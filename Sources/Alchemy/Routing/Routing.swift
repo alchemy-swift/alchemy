@@ -3,7 +3,10 @@ enum HTTPMethod {
 }
 
 /// Request validations
+/// (Handle through typed Middleware):
 /// 1. Router level: validate pre-conditions (auth, headers, app version)
+///
+/// (Handle with Request.validate(expectedType)):
 /// 2. Controller level: validate expected input (params unique to the request)
 
 extension Router {
@@ -33,17 +36,14 @@ extension Router {
     func on<R>(_ method: HTTPMethod, at path: String? = nil, do action: (Out) throws -> R) -> Self {
         self
     }
+    
+    /// Clean websocket API?
 }
 
 extension Router: Injectable where Out == Request {
     static func create(_ isMock: Bool) -> Router<Request> {
         Router { $0 }
     }
-}
-
-protocol Middleware {
-    associatedtype Out
-    func intercept(_ input: Request) -> Out
 }
 
 struct Router<Out> {
