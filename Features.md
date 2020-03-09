@@ -3,7 +3,7 @@
 
 ## API Design
 Each API should be... (ignoring docs)
-1. Simple to understand at first glance
+1. Simple to understand at first glance. Easy for noobs to pick up.
 2. Swifty (safe, leverage typing, error handling, leverage language features, etc)
 3. Readable and "fun" (i.e. branding, naming, etc)
 4. Encourage best practices
