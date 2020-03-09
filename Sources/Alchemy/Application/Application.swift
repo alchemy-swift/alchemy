@@ -1,0 +1,3 @@
+protocol Application {
+    func setup()
+}
