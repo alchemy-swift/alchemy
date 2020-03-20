@@ -11,9 +11,3 @@ struct TokenAuthMiddleware: Middleware {
         User(name: "Josh", email: "josh@gmail.com")
     }
 }
-
-struct User: Identifiable {
-    var id: UUID = UUID()
-    var name: String
-    var email: String
-}
