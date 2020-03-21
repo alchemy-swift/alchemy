@@ -1,58 +1,5 @@
 import Foundation
 
-/// Types of foreign keys
-/// 1. One to Many (Parent -> Child)
-/// 2. One to One (Parent -> Child)
-/// 3. Many to Many (separate table?)
-
-// Nonnull -> Use swift optional
-// Unique
-// Primary Key -> Identifiable?
-// Foreign Key
-// Check
-// Default
-// Index
-
-/// Logic silos
-/// 1. field constraints
-/// 2. relations & querying across tables (get all comments for a user's post)
-/// 3. migrations (adding/updating tables)
-
-extension Database {
-    func add(table: Table) {
-
-    }
-
-    func migrate(table: Table, migration: () -> Void) {
-
-    }
-}
-
-struct SampleSetup {
-    @Inject var db: Database
-
-    func setup() {
-        // Regular model tables
-        self.db.add(table: User.table)
-        self.db.add(table: Todo.table)
-        self.db.add(table: Comment.table)
-
-        // Junction tables
-        self.db.add(table: JunctionTables.todoTags)
-
-        // Migrations
-        self.db.migrate(table: Todo.table, migration: { })
-    }
-}
-
-extension User: Model {
-
-}
-
-struct SampleQueries {
-
-}
-
 extension Model {
     typealias Relation<To: RelationAllowed> = _Relation<Self, To>
 }
@@ -130,34 +77,6 @@ struct Todo: Model {
     var owner: User
 }
 
-/// Eager loading
-extension Todo {
-    
-}
-
-/// Through
-extension User {
-    // One to many through
-    // `User` -> `Todo` -> `Comments`
-    func relatedComments() -> Future<[Comment]> {
-//        self.linked(using: \Todo.user).fetch()
-        fatalError()
-    }
-}
-
-/// Relationship sugar
-extension Todo {
-    // 'One to Many', via a foreign key on the other type
-    func comments() -> Future<[Comment]> {
-        self.related(using: \.todo).all()
-    }
-
-    // 'Many to Many' across a junction table
-    func tags() -> Future<[Tag]> {
-        self.related(using: JunctionTables.todoTags).all()
-    }
-}
-
 /// Table abstraction, automatically synthesized for models
 protocol Table {
     var name: String { get }
@@ -189,31 +108,10 @@ struct JunctionTable<T: Model, U: Model>: Table {
 }
 
 struct JunctionTables {
-    static var todoTags = JunctionTable<Todo, Tag>(name: "TodoTags")
     static var passportCountries = JunctionTable<Passport, Country>(name: "PassportCountries")
 }
 
-struct Tag: Model {
-    var id: UUID
-    var name: String
-    var colorHex: String
-}
-
-struct Comment: Model {
-    var id: UUID
-    var timestamp: Date
-    var text: String
-    var commenter: User
-    var todo: Todo
-}
-
-protocol Model: Codable, Identifiable, RelationAllowed {
-//    typealias Value = Self
-}
-
-struct UserMigration {
-    
-}
+protocol Model: Codable, Identifiable, RelationAllowed { }
 
 struct Future<T> {
     init(_ val: T) {
@@ -221,31 +119,11 @@ struct Future<T> {
     }
 }
 
-@propertyWrapper
-struct Unique<T>: Codable where T: Codable {
-    var wrappedValue: T
-}
-
-@propertyWrapper
-struct Index<T>: Codable where T: Codable {
-    var wrappedValue: T
-}
-
-@propertyWrapper
-struct Default<T>: Codable where T: Codable {
-    var wrappedValue: T
-}
-
-@propertyWrapper
-struct Check<T>: Codable where T: Codable {
-    var wrappedValue: T
-}
-
 // Sanitize optional keypaths?
 // Keypaths for forced correct type?
 // Include nested layers
 
-struct User: Identifiable, Codable {
+struct User: Model {
     var id: UUID = UUID()
     var name: String
     var email: String
