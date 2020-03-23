@@ -218,3 +218,9 @@ struct Country: Model {
 // MARK: - Eager Loading
 
 // MARK: - CRUD on Relations
+
+// MARK: - Touching & Timestamps
+
+// MARK: - Relation vs Query
+/// Make `Relation` a subset of Query for similar lazy loading behavior, but extended functionality such as
+/// add, delete, touch, etc.
