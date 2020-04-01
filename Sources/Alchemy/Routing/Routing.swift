@@ -1,4 +1,4 @@
-enum HTTPMethod {
+public enum HTTPMethod {
     case get, post, patch, delete, put
 }
 
@@ -11,29 +11,29 @@ enum HTTPMethod {
 
 extension Router {
     @discardableResult
-    func path(_ path: String) -> Self {
+    public func path(_ path: String) -> Self {
         self
     }
 
     @discardableResult
-    func group(path: String? = nil, configure: (Self) -> Void) -> Self {
+    public func group(path: String? = nil, configure: (Self) -> Void) -> Self {
         self
     }
 
     @discardableResult
-    func group<M: Middleware>(with: M, configure: (Router<Out>) -> Void) -> Self where M.Out == Void {
+    public func group<M: Middleware>(with: M, configure: (Router<Out>) -> Void) -> Self where M.Out == Void {
         self
     }
 
     @discardableResult
-    func group<M: Middleware>(with: M, configure: (Router<(Out, M.Out)>) -> Void) -> Self {
+    public func group<M: Middleware>(with: M, configure: (Router<(Out, M.Out)>) -> Void) -> Self {
         self
     }
 }
 
 extension Router {
     @discardableResult
-    func on<R>(_ method: HTTPMethod, at path: String? = nil, do action: (Out) throws -> R) -> Self {
+    public func on<R>(_ method: HTTPMethod, at path: String? = nil, do action: (Out) throws -> R) -> Self {
         self
     }
     
@@ -41,29 +41,29 @@ extension Router {
 }
 
 extension Router: Injectable where Out == Request {
-    static func create(_ isMock: Bool) -> Router<Request> {
+    public static func create(_ isMock: Bool) -> Router<Request> {
         Router { $0 }
     }
 }
 
-struct Router<Out> {
+public struct Router<Out> {
 
     /// Either respond
     /// or pass down the chain
 
     private let action: (Request) -> Out
 
-    init(_ action: @escaping (Request) -> Out) {
+    public init(_ action: @escaping (Request) -> Out) {
         self.action = action
     }
 
     // A middleware that does something, but doesn't change the type
-    func middleware<M: Middleware>(_ middleware: M) -> Self where M.Out == Void {
+    public func middleware<M: Middleware>(_ middleware: M) -> Self where M.Out == Void {
         self
     }
 
     // A middleware that does something, then changes the type
-    func middleware<M: Middleware>(_ middleware: M) -> Router<(Out, M.Out)> {
+    public func middleware<M: Middleware>(_ middleware: M) -> Router<(Out, M.Out)> {
         Router<(Out, M.Out)> { request in
             (self.action(request), middleware.intercept(request))
         }

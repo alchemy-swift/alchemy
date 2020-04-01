@@ -1,3 +1,5 @@
+import Alchemy
+
 struct APIServer: Application {
     @Inject var db: Database
     @Inject var router: Router<Request>
@@ -16,12 +18,12 @@ struct APIServer: Application {
                     // `POST /users/reset`
                     .on(.post, at: "/reset", do: { req in "hi from user reset" })
                     // Applies to the rest of the requests in this chain, giving them a `User` parameter.
-                    .middleware(BasicAuthMiddleware())
+                    .middleware(BasicAuthMiddleware<User>())
                     // `POST /users/login`
                     .on(.post, at: "/login") { req, authedUser in "hi from user login" }
             }
             // Applies to requests in this group, validating a token auth and giving them a `User` parameter.
-            .group(with: TokenAuthMiddleware()) {
+            .group(with: TokenAuthMiddleware<User>()) {
                 // Applies to the rest of the requests in this chain.
                 $0.path("/todo")
                     // `POST /todo`
@@ -49,5 +51,17 @@ struct APIServer: Application {
 struct LoggingMiddleware: Middleware {
     func intercept(_ input: Request) -> Void {
         print("hey")
+    }
+}
+
+struct SampleSetup {
+    @Inject var db: Database
+
+    func setup() {
+        // Regular model tables
+        self.db.add(table: User.table)
+
+        // Junction tables
+        self.db.add(table: JunctionTables.passportCountries)
     }
 }

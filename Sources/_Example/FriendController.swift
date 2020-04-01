@@ -1,3 +1,5 @@
+import Alchemy
+
 struct FriendsController {
     func add(req: Request, current: User) throws -> Void {
         let dto = try req.validate(AddFriendDTO.self)

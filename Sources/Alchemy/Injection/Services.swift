@@ -3,15 +3,15 @@
 /// protocol SomeService { ... }
 /// protocol SomeServiceProvider: SomeService { ... }
 /// protocol SomeServiceMock: SomeService { ... }
-protocol Injectable {
+public protocol Injectable {
     static var shouldMock: Bool { get }
     static func create(_ isMock: Bool) -> Self
 }
 
 @propertyWrapper
-struct Inject<Value: Injectable> {
+public struct Inject<Value: Injectable> {
 
-    var wrappedValue: Value {
+    public var wrappedValue: Value {
         get {
 //            if Value.shouldMock {
 //
@@ -19,6 +19,9 @@ struct Inject<Value: Injectable> {
             fatalError()
         }
     }
+    
+    public init() {}
+    
     // Use cases
     // 1. A singleton, i.e. a redis cache.
     // 2. One of a few, i.e. there are multiple databases.
@@ -26,7 +29,7 @@ struct Inject<Value: Injectable> {
 }
 
 extension Injectable {
-    static var shouldMock: Bool { true }
+    public static var shouldMock: Bool { true }
 }
 
 /// Scratch

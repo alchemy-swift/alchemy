@@ -1,8 +1,8 @@
-protocol Application {
+public protocol Application {
     func setup()
 }
 
-extension Application {
+public extension Application {
     func run() {
         
     }
