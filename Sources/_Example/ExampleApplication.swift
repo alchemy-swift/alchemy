@@ -5,6 +5,8 @@ struct APIServer: Application {
     @Inject var router: Router<Request>
 
     func setup() {
+        return ()
+            
         self.db
             .configure()
 
