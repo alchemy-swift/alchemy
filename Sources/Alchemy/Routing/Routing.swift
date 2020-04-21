@@ -41,8 +41,10 @@ extension Router {
 }
 
 extension Router: Injectable where Out == Request {
+    public static var shared = Router<Request> { $0 }
+    
     public static func create(_ isMock: Bool) -> Router<Request> {
-        Router { $0 }
+        Router.shared
     }
 }
 

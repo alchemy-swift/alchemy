@@ -21,6 +21,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.0.0-rc"),
         .package(url: "https://github.com/MihaelIsaev/SwifQL.git", from:"2.0.0-beta"),
 //        .package(url: "https://github.com/MihaelIsaev/SwifQLNIO.git", from:"2.0.0"),
+        .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.11.0"),
     ],
     targets: [
         .target(
@@ -31,6 +32,7 @@ let package = Package(
 //                .product(name: "SwifQLNIO", package: "SwifQLNIO"),
                 .product(name: "NIO", package: "swift-nio"),
                 .product(name: "NIOHTTP1", package: "swift-nio"),
+                .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "CodableKit", package: "codable-kit"),
             ]
         ),
