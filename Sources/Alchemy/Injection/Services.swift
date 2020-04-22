@@ -3,36 +3,48 @@
 /// protocol SomeService { ... }
 /// protocol SomeServiceProvider: SomeService { ... }
 /// protocol SomeServiceMock: SomeService { ... }
+
+// Use cases
+// 1. A singleton, i.e. a redis cache.
+// 2. One of a few, i.e. there are multiple databases.
+// 3. Varies on the fly, i.e. a specific ViewModel. // probably not the use case
+
+import Foundation
+
 public protocol Injectable {
     static var shouldMock: Bool { get }
     static func create(_ isMock: Bool) -> Self
 }
 
-@propertyWrapper
-public struct Inject<Value: Injectable> {
+public extension Injectable {
+    static var shouldMock: Bool { Environment.current == .testing }
+}
 
+@propertyWrapper
+public class Inject<Value: Injectable> {
+    private var storedValue: Value?
+    
     public var wrappedValue: Value {
         get {
-//            if Value.shouldMock {
-//
-//            }
-            fatalError()
+            guard let storedValue = storedValue else {
+                return self.initializeValue()
+            }
+            
+            return storedValue
         }
     }
     
     public init() {}
     
-    // Use cases
-    // 1. A singleton, i.e. a redis cache.
-    // 2. One of a few, i.e. there are multiple databases.
-    // 3. Varies on the fly, i.e. a specific ViewModel.
+    private func initializeValue() -> Value {
+        let value = Value.create(Value.shouldMock)
+        self.storedValue = value
+        return value
+    }
 }
 
-extension Injectable {
-    public static var shouldMock: Bool { true }
-}
 
-/// Scratch
+// MARK: - Scratch
 protocol SomeService {
     func doStuff()
     func doOtherStuff()

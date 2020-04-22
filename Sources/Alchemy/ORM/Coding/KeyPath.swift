@@ -51,3 +51,4 @@ extension String {
 
 // 1. Get all keypaths for a model https://github.com/tensorflow/swift/blob/master/docs/DynamicPropertyIteration.md
 // 2. Map them to their values
+// Info: keypaths are hashable

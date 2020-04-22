@@ -1,4 +1,4 @@
 public protocol Middleware {
-    associatedtype Out
-    func intercept(_ input: Request) -> Out
+    associatedtype Result
+    func intercept(_ input: HTTPRequest) -> Result
 }

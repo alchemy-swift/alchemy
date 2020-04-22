@@ -1,9 +1,12 @@
-public struct Request {
-
-}
-
 /// Something that can be encoded to and decoded from an HTTP request
 public protocol RequestCodable {}
+
+/// Request validations
+/// (Handle through typed Middleware):
+/// 1. Router level: validate pre-conditions (auth, headers, app version)
+///
+/// (Handle with Request.validate(expectedType)):
+/// 2. Controller level: validate expected input (params unique to the request)
 
 /// Validation
 /// ----------
@@ -22,7 +25,7 @@ public protocol RequestCodable {}
 ///
 /// Could also potentially conform the type to `Validatable` and force some non-type validation, i.e. password
 /// is 8+ chars and has a number, uppercased char, etc.
-public extension Request {
+public extension HTTPRequest {
     func validate<T: RequestCodable>(_ type: T.Type) throws -> T {
         fatalError()
     }

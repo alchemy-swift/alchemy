@@ -29,14 +29,6 @@ struct StartupArgs {
     let htdocs: String
 }
 
-private struct GenericResponder: HTTPResponder {
-    func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
-        print("Request was: \(request.head.method.rawValue) \(request.head.uri)")
-        return request.eventLoop
-            .makeSucceededFuture(HTTPResponse(status: .ok, body: nil))
-    }
-}
-
 public extension Application {
     
     private func parseArgs() -> StartupArgs {
@@ -79,7 +71,7 @@ public extension Application {
 
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
-                channel.pipeline.addHandler(HTTPHandler(responder: GenericResponder()))
+                channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
             }
         }
 
@@ -122,7 +114,5 @@ public extension Application {
 
         print("Server closed")
     }
-    
-    
 }
 
