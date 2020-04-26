@@ -6,12 +6,12 @@ import XCTest
 final class RouterTests: XCTestCase {
     typealias TestRouter = Router<HTTPRequest, String>
     
-    var router = TestRouter(mapper: { $0 })
+    var router = TestRouter { $0 }
     var loop = EmbeddedEventLoop()
     
     override func setUp() {
         super.setUp()
-        self.router = TestRouter(mapper: { $0 })
+        self.router = TestRouter { $0 }
         self.loop = EmbeddedEventLoop()
     }
     

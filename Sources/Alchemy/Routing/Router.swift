@@ -1,62 +1,86 @@
 import NIO
 import NIOHTTP1
 
-extension HTTPMethod: Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.rawValue)
-    }
-}
-
 fileprivate let kRouterVariableEscape = ":"
+
+private struct HTTPKey: Hashable {
+    var fullURI: String
+    var method: HTTPMethod
+}
 
 /// Router. Takes an `HTTPRequest` and routes it to a handler.
 ///
 /// `Input` represents the type the router passes to a handler.
 /// `Output` represents the type the router expects back from a handler.
 public final class Router<Input, Output> {
-    private let uri: String
-    private let mapper: (HTTPRequest) throws -> Input
-    private var actions: [HTTPMethod: (Input) throws -> Output] = [:]
-    private var nextHandler: ((HTTPRequest) throws -> Output?)?
+    private let baseURI: String
+    /// Middleware to apply to any requests before passing to a handler.
+    private let middleware: (HTTPRequest) throws -> Input
+    /// Child routers, erased to a closure.
+    private var erasedChildren: [((HTTPRequest) throws -> Output?)] = []
+    /// Handlers to route requests to.
+    private var handlers: [HTTPKey: (Input) throws -> Output] = [:]
 
-    init(uri: String = "", mapper: @escaping (HTTPRequest) throws -> Input) {
-        self.uri = uri
-        self.mapper = mapper
+    init(baseURI: String = "", middleware: @escaping (HTTPRequest) throws -> Input) {
+        self.baseURI = baseURI
+        self.middleware = middleware
     }
     
-    func add(action: @escaping (Input) throws -> Output, for method: HTTPMethod) {
-        self.actions[method] = action
+    private func childrenHandle(request: HTTPRequest) throws -> Output? {
+        for child in self.erasedChildren {
+            if let output = try child(request) {
+                return output
+            }
+        }
+        
+        return nil
+    }
+    
+    func add(handler: @escaping (Input) throws -> Output, for method: HTTPMethod, path: String) {
+        self.handlers[HTTPKey(fullURI: self.baseURI + path, method: method)] = handler
     }
     
     func handle(request: HTTPRequest) throws -> Output? {
-        guard self.uri.matches(uri: request.head.uri) else {
-            return try self.nextHandler?(request)
+        let key = HTTPKey(fullURI: request.head.uri, method: request.head.method)
+        guard let handler = self.handlers[key] else {
+            return try self.childrenHandle(request: request)
         }
         
-        guard let handler = self.actions[request.head.method] else {
-            return nil
-        }
-        
-        return try handler(try self.mapper(request))
+        return try handler(try self.middleware(request))
     }
     
     // A middleware that does something, but doesn't change the type
     public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> where M.Result == Void {
-        let next = Router(uri: self.uri) {
+        let router = Router {
             middleware.intercept($0)
-            return try self.mapper($0)
+            return try self.middleware($0)
         }
-        self.nextHandler = next.handle
-        return next
+        
+        self.erasedChildren.append(router.handle)
+        return router
     }
 
     // A middleware that does something, then changes the type
     public func middleware<M: Middleware>(_ middleware: M) -> Router<(Input, M.Result), Output> {
-        let next = Router<(Input, M.Result), Output>(uri: self.uri) { request in
-            (try self.mapper(request), middleware.intercept(request))
+        let router = Router<(Input, M.Result), Output> { request in
+            (try self.middleware(request), middleware.intercept(request))
         }
-        self.nextHandler = next.handle
-        return next
+        
+        self.erasedChildren.append(router.handle)
+        return router
+    }
+    
+    /// Update the path for subsequent requests in the router chain.
+    public func path(_ path: String) -> Router<Input, Output> {
+        let router = Router(baseURI: self.baseURI + path, middleware: self.middleware)
+        self.erasedChildren.append(router.handle)
+        return router
+    }
+}
+
+extension HTTPMethod: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.rawValue)
     }
 }
 
@@ -84,31 +108,4 @@ extension String {
         
         return true
     }
-}
-
-extension Router {
-    /// For values
-    @discardableResult
-    public func on(_ method: HTTPMethod, at path: String? = nil,
-                   do action: @escaping (Input) throws -> Output) -> Self {
-        self.add(action: action, for: method)
-        return self
-    }
-    
-    /// For `Void` since `Void` can't conform to any protocol.
-//    @discardableResult
-//    public func on(_ method: HTTPMethod, at path: String? = nil,
-//                   do action: @escaping (Input) throws -> Void) -> Self {
-//        self.add(
-//            action: { out -> VoidCodable in
-//                try action(out)
-//                return VoidCodable()
-//            },
-//            for: method
-//        )
-//
-//        return self
-//    }
-    
-    /// Clean websocket API?
 }

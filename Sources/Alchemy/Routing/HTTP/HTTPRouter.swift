@@ -1,4 +1,4 @@
-public typealias HTTPRouter = Router<HTTPRequest, HTTPResponse>
+public typealias HTTPRouter = Router<HTTPRequest, HTTPResponseEncodable>
 
 extension HTTPRouter: Injectable {
     // Singleton router

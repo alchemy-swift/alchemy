@@ -1,4 +1,6 @@
-/// Something that can be encoded to and decoded from an HTTP request
+/// WIP: Something that can be encoded to and decoded from an HTTP request
+///
+/// Should probably be moved to `SwiftAPI` repo.
 public protocol RequestCodable {}
 
 /// Request validations
