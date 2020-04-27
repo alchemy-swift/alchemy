@@ -10,7 +10,7 @@ extension Router {
     }
 }
 
-/// `Void` helpers, since `Void` can't conform to a protocol.
+/// `Void` sugar, since `Void` can't conform to a protocol.
 extension Router where Output == HTTPResponseEncodable {
     /// For `Void`.
     @discardableResult
@@ -32,6 +32,32 @@ extension Router where Output == HTTPResponseEncodable {
     public func on(_ method: HTTPMethod, at path: String = "",
                    do action: @escaping (Input) throws -> EventLoopFuture<Void>) -> Self {
         self.add(handler: { try action($0).map { VoidCodable() } }, for: method, path: path)
+        return self
+    }
+}
+
+/// `Codable` sugar; protocol extensions can't have inheritence clauses so we can't conform
+/// `Codable` to `HTTPResponseEncodable`.
+extension Router where Output == HTTPResponseEncodable {
+    /// For `Codable`.
+    @discardableResult
+    public func on<E: Encodable>(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (Input) throws -> E
+    ) -> Self {
+        self.add(handler: { CodableWrapper(obj: try action($0)) }, for: method, path: path)
+        return self
+    }
+    
+    /// For `EventLoopFuture<E: Encodable>`.
+    @discardableResult
+    public func on<E: Encodable>(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (Input) throws -> EventLoopFuture<E>
+    ) -> Self {
+        self.add(handler: { try action($0).map(CodableWrapper.init) }, for: method, path: path)
         return self
     }
 }

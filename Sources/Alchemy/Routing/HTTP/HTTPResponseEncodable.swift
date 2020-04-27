@@ -32,13 +32,24 @@ extension Encodable {
     }
 }
 
-/// Used to represent a `Void` functions response type.
-/// something needs to be returned so we'll return
-/// and empty object.
+/// Used as a workaround for conforming `Void` to `HTTPResponseEncodable`.
 struct VoidCodable: Codable {}
 
 extension VoidCodable: HTTPResponseEncodable {
     public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
+        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    }
+}
+
+/// Used as a workaround for conforming `Encodable` to `HTTPResponseEncodable`.
+struct CodableWrapper: Encodable, HTTPResponseEncodable {
+    let obj: Encodable
+    
+    func encode(to encoder: Encoder) throws {
+        try obj.encode(to: encoder)
+    }
+    
+    func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
         eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }

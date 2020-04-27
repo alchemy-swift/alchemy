@@ -13,6 +13,8 @@ struct APIServer: Application {
         self.router
             // Applied to all subsequent routes
             .middleware(LoggingMiddleware(text: "Handling request:"))
+            // `GET /json`
+            .on(.GET, at: "/json", do: { _ in SampleJSON() })
             // Group all requests to /users
             .group(path: "/users") {
                 $0.on(.POST, do: { req in "hi from create user" })
@@ -47,6 +49,13 @@ struct APIServer: Application {
                     .on(.POST, at: "/message", do: friends.message)
             }
     }
+}
+
+struct SampleJSON: Encodable {
+    let one = "value1"
+    let two = "value2"
+    let three = "value3"
+    let four = 4
 }
 
 struct LoggingMiddleware: Middleware {
