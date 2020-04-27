@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "async-http-client",
+        "repositoryURL": "https://github.com/swift-server/async-http-client.git",
+        "state": {
+          "branch": null,
+          "revision": "037b70291941fe43de668066eb6fb802c5e181d2",
+          "version": "1.1.1"
+        }
+      },
+      {
         "package": "codable-kit",
         "repositoryURL": "https://github.com/vapor/codable-kit.git",
         "state": {
@@ -62,6 +71,15 @@
           "branch": null,
           "revision": "a27a07719ca785bcaca019a5b9fe1814b981b4a2",
           "version": "2.15.0"
+        }
+      },
+      {
+        "package": "swift-nio-extras",
+        "repositoryURL": "https://github.com/apple/swift-nio-extras.git",
+        "state": {
+          "branch": null,
+          "revision": "b4dbfacff47fb8d0f9e0a422d8d37935a9f10570",
+          "version": "1.4.0"
         }
       },
       {

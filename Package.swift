@@ -22,11 +22,14 @@ let package = Package(
         .package(url: "https://github.com/MihaelIsaev/SwifQL.git", from:"2.0.0-beta"),
 //        .package(url: "https://github.com/MihaelIsaev/SwifQLNIO.git", from:"2.0.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.11.0"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0")
+
     ],
     targets: [
         .target(
             name: "Alchemy",
             dependencies: [
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "SwifQL", package: "SwifQL"),
 //                .product(name: "SwifQLNIO", package: "SwifQLNIO"),

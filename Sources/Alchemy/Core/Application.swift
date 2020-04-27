@@ -66,8 +66,6 @@ public extension Application {
         let args = self.parseArgs()
 
         let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        let threadPool = NIOThreadPool(numberOfThreads: 6)
-        threadPool.start()
 
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
@@ -89,7 +87,6 @@ public extension Application {
 
         defer {
             try! group.syncShutdownGracefully()
-            try! threadPool.syncShutdownGracefully()
         }
 
         let channel = try { () -> Channel in
