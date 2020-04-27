@@ -1,4 +1,5 @@
 import Alchemy
+import NIO
 
 struct APIServer: Application {
     @Inject var db: Database
@@ -48,6 +49,15 @@ struct APIServer: Application {
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
             }
+            .on(.GET, at: "/db", do: Tester().test)
+    }
+}
+
+struct Tester {
+    @Inject var db: Database
+    
+    func test(req: HTTPRequest) -> EventLoopFuture<String> {
+        db.test(loop: req.eventLoop)
     }
 }
 
