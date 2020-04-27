@@ -52,7 +52,7 @@ public final class Router<Input, Output> {
     // A middleware that does something, but doesn't change the type
     public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> where M.Result == Void {
         let router = Router {
-            middleware.intercept($0)
+            try middleware.intercept($0)
             return try self.middleware($0)
         }
         
@@ -63,7 +63,7 @@ public final class Router<Input, Output> {
     // A middleware that does something, then changes the type
     public func middleware<M: Middleware>(_ middleware: M) -> Router<(Input, M.Result), Output> {
         let router = Router<(Input, M.Result), Output> { request in
-            (try self.middleware(request), middleware.intercept(request))
+            (try self.middleware(request), try middleware.intercept(request))
         }
         
         self.erasedChildren.append(router.handle)

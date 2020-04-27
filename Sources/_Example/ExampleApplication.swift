@@ -3,11 +3,16 @@ import Alchemy
 struct APIServer: Application {
     @Inject var db: Database
     @Inject var router: HTTPRouter
+    @Inject var globalMiddlewares: GlobalMiddlewares
 
     func setup() {
+        self.globalMiddlewares
+            // Applied to all incoming requests.
+            .add(LoggingMiddleware(text: "Received request:"))
+        
         self.router
             // Applied to all subsequent routes
-            .middleware(LoggingMiddleware())
+            .middleware(LoggingMiddleware(text: "Handling request:"))
             // Group all requests to /users
             .group(path: "/users") {
                 $0.on(.POST, do: { req in "hi from create user" })
@@ -45,8 +50,10 @@ struct APIServer: Application {
 }
 
 struct LoggingMiddleware: Middleware {
-    func intercept(_ input: HTTPRequest) -> Void {
-        print("hey")
+    let text: String
+    
+    func intercept(_ request: HTTPRequest) throws -> Void {
+        print("\(self.text) '\(request.head.method.rawValue) \(request.head.uri)'")
     }
 }
 

@@ -155,17 +155,17 @@ extension RouterTests.TestRouter {
 struct VoidMiddleware: Middleware {
     let callback: (HTTPRequest) -> Void
     
-    func intercept(_ input: HTTPRequest) -> Void {
-        self.callback(input)
+    func intercept(_ request: HTTPRequest) throws -> Void {
+        self.callback(request)
     }
 }
 
-/// Maps the request into a random `Int`.
+/// Maps the request into the given `Int`.
 struct MappingMiddleware: Middleware {
     let callback: (HTTPRequest) -> Int
     
-    func intercept(_ input: HTTPRequest) -> Int {
-        self.callback(input)
+    func intercept(_ request: HTTPRequest) throws -> Int {
+        self.callback(request)
     }
 }
 
