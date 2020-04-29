@@ -62,13 +62,6 @@ public struct _Relation<From: RelationAllowed, To: RelationAllowed>: Codable {
     }
 }
 
-/// Table abstraction, automatically synthesized for models
-public protocol Table {
-    var name: String { get }
-    // some type for handling fields & such
-    var fields: [String] { get }
-}
-
 public struct ModelTable: Table {
     public var name: String = "compute this"
     public var fields: [String] = []
@@ -96,7 +89,7 @@ public struct JunctionTable<T: Model, U: Model>: Table {
     }
 }
 
-public protocol Model: Codable, Identifiable, RelationAllowed { }
+public protocol Model: Codable, Identifiable, RelationAllowed, Table { }
 
 public struct Future<T> {
     public init(_ val: T) {

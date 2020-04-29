@@ -1,2 +1,6 @@
-let app = APIServer()
-try app.run()
+import Alchemy
+
+//let app = APIServer()
+//try app.run()
+
+KeyPathTest.test()
