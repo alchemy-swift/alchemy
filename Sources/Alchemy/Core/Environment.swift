@@ -6,7 +6,12 @@ struct Environment: Equatable {
     static let development = Environment(name: "development")
     
     static let current: Environment = {
-        /// Load from CommandLine.arguments
-        .development
+        #if DEBUG
+            print("Dev")
+            return .development
+        #else
+            print("Prod")
+            return .production
+        #endif
     }()
 }
