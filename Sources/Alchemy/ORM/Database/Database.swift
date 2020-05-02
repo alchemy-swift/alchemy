@@ -1,4 +1,4 @@
-import PostgresNIO
+import PostgresKit
 
 public final class Database {
     private var pooler = ConnectionPooler()
@@ -13,6 +13,10 @@ public final class Database {
     }
 }
 
+// Some examples
+// nio async http: https://github.com/swift-server/async-http-client/pull/31/files
+// vapor: https://github.com/vapor/async-kit/tree/master/Sources/AsyncKit/ConnectionPool
+//        & https://github.com/vapor/postgres-kit/blob/master/Sources/PostgresKit/ConnectionPool%2BPostgres.swift
 final class ConnectionPooler {
     // Never close for now.
     private var connection: PostgresConnection?
@@ -72,16 +76,5 @@ public extension Database {
 public struct Query {
     func toString() -> String {
         "SELECT version()"
-    }
-}
-
-/// Migrations
-public extension Database {
-    func add(table: Table) {
-
-    }
-
-    func migrate(table: Table, migration: () -> Void) {
-
     }
 }

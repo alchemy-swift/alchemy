@@ -80,10 +80,6 @@ struct SampleSetup {
     @Inject var db: Database
 
     func setup() {
-        // Regular model tables
-        self.db.add(table: User.table)
-
-        // Junction tables
-        self.db.add(table: JunctionTables.passportCountries)
+        
     }
 }
