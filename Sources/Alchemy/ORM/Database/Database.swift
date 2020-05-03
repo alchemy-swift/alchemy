@@ -74,6 +74,6 @@ public extension Database {
     }
 
     func run(query: Query) -> EventLoopFuture<[PostgresRow]> {
-        self.query(rawSQL: query.toSQL())
+        self.query(rawSQL: "")
     }
 }

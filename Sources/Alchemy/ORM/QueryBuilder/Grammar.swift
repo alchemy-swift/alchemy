@@ -18,7 +18,7 @@ class Grammar {
         \Query.offset
     ]
 
-    func compileSelect(query: Query) -> String {
+    func compileSelect(query: Query) -> SQL {
 
         // If the query does not have any columns set, we"ll set the columns to the
         // * character to just get all of the columns from the database. Then we
@@ -29,19 +29,20 @@ class Grammar {
             query.columns = ["*"]
         }
 
-        // To compile the query, we"ll spin through each component of the query and
-        // see if that component exists. If it does we"ll just call the compiler
+        // To compile the query, we'll spin through each component of the query and
+        // see if that component exists. If it does we'll just call the compiler
         // function for the component which is responsible for making the SQL.
-        let sql = concatenate(compileComponents(query: query))
+        let sql = compileComponents(query: query)
 
-        query.columns = original;
+        query.columns = original
 
         return sql
     }
 
-    private func compileComponents(query: Query) -> [String]
+    private func compileComponents(query: Query) -> SQL
     {
-        var sql: [String] = [];
+        var sql: [String] = []
+        var bindings: [Parameter] = []
         for component in selectComponents {
             // To compile the query, well spin through each component of the query and
             // see if that component exists. If it does we"ll just call the compiler
@@ -54,11 +55,12 @@ class Grammar {
                     sql.append(compileFrom(query, table: table))
                 }
                 else if component == \Query.wheres {
-                    sql.append(compileWheres(query))
+                    let wheres = compileWheres(query).bind(&bindings)
+                    sql.append(wheres.query)
                 }
             }
         }
-        return sql
+        return SQL(sql.joined(separator: " "), bindings: bindings)
     }
 
     private func compileColumns(_ query: Query, columns: [String]) -> String
@@ -72,19 +74,20 @@ class Grammar {
         return "from \(table)"
     }
 
-    func compileJoins(_ query: Query, joins: [JoinClause]) -> String {
-
-        return joins.map { join in
-            let compiledWhere = compileWheres(join)
+    func compileJoins(_ query: Query, joins: [JoinClause]) -> SQL {
+        var bindings: [Parameter] = []
+        let query = joins.map { join in
+            let whereSQL = compileWheres(join).bind(&bindings)
             if let nestedJoins = join.joins {
-                let compiledNested = compileJoins(query, joins: nestedJoins)
-                return trim("\(join.type) join (\(join.table)\(compiledNested)) \(compiledWhere)")
+                let nestedSQL = compileJoins(query, joins: nestedJoins).bind(&bindings)
+                return trim("\(join.type) join (\(join.table)\(nestedSQL.query)) \(whereSQL.query)")
             }
-            return trim("\(join.type) join \(join.table) \(compiledWhere)")
+            return trim("\(join.type) join \(join.table) \(whereSQL.query)")
         }.joined(separator: " ")
+        return SQL(query, bindings: bindings)
     }
 
-    private func compileWheres(_ query: Query) -> String
+    private func compileWheres(_ query: Query) -> SQL
     {
 
         // If we actually have some where clauses, we will strip off the first boolean
@@ -92,13 +95,14 @@ class Grammar {
         // avoid checking for the first clauses in each of the compilers methods.
 
         // Need to handle nested stuff somehow
-        var parts = query.wheres.map { $0.toString() }
-        if (parts.count > 0) {
+        
+        let (sql, bindings) = groupSQL(values: query.wheres)
+        if (sql.count > 0) {
             let conjunction = query is JoinClause ? "on" : "where"
-            let clauses = removeLeadingBoolean(parts.joined(separator: " "))
-            return "\(conjunction) \(clauses)"
+            let clauses = removeLeadingBoolean(sql.joined(separator: " "))
+            return SQL("\(conjunction) \(clauses)", bindings: bindings)
         }
-        return ""
+        return SQL()
 
         // This calls the where method based on the type of where that is passed in.
         // ie. whereBasic, whereColumn etc
@@ -108,9 +112,6 @@ class Grammar {
 //        })->all();
     }
 
-    private func whereIn(_ query: Query, where: [WhereClause]) {
-
-    }
 
 
 
@@ -118,37 +119,37 @@ class Grammar {
 
 
 
-
-
-    func compileInsert(_ query: Query, values: [String: Clause]) throws -> String
+    func compileInsert(_ query: Query, values: [[String: Parameter]]) throws -> SQL
     {
         guard let table = query.from else { throw GrammarError.missingTable }
 
         if values.isEmpty {
-            return "insert into \(table) default values"
+            return SQL("insert into \(table) default values")
         }
 
-        let columns = values.keys.joined(separator: ", ")
-        let parameters = parameterize(values.values.map { $0 })
-
-        return "insert into \(table) (\(columns)) values (\(parameters))"
+        let columns = values[0].keys.joined(separator: ", ")
+        let parameters = values.map { "(" + parameterize(Array($0.values)) + ")" }.joined(separator: ", ")
+        return SQL("insert into \(table) (\(columns)) values (\(parameters))")
     }
 
-    func compileUpdate(_ query: Query, values: [Clause]) throws -> String
+    func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL
     {
         guard let table = query.from else { throw GrammarError.missingTable }
+        var bindings: [Parameter] = []
         let columns = compileUpdateColumns(query, values: values)
-        let wheres = compileWheres(query)
 
+        var base = "update \(table)"
         if let clauses = query.joins {
-            let joins = compileJoins(query, joins: clauses)
-            return "update \(table) \(joins) set \(columns) \(wheres)"
+            let joinSQL = compileJoins(query, joins: clauses).bind(&bindings)
+            base += " \(joinSQL)"
         }
-        return "update \(table) set \(columns) \(wheres)"
+        bindings += values.values
+        let whereSQL = compileWheres(query).bind(&bindings)
+        return SQL("\(base) set \(columns) \(whereSQL.query)", bindings: bindings)
     }
 
-    func compileUpdateColumns(_ query: Query, values: [Clause]) -> String {
-        return values.enumerated().map { "\($0) = \(parameter($1))" }.joined(separator: ", ")
+    func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> String {
+        return values.map { "\($0) = \(parameter($1))" }.joined(separator: ", ")
     }
 
 
@@ -167,19 +168,14 @@ class Grammar {
         return value
     }
 
-    private func concatenate(_ segments: [String]) -> String
-    {
-        return segments.filter { !$0.isEmpty }.joined(separator: " ")
-    }
-
-    private func parameterize(_ values: [Clause]) -> String
+    private func parameterize(_ values: [Parameter]) -> String
     {
         return values.map { parameter($0) }.joined(separator: ", ")
     }
 
-    private func parameter(_ value: Clause) -> String
+    private func parameter(_ value: Parameter) -> String
     {
-        return value is Expression ? value.toString() : "?"
+        return value is Expression ? value.description : "?"
     }
 
     private func trim(_ value: String) -> String

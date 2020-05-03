@@ -25,7 +25,7 @@ struct APIServer: Application {
                     .middleware(BasicAuthMiddleware<User>())
                     // `POST /users/login`
                     .on(.POST, at: "/login") { req, authedUser in "hi from user login" }
-            }
+        }
             // Applies to requests in this group, validating a token auth and giving them a `User` parameter.
             .group(middleware: TokenAuthMiddleware<User>()) {
                 // Applies to the rest of the requests in this chain.
@@ -48,8 +48,8 @@ struct APIServer: Application {
                     .on(.DELETE, do: friends.remove)
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
-            }
-            .on(.GET, at: "/db", do: Tester().test)
+        }
+        .on(.GET, at: "/db", do: Tester().test)
     }
 }
 
@@ -57,14 +57,30 @@ struct Tester {
     @Inject var db: Database
     
     func test(req: HTTPRequest) throws -> Void {
-//        db.test(loop: req.eventLoop)
+        //        db.test(loop: req.eventLoop)
 
         let query = db.query()
-        .from(table: "users")
-        .select(["first_name", "last_name"])
-        .filter("last_name" == "Anderson")
-        .filter("first_name" ~= "Chris%")
-        print(query.toSQL())
+            .from(table: "users")
+            .select(["first_name", "last_name"])
+            .where("last_name" == "Anderson")
+            .where("first_name" ~= "Chris%")
+            .toSQL()
+        print(query)
+
+        let query2 = try? db.query()
+            .from(table: "users")
+            .insert(values: [
+                ["first_name": "Paul"],
+                ["first_name": "Jane"],
+                ["first_name": "Clementine"]
+            ])
+        print(query2 ?? "failed")
+
+        let query3 = try? db.query()
+            .from(table: "flights")
+            .where("id" == 10)
+            .update(values: [ "departed": true ])
+        print(query3 ?? "failed")
     }
 }
 

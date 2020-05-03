@@ -20,7 +20,7 @@ public class Query {
         self.database = database
     }
 
-    public func toSQL() -> String {
+    public func toSQL() -> SQL {
         return database.grammar.compileSelect(query: self)
     }
 
@@ -73,17 +73,42 @@ public class Query {
     //
     //    }
 
-    public func filter(_ clause: WhereClause) -> Query {
+    public func `where`(_ clause: WhereValue) -> Query {
         self.wheres.append(clause)
         return self
     }
-    //    orWhere(column, operator, value) = where(column, operator, value, "or")
+
+    public func orWhere(_ clause: WhereValue) -> Query {
+        var clause = clause
+        clause.boolean = .or
+        self.wheres.append(clause)
+        return self
+    }
+
+    public func `where`(
+        key: String,
+        in values: [Parameter],
+        type: WhereIn.InType = .in,
+        boolean: WhereBoolean = .and
+    ) -> Query {
+        self.wheres.append(WhereIn(key: key, values: values, type: type, boolean: boolean))
+        return self
+    }
+
+    public func orWhere(key: String, in values: [Parameter], type: WhereIn.InType = .in) -> Query {
+        return self.where(key: key, in: values, type: type, boolean: .or)
+    }
+
+    public func whereNot(key: String, in values: [Parameter], boolean: WhereBoolean = .and) -> Query {
+        return self.where(key: key, in: values, type: .notIn, boolean: boolean)
+    }
+
+    public func orWhereNot(key: String, in values: [Parameter]) -> Query {
+        return self.where(key: key, in: values, type: .notIn, boolean: .or)
+    }
+
     //    whereRaw(sql, bindings, boolean = "and")
     //    orWhereRaw(sql, bindings)
-    //    whereIn(column, values, boolean, not = false)
-    //    orWhereIn(column, values, boolean)
-    //    whereNotIn(column, values, boolean = "and")
-    //    orWhereNotIn(column, values)
     //    whereNull(column, boolean = "and", not = false)
     //    orWhereNull(column) = whereNull(column, "or")
     //    whereNotNull(column, boolean = "and") = whereNull(column, boolean, true)
@@ -92,8 +117,8 @@ public class Query {
     //    orHaving(column, operator, value) = having(column, operator, value, "or")
 
     @discardableResult
-    public func whereColumn(first: String, op: String, second: String, boolean: String = "and") -> Query {
-        self.wheres.append(WhereClause(first: first, op: op, second: second, boolean: boolean))
+    public func whereColumn(first: String, op: String, second: String, boolean: WhereBoolean = .and) -> Query {
+        self.wheres.append(WhereColumn(first: first, op: op, second: Expression(second), boolean: boolean))
         return self
     }
 
@@ -165,48 +190,52 @@ public class Query {
     //    count()
     //    exists()
     //
-    //    insert(values)
+    public func insert(value: [String: Parameter]) throws -> SQL {
+        return try insert(values: [value])
+    }
+
+    public func insert(values: [[String: Parameter]]) throws -> SQL {
+        if values.isEmpty { return SQL() }
+
+        return try database.grammar.compileInsert(self, values: values)
+    }
+
+    public func update(values: [String: Parameter]) throws -> SQL {
+        return try database.grammar.compileUpdate(self, values: values)
+    }
+
     //    update(values)
     //    updateOrInsert()
     //    delete(id = null)
-    //
-    //
-    //
-    //    //Model methods:
-    //    refresh()
-    //    save()
-    //    chunk(count, callback)
-    //    firstOrNew(conditions, values)
-    //    with(relationships)
 }
 
 
 extension String {
-    public static func ==(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: "=", value: rhs)
+    public static func ==(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: "=", value: rhs)
     }
 
-    public static func !=(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: "!=", value: rhs)
+    public static func !=(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: "!=", value: rhs)
     }
 
-    public static func <(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: "<", value: rhs)
+    public static func <(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: "<", value: rhs)
     }
 
-    public static func >(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: ">", value: rhs)
+    public static func >(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: ">", value: rhs)
     }
 
-    public static func <=(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: "<=", value: rhs)
+    public static func <=(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: "<=", value: rhs)
     }
 
-    public static func >=(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: ">=", value: rhs)
+    public static func >=(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: ">=", value: rhs)
     }
 
-    public static func ~=(lhs: String, rhs: String) -> WhereClause {
-        return WhereClause(key: lhs, op: "LIKE", value: rhs)
+    public static func ~=(lhs: String, rhs: Parameter) -> WhereValue {
+        return WhereValue(key: lhs, op: "LIKE", value: rhs)
     }
 }
