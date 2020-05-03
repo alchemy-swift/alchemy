@@ -119,21 +119,22 @@ extension Database {
         self.pool?.shutdown()
     }
     
-    public func test() -> EventLoopFuture<String> {
-        return self.query("SELECT version()")
+    public func test(on el: EventLoop) -> EventLoopFuture<String> {
+        return self.query("SELECT version()", on: el)
             .map { "\($0)" }
     }
 }
 
 extension Database {
-    func query(_ sql: String) -> EventLoopFuture<[PostgresRow]> {
+    func query(_ sql: String, on el: EventLoop) -> EventLoopFuture<[PostgresRow]> {
         guard let pool = pool, self.isConfigured else {
             fatalError("this database hasn't been configured yet. Please call `configure` before running any queries.")
         }
         
         print("Running query '\(sql)'")
-        return pool.database(logger: .init(label: "why_is_a_logger_needed"))
-            .simpleQuery(sql)
+        return pool.withConnection(logger: nil, on: el) { conn in
+            conn.simpleQuery(sql)
+        }
     }
 }
 

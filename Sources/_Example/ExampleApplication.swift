@@ -74,7 +74,7 @@ struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        db.test()
+        db.test(on: req.eventLoop)
     }
 }
 
