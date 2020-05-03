@@ -16,6 +16,7 @@ import NIOHTTP1
 import NIOHTTP2
 
 public protocol Application {
+    var eventLoopGroup: EventLoopGroup { get }
     func setup()
 }
 
@@ -65,15 +66,13 @@ public extension Application {
         
         let args = self.parseArgs()
 
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
                 channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
             }
         }
 
-        let socketBootstrap = ServerBootstrap(group: group)
+        let socketBootstrap = ServerBootstrap(group: self.eventLoopGroup)
             // Specify backlog and enable SO_REUSEADDR for the server itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
@@ -86,7 +85,7 @@ public extension Application {
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
         defer {
-            try! group.syncShutdownGracefully()
+            try! self.eventLoopGroup.syncShutdownGracefully()
         }
 
         let channel = try { () -> Channel in

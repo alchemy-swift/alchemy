@@ -41,8 +41,10 @@ extension PostgresDatabase: Injectable {
             Storage.dict[identifier] = newDB
             return newDB
         } else if let singleton = Storage.singleton {
+            print("Using singleton.")
             return singleton
         } else {
+            print("Creating singleton.")
             let singleton = PostgresDatabase()
             Storage.singleton = singleton
             return singleton
@@ -61,7 +63,7 @@ public struct DatabaseConfig {
     public let username: String
     public let password: String
     
-    init(
+    public init(
         socket: Socket,
         database: String,
         username: String,
@@ -81,9 +83,10 @@ public protocol Database: class {
 }
 
 extension Database {
-    var isConfigured: Bool { self.pool == nil }
+    var isConfigured: Bool { self.pool != nil }
     
     public func configure(with config: DatabaseConfig, eventLoopGroup: EventLoopGroup) {
+        print("Configuring.")
         //  Initialize the pool.
         let postgresConfig: PostgresConfiguration
         switch config.socket {

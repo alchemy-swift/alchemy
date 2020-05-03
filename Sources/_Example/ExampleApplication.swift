@@ -15,11 +15,15 @@ struct MultipleDatabases {
 }
 
 struct APIServer: Application {
+    var eventLoopGroup: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    
     @Inject var db: PostgresDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
+        self.db.configure(with: .main, eventLoopGroup: self.eventLoopGroup)
+        
         self.globalMiddlewares
             // Applied to all incoming requests.
             .add(LoggingMiddleware(text: "Received request:"))
