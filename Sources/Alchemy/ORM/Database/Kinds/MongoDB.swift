@@ -4,14 +4,12 @@
 public enum MongoDB { }
 
 /// Add a Database class with `Kind` as the kind type above.
-public final class MongoDatabase: Database {
-    public typealias Kind = MongoDB
-    public var pool: ConnectionPool?
-    
+public final class MongoDatabase: Database<MongoDB> {
     // Can optionally override any function such as setup, query, etc.
 }
 
 /// Then, potentially write a custom query builder for a `MongoDB` database.
+/// (assuming general query builder looks something like this)
 protocol QueryBuilder {
     associatedtype Kind
     func toString() -> String

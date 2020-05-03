@@ -16,7 +16,6 @@ import NIOHTTP1
 import NIOHTTP2
 
 public protocol Application {
-    var eventLoopGroup: EventLoopGroup { get }
     func setup()
 }
 
@@ -28,6 +27,13 @@ enum BindTo {
 struct StartupArgs {
     let target: BindTo
     let htdocs: String
+}
+
+extension MultiThreadedEventLoopGroup: Fusable {
+    public static func register(in container: Container) throws {
+        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        try container.register(singleton: group)
+    }
 }
 
 public extension Application {
@@ -61,6 +67,9 @@ public extension Application {
     }
     
     func run() throws {
+        // Setup the ELG
+        let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
+        
         // First, setup the application
         self.setup()
         
@@ -72,7 +81,7 @@ public extension Application {
             }
         }
 
-        let socketBootstrap = ServerBootstrap(group: self.eventLoopGroup)
+        let socketBootstrap = ServerBootstrap(group: group)
             // Specify backlog and enable SO_REUSEADDR for the server itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
@@ -85,7 +94,7 @@ public extension Application {
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
         defer {
-            try! self.eventLoopGroup.syncShutdownGracefully()
+            try! group.syncShutdownGracefully()
         }
 
         let channel = try { () -> Channel in

@@ -3,27 +3,25 @@ import NIO
 
 struct MultipleDatabases {
     // Singleton
-    @Inject
-    var mySQL: MySQLDatabase
+    @Fuse
+    var postgres: PostgresDatabase
     
     // Multiple singletons of same type
-    @Inject("postgres1")
-    var postgres1: PostgresDatabase
+    @Fuse("mySQL1")
+    var mySQL1: MySQLDatabase
     
-    @Inject("postgres2")
-    var postgres2: PostgresDatabase
+    @Fuse("mySQL2")
+    var mySQL2: MySQLDatabase
 }
 
 struct APIServer: Application {
     let eventLoopGroup: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     
-    @Inject var db: PostgresDatabase
+    @Fuse var db: PostgresDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
-        self.db.configure(with: .main, eventLoopGroup: self.eventLoopGroup)
-        
         self.globalMiddlewares
             // Applied to all incoming requests.
             .add(LoggingMiddleware(text: "Received request:"))
@@ -71,7 +69,7 @@ struct APIServer: Application {
 }
 
 struct DatabaseTestController {
-    @Inject var db: PostgresDatabase
+    @Fuse var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
         db.test(on: req.eventLoop)
