@@ -3,6 +3,7 @@ import PostgresKit
 public final class Database {
     private var pooler = ConnectionPooler()
     private var loop: EventLoop!
+    var grammar: Grammar = Grammar()
     
     public init() {}
     
@@ -63,18 +64,16 @@ extension Database: Injectable {
 
 /// Queries.
 public extension Database {
+    func query() -> Query {
+        return Query(database: self)
+    }
+
     func query(rawSQL: String) -> EventLoopFuture<[PostgresRow]> {
         return self.pooler.get(on: loop)
             .flatMap { $0.simpleQuery(rawSQL) }
     }
-    
-    func query(sql: Query) -> EventLoopFuture<[PostgresRow]> {
-        self.query(rawSQL: sql.toString())
-    }
-}
 
-public struct Query {
-    func toString() -> String {
-        "SELECT version()"
+    func run(query: Query) -> EventLoopFuture<[PostgresRow]> {
+        self.query(rawSQL: query.toSQL())
     }
 }

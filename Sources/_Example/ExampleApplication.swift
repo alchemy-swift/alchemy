@@ -56,8 +56,15 @@ struct APIServer: Application {
 struct Tester {
     @Inject var db: Database
     
-    func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        db.test(loop: req.eventLoop)
+    func test(req: HTTPRequest) throws -> Void {
+//        db.test(loop: req.eventLoop)
+
+        let query = db.query()
+        .from(table: "users")
+        .select(["first_name", "last_name"])
+        .filter("last_name" == "Anderson")
+        .filter("first_name" ~= "Chris%")
+        print(query.toSQL())
     }
 }
 
