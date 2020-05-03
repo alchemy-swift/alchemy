@@ -89,7 +89,7 @@ public struct JunctionTable<T: Model, U: Model>: Table {
     }
 }
 
-public protocol Model: Codable, Identifiable, RelationAllowed, Table { }
+public protocol Model: Identifiable, RelationAllowed, Table { }
 
 public struct Future<T> {
     public init(_ val: T) {

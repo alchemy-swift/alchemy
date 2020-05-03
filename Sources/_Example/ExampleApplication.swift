@@ -1,11 +1,24 @@
 import Alchemy
 import NIO
 
+struct MultipleDatabases {
+    // Singleton
+    @Inject
+    var mySQL: MySQLDatabase
+    
+    // Multiple singletons of same type
+    @Inject("postgres1")
+    var postgres1: PostgresDatabase
+    
+    @Inject("postgres2")
+    var postgres2: PostgresDatabase
+}
+
 struct APIServer: Application {
-    @Inject var db: Database
+    @Inject var db: PostgresDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
-
+    
     func setup() {
         self.globalMiddlewares
             // Applied to all incoming requests.
@@ -49,15 +62,15 @@ struct APIServer: Application {
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
             }
-            .on(.GET, at: "/db", do: Tester().test)
+            .on(.GET, at: "/db", do: DatabaseTestController().test)
     }
 }
 
-struct Tester {
-    @Inject var db: Database
+struct DatabaseTestController {
+    @Inject var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        db.test(loop: req.eventLoop)
+        db.test()
     }
 }
 
@@ -73,13 +86,5 @@ struct LoggingMiddleware: Middleware {
     
     func intercept(_ request: HTTPRequest) throws -> Void {
         print("\(self.text) '\(request.head.method.rawValue) \(request.head.uri)'")
-    }
-}
-
-struct SampleSetup {
-    @Inject var db: Database
-
-    func setup() {
-        
     }
 }

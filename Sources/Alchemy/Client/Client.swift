@@ -9,7 +9,7 @@ struct Client {
 }
 
 extension Client: Injectable {
-    static func create(_ isMock: Bool) -> Client {
+    static func create(identifier: String?, _ isMock: Bool) -> Client {
         Client()
     }
 }

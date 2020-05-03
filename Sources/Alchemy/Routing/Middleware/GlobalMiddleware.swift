@@ -11,7 +11,7 @@ public final class GlobalMiddlewares: Injectable {
         }
     }
     
-    public static func create(_ isMock: Bool) -> GlobalMiddlewares {
+    public static func create(identifier: String?, _ isMock: Bool) -> GlobalMiddlewares {
         struct Shared {
             static let storage = GlobalMiddlewares()
         }

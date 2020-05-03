@@ -12,8 +12,9 @@
 import Foundation
 
 public protocol Injectable {
+    associatedtype Identifier
     static var shouldMock: Bool { get }
-    static func create(_ isMock: Bool) -> Self
+    static func create(identifier: Identifier?, _ isMock: Bool) -> Self
 }
 
 public extension Injectable {
@@ -23,6 +24,7 @@ public extension Injectable {
 @propertyWrapper
 public class Inject<Value: Injectable> {
     private var storedValue: Value?
+    private var identifier: Value.Identifier?
     
     public var wrappedValue: Value {
         get {
@@ -36,8 +38,12 @@ public class Inject<Value: Injectable> {
     
     public init() {}
     
+    public init(_ identifier: Value.Identifier?) {
+        self.identifier = identifier
+    }
+    
     private func initializeValue() -> Value {
-        let value = Value.create(Value.shouldMock)
+        let value = Value.create(identifier: self.identifier, Value.shouldMock)
         self.storedValue = value
         return value
     }
