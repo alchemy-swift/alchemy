@@ -15,7 +15,7 @@ struct MultipleDatabases {
 }
 
 struct APIServer: Application {
-    var eventLoopGroup: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    let eventLoopGroup: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     
     @Inject var db: PostgresDatabase
     @Inject var router: HTTPRouter

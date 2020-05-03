@@ -1,55 +1,8 @@
 import PostgresKit
 
-// Vapor's `PostgresKit` has `EventLoopGroupConnectionPool` with a generic param. When we do our own we won't
-// have that. For now leaving as `EventLoopGroupConnectionPool<PostgresConnectionSource>`
-public typealias ConnectionPool = EventLoopGroupConnectionPool<PostgresConnectionSource>
-
-public enum PostgreSQL { }
-public enum MySQL { }
-
-public final class MySQLDatabase: Database {
-    public typealias Kind = MySQL
-    public var pool: ConnectionPool?
-}
-
-extension MySQLDatabase: Injectable {
-    public static func create(identifier: String?, _ isMock: Bool) -> MySQLDatabase {
-        struct Storage {
-            static let singleton = MySQLDatabase()
-        }
-        
-        return Storage.singleton
-    }
-}
-
-public final class PostgresDatabase: Database {
-    public typealias Kind = PostgreSQL
-    public var pool: ConnectionPool?
-}
-
-extension PostgresDatabase: Injectable {
-    public static func create(identifier: String?, _ isMock: Bool) -> PostgresDatabase {
-        struct Storage {
-            static var singleton: PostgresDatabase?
-            static var dict: [String: PostgresDatabase] = [:]
-        }
-        
-        if let identifier = identifier, let database = Storage.dict[identifier] {
-            return database
-        } else if let identifier = identifier {
-            let newDB = PostgresDatabase()
-            Storage.dict[identifier] = newDB
-            return newDB
-        } else if let singleton = Storage.singleton {
-            print("Using singleton.")
-            return singleton
-        } else {
-            print("Creating singleton.")
-            let singleton = PostgresDatabase()
-            Storage.singleton = singleton
-            return singleton
-        }
-    }
+public protocol Database: class {
+    associatedtype Kind
+    var pool: ConnectionPool? { get set }
 }
 
 public struct DatabaseConfig {
@@ -74,12 +27,6 @@ public struct DatabaseConfig {
         self.username = username
         self.password = password
     }
-}
-
-public protocol Database: class {
-    associatedtype Kind
-    
-    var pool: ConnectionPool? { get set }
 }
 
 extension Database {
@@ -132,37 +79,17 @@ extension Database {
         }
         
         print("Running query '\(sql)'")
-        return pool.withConnection(logger: nil, on: el) { conn in
-            conn.simpleQuery(sql)
-        }
+        
+        return pool.database(logger: .init(label: "wtf"))
+            .simpleQuery(sql)
+            // Need to resolve a promise on the event loop that created it, therefore, hop to the sending
+            // event loop before returning, since grabbing a random loop from the pool will likely change
+            // event loops.
+            .hop(to: el)
+        // Alternatively, run the DB query on the sending event loop? Need to thing more about when to do
+        // what.
+//        return pool.withConnection(logger: nil, on: el) { conn in
+//            conn.simpleQuery(sql)
+//        }
     }
 }
-
-/// Example of custom DB
-
-public enum MongoDB { }
-
-public final class MongoDatabase: Database {
-    public typealias Kind = MongoDB
-    public var pool: ConnectionPool?
-    
-    // Can optionally override any function such as setup, query, etc.
-}
-
-// Then user can write a custom query builder for a `MongoDB` database.
-
-protocol QueryBuilder {
-    associatedtype Kind
-    func toString() -> String
-}
-
-struct MongoBuilder: QueryBuilder {
-    // Assuming QueryBuilder has associated type `Kind`
-    public typealias Kind = MongoDB
-    
-    func toString() -> String {
-        "db.somecollection.find( {} )"
-    }
-}
-
-
