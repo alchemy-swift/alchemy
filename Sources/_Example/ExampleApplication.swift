@@ -7,19 +7,17 @@ struct MultipleDatabases {
     var postgres: PostgresDatabase
     
     // Multiple singletons of same type
-    @Fuse("mySQL1")
+    @Fuse(.one)
     var mySQL1: MySQLDatabase
     
-    @Fuse("mySQL2")
+    @Fuse(.two)
     var mySQL2: MySQLDatabase
 }
 
 struct APIServer: Application {
-    let eventLoopGroup: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-    
     @Fuse var db: PostgresDatabase
-    @Inject var router: HTTPRouter
-    @Inject var globalMiddlewares: GlobalMiddlewares
+    @Fuse var router: HTTPRouter
+    @Fuse var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
         self.globalMiddlewares
@@ -69,7 +67,8 @@ struct APIServer: Application {
 }
 
 struct DatabaseTestController {
-    @Fuse var db: PostgresDatabase
+    @Fuse()
+    var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
         db.test(on: req.eventLoop)

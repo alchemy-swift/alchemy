@@ -3,8 +3,7 @@ public final class Container {
     
     var storage: [String: FusableResolver] = [:]
     
-    // This closure will be called once, when the identifier for the service is first registered.
-    public func register<T: Fusable>(singleton: T, identifier: String) throws {
+    private func register<T: IdentifiedService>(singleton: T, identifier: T.Identifier) throws {
         let key = self.key(for: T.self)
         if let existingValue = self.storage[key] {
             guard let existingValue = existingValue as? IdentifiedSingletonResolver else {
@@ -22,7 +21,7 @@ public final class Container {
     }
     
     // This closure will be called once, when the service is first registered.
-    public func register<T: Fusable>(singleton: T) throws {
+    private func register<T: SingletonService>(singleton: T) throws {
         let key = self.key(for: T.self)
         guard self.storage[key] == nil else {
             throw FusionError.serviceAlreadyRegistered
@@ -31,7 +30,7 @@ public final class Container {
     }
 
     // This closure will be called each time a service is "Fused" with `@Fuse`.
-    public func register<T: Fusable>(factory: @escaping (Container) throws -> T) throws {
+    private func register<T: FactoryService>(factory: @escaping (Container) throws -> T) throws {
         let key = self.key(for: T.self)
         guard self.storage[key] == nil else {
             throw FusionError.serviceAlreadyRegistered
@@ -45,23 +44,37 @@ public final class Container {
         }
     }
     
-    public func resolve<T: Fusable>(_ type: T.Type = T.self, identifier: String? = nil) throws -> T {
-        try self.ensureRegistration(of: T.self)
-        
-        guard let value = self.storage[self.key(for: type)] else {
-            throw FusionError.serviceNotRegistered
+    public func resolve<T: IdentifiedService>(_ type: T.Type = T.self, identifier: T.Identifier) throws -> T {
+        let key = self.key(for: T.self)
+        guard let value = self.storage[key] else {
+            let singleton = try T.singleton(in: self, for: identifier)
+            try self.register(singleton: singleton, identifier: identifier)
+            return singleton
         }
         
         return try value.getTypedValue(for: identifier)
     }
     
-    private func ensureRegistration<T: Fusable>(of type: T.Type) throws {
-        let key = self.key(for: T.self)
-        guard self.storage[key] == nil else {
-            return
+    public func resolve<T: SingletonService>(_ type: T.Type = T.self) throws -> T {
+        let key = self.key(for: type)
+        guard let value = self.storage[key] else {
+            let singleton = try T.singleton(in: self)
+            try self.register(singleton: singleton)
+            return singleton
         }
         
-        try T.register(in: self)
+        return try value.getTypedValue(for: nil)
+    }
+    
+    public func resolve<T: FactoryService>(_ type: T.Type = T.self) throws -> T {
+        let key = self.key(for: type)
+        guard let value = self.storage[key] else {
+            let factory = T.factory
+            try self.register(factory: factory)
+            return try factory(self)
+        }
+        
+        return try value.getTypedValue(for: nil)
     }
     
     private func key<T: Fusable>(for type: T.Type) -> String {

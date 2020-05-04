@@ -29,10 +29,9 @@ struct StartupArgs {
     let htdocs: String
 }
 
-extension MultiThreadedEventLoopGroup: Fusable {
-    public static func register(in container: Container) throws {
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        try container.register(singleton: group)
+extension MultiThreadedEventLoopGroup: SingletonService {
+    public static func singleton(in container: Container) throws -> MultiThreadedEventLoopGroup {
+        MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     }
 }
 

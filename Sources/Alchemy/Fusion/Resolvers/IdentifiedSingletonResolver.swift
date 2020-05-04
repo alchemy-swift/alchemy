@@ -1,11 +1,11 @@
 struct IdentifiedSingletonResolver: FusableResolver {
-    private(set) var values: [String: Fusable]
+    private(set) var values: [AnyHashable: Fusable]
     
-    init(values: [String: Fusable]) {
+    init(values: [AnyHashable: Fusable]) {
         self.values = values
     }
     
-    func getValue(for identifier: String?) throws -> Fusable {
+    func getValue(for identifier: AnyHashable?) throws -> Fusable {
         guard let identifier = identifier else {
             throw FusionError.expectedIdentifier
         }
@@ -17,7 +17,7 @@ struct IdentifiedSingletonResolver: FusableResolver {
         return value
     }
     
-    func adding(service: Fusable, for identifier: String) -> IdentifiedSingletonResolver {
+    func adding(service: Fusable, for identifier: AnyHashable) -> IdentifiedSingletonResolver {
         var copy = self
         copy.values[identifier] = service
         return copy
