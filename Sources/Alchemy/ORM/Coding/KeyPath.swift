@@ -144,17 +144,6 @@ public struct KeyPathTest {
         migration2.add(keyPath: \.lastName, columnName: "last_name")
         
         ModelLookup.shared.printAll()
-        
-//        let jsonDecoder = JSONDecoder()
-//        do {
-//            try jsonDecoder.decode(Teacher.self, from: "{}".data(using: .utf8)!)
-//        }
-//        catch {
-//            print("Error: \(error)")
-//        }
-        
-//        let filtered = [josh, chris].filter(where: \.favoriteStudent.firstName.count, equals: 4)
-//        print("There were \(filtered.count) filtered teachers.")
     }
 }
 
