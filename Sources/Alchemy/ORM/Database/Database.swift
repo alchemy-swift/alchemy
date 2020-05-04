@@ -1,8 +1,9 @@
 import PostgresKit
 
-public class Database<Kind> {
+public class Database {
     let config: DatabaseConfig
     let pool: ConnectionPool
+    let grammar = Grammar()
     
     public init(config: DatabaseConfig, eventLoopGroup: EventLoopGroup) {
         //  Initialize the pool.
@@ -71,6 +72,10 @@ extension Database {
 }
 
 extension Database {
+    public func query() -> Query {
+        return Query(database: self)
+    }
+    
     func query(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
         print("Running query '\(sql)'")
         return pool.withConnection(logger: nil, on: loop) { conn in

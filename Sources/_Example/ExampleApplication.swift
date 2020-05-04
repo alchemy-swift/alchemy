@@ -50,16 +50,41 @@ struct APIServer: Application {
                     .on(.DELETE, do: friends.remove)
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
-            }
-            .on(.GET, at: "/db", do: DatabaseTestController().test)
+        }
+        .on(.GET, at: "/db", do: DatabaseTestController().test)
     }
 }
 
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        db.test(on: req.eventLoop)
+    func test(req: HTTPRequest) throws -> Void {
+        //        db.test(on: req.eventLoop)
+        let query = db.query()
+            .from(table: "users")
+            .select(["first_name", "last_name"])
+            .where("last_name" == "Anderson")
+            .where("first_name" ~= "Chris%")
+            .orderBy(column: "first_name")
+            .forPage(page: 1, perPage: 25)
+            .toSQL()
+        print(query)
+
+        let query2 = try? db.query()
+            .from(table: "users")
+            .insert(values: [
+                ["first_name": "Paul"],
+                ["first_name": "Jane"],
+                ["first_name": "Clementine"]
+            ])
+        print(query2 ?? "failed")
+
+        let query3 = try? db.query()
+            .from(table: "flights")
+            .where("id" == 10)
+            .update(values: [ "departed": true ])
+        print(query3 ?? "failed")
+
     }
 }
 

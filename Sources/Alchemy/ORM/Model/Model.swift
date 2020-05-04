@@ -72,9 +72,9 @@ extension Model {
         ModelTable()
     }
 
-    public static func query(_ database: Database = Database()) -> Query {
-        return Query(database: database).from(table: self.table)
-    }
+//    public static func query(_ database: Database = Database.default) -> Query {
+//        return Query(database: database).from(table: self.table)
+//    }
 
     public static func all() -> Future<[Self]> {
         Future([])

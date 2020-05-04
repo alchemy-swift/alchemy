@@ -10,7 +10,7 @@ public class Query {
     private(set) var wheres: [WhereClause] = []
     private(set) var groups: [String] = []
     private(set) var havings: [Any] = []
-    private(set) var orders: [Order] = []
+    private(set) var orders: [OrderClause] = []
     private(set) var limit: Int? = nil
     private(set) var offset: Int = 0
 
@@ -69,9 +69,6 @@ public class Query {
     //    leftJoin(table, first, operator, second)
     //    rightJoin(table, first, operator, second)
     //    crossJoin(table, first, operator, second)
-    //    func filter(column: String, operator: Operator, value: String, boolean: String? = "and") {
-    //
-    //    }
 
     public func `where`(_ clause: WhereValue) -> Query {
         self.wheres.append(clause)
@@ -107,14 +104,14 @@ public class Query {
         return self.where(key: key, in: values, type: .notIn, boolean: .or)
     }
 
-    //    whereRaw(sql, bindings, boolean = "and")
-    //    orWhereRaw(sql, bindings)
-    //    whereNull(column, boolean = "and", not = false)
-    //    orWhereNull(column) = whereNull(column, "or")
-    //    whereNotNull(column, boolean = "and") = whereNull(column, boolean, true)
-    //    groupBy(groups)
-    //    having(column, operator, value, boolean = "and")
-    //    orHaving(column, operator, value) = having(column, operator, value, "or")
+    public func whereRaw(sql: String, bindings: [Parameter], boolean: WhereBoolean = .and) -> Query {
+        self.wheres.append(WhereRaw(query: sql, values: bindings, boolean: boolean))
+        return self
+    }
+
+    public func orWhereRaw(sql: String, bindings: [Parameter]) -> Query {
+        return self.whereRaw(sql: sql, bindings: bindings, boolean: .or)
+    }
 
     @discardableResult
     public func whereColumn(first: String, op: String, second: String, boolean: WhereBoolean = .and) -> Query {
@@ -122,15 +119,28 @@ public class Query {
         return self
     }
 
+    //    whereNull(column, boolean = "and", not = false)
+    //    orWhereNull(column) = whereNull(column, "or")
+    //    whereNotNull(column, boolean = "and") = whereNull(column, boolean, true)
+    //    having(column, operator, value, boolean = "and")
+    //    orHaving(column, operator, value) = having(column, operator, value, "or")
 
-    public func orderBy(column: String, direction: Order.Sort = .ascending) -> Query {
-        //TODO: Add support for sort subquery
-        return self.orderBy(Order(column: column, direction: direction))
-    }
-
-    public func orderBy(_ order: Order) -> Query {
+    public func groupBy(_ group: String) -> Query {
+        self.groups.append(group)
         return self
     }
+
+    public func orderBy(_ order: OrderClause) -> Query {
+        self.orders.append(order)
+        return self
+    }
+
+    public func orderBy(column: String, direction: OrderClause.Sort = .asc) -> Query {
+        //TODO: Add support for sort subquery
+        return self.orderBy(OrderClause(column: column, direction: direction))
+    }
+
+
 
     public func offset(_ value: Int) -> Query {
         self.offset = max(0, value)
@@ -144,6 +154,7 @@ public class Query {
         return self
     }
 
+    // Paging starts at index 1, not zero
     public func forPage(page: Int, perPage: Int = 25) -> Query {
         return offset((page - 1) * perPage).limit(perPage)
     }

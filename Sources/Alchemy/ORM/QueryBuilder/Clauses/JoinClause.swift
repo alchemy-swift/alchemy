@@ -20,5 +20,4 @@ class JoinClause: Query {
     func orOn(first: String, op: String, second: String) -> JoinClause {
         return self.on(first: first, op: op, second: second, boolean: .or)
     }
-
 }

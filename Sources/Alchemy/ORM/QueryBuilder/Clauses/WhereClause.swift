@@ -71,5 +71,18 @@ extension WhereIn: WhereClause {
 }
 
 
+public struct WhereRaw {
+    let query: String
+    let values: [Parameter]
+    var boolean: WhereBoolean = .and
+}
+
+extension WhereRaw: WhereClause {
+    func toSQL() -> SQL {
+        return SQL("\(boolean) \(self.query)", bindings: values)
+    }
+}
+
+
 struct WhereSubquery {}
 
