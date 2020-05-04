@@ -1,21 +1,10 @@
 import Alchemy
 import NIO
 
-struct MultipleDatabases {
-    // Singleton
-    @Fuse
-    var postgres: PostgresDatabase
-    
-    // Multiple singletons of same type
-    @Fuse(.one)
-    var mySQL1: MySQLDatabase
-    
-    @Fuse(.two)
-    var mySQL2: MySQLDatabase
-}
-
 struct APIServer: Application {
-    @Fuse var db: PostgresDatabase
+    @Fuse var postgres: PostgresDatabase
+    @Fuse(.one) var mySQL1: MySQLDatabase
+    @Fuse(.two) var mySQL2: MySQLDatabase
     @Fuse var router: HTTPRouter
     @Fuse var globalMiddlewares: GlobalMiddlewares
     
@@ -67,8 +56,7 @@ struct APIServer: Application {
 }
 
 struct DatabaseTestController {
-    @Fuse()
-    var db: PostgresDatabase
+    @Fuse var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
         db.test(on: req.eventLoop)

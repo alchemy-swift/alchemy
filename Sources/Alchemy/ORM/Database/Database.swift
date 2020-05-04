@@ -64,16 +64,16 @@ extension Database {
         self.pool.shutdown()
     }
     
-    public func test(on el: EventLoop) -> EventLoopFuture<String> {
-        return self.query("SELECT version()", on: el)
+    public func test(on loop: EventLoop) -> EventLoopFuture<String> {
+        return self.query("SELECT version()", on: loop)
             .map { "\($0)" }
     }
 }
 
 extension Database {
-    func query(_ sql: String, on el: EventLoop) -> EventLoopFuture<[PostgresRow]> {
+    func query(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
         print("Running query '\(sql)'")
-        return pool.withConnection(logger: nil, on: el) { conn in
+        return pool.withConnection(logger: nil, on: loop) { conn in
             conn.simpleQuery(sql)
         }
     }
