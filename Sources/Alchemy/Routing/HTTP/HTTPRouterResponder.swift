@@ -1,8 +1,8 @@
 import NIO
 
 struct HTTPRouterResponder: HTTPResponder {
-    @Fuse var router: HTTPRouter
-    @Fuse var globalMiddlewares: GlobalMiddlewares
+    @Inject var router: HTTPRouter
+    @Inject var globalMiddlewares: GlobalMiddlewares
     
     func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
         do {

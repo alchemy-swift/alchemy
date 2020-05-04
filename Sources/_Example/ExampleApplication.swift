@@ -2,11 +2,11 @@ import Alchemy
 import NIO
 
 struct APIServer: Application {
-    @Fuse var postgres: PostgresDatabase
-    @Fuse(.one) var mySQL1: MySQLDatabase
-    @Fuse(.two) var mySQL2: MySQLDatabase
-    @Fuse var router: HTTPRouter
-    @Fuse var globalMiddlewares: GlobalMiddlewares
+    @Inject var postgres: PostgresDatabase
+    @Inject(.one) var mySQL1: MySQLDatabase
+    @Inject(.two) var mySQL2: MySQLDatabase
+    @Inject var router: HTTPRouter
+    @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
         self.globalMiddlewares
@@ -56,7 +56,7 @@ struct APIServer: Application {
 }
 
 struct DatabaseTestController {
-    @Fuse var db: PostgresDatabase
+    @Inject var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
         db.test(on: req.eventLoop)

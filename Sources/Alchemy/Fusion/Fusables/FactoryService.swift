@@ -3,7 +3,7 @@ public protocol FactoryService: Fusable {
     static var factory: (Container) throws -> Self { get }
 }
 
-public extension Fuse where Value: FactoryService {
+public extension Inject where Value: FactoryService {
     convenience init() {
         self.init { try $0.resolve() }
     }

@@ -1,5 +1,5 @@
 @propertyWrapper
-public class Fuse<Value: Fusable> {
+public class Inject<Value: Fusable> {
     // Just a single, global container for now. Would be great to have the user insert a custom container,
     // ideally like @Fuse(container: self.container) but there is not a way to access self in a property
     // wrapper init, yet.

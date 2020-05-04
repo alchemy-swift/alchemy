@@ -4,7 +4,7 @@ public protocol IdentifiedService: Fusable {
     static func singleton(in container: Container, for identifier: Identifier) throws -> Self
 }
 
-public extension Fuse where Value: IdentifiedService {
+public extension Inject where Value: IdentifiedService {
     convenience init() {
         fatalError("`IdentifiedService`s should be initialized using `init(_ identifier)` below.")
     }
