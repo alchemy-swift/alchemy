@@ -29,7 +29,7 @@ public final class Container {
         self.storage[key] = SingletonResolver(value: singleton)
     }
 
-    // This closure will be called each time a service is "Fused" with `@Fuse`.
+    // This closure will be called each time a service is "Fused" with `@Inject`.
     private func register<T: FactoryService>(factory: @escaping (Container) throws -> T) throws {
         let key = self.key(for: T.self)
         guard self.storage[key] == nil else {

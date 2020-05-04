@@ -1,4 +1,4 @@
-/// A type that can be injected via `@Fuse`. Don't implement this directly. Instead implement one of these
+/// A type that can be injected via `@Inject`. Don't implement this directly. Instead implement one of these
 /// classes that inherit from it...
 /// 
 ///  `Singleton`: Injects a single instance.
@@ -11,7 +11,7 @@ public protocol Fusable { }
 /// protocol SomeService { ... }
 /// protocol SomeServiceProvider: SomeService { ... }
 /// protocol SomeServiceMock: SomeService { ... }
-/// `@Fuse var service: SomeService` (inject `SomeServiceProvider` normally and `SomeServiceMock` on tests).
+/// `@Inject var service: SomeService` (inject `SomeServiceProvider` normally and `SomeServiceMock` on tests).
 
 /// TODO
 /// 1. Thread Safety around container access.

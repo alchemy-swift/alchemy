@@ -1,7 +1,7 @@
 @propertyWrapper
 public class Inject<Value: Fusable> {
     // Just a single, global container for now. Would be great to have the user insert a custom container,
-    // ideally like @Fuse(container: self.container) but there is not a way to access self in a property
+    // ideally like @Inject(container: self.container) but there is not a way to access self in a property
     // wrapper init, yet.
     //
     // See: https://stackoverflow.com/questions/58079611/access-self-in-swift-5-1-property-wrappers
@@ -29,7 +29,7 @@ public class Inject<Value: Fusable> {
         }
     }
     
-    // Only here so the compiler doesn't hurt itself and require `()` after the `@Fuse`. Convenience inits
+    // Only here so the compiler doesn't hurt itself and require `()` after the `@Inject`. Convenience inits
     // will override.
     public init() {
         fatalError("This should never be called.")
