@@ -2,10 +2,12 @@ import Alchemy
 import NIO
 
 struct APIServer: Application {
-    @Inject var db: Database
+    @Inject var postgres: PostgresDatabase
+    @Inject(.one) var mySQL1: MySQLDatabase
+    @Inject(.two) var mySQL2: MySQLDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
-
+    
     func setup() {
         self.globalMiddlewares
             // Applied to all incoming requests.
@@ -48,39 +50,16 @@ struct APIServer: Application {
                     .on(.DELETE, do: friends.remove)
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
-        }
-        .on(.GET, at: "/db", do: Tester().test)
+            }
+            .on(.GET, at: "/db", do: DatabaseTestController().test)
     }
 }
 
-struct Tester {
-    @Inject var db: Database
+struct DatabaseTestController {
+    @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) throws -> Void {
-        //        db.test(loop: req.eventLoop)
-
-        let query = db.query()
-            .from(table: "users")
-            .select(["first_name", "last_name"])
-            .where("last_name" == "Anderson")
-            .where("first_name" ~= "Chris%")
-            .toSQL()
-        print(query)
-
-        let query2 = try? db.query()
-            .from(table: "users")
-            .insert(values: [
-                ["first_name": "Paul"],
-                ["first_name": "Jane"],
-                ["first_name": "Clementine"]
-            ])
-        print(query2 ?? "failed")
-
-        let query3 = try? db.query()
-            .from(table: "flights")
-            .where("id" == 10)
-            .update(values: [ "departed": true ])
-        print(query3 ?? "failed")
+    func test(req: HTTPRequest) -> EventLoopFuture<String> {
+        db.test(on: req.eventLoop)
     }
 }
 
@@ -96,13 +75,5 @@ struct LoggingMiddleware: Middleware {
     
     func intercept(_ request: HTTPRequest) throws -> Void {
         print("\(self.text) '\(request.head.method.rawValue) \(request.head.uri)'")
-    }
-}
-
-struct SampleSetup {
-    @Inject var db: Database
-
-    func setup() {
-        
     }
 }

@@ -8,8 +8,6 @@ struct Client {
     }
 }
 
-extension Client: Injectable {
-    static func create(_ isMock: Bool) -> Client {
-        Client()
-    }
+extension Client: FactoryService {
+    static var factory: (Container) throws -> Client = { _ in Client() }
 }

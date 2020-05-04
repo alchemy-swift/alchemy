@@ -29,6 +29,12 @@ struct StartupArgs {
     let htdocs: String
 }
 
+extension MultiThreadedEventLoopGroup: SingletonService {
+    public static func singleton(in container: Container) throws -> MultiThreadedEventLoopGroup {
+        MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    }
+}
+
 public extension Application {
     
     private func parseArgs() -> StartupArgs {
@@ -60,12 +66,13 @@ public extension Application {
     }
     
     func run() throws {
+        // Setup the ELG
+        let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
+        
         // First, setup the application
         self.setup()
         
         let args = self.parseArgs()
-
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
 
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
