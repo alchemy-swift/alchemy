@@ -218,7 +218,4 @@ struct Request {
     static let get1Queries = Request(method: .GET, path: "/something?some=value&other=2", response: "get 1")
     static let get2 = Request(method: .GET, path: "/something/else", response: "get 2")
     static let get3 = Request(method: .GET, path: "/something_else", response: "get 3")
-    
-    static let pathParameterEscaped = Request(method: .GET, path: "/parameter/:id", response: "path param")
-    static let pathParameterValue = Request(method: .GET, path: "/parameter/123", response: "path param")
 }
