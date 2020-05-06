@@ -4,8 +4,10 @@ import NIOHTTP1
 fileprivate let kRouterVariableEscape = ":"
 
 private struct HTTPKey: Hashable {
-    var fullURI: String
-    var method: HTTPMethod
+    // The path of the request, relative to the host.
+    let fullPath: String
+    // The method of the request.
+    let method: HTTPMethod
 }
 
 /// Router. Takes an `HTTPRequest` and routes it to a handler.
@@ -37,11 +39,14 @@ public final class Router<Input, Output> {
     }
     
     func add(handler: @escaping (Input) throws -> Output, for method: HTTPMethod, path: String) {
-        self.handlers[HTTPKey(fullURI: self.baseURI + path, method: method)] = handler
+        self.handlers[HTTPKey(fullPath: self.baseURI + path, method: method)] = handler
     }
     
     func handle(request: HTTPRequest) throws -> Output? {
-        let key = HTTPKey(fullURI: request.head.uri, method: request.head.method)
+        let key = HTTPKey(fullPath: request.head.uri, method: request.head.method)
+//        self.handlers.contains(where: { key, value in
+//            request
+//        })
         guard let handler = self.handlers[key] else {
             return try self.childrenHandle(request: request)
         }
@@ -85,23 +90,22 @@ extension HTTPMethod: Hashable {
 }
 
 extension String {
-    fileprivate func matches(uri: String) -> Bool {
-        let parts1 = self.split(separator: "/")
-        let parts2 = uri.split(separator: "/")
+    /// Does the given string match a routable URI? The
+    fileprivate func matches(routablePath: String) -> Bool {
+        let pathParts = self.split(separator: "/")
+        let routablePathParts = routablePath.split(separator: "/")
         
-        guard parts1.count == parts2.count else {
+        guard pathParts.count == routablePathParts.count else {
             return false
         }
         
-        for (index, part1) in parts1.enumerated() {
-            let part2 = parts2[index]
+        for (index, pathPart) in pathParts.enumerated() {
+            let routablePathPart = routablePathParts[index]
             
-            // This uri component it a variable, don't check.
-            guard !part1.starts(with: kRouterVariableEscape)
-                && !part2.starts(with: kRouterVariableEscape) else
-            { continue }
+            // This path component is a variable, don't check for equality.
+            guard !routablePathPart.starts(with: kRouterVariableEscape) else { continue }
             
-            if part1 != part2 {
+            if pathPart != routablePathPart {
                 return false
             }
         }
