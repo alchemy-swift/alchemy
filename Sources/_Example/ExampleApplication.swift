@@ -82,7 +82,6 @@ struct LoggingMiddleware: Middleware {
             QUERY: \(request.queryItems)
             BODY_STRING: \(request.body?.decodeString() ?? "N/A")
             BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
-            BODY_TYPE: \(try request.body?.decodeJSON(as: SampleJSON.self))
             """)
     }
 }

@@ -15,6 +15,9 @@ public struct HTTPRequest {
     /// The url components of this request.
     public let components: URLComponents?
     
+    /// The any parameters inside the path.
+    public var pathParameters: [PathParameter] = []
+    
     /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
     var bodyBuffer: ByteBuffer?
     
@@ -46,6 +49,11 @@ extension HTTPRequest {
     /// Any query items parsed from the URL. These are not percent encoded.
     public var queryItems: [URLQueryItem] {
         self.components?.queryItems ?? []
+    }
+    
+    /// Returns the first `PathParameter` for the given key, if there is one.
+    public func pathParameter(named key: String) -> PathParameter? {
+        self.pathParameters.first(where: { $0.parameter == "key" })
     }
     
     /// The body is a wrapper used to provide simpler access to body data like JSON.
