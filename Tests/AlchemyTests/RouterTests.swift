@@ -119,12 +119,42 @@ final class RouterTests: XCTestCase {
         waitForExpectations(timeout: kMinTimeout)
     }
     
+    func testQueriesIgnored() {
+        self.router.register(.get1)
+        XCTAssertEqual(try self.router.request(.get1Queries), Request.get1.response)
+    }
+    
+    func testPathParametersMatch() {
+        let expect = expectation(description: "The handler should be called.")
+
+        let uuidString = UUID().uuidString
+        let orderedExpectedParameters = [
+            PathParameter(parameter: "uuid", stringValue: uuidString),
+            PathParameter(parameter: "user_id", stringValue: "123"),
+        ]
+        
+        let routeMethod = HTTPMethod.GET
+        let routeToRegister = "/v1/some_path/:uuid/:user_id"
+        let routeToCall = "/v1/some_path/\(uuidString)/123"
+        let routeResponse = "some response"
+        
+        self.router.on(routeMethod, at: routeToRegister) { request -> String in
+            XCTAssertEqual(request.pathParameters, orderedExpectedParameters)
+            expect.fulfill()
+            return routeResponse
+        }
+        
+        XCTAssertEqual(try self.router.request(Request(method: routeMethod, path: routeToCall, response: "")),
+                       routeResponse)
+        waitForExpectations(timeout: kMinTimeout)
+    }
+    
     func testMultipleRequests() {
         // What happens if a user registers the same route twice?
     }
     
-    func testInvalidURI() {
-        // What happens if a user registers an invalid uri string?
+    func testInvalidPath() {
+        // What happens if a user registers an invalid path string?
     }
     
     func testForwardSlashIssues() {
@@ -185,6 +215,10 @@ struct Request {
     
     static let getEmpty = Request(method: .GET, path: "", response: "get empty")
     static let get1 = Request(method: .GET, path: "/something", response: "get 1")
+    static let get1Queries = Request(method: .GET, path: "/something?some=value&other=2", response: "get 1")
     static let get2 = Request(method: .GET, path: "/something/else", response: "get 2")
     static let get3 = Request(method: .GET, path: "/something_else", response: "get 3")
+    
+    static let pathParameterEscaped = Request(method: .GET, path: "/parameter/:id", response: "path param")
+    static let pathParameterValue = Request(method: .GET, path: "/parameter/123", response: "path param")
 }

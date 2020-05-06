@@ -2,6 +2,14 @@ import Foundation
 import NIO
 import NIOHTTP1
 
+/// Represents a dynamic parameter inside the URL. Something like `:user_id` in the path `/v1/users/:user_id`.
+public struct PathParameter: Equatable {
+    /// The escaped parameter that was matched. Something like `:user_id`
+    public let parameter: String
+    /// The actual string value of the parameter.
+    public let stringValue: String
+}
+
 /// A simplified HTTPRequest type as you'll come across in many web frameworks
 public struct HTTPRequest {
     /// The EventLoop is stored in the HTTP request so that promises can be created
@@ -14,6 +22,9 @@ public struct HTTPRequest {
     
     /// The url components of this request.
     public let components: URLComponents?
+    
+    /// The any parameters inside the path.
+    public var pathParameters: [PathParameter] = []
     
     /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
     var bodyBuffer: ByteBuffer?
