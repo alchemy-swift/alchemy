@@ -75,6 +75,7 @@ struct LoggingMiddleware: Middleware {
     
     func intercept(_ request: HTTPRequest) throws -> Void {
         print("""
+            \(self.text)
             METHOD: \(request.method)
             PATH: \(request.path)
             HEADERS: \(request.headers)

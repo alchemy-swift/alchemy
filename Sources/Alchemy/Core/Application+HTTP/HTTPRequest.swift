@@ -12,11 +12,11 @@ public struct HTTPRequest {
     /// The headers are also found in the head, and they are often used to describe the body as well
     public let head: HTTPRequestHead
     
+    /// The url components of this request.
+    public let components: URLComponents?
+    
     /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
     var bodyBuffer: ByteBuffer?
-    
-    /// The components of the url of this request.
-    var components: URLComponents?
     
     /// This initializer is necessary because the `bodyBuffer` is a private property
     init(eventLoop: EventLoop, head: HTTPRequestHead, bodyBuffer: ByteBuffer?) {
