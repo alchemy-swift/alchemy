@@ -62,6 +62,14 @@ public struct _Relation<From: RelationAllowed, To: RelationAllowed>: Codable {
     }
 }
 
+public protocol Table: Codable {
+    static var tableName: String { get }
+}
+
+extension Table {
+    public static var tableName: String { String(describing: Self.self) }
+}
+
 public struct ModelTable: Table {
     public var name: String = "compute this"
     public var fields: [String] = []
