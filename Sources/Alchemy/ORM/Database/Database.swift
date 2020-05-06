@@ -1,6 +1,6 @@
 import PostgresKit
 
-public class Database<Kind> {
+public class Database {
     let config: DatabaseConfig
     let pool: ConnectionPool
     
