@@ -108,10 +108,12 @@ class Grammar {
 
         // Need to handle nested stuff somehow
         
-        let (sql, bindings) = groupSQL(values: query.wheres)
+        let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
         if (sql.count > 0) {
             let conjunction = query is JoinClause ? "on" : "where"
-            let clauses = removeLeadingBoolean(sql.joined(separator: " "))
+            let clauses = QueryHelpers.removeLeadingBoolean(
+                sql.joined(separator: " ")
+            )
             return SQL("\(conjunction) \(clauses)", bindings: bindings)
         }
         return SQL()
@@ -181,17 +183,6 @@ class Grammar {
 
 
 
-
-
-    private func removeLeadingBoolean(_ value: String) -> String {
-        if value.hasPrefix("and ") {
-            return String(value.dropFirst(4))
-        }
-        else if value.hasPrefix("or ") {
-            return String(value.dropFirst(3))
-        }
-        return value
-    }
 
     private func parameterize(_ values: [Parameter]) -> String {
         return values.map { parameter($0) }.joined(separator: ", ")

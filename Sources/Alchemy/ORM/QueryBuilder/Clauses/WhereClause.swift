@@ -1,21 +1,6 @@
 import Foundation
 
-protocol WhereClause: Sequelizable {
-    var operators: [String] { get }
-}
-
-extension WhereClause {
-    var operators: [String] {
-        [
-        "=", "<", ">", "<=", ">=", "<>", "!=", "<=>",
-        "like", "like binary", "not like", "ilike",
-        "&", "|", "^", "<<", ">>",
-        "rlike", "not rlike", "regexp", "not regexp",
-        "~", "~*", "!~", "!~*", "similar to",
-        "not similar to", "not ilike", "~~*", "!~~*",
-        ]
-    }
-}
+protocol WhereClause: Sequelizable { }
 
 public enum WhereBoolean: String {
     case and
@@ -24,7 +9,7 @@ public enum WhereBoolean: String {
 
 public struct WhereValue {
     let key: String
-    let op: String
+    let op: Operator
     let value: Parameter
     var boolean: WhereBoolean = .and
 }
@@ -38,7 +23,7 @@ extension WhereValue: WhereClause {
 
 public struct WhereColumn {
     let first: String
-    let op: String
+    let op: Operator
     let second: Expression
     var boolean: WhereBoolean = .and
 }
@@ -46,6 +31,24 @@ public struct WhereColumn {
 extension WhereColumn: WhereClause {
     func toSQL() -> SQL {
         return SQL("\(boolean) \(first) \(op) \(second.description)")
+    }
+}
+
+public typealias WhereNestedClosure = (Query) -> Query
+public struct WhereNested {
+    let database: Database
+    let closure: WhereNestedClosure
+    var boolean: WhereBoolean = .and
+}
+
+extension WhereNested: WhereClause {
+    func toSQL() -> SQL {
+        let query = self.closure(Query(database: self.database))
+        let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
+        let clauses = QueryHelpers.removeLeadingBoolean(
+            sql.joined(separator: " ")
+        )
+        return SQL("\(boolean) (\(clauses))", bindings: bindings)
     }
 }
 

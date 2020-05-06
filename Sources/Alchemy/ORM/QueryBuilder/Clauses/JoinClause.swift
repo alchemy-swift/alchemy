@@ -12,12 +12,12 @@ class JoinClause: Query {
     }
 
 
-    func on(first: String, op: String, second: String, boolean: WhereBoolean = .and) -> JoinClause {
+    func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> JoinClause {
         self.whereColumn(first: first, op: op, second: second, boolean: boolean)
         return self
     }
 
-    func orOn(first: String, op: String, second: String) -> JoinClause {
+    func orOn(first: String, op: Operator, second: String) -> JoinClause {
         return self.on(first: first, op: op, second: second, boolean: .or)
     }
 }

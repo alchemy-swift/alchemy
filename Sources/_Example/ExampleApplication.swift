@@ -63,12 +63,20 @@ struct DatabaseTestController {
         let query = db.query()
             .from(table: "users")
             .select(["first_name", "last_name"])
-            .where("last_name" == "Anderson")
             .where("first_name" ~= "Chris%")
+            .where {
+                $0.where("last_name" == "Anderson")
+                    .orWhere("last_name" == "Wright")
+            }
+            .where {
+                $0.where("age" < 30)
+                    .orWhere("age" > 50)
+            }
             .orderBy(column: "first_name")
+            .orderBy(column: "age", direction: .asc)
             .forPage(page: 1, perPage: 25)
             .toSQL()
-        print(query)
+            print(query)
 
         let query2 = try? db.query()
             .from(table: "users")

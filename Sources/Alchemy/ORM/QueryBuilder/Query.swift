@@ -93,7 +93,27 @@ public class Query {
     }
 
     public func orWhere(key: String, in values: [Parameter], type: WhereIn.InType = .in) -> Query {
-        return self.where(key: key, in: values, type: type, boolean: .or)
+        return self.where(
+            key: key,
+            in: values,
+            type: type,
+            boolean: .or
+        )
+    }
+
+    public func `where`(_ closure: @escaping WhereNestedClosure, boolean: WhereBoolean = .and) -> Query {
+        self.wheres.append(
+            WhereNested(
+                database: database,
+                closure: closure,
+                boolean: boolean
+            )
+        )
+        return self
+    }
+
+    public func orWhere(_ closure: @escaping WhereNestedClosure) -> Query {
+        return self.where(closure, boolean: .or)
     }
 
     public func whereNot(key: String, in values: [Parameter], boolean: WhereBoolean = .and) -> Query {
@@ -114,7 +134,7 @@ public class Query {
     }
 
     @discardableResult
-    public func whereColumn(first: String, op: String, second: String, boolean: WhereBoolean = .and) -> Query {
+    public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Query {
         self.wheres.append(WhereColumn(first: first, op: op, second: Expression(second), boolean: boolean))
         return self
     }
@@ -223,30 +243,30 @@ public class Query {
 
 extension String {
     public static func ==(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: "=", value: rhs)
+        return WhereValue(key: lhs, op: .equals, value: rhs)
     }
 
     public static func !=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: "!=", value: rhs)
+        return WhereValue(key: lhs, op: .notEqualTo, value: rhs)
     }
 
     public static func <(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: "<", value: rhs)
+        return WhereValue(key: lhs, op: .lessThan, value: rhs)
     }
 
     public static func >(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: ">", value: rhs)
+        return WhereValue(key: lhs, op: .greaterThan, value: rhs)
     }
 
     public static func <=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: "<=", value: rhs)
+        return WhereValue(key: lhs, op: .lessThanOrEqualTo, value: rhs)
     }
 
     public static func >=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: ">=", value: rhs)
+        return WhereValue(key: lhs, op: .greaterThanOrEqualTo, value: rhs)
     }
 
     public static func ~=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: "LIKE", value: rhs)
+        return WhereValue(key: lhs, op: .like, value: rhs)
     }
 }
