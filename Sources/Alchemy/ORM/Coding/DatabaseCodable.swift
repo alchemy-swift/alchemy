@@ -1,4 +1,6 @@
 import Foundation
+import EchoMirror
+import EchoProperties
 
 /// Given a `Codable` swift object, what is the best way to abstract the database storing, loading, schema
 /// creation, schema migration?
@@ -42,16 +44,38 @@ public struct CodableTester {
         } catch {
             print("Error using dict: \(error)")
         }
-    }
-    
-    func usingDictionary<E: Encodable>(_ obj: E) throws {
-        // Won't use, can't interpret types well (`Bool` casts as `Int`, `Double`, and `Bool`) & it'll be
-        // worse performance than using a custom encoder anyways (have to encode then decode into dict).
+        
+        do {
+            print(try (\SomeStruct.immutableString).name())
+            print(try (\SomeStruct.date).name())
+        } catch {
+            print("Error getting kp name: \(error)")
+        }
     }
     
     func usingCustomEncoder<E: Encodable>(_ obj: E) throws {
         let encoder = DatabaseEncoder()
         _ = try encoder.encode(obj, dateEncodingStrategy: .iso8601)
+    }
+}
+
+extension PartialKeyPath {
+    /// Get's the string name of a key path, or throws a `DatabaseEncodingError` if not found.
+    func name() throws -> String {
+        let all = Reflection.allNamedStoredPropertyKeyPaths(for: Root.self)
+        for (name, kp) in all {
+            // Doesn't seem to consistently work without the hash value.
+            if kp.hashValue == self.hashValue {
+                return name
+            } else {
+                // It doesn't work without this line. No clue why. Clearly some compiler juju going on with
+                // this lib.
+                var newName = name
+                newName += ""
+            }
+        }
+        
+        throw DatabaseEncodingError(message: "Unable to find a name for KeyPath '\(self)'")
     }
 }
 

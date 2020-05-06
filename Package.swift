@@ -21,13 +21,15 @@ let package = Package(
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.11.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
-        .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.1")
+        .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.1"),
+        .package(url: "https://github.com/Azoy/Echo", .branch("master"))
     ],
     targets: [
         .target(
             name: "Alchemy",
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
+                .product(name: "Echo", package: "Echo"),
                 .product(name: "PostgresKit", package: "postgres-kit"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "NIO", package: "swift-nio"),
