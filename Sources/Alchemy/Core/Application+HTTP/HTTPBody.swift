@@ -61,9 +61,23 @@ public struct HTTPBody: ExpressibleByStringLiteral {
             return Data.init(buffer: buffer)
         }
     }
+}
+
+extension HTTPBody {
+    /// Decodes the body as a `String`.
+    public func decodeString(with encoding: String.Encoding = .utf8) -> String? {
+        String(data: self.data, encoding: encoding)
+    }
     
-    /// Decodes the body as JSON into the provided Decodable type
-    public func decodeJSON<D: Decodable>(as type: D.Type) throws -> D {
-        return try JSONDecoder().decode(type, from: data)
+    /// Decodes the body as a JSON dictionary.
+    public func decodeJSONDictionary() throws -> [String: Any]? {
+        try JSONSerialization.jsonObject(with: self.data, options: []) as? [String: Any]
+    }
+    
+    /// Decodes the body as JSON into the provided Decodable type, with the optionally provided `JSONDecoder`.
+    public func decodeJSON<D: Decodable>(as type: D.Type, with decoder: JSONDecoder = JSONDecoder())
+        throws -> D
+    {
+        return try decoder.decode(type, from: data)
     }
 }

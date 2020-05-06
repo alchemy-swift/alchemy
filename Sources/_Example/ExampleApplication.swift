@@ -63,7 +63,7 @@ struct DatabaseTestController {
     }
 }
 
-struct SampleJSON: Encodable {
+struct SampleJSON: Codable {
     let one = "value1"
     let two = "value2"
     let three = "value3"
@@ -74,6 +74,14 @@ struct LoggingMiddleware: Middleware {
     let text: String
     
     func intercept(_ request: HTTPRequest) throws -> Void {
-        print("\(self.text) '\(request.head.method.rawValue) \(request.head.uri)'")
+        print("""
+            METHOD: \(request.method)
+            PATH: \(request.path)
+            HEADERS: \(request.headers)
+            QUERY: \(request.queryItems)
+            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
+            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
+            BODY_TYPE: \(try request.body?.decodeJSON(as: SampleJSON.self))
+            """)
     }
 }

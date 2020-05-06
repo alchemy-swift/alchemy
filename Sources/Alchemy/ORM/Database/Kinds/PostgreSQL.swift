@@ -1,3 +1,3 @@
 public enum PostgreSQL { }
 
-public final class PostgresDatabase: Database<PostgreSQL> { }
+public final class PostgresDatabase: Database { }
