@@ -1,6 +1,6 @@
 import Alchemy
 
-//let app = APIServer()
-//try app.run()
+let app = APIServer()
+try app.run()
 
-CodableTester().run()
+//CodableTester().run()

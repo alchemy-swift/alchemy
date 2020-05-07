@@ -1,4 +1,5 @@
 import Alchemy
+import Foundation
 import NIO
 
 struct APIServer: Application {
@@ -17,7 +18,7 @@ struct APIServer: Application {
             // Applied to all subsequent routes
             .middleware(LoggingMiddleware(text: "Handling request:"))
             // `GET /json`
-            .on(.GET, at: "/json", do: { _ in SampleJSON() })
+            .on(.GET, at: "/json", do: { _ in "\((\SampleJSON.date).storedName())" })
             // Group all requests to /users
             .group(path: "/users") {
                 $0.on(.POST, do: { req in "hi from create user" })
@@ -68,6 +69,7 @@ struct SampleJSON: Codable {
     let two = "value2"
     let three = "value3"
     let four = 4
+    let date = Date()
 }
 
 struct LoggingMiddleware: Middleware {
