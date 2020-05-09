@@ -1,3 +1,4 @@
+import Foundation
 import PostgresKit
 
 public class Database {
@@ -65,16 +66,46 @@ extension Database {
     }
     
     public func test(on loop: EventLoop) -> EventLoopFuture<String> {
-        return self.query("SELECT version()", on: loop)
+        return self.rawQuery("SELECT version()", on: loop)
             .map { "\($0)" }
     }
 }
 
 extension Database {
-    func query(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
-        print("Running query '\(sql)'")
-        return pool.withConnection(logger: nil, on: loop) { conn in
+    func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
+        pool.withConnection(logger: nil, on: loop) { conn in
             conn.simpleQuery(sql)
+        }
+    }
+    
+    func bindsQuery(_ sql: String, binds: [StoredProperty], on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
+        pool.withConnection(logger: nil, on: loop) { conn in
+            conn.query(sql, binds.map { $0.toPostgresData() })
+                .map { $0.rows }
+        }
+    }
+}
+
+extension StoredProperty {
+    func toPostgresData() -> PostgresData {
+        switch self.type {
+        case .bool(let value):
+            return PostgresData(bool: value)
+        case .date(let value):
+            return PostgresData(date: value)
+        case .double(let value):
+            return PostgresData(double: value)
+        case .int(let value):
+            return PostgresData(int: value)
+        case .json(let value):
+            return PostgresData(json: value)
+        case .string(let value):
+            return PostgresData(string: value)
+        case .uuid(let value):
+            return PostgresData(uuid: value)
+        case .array(_):
+            /// TODO: Support arrays
+            return PostgresData(array: [], elementType: .bool)
         }
     }
 }

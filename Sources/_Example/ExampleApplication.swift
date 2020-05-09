@@ -18,7 +18,7 @@ struct APIServer: Application {
             // Applied to all subsequent routes
             .middleware(LoggingMiddleware(text: "Handling request:"))
             // `GET /json`
-            .on(.GET, at: "/json", do: { _ in "\((\SampleJSON.date).storedName())" })
+            .on(.GET, at: "/json", do: { _ in SampleJSON() })
             // Group all requests to /users
             .group(path: "/users") {
                 $0.on(.POST, do: { req in "hi from create user" })
