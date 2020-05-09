@@ -8,8 +8,8 @@ extension PostgresDatabase: SingletonService {
     }
 }
 
-private extension DatabaseConfig {
-    static let postgres = DatabaseConfig(
+private extension PostgresConfig {
+    static let postgres = PostgresConfig(
         socket: .ipAddress(host: "127.0.0.1", port: 5432),
         database: "alchemy",
         username: "josh",

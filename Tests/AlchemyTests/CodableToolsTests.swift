@@ -30,24 +30,23 @@ final class CodableToolsTests: XCTestCase {
     }
     
     func testEncodableProperty() throws {
-        let properties = try StoredPropertyStruct()
-            .storedProperties()
+        let properties = try StoredPropertyStruct().fields()
         
         guard properties.count == 7 else {
             return XCTFail("The property count should be 7.")
         }
         
-        XCTAssertEqual(properties[0], StoredProperty(key: "uuid", type: .uuid(UUID())))
-        XCTAssertEqual(properties[1], StoredProperty(key: "string", type: .string("")))
-        XCTAssertEqual(properties[2], StoredProperty(key: "int", type: .int(1)))
-        XCTAssertEqual(properties[3], StoredProperty(key: "double", type: .double(1.0)))
-        XCTAssertEqual(properties[4], StoredProperty(key: "bool", type: .bool(false)))
-        XCTAssertEqual(properties[5], StoredProperty(key: "date", type: .date(Date())))
-        XCTAssertEqual(properties[6], StoredProperty(key: "json", type: .json(Data())))
+        XCTAssertEqual(properties[0], DatabaseField(column: "uuid", value: .uuid(UUID())))
+        XCTAssertEqual(properties[1], DatabaseField(column: "string", value: .string("")))
+        XCTAssertEqual(properties[2], DatabaseField(column: "int", value: .int(1)))
+        XCTAssertEqual(properties[3], DatabaseField(column: "double", value: .double(1.0)))
+        XCTAssertEqual(properties[4], DatabaseField(column: "bool", value: .bool(false)))
+        XCTAssertEqual(properties[5], DatabaseField(column: "date", value: .date(Date())))
+        XCTAssertEqual(properties[6], DatabaseField(column: "json", value: .json(Data())))
     }
     
     func testInvalidPropertyTypeThrows() {
-        XCTAssertThrowsError(try InvalidPropertyStruct().storedProperties())
+        XCTAssertThrowsError(try InvalidPropertyStruct().fields())
     }
 }
 
@@ -78,8 +77,8 @@ private struct OtherStruct: Codable {
     let other: Int
 }
 
-private struct StoredPropertyStruct: Codable {
-    struct SomeJSON: JSON {
+private struct StoredPropertyStruct: DatabaseCodable {
+    struct SomeJSON: DatabaseJSON {
         let string = "text"
     }
     
@@ -92,7 +91,7 @@ private struct StoredPropertyStruct: Codable {
     let json = SomeJSON()
 }
 
-private struct InvalidPropertyStruct: Codable {
+private struct InvalidPropertyStruct: DatabaseCodable {
     let data = Data()
 }
 

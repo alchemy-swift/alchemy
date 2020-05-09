@@ -1,20 +1,8 @@
 import Foundation
 
-public protocol JSON: Codable {
-    /// Automatically provided. Override in your conforming type if you would like to customize the JSON
-    /// serialization.
-    func toJSONData() throws -> Data
-}
-
-extension JSON {
-    public func toJSONData() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-}
-
 /// Class used to construct a dictionary [String: Any] from a Model
-open class StoredPropertyReader {
-    func readStoredProperties<E: Encodable>(of encodableValue: E) throws -> [StoredProperty] {
+open class DatabaseFieldReader {
+    func readFields<E: Encodable>(of encodableValue: E) throws -> [DatabaseField] {
         let databaseEncoder = StoredPropertyReaderEncoder()
         try encodableValue.encode(to: databaseEncoder)
         return databaseEncoder.storedProperties
@@ -28,7 +16,7 @@ enum StoredPropertyError: Error {
 private class StoredPropertyReaderEncoder: Encoder {
     public var codingPath = [CodingKey]()
 
-    public var storedProperties: [StoredProperty] = []
+    public var storedProperties: [DatabaseField] = []
 
     public var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy = .iso8601
 
@@ -64,10 +52,10 @@ fileprivate struct _DatabaseKeyedEncodingContainer<K: CodingKey> : KeyedEncoding
             throw StoredPropertyError.unsupportedType(type: "\(type(of: value))", key: key.stringValue)
         }
         
-        self.encoder.storedProperties.append(StoredProperty(key: key.stringValue, type: theType))
+        self.encoder.storedProperties.append(DatabaseField(column: key.stringValue, value: theType))
     }
     
-    private func propertyType<E: Encodable>(of value: E) throws -> StoredProperty.PropertyType? {
+    private func propertyType<E: Encodable>(of value: E) throws -> DatabaseField.Value? {
         if let value = value as? UUID {
             return .uuid(value)
         } else if let value = value as? Date {
@@ -80,7 +68,7 @@ fileprivate struct _DatabaseKeyedEncodingContainer<K: CodingKey> : KeyedEncoding
             return .bool(value)
         } else if let value = value as? String {
             return .string(value)
-        } else if let value = value as? JSON {
+        } else if let value = value as? DatabaseJSON {
             return .json(try value.toJSONData())
         } else {
             return nil

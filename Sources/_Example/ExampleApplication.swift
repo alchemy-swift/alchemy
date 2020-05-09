@@ -10,6 +10,8 @@ struct APIServer: Application {
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
+        DB.default = self.postgres
+        
         self.globalMiddlewares
             // Applied to all incoming requests.
             .add(LoggingMiddleware(text: "Received request:"))
@@ -60,7 +62,14 @@ struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        db.test(on: req.eventLoop)
+        self.db.rawQuery("SELECT version()", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    return ""
+                }
+                
+                return "\(try firstRow.getField(columnName: "version").string())"
+        }
     }
 }
 
