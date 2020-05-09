@@ -1,8 +1,13 @@
 import Foundation
 
-public protocol JSON: Codable {}
+public protocol JSON: Codable {
+    /// Automatically provided. Override in your conforming type if you would like to customize the JSON
+    /// serialization.
+    func toJSONData() throws -> Data
+}
+
 extension JSON {
-    func toJSONData() throws -> Data {
+    public func toJSONData() throws -> Data {
         try JSONEncoder().encode(self)
     }
 }

@@ -78,9 +78,9 @@ extension Database {
         }
     }
     
-    func bindsQuery(_ sql: String, binds: [StoredProperty], on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
+    func preparedQuery(_ sql: String, values: [StoredProperty], on loop: EventLoop) -> EventLoopFuture<[PostgresRow]> {
         pool.withConnection(logger: nil, on: loop) { conn in
-            conn.query(sql, binds.map { $0.toPostgresData() })
+            conn.query(sql, values.map { $0.toPostgresData() })
                 .map { $0.rows }
         }
     }
