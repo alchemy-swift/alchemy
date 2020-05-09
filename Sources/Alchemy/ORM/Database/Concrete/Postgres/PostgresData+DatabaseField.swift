@@ -1,3 +1,4 @@
+import Foundation
 import PostgresNIO
 
 extension PostgresData {
@@ -29,9 +30,11 @@ extension PostgresData {
                 value: .double(try self.double.unwrap(or: PostgresError.unwrapError("double", column: column)))
             )
         case .uuid:
+            // The `PostgresNIO` `UUID` parser doesn't seem to work properly `self.uuid` returns nil.
+            let uuid = self.string.flatMap { UUID(uuidString: $0) }
             return DatabaseField(
                 column: column,
-                value: .uuid(try self.uuid.unwrap(or: PostgresError.unwrapError("uuid", column: column)))
+                value: .uuid(try uuid.unwrap(or: PostgresError.unwrapError("uuid", column: column)))
             )
         case .json, .jsonb:
             return DatabaseField(

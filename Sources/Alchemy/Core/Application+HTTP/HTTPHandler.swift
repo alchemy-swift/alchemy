@@ -74,7 +74,8 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
             // Responds to the request
             let response = responder.respond(to: request)
                 .flatMapErrorThrowing { error in
-                    HTTPResponse(status: .internalServerError, body: HTTPBody(text: "server error"))
+                    print("Encountered error: \(error).")
+                    return HTTPResponse(status: .internalServerError, body: HTTPBody(text: "server error"))
                 }
             self.request = nil
       

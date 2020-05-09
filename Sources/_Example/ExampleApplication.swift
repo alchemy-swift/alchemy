@@ -62,15 +62,25 @@ struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
     func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        self.db.rawQuery("SELECT version()", on: req.eventLoop)
+        self.db.rawQuery("SELECT * FROM queries", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     return ""
                 }
                 
-                return "\(try firstRow.getField(columnName: "version").string())"
+                return "\(try firstRow.getField(columnName: "destination_id").uuid())"
         }
     }
+}
+
+struct Query: DatabaseCodable {
+    let id: UUID
+    let originID: UUID
+    let destinationID: UUID
+    let departure: Date
+    let `return`: Date
+    let isEnabled: Bool
+    let lastRun: Date
 }
 
 struct SampleJSON: Codable {
@@ -85,14 +95,14 @@ struct LoggingMiddleware: Middleware {
     let text: String
     
     func intercept(_ request: HTTPRequest) throws -> Void {
-        print("""
-            \(self.text)
-            METHOD: \(request.method)
-            PATH: \(request.path)
-            HEADERS: \(request.headers)
-            QUERY: \(request.queryItems)
-            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
-            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
-            """)
+//        print("""
+//            \(self.text)
+//            METHOD: \(request.method)
+//            PATH: \(request.path)
+//            HEADERS: \(request.headers)
+//            QUERY: \(request.queryItems)
+//            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
+//            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
+//            """)
     }
 }
