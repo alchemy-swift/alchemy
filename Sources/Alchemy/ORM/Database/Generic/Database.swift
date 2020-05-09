@@ -23,10 +23,3 @@ public protocol Database {
     func preparedQuery(_ sql: String, values: [DatabaseField], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
     func shutdown()
 }
-
-/// A row of data returned from a database.
-public protocol DatabaseRow {
-    /// Get a specific named field on a Database.
-    func getField(columnName: String) throws -> DatabaseField
-    func decode<D: DatabaseDecodable>(_ type: D.Type) -> D
-}

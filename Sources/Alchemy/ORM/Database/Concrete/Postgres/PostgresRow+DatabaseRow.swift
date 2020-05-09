@@ -1,6 +1,10 @@
 import PostgresNIO
 
 extension PostgresRow: DatabaseRow {
+    public var allColumns: [String] {
+        []
+    }
+    
     public func getField(columnName: String) throws -> DatabaseField {
         guard let value = self.column(columnName) else {
             throw PostgresError(message: "No column named '\(columnName)' was found.")
