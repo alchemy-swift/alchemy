@@ -2,6 +2,18 @@ import Foundation
 import PostgresNIO
 
 extension PostgresData {
+    private static let postgresDateFormatter: DateFormatter = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        return dateFormatter
+    }()
+    
+    private static let postgresTimestampzFormatter: DateFormatter = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSX"
+        return dateFormatter
+    }()
+    
     func toDatabaseField(from column: String) throws -> DatabaseField {
         switch self.type {
         case .int2, .int4, .int8:
@@ -19,7 +31,23 @@ extension PostgresData {
                 column: column,
                 value: .string(try self.string.unwrap(or: PostgresError.unwrapError("string", column: column)))
             )
-        case .date, .time, .timestamp, .timetz, .timestamptz:
+        case .date:
+            let string = try self.string.unwrap(or: PostgresError.unwrapError("date", column: column))
+            let date = try PostgresData.postgresDateFormatter.date(from: string)
+                .unwrap(or: PostgresError.unwrapError("date", column: column))
+            return DatabaseField(
+                column: column,
+                value: .date(date)
+            )
+        case .timestamptz:
+            let string = try self.string.unwrap(or: PostgresError.unwrapError("date", column: column))
+            let date = try PostgresData.postgresTimestampzFormatter.date(from: string)
+                .unwrap(or: PostgresError.unwrapError("date", column: column))
+            return DatabaseField(
+                column: column,
+                value: .date(date)
+            )
+        case .time, .timestamp, .timetz:
             return DatabaseField(
                 column: column,
                 value: .date(try self.date.unwrap(or: PostgresError.unwrapError("date", column: column)))

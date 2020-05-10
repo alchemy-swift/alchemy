@@ -12,8 +12,4 @@ extension PostgresRow: DatabaseRow {
         
         return try value.toDatabaseField(from: columnName)
     }
-    
-    public func decode<D>(_ type: D.Type) -> D where D : DatabaseDecodable {
-        fatalError()
-    }
 }

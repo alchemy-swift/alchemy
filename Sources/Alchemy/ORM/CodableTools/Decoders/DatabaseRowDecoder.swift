@@ -1,11 +1,14 @@
+import Foundation
+
 /// Decodes a `Decodable` from a `DatabaseRow`.
 struct DatabaseRowDecoder: Decoder {
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
     let row: DatabaseRow
+    let keyMappingStrategy: DatabaseKeyMappingStrategy
     
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
-        KeyedDecodingContainer(KeyedContainer(row: self.row))
+        KeyedDecodingContainer(KeyedContainer(row: self.row, keyMappingStrategy: self.keyMappingStrategy))
     }
     
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -18,17 +21,22 @@ struct DatabaseRowDecoder: Decoder {
 }
 
 private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
-    /// Used for debugging I believe; ignoring for now.
+    /// Used for debugging only I believe; ignoring for now.
     var codingPath: [CodingKey] = []
     
     var allKeys: [Key] {
         self.row.allColumns.compactMap { Key(stringValue: $0) }
     }
-    
+
     let row: DatabaseRow
+    let keyMappingStrategy: DatabaseKeyMappingStrategy
+    
+    private func string(for key: Key) -> String {
+        self.keyMappingStrategy.map(input: key.stringValue)
+    }
     
     func contains(_ key: Key) -> Bool {
-        self.allKeys.contains { $0.stringValue == key.stringValue }
+        self.allKeys.contains { $0.stringValue == self.string(for: key) }
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
@@ -37,64 +45,71 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
-        try self.row.getField(columnName: key.stringValue).bool()
+        try self.row.getField(columnName: self.string(for: key)).bool()
     }
     
     func decode(_ type: String.Type, forKey key: Key) throws -> String {
-        try self.row.getField(columnName: key.stringValue).string()
+        try self.row.getField(columnName: self.string(for: key)).string()
     }
     
     func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
-        try self.row.getField(columnName: key.stringValue).double()
+        try self.row.getField(columnName: self.string(for: key)).double()
     }
     
     func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
-        Float(try self.row.getField(columnName: key.stringValue).double())
+        Float(try self.row.getField(columnName: self.string(for: key)).double())
     }
     
     func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
-        try self.row.getField(columnName: key.stringValue).int()
+        try self.row.getField(columnName: self.string(for: key)).int()
     }
     
     func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
-        Int8(try self.row.getField(columnName: key.stringValue).int())
+        Int8(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
-        Int16(try self.row.getField(columnName: key.stringValue).int())
+        Int16(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
-        Int32(try self.row.getField(columnName: key.stringValue).int())
+        Int32(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
-        Int64(try self.row.getField(columnName: key.stringValue).int())
+        Int64(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
-        UInt(try self.row.getField(columnName: key.stringValue).int())
+        UInt(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
-        UInt8(try self.row.getField(columnName: key.stringValue).int())
+        UInt8(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
-        UInt16(try self.row.getField(columnName: key.stringValue).int())
+        UInt16(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
-        UInt32(try self.row.getField(columnName: key.stringValue).int())
+        UInt32(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
-        UInt64(try self.row.getField(columnName: key.stringValue).int())
+        UInt64(try self.row.getField(columnName: self.string(for: key)).int())
     }
     
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
-        /// TODO: Use this for eager loading?
-        throw DatabaseDecodingError("Nested database types aren't available, yet.")
+        if type == UUID.self {
+            return try self.row.getField(columnName: self.string(for: key)).uuid() as! T
+        } else if type == Date.self {
+            return try self.row.getField(columnName: self.string(for: key)).date() as! T
+        } else {
+            /// TODO: Use this for eager loading?
+            print("key: \(self.string(for: key)), type: \(Swift.type(of: type))")
+            throw DatabaseDecodingError("Nested database types aren't available, yet.")
+        }
     }
     
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {

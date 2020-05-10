@@ -58,22 +58,32 @@ struct APIServer: Application {
     }
 }
 
+struct MiscError: Error {
+    private let message: String
+    
+    init(_ message: String) {
+        self.message = message
+    }
+}
+
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) -> EventLoopFuture<String> {
+    func test(req: HTTPRequest) -> EventLoopFuture<Query> {
         self.db.rawQuery("SELECT * FROM queries", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
-                    return ""
+                    throw MiscError("No rows found.")
                 }
                 
-                return "\(try firstRow.getField(columnName: "destination_id").uuid())"
+                return try firstRow.decode(Query.self)
         }
     }
 }
 
 struct Query: DatabaseCodable {
+    static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
+    
     let id: UUID
     let originID: UUID
     let destinationID: UUID

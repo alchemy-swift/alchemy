@@ -4,13 +4,13 @@ public protocol DatabaseRow {
     
     /// Get a specific named field on a Database.
     func getField(columnName: String) throws -> DatabaseField
-    func decode<D: DatabaseDecodable>(_ type: D.Type) -> D
+    func decode<D: DatabaseCodable>(_ type: D.Type) throws -> D
 }
 
 extension DatabaseRow {
-    func decode<D: DatabaseDecodable>(_ type: D.Type) -> D {
+    public func decode<D: DatabaseCodable>(_ type: D.Type) throws -> D {
         /// For each stored coding key, pull out the column name.
         /// Will need to write a custom decoder that pulls out of a database row.
-        fatalError()
+        try D(from: DatabaseRowDecoder(row: self, keyMappingStrategy: D.keyMappingStrategy))
     }
 }
