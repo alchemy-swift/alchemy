@@ -92,7 +92,7 @@ extension DatabaseField {
             return PostgresData(string: value)
         case .uuid(let value):
             return PostgresData(uuid: value)
-        case .array(_):
+        case .array(let value):
             /// TODO: Support arrays
             return PostgresData(array: [], elementType: .bool)
         }

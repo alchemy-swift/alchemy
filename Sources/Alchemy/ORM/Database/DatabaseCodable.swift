@@ -1,12 +1,10 @@
 import Foundation
 
-public protocol DatabaseEncodable: Encodable {}
-public protocol DatabaseDecodable: Decodable {}
-
 /// A type that can be encoded to & from a `Database`. Likely represents a table in a relational database.
-public protocol DatabaseCodable: DatabaseEncodable & DatabaseDecodable {
+public protocol DatabaseCodable: Codable {
     /// How should the swift `CodingKey`s be mapped to database columns? Defaults to `useDefaultKeys`
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
+    static var tableName: String { get }
 }
 
 public enum DatabaseKeyMappingStrategy {

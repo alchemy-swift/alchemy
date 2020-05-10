@@ -78,6 +78,8 @@ private struct OtherStruct: Codable {
 }
 
 private struct StoredPropertyStruct: DatabaseCodable {
+    static var tableName = "stored_property"
+    
     struct SomeJSON: DatabaseJSON {
         let string = "text"
     }
@@ -92,6 +94,8 @@ private struct StoredPropertyStruct: DatabaseCodable {
 }
 
 private struct InvalidPropertyStruct: DatabaseCodable {
+    static var tableName = "invalid_property"
+    
     let data = Data()
 }
 

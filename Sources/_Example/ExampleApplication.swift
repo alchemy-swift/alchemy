@@ -69,20 +69,21 @@ struct MiscError: Error {
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) -> EventLoopFuture<Query> {
-        self.db.rawQuery("SELECT * FROM queries", on: req.eventLoop)
+    func test(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")
                 }
                 
-                return try firstRow.decode(Query.self)
+                return try firstRow.decode(Trip.self)
         }
     }
 }
 
 struct Query: DatabaseCodable {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
+    static var tableName = "queries"
     
     let id: UUID
     let originID: UUID
@@ -91,6 +92,28 @@ struct Query: DatabaseCodable {
     let `return`: Date
     let isEnabled: Bool
     let lastRun: Date
+}
+
+struct Trip: DatabaseCodable {
+    static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
+    static var tableName = "trips"
+    
+    let id: UUID
+    let userID: UUID
+    let originID: UUID
+    let destinationID: UUID
+    let priceStatus: PriceStatus?
+    let dotwStart: DOTW?
+    let dotwEnd: DOTW?
+    let additionalWeeks: Int?
+}
+
+public enum DOTW: String, Codable, CaseIterable {
+    case sunday, monday, tuesday, wednesday, thursday, friday, saturday
+}
+
+public enum PriceStatus: String, Codable, CaseIterable {
+    case lowest, low, medium, high
 }
 
 struct SampleJSON: Codable {
