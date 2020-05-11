@@ -36,7 +36,7 @@ final class CodableToolsTests: XCTestCase {
             return XCTFail("The property count should be 7.")
         }
         
-        XCTAssertEqual(properties[0], DatabaseField(column: "uuid", value: .uuid(UUID())))
+        XCTAssertEqual(properties[0], DatabaseField(column: "id", value: .uuid(UUID())))
         XCTAssertEqual(properties[1], DatabaseField(column: "string", value: .string("")))
         XCTAssertEqual(properties[2], DatabaseField(column: "int", value: .int(1)))
         XCTAssertEqual(properties[3], DatabaseField(column: "double", value: .double(1.0)))
@@ -47,6 +47,48 @@ final class CodableToolsTests: XCTestCase {
     
     func testInvalidPropertyTypeThrows() {
         XCTAssertThrowsError(try InvalidPropertyStruct().fields())
+    }
+}
+
+extension DatabaseField: Equatable {
+    public static func == (lhs: DatabaseField, rhs: DatabaseField) -> Bool {
+        lhs.column == rhs.column && lhs.value == rhs.value
+    }
+}
+
+extension DatabaseField.Value: Equatable {
+    public static func == (lhs: DatabaseField.Value, rhs: DatabaseField.Value) -> Bool {
+        if case .int = lhs, case .int = rhs {
+            return true
+        } else if case .double = lhs, case .double = rhs {
+            return true
+        } else if case .bool = lhs, case .bool = rhs {
+            return true
+        } else if case .string = lhs, case .string = rhs {
+            return true
+        } else if case .date = lhs, case .date = rhs {
+            return true
+        } else if case .json = lhs, case .json = rhs {
+            return true
+        } else if case .uuid = lhs, case .uuid = rhs {
+            return true
+        } else if case .arrayInt = lhs, case .arrayInt = rhs {
+            return true
+        } else if case .arrayDouble = lhs, case .arrayDouble = rhs {
+            return true
+        } else if case .arrayBool = lhs, case .arrayBool = rhs {
+            return true
+        } else if case .arrayString = lhs, case .arrayString = rhs {
+            return true
+        } else if case .arrayDate = lhs, case .arrayDate = rhs {
+            return true
+        } else if case .arrayJSON = lhs, case .arrayJSON = rhs {
+            return true
+        } else if case .arrayUUID = lhs, case .arrayUUID = rhs {
+            return true
+        } else {
+            return false
+        }
     }
 }
 

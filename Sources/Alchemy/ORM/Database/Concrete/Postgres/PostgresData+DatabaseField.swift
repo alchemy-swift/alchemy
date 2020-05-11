@@ -79,22 +79,47 @@ extension DatabaseField {
     func toPostgresData() -> PostgresData {
         switch self.value {
         case .bool(let value):
+            guard let value = value else { return .null }
             return PostgresData(bool: value)
         case .date(let value):
+            guard let value = value else { return .null }
             return PostgresData(date: value)
         case .double(let value):
+            guard let value = value else { return .null }
             return PostgresData(double: value)
         case .int(let value):
+            guard let value = value else { return .null }
             return PostgresData(int: value)
         case .json(let value):
+            guard let value = value else { return .null }
             return PostgresData(json: value)
         case .string(let value):
+            guard let value = value else { return .null }
             return PostgresData(string: value)
         case .uuid(let value):
+            guard let value = value else { return .null }
             return PostgresData(uuid: value)
-        case .array(let value):
-            /// TODO: Support arrays
-            return PostgresData(array: [], elementType: .bool)
+        case .arrayString(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
+        case .arrayInt(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
+        case .arrayDouble(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
+        case .arrayBool(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
+        case .arrayDate(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
+        case .arrayJSON(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
+        case .arrayUUID(let value):
+            guard let value = value else { return .null }
+            return PostgresData(array: value)
         }
     }
 }
