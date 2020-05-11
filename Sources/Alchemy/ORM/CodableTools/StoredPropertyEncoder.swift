@@ -70,6 +70,8 @@ fileprivate struct _DatabaseKeyedEncodingContainer<K: CodingKey> : KeyedEncoding
             return .string(value)
         } else if let value = value as? DatabaseJSON {
             return .json(try value.toJSONData())
+        } else if let value = value as? Array<String> {
+            return nil
         } else {
             return nil
         }

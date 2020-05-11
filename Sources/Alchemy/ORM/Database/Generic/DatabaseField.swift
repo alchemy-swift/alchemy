@@ -13,7 +13,9 @@ public struct DatabaseField {
         case array(Value)
     }
     
+    /// The name of the column this value came from.
     public let column: String
+    /// The value of this field.
     public let value: Value
 }
 

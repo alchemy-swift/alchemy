@@ -1,8 +1,6 @@
-//
-//  File.swift
-//  
-//
-//  Created by Josh Wright on 5/9/20.
-//
+@testable import Alchemy
+import XCTest
 
-import Foundation
+final class DatabaseRowTests: XCTestCase {
+    
+}
