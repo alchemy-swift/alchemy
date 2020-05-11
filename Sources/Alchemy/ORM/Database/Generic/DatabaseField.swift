@@ -30,3 +30,38 @@ public struct DatabaseField {
     /// The value of this field.
     public let value: Value
 }
+
+extension DatabaseField.Value {
+    var isNil: Bool {
+        switch self {
+        case .int(let value):
+            return value == nil
+        case .double(let value):
+            return value == nil
+        case .bool(let value):
+            return value == nil
+        case .string(let value):
+            return value == nil
+        case .date(let value):
+            return value == nil
+        case .json(let value):
+            return value == nil
+        case .uuid(let value):
+            return value == nil
+        case .arrayInt(let value):
+            return value == nil
+        case .arrayDouble(let value):
+            return value == nil
+        case .arrayBool(let value):
+            return value == nil
+        case .arrayString(let value):
+            return value == nil
+        case .arrayDate(let value):
+            return value == nil
+        case .arrayJSON(let value):
+            return value == nil
+        case .arrayUUID(let value):
+            return value == nil
+        }
+    }
+}

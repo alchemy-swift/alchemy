@@ -15,62 +15,60 @@ extension PostgresData {
     }()
     
     func toDatabaseField(from column: String) throws -> DatabaseField {
+        // Ensures that if value is nil, it's because the database column is actually nil and not because
+        // we are attempting to pull out the wrong type.
+        func validateNil<T>(_ value: T?) throws -> T? {
+            if self.value == nil {
+                return nil
+            } else {
+                let errorMessage = "Unable to unwrap expected type `\(Swift.type(of: T.self))` from column "
+                    + "'\(column)'."
+                return try value.unwrap(or: PostgresError(errorMessage))
+            }
+        }
+        
         switch self.type {
         case .int2, .int4, .int8:
-            return DatabaseField(
-                column: column,
-                value: .int(try self.int.unwrap(or: PostgresError.unwrapError("int", column: column)))
-            )
+            return DatabaseField(column: column, value: .int(try validateNil(self.int)))
         case .bool:
-            return DatabaseField(
-                column: column,
-                value: .bool(try self.bool.unwrap(or: PostgresError.unwrapError("bool", column: column)))
-            )
+            return DatabaseField(column: column, value: .bool(try validateNil(self.bool)))
         case .varchar, .text:
-            return DatabaseField(
-                column: column,
-                value: .string(try self.string.unwrap(or: PostgresError.unwrapError("string", column: column)))
-            )
+            return DatabaseField(column: column, value: .string(try validateNil(self.string)))
         case .date:
-            let string = try self.string.unwrap(or: PostgresError.unwrapError("date", column: column))
-            let date = try PostgresData.postgresDateFormatter.date(from: string)
-                .unwrap(or: PostgresError.unwrapError("date", column: column))
-            return DatabaseField(
-                column: column,
-                value: .date(date)
-            )
+            let date = try validateNil(self.string).map { string in
+                try PostgresData.postgresDateFormatter.date(from: string)
+                    .unwrap(or: PostgresError("Error decoding column '\(column)' to Postgres `date` type. "
+                        + "The string was '\(string)'"))
+            }
+            
+            return DatabaseField(column: column, value: .date(date))
         case .timestamptz:
-            let string = try self.string.unwrap(or: PostgresError.unwrapError("date", column: column))
-            let date = try PostgresData.postgresTimestampzFormatter.date(from: string)
-                .unwrap(or: PostgresError.unwrapError("date", column: column))
-            return DatabaseField(
-                column: column,
-                value: .date(date)
-            )
+            let date = try validateNil(self.string).map { string in
+                try PostgresData.postgresTimestampzFormatter.date(from: string)
+                    .unwrap(or: PostgresError("Error decoding column '\(column)' to Postgres `date` type. "
+                        + "The string was '\(string)'"))
+            }
+            
+            return DatabaseField(column: column, value: .date(date))
         case .time, .timestamp, .timetz:
-            return DatabaseField(
-                column: column,
-                value: .date(try self.date.unwrap(or: PostgresError.unwrapError("date", column: column)))
-            )
+            fatalError("Need to do these.")
         case .float4, .float8:
-            return DatabaseField(
-                column: column,
-                value: .double(try self.double.unwrap(or: PostgresError.unwrapError("double", column: column)))
-            )
+            return DatabaseField(column: column, value: .double(try validateNil(self.double)))
         case .uuid:
             // The `PostgresNIO` `UUID` parser doesn't seem to work properly `self.uuid` returns nil.
-            let uuid = self.string.flatMap { UUID(uuidString: $0) }
-            return DatabaseField(
-                column: column,
-                value: .uuid(try uuid.unwrap(or: PostgresError.unwrapError("uuid", column: column)))
-            )
+            let string = try validateNil(self.string)
+            let uuid = try string.map { string -> UUID in
+                guard let uuid = UUID(uuidString: string) else {
+                    throw PostgresError("Invalid UUID '\(string)' at column '\(column)'")
+                }
+                
+                return uuid
+            }
+            return DatabaseField(column: column, value: .uuid(uuid))
         case .json, .jsonb:
-            return DatabaseField(
-                column: column,
-                value: .json(try self.json.unwrap(or: PostgresError.unwrapError("json", column: column)))
-            )
+            return DatabaseField(column: column, value: .json(try validateNil(self.json)))
         default:
-            throw PostgresError(message: "Couldn't parse a `\(self.type)` from column '\(column)'. That Postgres datatype isn't supported, yet.")
+            throw PostgresError("Couldn't parse a `\(self.type)` from column '\(column)'. That Postgres datatype isn't supported, yet.")
         }
     }
 }

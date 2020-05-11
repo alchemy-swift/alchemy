@@ -59,9 +59,7 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     /// Is the key nil?
     func decodeNil(forKey key: Key) throws -> Bool {
         print("Decode nil")
-        try self.row.getField(columnName: self.string(for: key))
-        try self.row.getField(columnName: "outbound_departure_range")
-        return true
+        return try self.row.getField(columnName: self.string(for: key)).value.isNil
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {

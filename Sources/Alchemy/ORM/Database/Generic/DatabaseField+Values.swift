@@ -37,11 +37,10 @@ extension DatabaseField {
     }
     
     private func typeError(_ typeName: String) -> Error {
-        PostgresError(message: "Field at column '\(self.column)' was not a `\(typeName)`")
+        PostgresError("Field at column '\(self.column)' was not a `\(typeName)`")
     }
     
     private func unwrapOrError<T>(_ value: T?) throws -> T {
-        try value.unwrap(or: PostgresError(
-            message: "Tried to get a value from '\(self.column)' but it was `nil`."))
+        try value.unwrap(or: PostgresError("Tried to get a value from '\(self.column)' but it was `nil`."))
     }
 }
