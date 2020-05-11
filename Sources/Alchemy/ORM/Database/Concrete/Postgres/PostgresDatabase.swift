@@ -44,9 +44,9 @@ public final class PostgresDatabase: Database {
             .map { $0 }
     }
     
-    public func preparedQuery(_ sql: String, values: [DatabaseField], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func preparedQuery(_ sql: String, values: [String], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         self.pool.withConnection(logger: nil, on: loop) { conn in
-            conn.query(sql, values.map { $0.toPostgresData() })
+            conn.query(sql, values.map { PostgresData(string: $0) })
                 .map { $0.rows }
         }
     }
