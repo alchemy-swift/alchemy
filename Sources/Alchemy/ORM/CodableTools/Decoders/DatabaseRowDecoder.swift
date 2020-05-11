@@ -68,18 +68,11 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func contains(_ key: Key) -> Bool {
-        let val = self.row.allColumns.contains(self.string(for: key))
-        print("has key: \(self.string(for: key)) \(val)")
-        print("keys: \(self.allKeys.map { $0.stringValue })")
-        return val
+        self.row.allColumns.contains(self.string(for: key))
     }
     
-    /// Is the key nil?
     func decodeNil(forKey key: Key) throws -> Bool {
-        print("Decode nil")
-        let isNil = try self.row.getField(columnName: self.string(for: key)).value.isNil
-        print("'\(key.stringValue)' was nil? \(isNil)")
-        return isNil
+        try self.row.getField(columnName: self.string(for: key)).value.isNil
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {

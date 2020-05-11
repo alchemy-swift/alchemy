@@ -13,6 +13,8 @@ struct Trip: DatabaseCodable {
     let dotwStart: DOTW?
     let dotwEnd: DOTW?
     let additionalWeeks: Int?
+    let outboundDepartureRange: Range?
+    let outboundDepartureTime: Int?
 }
 
 enum DOTW: String, Codable {
@@ -21,4 +23,8 @@ enum DOTW: String, Codable {
 
 enum PriceStatus: String, Codable {
     case lowest, low, medium, high
+}
+
+public enum Range: String, Codable, CaseIterable {
+    case before, after
 }
