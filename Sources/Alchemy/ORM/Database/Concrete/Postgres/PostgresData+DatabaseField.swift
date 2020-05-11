@@ -67,6 +67,31 @@ extension PostgresData {
             return DatabaseField(column: column, value: .uuid(uuid))
         case .json, .jsonb:
             return DatabaseField(column: column, value: .json(try validateNil(self.json)))
+        case .int2Array, .int4Array, .int8Array:
+            return DatabaseField(column: column, value: .arrayInt(try validateNil(self.array(of: Int.self))))
+        case .float4Array, .float8Array:
+            return DatabaseField(column: column,
+                                 value: .arrayDouble(try validateNil(self.array(of: Double.self))))
+        case .boolArray:
+            return DatabaseField(
+                column: column,
+                value: .arrayBool(try validateNil(self.array(of: Bool.self))))
+        case .textArray:
+            return DatabaseField(
+                column: column,
+                value: .arrayString(try validateNil(self.array(of: String.self))))
+        case .timestampArray:
+            return DatabaseField(
+                column: column,
+                value: .arrayDate(try validateNil(self.array(of: Date.self))))
+        case .jsonbArray:
+            return DatabaseField(
+                column: column,
+                value: .arrayJSON(try validateNil(self.array(of: Data.self))))
+        case .uuidArray:
+            return DatabaseField(
+                column: column,
+                value: .arrayUUID(try validateNil(self.array(of: UUID.self))))
         default:
             throw PostgresError("Couldn't parse a `\(self.type)` from column '\(column)'. That Postgres datatype isn't supported, yet.")
         }
