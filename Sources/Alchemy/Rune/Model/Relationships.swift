@@ -8,7 +8,11 @@ extension Model {
     public typealias ManyToMany<To: RelationAllowed> = _ManyToMany<Self, To>
 }
 
-protocol Relationship {}
+protocol Relationship {
+    associatedtype To: RelationAllowed
+    
+    init(value: To.Value)
+}
 
 protocol AnyOneToOne {}
 
