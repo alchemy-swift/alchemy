@@ -112,7 +112,7 @@ struct DatabaseTestController {
         """
         
         print("statement: \(statement)")
-        return self.db.preparedQuery(statement, values: fields, on: req.eventLoop)
+        return self.db.preparedQuery(statement, values: fields.map { $0.value }, on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")

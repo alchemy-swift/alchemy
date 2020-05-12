@@ -98,9 +98,9 @@ extension PostgresData {
     }
 }
 
-extension DatabaseField {
-    public func toPostgresData() -> PostgresData {
-        switch self.value {
+extension DatabaseField.Value {
+    func toPostgresData() -> PostgresData {
+        switch self {
         case .bool(let value):
             guard let value = value else { return .null }
             return PostgresData(bool: value)

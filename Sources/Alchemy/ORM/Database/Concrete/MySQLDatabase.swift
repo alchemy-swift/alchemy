@@ -10,7 +10,9 @@ public final class MySQLDatabase: Database {
         fatalError()
     }
     
-    public func preparedQuery(_ sql: String, values: [DatabaseField], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func preparedQuery(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop)
+        -> EventLoopFuture<[DatabaseRow]>
+    {
         fatalError()
     }
     
