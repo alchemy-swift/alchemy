@@ -1,3 +1,5 @@
+import Foundation
+
 /// Relationships.
 extension Model {
     public typealias OneToOne<To: RelationAllowed> = _OneToOne<Self, To>
@@ -6,9 +8,11 @@ extension Model {
     public typealias ManyToMany<To: RelationAllowed> = _ManyToMany<Self, To>
 }
 
+protocol AnyOneToOne {}
+
 @propertyWrapper
 /// Either side of a one to one.
-public struct _OneToOne<From: RelationAllowed, To: RelationAllowed>: Codable {
+public struct _OneToOne<From: RelationAllowed, To: RelationAllowed>: Codable, AnyOneToOne {
     public var id: To.Value.Identifier?
     
     public var wrappedValue: To {
@@ -29,6 +33,14 @@ public struct _OneToOne<From: RelationAllowed, To: RelationAllowed>: Codable {
     public var projectedValue: Self<From, To> {
         self
     }
+    
+    public func encode(to encoder: Encoder) throws {
+        /// If this holds a reference to another object, encode it.
+        if let id = self.id {
+            var container = encoder.singleValueContainer()
+            try container.encode(id)
+        }
+    }
 }
 
 @propertyWrapper
@@ -46,12 +58,18 @@ public struct _OneToMany<One: RelationAllowed, Many: RelationAllowed>: Codable {
     public var projectedValue: Self<One, Many> {
         self
     }
+    
+    public func encode(to encoder: Encoder) throws {
+        /// Do nothing.
+    }
 }
+
+protocol AnyManyToOne {}
 
 @propertyWrapper
 /// The child of a one to many.
-public struct _ManyToOne<Many: RelationAllowed, One: RelationAllowed>: Codable {
-    public var id: One.Value.Identifier?
+public struct _ManyToOne<Many: RelationAllowed, One: RelationAllowed>: Codable, AnyManyToOne {
+    public var id: One.Value.Identifier
     
     public var wrappedValue: One {
         get { fatalError() }
@@ -65,6 +83,15 @@ public struct _ManyToOne<Many: RelationAllowed, One: RelationAllowed>: Codable {
     public var projectedValue: Self<Many, One> {
         self
     }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.id)
+    }
+    
+//    public init(from decoder: Decoder) throws {
+//
+//    }
 }
 
 @propertyWrapper
@@ -85,5 +112,9 @@ public struct _ManyToMany<From: RelationAllowed, To: RelationAllowed>: Codable {
     
     public var projectedValue: Self<From, To> {
         self
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        /// Do nothing.
     }
 }
