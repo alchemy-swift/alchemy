@@ -75,15 +75,9 @@ struct MiscError: Error {
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func select(req: HTTPRequest) -> EventLoopFuture<Trip> {
+    func select(req: HTTPRequest) -> EventLoopFuture<[Trip]> {
         self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
+            .flatMapThrowing { try $0.map { try $0.decode(Trip.self) } }
     }
     
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
