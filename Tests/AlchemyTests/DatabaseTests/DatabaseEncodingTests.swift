@@ -2,5 +2,7 @@
 import XCTest
 
 final class DatabaseEncodingTests: XCTestCase {
-    
+    func testEncodingCustomEnum() {
+        
+    }
 }

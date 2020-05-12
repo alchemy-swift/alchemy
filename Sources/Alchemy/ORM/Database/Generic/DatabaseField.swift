@@ -32,7 +32,7 @@ public struct DatabaseField {
 }
 
 extension DatabaseField.Value {
-    var isNil: Bool {
+    public var isNil: Bool {
         switch self {
         case .int(let value):
             return value == nil
@@ -63,5 +63,52 @@ extension DatabaseField.Value {
         case .arrayUUID(let value):
             return value == nil
         }
+    }
+}
+
+extension DatabaseField.Value {
+    private static let dateFormatter: DateFormatter = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSX"
+        return dateFormatter
+    }()
+    
+    public var sqlString: String {
+        switch self {
+        case .int(let value):
+            return value.nullOr { "\($0)" }
+        case .double(let value):
+            return value.nullOr { "\($0)" }
+        case .bool(let value):
+            return value.nullOr { "\($0)" }
+        case .string(let value):
+            return value.nullOr { "'\($0)'" }
+        case .date(let value):
+            return value.nullOr { "'\(DatabaseField.Value.dateFormatter.string(from: $0))'" }
+        case .json(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .uuid(let value):
+            return value.nullOr { "'\($0.uuidString)'" }
+        case .arrayInt(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .arrayDouble(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .arrayBool(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .arrayString(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .arrayDate(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .arrayJSON(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        case .arrayUUID(let value):
+            return value.nullOr { fatalError("not implemented '\($0)'") }
+        }
+    }
+}
+
+private extension Optional {
+    func nullOr(_ stringMap: (Wrapped) -> String) -> String {
+        self.map(stringMap) ?? "NULL"
     }
 }

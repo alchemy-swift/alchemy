@@ -5,7 +5,7 @@ struct Query: DatabaseCodable {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "queries"
     
-    let id: UUID
+    let id: UUID?
     let originID: UUID
     let destinationID: UUID
     let departure: Date

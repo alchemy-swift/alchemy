@@ -115,7 +115,6 @@ extension String {
     fileprivate func matchAndParseParameters(routablePath: String) -> RouterMatchResult {
         let pathParts = self.split(separator: "/")
         let routablePathParts = routablePath.split(separator: "/")
-        print("routable parts: \(routablePathParts)")
         var parameters: [PathParameter] = []
         
         guard pathParts.count == routablePathParts.count else {

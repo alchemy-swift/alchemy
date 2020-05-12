@@ -2,5 +2,7 @@
 import XCTest
 
 final class PostgresDatabaseTests: XCTestCase {
-    
+    func testDynamicQuery() {
+        
+    }
 }

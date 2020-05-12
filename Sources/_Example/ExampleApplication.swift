@@ -54,7 +54,13 @@ struct APIServer: Application {
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
             }
-            .on(.GET, at: "/db", do: DatabaseTestController().test)
+            .group(path: "/db") {
+                $0.on(.GET, at: "/select", do: DatabaseTestController().select)
+                $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
+                $0.on(.GET, at: "/update", do: DatabaseTestController().update)
+                $0.on(.GET, at: "/delete", do: DatabaseTestController().delete)
+                $0.on(.GET, at: "/join", do: DatabaseTestController().join)
+            }
     }
 }
 
@@ -69,7 +75,71 @@ struct MiscError: Error {
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) -> EventLoopFuture<Trip> {
+    func select(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func insert(req: HTTPRequest) throws -> EventLoopFuture<Trip> {
+        let trip = Trip(
+            id: UUID(),
+            userID: UUID(uuidString: "47c50f8f-8940-4b79-866a-7aae0342650a")!,
+            originID: UUID(uuidString: "04ffe341-ce99-4105-87f6-5778d7dc8706")!,
+            destinationID: UUID(uuidString: "5b57ae6b-45e3-4099-ab5b-c8a74ecbc4db")!,
+            priceStatus: .lowest,
+            dotwStart: .friday,
+            dotwEnd: .sunday,
+            additionalWeeks: 0,
+            outboundDepartureRange: nil,
+            outboundDepartureTime: nil
+        )
+        
+        let fields = try trip.fields()
+        let columns = fields.map { $0.column }
+        let values = fields.map { $0.value.sqlString }
+        
+        var statement = "insert into \(Trip.tableName) (\(columns.joined(separator: ", "))) values (\(values.joined(separator: ", ")))"
+        print("\(statement)")
+        
+        return self.db.rawQuery(statement, on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
         self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
