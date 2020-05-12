@@ -15,12 +15,21 @@ struct TripPlaces: Model {
     var trip: Trip
 }
 
+// 1 - 1 with trip
+struct Flight: Model {
+    var id: UUID?
+    var trip: Trip!
+}
+
 struct Trip: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "trips"
     
     let id: UUID
 
+    @OneToOne
+    var flight: Flight
+    
     @ManyToOne
     var user: User
     

@@ -83,9 +83,11 @@ struct DatabaseTestController {
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
         let user = User(id: UUID())
         let place = Place(id: UUID())
+        let flight = Flight(id: UUID())
         
         let trip = Trip(
             id: UUID(),
+            flight: .init(to: flight),
             user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
             origin: .init(place),
             destination: .init(place),
