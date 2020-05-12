@@ -7,7 +7,7 @@ public final class MongoDatabase: Database {
         fatalError()
     }
     
-    public func preparedQuery(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func query(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         fatalError()
     }
     
