@@ -110,7 +110,7 @@ struct DatabaseTestController {
         """
         
         print("statement: \(statement)")
-        return self.db.preparedQuery(statement, values: fields.map { $0.value }, on: req.eventLoop)
+        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
             .map { _ in "done" }
     }
     
