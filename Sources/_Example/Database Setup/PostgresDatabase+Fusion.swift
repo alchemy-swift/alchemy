@@ -11,7 +11,7 @@ extension PostgresDatabase: SingletonService {
 private extension PostgresConfig {
     static let postgres = PostgresConfig(
         socket: .ipAddress(host: "127.0.0.1", port: 5432),
-        database: "alchemy",
+        database: "roam",
         username: "josh",
         password: "password"
     )

@@ -87,11 +87,14 @@ struct DatabaseTestController {
     }
     
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
+        let user = User(id: UUID())
+        let place = Place(id: UUID())
+        
         let trip = Trip(
             id: UUID(),
-            userID: UUID(uuidString: "47c50f8f-8940-4b79-866a-7aae0342650a")!,
-            originID: UUID(uuidString: "04ffe341-ce99-4105-87f6-5778d7dc8706")!,
-            destinationID: UUID(uuidString: "5b57ae6b-45e3-4099-ab5b-c8a74ecbc4db")!,
+            user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
+            origin: .init(place),
+            destination: .init(place),
             priceStatus: .lowest,
             dotwStart: .friday,
             dotwEnd: .sunday,

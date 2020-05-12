@@ -1,10 +1,14 @@
 import Foundation
 
 /// A type that can be encoded to & from a `Database`. Likely represents a table in a relational database.
-public protocol DatabaseCodable: Codable, Identifiable {
+public protocol DatabaseCodable: Codable, DatabaseIdentifiable, Table {
     /// How should the swift `CodingKey`s be mapped to database columns? Defaults to `useDefaultKeys`.
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
-    static var tableName: String { get }
+}
+
+public protocol DatabaseIdentifiable: Identifiable {
+    associatedtype Identifier: Codable
+    var id: Self.Identifier { get }
 }
 
 public enum DatabaseKeyMappingStrategy {
