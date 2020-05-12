@@ -8,6 +8,8 @@ extension Model {
     public typealias ManyToMany<To: RelationAllowed> = _ManyToMany<Self, To>
 }
 
+protocol Relationship {}
+
 protocol AnyOneToOne {}
 
 @propertyWrapper

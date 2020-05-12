@@ -22,9 +22,30 @@ extension Model {
             .voided()
     }
     
-//    func delete() -> EventLoopFuture<Void> {
-//
-//    }
+    /// Deletes this model from the database.
+    func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+        let idField = try! self.idField()
+        return db.query("DELETE FROM \(Self.tableName) WHERE \(idField.column)=$1", values: [idField.value],
+                 on: loop)
+            .voided()
+    }
+    
+    func sync() -> EventLoopFuture<Self> {
+        // Refreshes this model from the database.
+        fatalError()
+    }
+}
+
+extension Array where Element: Model {
+    func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+        // Create or update each element in this array.
+        fatalError()
+    }
+    
+    func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+        // Delete all objects in this array.
+        fatalError()
+    }
 }
 
 extension EventLoopFuture {
