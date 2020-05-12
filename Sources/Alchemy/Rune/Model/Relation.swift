@@ -1,3 +1,4 @@
+/// Relationships.
 extension Model {
     public typealias OneToOne<To: RelationAllowed> = _OneToOne<Self, To>
     public typealias OneToMany<To: RelationAllowed> = _OneToMany<Self, To>
@@ -6,7 +7,7 @@ extension Model {
 }
 
 @propertyWrapper
-/// The parent of a one to many.
+/// Either side of a one to one.
 public struct _OneToOne<From: RelationAllowed, To: RelationAllowed>: Codable {
     public var id: To.Value.Identifier?
     
@@ -15,13 +16,14 @@ public struct _OneToOne<From: RelationAllowed, To: RelationAllowed>: Codable {
         set { fatalError() }
     }
     
-    /// Need two inits; one for the parent side, one for the child side.
+    /// Parent init
     public init(to: KeyPath<To, From>) {
         
     }
     
-    public init() {
-        
+    /// Child init
+    public init(to: To.Value) {
+        self.id = to.id
     }
     
     public var projectedValue: Self<From, To> {
@@ -56,12 +58,8 @@ public struct _ManyToOne<Many: RelationAllowed, One: RelationAllowed>: Codable {
         set { fatalError() }
     }
     
-    public init(_ one: One) {
-        
-    }
-    
-    public init() {
-        
+    public init(_ one: One.Value) {
+        self.id = one.id
     }
     
     public var projectedValue: Self<Many, One> {
