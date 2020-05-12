@@ -29,6 +29,15 @@
         }
       },
       {
+        "package": "Echo",
+        "repositoryURL": "https://github.com/Azoy/Echo",
+        "state": {
+          "branch": "master",
+          "revision": "241b2fb38a99159ac71574ae25a8fa93192e362a",
+          "version": null
+        }
+      },
+      {
         "package": "postgres-kit",
         "repositoryURL": "https://github.com/vapor/postgres-kit",
         "state": {

@@ -1,4 +1,5 @@
 import Alchemy
+import Foundation
 import NIO
 
 struct APIServer: Application {
@@ -9,6 +10,8 @@ struct APIServer: Application {
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
+        DB.default = self.postgres
+        
         self.globalMiddlewares
             // Applied to all incoming requests.
             .add(LoggingMiddleware(text: "Received request:"))
@@ -51,15 +54,102 @@ struct APIServer: Application {
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
             }
-            .on(.GET, at: "/db", do: DatabaseTestController().test)
+            .group(path: "/db") {
+                $0.on(.GET, at: "/select", do: DatabaseTestController().select)
+                $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
+                $0.on(.GET, at: "/update", do: DatabaseTestController().update)
+                $0.on(.GET, at: "/delete", do: DatabaseTestController().delete)
+                $0.on(.GET, at: "/join", do: DatabaseTestController().join)
+            }
+    }
+}
+
+struct MiscError: Error {
+    private let message: String
+    
+    init(_ message: String) {
+        self.message = message
     }
 }
 
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) -> EventLoopFuture<String> {
-        db.test(on: req.eventLoop)
+    func select(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
+        let trip = Trip(
+            id: UUID(),
+            userID: UUID(uuidString: "47c50f8f-8940-4b79-866a-7aae0342650a")!,
+            originID: UUID(uuidString: "04ffe341-ce99-4105-87f6-5778d7dc8706")!,
+            destinationID: UUID(uuidString: "5b57ae6b-45e3-4099-ab5b-c8a74ecbc4db")!,
+            priceStatus: .lowest,
+            dotwStart: .friday,
+            dotwEnd: .sunday,
+            additionalWeeks: 0,
+            outboundDepartureRange: nil,
+            outboundDepartureTime: nil
+        )
+        
+        let fields = try trip.fields()
+        let columns = fields.map { $0.column }
+        let values = fields.map { $0.value.sqlString }
+        
+        let statement = """
+        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
+        values (\(values.enumerated().map { index, _ in
+            return "$\(index + 1)"
+        }.joined(separator: ", ")))
+        """
+        
+        print("statement: \(statement)")
+        return self.db.preparedQuery(statement, values: fields.map { $0.value }, on: req.eventLoop)
+            .map { _ in "done" }
+    }
+    
+    func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
     }
 }
 
@@ -68,20 +158,21 @@ struct SampleJSON: Codable {
     let two = "value2"
     let three = "value3"
     let four = 4
+    let date = Date()
 }
 
 struct LoggingMiddleware: Middleware {
     let text: String
     
     func intercept(_ request: HTTPRequest) throws -> Void {
-        print("""
-            \(self.text)
-            METHOD: \(request.method)
-            PATH: \(request.path)
-            HEADERS: \(request.headers)
-            QUERY: \(request.queryItems)
-            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
-            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
-            """)
+//        print("""
+//            \(self.text)
+//            METHOD: \(request.method)
+//            PATH: \(request.path)
+//            HEADERS: \(request.headers)
+//            QUERY: \(request.queryItems)
+//            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
+//            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
+//            """)
     }
 }
