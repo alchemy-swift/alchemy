@@ -1,9 +1,9 @@
 # Alchemy
 
-[Overview](Overview.md)
+[Overview](Docs/Overview.md)
 
-[Features](Features.md)
+[Features](Docs/Features.md)
 
-[Learning](Learning.md)
+[Learning](Docs/Learning.md)
 
-[Tooling](Tooling.md)
+[Tooling](Docs/Tooling.md)
