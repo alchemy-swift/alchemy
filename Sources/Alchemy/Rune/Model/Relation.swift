@@ -1,31 +1,91 @@
-// MARK: - Examples
+extension Model {
+    public typealias OneToOne<To: RelationAllowed> = _OneToOne<Self, To>
+    public typealias OneToMany<To: RelationAllowed> = _OneToMany<Self, To>
+    public typealias ManyToOne<To: RelationAllowed> = _ManyToOne<Self, To>
+    public typealias ManyToMany<To: RelationAllowed> = _ManyToMany<Self, To>
+}
 
-// MARK: - Implementation
-
-extension _Relation {
-    // Alt names: `associated` `related`
-
-    /// Shorthand for if the User doens't want a bunch of relationship properties. Basically an anonymous
-    /// relationship for intermediary ones.
-
-    public func through<T: Model>(table: JunctionTable<From.Value, To.Value>) -> From.Value.Relation<T> {
-        // Filter across the junction table for objects of type T where the id key == `self.id`
-        fatalError()
+@propertyWrapper
+/// The parent of a one to many.
+public struct _OneToOne<From: RelationAllowed, To: RelationAllowed>: Codable {
+    public var id: To.Value.Identifier?
+    
+    public var wrappedValue: To {
+        get { fatalError() }
+        set { fatalError() }
     }
-
-    public func through<T: Model>(table: JunctionTable<To.Value, From.Value>) -> From.Value.Relation<T> {
-        // Filter across the junction table for objects of type T where the id key == `self.id`
-        fatalError()
+    
+    /// Need two inits; one for the parent side, one for the child side.
+    public init(to: KeyPath<To, From>) {
+        
     }
-
-    public func through<T: Model>(theirKey: KeyPath<T, To.Value>) -> From.Value.Relation<T> {
-        // Filter across the T table for objects where `id` == `keyPathValue`
-        fatalError()
+    
+    public init() {
+        
     }
+    
+    public var projectedValue: Self<From, To> {
+        self
+    }
+}
 
-    public func through<T: RelationAllowed>(relation: KeyPath<To, _Relation<To, T>>)
-        -> From.Value.Relation<T.Value>
+@propertyWrapper
+/// The parent of a one to many.
+public struct _OneToMany<One: RelationAllowed, Many: RelationAllowed>: Codable {
+    public var wrappedValue: [Many] {
+        get { fatalError() }
+        set { fatalError() }
+    }
+    
+    public init(to: KeyPath<Many, One>) {
+        
+    }
+    
+    public var projectedValue: Self<One, Many> {
+        self
+    }
+}
+
+@propertyWrapper
+/// The child of a one to many.
+public struct _ManyToOne<Many: RelationAllowed, One: RelationAllowed>: Codable {
+    public var id: One.Value.Identifier?
+    
+    public var wrappedValue: One {
+        get { fatalError() }
+        set { fatalError() }
+    }
+    
+    public init(_ one: One) {
+        
+    }
+    
+    public init() {
+        
+    }
+    
+    public var projectedValue: Self<Many, One> {
+        self
+    }
+}
+
+@propertyWrapper
+/// Either side of a many to many.
+public struct _ManyToMany<From: RelationAllowed, To: RelationAllowed>: Codable {
+    public var wrappedValue: [To] {
+        get { fatalError() }
+        set { fatalError() }
+    }
+    
+    public init<M: Model>(
+        viaModel: M.Type = M.self,
+        from fromKeyPath: KeyPath<M, From.Value>,
+        to toKeyPath: KeyPath<M, To.Value>)
     {
-        fatalError()
+
+    }
+    
+    public var projectedValue: Self<From, To> {
+        self
     }
 }

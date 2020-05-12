@@ -1,14 +1,29 @@
 import Alchemy
 import Foundation
 
-struct Trip: DatabaseCodable {
+struct User: Model, Authable {
+    let id: UUID
+}
+
+struct Place: Model {
+    let id: UUID
+}
+
+struct Trip: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "trips"
     
     let id: UUID
-    let userID: UUID
-    let originID: UUID
-    let destinationID: UUID
+
+    @ManyToOne
+    var user: User
+    
+    @ManyToOne
+    var origin: Place
+    
+    @ManyToOne
+    var destination: Place
+    
     let priceStatus: PriceStatus?
     let dotwStart: DOTW?
     let dotwEnd: DOTW?
