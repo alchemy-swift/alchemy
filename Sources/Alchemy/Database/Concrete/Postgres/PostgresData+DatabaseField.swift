@@ -117,11 +117,9 @@ extension DatabaseField.Value {
             guard let value = value else { return .null }
             return PostgresData(json: value)
         case .string(let value):
-            print("got string")
             guard let value = value else { return .null }
             return PostgresData(string: value)
         case .uuid(let value):
-            print("got uuid")
             guard let value = value else { return .null }
             return PostgresData(uuid: value)
         case .arrayString(let value):

@@ -150,7 +150,7 @@ private struct _DatabaseKeyedEncodingContainer<K: CodingKey> : KeyedEncodingCont
         let keyString = self.encoder.mappingStrategy.map(input: key.stringValue)
         if let theType = try propertyType(of: value) {
             self.encoder.storedProperties.append(DatabaseField(column: keyString, value: theType))
-        } else if value is AnyManyToOne {
+        } else if value is AnyManyToOne || value is AnyOneToOne {
             try value.encode(to: _SingleValueEncoder(column: keyString + "_id", encoder: self.encoder))
         } else {
             try value.encode(to: _SingleValueEncoder(column: keyString, encoder: self.encoder))
