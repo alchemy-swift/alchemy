@@ -104,10 +104,15 @@ struct DatabaseTestController {
         let columns = fields.map { $0.column }
         let values = fields.map { $0.value.sqlString }
         
-        var statement = "insert into \(Trip.tableName) (\(columns.joined(separator: ", "))) values (\(values.joined(separator: ", ")))"
-        print("\(statement)")
+        let statement = """
+        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
+        values (\(values.enumerated().map { index, _ in
+            return "$\(index + 1)"
+        }.joined(separator: ", ")))
+        """
         
-        return self.db.rawQuery(statement, on: req.eventLoop)
+        print("statement: \(statement)")
+        return self.db.preparedQuery(statement, values: fields, on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")

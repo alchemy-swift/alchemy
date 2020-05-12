@@ -1,4 +1,5 @@
 import NIO
+import PostgresNIO
 
 // Not working at the moment, seems like https://github.com/vapor/mysql-nio has some larger updates coming
 // soon.
@@ -9,7 +10,7 @@ public final class MySQLDatabase: Database {
         fatalError()
     }
     
-    public func preparedQuery(_ sql: String, values: [String], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func preparedQuery(_ sql: String, values: [DatabaseField], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         fatalError()
     }
     

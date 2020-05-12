@@ -20,6 +20,6 @@ public struct DatabaseDefault {
 
 public protocol Database {
     func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
-    func preparedQuery(_ sql: String, values: [String], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    func preparedQuery(_ sql: String, values: [DatabaseField], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
     func shutdown()
 }
