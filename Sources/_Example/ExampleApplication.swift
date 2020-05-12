@@ -86,7 +86,7 @@ struct DatabaseTestController {
         }
     }
     
-    func insert(req: HTTPRequest) throws -> EventLoopFuture<Trip> {
+    func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
         let trip = Trip(
             id: UUID(),
             userID: UUID(uuidString: "47c50f8f-8940-4b79-866a-7aae0342650a")!,
@@ -113,17 +113,12 @@ struct DatabaseTestController {
         
         print("statement: \(statement)")
         return self.db.preparedQuery(statement, values: fields.map { $0.value }, on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
+            .map { _ in "done" }
     }
     
     func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")
@@ -134,7 +129,8 @@ struct DatabaseTestController {
     }
     
     func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")
@@ -145,7 +141,8 @@ struct DatabaseTestController {
     }
     
     func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")
