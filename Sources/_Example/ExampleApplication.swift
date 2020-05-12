@@ -99,11 +99,10 @@ struct DatabaseTestController {
         
         let fields = try trip.fields()
         let columns = fields.map { $0.column }
-        let values = fields.map { $0.value.sqlString }
         
         let statement = """
         insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
-        values (\(values.enumerated().map { index, _ in
+        values (\(fields.enumerated().map { index, _ in
             return "$\(index + 1)"
         }.joined(separator: ", ")))
         """

@@ -9,6 +9,12 @@ struct Place: Model {
     let id: UUID
 }
 
+struct TripPlaces: Model {
+    var id: UUID = UUID()
+    var place: Place
+    var trip: Trip
+}
+
 struct Trip: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "trips"
@@ -23,6 +29,9 @@ struct Trip: Model {
     
     @ManyToOne
     var destination: Place
+    
+    @ManyToMany(from: \TripPlaces.trip, to: \.place)
+    var places: [Place]
     
     let priceStatus: PriceStatus?
     let dotwStart: DOTW?
