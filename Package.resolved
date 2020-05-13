@@ -29,15 +29,6 @@
         }
       },
       {
-        "package": "codable-kit",
-        "repositoryURL": "https://github.com/vapor/codable-kit.git",
-        "state": {
-          "branch": "master",
-          "revision": "43eeae0a0b53c0b527363ce282a4255d4d90a68f",
-          "version": null
-        }
-      },
-      {
         "package": "Echo",
         "repositoryURL": "https://github.com/Azoy/Echo",
         "state": {
