@@ -14,6 +14,10 @@ let package = Package(
             name: "Alchemy",
             targets: ["Alchemy"]
         ),
+        .library(
+            name: "Papyrus-iOS",
+            targets: ["Papyrus-iOS"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
@@ -21,8 +25,9 @@ let package = Package(
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.11.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
-        .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.1"),
-        .package(url: "https://github.com/Azoy/Echo", .branch("master"))
+        .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.0"),
+        .package(url: "https://github.com/Azoy/Echo", .branch("master")),
+        .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0")
     ],
     targets: [
         .target(
@@ -41,6 +46,10 @@ let package = Package(
         .target(
             name: "_Example",
             dependencies: ["Alchemy"]
+        ),
+        .target(
+            name: "Papyrus-iOS",
+            dependencies: ["Alchemy", "Alamofire"]
         ),
         .testTarget(
             name: "AlchemyTests",
