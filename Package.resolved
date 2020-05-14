@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/vapor/postgres-kit",
         "state": {
           "branch": null,
-          "revision": "e43a32baec80ebbcfed4d0330d0be50eb73434c7",
-          "version": "2.0.1"
+          "revision": "152f69bfc0d767d29c9be427cd60169f9f62c8bd",
+          "version": "2.0.0"
         }
       },
       {
