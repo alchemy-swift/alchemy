@@ -1,3 +1,4 @@
+import Foundation
 import NIO
 import NIOHTTP1
 
@@ -11,6 +12,12 @@ public struct HTTPRequest {
     /// The headers are also found in the head, and they are often used to describe the body as well
     public let head: HTTPRequestHead
     
+    /// The url components of this request.
+    public let components: URLComponents?
+    
+    /// The any parameters inside the path.
+    public var pathParameters: [PathParameter] = []
+    
     /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
     var bodyBuffer: ByteBuffer?
     
@@ -19,9 +26,37 @@ public struct HTTPRequest {
         self.eventLoop = eventLoop
         self.head = head
         self.bodyBuffer = bodyBuffer
+        self.components = URLComponents(string: head.uri)
+    }
+}
+
+extension HTTPRequest {
+    /// The HTTPMethod of the request.
+    public var method: HTTPMethod {
+        self.head.method
     }
     
-    /// The body is a wrapped used to provide simpler access to body data like JSON
+    /// The path of the request. Does not include the query string.
+    public var path: String {
+        self.components?.path ?? ""
+    }
+    
+    /// Any headers associated with the request.
+    public var headers: HTTPHeaders {
+        self.head.headers
+    }
+    
+    /// Any query items parsed from the URL. These are not percent encoded.
+    public var queryItems: [URLQueryItem] {
+        self.components?.queryItems ?? []
+    }
+    
+    /// Returns the first `PathParameter` for the given key, if there is one.
+    public func pathParameter(named key: String) -> PathParameter? {
+        self.pathParameters.first(where: { $0.parameter == "key" })
+    }
+    
+    /// The body is a wrapper used to provide simpler access to body data like JSON.
     public var body: HTTPBody? {
         guard let bodyBuffer = bodyBuffer else {
             return nil

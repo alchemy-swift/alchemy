@@ -1,4 +1,5 @@
 import Alchemy
+import Foundation
 import NIO
 
 struct APIServer: Application {
@@ -9,6 +10,8 @@ struct APIServer: Application {
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
+        DB.default = self.postgres
+        
         self.globalMiddlewares
             // Applied to all incoming requests.
             .add(LoggingMiddleware(text: "Received request:"))
@@ -50,63 +53,124 @@ struct APIServer: Application {
                     .on(.DELETE, do: friends.remove)
                     // `POST /friends/message`
                     .on(.POST, at: "/message", do: friends.message)
-        }
-        .on(.GET, at: "/db", do: DatabaseTestController().test)
+            }
+            .group(path: "/db") {
+                $0.on(.GET, at: "/select", do: DatabaseTestController().select)
+                $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
+                $0.on(.GET, at: "/update", do: DatabaseTestController().update)
+                $0.on(.GET, at: "/delete", do: DatabaseTestController().delete)
+                $0.on(.GET, at: "/join", do: DatabaseTestController().join)
+            }
+    }
+}
+
+struct MiscError: Error {
+    private let message: String
+    
+    init(_ message: String) {
+        self.message = message
     }
 }
 
 struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
-    func test(req: HTTPRequest) throws -> Void {
-        //        db.test(on: req.eventLoop)
-        let query = db.query()
-            .from(table: "users")
-            .select(["first_name", "last_name"])
-            .where("first_name" ~= "Chris%")
-            .where {
-                $0.where("last_name" == "Anderson")
-                    .orWhere("last_name" == "Wright")
-            }
-            .where {
-                $0.where("age" < 30)
-                    .orWhere("age" > 50)
-            }
-            .orderBy(column: "first_name")
-            .orderBy(column: "age", direction: .asc)
-            .forPage(page: 1, perPage: 25)
-            .toSQL()
-            print(query)
-
-        let query2 = try? db.query()
-            .from(table: "users")
-            .insert(values: [
-                ["first_name": "Paul"],
-                ["first_name": "Jane"],
-                ["first_name": "Clementine"]
-            ])
-        print(query2 ?? "failed")
-
-        let query3 = try? db.query()
-            .from(table: "flights")
-            .where("id" == 10)
-            .update(values: [ "departed": true ])
-        print(query3 ?? "failed")
-
+    func select(req: HTTPRequest) -> EventLoopFuture<[Trip]> {
+        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { try $0.map { try $0.decode(Trip.self) } }
+    }
+    
+    func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
+        let user = User(id: UUID())
+        let place = Place(id: UUID())
+        let flight = Flight(id: UUID())
+        
+        let trip = Trip(
+            id: UUID(),
+            flight: .init(to: flight),
+            user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
+            origin: .init(place),
+            destination: .init(place),
+            priceStatus: .lowest,
+            dotwStart: .friday,
+            dotwEnd: .sunday,
+            additionalWeeks: 0,
+            outboundDepartureRange: nil,
+            outboundDepartureTime: nil
+        )
+        
+        let fields = try trip.fields()
+        let columns = fields.map { $0.column }
+        
+        let statement = """
+        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
+        values (\(fields.enumerated().map { index, _ in
+            return "$\(index + 1)"
+        }.joined(separator: ", ")))
+        """
+        
+        print("statement: \(statement)")
+        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
+            .map { _ in "done" }
+    }
+    
+    func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
+    }
+    
+    func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
+        fatalError("TODO")
+        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+            .flatMapThrowing { rows in
+                guard let firstRow = rows.first else {
+                    throw MiscError("No rows found.")
+                }
+                
+                return try firstRow.decode(Trip.self)
+        }
     }
 }
 
-struct SampleJSON: Encodable {
+struct SampleJSON: Codable {
     let one = "value1"
     let two = "value2"
     let three = "value3"
     let four = 4
+    let date = Date()
 }
 
 struct LoggingMiddleware: Middleware {
     let text: String
     
     func intercept(_ request: HTTPRequest) throws -> Void {
-        print("\(self.text) '\(request.head.method.rawValue) \(request.head.uri)'")
+//        print("""
+//            \(self.text)
+//            METHOD: \(request.method)
+//            PATH: \(request.path)
+//            HEADERS: \(request.headers)
+//            QUERY: \(request.queryItems)
+//            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
+//            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
+//            """)
     }
 }
