@@ -19,7 +19,8 @@ public struct DatabaseDefault {
 }
 
 public protocol Database {
+    var grammar: Grammar { get }
     func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
-    func query(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    func query(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
     func shutdown()
 }

@@ -10,7 +10,7 @@ public enum WhereBoolean: String {
 public struct WhereValue {
     let key: String
     let op: Operator
-    let value: Parameter
+    let value: DatabaseValue
     var boolean: WhereBoolean = .and
 }
 
@@ -61,7 +61,7 @@ public struct WhereIn {
     }
 
     let key: String
-    let values: [Parameter]
+    let values: [DatabaseValue]
     let type: InType
     var boolean: WhereBoolean = .and
 }
@@ -76,7 +76,7 @@ extension WhereIn: WhereClause {
 
 public struct WhereRaw {
     let query: String
-    let values: [Parameter]
+    let values: [DatabaseValue]
     var boolean: WhereBoolean = .and
 }
 

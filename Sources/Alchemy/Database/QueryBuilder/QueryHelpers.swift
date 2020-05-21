@@ -11,8 +11,8 @@ class QueryHelpers {
         return value
     }
 
-    static func groupSQL(values: [Sequelizable]) -> ([String], [Parameter]) {
-        return values.reduce(([String](), [Parameter]())) {
+    static func groupSQL(values: [Sequelizable]) -> ([String], [DatabaseValue]) {
+        return values.reduce(([String](), [DatabaseValue]())) {
             var parts = $0
             let sql = $1.toSQL()
             parts.0.append(sql.query)

@@ -76,7 +76,13 @@ struct DatabaseTestController {
     @Inject var db: PostgresDatabase
     
     func select(req: HTTPRequest) -> EventLoopFuture<[Trip]> {
-        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        return Trip.query(database: self.db)
+            .where("max_stops" == 1)
+            .where {
+                $0.where("departure" == "ORD")
+                .orWhere("departure" == "MDW")
+            }
+            .get()
             .flatMapThrowing { try $0.map { try $0.decode(Trip.self) } }
     }
     
@@ -116,6 +122,12 @@ struct DatabaseTestController {
     
     func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
         fatalError("TODO")
+
+        try? Trip.query(database: self.db)
+            .where("max_stops" == 1)
+            .update(values: [ "last_checked_for_deals": Date() ])
+
+
         return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {

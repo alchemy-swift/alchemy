@@ -1,6 +1,6 @@
 import Foundation
 
-class Grammar {
+public class Grammar {
 
     enum GrammarError: Error {
         case missingTable
@@ -41,7 +41,7 @@ class Grammar {
 
     private func compileComponents(query: Query) -> SQL {
         var sql: [String] = []
-        var bindings: [Parameter] = []
+        var bindings: [DatabaseValue] = []
         for component in selectComponents {
             // To compile the query, well spin through each component of the query and
             // see if that component exists. If it does we"ll just call the compiler
@@ -88,7 +88,7 @@ class Grammar {
     }
 
     func compileJoins(_ query: Query, joins: [JoinClause]) -> SQL {
-        var bindings: [Parameter] = []
+        var bindings: [DatabaseValue] = []
         let query = joins.map { join in
             let whereSQL = compileWheres(join).bind(&bindings)
             if let nestedJoins = join.joins {
@@ -163,23 +163,41 @@ class Grammar {
 
     func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
-        var bindings: [Parameter] = []
-        let columns = compileUpdateColumns(query, values: values)
+        var bindings: [DatabaseValue] = []
+        let columnSQL = compileUpdateColumns(query, values: values)
 
         var base = "update \(table)"
         if let clauses = query.joins {
             let joinSQL = compileJoins(query, joins: clauses).bind(&bindings)
             base += " \(joinSQL)"
         }
-        bindings += values.values
+        bindings += columnSQL.bindings
         let whereSQL = compileWheres(query).bind(&bindings)
-        return SQL("\(base) set \(columns) \(whereSQL.query)", bindings: bindings)
+        return SQL("\(base) set \(columnSQL.query) \(whereSQL.query)", bindings: bindings)
     }
 
-    func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> String {
-        return values.map { "\($0) = \(parameter($1))" }.joined(separator: ", ")
+    func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> SQL {
+        var bindings: [DatabaseValue] = []
+        var parts: [String] = []
+        for value in values {
+            if let expression = value.value as? Expression {
+                parts.append("\(value.key) = \(expression.description)")
+            }
+            else {
+                bindings.append(value.value.value)
+                parts.append("\(value.key) = ?")
+            }
+        }
+
+        return SQL(parts.joined(separator: ", "), bindings: bindings)
     }
 
+
+    func compileDelete(_ query: Query) throws -> SQL {
+        guard let table = query.from else { throw GrammarError.missingTable }
+        let whereSQL = compileWheres(query)
+        return SQL("delete from \(table) \(whereSQL.query)", bindings: whereSQL.bindings)
+    }
 
 
 
@@ -189,7 +207,10 @@ class Grammar {
     }
 
     private func parameter(_ value: Parameter) -> String {
-        return value is Expression ? value.description : "?"
+        if let value = value as? Expression {
+            return value.description
+        }
+        return "?"
     }
 
     private func trim(_ value: String) -> String {

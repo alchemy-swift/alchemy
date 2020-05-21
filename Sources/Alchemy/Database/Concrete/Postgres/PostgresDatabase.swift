@@ -6,6 +6,8 @@ public final class PostgresDatabase: Database {
     
     private let config: PostgresConfig
     private let pool: ConnectionPool
+
+    public let grammar = Grammar()
     
     public init(config: PostgresConfig, eventLoopGroup: EventLoopGroup) {
         //  Initialize the pool.
@@ -44,7 +46,7 @@ public final class PostgresDatabase: Database {
             .map { $0 }
     }
     
-    public func query(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func query(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(sql, values.map { $0.toPostgresData() })
                 .map { $0.rows }

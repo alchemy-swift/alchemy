@@ -206,7 +206,7 @@ fileprivate struct _DatabaseEncodingContainer: UnkeyedEncodingContainer, SingleV
 
 }
 
-private func propertyType<E: Encodable>(of value: E) throws -> DatabaseField.Value? {
+private func propertyType<E: Encodable>(of value: E) throws -> DatabaseValue? {
     if let value = value as? UUID {
         return .uuid(value)
     } else if let value = value as? Date {

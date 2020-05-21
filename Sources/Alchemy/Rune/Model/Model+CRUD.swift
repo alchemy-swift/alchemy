@@ -4,7 +4,8 @@ extension Model {
     static func all(db: Database = DB.default, loop: EventLoop = Loop.current)
         -> EventLoopFuture<[Self]>
     {
-        db.rawQuery("SELECT * FROM \(Self.tableName)", on: loop)
+        self.query(database: db)
+            .get(on: loop)
             .flatMapEachThrowing { try $0.decode(Self.self) }
     }
     
@@ -23,10 +24,11 @@ extension Model {
     }
     
     /// Deletes this model from the database.
-    func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+    func delete(db: Database = DB.default, loop: EventLoop = Loop.current) throws -> EventLoopFuture<Void> {
         let idField = try! self.idField()
-        return db.query("DELETE FROM \(Self.tableName) WHERE \(idField.column)=$1", values: [idField.value],
-                 on: loop)
+        return try Self.query(database: db)
+            .where(idField.column == idField.date())
+            .delete(on: loop)
             .voided()
     }
     
@@ -59,8 +61,8 @@ struct RuneError: Error {
 }
 
 /// Can't call static properties from a protocol so this is used for getting the current event loop.
-struct Loop {
-    static var current: EventLoop {
+public struct Loop {
+    public static var current: EventLoop {
         guard let current = MultiThreadedEventLoopGroup.currentEventLoop else {
             fatalError("Unable to find an event loop associated with this thread. Try passing it in manually.")
         }

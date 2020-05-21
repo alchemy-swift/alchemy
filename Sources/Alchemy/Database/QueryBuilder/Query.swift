@@ -1,4 +1,5 @@
 import Foundation
+import NIO
 
 public class Query {
 
@@ -49,10 +50,6 @@ public class Query {
     //
     //    }
 
-    public func from(table: ModelTable) -> Query {
-        return from(table: table.name)
-    }
-
     public func from(table: String, as alias: String? = nil) -> Query {
 
         //TODO: Something about subquery
@@ -88,7 +85,12 @@ public class Query {
         type: WhereIn.InType = .in,
         boolean: WhereBoolean = .and
     ) -> Query {
-        self.wheres.append(WhereIn(key: key, values: values, type: type, boolean: boolean))
+        self.wheres.append(WhereIn(
+            key: key,
+            values: values.map { $0.value },
+            type: type,
+            boolean: boolean)
+        )
         return self
     }
 
@@ -125,7 +127,11 @@ public class Query {
     }
 
     public func whereRaw(sql: String, bindings: [Parameter], boolean: WhereBoolean = .and) -> Query {
-        self.wheres.append(WhereRaw(query: sql, values: bindings, boolean: boolean))
+        self.wheres.append(WhereRaw(
+            query: sql,
+            values: bindings.map { $0.value },
+            boolean: boolean)
+        )
         return self
     }
 
@@ -179,63 +185,49 @@ public class Query {
         return offset((page - 1) * perPage).limit(perPage)
     }
 
-//    public func get($columns = ["*"])
-//    {
-//        return collect($this->onceWithColumns(Arr::wrap($columns), function () {
-//            return $this->processor->processSelect($this, $this->runSelect());
-//        }));
-//    }
-    //
-//    func first(_ columns: [String]) {
-//
-//    }
-    //
-    //    private func onceWithColumns($columns, $callback)
-    //    {
-    //        let original = self.columns
-    //        if original.isEmpty {
-    //            self.columns = columns
-    //        }
-    //
-    //        let result =
-    //
-    //        if (is_null($original)) {
-    //            $this->columns = $columns;
-    //        }
-    //
-    //        $result = $callback();
-    //
-    //        $this->columns = $original;
-    //
-    //        return $result;
-    //    }
+    public func get(_ columns: [Any] = ["*"], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+        let sql = database.grammar.compileSelect(query: self)
+        return self.database.query(sql.query, values: sql.bindings, on: loop)
+    }
 
+    public func first(_ columns: [Any] = ["*"], on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
+        return self.limit(1)
+            .get(columns, on: loop)
+            .flatMapThrowing { $0.first }
+    }
 
-    // Query for a single record by ID
-    //    func find(id: Identifier, columns = ["*"]) -> Builder {
-    //        return `where`(column: "id", operator: <#T##<<error type>>#>, value: <#T##String#>)
-    //    }
+    public func find(field: DatabaseField, columns: [Any] = ["*"], on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
+        self.wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
+        return self.limit(1)
+            .get(columns, on: loop)
+            .flatMapThrowing { $0.first }
+    }
 
-    //    get(columns = ["*"])
+    //
     //    paginate(perPage, columns, page)
     //    count()
     //    exists()
     //
-    public func insert(value: [String: Parameter]) throws -> SQL {
+
+    public func insert(value: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
         return try insert(values: [value])
     }
 
-    public func insert(values: [[String: Parameter]]) throws -> SQL {
-        if values.isEmpty { return SQL() }
-
-        return try database.grammar.compileInsert(self, values: values)
+    public func insert(values: [[String: Parameter]], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
+        let sql = try database.grammar.compileInsert(self, values: values)
+        return self.database.query(sql.query, values: sql.bindings, on: loop)
     }
 
-    public func update(values: [String: Parameter]) throws -> SQL {
-        return try database.grammar.compileUpdate(self, values: values)
+    public func update(values: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
+        let sql = try database.grammar.compileUpdate(self, values: values)
+        return self.database.query(sql.query, values: sql.bindings, on: loop)
     }
 
-    //    update(values)
+    public func delete(on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
+        let sql = try database.grammar.compileDelete(self)
+        return self.database.query(sql.query, values: sql.bindings, on: loop)
+    }
+
     //    updateOrInsert()
     //    delete(id = null)
 }
@@ -243,30 +235,30 @@ public class Query {
 
 extension String {
     public static func ==(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .equals, value: rhs)
+        return WhereValue(key: lhs, op: .equals, value: rhs.value)
     }
 
     public static func !=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .notEqualTo, value: rhs)
+        return WhereValue(key: lhs, op: .notEqualTo, value: rhs.value)
     }
 
     public static func <(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .lessThan, value: rhs)
+        return WhereValue(key: lhs, op: .lessThan, value: rhs.value)
     }
 
     public static func >(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .greaterThan, value: rhs)
+        return WhereValue(key: lhs, op: .greaterThan, value: rhs.value)
     }
 
     public static func <=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .lessThanOrEqualTo, value: rhs)
+        return WhereValue(key: lhs, op: .lessThanOrEqualTo, value: rhs.value)
     }
 
     public static func >=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .greaterThanOrEqualTo, value: rhs)
+        return WhereValue(key: lhs, op: .greaterThanOrEqualTo, value: rhs.value)
     }
 
     public static func ~=(lhs: String, rhs: Parameter) -> WhereValue {
-        return WhereValue(key: lhs, op: .like, value: rhs)
+        return WhereValue(key: lhs, op: .like, value: rhs.value)
     }
 }

@@ -1,9 +1,14 @@
 import Foundation
 
 struct Expression: Parameter {
-    let value: CustomStringConvertible
+    private var _value: String
+    public var value: DatabaseValue { .string(_value) }
 
-    init(_ value: CustomStringConvertible) {
-        self.value = value
+    init(_ value: String) {
+        self._value = value
     }
+}
+
+extension Expression: CustomStringConvertible {
+    var description: String { return self._value }
 }
