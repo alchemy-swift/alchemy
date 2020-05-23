@@ -6,85 +6,33 @@ public class Grammar {
         case missingTable
     }
 
-    private let selectComponents: [AnyKeyPath] = [
-        \Query.columns,
-        \Query.from,
-        \Query.joins,
-        \Query.wheres,
-        \Query.groups,
-        \Query.havings,
-        \Query.orders,
-        \Query.limit,
-        \Query.offset
-    ]
+    func compileSelect(query: Query) throws -> SQL {
 
-    func compileSelect(query: Query) -> SQL {
+        var parts: [SQL] = [
+            compileColumns(query, columns: query.columns),
+            try compileFrom(query, table: query.from)
+        ]
+        if let joins = query.joins {
+            parts += compileJoins(query, joins: joins)
+        }
+        parts += compileWheres(query)
 
-        // If the query does not have any columns set, we'll set the columns to the
-        // * character to just get all of the columns from the database. Then we
-        // can build the query and concatenate all the pieces together as one.
-        let original = query.columns
+        if !query.groups.isEmpty {
+            parts += compileGroups(query, groups: query.groups)
+        }
+        parts += compileHavings(query)
 
-        if query.columns == nil {
-            query.columns = [SQL("*")]
+        if !query.orders.isEmpty {
+            parts += compileOrders(query, orders: query.orders)
+        }
+        if let limit = query.limit {
+            parts += compileLimit(query, limit: limit)
+        }
+        if let offset = query.offset {
+            parts += compileOffset(query, offset: offset)
         }
 
-        // To compile the query, we'll spin through each component of the query and
-        // see if that component exists. If it does we'll just call the compiler
-        // function for the component which is responsible for making the SQL.
-        let sql = compileComponents(query: query)
-
-        query.columns = original
-
-        return sql
-    }
-
-    private func compileComponents(query: Query) -> SQL {
-        var sql: [String] = []
-        var bindings: [DatabaseValue] = []
-
-        for component in selectComponents {
-            if let part = query[keyPath: component] {
-                if component == \Query.columns,
-                    let columns = part as? [Raw] {
-                    compileColumns(query, columns: columns)
-                        .bind(queries: &sql, bindings: &bindings)
-                }
-                else if component == \Query.from,
-                    let table = part as? String {
-                    sql.append(compileFrom(query, table: table))
-                }
-                else if component == \Query.joins,
-                    let joins = part as? [JoinClause] {
-                    compileJoins(query, joins: joins)
-                        .bind(queries: &sql, bindings: &bindings)
-                }
-                else if component == \Query.wheres {
-                    compileWheres(query)
-                        .bind(queries: &sql, bindings: &bindings)
-                }
-                else if component == \Query.groups,
-                    let groups = part as? [String],
-                    !groups.isEmpty {
-                    sql.append(compileGroups(query, groups: groups))
-                }
-                else if component == \Query.havings {
-                    compileHavings(query)
-                        .bind(queries: &sql, bindings: &bindings)
-                }
-                else if component == \Query.orders,
-                    let orders = part as? [OrderClause],
-                    !orders.isEmpty {
-                    sql.append(compileOrders(query, orders: orders))
-                }
-                else if component == \Query.limit, let limit = part as? Int {
-                    sql.append(compileLimit(query, limit: limit))
-                }
-                else if component == \Query.offset, let offset = part as? Int {
-                    sql.append(compileOffset(query, offset: offset))
-                }
-            }
-        }
+        let (sql, bindings) = QueryHelpers.groupSQL(values: parts)
         return SQL(sql.joined(separator: " "), bindings: bindings)
     }
 
@@ -94,8 +42,9 @@ public class Grammar {
         return SQL("\(select) \(sql.joined(separator: ", "))", bindings: bindings)
     }
 
-    private func compileFrom(_ query: Query, table: String) -> String {
-        return "from \(table)"
+    private func compileFrom(_ query: Query, table: String?) throws -> SQL {
+        guard let table = table else { throw GrammarError.missingTable }
+        return SQL("from \(table)")
     }
 
     func compileJoins(_ query: Query, joins: [JoinClause]) -> SQL {
@@ -131,8 +80,8 @@ public class Grammar {
     }
 
 
-    func compileGroups(_ query: Query, groups: [String]) -> String {
-        return "group by \(groups.joined(separator: ", "))"
+    func compileGroups(_ query: Query, groups: [String]) -> SQL {
+        return SQL("group by \(groups.joined(separator: ", "))")
     }
 
     func compileHavings(_ query: Query) -> SQL {
@@ -146,17 +95,17 @@ public class Grammar {
         return SQL()
     }
 
-    func compileOrders(_ query: Query, orders: [OrderClause]) -> String {
+    func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL {
         let ordersSQL = orders.map { $0.toSQL().query }.joined(separator: ", ")
-        return "order by \(ordersSQL)"
+        return SQL("order by \(ordersSQL)")
     }
 
-    func compileLimit(_ query: Query, limit: Int) -> String {
-        return "limit \(limit)"
+    func compileLimit(_ query: Query, limit: Int) -> SQL {
+        return SQL("limit \(limit)")
     }
 
-    func compileOffset(_ query: Query, offset: Int) -> String {
-        return "offset \(offset)"
+    func compileOffset(_ query: Query, offset: Int) -> SQL {
+        return SQL("offset \(offset)")
     }
 
     func compileInsert(_ query: Query, values: [KeyValuePairs<String, Parameter>]) throws -> SQL {

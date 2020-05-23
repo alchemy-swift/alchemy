@@ -23,10 +23,10 @@ extension Model {
     }
     
     /// Deletes this model from the database.
-    func delete(db: Database = DB.default, loop: EventLoop = Loop.current) throws -> EventLoopFuture<Void> {
+    func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
         let idField = try! self.idField()
-        return try Self.query(database: db)
-            .where(idField.column == idField.date())
+        return Self.query(database: db)
+            .where(WhereValue(key: idField.column, op: .equals, value: idField.value))
             .delete(on: loop)
             .voided()
     }
