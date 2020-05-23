@@ -4,13 +4,12 @@ import NIO
 
 struct APIServer: Application {
     @Inject var postgres: PostgresDatabase
-    @Inject(.one) var mySQL1: MySQLDatabase
-    @Inject(.two) var mySQL2: MySQLDatabase
+    @Inject var mySQL1: MySQLDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
-        DB.default = self.postgres
+        DB.default = self.mySQL1
         
         self.globalMiddlewares
             // Applied to all incoming requests.
@@ -73,59 +72,70 @@ struct MiscError: Error {
 }
 
 struct DatabaseTestController {
-    @Inject var db: PostgresDatabase
+    @Inject var db: MySQLDatabase
     
-    func select(req: HTTPRequest) -> EventLoopFuture<[Trip]> {
-        return Trip.query(database: self.db)
-            .where("max_stops" == 1)
-            .where {
-                $0.where("departure" == "ORD")
-                .orWhere("departure" == "MDW")
-            }
+    func select(req: HTTPRequest) -> EventLoopFuture<[Rental]> {
+        return Rental.query()
+            .where("price" < 150.5)
+            .where("num_beds" > 1)
             .get()
-            .flatMapThrowing { try $0.map { try $0.decode(Trip.self) } }
     }
     
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
-        let user = User(id: UUID())
-        let place = Place(id: UUID())
-        let flight = Flight(id: UUID())
-        
-        let trip = Trip(
-            id: UUID(),
-            flight: .init(to: flight),
-            user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
-            origin: .init(place),
-            destination: .init(place),
-            priceStatus: .lowest,
-            dotwStart: .friday,
-            dotwEnd: .sunday,
-            additionalWeeks: 0,
-            outboundDepartureRange: nil,
-            outboundDepartureTime: nil
-        )
-        
-        let fields = try trip.fields()
-        let columns = fields.map { $0.column }
-        
-        let statement = """
-        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
-        values (\(fields.enumerated().map { index, _ in
-            return "$\(index + 1)"
-        }.joined(separator: ", ")))
-        """
-        
-        print("statement: \(statement)")
-        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
+//        let user = User(id: UUID())
+//        let place = Place(id: UUID())
+//        let flight = Flight(id: UUID())
+//
+//        let trip = Trip(
+//            id: UUID(),
+//            flight: .init(to: flight),
+//            user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
+//            origin: .init(place),
+//            destination: .init(place),
+//            priceStatus: .lowest,
+//            dotwStart: .friday,
+//            dotwEnd: .sunday,
+//            additionalWeeks: 0,
+//            outboundDepartureRange: nil,
+//            outboundDepartureTime: nil
+//        )
+//
+//        let fields = try trip.fields()
+//        let columns = fields.map { $0.column }
+//
+//        let statement = """
+//        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
+//        values (\(fields.enumerated().map { index, _ in
+//            return "$\(index + 1)"
+//        }.joined(separator: ", ")))
+//        """
+
+        return Rental.query(database: self.db)
+            .insert([
+                [
+                    "price": 220,
+                    "num_beds": 1,
+                    "location": "NYC"
+                ],
+                [
+                    "price": 100,
+                    "num_beds": 7,
+                    "location": "Dallas"
+                ]
+            ])
             .map { _ in "done" }
+        
+//        print("statement: \(statement)")
+//        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
+//            .map { _ in "done" }
     }
     
     func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
         fatalError("TODO")
 
-        try? Trip.query(database: self.db)
-            .where("max_stops" == 1)
-            .update(values: [ "last_checked_for_deals": Date() ])
+//        try Trip.query(database: self.db)
+//            .where("max_stops" == 1)
+//            .update(values: [ "last_checked_for_deals": Date() ])
 
 
         return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)

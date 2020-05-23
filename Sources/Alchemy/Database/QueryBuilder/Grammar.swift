@@ -149,16 +149,26 @@ public class Grammar {
 
 
 
-    func compileInsert(_ query: Query, values: [[String: Parameter]]) throws -> SQL {
+    func compileInsert(_ query: Query, values: [KeyValuePairs<String, Parameter>]) throws -> SQL {
+        
         guard let table = query.from else { throw GrammarError.missingTable }
 
         if values.isEmpty {
             return SQL("insert into \(table) default values")
         }
 
-        let columns = values[0].keys.joined(separator: ", ")
-        let parameters = values.map { "(" + parameterize(Array($0.values)) + ")" }.joined(separator: ", ")
-        return SQL("insert into \(table) (\(columns)) values (\(parameters))")
+        let columns = values[0].map { $0.key }.joined(separator: ", ")
+        var parameters: [DatabaseValue] = []
+        var placeholders: [String] = []
+
+        for value in values {
+            parameters.append(contentsOf: value.map { $0.value.value })
+            placeholders.append("(\(parameterize(value.map { $0.value })))")
+        }
+        return SQL(
+            "insert into \(table) (\(columns)) values \(placeholders.joined(separator: ", "))",
+            bindings: parameters
+        )
     }
 
     func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {
@@ -173,7 +183,10 @@ public class Grammar {
         }
         bindings += columnSQL.bindings
         let whereSQL = compileWheres(query).bind(&bindings)
-        return SQL("\(base) set \(columnSQL.query) \(whereSQL.query)", bindings: bindings)
+        return SQL(
+            "\(base) set \(columnSQL.query) \(whereSQL.query)",
+            bindings: bindings
+        )
     }
 
     func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> SQL {

@@ -43,6 +43,8 @@ public struct HTTPBody: ExpressibleByStringLiteral {
         if pretty {
             encoder.outputFormatting = .prettyPrinted
         }
+
+        encoder.dateEncodingStrategy = .iso8601
         
         let data = try encoder.encode(json)
         

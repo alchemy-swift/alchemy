@@ -38,6 +38,24 @@
         }
       },
       {
+        "package": "mysql-kit",
+        "repositoryURL": "https://github.com/vapor/mysql-kit",
+        "state": {
+          "branch": null,
+          "revision": "b59a08d77c3830b21f35fe744813640ef56a2ebb",
+          "version": "4.0.0-rc.1.6"
+        }
+      },
+      {
+        "package": "mysql-nio",
+        "repositoryURL": "https://github.com/vapor/mysql-nio.git",
+        "state": {
+          "branch": null,
+          "revision": "6a9235582076122badc5428c8d5b6c41f9e40e1a",
+          "version": "1.0.0-rc.2.2"
+        }
+      },
+      {
         "package": "postgres-kit",
         "repositoryURL": "https://github.com/vapor/postgres-kit",
         "state": {

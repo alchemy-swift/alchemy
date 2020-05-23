@@ -13,7 +13,7 @@ public class Query {
     private(set) var havings: [Any] = []
     private(set) var orders: [OrderClause] = []
     private(set) var limit: Int? = nil
-    private(set) var offset: Int = 0
+    private(set) var offset: Int? = nil
 
     public var distinct = false
 
@@ -29,7 +29,7 @@ public class Query {
         return false
     }
 
-    public func select(_ columns: [Any] = ["*"]) -> Query {
+    public func select(_ columns: [Any] = ["*"]) -> Self {
 
         self.columns = []
         for column in columns {
@@ -50,7 +50,7 @@ public class Query {
     //
     //    }
 
-    public func from(table: String, as alias: String? = nil) -> Query {
+    public func from(table: String, as alias: String? = nil) -> Self {
 
         //TODO: Something about subquery
 
@@ -67,12 +67,12 @@ public class Query {
     //    rightJoin(table, first, operator, second)
     //    crossJoin(table, first, operator, second)
 
-    public func `where`(_ clause: WhereValue) -> Query {
+    public func `where`(_ clause: WhereValue) -> Self {
         self.wheres.append(clause)
         return self
     }
 
-    public func orWhere(_ clause: WhereValue) -> Query {
+    public func orWhere(_ clause: WhereValue) -> Self {
         var clause = clause
         clause.boolean = .or
         self.wheres.append(clause)
@@ -84,7 +84,7 @@ public class Query {
         in values: [Parameter],
         type: WhereIn.InType = .in,
         boolean: WhereBoolean = .and
-    ) -> Query {
+    ) -> Self {
         self.wheres.append(WhereIn(
             key: key,
             values: values.map { $0.value },
@@ -94,7 +94,7 @@ public class Query {
         return self
     }
 
-    public func orWhere(key: String, in values: [Parameter], type: WhereIn.InType = .in) -> Query {
+    public func orWhere(key: String, in values: [Parameter], type: WhereIn.InType = .in) -> Self {
         return self.where(
             key: key,
             in: values,
@@ -103,7 +103,7 @@ public class Query {
         )
     }
 
-    public func `where`(_ closure: @escaping WhereNestedClosure, boolean: WhereBoolean = .and) -> Query {
+    public func `where`(_ closure: @escaping WhereNestedClosure, boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(
             WhereNested(
                 database: database,
@@ -114,19 +114,19 @@ public class Query {
         return self
     }
 
-    public func orWhere(_ closure: @escaping WhereNestedClosure) -> Query {
+    public func orWhere(_ closure: @escaping WhereNestedClosure) -> Self {
         return self.where(closure, boolean: .or)
     }
 
-    public func whereNot(key: String, in values: [Parameter], boolean: WhereBoolean = .and) -> Query {
+    public func whereNot(key: String, in values: [Parameter], boolean: WhereBoolean = .and) -> Self {
         return self.where(key: key, in: values, type: .notIn, boolean: boolean)
     }
 
-    public func orWhereNot(key: String, in values: [Parameter]) -> Query {
+    public func orWhereNot(key: String, in values: [Parameter]) -> Self {
         return self.where(key: key, in: values, type: .notIn, boolean: .or)
     }
 
-    public func whereRaw(sql: String, bindings: [Parameter], boolean: WhereBoolean = .and) -> Query {
+    public func whereRaw(sql: String, bindings: [Parameter], boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereRaw(
             query: sql,
             values: bindings.map { $0.value },
@@ -135,12 +135,12 @@ public class Query {
         return self
     }
 
-    public func orWhereRaw(sql: String, bindings: [Parameter]) -> Query {
+    public func orWhereRaw(sql: String, bindings: [Parameter]) -> Self {
         return self.whereRaw(sql: sql, bindings: bindings, boolean: .or)
     }
 
     @discardableResult
-    public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Query {
+    public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereColumn(first: first, op: op, second: Expression(second), boolean: boolean))
         return self
     }
@@ -151,29 +151,29 @@ public class Query {
     //    having(column, operator, value, boolean = "and")
     //    orHaving(column, operator, value) = having(column, operator, value, "or")
 
-    public func groupBy(_ group: String) -> Query {
+    public func groupBy(_ group: String) -> Self {
         self.groups.append(group)
         return self
     }
 
-    public func orderBy(_ order: OrderClause) -> Query {
+    public func orderBy(_ order: OrderClause) -> Self {
         self.orders.append(order)
         return self
     }
 
-    public func orderBy(column: String, direction: OrderClause.Sort = .asc) -> Query {
+    public func orderBy(column: String, direction: OrderClause.Sort = .asc) -> Self {
         //TODO: Add support for sort subquery
         return self.orderBy(OrderClause(column: column, direction: direction))
     }
 
 
 
-    public func offset(_ value: Int) -> Query {
+    public func offset(_ value: Int) -> Self {
         self.offset = max(0, value)
         return self
     }
 
-    public func limit(_ value: Int) -> Query {
+    public func limit(_ value: Int) -> Self {
         if (value >= 0) {
             self.limit = value
         }
@@ -181,7 +181,7 @@ public class Query {
     }
 
     // Paging starts at index 1, not zero
-    public func forPage(page: Int, perPage: Int = 25) -> Query {
+    public func forPage(page: Int, perPage: Int = 25) -> Self {
         return offset((page - 1) * perPage).limit(perPage)
     }
 
@@ -209,13 +209,18 @@ public class Query {
     //    exists()
     //
 
-    public func insert(value: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
-        return try insert(values: [value])
+    public func insert(_ value: KeyValuePairs<String, Parameter>, on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+        return insert([value])
     }
 
-    public func insert(values: [[String: Parameter]], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
-        let sql = try database.grammar.compileInsert(self, values: values)
-        return self.database.query(sql.query, values: sql.bindings, on: loop)
+    public func insert(_ values: [KeyValuePairs<String, Parameter>], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+        do {
+            let sql = try database.grammar.compileInsert(self, values: values)
+            return self.database.query(sql.query, values: sql.bindings, on: loop)
+        }
+        catch let error {
+            return loop.makeFailedFuture(error)
+        }
     }
 
     public func update(values: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
