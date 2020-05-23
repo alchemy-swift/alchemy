@@ -40,14 +40,14 @@ public final class PostgresDatabase: Database {
         self.pool = pool
     }
     
-    public func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         self.pool
             .withConnection(logger: nil, on: loop) { $0.simpleQuery(sql) }
             // Required for type inference.
             .map { $0 }
     }
     
-    public func query(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         return self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(
                 self.positionBindings(sql),

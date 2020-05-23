@@ -54,7 +54,6 @@ extension WhereNested: WhereClause {
 
 
 public struct WhereIn {
-
     public enum InType: String {
         case `in`
         case notIn
@@ -76,7 +75,7 @@ extension WhereIn: WhereClause {
 
 public struct WhereRaw {
     let query: String
-    let values: [DatabaseValue]
+    var values: [DatabaseValue] = []
     var boolean: WhereBoolean = .and
 }
 
@@ -85,7 +84,3 @@ extension WhereRaw: WhereClause {
         return SQL("\(boolean) \(self.query)", bindings: values)
     }
 }
-
-
-struct WhereSubquery {}
-

@@ -1,23 +1,23 @@
 import Foundation
 import NIO
 
-public class Query {
+public class Query: Sequelizable {
 
     let database: Database
 
-    var columns: [String]? = nil
+    var columns: [Raw]? = nil
     private(set) var from: String?
     private(set) var joins: [JoinClause]? = nil
     private(set) var wheres: [WhereClause] = []
     private(set) var groups: [String] = []
-    private(set) var havings: [Any] = []
+    private(set) var havings: [WhereClause] = []
     private(set) var orders: [OrderClause] = []
     private(set) var limit: Int? = nil
     private(set) var offset: Int? = nil
 
-    public var distinct = false
+    private(set) var _distinct = false
 
-    init(database: Database) {
+    public init(database: Database) {
         self.database = database
     }
 
@@ -25,16 +25,16 @@ public class Query {
         return database.grammar.compileSelect(query: self)
     }
 
-    func isQueryable(column: Any) -> Bool {
-        return false
-    }
-
-    public func select(_ columns: [Any] = ["*"]) -> Self {
+    @discardableResult
+    public func select(_ columns: [Column] = ["*"]) -> Self {
 
         self.columns = []
         for column in columns {
 
             if let column = column as? String {
+                self.columns?.append(Raw(column))
+            }
+            else if let column = column as? Raw {
                 self.columns?.append(column)
             }
             else {
@@ -44,15 +44,9 @@ public class Query {
         return self
     }
 
-    //    func selectRaw(expression, array bindings)
-    //
-    //    func selectRaw(var expression, bindings) {
-    //
-    //    }
-
     public func from(table: String, as alias: String? = nil) -> Self {
 
-        //TODO: Something about subquery
+        //TODO: Allow for selecting from subqueries
 
         guard let alias = alias else {
             self.from = table
@@ -62,10 +56,68 @@ public class Query {
         return self
     }
 
-    //    join(table, first, operator, second, type, where)
-    //    leftJoin(table, first, operator, second)
-    //    rightJoin(table, first, operator, second)
-    //    crossJoin(table, first, operator, second)
+    public func join(
+        table: String,
+        first: String,
+        op: Operator = .equals,
+        second: String,
+        type: JoinType = .inner
+    ) -> Self {
+        let join = JoinClause(query: self, type: type, table: table)
+            .on(first: first, op: op, second: second)
+        if joins == nil {
+            joins = [join]
+        }
+        else {
+            joins?.append(join)
+        }
+        return self
+    }
+
+    public func leftJoin(
+        table: String,
+        first: String,
+        op: Operator = .equals,
+        second: String
+    ) -> Self {
+        self.join(
+            table: table,
+            first: first,
+            op: op,
+            second: second,
+            type: .left
+        )
+    }
+
+    public func rightJoin(
+        table: String,
+        first: String,
+        op: Operator = .equals,
+        second: String
+    ) -> Self {
+        self.join(
+            table: table,
+            first: first,
+            op: op,
+            second: second,
+            type: .right
+        )
+    }
+
+    public func crossJoin(
+        table: String,
+        first: String,
+        op: Operator = .equals,
+        second: String
+    ) -> Self {
+        self.join(
+            table: table,
+            first: first,
+            op: op,
+            second: second,
+            type: .cross
+        )
+    }
 
     public func `where`(_ clause: WhereValue) -> Self {
         self.wheres.append(clause)
@@ -75,8 +127,7 @@ public class Query {
     public func orWhere(_ clause: WhereValue) -> Self {
         var clause = clause
         clause.boolean = .or
-        self.wheres.append(clause)
-        return self
+        return self.where(clause)
     }
 
     public func `where`(
@@ -145,11 +196,51 @@ public class Query {
         return self
     }
 
-    //    whereNull(column, boolean = "and", not = false)
-    //    orWhereNull(column) = whereNull(column, "or")
-    //    whereNotNull(column, boolean = "and") = whereNull(column, boolean, true)
-    //    having(column, operator, value, boolean = "and")
-    //    orHaving(column, operator, value) = having(column, operator, value, "or")
+    public func whereNull(
+        key: String,
+        boolean: WhereBoolean = .and,
+        not: Bool = false
+    ) -> Self {
+        let action = not ? "IS NOT" : "IS"
+        self.wheres.append(WhereRaw(
+            query: "\(key) \(action) NULL",
+            boolean: boolean)
+        )
+        return self
+    }
+
+    public func orWhereNull(key: String) -> Self {
+        return self.whereNull(key: key, boolean: .or)
+    }
+
+    public func whereNotNull(key: String, boolean: WhereBoolean = .and) -> Self {
+        return self.whereNull(key: key, boolean: boolean, not: true)
+    }
+
+    public func orWhereNotNull(key: String) -> Self {
+        return self.whereNotNull(key: key, boolean: .or)
+    }
+
+
+    public func having(_ clause: WhereValue) -> Self {
+        self.havings.append(clause)
+        return self
+    }
+
+    public func orHaving(_ clause: WhereValue) -> Self {
+        var clause = clause
+        clause.boolean = .or
+        return self.having(clause)
+    }
+
+    public func having(key: String, op: Operator, value: Parameter, boolean: WhereBoolean = .and) -> Self {
+        return self.having(WhereValue(
+            key: key,
+            op: op,
+            value: value.value,
+            boolean: boolean)
+        )
+    }
 
     public func groupBy(_ group: String) -> Self {
         self.groups.append(group)
@@ -161,9 +252,14 @@ public class Query {
         return self
     }
 
-    public func orderBy(column: String, direction: OrderClause.Sort = .asc) -> Self {
+    public func orderBy(column: Column, direction: OrderClause.Sort = .asc) -> Self {
         //TODO: Add support for sort subquery
         return self.orderBy(OrderClause(column: column, direction: direction))
+    }
+
+    public func distinct() -> Self {
+        self._distinct = true
+        return self
     }
 
 
@@ -185,27 +281,44 @@ public class Query {
         return offset((page - 1) * perPage).limit(perPage)
     }
 
-    public func get(_ columns: [Any] = ["*"], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func get(_ columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+        if let columns = columns {
+            self.select(columns)
+        }
         let sql = database.grammar.compileSelect(query: self)
-        return self.database.query(sql.query, values: sql.bindings, on: loop)
+        return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
     }
 
-    public func first(_ columns: [Any] = ["*"], on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
+    public func first(_ columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
         return self.limit(1)
             .get(columns, on: loop)
             .flatMapThrowing { $0.first }
     }
 
-    public func find(field: DatabaseField, columns: [Any] = ["*"], on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
+    public func find(field: DatabaseField, columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
         self.wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
         return self.limit(1)
             .get(columns, on: loop)
             .flatMapThrowing { $0.first }
     }
 
+    public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int?> {
+        var query = "COUNT(\(column))"
+        if let name = name {
+            query += " as \(name)"
+        }
+        return self.select([query])
+            .first()
+            .flatMapThrowing {
+                if let column = $0?.allColumns.first {
+                    return try $0?.getField(columnName: column).int()
+                }
+                return nil
+            }
+    }
+
     //
     //    paginate(perPage, columns, page)
-    //    count()
     //    exists()
     //
 
@@ -216,7 +329,7 @@ public class Query {
     public func insert(_ values: [KeyValuePairs<String, Parameter>], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
         do {
             let sql = try database.grammar.compileInsert(self, values: values)
-            return self.database.query(sql.query, values: sql.bindings, on: loop)
+            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
         }
         catch let error {
             return loop.makeFailedFuture(error)
@@ -225,12 +338,12 @@ public class Query {
 
     public func update(values: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
         let sql = try database.grammar.compileUpdate(self, values: values)
-        return self.database.query(sql.query, values: sql.bindings, on: loop)
+        return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
     }
 
     public func delete(on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
         let sql = try database.grammar.compileDelete(self)
-        return self.database.query(sql.query, values: sql.bindings, on: loop)
+        return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
     }
 
     //    updateOrInsert()

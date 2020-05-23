@@ -14,13 +14,23 @@ public struct DatabaseDefault {
         }
         set { DatabaseDefault._default = newValue }
     }
+    public static func query() -> Query {
+        return DB.default.query()
+    }
     
     private static var _default: Database?
 }
 
 public protocol Database {
     var grammar: Grammar { get }
-    func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
-    func query(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    func query() -> Query
+    func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
     func shutdown()
+}
+
+extension Database {
+    public func query() -> Query {
+        return Query(database: self)
+    }
 }

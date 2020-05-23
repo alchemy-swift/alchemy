@@ -6,7 +6,6 @@ extension Model {
     {
         self.query(database: db)
             .get(on: loop)
-            .flatMapEachThrowing { try $0.decode(Self.self) }
     }
     
     /// Updates or creates the model.
@@ -19,7 +18,7 @@ extension Model {
         VALUES (\(fields.enumerated().map { index, _ in "$\(index + 1)" }.joined(separator: ", ")))
         """
 
-        return db.query(statement, values: fields.map { $0.value }, on: loop)
+        return db.runQuery(statement, values: fields.map { $0.value }, on: loop)
             .voided()
     }
     

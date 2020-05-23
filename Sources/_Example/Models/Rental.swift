@@ -11,6 +11,8 @@ struct Rental: Model {
     let price: Double
     let numBeds: Int
 
+    let reviewCount: Int
+
     let createdAt: Date
     let updatedAt: Date
 }

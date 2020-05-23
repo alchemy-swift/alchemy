@@ -9,7 +9,7 @@ struct APIServer: Application {
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
-        DB.default = self.postgres
+        DB.default = self.mysql
         
         self.globalMiddlewares
             // Applied to all incoming requests.
@@ -74,11 +74,20 @@ struct MiscError: Error {
 struct DatabaseTestController {
     @Inject var db: MySQLDatabase
     
-    func select(req: HTTPRequest) -> EventLoopFuture<[Rental]> {
+    func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
+//        return Rental.query()
+//            .select([
+//                "rentals.*",
+//                Raw("COUNT(*) AS review_count")
+//            ])
+//            .leftJoin(table: "reviews", first: "reviews.rental_id", second: "rentals.id")
+//            .where("num_beds" > 1)
+//            .groupBy("rentals.id")
+//            .get()
+
         return Rental.query()
-            .where("price" < 150.5)
-            .where("num_beds" > 1)
-            .get()
+            .where("num_beds" >= 1)
+            .count(as: "rentals_count")
     }
     
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
@@ -138,7 +147,7 @@ struct DatabaseTestController {
 //            .update(values: [ "last_checked_for_deals": Date() ])
 
 
-        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        return self.db.runRawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")
@@ -150,7 +159,7 @@ struct DatabaseTestController {
     
     func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
         fatalError("TODO")
-        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        return self.db.runRawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")
@@ -162,7 +171,7 @@ struct DatabaseTestController {
     
     func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
         fatalError("TODO")
-        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
+        return self.db.runRawQuery("SELECT * FROM trips", on: req.eventLoop)
             .flatMapThrowing { rows in
                 guard let firstRow = rows.first else {
                     throw MiscError("No rows found.")

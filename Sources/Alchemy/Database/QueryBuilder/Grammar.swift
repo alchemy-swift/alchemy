@@ -20,13 +20,13 @@ public class Grammar {
 
     func compileSelect(query: Query) -> SQL {
 
-        // If the query does not have any columns set, we"ll set the columns to the
+        // If the query does not have any columns set, we'll set the columns to the
         // * character to just get all of the columns from the database. Then we
         // can build the query and concatenate all the pieces together as one.
         let original = query.columns
 
         if query.columns == nil {
-            query.columns = ["*"]
+            query.columns = [SQL("*")]
         }
 
         // To compile the query, we'll spin through each component of the query and
@@ -42,25 +42,35 @@ public class Grammar {
     private func compileComponents(query: Query) -> SQL {
         var sql: [String] = []
         var bindings: [DatabaseValue] = []
+
         for component in selectComponents {
-            // To compile the query, well spin through each component of the query and
-            // see if that component exists. If it does we"ll just call the compiler
-            // function for the component which is responsible for making the SQL.
             if let part = query[keyPath: component] {
-                if component == \Query.columns, let columns = part as? [String] {
-                    sql.append(compileColumns(query, columns: columns))
+                if component == \Query.columns,
+                    let columns = part as? [Raw] {
+                    compileColumns(query, columns: columns)
+                        .bind(queries: &sql, bindings: &bindings)
                 }
-                else if component == \Query.from, let table = part as? String {
+                else if component == \Query.from,
+                    let table = part as? String {
                     sql.append(compileFrom(query, table: table))
                 }
+                else if component == \Query.joins,
+                    let joins = part as? [JoinClause] {
+                    compileJoins(query, joins: joins)
+                        .bind(queries: &sql, bindings: &bindings)
+                }
                 else if component == \Query.wheres {
-                    let wheres = compileWheres(query).bind(&bindings)
-                    sql.append(wheres.query)
+                    compileWheres(query)
+                        .bind(queries: &sql, bindings: &bindings)
                 }
                 else if component == \Query.groups,
                     let groups = part as? [String],
                     !groups.isEmpty {
                     sql.append(compileGroups(query, groups: groups))
+                }
+                else if component == \Query.havings {
+                    compileHavings(query)
+                        .bind(queries: &sql, bindings: &bindings)
                 }
                 else if component == \Query.orders,
                     let orders = part as? [OrderClause],
@@ -78,9 +88,10 @@ public class Grammar {
         return SQL(sql.joined(separator: " "), bindings: bindings)
     }
 
-    private func compileColumns(_ query: Query, columns: [String]) -> String {
-        let select = query.distinct ? "select distinct" : "select"
-        return "\(select) \(columns.joined(separator: ", "))"
+    private func compileColumns(_ query: Query, columns: [Raw]) -> SQL {
+        let select = query._distinct ? "select distinct" : "select"
+        let (sql, bindings) = QueryHelpers.groupSQL(values: columns)
+        return SQL("\(select) \(sql.joined(separator: ", "))", bindings: bindings)
     }
 
     private func compileFrom(_ query: Query, table: String) -> String {
@@ -117,18 +128,22 @@ public class Grammar {
             return SQL("\(conjunction) \(clauses)", bindings: bindings)
         }
         return SQL()
-
-        // This calls the where method based on the type of where that is passed in.
-        // ie. whereBasic, whereColumn etc
-
-        //        return collect($query->wheres)->map(function ($where) use ($query) {
-        //            return $where['boolean'].' '.$this->{"where{$where['type']}"}($query, $where);
-        //        })->all();
     }
 
 
     func compileGroups(_ query: Query, groups: [String]) -> String {
         return "group by \(groups.joined(separator: ", "))"
+    }
+
+    func compileHavings(_ query: Query) -> SQL {
+        let (sql, bindings) = QueryHelpers.groupSQL(values: query.havings)
+        if (sql.count > 0) {
+            let clauses = QueryHelpers.removeLeadingBoolean(
+                sql.joined(separator: " ")
+            )
+            return SQL("having \(clauses)", bindings: bindings)
+        }
+        return SQL()
     }
 
     func compileOrders(_ query: Query, orders: [OrderClause]) -> String {
@@ -143,11 +158,6 @@ public class Grammar {
     func compileOffset(_ query: Query, offset: Int) -> String {
         return "offset \(offset)"
     }
-
-
-
-
-
 
     func compileInsert(_ query: Query, values: [KeyValuePairs<String, Parameter>]) throws -> SQL {
         
@@ -205,13 +215,11 @@ public class Grammar {
         return SQL(parts.joined(separator: ", "), bindings: bindings)
     }
 
-
     func compileDelete(_ query: Query) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
         let whereSQL = compileWheres(query)
         return SQL("delete from \(table) \(whereSQL.query)", bindings: whereSQL.bindings)
     }
-
 
 
 
