@@ -3,11 +3,14 @@ import PostgresNIO
 
 /// Example of adding a custom db.
 public final class MongoDatabase: Database {
-    public func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+
+    public let grammar = Grammar()
+
+    public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         fatalError()
     }
     
-    public func query(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         fatalError()
     }
     

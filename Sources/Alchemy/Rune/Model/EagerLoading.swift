@@ -23,7 +23,7 @@ final class RuneQuery<ReturnType: Model> {
             let queryString = """
             SELECT * FROM \(R.To.Value.tableName) WHERE id IN (\(placeholder))
             """
-            return self.database.query(queryString, values: ids.map { $0.value }, on: self.loop)
+            return self.database.runQuery(queryString, values: ids.map { $0.value }, on: self.loop)
                 .flatMapEachThrowing { try $0.decode(R.To.Value.self) }
                 .map { modelResults in
                     var updatedResults = [ReturnType]()

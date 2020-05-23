@@ -4,8 +4,8 @@ extension Model {
     static func all(db: Database = DB.default, loop: EventLoop = Loop.current)
         -> EventLoopFuture<[Self]>
     {
-        db.rawQuery("SELECT * FROM \(Self.tableName)", on: loop)
-            .flatMapEachThrowing { try $0.decode(Self.self) }
+        self.query(database: db)
+            .get(on: loop)
     }
     
     /// Updates or creates the model.
@@ -18,15 +18,16 @@ extension Model {
         VALUES (\(fields.enumerated().map { index, _ in "$\(index + 1)" }.joined(separator: ", ")))
         """
 
-        return db.query(statement, values: fields.map { $0.value }, on: loop)
+        return db.runQuery(statement, values: fields.map { $0.value }, on: loop)
             .voided()
     }
     
     /// Deletes this model from the database.
     func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
         let idField = try! self.idField()
-        return db.query("DELETE FROM \(Self.tableName) WHERE \(idField.column)=$1", values: [idField.value],
-                 on: loop)
+        return Self.query(database: db)
+            .where(WhereValue(key: idField.column, op: .equals, value: idField.value))
+            .delete(on: loop)
             .voided()
     }
     
@@ -59,8 +60,8 @@ struct RuneError: Error {
 }
 
 /// Can't call static properties from a protocol so this is used for getting the current event loop.
-struct Loop {
-    static var current: EventLoop {
+public struct Loop {
+    public static var current: EventLoop {
         guard let current = MultiThreadedEventLoopGroup.currentEventLoop else {
             fatalError("Unable to find an event loop associated with this thread. Try passing it in manually.")
         }

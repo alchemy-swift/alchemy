@@ -56,8 +56,8 @@ extension DatabaseField: Equatable {
     }
 }
 
-extension DatabaseField.Value: Equatable {
-    public static func == (lhs: DatabaseField.Value, rhs: DatabaseField.Value) -> Bool {
+extension DatabaseValue: Equatable {
+    public static func == (lhs: DatabaseValue, rhs: DatabaseValue) -> Bool {
         if case .int = lhs, case .int = rhs {
             return true
         } else if case .double = lhs, case .double = rhs {

@@ -7,8 +7,8 @@ struct TestAPI {
 
 struct TestReqDTO {
     @Path   var userID: String
-    @Query  var number: Int
-    @Query  var someThings: [String]
+    @HTTPQuery  var number: Int
+    @HTTPQuery  var someThings: [String]
     @Header var value: String
     @Body   var obj: TestObj
 }
