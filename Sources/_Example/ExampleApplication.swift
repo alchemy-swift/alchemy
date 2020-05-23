@@ -4,12 +4,12 @@ import NIO
 
 struct APIServer: Application {
     @Inject var postgres: PostgresDatabase
-    @Inject var mySQL1: MySQLDatabase
+    @Inject var mysql: MySQLDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
-        DB.default = self.mySQL1
+        DB.default = self.postgres
         
         self.globalMiddlewares
             // Applied to all incoming requests.
