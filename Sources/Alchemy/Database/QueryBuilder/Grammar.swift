@@ -7,30 +7,17 @@ public class Grammar {
     }
 
     func compileSelect(query: Query) throws -> SQL {
-
-        var parts: [SQL] = [
+        let parts: [SQL?] = [
             compileColumns(query, columns: query.columns),
-            try compileFrom(query, table: query.from)
+            try compileFrom(query, table: query.from),
+            compileJoins(query, joins: query.joins),
+            compileWheres(query),
+            compileGroups(query, groups: query.groups),
+            compileHavings(query),
+            compileOrders(query, orders: query.orders),
+            compileLimit(query, limit: query.limit),
+            compileOffset(query, offset: query.offset)
         ]
-        if let joins = query.joins {
-            parts += compileJoins(query, joins: joins)
-        }
-        parts += compileWheres(query)
-
-        if !query.groups.isEmpty {
-            parts += compileGroups(query, groups: query.groups)
-        }
-        parts += compileHavings(query)
-
-        if !query.orders.isEmpty {
-            parts += compileOrders(query, orders: query.orders)
-        }
-        if let limit = query.limit {
-            parts += compileLimit(query, limit: limit)
-        }
-        if let offset = query.offset {
-            parts += compileOffset(query, offset: offset)
-        }
 
         let (sql, bindings) = QueryHelpers.groupSQL(values: parts)
         return SQL(sql.joined(separator: " "), bindings: bindings)
@@ -47,12 +34,17 @@ public class Grammar {
         return SQL("from \(table)")
     }
 
-    func compileJoins(_ query: Query, joins: [JoinClause]) -> SQL {
+    func compileJoins(_ query: Query, joins: [JoinClause]?) -> SQL? {
+        guard let joins = joins else { return nil }
         var bindings: [DatabaseValue] = []
-        let query = joins.map { join in
-            let whereSQL = compileWheres(join).bind(&bindings)
-            if let nestedJoins = join.joins {
-                let nestedSQL = compileJoins(query, joins: nestedJoins).bind(&bindings)
+        let query = joins.compactMap { join in
+            guard let whereSQL = compileWheres(join) else {
+                return nil
+            }
+            bindings += whereSQL.bindings
+            if let nestedJoins = join.joins,
+                let nestedSQL = compileJoins(query, joins: nestedJoins) {
+                bindings += nestedSQL.bindings
                 return trim("\(join.type) join (\(join.table)\(nestedSQL.query)) \(whereSQL.query)")
             }
             return trim("\(join.type) join \(join.table) \(whereSQL.query)")
@@ -60,7 +52,7 @@ public class Grammar {
         return SQL(query, bindings: bindings)
     }
 
-    private func compileWheres(_ query: Query) -> SQL {
+    private func compileWheres(_ query: Query) -> SQL? {
 
         // If we actually have some where clauses, we will strip off the first boolean
         // operator, which is added by the query builders for convenience so we can
@@ -76,15 +68,16 @@ public class Grammar {
             )
             return SQL("\(conjunction) \(clauses)", bindings: bindings)
         }
-        return SQL()
+        return nil
     }
 
 
-    func compileGroups(_ query: Query, groups: [String]) -> SQL {
+    func compileGroups(_ query: Query, groups: [String]) -> SQL? {
+        if groups.isEmpty { return nil }
         return SQL("group by \(groups.joined(separator: ", "))")
     }
 
-    func compileHavings(_ query: Query) -> SQL {
+    func compileHavings(_ query: Query) -> SQL? {
         let (sql, bindings) = QueryHelpers.groupSQL(values: query.havings)
         if (sql.count > 0) {
             let clauses = QueryHelpers.removeLeadingBoolean(
@@ -92,19 +85,22 @@ public class Grammar {
             )
             return SQL("having \(clauses)", bindings: bindings)
         }
-        return SQL()
+        return nil
     }
 
-    func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL {
+    func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL? {
+        if orders.isEmpty { return nil }
         let ordersSQL = orders.map { $0.toSQL().query }.joined(separator: ", ")
         return SQL("order by \(ordersSQL)")
     }
 
-    func compileLimit(_ query: Query, limit: Int) -> SQL {
+    func compileLimit(_ query: Query, limit: Int?) -> SQL? {
+        guard let limit = limit else { return nil }
         return SQL("limit \(limit)")
     }
 
-    func compileOffset(_ query: Query, offset: Int) -> SQL {
+    func compileOffset(_ query: Query, offset: Int?) -> SQL? {
+        guard let offset = offset else { return nil }
         return SQL("offset \(offset)")
     }
 
@@ -136,16 +132,20 @@ public class Grammar {
         let columnSQL = compileUpdateColumns(query, values: values)
 
         var base = "update \(table)"
-        if let clauses = query.joins {
-            let joinSQL = compileJoins(query, joins: clauses).bind(&bindings)
+        if let clauses = query.joins,
+            let joinSQL = compileJoins(query, joins: clauses) {
+            bindings += joinSQL.bindings
             base += " \(joinSQL)"
         }
+
         bindings += columnSQL.bindings
-        let whereSQL = compileWheres(query).bind(&bindings)
-        return SQL(
-            "\(base) set \(columnSQL.query) \(whereSQL.query)",
-            bindings: bindings
-        )
+        base += "set \(columnSQL.query)"
+
+        if let whereSQL = compileWheres(query) {
+            bindings += whereSQL.bindings
+            base += " \(whereSQL.query)"
+        }
+        return SQL(base, bindings: bindings)
     }
 
     func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> SQL {
@@ -166,8 +166,12 @@ public class Grammar {
 
     func compileDelete(_ query: Query) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
-        let whereSQL = compileWheres(query)
-        return SQL("delete from \(table) \(whereSQL.query)", bindings: whereSQL.bindings)
+        if let whereSQL = compileWheres(query) {
+            return SQL("delete from \(table) \(whereSQL.query)", bindings: whereSQL.bindings)
+        }
+        else {
+            return SQL("delete from \(table)")
+        }
     }
 
 

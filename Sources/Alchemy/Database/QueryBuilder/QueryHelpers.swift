@@ -15,11 +15,12 @@ class QueryHelpers {
         self.groupSQL(values: values.map { $0.toSQL() })
     }
 
-    static func groupSQL(values: [SQL]) -> ([String], [DatabaseValue]) {
+    static func groupSQL(values: [SQL?]) -> ([String], [DatabaseValue]) {
         return values.reduce(([String](), [DatabaseValue]())) {
             var parts = $0
-            parts.0.append($1.query)
-            parts.1.append(contentsOf: $1.bindings)
+            guard let sql = $1 else { return parts }
+            parts.0.append(sql.query)
+            parts.1.append(contentsOf: sql.bindings)
             return parts
         }
     }
