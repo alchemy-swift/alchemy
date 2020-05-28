@@ -83,7 +83,11 @@ public struct _ManyToOne<Many: RelationAllowed, One: RelationAllowed>: Codable, 
     }
     
     public init(_ one: One.Value) {
-        self.id = one.id
+        guard let id = one.id else {
+            fatalError("Can't form a relation with an unidentified object.")
+        }
+
+        self.id = id
     }
     
     public var projectedValue: Self<Many, One> {

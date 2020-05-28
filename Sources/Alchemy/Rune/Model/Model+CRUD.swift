@@ -10,24 +10,37 @@ extension Model {
     
     /// Updates or creates the model.
     func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
-        if let id = self.id {
-            Self.query(database: db)
-                .insert(<#T##value: KeyValuePairs<String, Parameter>##KeyValuePairs<String, Parameter>#>)
-        } else {
-            Self.query(database: db)
-            .update(values: <#T##[String : Parameter]#>)
-        }
-        
-        let fields = try! self.fields()
-        let columns = fields.map { $0.column }
-        
-        let statement = """
-        INSERT INTO \(Self.tableName) (\(columns.joined(separator: ", ")))
-        VALUES (\(fields.enumerated().map { index, _ in "$\(index + 1)" }.joined(separator: ", ")))
-        """
+        catchError {
+            let fields = try self.fields()
+            if self.existsInDatabase {
+                let setString = fields
+                    .compactMap { $0.column != "id" ? $0 : nil }
+                    .enumerated()
+                    .map { index, value in "\(value.column) = $\(index + 1)" }
+                    .joined(separator: ", ")
 
-        return db.runQuery(statement, values: fields.map { $0.value }, on: loop)
-            .voided()
+                let statement = """
+                UPDATE \(Self.tableName)
+                SET \(setString)
+                WHERE id = $\(fields.count)
+                """
+
+                return db.runQuery(statement, values: fields.map { $0.value } + [], on: loop)
+                    .voided()
+            } else {
+                let columnsString = fields.map { $0.column }.joined(separator: ", ")
+                let valuesString = fields.enumerated()
+                    .map { index, _ in "$\(index + 1)" }
+                    .joined(separator: ", ")
+
+                let statement = """
+                INSERT INTO \(Self.tableName) (\(columnsString))
+                VALUES (\(valuesString))
+                """
+                return db.runQuery(statement, values: fields.map { $0.value }, on: loop)
+                    .voided()
+            }
+        }
     }
     
     /// Deletes this model from the database.
@@ -44,6 +57,13 @@ extension Model {
     func sync() -> EventLoopFuture<Self> {
         // Refreshes this model from the database.
         fatalError()
+    }
+}
+
+extension Model {
+    /// Whether the model exists in the database already. Currently just whether the id is nil.
+    var existsInDatabase: Bool {
+        self.id != nil
     }
 }
 
@@ -83,4 +103,12 @@ public struct Loop {
         
         return current
     }
+}
+
+protocol OptionalProtocol {
+    var optionalValue: Self? { get }
+}
+
+extension Optional: OptionalProtocol {
+    var optionalValue: Optional<Wrapped>? { self }
 }

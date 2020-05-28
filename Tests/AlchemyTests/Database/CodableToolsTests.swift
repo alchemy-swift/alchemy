@@ -126,7 +126,7 @@ private struct StoredPropertyStruct: DatabaseCodable {
         let string = "text"
     }
     
-    let id = UUID()
+    let id: UUID? = UUID()
     let string = "value"
     let int = 1
     let double = 1.0
@@ -138,7 +138,7 @@ private struct StoredPropertyStruct: DatabaseCodable {
 private struct InvalidPropertyStruct: DatabaseCodable {
     static var tableName = "invalid_property"
     
-    let id = UUID()
+    let id: UUID? = UUID()
     let data = Data()
 }
 

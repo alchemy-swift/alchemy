@@ -5,7 +5,7 @@ struct Rental: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "rentals"
 
-    let id: Int
+    let id: Int?
 
     let location: String
     let price: Double
@@ -21,7 +21,7 @@ struct Review: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "reviews"
 
-    let id: Int
+    let id: Int?
 
     @OneToOne
     var rental: Rental

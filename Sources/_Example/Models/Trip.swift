@@ -2,15 +2,15 @@ import Alchemy
 import Foundation
 
 struct User: Model, Authable {
-    let id: UUID
+    let id: UUID?
 }
 
 struct Place: Model {
-    let id: UUID
+    let id: UUID?
 }
 
 struct TripPlaces: Model {
-    var id: UUID = UUID()
+    var id: UUID? = UUID()
     var place: Place
     var trip: Trip
 }
@@ -25,7 +25,7 @@ struct Trip: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "trips"
     
-    let id: UUID
+    let id: UUID?
 
     @OneToOne
     var flight: Flight

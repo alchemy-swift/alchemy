@@ -6,7 +6,7 @@ import Foundation
 // Include nested layers
 
 struct Traveler: Model, Authable {
-    var id: UUID = UUID()
+    var id: UUID? = UUID()
     var name: String
     var email: String
 
@@ -21,7 +21,7 @@ struct Traveler: Model, Authable {
 /// Custom Key Paths, default to ID
 
 struct Passport: Model {
-    var id: UUID = UUID()
+    var id: UUID? = UUID()
     var color: String
     var dateIssued: Date
 
@@ -49,14 +49,14 @@ struct Passport: Model {
 }
 
 struct PassportPage: Model {
-    var id: UUID = UUID()
+    var id: UUID? = UUID()
 
     @ManyToOne
     var passport: Passport
 }
 
 struct Photo: Model {
-    var id: UUID = UUID()
+    var id: UUID? = UUID()
     var imageURL: String
 
     @ManyToOne
@@ -67,7 +67,7 @@ struct Photo: Model {
 }
 
 struct PassportCountries: Model {
-    let id: UUID
+    let id: UUID?
     
     @ManyToOne
     var passport: Passport
@@ -77,7 +77,7 @@ struct PassportCountries: Model {
 }
 
 struct Country: Model {
-    var id: UUID = UUID()
+    var id: UUID? = UUID()
     var name: String
 
     /// Through Relations - for a later date.

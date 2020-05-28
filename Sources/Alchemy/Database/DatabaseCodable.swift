@@ -7,8 +7,8 @@ public protocol DatabaseCodable: Codable, DatabaseIdentifiable, Table {
 }
 
 public protocol DatabaseIdentifiable: Identifiable {
-    associatedtype Identifier: Codable
-    var id: Self.Identifier { get }
+    associatedtype Identifier: Codable & Hashable
+    var id: Self.Identifier? { get }
 }
 
 public enum DatabaseKeyMappingStrategy {

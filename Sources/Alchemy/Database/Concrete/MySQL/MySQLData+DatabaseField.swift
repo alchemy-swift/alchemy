@@ -60,7 +60,7 @@ extension DatabaseValue {
         case .int(let value):
             guard let value = value else { return .null }
             return MySQLData(int: value)
-        case .json(let value):
+        case .json(_):
             fatalError()
         case .string(let value):
             guard let value = value else { return .null }
