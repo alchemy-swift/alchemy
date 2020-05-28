@@ -4,12 +4,20 @@ extension Model {
     static func all(db: Database = DB.default, loop: EventLoop = Loop.current)
         -> EventLoopFuture<[Self]>
     {
-        self.query(database: db)
+        Self.query(database: db)
             .get(on: loop)
     }
     
     /// Updates or creates the model.
     func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+        if let id = self.id {
+            Self.query(database: db)
+                .insert(<#T##value: KeyValuePairs<String, Parameter>##KeyValuePairs<String, Parameter>#>)
+        } else {
+            Self.query(database: db)
+            .update(values: <#T##[String : Parameter]#>)
+        }
+        
         let fields = try! self.fields()
         let columns = fields.map { $0.column }
         
@@ -24,11 +32,13 @@ extension Model {
     
     /// Deletes this model from the database.
     func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
-        let idField = try! self.idField()
-        return Self.query(database: db)
-            .where(WhereValue(key: idField.column, op: .equals, value: idField.value))
-            .delete(on: loop)
-            .voided()
+        catchError(on: loop) {
+            let idField = try self.idField()
+            return Self.query(database: db)
+                .where(WhereValue(key: idField.column, op: .equals, value: idField.value))
+                .delete(on: loop)
+                .voided()
+        }
     }
     
     func sync() -> EventLoopFuture<Self> {
@@ -45,6 +55,11 @@ extension Array where Element: Model {
     
     func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
         // Delete all objects in this array.
+        fatalError()
+    }
+    
+    func sync() -> EventLoopFuture<Self> {
+        // Refreshes this model from the database.
         fatalError()
     }
 }
