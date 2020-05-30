@@ -6,6 +6,14 @@ extension DatabaseCodable {
     public func fields() throws -> [DatabaseField] {
         try DatabaseFieldReader().readFields(of: self)
     }
+
+    public func dictionary() throws -> OrderedDictionary<String, Parameter> {
+        var dict = OrderedDictionary<String, Parameter>()
+        for field in try self.fields() {
+            dict.updateValue(field.value, forKey: field.column)
+        }
+        return dict
+    }
     
     public func idField() throws -> DatabaseField {
         // Very naive approach. Only works with objects who's id field is literally titled `id`. Need some
@@ -16,5 +24,11 @@ extension DatabaseCodable {
         }
         
         return idField
+    }
+}
+
+extension Array where Element == DatabaseField {
+    var idField: DatabaseField? {
+        self.filter { $0.column == "id" }.first
     }
 }

@@ -7,9 +7,13 @@ public protocol DatabaseCodable: Codable, DatabaseIdentifiable, Table {
 }
 
 public protocol DatabaseIdentifiable: Identifiable {
-    associatedtype Identifier: Codable & Hashable
+    associatedtype Identifier: RuneID
     var id: Self.Identifier? { get }
 }
+
+public protocol RuneID: Hashable, Parameter, Codable {}
+extension UUID: RuneID {}
+extension Int: RuneID {}
 
 public enum DatabaseKeyMappingStrategy {
     case useDefaultKeys

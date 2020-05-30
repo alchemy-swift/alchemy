@@ -297,14 +297,14 @@ public class Query: Sequelizable {
     public func first(_ columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
         return self.limit(1)
             .get(columns, on: loop)
-            .flatMapThrowing { $0.first }
+            .map { $0.first }
     }
 
     public func find(field: DatabaseField, columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
         self.wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
         return self.limit(1)
             .get(columns, on: loop)
-            .flatMapThrowing { $0.first }
+            .map { $0.first }
     }
 
     public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int?> {
@@ -327,11 +327,11 @@ public class Query: Sequelizable {
     //    exists()
     //
 
-    public func insert(_ value: KeyValuePairs<String, Parameter>, on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func insert(_ value: OrderedDictionary<String, Parameter>, on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
         return insert([value])
     }
 
-    public func insert(_ values: [KeyValuePairs<String, Parameter>], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func insert(_ values: [OrderedDictionary<String, Parameter>], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
         do {
             let sql = try database.grammar.compileInsert(self, values: values)
             return self.database.runQuery(sql.query, values: sql.bindings, on: loop)

@@ -104,7 +104,7 @@ public class Grammar {
         return SQL("offset \(offset)")
     }
 
-    func compileInsert(_ query: Query, values: [KeyValuePairs<String, Parameter>]) throws -> SQL {
+    func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
         
         guard let table = query.from else { throw GrammarError.missingTable }
 

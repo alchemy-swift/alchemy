@@ -4,6 +4,10 @@ public protocol Parameter {
     var value: DatabaseValue { get }
 }
 
+extension DatabaseValue: Parameter {
+    public var value: DatabaseValue { self }
+}
+
 extension String: Parameter {
     public var value: DatabaseValue { .string(self) }
 }
@@ -22,4 +26,8 @@ extension Double: Parameter {
 
 extension Date: Parameter {
     public var value: DatabaseValue { .date(self) }
+}
+
+extension UUID: Parameter {
+    public var value: DatabaseValue { .uuid(self) }
 }
