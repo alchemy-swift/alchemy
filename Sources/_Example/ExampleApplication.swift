@@ -56,9 +56,6 @@ struct APIServer: Application {
             .group(path: "/db") {
                 $0.on(.GET, at: "/select", do: DatabaseTestController().select)
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
-                $0.on(.GET, at: "/update", do: DatabaseTestController().update)
-                $0.on(.GET, at: "/delete", do: DatabaseTestController().delete)
-                $0.on(.GET, at: "/join", do: DatabaseTestController().join)
             }
     }
 }
@@ -137,48 +134,6 @@ struct DatabaseTestController {
 //        print("statement: \(statement)")
 //        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
 //            .map { _ in "done" }
-    }
-    
-    func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        fatalError("TODO")
-
-//        try Trip.query(database: self.db)
-//            .where("max_stops" == 1)
-//            .update(values: [ "last_checked_for_deals": Date() ])
-
-
-        return self.db.runRawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
-    }
-    
-    func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        fatalError("TODO")
-        return self.db.runRawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
-    }
-    
-    func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        fatalError("TODO")
-        return self.db.runRawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
     }
 }
 

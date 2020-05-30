@@ -23,7 +23,7 @@ struct Review: Model {
 
     let id: Int?
 
-    @OneToOne
+//    @BelongsTo
     var rental: Rental
 
     let comment: String
@@ -32,4 +32,8 @@ struct Review: Model {
 
     let createdAt: Date
     let updatedAt: Date
+}
+
+struct User: Model, Authable {
+    var id: UUID?
 }

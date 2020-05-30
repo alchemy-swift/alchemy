@@ -1,6 +1,7 @@
 import NIO
 
 extension Model {
+    /// Get all of the models of this type.
     static func all(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<[Self]> {
         Self.query(database: db)
             .getAll(on: loop)
@@ -46,21 +47,6 @@ extension Model {
                 .first()
                 .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Sync error: couldn't find a row on \(Self.tableName) with id \(id)")).decode(Self.self) }
         }
-    }
-}
-
-extension Model {
-    /// A tuple representing the column & value tuples of the type.
-    func sqlData() throws -> (columns: [String], values: [DatabaseValue]) {
-        var columns: [String] = []
-        var values: [DatabaseValue] = []
-
-        for field in try self.fields() {
-            columns.append(field.column)
-            values.append(field.value)
-        }
-
-        return (columns: columns, values: values)
     }
 }
 
