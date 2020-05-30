@@ -84,10 +84,3 @@ extension Array where Element: Model {
         }
     }
 }
-
-extension Model {
-    /// Whether the model exists in the database already. Currently just whether the id is nil.
-    var existsInDatabase: Bool {
-        self.id != nil
-    }
-}
