@@ -41,7 +41,7 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
 
     public required init(from decoder: Decoder) throws {}
     
-    public var projectedValue: Self<From, To> {
+    public var projectedValue: _HasOne<From, To> {
         self
     }
     
@@ -60,7 +60,7 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Cod
         set { self.value = newValue }
     }
 
-    public var projectedValue: Self<One, Many> { self }
+    public var projectedValue: _HasMany<From, To> { self }
 
     /// One to Many
     public init(to: KeyPath<To, From>) {
@@ -106,7 +106,7 @@ public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: Relationsh
         self.id = id
     }
 
-    public var projectedValue: Self<Many, One> {
+    public var projectedValue: _BelongsTo<Child, Parent> {
         self
     }
 

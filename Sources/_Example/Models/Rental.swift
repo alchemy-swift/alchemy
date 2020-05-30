@@ -15,6 +15,9 @@ struct Rental: Model {
 
     let createdAt: Date
     let updatedAt: Date
+
+    @BelongsTo
+    var review: Review
 }
 
 struct Review: Model {
@@ -23,7 +26,7 @@ struct Review: Model {
 
     let id: Int?
 
-//    @BelongsTo
+//    @HasOne(to: \.review)
     var rental: Rental
 
     let comment: String
@@ -32,8 +35,4 @@ struct Review: Model {
 
     let createdAt: Date
     let updatedAt: Date
-}
-
-struct User: Model, Authable {
-    var id: UUID?
 }
