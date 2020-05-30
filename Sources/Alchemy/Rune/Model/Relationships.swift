@@ -12,13 +12,15 @@ protocol Relationship: class {
     associatedtype From: Model
 
     /// Given a list of `From`s, load the relationships in order.
-    static func load(_ from: [From]) -> EventLoopFuture<[Self]>
+    func load(_ from: [From]) -> EventLoopFuture<[Self]>
 }
 
 @propertyWrapper
 public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Codable {
     private var value: To?
-    private var toKey: String?
+
+    private var toKey: KeyPath<To, To.Value.BelongsTo<From>>?
+    private var toString: String?
 
     public var wrappedValue: To {
         get {
@@ -28,27 +30,27 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
         set { self.value = newValue }
     }
 
-    required init(value: To) {
+    init(value: To) {
         self.value = value
-        self.toKey = ""
+//        self.toKey = ""
     }
 
-    static func load(_ from: [From]) -> EventLoopFuture<[_HasOne]> {
-        To.Value.query()
-            .where("id" == "")
-            .getAll()
-            .mapEach { .init(value: To.from($0)) }
+    func load(_ from: [From]) -> EventLoopFuture<[_HasOne]> {
+//        To.Value.query()
+//            // Should only pull on per id
+//            .where(key: self.toKey, in: from.compactMap { $0.id })
+//            .getAll()
+//            .mapEach { .init(value: To.from($0)) }
+        fatalError()
     }
 
-    public init(to: KeyPath<To, From>) {
-        self.toKey = to.keyPathObject.kvcString ?? "wat"
+    public init(to key: KeyPath<To, To.Value.BelongsTo<From>>, string: String) {
+        self.toKey = key
     }
 
-    public required init(from decoder: Decoder) throws {}
+    public required init(from decoder: Decoder) throws { }
     
-    public var projectedValue: _HasOne<From, To> {
-        self
-    }
+    public var projectedValue: _HasOne<From, To> { self }
     
     public func encode(to encoder: Encoder) throws {}
 }
@@ -56,6 +58,10 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
 @propertyWrapper
 public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Codable {
     private var value: [To]?
+
+    private var toKey: String
+    private var fromKey: String?
+    private var throughTable: String?
 
     public var wrappedValue: [To] {
         get {
@@ -68,22 +74,42 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Cod
     public var projectedValue: _HasMany<From, To> { self }
 
     /// One to Many
-    public init(to: KeyPath<To, From>) {
+    public init(to key: String) {
+        self.toKey = key
+    }
 
+    private init(value: [To]) {
+        fatalError()
     }
 
     /// Many to Many
-    public init<Through: Model>(from: KeyPath<Through, From>, to: KeyPath<Through, To>) {
-
+    public init<Through: Model>(through: Through.Type, from fromKey: String, to toKey: String) {
+        fatalError()
     }
 
-    static func load(_ from: [From]) -> EventLoopFuture<[_HasMany]> {
-        fatalError()
+    func load(_ from: [From]) -> EventLoopFuture<[_HasMany]> {
+        To.Value.query()
+            // Should only pull on per id
+            .where(key: self.toKey, in: from.compactMap { $0.id })
+            .getAll()
+            .map { results in
+                var orderedDict = OrderedDictionary<From.Identifier, [To]>()
+                for fromID in from.compactMap({ $0.id }) {
+                    orderedDict[fromID] = []
+                }
+                for result in results {
+//                    orderedDict[result[keyPath: ]]
+                }
+
+                fatalError()
+//                return Array(orderedDict.orderedValues)
+//                .init(value: $0.map { To.from($0) })
+            }
     }
     
     public func encode(to encoder: Encoder) throws {}
 
-    public init(from decoder: Decoder) throws {}
+    public init(from decoder: Decoder) throws {fatalError()}
 }
 
 protocol AnyBelongsTo {}
@@ -102,6 +128,10 @@ public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: Relationsh
         }
         set { self.value = newValue }
     }
+
+    public init() {
+        fatalError()
+    }
     
     public init(_ parent: Parent.Value) {
         guard let id = parent.id else {
@@ -115,7 +145,7 @@ public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: Relationsh
         self
     }
 
-    static func load(_ from: [Child]) -> EventLoopFuture<[_BelongsTo]> {
+    func load(_ from: [Child]) -> EventLoopFuture<[_BelongsTo]> {
         fatalError()
     }
 

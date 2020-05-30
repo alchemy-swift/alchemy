@@ -40,7 +40,7 @@ struct Trip: Model {
     @BelongsTo
     var destination: Place
     
-    @HasMany(from: \TripPlaces.trip, to: \.place)
+//    @HasMany(from: \TripPlaces.trip, to: \.place)
     var places: [Place]
     
     let priceStatus: PriceStatus?

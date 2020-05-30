@@ -16,10 +16,21 @@ public class ModelQuery<M: Model>: Query {
             .flatMapThrowing { try $0.decode(M.self) }
     }
 
-    func with<R: Relationship>(_ eagerLoadKeyPath: WritableKeyPath<M, R>,
-                               on loop: EventLoop = Loop.current, db: Database) where R.From == M {
+    func with<R: RelationAllowed>(
+        _ eagerLoadKeyPath: WritableKeyPath<M, M.HasOne<R>>,
+        on loop: EventLoop = Loop.current,
+        db: Database
+    ){
         self.eagerLoads.append { results in
-            R.load(results)
+            // If there are no results, don't need to eager load.
+            guard let firstResult = results.first else {
+                return loop.future([])
+            }
+
+            let theIDs = results.map { $0[keyPath: eagerLoadKeyPath] }
+
+            return firstResult[keyPath: eagerLoadKeyPath]
+                .load(results)
                 .map { relationshipResults in
                     var updatedResults = [M]()
 
