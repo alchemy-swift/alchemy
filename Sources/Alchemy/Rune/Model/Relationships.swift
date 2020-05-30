@@ -18,6 +18,7 @@ protocol Relationship: class {
 @propertyWrapper
 public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Codable {
     private var value: To?
+    private var toKey: String?
 
     public var wrappedValue: To {
         get {
@@ -29,14 +30,18 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
 
     required init(value: To) {
         self.value = value
+        self.toKey = ""
     }
 
     static func load(_ from: [From]) -> EventLoopFuture<[_HasOne]> {
-        fatalError()
+        To.Value.query()
+            .where("id" == "")
+            .getAll()
+            .mapEach { .init(value: To.from($0)) }
     }
 
     public init(to: KeyPath<To, From>) {
-        
+        self.toKey = to.keyPathObject.kvcString ?? "wat"
     }
 
     public required init(from decoder: Decoder) throws {}
