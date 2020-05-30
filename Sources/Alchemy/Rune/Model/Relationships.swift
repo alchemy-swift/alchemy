@@ -1,6 +1,10 @@
 import Foundation
 import NIO
 
+/// Relationships need to...
+/// 1. encode an id value (`BelongsTo`) or nothing (`HasOne`, `HasMany`)
+/// 2. decode properly, with `KeyPath` & `String` info in tact.
+
 /// Relationships.
 extension Model {
     public typealias HasOne<To: RelationAllowed> = _HasOne<Self, To>
@@ -117,7 +121,7 @@ protocol AnyBelongsTo {}
 @propertyWrapper
 /// The child of a one to many or a one to one.
 public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: Relationship, Codable, AnyBelongsTo {
-    public var id: Parent.Value.Identifier
+    public var id: Parent.Value.Identifier!
 
     private var value: Parent?
     
@@ -130,7 +134,7 @@ public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: Relationsh
     }
 
     public init() {
-        fatalError()
+        
     }
     
     public init(_ parent: Parent.Value) {

@@ -72,7 +72,10 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
-        try self.row.getField(columnName: self.string(for: key)).value.isNil
+        if key.stringValue == "pet" {
+            return true
+        }
+        return try self.row.getField(columnName: self.string(for: key)).value.isNil
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
@@ -136,7 +139,11 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
             return try self.row.getField(columnName: self.string(for: key)).uuid() as! T
         } else if type == Date.self {
             return try self.row.getField(columnName: self.string(for: key)).date() as! T
+        } else if type is AnyBelongsTo {
+            let field = try self.row.getField(columnName: self.string(for: key))
+            return try T(from: DatabaseFieldDecoder(field: field))
         } else {
+            print("type: \(type)")
             let field = try self.row.getField(columnName: self.string(for: key))
             return try T(from: DatabaseFieldDecoder(field: field))
         }
@@ -225,6 +232,12 @@ private struct _SingleValueDecodingContainer: SingleValueDecodingContainer {
     }
     
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        throw PostgresError("Decode a type from a single value container is not supported.")
+        if type == Int.self {
+            return try self.field.int() as! T
+        } else if type == UUID.self {
+            return try self.field.uuid() as! T
+        } else {
+            throw PostgresError("Decode a type from a single value container is not supported \(type).")
+        }
     }
 }

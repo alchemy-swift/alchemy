@@ -1,10 +1,6 @@
 import Alchemy
 import Foundation
 
-struct User: Model, Authable {
-    let id: UUID?
-}
-
 struct Place: Model {
     let id: UUID?
 }

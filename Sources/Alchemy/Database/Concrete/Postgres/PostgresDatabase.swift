@@ -48,6 +48,8 @@ public final class PostgresDatabase: Database {
     }
     
     public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+        print(sql)
+        print(values)
         return self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(
                 self.positionBindings(sql),

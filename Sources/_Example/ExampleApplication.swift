@@ -9,7 +9,7 @@ struct APIServer: Application {
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func setup() {
-        DB.default = self.mysql
+        DB.default = self.postgres
         
         self.globalMiddlewares
             // Applied to all incoming requests.
@@ -20,6 +20,14 @@ struct APIServer: Application {
             .middleware(LoggingMiddleware(text: "Handling request:"))
             // `GET /json`
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
+            // Group all pet requests
+            .group(path: "/pets") {
+                let controller = PetsController()
+                $0.on(.POST, at: "/user", do: controller.createUser)
+                $0.on(.GET, at: "/user", do: controller.getUsers)
+                $0.on(.POST, at: "/pet", do: controller.createPet)
+                $0.on(.GET, at: "/pet", do: controller.getPets)
+            }
             // Group all requests to /users
             .group(path: "/users") {
                 $0.on(.POST, do: { req in "hi from create user" })
@@ -29,7 +37,7 @@ struct APIServer: Application {
                     .middleware(BasicAuthMiddleware<User>())
                     // `POST /users/login`
                     .on(.POST, at: "/login") { req, authedUser in "hi from user login" }
-        }
+            }
             // Applies to requests in this group, validating a token auth and giving them a `User` parameter.
             .group(middleware: TokenAuthMiddleware<User>()) {
                 // Applies to the rest of the requests in this chain.
