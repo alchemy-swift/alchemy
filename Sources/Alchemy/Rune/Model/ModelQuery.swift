@@ -17,8 +17,7 @@ public class ModelQuery<M: Model>: Query {
     }
 
     public func with<R: RelationAllowed>(
-        from eagerLoadKeyPath: KeyPath<M, M.HasOne<R>>,
-        to: KeyPath<R.Value, R.Value.BelongsTo<M>>,
+        _ relationshipKeyPath: KeyPath<M, M.HasOne<R>>,
         on loop: EventLoop = Loop.current,
         db: Database = DB.default
     ) -> ModelQuery<M> {
@@ -28,21 +27,8 @@ public class ModelQuery<M: Model>: Query {
                 return loop.future([])
             }
 
-            return firstResult[keyPath: eagerLoadKeyPath]
-                .load(results)
-                .flatMapThrowing { relationshipResults in
-                    var updatedResults = [M]()
-                    
-                    let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: to].id })
-
-                    for (index, result) in results.enumerated() {
-                        let values = dict[result.id as! M.Value.Identifier]
-                        result[keyPath: eagerLoadKeyPath].wrappedValue = try R.from(values?.first)
-                        updatedResults.append(result)
-                    }
-
-                    return updatedResults
-                }
+            return firstResult[keyPath: relationshipKeyPath]
+                .load(results, from: relationshipKeyPath)
         }
         
         return self

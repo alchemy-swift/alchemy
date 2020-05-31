@@ -12,27 +12,44 @@ extension Model {
     public typealias BelongsTo<To: RelationAllowed> = _BelongsTo<Self, To>
 }
 
+protocol Relationship {
+    associatedtype From: Model
+    associatedtype To: RelationAllowed
+    func load(_ from: [From], from eagerLoadKeyPath: KeyPath<From, Self>) -> EventLoopFuture<[From]>
+}
+
 public protocol AnyHas {}
 
 class RelationshipData {
-    private static var dict: [String: String] = [:]
+    private static var dict: [String: (String, AnyKeyPath)] = [:]
     
-    static func store<From: Model, To: Model>(from: From.Type, to: To.Type, fromStored: String, toKey: String) {
+    static func store<From: Model, To: Model>(
+        from: From.Type,
+        to: To.Type,
+        fromStored: String,
+        keyString: String,
+        keyPath: AnyKeyPath
+    ) {
         let key = "\(From.tableName)_\(To.tableName)_\(fromStored)"
-        dict[key] = toKey
+        dict[key] = (keyString, keyPath)
     }
     
-    static func get<From: Model, To: Model>(from: From.Type, to: To.Type, fromStored: String) -> String? {
+    static func get<From: Model, To: Model>(
+        from: From.Type,
+        to: To.Type,
+        fromStored: String
+    ) -> (String, AnyKeyPath)? {
         let key = "\(From.tableName)_\(To.tableName)_\(fromStored)"
         return dict[key]
     }
 }
 
 @propertyWrapper
-public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas {
+public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas, Relationship {
     private var value: To?
 
     private var toKey: String
+    private var toKeyPath: KeyPath<To.Value, To.Value.BelongsTo<From>>!
 
     public var wrappedValue: To {
         get {
@@ -41,24 +58,20 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas {
         }
         set { self.value = newValue }
     }
+    
+    public var projectedValue: _HasOne<From, To> { self }
 
-    init(value: To) {
+    public init(value: To) {
         self.value = value
         self.toKey = ""
     }
 
-    func load(_ from: [From]) -> EventLoopFuture<[To.Value]> {
-        To.Value.query()
-            // Should only pull on per id
-            .where(key: self.toKey, in: from.compactMap { $0.id })
-            .getAll()
-    }
-
-    public init(this: String, to key: String) {
-        RelationshipData.store(from: From.self, to: To.Value.self, fromStored: this, toKey: key)
+    public init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
+        RelationshipData.store(from: From.self, to: To.Value.self, fromStored: this, keyString: key, keyPath: via)
         self.toKey = key
+        self.toKeyPath = via
     }
-
+    
     public required init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let codingKey = try container.decode(String.self)
@@ -67,11 +80,31 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas {
             fatalError("Unable to find the foreign key of this relationship ;_;")
         }
         
-        self.toKey = key
+        self.toKey = key.0
+        self.toKeyPath = key.1 as? KeyPath<To.Value, To.Value.BelongsTo<From>>
     }
     
-    public var projectedValue: _HasOne<From, To> { self }
-    
+    func load(
+        _ from: [From],
+        from eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
+    {
+        To.Value.query()
+            // Should only pull on per id
+            .where(key: self.toKey, in: from.compactMap { $0.id })
+            .getAll()
+            .flatMapThrowing { relationshipResults in
+                var updatedResults = [From]()
+                let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: self.toKeyPath].id! })
+                for result in from {
+                    let values = dict[result.id as! From.Value.Identifier]
+                    result[keyPath: eagerLoadKeyPath].wrappedValue = try To.from(values?.first)
+                    updatedResults.append(result)
+                }
+
+                return updatedResults
+            }
+    }
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         if let value = self.value as? To.Value {
@@ -114,24 +147,11 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas {
         fatalError()
     }
 
-    func load(_ from: [From]) -> EventLoopFuture<[_HasMany]> {
+    func load(_ from: [From]) -> EventLoopFuture<[To.Value]> {
         To.Value.query()
             // Should only pull on per id
             .where(key: self.toKey, in: from.compactMap { $0.id })
             .getAll()
-            .map { results in
-                var orderedDict = OrderedDictionary<From.Identifier, [To]>()
-                for fromID in from.compactMap({ $0.id }) {
-                    orderedDict[fromID] = []
-                }
-                for result in results {
-//                    orderedDict[result[keyPath: ]]
-                }
-
-                fatalError()
-//                return Array(orderedDict.orderedValues)
-//                .init(value: $0.map { To.from($0) })
-            }
     }
     
     public func encode(to encoder: Encoder) throws {}
