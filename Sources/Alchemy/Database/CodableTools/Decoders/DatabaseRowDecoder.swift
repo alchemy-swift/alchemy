@@ -72,9 +72,6 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
-        if key.stringValue == "pet" {
-            return true
-        }
         return try self.row.getField(columnName: self.string(for: key)).value.isNil
     }
     
@@ -139,10 +136,20 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
             return try self.row.getField(columnName: self.string(for: key)).uuid() as! T
         } else if type == Date.self {
             return try self.row.getField(columnName: self.string(for: key)).date() as! T
-        } else if type is AnyBelongsTo {
-            let field = try self.row.getField(columnName: self.string(for: key))
+        } else if type is AnyBelongsTo.Type {
+            let field = try self.row.getField(columnName: self.string(for: key) + "_id")
             return try T(from: DatabaseFieldDecoder(field: field))
+        } else if type is AnyHas.Type {
+//            let field = try self.row.getField(columnName: self.string(for: key) + "_id")
+            /// Pass junk, it won't decode.
+            return try T(from: DatabaseFieldDecoder(field: .init(column: "junnk", value: .string(nil))))
         } else {
+            if (type as? AnyBelongsTo.Type) != nil {
+                print("nil")
+            } else {
+                print("yay")
+            }
+            
             print("type: \(type)")
             let field = try self.row.getField(columnName: self.string(for: key))
             return try T(from: DatabaseFieldDecoder(field: field))

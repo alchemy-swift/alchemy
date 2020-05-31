@@ -152,6 +152,8 @@ private struct _DatabaseKeyedEncodingContainer<K: CodingKey> : KeyedEncodingCont
             self.encoder.storedProperties.append(DatabaseField(column: keyString, value: theType))
         } else if value is AnyBelongsTo {
             try value.encode(to: _SingleValueEncoder(column: keyString + "_id", encoder: self.encoder))
+        } else if value is AnyHas {
+            // do nothing
         } else {
             try value.encode(to: _SingleValueEncoder(column: keyString, encoder: self.encoder))
         }

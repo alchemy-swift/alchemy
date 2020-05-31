@@ -6,13 +6,7 @@ extension PostgresRow: DatabaseRow {
     }
     
     public func getField(columnName: String) throws -> DatabaseField {
-        var columnName = columnName
-        if columnName == "owner" {
-            columnName = "owner_id"
-        }
-        
         guard let value = self.column(columnName) else {
-            
             throw PostgresError("No column named '\(columnName)' was found.")
         }
         

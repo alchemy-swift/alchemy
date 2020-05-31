@@ -19,8 +19,10 @@ protocol Relationship: class {
     func load(_ from: [From]) -> EventLoopFuture<[Self]>
 }
 
+public protocol AnyHas {}
+
 @propertyWrapper
-public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Codable {
+public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Codable, AnyHas {
     private var value: To?
 
     private var toKey: KeyPath<To, To.Value.BelongsTo<From>>?
@@ -50,17 +52,26 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
 
     public init(to key: KeyPath<To, To.Value.BelongsTo<From>>, string: String) {
         self.toKey = key
+        self.toString = string
     }
 
     public required init(from decoder: Decoder) throws { }
     
     public var projectedValue: _HasOne<From, To> { self }
     
-    public func encode(to encoder: Encoder) throws {}
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        print("to key: \(self.toString)")
+        if let value = self.value {
+//            container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
+    }
 }
 
 @propertyWrapper
-public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Codable {
+public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Codable, AnyHas {
     private var value: [To]?
 
     private var toKey: String
@@ -116,11 +127,11 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Cod
     public init(from decoder: Decoder) throws {fatalError()}
 }
 
-protocol AnyBelongsTo {}
+public protocol AnyBelongsTo {}
 
 @propertyWrapper
 /// The child of a one to many or a one to one.
-public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: Relationship, Codable, AnyBelongsTo {
+public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: AnyBelongsTo, Relationship, Codable {
     public var id: Parent.Value.Identifier!
 
     private var value: Parent?
