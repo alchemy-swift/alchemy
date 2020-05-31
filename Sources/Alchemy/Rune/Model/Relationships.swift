@@ -12,21 +12,27 @@ extension Model {
     public typealias BelongsTo<To: RelationAllowed> = _BelongsTo<Self, To>
 }
 
-protocol Relationship: class {
-    associatedtype From: Model
-
-    /// Given a list of `From`s, load the relationships in order.
-    func load(_ from: [From]) -> EventLoopFuture<[Self]>
-}
-
 public protocol AnyHas {}
 
+class RelationshipData {
+    private static var dict: [String: String] = [:]
+    
+    static func store<From: Model, To: Model>(from: From.Type, to: To.Type, fromStored: String, toKey: String) {
+        let key = "\(From.tableName)_\(To.tableName)_\(fromStored)"
+        dict[key] = toKey
+    }
+    
+    static func get<From: Model, To: Model>(from: From.Type, to: To.Type, fromStored: String) -> String? {
+        let key = "\(From.tableName)_\(To.tableName)_\(fromStored)"
+        return dict[key]
+    }
+}
+
 @propertyWrapper
-public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Codable, AnyHas {
+public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas {
     private var value: To?
 
-    private var toKey: KeyPath<To, To.Value.BelongsTo<From>>?
-    private var toString: String?
+    private var toKey: String
 
     public var wrappedValue: To {
         get {
@@ -38,32 +44,38 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
 
     init(value: To) {
         self.value = value
-//        self.toKey = ""
+        self.toKey = ""
     }
 
-    func load(_ from: [From]) -> EventLoopFuture<[_HasOne]> {
-//        To.Value.query()
-//            // Should only pull on per id
-//            .where(key: self.toKey, in: from.compactMap { $0.id })
-//            .getAll()
-//            .mapEach { .init(value: To.from($0)) }
-        fatalError()
+    func load(_ from: [From]) -> EventLoopFuture<[To.Value]> {
+        To.Value.query()
+            // Should only pull on per id
+            .where(key: self.toKey, in: from.compactMap { $0.id })
+            .getAll()
     }
 
-    public init(to key: KeyPath<To, To.Value.BelongsTo<From>>, string: String) {
+    public init(this: String, to key: String) {
+        RelationshipData.store(from: From.self, to: To.Value.self, fromStored: this, toKey: key)
         self.toKey = key
-        self.toString = string
     }
 
-    public required init(from decoder: Decoder) throws { }
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let codingKey = try container.decode(String.self)
+        
+        guard let key = RelationshipData.get(from: From.self, to: To.Value.self, fromStored: codingKey) else {
+            fatalError("Unable to find the foreign key of this relationship ;_;")
+        }
+        
+        self.toKey = key
+    }
     
     public var projectedValue: _HasOne<From, To> { self }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        print("to key: \(self.toString)")
-        if let value = self.value {
-//            container.encode(value)
+        if let value = self.value as? To.Value {
+            try container.encode(value)
         } else {
             try container.encodeNil()
         }
@@ -71,7 +83,7 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Relationship, Coda
 }
 
 @propertyWrapper
-public final class _HasMany<From: Model, To: RelationAllowed>: Relationship, Codable, AnyHas {
+public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas {
     private var value: [To]?
 
     private var toKey: String
@@ -131,7 +143,7 @@ public protocol AnyBelongsTo {}
 
 @propertyWrapper
 /// The child of a one to many or a one to one.
-public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: AnyBelongsTo, Relationship, Codable {
+public final class _BelongsTo<Child: Model, Parent: RelationAllowed>: AnyBelongsTo, Codable {
     public var id: Parent.Value.Identifier!
 
     private var value: Parent?

@@ -68,7 +68,7 @@ public struct WhereIn {
 extension WhereIn: WhereClause {
     func toSQL() -> SQL {
         let placeholders = Array(repeating: "?", count: values.count)
-        return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
+        return SQL("\(boolean) \(key) \(type)(\(placeholders.joined(separator: ", ")))", bindings: values)
     }
 }
 

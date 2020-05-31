@@ -6,8 +6,8 @@ struct User: Model, Authable {
     let id: Int?
     let name: String
     
-    @HasOne(to: \.$owner, string: "wtf")
-    var pet: Pet
+    @HasOne(this: "pet", to: "owner_id")
+    var pet: Pet?
 }
 
 struct Pet: Model {

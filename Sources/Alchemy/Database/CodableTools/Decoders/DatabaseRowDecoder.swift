@@ -68,7 +68,7 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func contains(_ key: Key) -> Bool {
-        self.row.allColumns.contains(self.string(for: key))
+        return self.row.allColumns.contains(self.string(for: key))
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
@@ -140,17 +140,9 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
             let field = try self.row.getField(columnName: self.string(for: key) + "_id")
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is AnyHas.Type {
-//            let field = try self.row.getField(columnName: self.string(for: key) + "_id")
-            /// Pass junk, it won't decode.
-            return try T(from: DatabaseFieldDecoder(field: .init(column: "junnk", value: .string(nil))))
+            // Special case the AnyHas to decode the coding key.
+            return try T(from: DatabaseFieldDecoder(field: .init(column: "key", value: .string(key.stringValue))))
         } else {
-            if (type as? AnyBelongsTo.Type) != nil {
-                print("nil")
-            } else {
-                print("yay")
-            }
-            
-            print("type: \(type)")
             let field = try self.row.getField(columnName: self.string(for: key))
             return try T(from: DatabaseFieldDecoder(field: field))
         }

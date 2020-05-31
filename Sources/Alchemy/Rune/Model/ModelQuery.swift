@@ -16,32 +16,36 @@ public class ModelQuery<M: Model>: Query {
             .flatMapThrowing { try $0.decode(M.self) }
     }
 
-    func with<R: RelationAllowed>(
-        _ eagerLoadKeyPath: WritableKeyPath<M, M.HasOne<R>>,
+    public func with<R: RelationAllowed>(
+        from eagerLoadKeyPath: KeyPath<M, M.HasOne<R>>,
+        to: KeyPath<R.Value, R.Value.BelongsTo<M>>,
         on loop: EventLoop = Loop.current,
-        db: Database
-    ){
+        db: Database = DB.default
+    ) -> ModelQuery<M> {
         self.eagerLoads.append { results in
             // If there are no results, don't need to eager load.
             guard let firstResult = results.first else {
                 return loop.future([])
             }
 
-            let theIDs = results.map { $0[keyPath: eagerLoadKeyPath] }
-
             return firstResult[keyPath: eagerLoadKeyPath]
                 .load(results)
-                .map { relationshipResults in
+                .flatMapThrowing { relationshipResults in
                     var updatedResults = [M]()
+                    
+                    let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: to].id })
 
-                    for (index, var result) in results.enumerated() {
-                        result[keyPath: eagerLoadKeyPath] = relationshipResults[index]
+                    for (index, result) in results.enumerated() {
+                        let values = dict[result.id as! M.Value.Identifier]
+                        result[keyPath: eagerLoadKeyPath].wrappedValue = try R.from(values?.first)
                         updatedResults.append(result)
                     }
 
                     return updatedResults
                 }
         }
+        
+        return self
     }
 
     /// Evaluate all of the eager loads, sequentially.

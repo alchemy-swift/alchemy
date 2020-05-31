@@ -8,7 +8,9 @@ struct PetsController {
     }
     
     func getUsers(_ req: HTTPRequest) -> EventLoopFuture<[User]> {
-        User.all()
+        User.query()
+            .with(from: \.$pet, to: \.$owner)
+            .getAll()
     }
     
     func createUser(_ req: HTTPRequest) -> EventLoopFuture<User> {
