@@ -16,11 +16,11 @@ public class ModelQuery<M: Model>: Query {
             .flatMapThrowing { try $0.decode(M.self) }
     }
 
-    public func with<R: RelationAllowed>(
-        _ relationshipKeyPath: KeyPath<M, M.HasOne<R>>,
+    public func with<R: Relationship>(
+        _ relationshipKeyPath: KeyPath<M, R>,
         on loop: EventLoop = Loop.current,
         db: Database = DB.default
-    ) -> ModelQuery<M> {
+    ) -> ModelQuery<M> where R.From == M {
         self.eagerLoads.append { results in
             // If there are no results, don't need to eager load.
             guard let firstResult = results.first else {

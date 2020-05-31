@@ -8,6 +8,9 @@ struct User: Model, Authable {
     
     @HasOne(this: "pet", to: "owner_id", via: \.$owner)
     var pet: Pet?
+    
+    @HasMany(this: "pets", to: "owner_id", via: \.$owner)
+    var pets: [Pet]
 }
 
 struct Pet: Model {

@@ -10,6 +10,7 @@ struct PetsController {
     func getUsers(_ req: HTTPRequest) -> EventLoopFuture<[User]> {
         User.query()
             .with(\.$pet)
+            .with(\.$pets)
             .getAll()
     }
     

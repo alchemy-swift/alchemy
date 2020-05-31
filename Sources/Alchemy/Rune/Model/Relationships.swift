@@ -12,7 +12,7 @@ extension Model {
     public typealias BelongsTo<To: RelationAllowed> = _BelongsTo<Self, To>
 }
 
-protocol Relationship {
+public protocol Relationship {
     associatedtype From: Model
     associatedtype To: RelationAllowed
     func load(_ from: [From], from eagerLoadKeyPath: KeyPath<From, Self>) -> EventLoopFuture<[From]>
@@ -84,7 +84,7 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas, R
         self.toKeyPath = key.1 as? KeyPath<To.Value, To.Value.BelongsTo<From>>
     }
     
-    func load(
+    public func load(
         _ from: [From],
         from eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
     {
@@ -116,12 +116,11 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas, R
 }
 
 @propertyWrapper
-public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas {
+public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas, Relationship {
     private var value: [To]?
 
     private var toKey: String
-    private var fromKey: String?
-    private var throughTable: String?
+    private var toKeyPath: KeyPath<To.Value, To.Value.BelongsTo<From>>!
 
     public var wrappedValue: [To] {
         get {
@@ -134,29 +133,61 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas {
     public var projectedValue: _HasMany<From, To> { self }
 
     /// One to Many
-    public init(to key: String) {
+    public init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
+        RelationshipData.store(from: From.self, to: To.Value.self, fromStored: this, keyString: key, keyPath: via)
         self.toKey = key
+        self.toKeyPath = via
     }
 
     private init(value: [To]) {
-        fatalError()
+        // Can init with RelationshipData?
+        self.value = value
+        self.toKey = ""
     }
 
     /// Many to Many
     public init<Through: Model>(through: Through.Type, from fromKey: String, to toKey: String) {
-        fatalError()
+        fatalError("TODO")
     }
 
-    func load(_ from: [From]) -> EventLoopFuture<[To.Value]> {
+    public func load(_ from: [From], from eagerLoadKeyPath: KeyPath<From, _HasMany<From, To>>) -> EventLoopFuture<[From]> {
         To.Value.query()
             // Should only pull on per id
             .where(key: self.toKey, in: from.compactMap { $0.id })
             .getAll()
+            .flatMapThrowing { relationshipResults in
+                var updatedResults = [From]()
+                let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: self.toKeyPath].id! })
+                for result in from {
+                    let values = dict[result.id as! From.Value.Identifier]
+                    result[keyPath: eagerLoadKeyPath].wrappedValue = try values?.map { try To.from($0) } ?? []
+                    updatedResults.append(result)
+                }
+
+                return updatedResults
+            }
     }
     
-    public func encode(to encoder: Encoder) throws {}
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let value = self.value as? [To.Value] {
+            try container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
+    }
 
-    public init(from decoder: Decoder) throws {fatalError()}
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let codingKey = try container.decode(String.self)
+        
+        guard let key = RelationshipData.get(from: From.self, to: To.Value.self, fromStored: codingKey) else {
+            fatalError("Unable to find the foreign key of this relationship ;_;")
+        }
+        
+        self.toKey = key.0
+        self.toKeyPath = key.1 as? KeyPath<To.Value, To.Value.BelongsTo<From>>
+    }
 }
 
 public protocol AnyBelongsTo {}
