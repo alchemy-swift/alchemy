@@ -20,36 +20,53 @@ public protocol Relationship {
 
 public protocol AnyHas {}
 
-class RelationshipData {
-    private static var dict: [String: (String, AnyKeyPath)] = [:]
+class RelationshipDataStorage {
+    private static var dict: [String: RelationshipData] = [:]
     
     static func store<From: Model, To: Model>(
         from: From.Type,
         to: To.Type,
         fromStored: String,
-        keyString: String,
-        keyPath: AnyKeyPath
+        data: RelationshipData
     ) {
         let key = "\(From.tableName)_\(To.tableName)_\(fromStored)"
-        dict[key] = (keyString, keyPath)
+        dict[key] = data
     }
     
     static func get<From: Model, To: Model>(
         from: From.Type,
         to: To.Type,
         fromStored: String
-    ) -> (String, AnyKeyPath)? {
+    ) -> RelationshipData? {
         let key = "\(From.tableName)_\(To.tableName)_\(fromStored)"
         return dict[key]
     }
+}
+
+enum RelationshipData {
+    /// The relationship is through two foreign keys on a pivot table.
+    ///
+    /// Pet -> PetVaccine -> Vaccine
+    case pivot(
+        fromKey: AnyKeyPath,
+        fromKeyString: String,
+        toKey: AnyKeyPath,
+        toKeyString: String
+    )
+    /// The relationship is via a foreign key on the child.
+    ///
+    /// Pet -> User
+    case foreignKey(
+        key: AnyKeyPath,
+        keyString: String
+    )
 }
 
 @propertyWrapper
 public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas, Relationship {
     private var value: To?
 
-    private var toKey: String
-    private var toKeyPath: KeyPath<To.Value, To.Value.BelongsTo<From>>!
+    private var relationshipData: RelationshipData!
 
     public var wrappedValue: To {
         get {
@@ -63,46 +80,54 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas, R
 
     public init(value: To) {
         self.value = value
-        self.toKey = ""
     }
 
     public init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
-        RelationshipData.store(from: From.self, to: To.Value.self, fromStored: this, keyString: key, keyPath: via)
-        self.toKey = key
-        self.toKeyPath = via
+        RelationshipDataStorage.store(
+            from: From.self,
+            to: To.Value.self,
+            fromStored: this,
+            data: .foreignKey(key: via, keyString: key)
+        )
+        self.relationshipData = .foreignKey(key: via, keyString: key)
     }
     
     public required init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let codingKey = try container.decode(String.self)
         
-        guard let key = RelationshipData.get(from: From.self, to: To.Value.self, fromStored: codingKey) else {
-            fatalError("Unable to find the foreign key of this relationship ;_;")
+        guard let data = RelationshipDataStorage.get(from: From.self, to: To.Value.self, fromStored: codingKey) else {
+            fatalError("Unable to find the data of this relationship ;_;")
         }
         
-        self.toKey = key.0
-        self.toKeyPath = key.1 as? KeyPath<To.Value, To.Value.BelongsTo<From>>
+        self.relationshipData = data
     }
     
     public func load(
         _ from: [From],
         from eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
     {
-        To.Value.query()
-            // Should only pull on per id
-            .where(key: self.toKey, in: from.compactMap { $0.id })
-            .getAll()
-            .flatMapThrowing { relationshipResults in
-                var updatedResults = [From]()
-                let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: self.toKeyPath].id! })
-                for result in from {
-                    let values = dict[result.id as! From.Value.Identifier]
-                    result[keyPath: eagerLoadKeyPath].wrappedValue = try To.from(values?.first)
-                    updatedResults.append(result)
-                }
+        switch self.relationshipData {
+        case let .foreignKey(key, keyString):
+            let toKey = key as! KeyPath<To.Value, To.Value.BelongsTo<From>>
+            return To.Value.query()
+                // Should only pull on per id
+                .where(key: keyString, in: from.compactMap { $0.id })
+                .getAll()
+                .flatMapThrowing { relationshipResults in
+                    var updatedResults = [From]()
+                    let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: toKey].id! })
+                    for result in from {
+                        let values = dict[result.id as! From.Value.Identifier]
+                        result[keyPath: eagerLoadKeyPath].wrappedValue = try To.from(values?.first)
+                        updatedResults.append(result)
+                    }
 
-                return updatedResults
-            }
+                    return updatedResults
+                }
+        default:
+            fatalError("not ready yet")
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -119,8 +144,7 @@ public final class _HasOne<From: Model, To: RelationAllowed>: Codable, AnyHas, R
 public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas, Relationship {
     private var value: [To]?
 
-    private var toKey: String
-    private var toKeyPath: KeyPath<To.Value, To.Value.BelongsTo<From>>!
+    private var relationshipData: RelationshipData!
 
     public var wrappedValue: [To] {
         get {
@@ -134,38 +158,53 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas, 
 
     /// One to Many
     public init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
-        RelationshipData.store(from: From.self, to: To.Value.self, fromStored: this, keyString: key, keyPath: via)
-        self.toKey = key
-        self.toKeyPath = via
+        RelationshipDataStorage.store(
+            from: From.self,
+            to: To.Value.self,
+            fromStored: this,
+            data: .foreignKey(key: via, keyString: key)
+        )
+        self.relationshipData = .foreignKey(key: via, keyString: key)
     }
 
     private init(value: [To]) {
         // Can init with RelationshipData?
         self.value = value
-        self.toKey = ""
     }
 
     /// Many to Many
-    public init<Through: Model>(through: Through.Type, from fromKey: String, to toKey: String) {
+    public init<Through: Model>(
+        named: String,
+        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
+        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
+        fromString: String,
+        toString: String
+    ) {
         fatalError("TODO")
     }
 
     public func load(_ from: [From], from eagerLoadKeyPath: KeyPath<From, _HasMany<From, To>>) -> EventLoopFuture<[From]> {
-        To.Value.query()
-            // Should only pull on per id
-            .where(key: self.toKey, in: from.compactMap { $0.id })
-            .getAll()
-            .flatMapThrowing { relationshipResults in
-                var updatedResults = [From]()
-                let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: self.toKeyPath].id! })
-                for result in from {
-                    let values = dict[result.id as! From.Value.Identifier]
-                    result[keyPath: eagerLoadKeyPath].wrappedValue = try values?.map { try To.from($0) } ?? []
-                    updatedResults.append(result)
-                }
+        switch self.relationshipData {
+        case let .foreignKey(key, keyString):
+            let toKey = key as! KeyPath<To.Value, To.Value.BelongsTo<From>>
+            return To.Value.query()
+                // Should only pull on per id
+                .where(key: keyString, in: from.compactMap { $0.id })
+                .getAll()
+                .flatMapThrowing { relationshipResults in
+                    var updatedResults = [From]()
+                    let dict = Dictionary(grouping: relationshipResults, by: { $0[keyPath: toKey].id! })
+                    for result in from {
+                        let values = dict[result.id as! From.Value.Identifier]
+                        result[keyPath: eagerLoadKeyPath].wrappedValue = try values?.map { try To.from($0) } ?? []
+                        updatedResults.append(result)
+                    }
 
-                return updatedResults
-            }
+                    return updatedResults
+                }
+        default:
+            fatalError("not ready yet")
+        }
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -181,12 +220,11 @@ public final class _HasMany<From: Model, To: RelationAllowed>: Codable, AnyHas, 
         let container = try decoder.singleValueContainer()
         let codingKey = try container.decode(String.self)
         
-        guard let key = RelationshipData.get(from: From.self, to: To.Value.self, fromStored: codingKey) else {
+        guard let data = RelationshipDataStorage.get(from: From.self, to: To.Value.self, fromStored: codingKey) else {
             fatalError("Unable to find the foreign key of this relationship ;_;")
         }
         
-        self.toKey = key.0
-        self.toKeyPath = key.1 as? KeyPath<To.Value, To.Value.BelongsTo<From>>
+        self.relationshipData = data
     }
 }
 
