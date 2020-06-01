@@ -11,9 +11,19 @@ public protocol DatabaseIdentifiable: Identifiable {
     var id: Self.Identifier? { get }
 }
 
-public protocol RuneID: Hashable, Parameter, Codable {}
-extension UUID: RuneID {}
-extension Int: RuneID {}
+public protocol RuneID: Hashable, Parameter, Codable {
+    static func from(field: DatabaseField) throws -> Self
+}
+extension UUID: RuneID {
+    public static func from(field: DatabaseField) throws -> UUID {
+        try field.uuid()
+    }
+}
+extension Int: RuneID {
+    public static func from(field: DatabaseField) throws -> Int {
+        try field.int()
+    }
+}
 
 public enum DatabaseKeyMappingStrategy {
     case useDefaultKeys

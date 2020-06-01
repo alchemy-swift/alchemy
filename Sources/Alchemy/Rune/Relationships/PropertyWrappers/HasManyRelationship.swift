@@ -19,17 +19,6 @@ public final class HasManyRelationship<From: Model, To: RelationAllowed>: HasRel
         self.value = value
     }
 
-    /// Many to Many
-    public init<Through: Model>(
-        named: String,
-        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
-        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
-        fromString: String,
-        toString: String
-    ) {
-        fatalError("TODO")
-    }
-
     public func load(
         _ from: [From],
         from eagerLoadKeyPath: KeyPath<From, From.HasMany<To>>) -> EventLoopFuture<[From]>
@@ -62,5 +51,15 @@ public final class HasManyRelationship<From: Model, To: RelationAllowed>: HasRel
     
     public required init(this: String, to key: KeyPath<To.Value, To.Value.BelongsTo<From>>, keyString: String) {
         super.init(this: this, to: key, keyString: keyString)
+    }
+    
+    public required init<Through: Model>(
+        named: String,
+        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
+        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
+        fromString: String,
+        toString: String
+    ) {
+        super.init(named: named, from: fromKey, to: toKey, fromString: fromString, toString: toString)
     }
 }

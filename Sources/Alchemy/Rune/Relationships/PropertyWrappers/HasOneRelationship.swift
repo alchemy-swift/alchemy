@@ -28,6 +28,16 @@ public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRela
         try super.init(from: decoder)
     }
     
+    public required init<Through: Model>(
+        named: String,
+        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
+        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
+        fromString: String,
+        toString: String
+    ) {
+        super.init(named: named, from: fromKey, to: toKey, fromString: fromString, toString: toString)
+    }
+    
     public func load(
         _ from: [From],
         from eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>

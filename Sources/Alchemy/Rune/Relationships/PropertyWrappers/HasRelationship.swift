@@ -19,6 +19,30 @@ public class HasRelationship<From: Model, To: RelationAllowed>: AnyHas, Decodabl
         )
     }
     
+    public required init<Through: Model>(
+        named: String,
+        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
+        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
+        fromString: String,
+        toString: String
+    ) {
+        let loadClosure = EagerLoader<From, To>.through(
+            named: named,
+            from: fromKey,
+            to: toKey,
+            fromString: fromString,
+            toString: toString
+        )
+        self.eagerLoadClosure = loadClosure
+
+        RelationshipDataStorage.store(
+            from: From.self,
+            to: To.self,
+            fromStored: named,
+            loadClosure: loadClosure
+        )
+    }
+    
     public required init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let codingKey = try container.decode(String.self)

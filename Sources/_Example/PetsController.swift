@@ -21,7 +21,10 @@ struct PetsController {
     }
     
     func getPets(_ req: HTTPRequest) -> EventLoopFuture<[Pet]> {
-        Pet.all()
+        Pet.query()
+            .with(\.$owner)
+            .with(\.$vaccines)
+            .getAll()
     }
     
     func createPet(_ req: HTTPRequest) -> EventLoopFuture<Pet> {

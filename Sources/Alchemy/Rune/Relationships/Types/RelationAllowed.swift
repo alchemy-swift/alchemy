@@ -1,5 +1,5 @@
 /// So that `Model` & `Model?` can have similar functionality.
-public protocol RelationAllowed {
+public protocol RelationAllowed: Codable {
     associatedtype Value: Model
     var elementType: Value.Type { get }
 

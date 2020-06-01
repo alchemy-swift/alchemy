@@ -5,7 +5,7 @@ public class ModelQuery<M: Model>: Query {
     private var eagerLoads: [([M]) -> EventLoopFuture<[M]>] = []
 
     public func getAll(on loop: EventLoop = Loop.current) -> EventLoopFuture<[M]> {
-        self.get(["*"], on: loop)
+        self.get(["\(M.tableName).*"], on: loop)
             .flatMapThrowing { try $0.map { try $0.decode(M.self) } }
             .flatMap { self.evaluateEagerLoads(for: $0) }
     }
