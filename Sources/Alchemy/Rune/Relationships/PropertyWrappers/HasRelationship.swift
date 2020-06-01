@@ -7,8 +7,8 @@ public class HasRelationship<From: Model, To: RelationAllowed>: AnyHas, Decodabl
     
     init() {}
     
-    public required init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
-        let loadClosure = EagerLoader<From, To>.via(key: via, keyString: key)
+    public required init(this: String, to key: KeyPath<To.Value, To.Value.BelongsTo<From>>, keyString: String) {
+        let loadClosure = EagerLoader<From, To>.via(key: key, keyString: keyString)
         self.eagerLoadClosure = loadClosure
         
         RelationshipDataStorage.store(

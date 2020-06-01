@@ -26,7 +26,7 @@ struct Review: Model {
 
     let id: Int?
 
-    @HasOne(this: "rental", to: "review_id", via: \.$review)
+    @HasOne(this: "rental", to: \.$review, keyString: "review_id")
     var rental: Rental
 
     let comment: String

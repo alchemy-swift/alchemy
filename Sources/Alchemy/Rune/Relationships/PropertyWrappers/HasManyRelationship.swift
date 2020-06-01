@@ -60,7 +60,7 @@ public final class HasManyRelationship<From: Model, To: RelationAllowed>: HasRel
         try super.init(from: decoder)
     }
     
-    public required init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
-        super.init(this: this, to: key, via: via)
+    public required init(this: String, to key: KeyPath<To.Value, To.Value.BelongsTo<From>>, keyString: String) {
+        super.init(this: this, to: key, keyString: keyString)
     }
 }

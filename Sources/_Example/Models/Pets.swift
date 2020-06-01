@@ -6,10 +6,10 @@ struct User: Model, Authable {
     let id: Int?
     let name: String
     
-    @HasOne(this: "pet", to: "owner_id", via: \.$owner)
+    @HasOne(this: "pet", to: \.$owner, keyString: "owner_id")
     var pet: Pet?
     
-    @HasMany(this: "pets", to: "owner_id", via: \.$owner)
+    @HasMany(this: "pets", to: \.$owner, keyString: "owner_id")
     var pets: [Pet]
 }
 

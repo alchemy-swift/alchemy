@@ -20,8 +20,8 @@ public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRela
         self.value = value
     }
     
-    public required init(this: String, to key: String, via: KeyPath<To.Value, To.Value.BelongsTo<From>>) {
-        super.init(this: this, to: key, via: via)
+    public required init(this: String, to key: KeyPath<To.Value, To.Value.BelongsTo<From>>, keyString: String) {
+        super.init(this: this, to: key, keyString: keyString)
     }
     
     public required init(from decoder: Decoder) throws {

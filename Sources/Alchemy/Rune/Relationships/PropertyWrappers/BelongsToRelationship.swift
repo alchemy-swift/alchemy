@@ -34,10 +34,6 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
         self
     }
 
-    func load(_ from: [Child]) -> EventLoopFuture<[BelongsToRelationship]> {
-        fatalError()
-    }
-    
     public func load(
         _ from: [Child],
         from eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
