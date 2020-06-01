@@ -24,8 +24,7 @@ struct PetsController {
     }
     
     func createPet(_ req: HTTPRequest) -> EventLoopFuture<Pet> {
-        let owner = User(id: 1, name: "Josh")
-        let pet = Pet(id: nil, name: "Fido", owner: .init(owner))
+        let pet = Pet(id: nil, name: "Melvin", type: .dog, owner: .init(1))
         return pet.save().map { pet }
     }
     

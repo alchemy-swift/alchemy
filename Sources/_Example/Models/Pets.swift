@@ -13,11 +13,16 @@ struct User: Model, Authable {
     var pets: [Pet]
 }
 
+enum PetType: Int, Codable {
+    case dog, cat
+}
+
 struct Pet: Model {
     static var tableName: String = "pets"
     
     let id: Int?
     let name: String
+    let type: PetType
     
     @BelongsTo
     var owner: User
