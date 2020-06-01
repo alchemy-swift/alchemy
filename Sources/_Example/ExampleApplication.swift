@@ -27,6 +27,7 @@ struct APIServer: Application {
                 $0.on(.GET, at: "/user", do: controller.getUsers)
                 $0.on(.POST, at: "/pet", do: controller.createPet)
                 $0.on(.GET, at: "/pet", do: controller.getPets)
+                $0.on(.POST, at: "/vaccinate/:pet_id/:vaccine_id", do: controller.vaccinate)
             }
             // Group all requests to /users
             .group(path: "/users") {

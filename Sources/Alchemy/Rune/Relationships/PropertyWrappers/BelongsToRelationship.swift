@@ -22,6 +22,10 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
 
     public init() {}
     
+    public init(_ parentID: Parent.Value.Identifier) {
+        self.id = parentID
+    }
+    
     public init(_ parent: Parent.Value) {
         guard let id = parent.id else {
             fatalError("Can't form a relation with an unidentified object.")

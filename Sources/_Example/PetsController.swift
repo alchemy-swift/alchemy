@@ -3,10 +3,6 @@ import Foundation
 import NIO
 
 struct PetsController {
-    func test() -> some CustomStringConvertible {
-        ""
-    }
-    
     func getUsers(_ req: HTTPRequest) -> EventLoopFuture<[User]> {
         User.query()
             .with(\.$pet)
@@ -32,4 +28,17 @@ struct PetsController {
         let pet = Pet(id: nil, name: "Fido", owner: .init(owner))
         return pet.save().map { pet }
     }
+    
+    func vaccinate(_ req: HTTPRequest) throws -> EventLoopFuture<Void> {
+        let petID = try Int(try req.pathComponent(for: "pet_id")).unwrap(or: PetError("not int"))
+        let vaccineID = try Int(try req.pathComponent(for: "vaccine_id")).unwrap(or: PetError("not int"))
+        
+        return PetVaccine(pet: .init(petID), vaccine: .init(vaccineID))
+            .save()
+    }
+}
+
+struct PetError: Error {
+    let info: String
+    init(_ info: String) { self.info = info }
 }
