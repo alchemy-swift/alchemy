@@ -20,8 +20,6 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
         set { self.value = newValue }
     }
 
-    public init() {}
-    
     public init(_ parentID: Parent.Value.Identifier) {
         self.id = parentID
     }
