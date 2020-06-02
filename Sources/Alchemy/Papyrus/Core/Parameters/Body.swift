@@ -27,7 +27,7 @@ public enum ContentType {
 }
 
 @propertyWrapper
-public struct Body<Value: Codable>: AnyBody {
+public struct Body<Value: Codable>: Decodable, AnyBody {
     public var contentType: ContentType = .json
     public var content: AnyEncodable { .init(wrappedValue) }
     
@@ -49,6 +49,14 @@ public struct Body<Value: Codable>: AnyBody {
     public init(wrappedValue: Value, _ contentType: ContentType) {
         self.contentType = contentType
         self.wrappedValue = wrappedValue
+    }
+    
+    public init(from decoder: Decoder) throws {
+        guard let requestDecoder = decoder as? HTTPRequestDecoder else {
+            fatalError("Can't decode without a request.")
+        }
+        
+        self.wrappedValue = try requestDecoder.singleValueContainer().decode(Value.self)
     }
 }
 

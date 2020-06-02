@@ -3,7 +3,7 @@ import NIO
 import NIOHTTP1
 
 /// A simplified HTTPRequest type as you'll come across in many web frameworks
-public struct HTTPRequest {
+public final class HTTPRequest {
     /// The EventLoop is stored in the HTTP request so that promises can be created
     public let eventLoop: EventLoop
     
@@ -20,6 +20,9 @@ public struct HTTPRequest {
     
     /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
     var bodyBuffer: ByteBuffer?
+    
+    /// Any information set by a middleware.
+    var middlewareData: [ObjectIdentifier: Any] = [:]
     
     /// This initializer is necessary because the `bodyBuffer` is a private property
     init(eventLoop: EventLoop, head: HTTPRequestHead, bodyBuffer: ByteBuffer?) {
@@ -64,4 +67,18 @@ extension HTTPRequest {
         
         return HTTPBody(buffer: bodyBuffer)
     }
+    
+    public func set<T>(_ value: T) {
+        self.middlewareData[identifier(of: T.self)] = value
+    }
+    
+    public func get<T>(_ type: T.Type = T.self) throws -> T {
+        try self.middlewareData[identifier(of: T.self)]
+            .unwrap(as: type, or: RoutingError("Couldn't find type `\(name(of: type))` on this request"))
+    }
+}
+
+struct RoutingError: Error {
+    let info: String
+    init(_ info: String) { self.info = info }
 }

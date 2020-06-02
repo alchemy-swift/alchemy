@@ -29,12 +29,6 @@ struct StartupArgs {
     let htdocs: String
 }
 
-extension MultiThreadedEventLoopGroup: SingletonService {
-    public static func singleton(in container: Container) throws -> MultiThreadedEventLoopGroup {
-        MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-    }
-}
-
 public extension Application {
     
     private func parseArgs() -> StartupArgs {

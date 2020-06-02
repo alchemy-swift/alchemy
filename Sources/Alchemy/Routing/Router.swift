@@ -53,35 +53,20 @@ public final class Router<Input, Output> {
                 continue
             }
             
-            var updatedRequest = request
-            updatedRequest.pathParameters = matchResult.parsedPathParameters
-            return try value(try self.middleware(updatedRequest))
+            request.pathParameters = matchResult.parsedPathParameters
+            return try value(try self.middleware(request))
         }
         
         return try self.childrenHandle(request: request)
     }
     
     // A middleware that does something, but doesn't change the type
-    public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> where M.Result == Void {
-        let router = Router {
-            try middleware.intercept($0)
-            return try self.middleware($0)
-        }
-        
+    public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> {
+        let router = Router { try self.middleware(try middleware.intercept($0)) }
         self.erasedChildren.append(router.handle)
         return router
     }
 
-    // A middleware that does something, then changes the type
-    public func middleware<M: Middleware>(_ middleware: M) -> Router<(Input, M.Result), Output> {
-        let router = Router<(Input, M.Result), Output> { request in
-            (try self.middleware(request), try middleware.intercept(request))
-        }
-        
-        self.erasedChildren.append(router.handle)
-        return router
-    }
-    
     /// Update the path for subsequent requests in the router chain.
     public func path(_ path: String) -> Router<Input, Output> {
         let router = Router(basePath: self.basePath + path, middleware: self.middleware)
