@@ -13,4 +13,21 @@ extension EventLoopFuture {
             }
         }
     }
+
+    func voided() -> EventLoopFuture<Void> {
+        self.map { _ in () }
+    }
+}
+
+/// Takes a throwing block & returns either the `EventLoopFuture<T>` that block creates or an errored
+/// `EventLoopFuture<T>` if the closure threw an error.
+func catchError<T>(on loop: EventLoop, _ closure: () throws -> EventLoopFuture<T>)
+    -> EventLoopFuture<T>
+{
+    do {
+        return try closure()
+    }
+    catch {
+        return loop.future(error: error)
+    }
 }

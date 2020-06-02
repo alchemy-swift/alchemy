@@ -29,16 +29,6 @@ public struct API {
     }
 }
 
-struct HTTPError: Error {
-    let status: HTTPResponseStatus
-    let message: String?
-    
-    init(_ status: HTTPResponseStatus, message: String? = nil) {
-        self.status = status
-        self.message = message
-    }
-}
-
 private extension HTTPClient {
     func performRequest<Response: Codable>(baseURL: String, _ parameters: RequestParameters,
                                            customDecoder: JSONDecoder? = nil)
@@ -59,7 +49,7 @@ private extension HTTPClient {
                 }
                 
                 guard let responseJSON = try response.body
-                    .map { HTTPBody(buffer: $0) }?
+                    .map({ HTTPBody(buffer: $0) })?
                     .decodeJSON(as: Response.self, with: customDecoder ?? JSONDecoder()) else
                 {
                     throw HTTPError(HTTPResponseStatus.internalServerError)

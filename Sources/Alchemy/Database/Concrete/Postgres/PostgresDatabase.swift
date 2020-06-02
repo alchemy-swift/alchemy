@@ -1,3 +1,4 @@
+import Foundation
 import PostgresKit
 import NIO
 
@@ -6,6 +7,8 @@ public final class PostgresDatabase: Database {
     
     private let config: PostgresConfig
     private let pool: ConnectionPool
+
+    public let grammar = Grammar()
     
     public init(config: PostgresConfig, eventLoopGroup: EventLoopGroup) {
         //  Initialize the pool.
@@ -37,21 +40,33 @@ public final class PostgresDatabase: Database {
         self.pool = pool
     }
     
-    public func rawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+    public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         self.pool
             .withConnection(logger: nil, on: loop) { $0.simpleQuery(sql) }
             // Required for type inference.
             .map { $0 }
     }
     
-    public func preparedQuery(_ sql: String, values: [DatabaseField.Value], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: nil, on: loop) { conn in
-            conn.query(sql, values.map { $0.toPostgresData() })
-                .map { $0.rows }
+    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
+        print(sql)
+        print(values)
+        return self.pool.withConnection(logger: nil, on: loop) { conn in
+            conn.query(
+                self.positionBindings(sql),
+                values.map { $0.toPostgresData() }
+            ).map { $0.rows }
         }
     }
     
     public func shutdown() {
         self.pool.shutdown()
+    }
+
+    private func positionBindings(_ sql: String) -> String {
+
+        //TODO: Ensure a user can enter ? into their content?
+        return sql.replaceAll(matching: "(\\?)") { (index, _) in
+            return "$\(index + 1)"
+        }
     }
 }

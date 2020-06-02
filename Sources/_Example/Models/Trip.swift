@@ -1,14 +1,44 @@
 import Alchemy
 import Foundation
 
-struct Trip: DatabaseCodable {
+struct Place: Model {
+    let id: UUID?
+}
+
+struct TripPlaces: Model {
+    var id: UUID? = UUID()
+    var place: Place
+    var trip: Trip
+}
+
+// 1 - 1 with trip
+struct Flight: Model {
+    var id: UUID?
+    @BelongsTo
+    var trip: Trip
+}
+
+struct Trip: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "trips"
     
-    let id: UUID
-    let userID: UUID
-    let originID: UUID
-    let destinationID: UUID
+    let id: UUID?
+
+    @HasOne
+    var flight: Flight
+    
+    @BelongsTo
+    var user: User
+    
+    @BelongsTo
+    var origin: Place
+    
+    @BelongsTo
+    var destination: Place
+    
+//    @HasMany(from: \TripPlaces.trip, to: \.place)
+    var places: [Place]
+    
     let priceStatus: PriceStatus?
     let dotwStart: DOTW?
     let dotwEnd: DOTW?

@@ -4,8 +4,7 @@ import NIO
 
 struct APIServer: Application {
     @Inject var postgres: PostgresDatabase
-    @Inject(.one) var mySQL1: MySQLDatabase
-    @Inject(.two) var mySQL2: MySQLDatabase
+    @Inject var mysql: MySQLDatabase
     @Inject var router: HTTPRouter
     @Inject var globalMiddlewares: GlobalMiddlewares
     
@@ -21,6 +20,15 @@ struct APIServer: Application {
             .middleware(LoggingMiddleware(text: "Handling request:"))
             // `GET /json`
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
+            // Group all pet requests
+            .group(path: "/pets") {
+                let controller = PetsController()
+                $0.on(.POST, at: "/user", do: controller.createUser)
+                $0.on(.GET, at: "/user", do: controller.getUsers)
+                $0.on(.POST, at: "/pet", do: controller.createPet)
+                $0.on(.GET, at: "/pet", do: controller.getPets)
+                $0.on(.POST, at: "/vaccinate/:pet_id/:vaccine_id", do: controller.vaccinate)
+            }
             // Group all requests to /users
             .group(path: "/users") {
                 $0.on(.POST, do: { req in "hi from create user" })
@@ -57,9 +65,6 @@ struct APIServer: Application {
             .group(path: "/db") {
                 $0.on(.GET, at: "/select", do: DatabaseTestController().select)
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
-                $0.on(.GET, at: "/update", do: DatabaseTestController().update)
-                $0.on(.GET, at: "/delete", do: DatabaseTestController().delete)
-                $0.on(.GET, at: "/join", do: DatabaseTestController().join)
             }
     }
 }
@@ -73,83 +78,71 @@ struct MiscError: Error {
 }
 
 struct DatabaseTestController {
-    @Inject var db: PostgresDatabase
+    @Inject var db: MySQLDatabase
     
-    func select(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
+    func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
+//        return Rental.query()
+//            .select([
+//                "rentals.*",
+//                Raw("COUNT(*) AS review_count")
+//            ])
+//            .leftJoin(table: "reviews", first: "reviews.rental_id", second: "rentals.id")
+//            .where("num_beds" > 1)
+//            .groupBy("rentals.id")
+//            .get()
+
+        return Rental.query()
+            .where("num_beds" >= 1)
+            .count(as: "rentals_count")
     }
     
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
-        let trip = Trip(
-            id: UUID(),
-            userID: UUID(uuidString: "47c50f8f-8940-4b79-866a-7aae0342650a")!,
-            originID: UUID(uuidString: "04ffe341-ce99-4105-87f6-5778d7dc8706")!,
-            destinationID: UUID(uuidString: "5b57ae6b-45e3-4099-ab5b-c8a74ecbc4db")!,
-            priceStatus: .lowest,
-            dotwStart: .friday,
-            dotwEnd: .sunday,
-            additionalWeeks: 0,
-            outboundDepartureRange: nil,
-            outboundDepartureTime: nil
-        )
-        
-        let fields = try trip.fields()
-        let columns = fields.map { $0.column }
-        let values = fields.map { $0.value.sqlString }
-        
-        let statement = """
-        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
-        values (\(values.enumerated().map { index, _ in
-            return "$\(index + 1)"
-        }.joined(separator: ", ")))
-        """
-        
-        print("statement: \(statement)")
-        return self.db.preparedQuery(statement, values: fields.map { $0.value }, on: req.eventLoop)
+//        let user = User(id: UUID())
+//        let place = Place(id: UUID())
+//        let flight = Flight(id: UUID())
+//
+//        let trip = Trip(
+//            id: UUID(),
+//            flight: .init(to: flight),
+//            user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
+//            origin: .init(place),
+//            destination: .init(place),
+//            priceStatus: .lowest,
+//            dotwStart: .friday,
+//            dotwEnd: .sunday,
+//            additionalWeeks: 0,
+//            outboundDepartureRange: nil,
+//            outboundDepartureTime: nil
+//        )
+//
+//        let fields = try trip.fields()
+//        let columns = fields.map { $0.column }
+//
+//        let statement = """
+//        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
+//        values (\(fields.enumerated().map { index, _ in
+//            return "$\(index + 1)"
+//        }.joined(separator: ", ")))
+//        """
+
+        return Rental.query(database: self.db)
+            .insert([
+                [
+                    "price": 220,
+                    "num_beds": 1,
+                    "location": "NYC"
+                ],
+                [
+                    "price": 100,
+                    "num_beds": 7,
+                    "location": "Dallas"
+                ]
+            ])
             .map { _ in "done" }
-    }
-    
-    func update(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        fatalError("TODO")
-        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
-    }
-    
-    func delete(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        fatalError("TODO")
-        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
-    }
-    
-    func join(req: HTTPRequest) -> EventLoopFuture<Trip> {
-        fatalError("TODO")
-        return self.db.rawQuery("SELECT * FROM trips", on: req.eventLoop)
-            .flatMapThrowing { rows in
-                guard let firstRow = rows.first else {
-                    throw MiscError("No rows found.")
-                }
-                
-                return try firstRow.decode(Trip.self)
-        }
+        
+//        print("statement: \(statement)")
+//        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
+//            .map { _ in "done" }
     }
 }
 

@@ -1,10 +1,34 @@
 import Foundation
 
 /// A type that can be encoded to & from a `Database`. Likely represents a table in a relational database.
-public protocol DatabaseCodable: Codable, Identifiable {
-    /// How should the swift `CodingKey`s be mapped to database columns? Defaults to `useDefaultKeys`.
+public protocol DatabaseCodable: Codable, DatabaseIdentifiable, Table {
+    /// How should the swift `CodingKey`s be mapped to database columns? Defaults to `convertToSnakeCase`.
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
-    static var tableName: String { get }
+}
+
+public protocol DatabaseIdentifiable: Identifiable {
+    associatedtype Identifier: RuneID
+    var id: Self.Identifier? { get }
+}
+
+extension DatabaseIdentifiable {
+    public func getID() throws -> Self.Identifier {
+        try self.id.unwrap(or: RuneError(info: "Object of type \(type(of: self)) had a nil id."))
+    }
+}
+
+public protocol RuneID: Hashable, Parameter, Codable {
+    static func from(field: DatabaseField) throws -> Self
+}
+extension UUID: RuneID {
+    public static func from(field: DatabaseField) throws -> UUID {
+        try field.uuid()
+    }
+}
+extension Int: RuneID {
+    public static func from(field: DatabaseField) throws -> Int {
+        try field.int()
+    }
 }
 
 public enum DatabaseKeyMappingStrategy {
@@ -40,5 +64,5 @@ extension String {
 }
 
 extension DatabaseCodable {
-    public static var keyMappingStrategy: DatabaseKeyMappingStrategy { .useDefaultKeys }
+    public static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
 }

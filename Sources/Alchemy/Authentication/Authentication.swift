@@ -1,8 +1,6 @@
 import Foundation
 
-public protocol Authable {
-    
-}
+public protocol Authable {}
 
 public struct BasicAuthMiddleware<T: Authable>: Middleware {
     public func intercept(_ request: HTTPRequest) throws -> T {

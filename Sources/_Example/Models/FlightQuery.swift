@@ -1,7 +1,7 @@
 import Alchemy
 import Foundation
 
-struct Query: DatabaseCodable {
+struct FlightQuery: DatabaseCodable {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "queries"
     

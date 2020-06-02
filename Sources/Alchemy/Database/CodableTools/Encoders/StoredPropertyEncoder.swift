@@ -126,7 +126,11 @@ private struct _SingleValueEncodingContainer: SingleValueEncodingContainer {
     }
     
     mutating func encode<T>(_ value: T) throws where T : Encodable {
-        throw DatabaseDecodingError("Error encoding type `\(type(of: T.self))` into single value container.")
+        if let value = try propertyType(of: value) {
+            self.encoder?.storedProperties.append(DatabaseField(column: self.column, value: value))
+        } else {
+            throw DatabaseDecodingError("Error encoding type `\(type(of: T.self))` into single value container.")
+        }
     }
 }
 
@@ -144,30 +148,14 @@ private struct _DatabaseKeyedEncodingContainer<K: CodingKey> : KeyedEncodingCont
 
     public mutating func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
         let keyString = self.encoder.mappingStrategy.map(input: key.stringValue)
-        if let theType = try self.propertyType(of: value) {
+        if let theType = try propertyType(of: value) {
             self.encoder.storedProperties.append(DatabaseField(column: keyString, value: theType))
+        } else if value is AnyBelongsTo {
+            try value.encode(to: _SingleValueEncoder(column: keyString + "_id", encoder: self.encoder))
+        } else if value is AnyHas {
+            // do nothing
         } else {
             try value.encode(to: _SingleValueEncoder(column: keyString, encoder: self.encoder))
-        }
-    }
-    
-    private func propertyType<E: Encodable>(of value: E) throws -> DatabaseField.Value? {
-        if let value = value as? UUID {
-            return .uuid(value)
-        } else if let value = value as? Date {
-            return .date(value)
-        } else if let value = value as? Int {
-            return .int(value)
-        } else if let value = value as? Double {
-            return .double(value)
-        } else if let value = value as? Bool {
-            return .bool(value)
-        } else if let value = value as? String {
-            return .string(value)
-        } else if let value = value as? DatabaseJSON {
-            return .json(try value.toJSONData())
-        } else {
-            return nil
         }
     }
     
@@ -218,4 +206,24 @@ fileprivate struct _DatabaseEncodingContainer: UnkeyedEncodingContainer, SingleV
         return encoder
     }
 
+}
+
+private func propertyType<E: Encodable>(of value: E) throws -> DatabaseValue? {
+    if let value = value as? UUID {
+        return .uuid(value)
+    } else if let value = value as? Date {
+        return .date(value)
+    } else if let value = value as? Int {
+        return .int(value)
+    } else if let value = value as? Double {
+        return .double(value)
+    } else if let value = value as? Bool {
+        return .bool(value)
+    } else if let value = value as? String {
+        return .string(value)
+    } else if let value = value as? DatabaseJSON {
+        return .json(try value.toJSONData())
+    } else {
+        return nil
+    }
 }

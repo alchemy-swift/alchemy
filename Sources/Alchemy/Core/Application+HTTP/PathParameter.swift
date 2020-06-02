@@ -30,13 +30,3 @@ extension PathParameter {
             .unwrap(or: Error(message: "Unable to decode Int for '\(self.parameter)'. Value was '\(self.stringValue)'."))
     }
 }
-
-extension Optional {
-    func unwrap(or error: Error) throws -> Wrapped {
-        guard let wrapped = self else {
-            throw error
-        }
-        
-        return wrapped
-    }
-}

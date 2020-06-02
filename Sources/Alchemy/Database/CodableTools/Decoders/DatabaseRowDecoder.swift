@@ -68,11 +68,11 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func contains(_ key: Key) -> Bool {
-        self.row.allColumns.contains(self.string(for: key))
+        return self.row.allColumns.contains(self.string(for: key))
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
-        try self.row.getField(columnName: self.string(for: key)).value.isNil
+        return try self.row.getField(columnName: self.string(for: key)).value.isNil
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
@@ -136,6 +136,12 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
             return try self.row.getField(columnName: self.string(for: key)).uuid() as! T
         } else if type == Date.self {
             return try self.row.getField(columnName: self.string(for: key)).date() as! T
+        } else if type is AnyBelongsTo.Type {
+            let field = try self.row.getField(columnName: self.string(for: key) + "_id")
+            return try T(from: DatabaseFieldDecoder(field: field))
+        } else if type is AnyHas.Type {
+            // Special case the AnyHas to decode the coding key.
+            return try T(from: DatabaseFieldDecoder(field: .init(column: "key", value: .string(key.stringValue))))
         } else {
             let field = try self.row.getField(columnName: self.string(for: key))
             return try T(from: DatabaseFieldDecoder(field: field))
@@ -225,6 +231,12 @@ private struct _SingleValueDecodingContainer: SingleValueDecodingContainer {
     }
     
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        throw PostgresError("Decode a type from a single value container is not supported.")
+        if type == Int.self {
+            return try self.field.int() as! T
+        } else if type == UUID.self {
+            return try self.field.uuid() as! T
+        } else {
+            throw PostgresError("Decode a type from a single value container is not supported \(type).")
+        }
     }
 }

@@ -81,3 +81,11 @@ struct Many<T>: Codable where T: Codable {
 //    }
 }
 
+### Scratch
+// Through relations
+// Eager Loading
+// CRUD on Relations
+// Touching & Timestamps
+// Relation vs Query
+/// Make `Relation` a subset of Query for similar lazy loading behavior, but extended functionality such as
+/// add, delete, touch, etc.

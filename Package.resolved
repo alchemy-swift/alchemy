@@ -29,15 +29,6 @@
         }
       },
       {
-        "package": "codable-kit",
-        "repositoryURL": "https://github.com/vapor/codable-kit.git",
-        "state": {
-          "branch": "master",
-          "revision": "43eeae0a0b53c0b527363ce282a4255d4d90a68f",
-          "version": null
-        }
-      },
-      {
         "package": "Echo",
         "repositoryURL": "https://github.com/Azoy/Echo",
         "state": {
@@ -47,12 +38,30 @@
         }
       },
       {
+        "package": "mysql-kit",
+        "repositoryURL": "https://github.com/vapor/mysql-kit",
+        "state": {
+          "branch": null,
+          "revision": "b59a08d77c3830b21f35fe744813640ef56a2ebb",
+          "version": "4.0.0-rc.1.6"
+        }
+      },
+      {
+        "package": "mysql-nio",
+        "repositoryURL": "https://github.com/vapor/mysql-nio.git",
+        "state": {
+          "branch": null,
+          "revision": "6a9235582076122badc5428c8d5b6c41f9e40e1a",
+          "version": "1.0.0-rc.2.2"
+        }
+      },
+      {
         "package": "postgres-kit",
         "repositoryURL": "https://github.com/vapor/postgres-kit",
         "state": {
           "branch": null,
-          "revision": "e43a32baec80ebbcfed4d0330d0be50eb73434c7",
-          "version": "2.0.1"
+          "revision": "152f69bfc0d767d29c9be427cd60169f9f62c8bd",
+          "version": "2.0.0"
         }
       },
       {
