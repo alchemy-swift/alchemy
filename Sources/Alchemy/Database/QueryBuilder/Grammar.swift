@@ -139,7 +139,7 @@ public class Grammar {
         }
 
         bindings += columnSQL.bindings
-        base += "set \(columnSQL.query)"
+        base += " set \(columnSQL.query)"
 
         if let whereSQL = compileWheres(query) {
             bindings += whereSQL.bindings

@@ -9,17 +9,17 @@ extension Model {
     
     /// Saves the `Model` to the `Database`. If the model's id is nil, it inserts it. If the id is
     /// not nil, it updates.
-    public func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+    public func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Self> {
         catchError(on: loop) {
             if let id = self.id {
                 return try Self.query()
                     .where("id" == id)
                     .update(values: try self.dictionary().unorderedDictionary)
-                    .voided()
+                    .map { _ in self }
             } else {
                 return Self.query(database: db)
                     .insert(try self.dictionary())
-                    .voided()
+                    .map { _ in self }
             }
         }
     }
@@ -52,11 +52,11 @@ extension Model {
 
 extension Array where Element: Model {
     /// Create or update each element in this array. Runs two queries; one to update & one to insert.
-    public func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
+    public func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Self> {
         catchError(on: loop) {
             Element.query(database: db)
                 .insert(try self.map { try $0.dictionary() })
-                .voided()
+                .map { _ in self }
         }
     }
 

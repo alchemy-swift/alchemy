@@ -11,6 +11,12 @@ public protocol DatabaseIdentifiable: Identifiable {
     var id: Self.Identifier? { get }
 }
 
+extension DatabaseIdentifiable {
+    public func getID() throws -> Self.Identifier {
+        try self.id.unwrap(or: RuneError(info: "Object of type \(type(of: self)) had a nil id."))
+    }
+}
+
 public protocol RuneID: Hashable, Parameter, Codable {
     static func from(field: DatabaseField) throws -> Self
 }
