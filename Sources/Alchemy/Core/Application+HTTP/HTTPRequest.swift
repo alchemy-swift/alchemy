@@ -68,10 +68,12 @@ extension HTTPRequest {
         return HTTPBody(buffer: bodyBuffer)
     }
     
+    /// Sets a value associated with this request. Useful for setting objects with middleware.
     public func set<T>(_ value: T) {
         self.middlewareData[identifier(of: T.self)] = value
     }
     
+    /// Gets a value associated with this request, throws if there is not one of type `T` already set.
     public func get<T>(_ type: T.Type = T.self) throws -> T {
         try self.middlewareData[identifier(of: T.self)]
             .unwrap(as: type, or: RoutingError("Couldn't find type `\(name(of: type))` on this request"))

@@ -59,7 +59,7 @@ struct EncodingHelper {
     private func replacedPath(_ basePath: String) throws -> String {
         try self.paths.reduce(into: basePath) { basePath, component in
             guard basePath.contains(":\(component.key)") else {
-                throw SwiftAPIError(message: "Tried to encode path component '\(component.key)' but didn't find any instance of ':\(component.key)' in the path.")
+                throw PapyrusError("Tried to encode path component '\(component.key)' but didn't find any instance of ':\(component.key)' in the path.")
             }
 
             basePath = basePath.replacingOccurrences(of: ":\(component.key)", with: component.value.value)
@@ -78,7 +78,7 @@ struct EncodingHelper {
 
     func getBody() throws -> (content: AnyEncodable, contentType: ContentType)? {
         guard self.bodies.count <= 1 else {
-            throw SwiftAPIError(message: "Only one `@Body` attribute is allowed per request.")
+            throw PapyrusError("Only one `@Body` attribute is allowed per request.")
         }
         
         return self.bodies.first.map { ($0.value.content, $0.value.contentType) }

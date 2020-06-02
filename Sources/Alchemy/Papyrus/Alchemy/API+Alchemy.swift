@@ -14,14 +14,17 @@ public struct API {
         self.customDecoder = customDecoder
     }
     
-    public func request<Req, Res>(_ endpoint: Endpoint<Req, Res>, _ dto: Req, _ client: HTTPClient) throws
-        -> EventLoopFuture<(content: Res, response: HTTPClient.Response)>
+    public func request<Req, Res>(
+        _ endpoint: Endpoint<Req, Res>, _ dto: Req,
+        _ client: HTTPClient = Client.default
+    )
+        throws -> EventLoopFuture<(content: Res, response: HTTPClient.Response)>
     {
         let parameters = try endpoint.parameters(dto: dto)
         return client.performRequest(baseURL: self.baseURL, parameters, customDecoder: self.customDecoder)
     }
     
-    public func request<Res>(_ endpoint: Endpoint<Alchemy.Empty, Res>, _ client: HTTPClient)
+    public func request<Res>(_ endpoint: Endpoint<Alchemy.Empty, Res>, _ client: HTTPClient = Client.default)
         -> EventLoopFuture<(content: Res, response: HTTPClient.Response)>
     {
         client.performRequest(baseURL: self.baseURL, .just(url: endpoint.basePath, method: endpoint.method),
