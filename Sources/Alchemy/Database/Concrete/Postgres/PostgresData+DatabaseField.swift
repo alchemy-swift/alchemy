@@ -10,7 +10,7 @@ extension PostgresData {
     
     private static let postgresTimestampzFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSX"
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
         return dateFormatter
     }()
     
@@ -37,16 +37,16 @@ extension PostgresData {
         case .date:
             let date = try validateNil(self.string).map { string in
                 try PostgresData.postgresDateFormatter.date(from: string)
-                    .unwrap(or: PostgresError("Error decoding column '\(column)' to Postgres `date` type. "
-                        + "The string was '\(string)'"))
+                    .unwrap(or: PostgresError("Error decoding column `\(column)` to Postgres `date` type. "
+                        + "The string was `\(string)`"))
             }
             
             return DatabaseField(column: column, value: .date(date))
         case .timestamptz:
             let date = try validateNil(self.string).map { string in
                 try PostgresData.postgresTimestampzFormatter.date(from: string)
-                    .unwrap(or: PostgresError("Error decoding column '\(column)' to Postgres `date` type. "
-                        + "The string was '\(string)'"))
+                    .unwrap(or: PostgresError("Error decoding column `\(column)` to Postgres `date` type. "
+                        + "The string was `\(string)`"))
             }
             
             return DatabaseField(column: column, value: .date(date))

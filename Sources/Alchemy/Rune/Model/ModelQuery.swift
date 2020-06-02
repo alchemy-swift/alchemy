@@ -11,7 +11,7 @@ public class ModelQuery<M: Model>: Query {
     }
 
     public func getFirst(on loop: EventLoop = Loop.current) -> EventLoopFuture<M> {
-        self.first(on: loop)
+        self.first(["\(M.tableName).*"], on: loop)
             .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Unable to find first element.")) }
             .flatMapThrowing { try $0.decode(M.self) }
     }

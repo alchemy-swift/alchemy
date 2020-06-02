@@ -2,7 +2,7 @@ import Foundation
 
 /// A type that can be encoded to & from a `Database`. Likely represents a table in a relational database.
 public protocol DatabaseCodable: Codable, DatabaseIdentifiable, Table {
-    /// How should the swift `CodingKey`s be mapped to database columns? Defaults to `useDefaultKeys`.
+    /// How should the swift `CodingKey`s be mapped to database columns? Defaults to `convertToSnakeCase`.
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
 }
 
@@ -58,5 +58,5 @@ extension String {
 }
 
 extension DatabaseCodable {
-    public static var keyMappingStrategy: DatabaseKeyMappingStrategy { .useDefaultKeys }
+    public static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
 }
