@@ -13,7 +13,7 @@ extension Authable {
 }
 
 public struct BasicAuthMiddleware<T: Authable>: Middleware {
-    public func intercept(_ request: HTTPRequest) throws -> HTTPRequest {
+    public func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
         // Load object from DB, authing via username/password
         fatalError()
     }
@@ -22,7 +22,7 @@ public struct BasicAuthMiddleware<T: Authable>: Middleware {
 }
 
 public struct TokenAuthMiddleware<T: Authable>: Middleware {
-    public func intercept(_ request: HTTPRequest) throws -> HTTPRequest {
+    public func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
         // Load object from DB, authing via token
         fatalError()
     }

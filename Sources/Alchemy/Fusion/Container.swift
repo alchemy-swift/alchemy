@@ -1,5 +1,5 @@
 public final class Container {
-    static var global = Container()
+    public static var global = Container()
     
     var storage: [String: FusableResolver] = [:]
     

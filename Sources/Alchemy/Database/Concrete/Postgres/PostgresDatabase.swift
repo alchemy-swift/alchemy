@@ -10,7 +10,10 @@ public final class PostgresDatabase: Database {
 
     public let grammar = Grammar()
     
-    public init(config: PostgresConfig, eventLoopGroup: EventLoopGroup) {
+    public init(
+        config: PostgresConfig,
+        eventLoopGroup: EventLoopGroup = try! Container.global.resolve(MultiThreadedEventLoopGroup.self)
+    ) {
         //  Initialize the pool.
         let postgresConfig: PostgresConfiguration
         switch config.socket {

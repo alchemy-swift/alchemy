@@ -12,7 +12,9 @@ public struct DatabaseDefault {
             
             return _default
         }
-        set { DatabaseDefault._default = newValue }
+        set {
+            DatabaseDefault._default = newValue
+        }
     }
     public static func query() -> Query {
         return DB.default.query()

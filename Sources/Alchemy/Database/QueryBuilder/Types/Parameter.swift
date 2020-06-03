@@ -4,6 +4,12 @@ public protocol Parameter {
     var value: DatabaseValue { get }
 }
 
+extension Parameter {
+    /// A null value... pretty sure it won't matter what the type is? If it does can move this into each
+    /// extension.
+    public static var null: Parameter { DatabaseValue.string(nil) }
+}
+
 extension DatabaseValue: Parameter {
     public var value: DatabaseValue { self }
 }

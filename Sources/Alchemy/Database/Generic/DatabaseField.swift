@@ -11,9 +11,3 @@ public struct DatabaseField {
     /// The value of this field.
     public let value: DatabaseValue
 }
-
-private extension Optional {
-    func nullOr(_ stringMap: (Wrapped) -> String) -> String {
-        self.map(stringMap) ?? "NULL"
-    }
-}

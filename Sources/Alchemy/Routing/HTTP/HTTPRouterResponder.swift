@@ -5,16 +5,16 @@ struct HTTPRouterResponder: HTTPResponder {
     @Inject var globalMiddlewares: GlobalMiddlewares
     
     func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
-        do {
-            try self.globalMiddlewares.run(on: request)
-            guard let response = try self.router.handle(request: request) else {
-                return request.eventLoop
-                    .makeSucceededFuture(HTTPResponse(status: .notFound, body: nil))
-            }
-            
-            return try response.encode(on: request.eventLoop)
-        } catch {
-            return request.eventLoop.makeFailedFuture(error)
+        catchError {
+            self.globalMiddlewares.run(on: request)
+                .flatMap { request in
+                    guard let response = self.router.handle(request: request) else {
+                        return request.eventLoop
+                            .makeSucceededFuture(HTTPResponse(status: .notFound, body: nil))
+                    }
+                    
+                    return response.throwingFlatMap { try $0.encode(on: request.eventLoop) }
+                }
         }
     }
 }

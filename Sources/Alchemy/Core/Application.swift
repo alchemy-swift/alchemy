@@ -36,7 +36,7 @@ public extension Application {
         let arguments = CommandLine.arguments.dropFirst(0) // just to get an ArraySlice<String> from [String]
         let arg1 = arguments.dropFirst().first
         let arg2 = arguments.dropFirst(2).first
-
+        
         let defaultHost = "::1"
         let defaultPort = 8888
         let htdocs = "/dev/null/"
