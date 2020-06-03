@@ -27,7 +27,7 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
                 .where(T.valueKeyString == bearerAuth.token)
                 .with(T.userKey)
                 .getFirst()
-                .map { request.set($0[keyPath: T.userKey]) }
+                .map { request.set($0[keyPath: T.userKey].wrappedValue) }
         }
     }
 }

@@ -14,6 +14,8 @@ public class ModelQuery<M: Model>: Query {
         self.first(["\(M.tableName).*"], on: loop)
             .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Unable to find first element.")) }
             .flatMapThrowing { try $0.decode(M.self) }
+            .flatMap { self.evaluateEagerLoads(for: [$0]) }
+            .flatMapThrowing { try $0.first.unwrap(or: RuneError(info: "Unable to find first element.")) }
     }
 
     public func with<R: Relationship>(

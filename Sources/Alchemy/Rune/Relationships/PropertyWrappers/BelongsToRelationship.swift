@@ -14,7 +14,7 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
     
     public var wrappedValue: Parent {
         get {
-            guard let value = self.value else { fatalError("Please load first") }
+            guard let value = self.value else { fatalError("Relationship was not loaded!") }
             return value
         }
         set { self.value = newValue }
