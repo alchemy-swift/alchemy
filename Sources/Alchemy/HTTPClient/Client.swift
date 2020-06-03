@@ -9,14 +9,13 @@ public typealias Client = HTTPClientDefault
 public struct HTTPClientDefault {
     public static var `default`: HTTPClient {
         get {
-            guard let _default = HTTPClientDefault._default else {
-                fatalError("A default `Database` has not been set up yet. You can do so via `DB.default = ...`")
-            }
-            
             return _default
         }
-        set { HTTPClientDefault._default = newValue }
+        set {
+            try? HTTPClientDefault._default.syncShutdown()
+            HTTPClientDefault._default = newValue
+        }
     }
     
-    private static var _default: HTTPClient?
+    private static var _default: HTTPClient = HTTPClient(eventLoopGroupProvider: .createNew)
 }
