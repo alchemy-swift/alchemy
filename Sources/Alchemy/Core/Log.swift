@@ -1,7 +1,12 @@
 import Logging
 
 public struct Log {
-    private static let logger = Logger(label: "inc.alchemy")
+    /// TODO: easy emission of logs of various levels to other places. i.e. critical to slack, all to datadog,
+    /// etc.
+    /// Also support for metadata?
+    /// Also filenames, line numbers, timestamps, etc
+    
+    private static let logger = Logger(label: "inc.alchemy.your_app")
     
     // An optional prefix for all logs. (will remove later, useful for debugging for now)
     public static var prefix: String? = "[ Alchemy ] "

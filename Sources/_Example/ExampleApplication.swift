@@ -81,51 +81,13 @@ struct DatabaseTestController {
     @Inject var db: MySQLDatabase
     
     func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
-//        return Rental.query()
-//            .select([
-//                "rentals.*",
-//                Raw("COUNT(*) AS review_count")
-//            ])
-//            .leftJoin(table: "reviews", first: "reviews.rental_id", second: "rentals.id")
-//            .where("num_beds" > 1)
-//            .groupBy("rentals.id")
-//            .get()
-
-        return Rental.query()
+        Rental.query()
             .where("num_beds" >= 1)
             .count(as: "rentals_count")
     }
     
     func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
-//        let user = User(id: UUID())
-//        let place = Place(id: UUID())
-//        let flight = Flight(id: UUID())
-//
-//        let trip = Trip(
-//            id: UUID(),
-//            flight: .init(to: flight),
-//            user: .init(user), // Property wrappers don't play nice with auto-generated initializers.
-//            origin: .init(place),
-//            destination: .init(place),
-//            priceStatus: .lowest,
-//            dotwStart: .friday,
-//            dotwEnd: .sunday,
-//            additionalWeeks: 0,
-//            outboundDepartureRange: nil,
-//            outboundDepartureTime: nil
-//        )
-//
-//        let fields = try trip.fields()
-//        let columns = fields.map { $0.column }
-//
-//        let statement = """
-//        insert into \(Trip.tableName) (\(columns.joined(separator: ", ")))
-//        values (\(fields.enumerated().map { index, _ in
-//            return "$\(index + 1)"
-//        }.joined(separator: ", ")))
-//        """
-
-        return Rental.query(database: self.db)
+        Rental.query(database: self.db)
             .insert([
                 [
                     "price": 220,
@@ -139,10 +101,6 @@ struct DatabaseTestController {
                 ]
             ])
             .map { _ in "done" }
-        
-//        print("statement: \(statement)")
-//        return self.db.query(statement, values: fields.map { $0.value }, on: req.eventLoop)
-//            .map { _ in "done" }
     }
 }
 
@@ -154,18 +112,7 @@ struct SampleJSON: Codable {
     let date = Date()
 }
 
-struct LoggingMiddleware: Middleware {
     let text: String
     
-    func intercept(_ request: HTTPRequest) throws -> Void {
-//        print("""
-//            \(self.text)
-//            METHOD: \(request.method)
-//            PATH: \(request.path)
-//            HEADERS: \(request.headers)
-//            QUERY: \(request.queryItems)
-//            BODY_STRING: \(request.body?.decodeString() ?? "N/A")
-//            BODY_DICT: \(try request.body?.decodeJSONDictionary() ?? [:])
-//            """)
-    }
+    func intercept(_ request: HTTPRequest) throws -> Void { }
 }
