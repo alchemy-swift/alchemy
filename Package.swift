@@ -20,6 +20,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.1.0"),
         .package(url: "https://github.com/vapor/mysql-nio.git", from: "1.0.0-rc.2.2"),
@@ -43,6 +44,7 @@ let package = Package(
                 .product(name: "NIO", package: "swift-nio"),
                 .product(name: "NIOHTTP1", package: "swift-nio"),
                 .product(name: "NIOHTTP2", package: "swift-nio-http2"),
+                .product(name: "Logging", package: "swift-log"),
             ]
         ),
         .target(
