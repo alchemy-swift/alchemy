@@ -7,12 +7,13 @@ extension HTTPRequest {
             .unwrap(or: PapyrusError("Expected `\(key)` in the request headers."))
     }
     
-    public func getQuery<T: Decodable>(for key: String) throws -> T {
-        do {
-            throw PapyrusError("not available yet")
-        } catch {
-            throw PapyrusError("Encountered an error getting `\(key)` from the request query. \(error).")
+    public func getQuery(for key: String) throws -> String {
+        guard let queryItem = self.queryItems.filter ({ $0.name == key }).first else {
+            throw PapyrusError("Expected `\(key)` in the request query")
         }
+        
+        return try queryItem.value
+            .unwrap(or: PapyrusError("Found a query parameter for `\(key)` but it was nil"))
     }
     
     public func pathComponent(for key: String) throws -> String {
@@ -24,7 +25,7 @@ extension HTTPRequest {
     public func getBody<T>() throws -> T where T : Decodable {
         do {
             return try self.body
-                .unwrap(or: HTTPError(.internalServerError))
+                .unwrap(or: PapyrusError("There was no body in this request."))
                 .decodeJSON(as: T.self)
         } catch {
             throw PapyrusError("Encountered an error decoding the body to type `\(T.self)`: \(error)")
@@ -65,6 +66,7 @@ private struct HTTPParamDecoder: Decoder {
     var userInfo: [CodingUserInfoKey : Any] = [:]
     let request: HTTPRequest
     let param: HTTPParameter
+    let key: String
     
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
         throw PapyrusError("`container` shouldn't be called; this is only for single values.")
@@ -75,7 +77,7 @@ private struct HTTPParamDecoder: Decoder {
     }
     
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        HTTPRequestSingleValueDecodingContainer(request: self.request, parameter: self.param)
+        HTTPRequestSingleValueDecodingContainer(request: self.request, parameter: self.param, key: self.key)
     }
 }
 
@@ -168,13 +170,13 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
         if type is AnyHeader.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .header))
+            return try T(from: HTTPParamDecoder(request: self.request, param: .header, key: key.stringValue))
         } else if type is AnyBody.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .body))
+            return try T(from: HTTPParamDecoder(request: self.request, param: .body, key: key.stringValue))
         } else if type is AnyQuery.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .query))
+            return try T(from: HTTPParamDecoder(request: self.request, param: .query, key: key.stringValue))
         } else if type is AnyPath.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .path))
+            return try T(from: HTTPParamDecoder(request: self.request, param: .path, key: key.stringValue))
         } else {
             throw PapyrusError("`\(name(of: type))` unsupported.")
         }
@@ -206,6 +208,7 @@ private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingConta
     
     let request: HTTPRequest
     let parameter: HTTPParameter
+    let key: String
     
     func decodeNil() -> Bool {
         fatalError("`optional` not supported yet")
@@ -229,11 +232,11 @@ private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingConta
         case .body:
             throw PapyrusError("`body` doesn't suport `string`")
         case .header:
-            throw PapyrusError("`header` doesn't suport `string`")
+            return try self.request.getHeader(for: self.key)
         case .path:
-            throw PapyrusError("`path` doesn't suport `string`")
+            return try self.request.pathComponent(for: self.key)
         case .query:
-            throw PapyrusError("`query` doesn't suport `string`")
+            return try self.request.getQuery(for: self.key)
         }
     }
     
@@ -396,13 +399,17 @@ private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingConta
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
         switch self.parameter {
         case .body:
-            throw PapyrusError("`body` doesn't suport `T`")
+            return try request.getBody()
         case .header:
             throw PapyrusError("`header` doesn't suport `T`")
         case .path:
             throw PapyrusError("`path` doesn't suport `T`")
         case .query:
-            throw PapyrusError("`query` doesn't suport `T`")
+            if type is String.Type {
+                return try request.getQuery(for: self.key) as! T
+            } else {
+                throw PapyrusError("`query` doesn't suport Encodable `T` of type \(name(of: T.self))")
+            }
         }
     }
 }

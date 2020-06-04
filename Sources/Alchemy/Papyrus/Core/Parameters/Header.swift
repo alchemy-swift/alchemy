@@ -19,10 +19,6 @@ public struct Header: Decodable, AnyHeader {
     }
     
     public init(from decoder: Decoder) throws {
-        guard let requestDecoder = decoder as? HTTPRequestDecoder else {
-            fatalError("Can't decode without a request.")
-        }
-        
-        self.wrappedValue = try requestDecoder.singleValueContainer().decode(String.self)
+        self.wrappedValue = try decoder.singleValueContainer().decode(String.self)
     }
 }

@@ -8,7 +8,7 @@ public final class PostgresDatabase: Database {
     private let config: PostgresConfig
     private let pool: ConnectionPool
 
-    public let grammar = Grammar()
+    public let grammar: Grammar = PostgresGrammar()
     
     public init(
         config: PostgresConfig,
@@ -71,5 +71,13 @@ public final class PostgresDatabase: Database {
         return sql.replaceAll(matching: "(\\?)") { (index, _) in
             return "$\(index + 1)"
         }
+    }
+}
+
+private class PostgresGrammar: Grammar {
+    override func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
+        var initial = try super.compileInsert(query, values: values)
+        initial.query.append(" returning *")
+        return initial
     }
 }

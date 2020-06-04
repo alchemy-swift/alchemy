@@ -19,7 +19,8 @@ extension Model {
             } else {
                 return Self.query(database: db)
                     .insert(try self.dictionary())
-                    .map { _ in self }
+                    .flatMapThrowing { try $0.first.unwrap(or: RuneError(info: "Unable to find first element.")) }
+                    .flatMapThrowing { try $0.decode(Self.self) }
             }
         }
     }

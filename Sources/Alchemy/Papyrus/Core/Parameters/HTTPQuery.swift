@@ -9,10 +9,6 @@ public struct HTTPQuery<Value: Decodable>: Decodable, AnyQuery {
     public init(wrappedValue: Value) { self.wrappedValue = wrappedValue }
     
     public init(from decoder: Decoder) throws {
-        guard let requestDecoder = decoder as? HTTPRequestDecoder else {
-            fatalError("Can't decode without a request.")
-        }
-        
-        self.wrappedValue = try requestDecoder.singleValueContainer().decode(Value.self)
+        self.wrappedValue = try decoder.singleValueContainer().decode(Value.self)
     }
 }
