@@ -2,15 +2,15 @@ public protocol BasicAuthable: Model {
     static var usernameKeyString: String { get }
     static var passwordHashKeyString: String { get }
     
-    static func verify(password: String, passwordHash: String) -> Bool
+    static func verify(password: String, passwordHash: String) throws -> Bool
 }
 
 extension BasicAuthable {
     public static var usernameKeyString: String { "username" }
     public static var passwordHashKeyString: String { "password_hash" }
     
-    public static func verify(password: String, passwordHash: String) -> Bool {
-        password == passwordHash
+    public static func verify(password: String, passwordHash: String) throws -> Bool {
+        try Bcrypt.verify(passwordHash, created: passwordHash)
     }
     
     public static func basicAuthMiddleware() -> BasicAuthMiddleware<Self> {
@@ -35,7 +35,7 @@ public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
                     
                     let passwordHash = try firstRow.getField(columnName: B.passwordHashKeyString).string()
                     
-                    guard B.verify(password: basicAuth.password, passwordHash: passwordHash) else {
+                    guard try B.verify(password: basicAuth.password, passwordHash: passwordHash) else {
                         throw HTTPError(.unauthorized)
                     }
                     

@@ -12,30 +12,30 @@ public struct Log {
     public static var prefix: String? = "[ Alchemy ] "
     
     public static func trace(_ message: String) {
-        Log.logger.trace(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.trace(.init(stringLiteral: (prefix ?? "") + message))
     }
     
     public static func debug(_ message: String) {
-        Log.logger.debug(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.debug(.init(stringLiteral: (prefix ?? "") + message))
     }
     
     public static func info(_ message: String) {
-        Log.logger.info(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.info(.init(stringLiteral: (prefix ?? "") + message))
     }
     
     public static func notice(_ message: String) {
-        Log.logger.notice(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.notice(.init(stringLiteral: (prefix ?? "") + message))
     }
     
     public static func warning(_ message: String) {
-        Log.logger.warning(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.warning(.init(stringLiteral: (prefix ?? "") + message))
     }
     
     public static func error(_ message: String) {
-        Log.logger.error(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.error(.init(stringLiteral: (prefix ?? "") + message))
     }
     
     public static func critical(_ message: String) {
-        Log.logger.critical(.init(stringLiteral: prefix ?? "" + message))
+        Log.logger.critical(.init(stringLiteral: (prefix ?? "") + message))
     }
 }
