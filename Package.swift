@@ -45,11 +45,16 @@ let package = Package(
                 .product(name: "NIOHTTP1", package: "swift-nio"),
                 .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "Logging", package: "swift-log"),
+                "CBcrypt",
             ]
         ),
         .target(
             name: "_Example",
             dependencies: ["Alchemy"]
+        ),
+        .target(
+            name: "CBcrypt",
+            dependencies: []
         ),
         .target(
             name: "Papyrus-iOS",

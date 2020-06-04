@@ -1,11 +1,11 @@
-struct Environment: Equatable {
-    let name: String
+public struct Environment: Equatable {
+    public let name: String
     
-    static let testing = Environment(name: "testing")
-    static let production = Environment(name: "production")
-    static let development = Environment(name: "development")
+    public static let testing = Environment(name: "testing")
+    public static let production = Environment(name: "production")
+    public static let development = Environment(name: "development")
     
-    static let current: Environment = {
+    public static let current: Environment = {
         #if DEBUG
             print("Dev")
             return .development
@@ -14,4 +14,6 @@ struct Environment: Equatable {
             return .production
         #endif
     }()
+    
+    public static var isRelease: Bool { Environment.current == .production }
 }
