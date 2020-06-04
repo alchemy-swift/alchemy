@@ -28,7 +28,7 @@ struct EncodingHelper {
     private var paths: [String: AnyPath] = [:]
 
     fileprivate init<T>(_ value: T) {
-        if let value = value as? Encodable {
+        if let value = value as? BodyCodable {
             self.bodies["body"] = ErasedBody(content: value.toAny(), contentType: .json)
             return
         }
