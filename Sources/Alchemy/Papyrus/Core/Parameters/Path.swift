@@ -3,7 +3,7 @@ protocol AnyPath {
 }
 
 @propertyWrapper
-public struct Path: Decodable, AnyPath {
+public struct Path: Codable, AnyPath {
     public var wrappedValue: String
     var value: String { wrappedValue }
 

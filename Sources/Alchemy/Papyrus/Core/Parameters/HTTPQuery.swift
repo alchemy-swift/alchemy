@@ -1,11 +1,11 @@
 protocol AnyQuery {
-    var value: Decodable { get }
+    var value: Codable { get }
 }
 
 @propertyWrapper
-public struct HTTPQuery<Value: Decodable>: Decodable, AnyQuery {
+public struct HTTPQuery<Value: Codable>: Codable, AnyQuery {
     public var wrappedValue: Value
-    var value: Decodable { wrappedValue }
+    var value: Codable { wrappedValue }
     public init(wrappedValue: Value) { self.wrappedValue = wrappedValue }
     
     public init(from decoder: Decoder) throws {

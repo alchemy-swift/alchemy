@@ -27,7 +27,7 @@ public enum ContentType {
 }
 
 @propertyWrapper
-public struct Body<Value: Codable>: Decodable, AnyBody {
+public struct Body<Value: Codable>: Codable, AnyBody {
     public var contentType: ContentType = .json
     public var content: AnyEncodable { .init(wrappedValue) }
     
@@ -53,6 +53,10 @@ public struct Body<Value: Codable>: Decodable, AnyBody {
     
     public init(from decoder: Decoder) throws {
         self.wrappedValue = try decoder.singleValueContainer().decode(Value.self)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        // do nothing
     }
 }
 

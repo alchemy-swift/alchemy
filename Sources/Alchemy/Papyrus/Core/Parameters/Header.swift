@@ -4,7 +4,7 @@ protocol AnyHeader {
 }
 
 @propertyWrapper
-public struct Header: Decodable, AnyHeader {
+public struct Header: Codable, AnyHeader {
     public var wrappedValue: String
     var keyOverride: String?
     var value: String { wrappedValue }

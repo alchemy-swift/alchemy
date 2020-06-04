@@ -1,3 +1,4 @@
+import Foundation
 import NIO
 
 extension Empty: HTTPResponseEncodable {}
@@ -9,7 +10,7 @@ public extension HTTPRouter {
         where Req: Decodable, Res: HTTPResponseEncodable
     {
         self.registerRequest(endpoint) {
-            try closure($0, try Req(from: HTTPRequestDecoder(request: $0, keyMappingStrategy: .convertToSnakeCase)))
+            try closure($0, try Req(from: $0))
         }
     }
     
@@ -25,7 +26,7 @@ public extension HTTPRouter {
                        use closure: @escaping (HTTPRequest, Req) throws -> EventLoopFuture<Void>) where Req: Decodable
     {
         self.registerRequest(endpoint) {
-            try closure($0, try Req(from: HTTPRequestDecoder(request: $0, keyMappingStrategy: .convertToSnakeCase)))
+            try closure($0, try Req(from: $0))
                 .map { Empty() }
         }
     }
@@ -35,5 +36,19 @@ public extension HTTPRouter {
         where Res: HTTPResponseEncodable
     {
         self.on(endpoint.method, at: endpoint.basePath, do: closure)
+    }
+}
+
+extension RequestAllowed {
+    init(from request: HTTPRequest) throws {
+        if Self.self is RequestBodyCodable.Type {
+            guard let body = request.bodyBuffer else {
+                throw PapyrusError("Attempting to decode a `RequestBodyCodable` from a request with no body!")
+            }
+            
+            self = try JSONDecoder().decode(Self.self, from: body)
+        } else {
+            try self.init(from: HTTPRequestDecoder(request: request, keyMappingStrategy: .convertToSnakeCase))
+        }
     }
 }
