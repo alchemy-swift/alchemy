@@ -7,7 +7,8 @@ typealias NestedEagerLoadClosure<From: Model, To: RelationAllowed>
 typealias EagerLoadClosure<From: Model, To: RelationAllowed>
     = ([From]) -> EventLoopFuture<[From.Value.Identifier: [To.Value]]>
 
-/// Encapsulates loading behavior from `From` to `To`. Erases any intermediary types.
+/// Encapsulates loading behavior from `From` to `To` for `HasOne` or `HasMany` relationships. Erases any
+/// intermediary types.
 struct EagerLoader<From: Model, To: RelationAllowed> {
     static func via(
         key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
@@ -32,9 +33,10 @@ struct EagerLoader<From: Model, To: RelationAllowed> {
         nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
     ) -> EagerLoadClosure<From, To> {
         return { from in
-            To.Value.query()
+            let initalQuery = To.Value.query()
                 .leftJoin(table: Through.tableName, first: toString, second: "\(To.Value.tableName).id")
                 .where(key: fromString, in: from.compactMap { $0.id })
+            return (nestedQuery?(initalQuery) ?? initalQuery)
                 .get(["\(To.Value.tableName).*, \(fromString)"])
                 .flatMapThrowing { toResults in
                     var dict: [From.Value.Identifier: [To.Value]] = [:]
