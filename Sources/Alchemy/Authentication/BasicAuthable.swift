@@ -10,7 +10,7 @@ extension BasicAuthable {
     public static var passwordHashKeyString: String { "password_hash" }
     
     public static func verify(password: String, passwordHash: String) throws -> Bool {
-        try Bcrypt.verify(passwordHash, created: passwordHash)
+        try Bcrypt.verify(password, created: passwordHash)
     }
     
     public static func basicAuthMiddleware() -> BasicAuthMiddleware<Self> {
