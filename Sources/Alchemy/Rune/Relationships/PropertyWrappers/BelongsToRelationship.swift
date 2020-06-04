@@ -38,11 +38,12 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
 
     public func load(
         _ from: [Child],
+        with nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
         from eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
     {
         let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }
-        return Parent.Value.query()
-            .where(key: "id", in: parentIDs)
+        let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
+        return nestedQuery(initialQuery)
             .getAll()
             .flatMapThrowing { parents in
                 var updatedResults = [Child]()

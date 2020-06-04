@@ -2,6 +2,11 @@ import Foundation
 import NIO
 
 public class ModelQuery<M: Model>: Query {
+    public typealias NestedEagerLoads<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
+    
+    /// Right now these only run when the query is finished with `getAll` or `getFirst`. If the user finishes
+    /// with a `get()` we don't know if/when the decode will happen and how to handle it. Potential ways of
+    /// doing it (call eager load @ the `.decode` level of a `DatabaseRow`, but too complicated for now).
     private var eagerLoads: [([M]) -> EventLoopFuture<[M]>] = []
 
     public func getAll(on loop: EventLoop = Loop.current) -> EventLoopFuture<[M]> {
@@ -21,7 +26,8 @@ public class ModelQuery<M: Model>: Query {
     public func with<R: Relationship>(
         _ relationshipKeyPath: KeyPath<M, R>,
         on loop: EventLoop = Loop.current,
-        db: Database = DB.default
+        db: Database = DB.default,
+        nested: @escaping NestedEagerLoads<R.To.Value> = { $0 }
     ) -> ModelQuery<M> where R.From == M {
         self.eagerLoads.append { results in
             // If there are no results, don't need to eager load.
@@ -30,7 +36,11 @@ public class ModelQuery<M: Model>: Query {
             }
 
             return firstResult[keyPath: relationshipKeyPath]
-                .load(results, from: relationshipKeyPath)
+                .load(
+                    results,
+                    with: nested,
+                    from: relationshipKeyPath
+                )
         }
         
         return self
