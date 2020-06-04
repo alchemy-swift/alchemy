@@ -7,4 +7,4 @@ public struct Endpoint<Req: RequestAllowed, Res: Codable> {
 
 public protocol RequestAllowed: Codable {}
 public protocol RequestCodable: RequestAllowed {}
-public protocol RequestBodyCodable: RequestAllowed {}
+public protocol BodyCodable: RequestAllowed {}

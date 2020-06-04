@@ -41,7 +41,7 @@ public extension HTTPRouter {
 
 extension RequestAllowed {
     init(from request: HTTPRequest) throws {
-        if Self.self is RequestBodyCodable.Type {
+        if Self.self is BodyCodable.Type {
             guard let body = request.bodyBuffer else {
                 throw PapyrusError("Attempting to decode a `RequestBodyCodable` from a request with no body!")
             }
