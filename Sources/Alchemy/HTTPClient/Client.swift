@@ -3,6 +3,7 @@
 /// Might not be necessary with the newly christened https://github.com/swift-server/async-http-client
 /// Haven't looked @ the docs but maybe they could be prettified.
 import AsyncHTTPClient
+import NIO
 
 /// Global singleton accessor & convenient typealias for a default database.
 public typealias Client = HTTPClientDefault
@@ -17,5 +18,8 @@ public struct HTTPClientDefault {
         }
     }
     
-    private static var _default: HTTPClient = HTTPClient(eventLoopGroupProvider: .createNew)
+    private static var _default: HTTPClient = {
+        let multi = try! Container.global.resolve(MultiThreadedEventLoopGroup.self)
+        return HTTPClient(eventLoopGroupProvider: .shared(multi))
+    }()
 }
