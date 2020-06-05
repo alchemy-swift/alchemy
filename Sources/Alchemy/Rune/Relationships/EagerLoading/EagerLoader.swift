@@ -16,7 +16,9 @@ struct EagerLoader<From: Model, To: RelationAllowed> {
         nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
     ) -> EagerLoadClosure<From, To> {
         return { from in
-            let initialQuery = To.Value.query().where(key: keyString, in: from.compactMap { $0.id })
+            let idsToSearch = from.compactMap { $0.id }.uniques
+            let initialQuery = To.Value.query()
+                .where(key: keyString, in: idsToSearch)
             return (nestedQuery?(initialQuery) ?? initialQuery)
                 .getAll()
                 .flatMapThrowing { Dictionary(grouping: $0, by: { $0[keyPath: key].id! }) }
@@ -33,9 +35,10 @@ struct EagerLoader<From: Model, To: RelationAllowed> {
         nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
     ) -> EagerLoadClosure<From, To> {
         return { from in
+            let idsToSearch = from.compactMap { $0.id }.uniques
             let initalQuery = To.Value.query()
                 .leftJoin(table: Through.tableName, first: toString, second: "\(To.Value.tableName).id")
-                .where(key: fromString, in: from.compactMap { $0.id })
+                .where(key: fromString, in: idsToSearch)
             return (nestedQuery?(initalQuery) ?? initalQuery)
                 .get(["\(To.Value.tableName).*, \(fromString)"])
                 .flatMapThrowing { toResults in

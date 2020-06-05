@@ -45,7 +45,7 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
         with nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
         from eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
     {
-        let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }
+        let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
         let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
         return nestedQuery(initialQuery)
             .getAll()
