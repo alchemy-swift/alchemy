@@ -59,6 +59,13 @@ extension Model {
             .first()
             .flatMapThrowing { try $0.map { _ in throw error } }
     }
+    
+    /// Gets the first element that meets the given where value. Throws an error if no results match.
+    public static func unwrapFirstWhere(_ where: WhereValue, or error: Error) -> EventLoopFuture<Self> {
+        Self.query()
+            .where(`where`)
+            .unwrapFirst(or: error)
+    }
 }
 
 extension Array where Element: Model {

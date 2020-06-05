@@ -8,7 +8,11 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
     public typealias From = Child
     public typealias To = Parent
     
-    public var id: Parent.Value.Identifier!
+    public var id: Parent.Value.Identifier! {
+        didSet {
+            self.value = nil
+        }
+    }
 
     private var value: Parent?
     
