@@ -38,16 +38,7 @@ public struct HTTPBody: ExpressibleByStringLiteral {
   
     /// Encodes an object to JSON with optional pretty printing as a response
     public init<E: Encodable>(json: E, pretty: Bool = false) throws {
-        let encoder = JSONEncoder()
-        
-        if pretty {
-            encoder.outputFormatting = .prettyPrinted
-        }
-
-        encoder.dateEncodingStrategy = .iso8601
-        
-        let data = try encoder.encode(json)
-        
+        let data = try HTTPResponse.defaultJSONEncoder.encode(json)
         self.init(data: data, mimeType: "application/json")
     }
 
