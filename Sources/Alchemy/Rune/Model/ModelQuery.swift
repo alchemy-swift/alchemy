@@ -17,15 +17,19 @@ public class ModelQuery<M: Model>: Query {
 
     public func getFirst(on loop: EventLoop = Loop.current) -> EventLoopFuture<M?> {
         self.first(["\(M.tableName).*"], on: loop)
-            .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Unable to find first element.")) }
-            .flatMapThrowing { try $0.decode(M.self) }
-            .flatMap { self.evaluateEagerLoads(for: [$0]) }
-            .map { $0.first }
+            .flatMapThrowing { try $0?.decode(M.self) }
+            .flatMap { result -> EventLoopFuture<M?> in
+                if let result = result {
+                    return self.evaluateEagerLoads(for: [result]).map { $0.first }
+                } else {
+                    return loop.future(nil)
+                }
+            }
     }
     
-    public func getFirstUnwrapped(on loop: EventLoop = Loop.current) -> EventLoopFuture<M> {
+    public func unwrapFirst(on loop: EventLoop = Loop.current, or error: Error? = nil) -> EventLoopFuture<M> {
         self.getFirst(on: loop)
-            .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Unable to find first element.")) }
+            .flatMapThrowing { try $0.unwrap(or: error ?? RuneError(info: "Unable to find first element.")) }
     }
 
     public func with<R: Relationship>(

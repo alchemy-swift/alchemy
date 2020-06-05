@@ -1,3 +1,3 @@
-struct RuneError: Error {
-    let info: String
+public struct RuneError: Error {
+    public let info: String
 }
