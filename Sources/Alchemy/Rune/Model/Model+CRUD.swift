@@ -49,6 +49,16 @@ extension Model {
                 .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Sync error: couldn't find a row on \(Self.tableName) with id \(id)")).decode(Self.self) }
         }
     }
+    
+    /// Throws an error if a query with the specified where clause returns a value.
+    ///
+    /// Useful for detecting if a value with a conflicting key already exists.
+    public static func ensureNotExist(_ where: WhereValue, else error: Error) -> EventLoopFuture<Void> {
+        Self.query()
+            .where(`where`)
+            .first()
+            .flatMapThrowing { try $0.map { _ in throw error } }
+    }
 }
 
 extension Array where Element: Model {

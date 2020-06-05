@@ -26,7 +26,8 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
             return T.query()
                 .where(T.valueKeyString == bearerAuth.token)
                 .with(T.userKey)
-                .getFirst()
+                .getFirst(on: request.eventLoop)
+                .flatMapThrowing { try $0.unwrap(or: HTTPError(.unauthorized)) }
                 .map { request.set($0[keyPath: T.userKey].wrappedValue) }
         }
     }

@@ -7,10 +7,8 @@ public struct Environment: Equatable {
     
     public static let current: Environment = {
         #if DEBUG
-            print("Dev")
             return .development
         #else
-            print("Prod")
             return .production
         #endif
     }()

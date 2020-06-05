@@ -13,6 +13,8 @@ final class EncodingTests: XCTestCase {
         
         /// Todo data test
     }
+    
+    /// Body/path/query/header types
 
     static var allTests = [
         ("encodeValue", testEncodeValue),
