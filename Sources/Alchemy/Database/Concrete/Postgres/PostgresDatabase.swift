@@ -44,7 +44,8 @@ public final class PostgresDatabase: Database {
     }
     
     public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool
+        print(sql)
+        return self.pool
             .withConnection(logger: nil, on: loop) { $0.simpleQuery(sql) }
             // Required for type inference.
             .map { $0 }

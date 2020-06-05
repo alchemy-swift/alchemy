@@ -65,7 +65,8 @@ extension DatabaseValue {
         case .bool(let value):
             return value.map { "\($0)" } ?? "NULL"
         case .string(let value):
-            return value.map { "'\($0)'" } ?? "NULL"
+            // ' -> '' is escape for MySQL & Postgres... not sure if this will break elsewhere.
+            return value.map { "'\($0.replacingOccurrences(of: "'", with: "''"))'" } ?? "NULL"
         case .date(let value):
             return value.map { "'\($0)'" } ?? "NULL"
         case .json(_):
