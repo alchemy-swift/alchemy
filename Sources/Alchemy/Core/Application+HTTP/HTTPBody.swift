@@ -68,7 +68,7 @@ extension HTTPBody {
     }
     
     /// Decodes the body as JSON into the provided Decodable type, with the optionally provided `JSONDecoder`.
-    public func decodeJSON<D: Decodable>(as type: D.Type, with decoder: JSONDecoder = JSONDecoder())
+    public func decodeJSON<D: Decodable>(as type: D.Type, with decoder: JSONDecoder = HTTPRequest.defaultJSONDecoder)
         throws -> D
     {
         return try decoder.decode(type, from: data)

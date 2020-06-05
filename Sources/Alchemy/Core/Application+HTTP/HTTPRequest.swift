@@ -4,6 +4,9 @@ import NIOHTTP1
 
 /// A simplified HTTPRequest type as you'll come across in many web frameworks
 public final class HTTPRequest {
+    /// The default JSONDecoder with which to decode HTTP request bodies.
+    public static var defaultJSONDecoder = JSONDecoder()
+    
     /// The EventLoop is stored in the HTTP request so that promises can be created
     public let eventLoop: EventLoop
     

@@ -35,7 +35,7 @@ extension HTTPRequest {
 
 import Foundation
 
-/// Decodes a `Decodable` from a `DatabaseRow`.
+/// Decodes a `RequestCodable` from a `HTTPRequest`.
 struct HTTPRequestDecoder: Decoder {
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
