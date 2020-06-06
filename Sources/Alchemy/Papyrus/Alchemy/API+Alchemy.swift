@@ -37,34 +37,65 @@ private extension HTTPClient {
                                            customDecoder: JSONDecoder? = nil)
         -> EventLoopFuture<(content: Response, response: HTTPClient.Response)>
     {
-        let fullURL = baseURL + parameters.fullPath
-        let headers = HTTPHeaders(parameters.headers.map { $0 })
-        let data = try! parameters.body.map { try JSONEncoder().encode($0.content) }
-        let body = data.map { HTTPClient.Body.data($0) }
-        
-        let request = try! HTTPClient.Request(url: fullURL, method: parameters.method, headers: headers, body: body)
-        
-        return self.execute(request: request)
-            .flatMapThrowing { response -> (content: Response, response: HTTPClient.Response) in
-                guard response.status.isSuccess else {
-                    print("[PapyrusAlchemy] Error: Got status code `\(response.status.code)` hitting `\(fullURL)`.")
-                    throw HTTPError(response.status)
-                }
-                
-                guard let responseJSON = try response.body
-                    .map({ HTTPBody(buffer: $0) })?
-                    .decodeJSON(as: Response.self, with: customDecoder ?? JSONDecoder()) else
-                {
-                    throw HTTPError(HTTPResponseStatus.internalServerError)
-                }
-                
-                return (responseJSON, response)
+        catchError {
+            var fullURL = baseURL + parameters.fullPath
+            var headers = HTTPHeaders(parameters.headers.map { $0 })
+            
+            var bodyData: Data?
+            if parameters.body?.contentType == .json {
+                bodyData = try parameters.body.map { try JSONEncoder().encode($0.content) }
+            } else if parameters.body?.contentType == .urlEncoded, let urlParams = try parameters.urlParams() {
+                headers.add(name: "Content-Type", value: "application/x-www-form-urlencoded")
+                fullURL = baseURL + parameters.basePath + urlParams + parameters.query
             }
+            
+            print("""
+                Method: \(parameters.method)
+                URL: \(fullURL)
+                Headers: \(headers)
+                Body: \(bodyData)
+                """)
+            
+            let request = try HTTPClient.Request(
+                url: fullURL,
+                method: parameters.method,
+                headers: headers,
+                body: bodyData.map { HTTPClient.Body.data($0) }
+            )
+            
+            return self.execute(request: request)
+                .flatMapThrowing { response -> (content: Response, response: HTTPClient.Response) in
+                    guard response.status.isSuccess else {
+                        print("[PapyrusAlchemy] Error: Got status code `\(response.status.code)` hitting `\(fullURL)` response was: \(response.bodyString()).")
+                        throw HTTPError(response.status)
+                    }
+                    
+                    guard let responseJSON = try response.body
+                        .map({ HTTPBody(buffer: $0) })?
+                        .decodeJSON(as: Response.self, with: customDecoder ?? JSONDecoder()) else
+                    {
+                        throw HTTPError(HTTPResponseStatus.internalServerError)
+                    }
+                    
+                    return (responseJSON, response)
+                }
+        }
     }
 }
 
 private extension HTTPResponseStatus {
     var isSuccess: Bool {
         self.code >= 200 && self.code <= 299
+    }
+}
+
+extension HTTPClient.Response {
+    func bodyString() -> String? {
+        let data = self.body?.withUnsafeReadableBytes { buffer -> Data in
+            let buffer = buffer.bindMemory(to: UInt8.self)
+            return Data.init(buffer: buffer)
+        }
+        
+        return data.map { String(data: $0, encoding: .utf8) ?? "" }
     }
 }
