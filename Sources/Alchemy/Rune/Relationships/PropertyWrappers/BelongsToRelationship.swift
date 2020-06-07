@@ -18,7 +18,7 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
     
     public var wrappedValue: Parent {
         get {
-            guard let value = self.value else { fatalError("Relationship was not loaded!") }
+            guard let value = self.value else { fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!") }
             return value
         }
         set { self.value = newValue }
@@ -34,6 +34,8 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
         }
 
         self.id = id
+        // From only throws if this is passed nil; can force try here.
+        self.value = try! Parent.from(parent)
     }
 
     public var projectedValue: BelongsToRelationship<Child, Parent> {
