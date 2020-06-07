@@ -42,4 +42,8 @@ public struct Scheduler {
         
         return self
     }
+    
+    public static var factory: (Container) throws -> Scheduler = { _ in
+        Scheduler(scheduleLoop: Loop.current)
+    }
 }
