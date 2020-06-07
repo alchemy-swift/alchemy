@@ -45,7 +45,7 @@ enum URLQueryFragment: ExpressibleByStringLiteral, Equatable {
         do {
             try self.asUrlDecoded().hash(into: &into)
         } catch {
-            Log.error("Error: \(error)")
+            print("Error hashing: \(error)")
         }
     }
 }

@@ -11,6 +11,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+import Fusion
 import NIO
 import NIOHTTP1
 import NIOHTTP2

@@ -1,3 +1,4 @@
+import Fusion
 import NIO
 
 public final class GlobalMiddlewares {

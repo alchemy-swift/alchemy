@@ -13,7 +13,6 @@ public struct DatabaseDefault {
             return _default
         }
         set {
-            print("current: \(DatabaseDefault._default) new \(newValue)")
             DatabaseDefault._default = newValue
         }
     }

@@ -12,7 +12,7 @@ public struct AnyEncodable: Encodable {
     }
 }
 
-protocol AnyBody {
+public protocol AnyBody {
     var content: AnyEncodable { get }
     var contentType: ContentType { get }
 }

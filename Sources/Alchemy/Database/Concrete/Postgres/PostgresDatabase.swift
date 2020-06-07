@@ -1,3 +1,4 @@
+import Fusion
 import Foundation
 import PostgresKit
 import NIO

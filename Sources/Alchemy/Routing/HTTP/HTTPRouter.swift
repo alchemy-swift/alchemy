@@ -1,3 +1,5 @@
+import Fusion
+
 public typealias HTTPRouter = Router<HTTPRequest, HTTPResponseEncodable>
 
 extension HTTPRouter: SingletonService, Fusable {

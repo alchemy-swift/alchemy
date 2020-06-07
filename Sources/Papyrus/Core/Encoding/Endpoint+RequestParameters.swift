@@ -1,5 +1,4 @@
 import Foundation
-import NIOHTTP1
 
 /// Conform your request objects to this.
 public extension Endpoint {
@@ -28,7 +27,7 @@ public struct RequestParameters {
         RequestParameters(method: method, headers: [:], basePath: url, query: "", fullPath: url, body: nil)
     }
     
-    func urlParams() throws -> String? {
+    public func urlParams() throws -> String? {
         guard let body = body, body.contentType == .urlEncoded else {
             return nil
         }

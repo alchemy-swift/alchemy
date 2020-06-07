@@ -2,6 +2,7 @@ import AsyncHTTPClient
 import Foundation
 import NIO
 import NIOHTTP1
+import Papyrus
 
 public struct API {
     /// The baseURL of all endpoints this requests
@@ -24,7 +25,7 @@ public struct API {
         return client.performRequest(baseURL: self.baseURL, parameters, customDecoder: self.customDecoder)
     }
     
-    public func request<Res>(_ endpoint: Endpoint<Alchemy.Empty, Res>, _ client: HTTPClient = Client.default)
+    public func request<Res>(_ endpoint: Endpoint<Empty, Res>, _ client: HTTPClient = Client.default)
         -> EventLoopFuture<(content: Res, response: HTTPClient.Response)>
     {
         client.performRequest(baseURL: self.baseURL, .just(url: endpoint.basePath, method: endpoint.method),
@@ -53,7 +54,7 @@ private extension HTTPClient {
             
             let request = try HTTPClient.Request(
                 url: fullURL,
-                method: parameters.method,
+                method: parameters.method.nio,
                 headers: headers,
                 body: bodyData.map { HTTPClient.Body.data($0) }
             )

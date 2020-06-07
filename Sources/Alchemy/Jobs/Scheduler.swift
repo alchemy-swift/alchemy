@@ -1,3 +1,4 @@
+import Fusion
 import NIO
 
 /// Fires & forgets recurring work, doesn't use any notion of job storage or driver. Kind of like an internal

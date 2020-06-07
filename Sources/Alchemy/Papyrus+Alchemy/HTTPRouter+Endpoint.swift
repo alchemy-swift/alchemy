@@ -1,4 +1,5 @@
 import Foundation
+import Papyrus
 import NIO
 
 extension Empty: HTTPResponseEncodable {}
@@ -35,7 +36,7 @@ public extension HTTPRouter {
                                            _ closure: @escaping (HTTPRequest) throws -> EventLoopFuture<Res>)
         where Res: HTTPResponseEncodable
     {
-        self.on(endpoint.method, at: endpoint.basePath, do: closure)
+        self.on(endpoint.method.nio, at: endpoint.basePath, do: closure)
     }
 }
 

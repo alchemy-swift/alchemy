@@ -1,4 +1,4 @@
-protocol AnyHeader {
+public protocol AnyHeader {
     var keyOverride: String? { get }
     var value: String { get }
 }
@@ -6,8 +6,8 @@ protocol AnyHeader {
 @propertyWrapper
 public struct Header: Codable, AnyHeader {
     public var wrappedValue: String
-    var keyOverride: String?
-    var value: String { wrappedValue }
+    public var keyOverride: String?
+    public var value: String { wrappedValue }
     
     public init(wrappedValue: String) {
         self.wrappedValue = wrappedValue

@@ -1,6 +1,7 @@
 import Foundation
+import Papyrus
 
-/// Tools for decoding
+/// Tools for decoding. TODO: move this to Papyrus library.
 extension HTTPRequest {
     public func getHeader(for key: String) throws -> String {
         try self.headers.first(name: key)

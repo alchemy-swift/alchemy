@@ -15,6 +15,14 @@ let package = Package(
             targets: ["Alchemy"]
         ),
         .library(
+            name: "Fusion",
+            targets: ["Fusion"]
+        ),
+        .library(
+            name: "Papyrus",
+            targets: ["Papyrus"]
+        ),
+        .library(
             name: "Papyrus-iOS",
             targets: ["Papyrus-iOS"]
         ),
@@ -35,6 +43,7 @@ let package = Package(
         .target(
             name: "Alchemy",
             dependencies: [
+                /// External dependencies
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "Echo", package: "Echo"),
                 .product(name: "PostgresKit", package: "postgres-kit"),
@@ -45,6 +54,10 @@ let package = Package(
                 .product(name: "NIOHTTP1", package: "swift-nio"),
                 .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "Logging", package: "swift-log"),
+                
+                /// Internal dependencies
+                "Papyrus",
+                "Fusion",
                 "CBcrypt",
             ]
         ),
@@ -57,8 +70,16 @@ let package = Package(
             dependencies: []
         ),
         .target(
+            name: "Papyrus",
+            dependencies: []
+        ),
+        .target(
+            name: "Fusion",
+            dependencies: []
+        ),
+        .target(
             name: "Papyrus-iOS",
-            dependencies: ["Alchemy", "Alamofire"]
+            dependencies: ["Papyrus", "Alamofire"]
         ),
         .testTarget(
             name: "AlchemyTests",
