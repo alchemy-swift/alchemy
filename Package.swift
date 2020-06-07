@@ -62,7 +62,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "_Example",
+            name: "Example",
             dependencies: ["Alchemy"]
         ),
         .target(
