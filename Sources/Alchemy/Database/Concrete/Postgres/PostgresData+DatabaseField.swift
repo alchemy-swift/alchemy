@@ -2,28 +2,18 @@ import Foundation
 import PostgresNIO
 
 extension PostgresData {
-    private static let postgresDateFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        return dateFormatter
-    }()
-    
-    private static let postgresTimestampzFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
-        return dateFormatter
-    }()
-    
     func toDatabaseField(from column: String) throws -> DatabaseField {
         // Ensures that if value is nil, it's because the database column is actually nil and not because
         // we are attempting to pull out the wrong type.
         func validateNil<T>(_ value: T?) throws -> T? {
             if self.value == nil {
                 return nil
+            } else if value == nil {
+                let errorMessage = "Unable to unwrap expected type `\(name(of: T.self))` from column "
+                + "'\(column)'."
+                throw PostgresError(errorMessage)
             } else {
-                let errorMessage = "Unable to unwrap expected type `\(Swift.type(of: T.self))` from column "
-                    + "'\(column)'."
-                return try value.unwrap(or: PostgresError(errorMessage))
+                return value
             }
         }
         
@@ -35,21 +25,9 @@ extension PostgresData {
         case .varchar, .text:
             return DatabaseField(column: column, value: .string(try validateNil(self.string)))
         case .date:
-            let date = try validateNil(self.string).map { string in
-                try PostgresData.postgresDateFormatter.date(from: string)
-                    .unwrap(or: PostgresError("Error decoding column `\(column)` to Postgres `date` type. "
-                        + "The string was `\(string)`"))
-            }
-            
-            return DatabaseField(column: column, value: .date(date))
+            return DatabaseField(column: column, value: .date(try validateNil(self.date)))
         case .timestamptz:
-            let date = try validateNil(self.string).map { string in
-                try PostgresData.postgresTimestampzFormatter.date(from: string)
-                    .unwrap(or: PostgresError("Error decoding column `\(column)` to Postgres `date` type. "
-                        + "The string was `\(string)`"))
-            }
-            
-            return DatabaseField(column: column, value: .date(date))
+            return DatabaseField(column: column, value: .date(try validateNil(self.date)))
         case .time, .timestamp, .timetz:
             fatalError("Need to do these.")
         case .float4, .float8:

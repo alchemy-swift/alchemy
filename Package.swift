@@ -15,11 +15,20 @@ let package = Package(
             targets: ["Alchemy"]
         ),
         .library(
-            name: "Papyrus-iOS",
-            targets: ["Papyrus-iOS"]
+            name: "Fusion",
+            targets: ["Fusion"]
+        ),
+        .library(
+            name: "Papyrus",
+            targets: ["Papyrus"]
+        ),
+        .library(
+            name: "PapyrusIOS",
+            targets: ["PapyrusIOS"]
         ),
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.1.0"),
         .package(url: "https://github.com/vapor/mysql-nio.git", from: "1.0.0-rc.2.2"),
@@ -34,6 +43,7 @@ let package = Package(
         .target(
             name: "Alchemy",
             dependencies: [
+                /// External dependencies
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "Echo", package: "Echo"),
                 .product(name: "PostgresKit", package: "postgres-kit"),
@@ -43,15 +53,33 @@ let package = Package(
                 .product(name: "NIO", package: "swift-nio"),
                 .product(name: "NIOHTTP1", package: "swift-nio"),
                 .product(name: "NIOHTTP2", package: "swift-nio-http2"),
+                .product(name: "Logging", package: "swift-log"),
+                
+                /// Internal dependencies
+                "Papyrus",
+                "Fusion",
+                "CBcrypt",
             ]
         ),
         .target(
-            name: "_Example",
+            name: "Example",
             dependencies: ["Alchemy"]
         ),
         .target(
-            name: "Papyrus-iOS",
-            dependencies: ["Alchemy", "Alamofire"]
+            name: "CBcrypt",
+            dependencies: []
+        ),
+        .target(
+            name: "Papyrus",
+            dependencies: []
+        ),
+        .target(
+            name: "Fusion",
+            dependencies: []
+        ),
+        .target(
+            name: "PapyrusIOS",
+            dependencies: ["Papyrus", "Alamofire"]
         ),
         .testTarget(
             name: "AlchemyTests",

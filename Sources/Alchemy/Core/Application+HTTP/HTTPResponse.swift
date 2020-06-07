@@ -2,6 +2,9 @@ import NIOHTTP1
 
 /// An HTTPResponse as you'll commonly see in web frameworks. This response can be a failure or success case depending on the status code in the `head`
 public struct HTTPResponse {
+    /// The default JSONEncoder with which to encode JSON responses.
+    public static var defaultJSONEncoder = JSONEncoder()
+    
     /// The success or failure status and HTTP headers
     public let head: HTTPResponseHead
   

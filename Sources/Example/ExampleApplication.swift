@@ -1,0 +1,122 @@
+import Alchemy
+import Foundation
+import NIO
+
+struct APIServer: Application {
+    @Inject var postgres: PostgresDatabase
+    @Inject var mysql: MySQLDatabase
+    @Inject var router: HTTPRouter
+    @Inject var globalMiddlewares: GlobalMiddlewares
+    
+    func setup() {
+        DB.default = self.postgres
+        
+        self.globalMiddlewares
+            // Applied to all incoming requests.
+            .add(LoggingMiddleware(text: "Received request:"))
+        
+        self.router
+            // Applied to all subsequent routes
+            .middleware(LoggingMiddleware(text: "Handling request:"))
+            // `GET /json`
+            .on(.GET, at: "/json", do: { _ in SampleJSON() })
+            // Group all pet requests
+            .group(path: "/pets") {
+                let controller = PetsController()
+                $0.on(.POST, at: "/user", do: controller.createUser)
+                $0.on(.GET, at: "/user", do: controller.getUsers)
+                $0.on(.POST, at: "/pet", do: controller.createPet)
+                $0.on(.GET, at: "/pet", do: controller.getPets)
+                $0.on(.POST, at: "/vaccinate/:pet_id/:vaccine_id", do: controller.vaccinate)
+            }
+            // Group all requests to /users
+            .group(path: "/users") {
+                $0.on(.POST, do: { req in "hi from create user" })
+                    // `POST /users/reset`
+                    .on(.POST, at: "/reset", do: { req in "hi from user reset" })
+                    // Applies to the rest of the requests in this chain, giving them a `User` parameter.
+                    .middleware(User.basicAuthMiddleware())
+                    // `POST /users/login`
+                    .on(.POST, at: "/login") { req in "hi from user login" }
+            }
+            // Applies to requests in this group, validating a token auth and giving them a `User` parameter.
+            .group(middleware: UserToken.tokenAuthMiddleware()) {
+                // Applies to the rest of the requests in this chain.
+                $0.path("/todo")
+                    // `POST /todo`
+                    .on(.POST) { req in "hi from todo create" }
+                    // `PUT /todo`
+                    .on(.POST) { req in "hi from todo update" }
+                    // `DELETE /todo`
+                    .on(.DELETE) { req in "hi from todo delete" }
+
+                // Abstraction for handling requests related to friends.
+                let friends = FriendsController()
+
+                // Applies to the rest of the requests in this chain.
+                $0.path("/friends")
+                    // `POST /friends`
+                    .on(.POST, do: friends.message)
+                    // `DELETE /friends`
+                    .on(.DELETE, do: friends.remove)
+                    // `POST /friends/message`
+                    .on(.POST, at: "/message", do: friends.message)
+            }
+            .group(path: "/db") {
+                $0.on(.GET, at: "/select", do: DatabaseTestController().select)
+                $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
+            }
+    }
+}
+
+struct MiscError: Error {
+    private let message: String
+    
+    init(_ message: String) {
+        self.message = message
+    }
+}
+
+struct DatabaseTestController {
+    @Inject var db: MySQLDatabase
+    
+    func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
+        Rental.query()
+            .where("num_beds" >= 1)
+            .count(as: "rentals_count")
+    }
+    
+    func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
+        Rental.query(database: self.db)
+            .insert([
+                [
+                    "price": 220,
+                    "num_beds": 1,
+                    "location": "NYC"
+                ],
+                [
+                    "price": 100,
+                    "num_beds": 7,
+                    "location": "Dallas"
+                ]
+            ])
+            .map { _ in "done" }
+    }
+}
+
+struct SampleJSON: Codable {
+    let one = "value1"
+    let two = "value2"
+    let three = "value3"
+    let four = 4
+    let date = Date()
+}
+
+struct LoggingMiddleware: Middleware {
+    let text: String
+    
+    func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
+        Log.info("Got a request to \(request.path).")
+        return request.eventLoop.future(request)
+    }
+}

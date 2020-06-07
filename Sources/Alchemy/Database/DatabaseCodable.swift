@@ -8,7 +8,7 @@ public protocol DatabaseCodable: Codable, DatabaseIdentifiable, Table {
 
 public protocol DatabaseIdentifiable: Identifiable {
     associatedtype Identifier: RuneID
-    var id: Self.Identifier? { get }
+    var id: Self.Identifier? { get set }
 }
 
 extension DatabaseIdentifiable {

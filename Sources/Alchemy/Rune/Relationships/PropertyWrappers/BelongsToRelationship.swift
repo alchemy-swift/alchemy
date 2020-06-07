@@ -8,20 +8,22 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
     public typealias From = Child
     public typealias To = Parent
     
-    public var id: Parent.Value.Identifier!
+    public var id: Parent.Value.Identifier! {
+        didSet {
+            self.value = nil
+        }
+    }
 
     private var value: Parent?
     
     public var wrappedValue: Parent {
         get {
-            guard let value = self.value else { fatalError("Please load first") }
+            guard let value = self.value else { fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!") }
             return value
         }
         set { self.value = newValue }
     }
 
-    public init() {}
-    
     public init(_ parentID: Parent.Value.Identifier) {
         self.id = parentID
     }
@@ -32,6 +34,8 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
         }
 
         self.id = id
+        // From only throws if this is passed nil; can force try here.
+        self.value = try! Parent.from(parent)
     }
 
     public var projectedValue: BelongsToRelationship<Child, Parent> {
@@ -40,11 +44,12 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
 
     public func load(
         _ from: [Child],
+        with nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
         from eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
     {
-        let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }
-        return Parent.Value.query()
-            .where(key: "id", in: parentIDs)
+        let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
+        let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
+        return nestedQuery(initialQuery)
             .getAll()
             .flatMapThrowing { parents in
                 var updatedResults = [Child]()

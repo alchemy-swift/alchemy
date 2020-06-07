@@ -40,9 +40,10 @@ public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRela
     
     public func load(
         _ from: [From],
+        with nestedQuery: @escaping (ModelQuery<To.Value>) -> ModelQuery<To.Value>,
         from eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
     {
-        self.eagerLoadClosure(from)
+        self.eagerLoadClosure(nestedQuery)(from)
             .flatMapThrowing { dict in
                 var updatedResults = [From]()
                 for result in from {

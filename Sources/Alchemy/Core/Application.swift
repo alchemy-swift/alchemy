@@ -11,6 +11,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+import Fusion
 import NIO
 import NIOHTTP1
 import NIOHTTP2
@@ -29,12 +30,6 @@ struct StartupArgs {
     let htdocs: String
 }
 
-extension MultiThreadedEventLoopGroup: SingletonService {
-    public static func singleton(in container: Container) throws -> MultiThreadedEventLoopGroup {
-        MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-    }
-}
-
 public extension Application {
     
     private func parseArgs() -> StartupArgs {
@@ -42,7 +37,7 @@ public extension Application {
         let arguments = CommandLine.arguments.dropFirst(0) // just to get an ArraySlice<String> from [String]
         let arg1 = arguments.dropFirst().first
         let arg2 = arguments.dropFirst(2).first
-
+        
         let defaultHost = "::1"
         let defaultPort = 8888
         let htdocs = "/dev/null/"
@@ -66,16 +61,17 @@ public extension Application {
     }
     
     func run() throws {
-        // Setup the ELG
+        // Get the global MultiThreadedEventLoopGroup
         let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
-        
-        // First, setup the application
-        self.setup()
+
+        // First, setup the application (on an `EventLoop` from the global group so `Loop.current` can be
+        // used.)
+        _ = group.next().submit(self.setup)
         
         let args = self.parseArgs()
 
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
-            return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
+            channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
                 channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
             }
         }

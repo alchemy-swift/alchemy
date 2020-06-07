@@ -8,6 +8,12 @@ public protocol HTTPResponseEncodable {
 
 /// Conform common closure return types to HTTPResponseEncodable
 
+extension Array: HTTPResponseEncodable where Element: Encodable {
+    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
+        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    }
+}
+
 extension HTTPResponse: HTTPResponseEncodable {
     public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
         eventLoop.makeSucceededFuture(self)

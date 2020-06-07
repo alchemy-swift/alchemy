@@ -12,7 +12,9 @@ public struct DatabaseDefault {
             
             return _default
         }
-        set { DatabaseDefault._default = newValue }
+        set {
+            DatabaseDefault._default = newValue
+        }
     }
     public static func query() -> Query {
         return DB.default.query()
@@ -25,6 +27,7 @@ public protocol Database {
     var grammar: Grammar { get }
     func query() -> Query
     func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    /// TODO, don't bind NULL since at least postgres seems to complain. Still works tho.
     func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
     func shutdown()
 }

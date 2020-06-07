@@ -1,3 +1,4 @@
+import Fusion
 import Foundation
 import PostgresKit
 import NIO
@@ -8,9 +9,12 @@ public final class PostgresDatabase: Database {
     private let config: PostgresConfig
     private let pool: ConnectionPool
 
-    public let grammar = Grammar()
+    public let grammar: Grammar = PostgresGrammar()
     
-    public init(config: PostgresConfig, eventLoopGroup: EventLoopGroup) {
+    public init(
+        config: PostgresConfig,
+        eventLoopGroup: EventLoopGroup = try! Container.global.resolve(MultiThreadedEventLoopGroup.self)
+    ) {
         //  Initialize the pool.
         let postgresConfig: PostgresConfiguration
         switch config.socket {
@@ -42,15 +46,14 @@ public final class PostgresDatabase: Database {
     
     public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         self.pool
-            .withConnection(logger: nil, on: loop) { $0.simpleQuery(sql) }
+            .withConnection(logger: nil, on: loop) { $0.query(sql) }
             // Required for type inference.
-            .map { $0 }
+            .map { $0.rows }
     }
     
-    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        print(sql)
-        print(values)
-        return self.pool.withConnection(logger: nil, on: loop) { conn in
+    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    {
+        self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(
                 self.positionBindings(sql),
                 values.map { $0.toPostgresData() }
@@ -63,10 +66,17 @@ public final class PostgresDatabase: Database {
     }
 
     private func positionBindings(_ sql: String) -> String {
-
-        //TODO: Ensure a user can enter ? into their content?
-        return sql.replaceAll(matching: "(\\?)") { (index, _) in
+        // TODO: Ensure a user can enter ? into their content?
+        sql.replaceAll(matching: "(\\?)") { (index, _) in
             return "$\(index + 1)"
         }
+    }
+}
+
+private class PostgresGrammar: Grammar {
+    override func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
+        var initial = try super.compileInsert(query, values: values)
+        initial.query.append(" returning *")
+        return initial
     }
 }

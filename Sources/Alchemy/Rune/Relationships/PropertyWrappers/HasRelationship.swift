@@ -3,19 +3,18 @@ import NIO
 public protocol AnyHas {}
 
 public class HasRelationship<From: Model, To: RelationAllowed>: AnyHas, Decodable {
-    var eagerLoadClosure: EagerLoadClosure<From, To>!
+    var eagerLoadClosure: NestedEagerLoadClosure<From, To>!
     
     init() {}
     
     public required init(this: String, to key: KeyPath<To.Value, To.Value.BelongsTo<From>>, keyString: String) {
-        let loadClosure = EagerLoader<From, To>.via(key: key, keyString: keyString)
-        self.eagerLoadClosure = loadClosure
+        self.eagerLoadClosure = { EagerLoader<From, To>.via(key: key, keyString: keyString, nestedQuery: $0!) }
         
         RelationshipDataStorage.store(
             from: From.self,
             to: To.self,
             fromStored: this,
-            loadClosure: loadClosure
+            loadClosure: self.eagerLoadClosure
         )
     }
     
@@ -26,20 +25,22 @@ public class HasRelationship<From: Model, To: RelationAllowed>: AnyHas, Decodabl
         fromString: String,
         toString: String
     ) {
-        let loadClosure = EagerLoader<From, To>.through(
-            named: named,
-            from: fromKey,
-            to: toKey,
-            fromString: fromString,
-            toString: toString
-        )
-        self.eagerLoadClosure = loadClosure
+        self.eagerLoadClosure = {
+            EagerLoader<From, To>.through(
+                named: named,
+                from: fromKey,
+                to: toKey,
+                fromString: fromString,
+                toString: toString,
+                nestedQuery: $0
+            )
+        }
 
         RelationshipDataStorage.store(
             from: From.self,
             to: To.self,
             fromStored: named,
-            loadClosure: loadClosure
+            loadClosure: self.eagerLoadClosure
         )
     }
     

@@ -1,16 +1,25 @@
 import NIO
 
-typealias EagerLoadClosure<From: Model, To: RelationAllowed> = ([From]) -> EventLoopFuture<[From.Value.Identifier: [To.Value]]>
+typealias NestedEagerLoadClosure<From: Model, To: RelationAllowed>
+    // Param needs to be optional for implicit escaping, otherwise won't compile.
+    = ((((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?) -> EagerLoadClosure<From, To>)
 
-/// Encapsulates loading behavior from `From` to `To`. Erases any intermediary types.
+typealias EagerLoadClosure<From: Model, To: RelationAllowed>
+    = ([From]) -> EventLoopFuture<[From.Value.Identifier: [To.Value]]>
+
+/// Encapsulates loading behavior from `From` to `To` for `HasOne` or `HasMany` relationships. Erases any
+/// intermediary types.
 struct EagerLoader<From: Model, To: RelationAllowed> {
     static func via(
         key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
-        keyString: String
+        keyString: String,
+        nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
     ) -> EagerLoadClosure<From, To> {
         return { from in
-            To.Value.query()
-                .where(key: keyString, in: from.compactMap { $0.id })
+            let idsToSearch = from.compactMap { $0.id }.uniques
+            let initialQuery = To.Value.query()
+                .where(key: keyString, in: idsToSearch)
+            return (nestedQuery?(initialQuery) ?? initialQuery)
                 .getAll()
                 .flatMapThrowing { Dictionary(grouping: $0, by: { $0[keyPath: key].id! }) }
         }
@@ -21,12 +30,16 @@ struct EagerLoader<From: Model, To: RelationAllowed> {
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
         fromString: String,
-        toString: String
+        toString: String,
+        /// TODO: This doesn't work, yet.
+        nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
     ) -> EagerLoadClosure<From, To> {
         return { from in
-            To.Value.query()
+            let idsToSearch = from.compactMap { $0.id }.uniques
+            let initalQuery = To.Value.query()
                 .leftJoin(table: Through.tableName, first: toString, second: "\(To.Value.tableName).id")
-                .where(key: fromString, in: from.compactMap { $0.id })
+                .where(key: fromString, in: idsToSearch)
+            return (nestedQuery?(initalQuery) ?? initalQuery)
                 .get(["\(To.Value.tableName).*, \(fromString)"])
                 .flatMapThrowing { toResults in
                     var dict: [From.Value.Identifier: [To.Value]] = [:]

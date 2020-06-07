@@ -15,22 +15,24 @@ private struct HTTPKey: Hashable {
 /// `Input` represents the type the router passes to a handler.
 /// `Output` represents the type the router expects back from a handler.
 public final class Router<Input, Output> {
+    typealias MiddlewareClosure = (HTTPRequest) -> EventLoopFuture<Input>
+    
     private let basePath: String
     /// Middleware to apply to any requests before passing to a handler.
-    private let middleware: (HTTPRequest) throws -> Input
+    private let middleware: MiddlewareClosure
     /// Child routers, erased to a closure.
-    private var erasedChildren: [((HTTPRequest) throws -> Output?)] = []
+    private var erasedChildren: [((HTTPRequest) -> EventLoopFuture<Output>?)] = []
     /// Handlers to route requests to.
     private var handlers: [HTTPKey: (Input) throws -> Output] = [:]
 
-    init(basePath: String = "", middleware: @escaping (HTTPRequest) throws -> Input) {
+    init(basePath: String = "", middleware: @escaping MiddlewareClosure) {
         self.basePath = basePath
         self.middleware = middleware
     }
     
-    private func childrenHandle(request: HTTPRequest) throws -> Output? {
+    private func childrenHandle(request: HTTPRequest) -> EventLoopFuture<Output>? {
         for child in self.erasedChildren {
-            if let output = try child(request) {
+            if let output = child(request) {
                 return output
             }
         }
@@ -42,7 +44,7 @@ public final class Router<Input, Output> {
         self.handlers[HTTPKey(fullPath: self.basePath + path, method: method)] = handler
     }
     
-    func handle(request: HTTPRequest) throws -> Output? {
+    func handle(request: HTTPRequest) -> EventLoopFuture<Output>? {
         for (key, value) in self.handlers {
             guard request.method == key.method else {
                 continue
@@ -53,35 +55,25 @@ public final class Router<Input, Output> {
                 continue
             }
             
-            var updatedRequest = request
-            updatedRequest.pathParameters = matchResult.parsedPathParameters
-            return try value(try self.middleware(updatedRequest))
+            request.pathParameters = matchResult.parsedPathParameters
+            
+            return self.middleware(request)
+                .flatMapThrowing { try value($0) }
         }
         
-        return try self.childrenHandle(request: request)
+        return self.childrenHandle(request: request)
     }
     
     // A middleware that does something, but doesn't change the type
-    public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> where M.Result == Void {
-        let router = Router {
-            try middleware.intercept($0)
-            return try self.middleware($0)
+    public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> {
+        let router = Router { req in
+            middleware.intercept(req)
+                .flatMap { self.middleware($0) }
         }
-        
         self.erasedChildren.append(router.handle)
         return router
     }
 
-    // A middleware that does something, then changes the type
-    public func middleware<M: Middleware>(_ middleware: M) -> Router<(Input, M.Result), Output> {
-        let router = Router<(Input, M.Result), Output> { request in
-            (try self.middleware(request), try middleware.intercept(request))
-        }
-        
-        self.erasedChildren.append(router.handle)
-        return router
-    }
-    
     /// Update the path for subsequent requests in the router chain.
     public func path(_ path: String) -> Router<Input, Output> {
         let router = Router(basePath: self.basePath + path, middleware: self.middleware)

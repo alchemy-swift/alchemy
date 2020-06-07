@@ -19,7 +19,8 @@ extension Model {
             } else {
                 return Self.query(database: db)
                     .insert(try self.dictionary())
-                    .map { _ in self }
+                    .flatMapThrowing { try $0.first.unwrap(or: RuneError(info: "Unable to find first element.")) }
+                    .flatMapThrowing { try $0.decode(Self.self) }
             }
         }
     }
@@ -47,6 +48,23 @@ extension Model {
                 .first()
                 .flatMapThrowing { try $0.unwrap(or: RuneError(info: "Sync error: couldn't find a row on \(Self.tableName) with id \(id)")).decode(Self.self) }
         }
+    }
+    
+    /// Throws an error if a query with the specified where clause returns a value.
+    ///
+    /// Useful for detecting if a value with a conflicting key already exists.
+    public static func ensureNotExist(_ where: WhereValue, else error: Error) -> EventLoopFuture<Void> {
+        Self.query()
+            .where(`where`)
+            .first()
+            .flatMapThrowing { try $0.map { _ in throw error } }
+    }
+    
+    /// Gets the first element that meets the given where value. Throws an error if no results match.
+    public static func unwrapFirstWhere(_ where: WhereValue, or error: Error) -> EventLoopFuture<Self> {
+        Self.query()
+            .where(`where`)
+            .unwrapFirst(or: error)
     }
 }
 

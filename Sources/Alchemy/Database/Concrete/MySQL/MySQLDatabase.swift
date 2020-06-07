@@ -7,7 +7,7 @@ public final class MySQLDatabase: Database {
     private let config: MySQLConfig
     private let pool: ConnectionPool
 
-    public let grammar = Grammar()
+    public let grammar: Grammar = MySQLGrammar()
 
     public init(config: MySQLConfig, eventLoopGroup: EventLoopGroup) {
         //  Initialize the pool.
@@ -58,5 +58,13 @@ public final class MySQLDatabase: Database {
 
     public func shutdown() {
         self.pool.shutdown()
+    }
+}
+
+private class MySQLGrammar: Grammar {
+    override func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
+        var initial = try super.compileInsert(query, values: values)
+        initial.query.append("; select * from table where Id=LAST_INSERT_ID();")
+        return initial
     }
 }

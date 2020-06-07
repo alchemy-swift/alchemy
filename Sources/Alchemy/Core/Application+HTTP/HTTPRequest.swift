@@ -3,7 +3,10 @@ import NIO
 import NIOHTTP1
 
 /// A simplified HTTPRequest type as you'll come across in many web frameworks
-public struct HTTPRequest {
+public final class HTTPRequest {
+    /// The default JSONDecoder with which to decode HTTP request bodies.
+    public static var defaultJSONDecoder = JSONDecoder()
+    
     /// The EventLoop is stored in the HTTP request so that promises can be created
     public let eventLoop: EventLoop
     
@@ -20,6 +23,9 @@ public struct HTTPRequest {
     
     /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
     var bodyBuffer: ByteBuffer?
+    
+    /// Any information set by a middleware.
+    var middlewareData: [ObjectIdentifier: Any] = [:]
     
     /// This initializer is necessary because the `bodyBuffer` is a private property
     init(eventLoop: EventLoop, head: HTTPRequestHead, bodyBuffer: ByteBuffer?) {
@@ -64,4 +70,95 @@ extension HTTPRequest {
         
         return HTTPBody(buffer: bodyBuffer)
     }
+    
+    /// Sets a value associated with this request. Useful for setting objects with middleware.
+    public func set<T>(_ value: T) -> Self {
+        self.middlewareData[identifier(of: T.self)] = value
+        return self
+    }
+    
+    /// Gets a value associated with this request, throws if there is not one of type `T` already set.
+    public func get<T>(_ type: T.Type = T.self) throws -> T {
+        try self.middlewareData[identifier(of: T.self)]
+            .unwrap(as: type, or: RoutingError("Couldn't find type `\(name(of: type))` on this request"))
+    }
+}
+
+public enum HTTPAuth {
+    case basic(HTTPBasicAuth)
+    case bearer(HTTPBearerAuth)
+}
+
+extension HTTPRequest {
+    /// Get auth, if there is one
+    public func getAuth() -> HTTPAuth? {
+        guard var authString = self.headers.first(name: "Authorization") else {
+            return nil
+        }
+        
+        if authString.starts(with: "Basic ") {
+            authString.removeFirst(6)
+            
+            guard let base64Data = Data(base64Encoded: authString),
+                let authString = String(data: base64Data, encoding: .utf8) else
+            {
+                // Or maybe we should throw error?
+                return nil
+            }
+            
+            let components = authString.components(separatedBy: ":")
+            guard let username = components.first else {
+                return nil
+            }
+            
+            let password = components.dropFirst().joined()
+            
+            return .basic(HTTPBasicAuth(username: username, password: password))
+        } else if authString.starts(with: "Bearer ") {
+            authString.removeFirst(7)
+            return .bearer(HTTPBearerAuth(token: authString))
+        } else {
+            return nil
+        }
+    }
+    
+    /// Get basic auth, if there is one
+    public func basicAuth() -> HTTPBasicAuth? {
+        guard let auth = self.getAuth() else {
+            return nil
+        }
+        
+        if case let .basic(authData) = auth {
+            return authData
+        } else {
+            return nil
+        }
+    }
+    
+    /// Get bearer auth, if there is one
+    public func bearerAuth() -> HTTPBearerAuth? {
+        guard let auth = self.getAuth() else {
+            return nil
+        }
+        
+        if case let .bearer(authData) = auth {
+            return authData
+        } else {
+            return nil
+        }
+    }
+}
+
+public struct HTTPBasicAuth {
+    public let username: String
+    public let password: String
+}
+
+public struct HTTPBearerAuth {
+    public let token: String
+}
+
+struct RoutingError: Error {
+    let info: String
+    init(_ info: String) { self.info = info }
 }

@@ -16,7 +16,17 @@ public struct WhereValue {
 
 extension WhereValue: WhereClause {
     func toSQL() -> SQL {
-        return SQL("\(boolean) \(key) \(op) ?", binding: value)
+        if self.value.isNil {
+            if self.op == .notEqualTo {
+                return SQL("\(boolean) \(key) IS NOT NULL")
+            } else if self.op == .equals {
+                return SQL("\(boolean) \(key) IS NULL")
+            } else {
+                fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
+            }
+        } else {
+            return SQL("\(boolean) \(key) \(op) ?", binding: value)
+        }
     }
 }
 

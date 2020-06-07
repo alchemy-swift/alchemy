@@ -1,7 +1,7 @@
 import Foundation
 
 public struct SQL {
-    let query: String
+    var query: String
     let bindings: [DatabaseValue]
 
     public init(_ query: String = "", bindings: [DatabaseValue] = []) {

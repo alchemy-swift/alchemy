@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Operator: CustomStringConvertible {
+public enum Operator: CustomStringConvertible, Equatable {
     case equals
     case lessThan
     case greaterThan

@@ -5,7 +5,7 @@ class RelationshipDataStorage {
         from: From.Type,
         to: To.Type,
         fromStored: String,
-        loadClosure: @escaping EagerLoadClosure<From, To>
+        loadClosure: @escaping NestedEagerLoadClosure<From, To>
     ) {
         let key = "\(From.tableName)_\(To.Value.tableName)_\(fromStored)"
         dict[key] = loadClosure
@@ -15,8 +15,8 @@ class RelationshipDataStorage {
         from: From.Type,
         to: To.Type,
         fromStored: String
-    ) -> EagerLoadClosure<From, To>? {
+    ) -> NestedEagerLoadClosure<From, To>? {
         let key = "\(From.tableName)_\(To.Value.tableName)_\(fromStored)"
-        return dict[key] as? EagerLoadClosure<From, To>
+        return dict[key] as? NestedEagerLoadClosure<From, To>
     }
 }

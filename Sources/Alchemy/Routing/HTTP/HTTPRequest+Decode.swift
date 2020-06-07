@@ -1,7 +1,9 @@
+import Papyrus
+
 /// WIP: Something that can be encoded to and decoded from an HTTP request
 ///
 /// Should probably be moved to `SwiftAPI` repo.
-public protocol RequestCodable {}
+//public protocol RequestCodable {}
 
 /// Request validations
 /// (Handle through typed Middleware):
