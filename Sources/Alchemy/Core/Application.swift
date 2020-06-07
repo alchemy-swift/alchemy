@@ -60,16 +60,17 @@ public extension Application {
     }
     
     func run() throws {
-        // Setup the ELG
+        // Get the global MultiThreadedEventLoopGroup
         let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
-        
-        // First, setup the application
-        self.setup()
+
+        // First, setup the application (on an `EventLoop` from the global group so `Loop.current` can be
+        // used.)
+        _ = group.next().submit(self.setup)
         
         let args = self.parseArgs()
 
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
-            return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
+            channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
                 channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
             }
         }
