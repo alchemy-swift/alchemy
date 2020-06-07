@@ -62,7 +62,7 @@ private extension HTTPClient {
             return self.execute(request: request)
                 .flatMapThrowing { response -> (content: Response, response: HTTPClient.Response) in
                     guard response.status.isSuccess else {
-                        print("[PapyrusAlchemy] Error: Got status code `\(response.status.code)` hitting `\(fullURL)` response was: \(response.bodyString()).")
+                        print("[PapyrusAlchemy] Error: Got status code `\(response.status.code)` hitting `\(fullURL)` response was: \(response.bodyString() ?? "nil").")
                         throw HTTPError(response.status)
                     }
                     

@@ -38,7 +38,7 @@ public final class HTTPRequest {
 
 extension HTTPRequest {
     /// The HTTPMethod of the request.
-    public var method: HTTPMethod {
+    public var method: NIOHTTP1.HTTPMethod {
         self.head.method
     }
     

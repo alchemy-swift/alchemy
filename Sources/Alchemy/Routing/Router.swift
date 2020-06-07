@@ -7,7 +7,7 @@ private struct HTTPKey: Hashable {
     // The path of the request, relative to the host.
     let fullPath: String
     // The method of the request.
-    let method: HTTPMethod
+    let method: NIOHTTP1.HTTPMethod
 }
 
 /// Router. Takes an `HTTPRequest` and routes it to a handler.
@@ -40,7 +40,7 @@ public final class Router<Input, Output> {
         return nil
     }
     
-    func add(handler: @escaping (Input) throws -> Output, for method: HTTPMethod, path: String) {
+    func add(handler: @escaping (Input) throws -> Output, for method: NIOHTTP1.HTTPMethod, path: String) {
         self.handlers[HTTPKey(fullPath: self.basePath + path, method: method)] = handler
     }
     
@@ -82,7 +82,7 @@ public final class Router<Input, Output> {
     }
 }
 
-extension HTTPMethod: Hashable {
+extension NIOHTTP1.HTTPMethod: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.rawValue)
     }
