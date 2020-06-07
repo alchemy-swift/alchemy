@@ -24,7 +24,7 @@ struct Review: Model {
     static var keyMappingStrategy: DatabaseKeyMappingStrategy = .convertToSnakeCase
     static var tableName = "reviews"
 
-    let id: Int?
+    var id: Int?
 
     @HasOne(this: "rental", to: \.$review, keyString: "review_id")
     var rental: Rental

@@ -1,8 +1,8 @@
 import NIOHTTP1
 import Papyrus
 
-extension Papyrus.HTTPMethod {
-    var nio: NIOHTTP1.HTTPMethod {
+extension HTTPReqMethod {
+    var nio: HTTPMethod {
         .init(rawValue: self.rawValue)
     }
 }

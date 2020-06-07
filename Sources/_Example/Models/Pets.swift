@@ -1,9 +1,12 @@
 import Alchemy
 
-struct User: Model, Authable {
+struct User: Model, BasicAuthable {
     static var tableName: String = "users"
+    static var usernameKeyString: String = "email"
     
-    let id: Int?
+    var id: Int?
+    let email: String
+    let passwordHash: String
     let name: String
     
     @HasOne(this: "pet", to: \.$owner, keyString: "owner_id")
@@ -13,6 +16,16 @@ struct User: Model, Authable {
     var pets: [Pet]
 }
 
+struct UserToken: Model, TokenAuthable {
+    static var userKey: KeyPath<UserToken, BelongsTo<User>> = \.$user
+    
+    var id: Int?
+    let value: String
+    
+    @BelongsTo
+    var user: User
+}
+
 enum PetType: Int, Codable {
     case dog, cat
 }
@@ -20,7 +33,7 @@ enum PetType: Int, Codable {
 struct Pet: Model {
     static var tableName: String = "pets"
     
-    let id: Int?
+    var id: Int?
     let name: String
     let type: PetType
     
@@ -40,7 +53,7 @@ struct Pet: Model {
 struct Vaccine: Model {
     static var tableName: String = "vaccines"
     
-    let id: Int?
+    var id: Int?
     let name: String
 }
 

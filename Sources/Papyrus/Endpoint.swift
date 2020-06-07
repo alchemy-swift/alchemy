@@ -1,5 +1,5 @@
 public struct Endpoint<Req: RequestAllowed, Res: Codable> {
-    public let method: HTTPMethod
+    public let method: HTTPReqMethod
     public var basePath: String
 }
 

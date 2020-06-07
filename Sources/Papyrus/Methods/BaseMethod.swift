@@ -1,12 +1,12 @@
-public class Method<Req: RequestAllowed, Res: Codable> {
+public class BaseMethod<Req: RequestAllowed, Res: Codable> {
     public var wrappedValue: Endpoint<Req, Res>
 
-    init(_ method: HTTPMethod, _ basePath: String) {
+    init(_ method: HTTPReqMethod, _ basePath: String) {
         self.wrappedValue = Endpoint<Req, Res>(method: method, basePath: basePath)
     }
 }
 
-public enum HTTPMethod: String {
+public enum HTTPReqMethod: String {
     case CONNECT = "CONNECT"
     case DELETE = "DELETE"
     case GET = "GET"

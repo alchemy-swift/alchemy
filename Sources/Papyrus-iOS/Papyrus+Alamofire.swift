@@ -29,8 +29,8 @@ extension API {
     }
 }
 
-public extension NIOHTTP1.HTTPMethod {
-    var af: Alamofire.HTTPMethod {
+public extension HTTPReqMethod {
+    var af: HTTPMethod {
         return Alamofire.HTTPMethod(rawValue: self.rawValue.uppercased())
     }
 }

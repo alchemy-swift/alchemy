@@ -5,7 +5,7 @@ struct TestAPI {
     var test: Endpoint<TestReqDTO, TestResDTO>
 }
 
-struct TestReqDTO {
+struct TestReqDTO: RequestCodable {
     @Path   var userID: String
     @HTTPQuery  var number: Int
     @HTTPQuery  var someThings: [String]

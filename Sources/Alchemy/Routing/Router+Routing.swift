@@ -3,7 +3,7 @@ import NIOHTTP1
 
 extension Router {
     @discardableResult
-    public func on(_ method: NIOHTTP1.HTTPMethod, at path: String = "",
+    public func on(_ method: HTTPMethod, at path: String = "",
                    do action: @escaping (Input) throws -> Output) -> Self {
         self.add(handler: action, for: method, path: path)
         return self
@@ -14,7 +14,7 @@ extension Router {
 extension Router where Output == HTTPResponseEncodable {
     /// For `Void`.
     @discardableResult
-    public func on(_ method: NIOHTTP1.HTTPMethod, at path: String = "",
+    public func on(_ method: HTTPMethod, at path: String = "",
                    do action: @escaping (Input) throws -> Void) -> Self {
         self.add(
             handler: { out -> VoidCodable in
@@ -29,7 +29,7 @@ extension Router where Output == HTTPResponseEncodable {
     
     /// For `EventLoopFuture<Void>`.
     @discardableResult
-    public func on(_ method: NIOHTTP1.HTTPMethod, at path: String = "",
+    public func on(_ method: HTTPMethod, at path: String = "",
                    do action: @escaping (Input) throws -> EventLoopFuture<Void>) -> Self {
         self.add(handler: { try action($0).map { VoidCodable() } }, for: method, path: path)
         return self
@@ -42,7 +42,7 @@ extension Router where Output == HTTPResponseEncodable {
     /// For `Codable`.
     @discardableResult
     public func on<E: Encodable>(
-        _ method: NIOHTTP1.HTTPMethod,
+        _ method: HTTPMethod,
         at path: String = "",
         do action: @escaping (Input) throws -> E
     ) -> Self {
@@ -53,7 +53,7 @@ extension Router where Output == HTTPResponseEncodable {
     /// For `EventLoopFuture<E: Encodable>`.
     @discardableResult
     public func on<E: Encodable>(
-        _ method: NIOHTTP1.HTTPMethod,
+        _ method: HTTPMethod,
         at path: String = "",
         do action: @escaping (Input) throws -> EventLoopFuture<E>
     ) -> Self {

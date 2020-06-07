@@ -16,14 +16,14 @@ public extension Endpoint {
 }
 
 public struct RequestParameters {
-    public let method: HTTPMethod
+    public let method: HTTPReqMethod
     public let headers: [String: String]
     public let basePath: String
     public let query: String
     public let fullPath: String
     public let body: (content: AnyEncodable, contentType: ContentType)?
     
-    public static func just(url: String, method: HTTPMethod) -> RequestParameters {
+    public static func just(url: String, method: HTTPReqMethod) -> RequestParameters {
         RequestParameters(method: method, headers: [:], basePath: url, query: "", fullPath: url, body: nil)
     }
     

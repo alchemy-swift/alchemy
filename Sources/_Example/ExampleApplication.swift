@@ -35,20 +35,20 @@ struct APIServer: Application {
                     // `POST /users/reset`
                     .on(.POST, at: "/reset", do: { req in "hi from user reset" })
                     // Applies to the rest of the requests in this chain, giving them a `User` parameter.
-                    .middleware(BasicAuthMiddleware<User>())
+                    .middleware(User.basicAuthMiddleware())
                     // `POST /users/login`
-                    .on(.POST, at: "/login") { req, authedUser in "hi from user login" }
+                    .on(.POST, at: "/login") { req in "hi from user login" }
             }
             // Applies to requests in this group, validating a token auth and giving them a `User` parameter.
-            .group(middleware: TokenAuthMiddleware<User>()) {
+            .group(middleware: UserToken.tokenAuthMiddleware()) {
                 // Applies to the rest of the requests in this chain.
                 $0.path("/todo")
                     // `POST /todo`
-                    .on(.POST) { req, user in "hi from todo create" }
+                    .on(.POST) { req in "hi from todo create" }
                     // `PUT /todo`
-                    .on(.POST) { req, user in "hi from todo update" }
+                    .on(.POST) { req in "hi from todo update" }
                     // `DELETE /todo`
-                    .on(.DELETE) { req, user in "hi from todo delete" }
+                    .on(.DELETE) { req in "hi from todo delete" }
 
                 // Abstraction for handling requests related to friends.
                 let friends = FriendsController()
@@ -112,7 +112,11 @@ struct SampleJSON: Codable {
     let date = Date()
 }
 
+struct LoggingMiddleware: Middleware {
     let text: String
     
-    func intercept(_ request: HTTPRequest) throws -> Void { }
+    func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
+        Log.info("Got a request to \(request.path).")
+        return request.eventLoop.future(request)
+    }
 }

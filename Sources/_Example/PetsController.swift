@@ -10,10 +10,9 @@ struct PetsController {
             .getAll()
     }
     
-    func createUser(_ req: HTTPRequest) -> EventLoopFuture<User> {
-        let user = User(id: nil, name: "Josh")
-        return user.save()
-            .map { user }
+    func createUser(_ req: HTTPRequest) throws -> EventLoopFuture<User> {
+        User(id: nil, email: "josh@test.com", passwordHash: try Bcrypt.hash("password"), name: "Josh")
+            .save()
     }
     
     func getPets(_ req: HTTPRequest) -> EventLoopFuture<[Pet]> {
@@ -24,8 +23,8 @@ struct PetsController {
     }
     
     func createPet(_ req: HTTPRequest) -> EventLoopFuture<Pet> {
-        let pet = Pet(id: nil, name: "Melvin", type: .dog, owner: .init(1))
-        return pet.save().map { pet }
+        Pet(id: nil, name: "Melvin", type: .dog, owner: .init(1))
+            .save()
     }
     
     func vaccinate(_ req: HTTPRequest) throws -> EventLoopFuture<Void> {
@@ -34,6 +33,7 @@ struct PetsController {
         
         return PetVaccine(pet: .init(petID), vaccine: .init(vaccineID))
             .save()
+            .voided()
     }
 }
 
