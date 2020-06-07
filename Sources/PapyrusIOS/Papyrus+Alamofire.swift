@@ -1,7 +1,6 @@
 import Alamofire
-import Alchemy
+import Papyrus
 import Foundation
-import NIOHTTP1
 
 /// Makes request
 public protocol API {
@@ -14,7 +13,7 @@ public protocol API {
 
 extension API {
     /// Request an endpoint with an empty request type & a non-empty Response type.
-    public func request<Res>(_ endpoint: Endpoint<Alchemy.Empty, Res>) -> DataRequest {
+    public func request<Res>(_ endpoint: Endpoint<Papyrus.Empty, Res>) -> DataRequest {
         self.session.request(baseURL + endpoint.basePath, method: endpoint.method.af)
     }
     
