@@ -44,17 +44,15 @@ public final class PostgresDatabase: Database {
     }
     
     public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        print(sql)
-        return self.pool
+        self.pool
             .withConnection(logger: nil, on: loop) { $0.simpleQuery(sql) }
             // Required for type inference.
             .map { $0 }
     }
     
-    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        print(sql)
-        print(values)
-        return self.pool.withConnection(logger: nil, on: loop) { conn in
+    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
+    {
+        self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(
                 self.positionBindings(sql),
                 values.map { $0.toPostgresData() }
@@ -67,9 +65,8 @@ public final class PostgresDatabase: Database {
     }
 
     private func positionBindings(_ sql: String) -> String {
-
-        //TODO: Ensure a user can enter ? into their content?
-        return sql.replaceAll(matching: "(\\?)") { (index, _) in
+        // TODO: Ensure a user can enter ? into their content?
+        sql.replaceAll(matching: "(\\?)") { (index, _) in
             return "$\(index + 1)"
         }
     }

@@ -272,6 +272,8 @@ public class Query: Sequelizable {
     public func limit(_ value: Int) -> Self {
         if (value >= 0) {
             self.limit = value
+        } else {
+            fatalError("No negative limits allowed!")
         }
         return self
     }

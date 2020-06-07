@@ -34,7 +34,7 @@ public struct RequestParameters {
         }
         
         let encoder = URLFormEncoder()
-        return try ";" + encoder.encode(body.content)
+        return try encoder.encode(body.content)
     }
 }
 

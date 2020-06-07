@@ -43,18 +43,13 @@ private extension HTTPClient {
             
             var bodyData: Data?
             if parameters.body?.contentType == .json {
+                headers.add(name: "Content-Type", value: "application/json")
                 bodyData = try parameters.body.map { try JSONEncoder().encode($0.content) }
             } else if parameters.body?.contentType == .urlEncoded, let urlParams = try parameters.urlParams() {
                 headers.add(name: "Content-Type", value: "application/x-www-form-urlencoded")
-                fullURL = baseURL + parameters.basePath + urlParams + parameters.query
+                bodyData = urlParams.data(using: .utf8)
+                fullURL = baseURL + parameters.basePath + parameters.query
             }
-            
-            print("""
-                Method: \(parameters.method)
-                URL: \(fullURL)
-                Headers: \(headers)
-                Body: \(bodyData)
-                """)
             
             let request = try HTTPClient.Request(
                 url: fullURL,
