@@ -23,8 +23,8 @@ let package = Package(
             targets: ["Papyrus"]
         ),
         .library(
-            name: "Papyrus-iOS",
-            targets: ["Papyrus-iOS"]
+            name: "PapyrusIOS",
+            targets: ["PapyrusIOS"]
         ),
     ],
     dependencies: [
@@ -78,7 +78,7 @@ let package = Package(
             dependencies: []
         ),
         .target(
-            name: "Papyrus-iOS",
+            name: "PapyrusIOS",
             dependencies: ["Papyrus", "Alamofire"]
         ),
         .testTarget(
