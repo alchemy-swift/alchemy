@@ -8,13 +8,8 @@ extension HTTPRequest {
             .unwrap(or: PapyrusError("Expected `\(key)` in the request headers."))
     }
     
-    public func getQuery(for key: String) throws -> String {
-        guard let queryItem = self.queryItems.filter ({ $0.name == key }).first else {
-            throw PapyrusError("Expected `\(key)` in the request query")
-        }
-        
-        return try queryItem.value
-            .unwrap(or: PapyrusError("Found a query parameter for `\(key)` but it was nil"))
+    public func getQuery(for key: String) -> String? {
+        self.queryItems.filter ({ $0.name == key }).first?.value
     }
     
     public func pathComponent(for key: String) throws -> String {
@@ -238,6 +233,7 @@ private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingConta
             return try self.request.pathComponent(for: self.key)
         case .query:
             return try self.request.getQuery(for: self.key)
+                .unwrap(or: PapyrusError("Expected `\(key)` in the request query"))
         }
     }
     
@@ -407,7 +403,13 @@ private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingConta
             throw PapyrusError("`path` doesn't suport `T`")
         case .query:
             if type is String.Type {
-                return try request.getQuery(for: self.key) as! T
+                guard let result = request.getQuery(for: self.key) else {
+                    throw PapyrusError("Expected `\(key)` in the request query")
+                }
+                
+                return result as! T
+            } else if type is Optional<String>.Type {
+                return request.getQuery(for: self.key) as! T
             } else {
                 throw PapyrusError("`query` doesn't suport Encodable `T` of type \(name(of: T.self))")
             }

@@ -8,3 +8,8 @@ public extension Inject where Value: FactoryService {
         self.init { try $0.resolve() }
     }
 }
+
+extension FactoryService {
+    /// Gets a service instance from the global `Container`, or crashes if one isn't registered.
+    public static func global() -> Self { try! Container.global.resolve() }
+}
