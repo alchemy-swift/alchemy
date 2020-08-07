@@ -10,9 +10,12 @@ extension PostgresDatabase: SingletonService {
 
 private extension PostgresConfig {
     static let postgres = PostgresConfig(
-        socket: .ipAddress(host: "127.0.0.1", port: 5432),
-        database: "alchemy",
-        username: "josh",
-        password: "password"
+        socket: .ipAddress(
+            host: Env.DB_HOST!,
+            port: Env.DB_PORT!
+        ),
+        database: Env.DB_DATABASE!,
+        username: Env.DB_USER!,
+        password: Env.DB_PASS!
     )
 }
