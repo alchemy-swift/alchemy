@@ -61,6 +61,9 @@ public extension Application {
     }
     
     func run() throws {
+        // Setup environment
+        _ = Env.current
+        
         // Get the global MultiThreadedEventLoopGroup
         let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
 
