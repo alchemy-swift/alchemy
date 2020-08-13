@@ -2,12 +2,11 @@ import Foundation
 
 protocol ColumnCreator {}
 
-struct CreateTableBuilder: TableBuilder, ColumnCreator {
-    func sql() -> String { "" }
+struct CreateTableBuilder: ColumnCreator {
+    var createColumns: [CreateColumn] = []
 }
 
 extension ColumnCreator {
-    /// Columns
     @discardableResult func increments(_ column: String) -> ColumnBuilder<Int> { ColumnBuilder(name: column) }
     @discardableResult func int(_ column: String) -> ColumnBuilder<Int> { ColumnBuilder(name: column) }
     @discardableResult func double(_ column: String) -> ColumnBuilder<Double> { ColumnBuilder(name: column) }

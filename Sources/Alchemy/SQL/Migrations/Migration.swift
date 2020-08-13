@@ -25,48 +25,41 @@ protocol Migration {
     func down(schema: Schema)
 }
 
-struct Schema {
-    var builders: [TableBuilder] = []
+public class Schema {
+    private var grammar = MigrationGrammar()
+    var statements: [SQL] = []
     
-    func appending(builders: [TableBuilder]) -> Schema {
-        Schema(builders: self.builders + builders)
+    func append(statements: [SQL]) {
+        self.statements = self.statements + statements
     }
 }
 
 extension Schema {
-    @discardableResult
-    func create(table: String, builder: (CreateTableBuilder) -> Void) -> Schema {
-        let createBuilder = CreateTableBuilder()
-        builder(createBuilder)
-        return self.appending(builders: [createBuilder])
+    func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
+        var createBuilder = CreateTableBuilder()
+        builder(&createBuilder)
+        return self.append(statements: [
+            self.grammar.compileCreate(table: table, columns: createBuilder.createColumns)
+        ])
     }
     
-    @discardableResult
-    func alter(table: String, builder: (AlterTableBuilder) -> Void) -> Schema {
-        let alterBuilder = AlterTableBuilder()
-        builder(alterBuilder)
-        return self.appending(builders: [alterBuilder])
+    func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
+        var alterBuilder = AlterTableBuilder(table: table)
+        builder(&alterBuilder)
+        let renames = alterBuilder.renameColumns.map {
+            self.grammar.compileRenameColumn(table: table, column: $0.column, to: $0.to)
+        }
+        return self.append(statements: renames + [
+            self.grammar.compileTableChange(table: table, dropColumns: alterBuilder.dropColumns,
+                                            addColumns: alterBuilder.addColumns)
+        ])
     }
     
-    @discardableResult
-    func drop(table: String) -> Schema {
-        self.appending(builders: [DropTableBuilder()])
+    func drop(table: String) {
+        self.append(statements: [self.grammar.compileDrop(table: table)])
     }
     
-    @discardableResult
-    func rename(table: String, to: String) -> Schema {
-        self.appending(builders: [RenameTableBuilder()])
+    func rename(table: String, to: String) {
+        self.append(statements: [self.grammar.compileRename(table: table, to: to)])
     }
-}
-
-protocol TableBuilder {
-    func sql() -> String
-}
-
-struct DropTableBuilder: TableBuilder {
-    func sql() -> String { "" }
-}
-
-struct RenameTableBuilder: TableBuilder {
-    func sql() -> String { "" }
 }
