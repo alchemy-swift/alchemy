@@ -56,42 +56,6 @@ extension DatabaseField: Equatable {
     }
 }
 
-extension DatabaseValue: Equatable {
-    public static func == (lhs: DatabaseValue, rhs: DatabaseValue) -> Bool {
-        if case .int = lhs, case .int = rhs {
-            return true
-        } else if case .double = lhs, case .double = rhs {
-            return true
-        } else if case .bool = lhs, case .bool = rhs {
-            return true
-        } else if case .string = lhs, case .string = rhs {
-            return true
-        } else if case .date = lhs, case .date = rhs {
-            return true
-        } else if case .json = lhs, case .json = rhs {
-            return true
-        } else if case .uuid = lhs, case .uuid = rhs {
-            return true
-        } else if case .arrayInt = lhs, case .arrayInt = rhs {
-            return true
-        } else if case .arrayDouble = lhs, case .arrayDouble = rhs {
-            return true
-        } else if case .arrayBool = lhs, case .arrayBool = rhs {
-            return true
-        } else if case .arrayString = lhs, case .arrayString = rhs {
-            return true
-        } else if case .arrayDate = lhs, case .arrayDate = rhs {
-            return true
-        } else if case .arrayJSON = lhs, case .arrayJSON = rhs {
-            return true
-        } else if case .arrayUUID = lhs, case .arrayUUID = rhs {
-            return true
-        } else {
-            return false
-        }
-    }
-}
-
 private struct SomeStruct: Codable {
     let immutableString: String = "Josh"
     var data: Data = Data()

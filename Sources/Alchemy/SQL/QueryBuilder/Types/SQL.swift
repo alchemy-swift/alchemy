@@ -34,3 +34,9 @@ extension Array where Self.Iterator.Element == SQL {
         lhs.append(rhs)
     }
 }
+
+extension SQL: Equatable {
+    public static func == (lhs: SQL, rhs: SQL) -> Bool {
+        lhs.query == rhs.query && lhs.bindings == rhs.bindings
+    }
+}

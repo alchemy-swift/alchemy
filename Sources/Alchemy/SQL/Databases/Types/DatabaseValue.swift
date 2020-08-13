@@ -1,6 +1,6 @@
 import Foundation
 
-public indirect enum DatabaseValue {
+public indirect enum DatabaseValue: Equatable {
     /// Primitives.
     case int(Int?)
     case double(Double?)
@@ -56,6 +56,8 @@ extension DatabaseValue {
     
     /// Gives a database appropriate string representation of this value, even if it isn't a string. Note,
     /// this does not add single quotes (') for anything.
+    ///
+    /// TODO convert to Sequelizable
     public var stringified: String {
         switch self {
         case .int(let value):
