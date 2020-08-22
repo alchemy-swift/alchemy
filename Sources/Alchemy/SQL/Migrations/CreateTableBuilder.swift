@@ -1,6 +1,8 @@
 import Foundation
 
-protocol ColumnCreator {}
+protocol ColumnCreator {
+    var createColumns: [CreateColumn] { get set }
+}
 
 struct CreateTableBuilder: ColumnCreator {
     var createColumns: [CreateColumn] = []
