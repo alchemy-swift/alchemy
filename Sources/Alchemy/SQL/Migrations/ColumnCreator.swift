@@ -10,6 +10,22 @@ extension ColumnCreator {
     }
 }
 
+struct CreateColumn {
+    let column: String
+    let type: String
+    let constraints: [String]
+}
+
+extension CreateColumn {
+    func toSQL() -> String {
+        var baseSQL = "\(column) \(type)"
+        if !constraints.isEmpty {
+            baseSQL.append(" \(constraints.joined(separator: " "))")
+        }
+        return baseSQL
+    }
+}
+
 extension ColumnCreator {
     private func appendAndReturn<T: Sequelizable>(builder: ColumnBuilder<T>) -> ColumnBuilder<T> {
         self.builders.append(builder)

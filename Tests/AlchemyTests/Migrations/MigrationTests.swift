@@ -50,6 +50,43 @@ final class MigrationTests: XCTestCase {
                 """)
         ])
     }
+    
+    func testCreateIndex() {
+        XCTAssertEqual(Schema {
+            $0.alter(table: "users") { table in
+                
+            }
+        }.statements, [
+            SQL("""
+                CREATE TABLE users (
+                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4()
+                    bmi float8 DEFAULT 15.0
+                    email text NOT NULL UNIQUE
+                    age int DEFAULT 21
+                    is_pro bool
+                    created_at timestampz
+                    some_json json DEFAULT {"name":"Josh","age":26}
+                    parent_id uuid REFERENCES users(id)
+                )
+                """)
+        ])
+    }
+    
+    func testDropIndex() {
+        XCTFail()
+    }
+    
+    func testDropColumn() {
+        XCTFail()
+    }
+    
+    func testRenameColumn() {
+        XCTFail()
+    }
+    
+    func testAddColumn() {
+        XCTFail()
+    }
 }
 
 extension Schema {

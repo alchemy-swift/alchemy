@@ -40,4 +40,8 @@ extension Schema {
     func rename(table: String, to: String) {
         self.append(statements: [self.grammar.compileRename(table: table, to: to)])
     }
+    
+    func raw(sql: String) {
+        self.append(statements: [SQL(sql, bindings: [])])
+    }
 }

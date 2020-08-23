@@ -1,11 +1,17 @@
 import Foundation
 
-final class AlterTableBuilder: ColumnCreator {
+final class AlterTableBuilder: ColumnCreator, IndexCreator {
     let table: String
+    
+    /// Columns
     var dropColumns: [String] = []
     var addColumns: [CreateColumn] = []
     var renameColumns: [RenameColumn] = []
     
+    /// Indexes
+    var dropIndices: [String] = []
+    
+    var createIndices: [CreateIndex] = []
     var builders: [ColumnBuilderErased] = []
     
     init(table: String) {
@@ -26,20 +32,4 @@ extension AlterTableBuilder {
 struct RenameColumn {
     let column: String
     let to: String
-}
-
-struct CreateColumn {
-    let column: String
-    let type: String
-    let constraints: [String]
-}
-
-extension CreateColumn {
-    func toSQL() -> String {
-        var baseSQL = "\(column) \(type)"
-        if !constraints.isEmpty {
-            baseSQL.append(" \(constraints.joined(separator: " "))")
-        }
-        return baseSQL
-    }
 }
