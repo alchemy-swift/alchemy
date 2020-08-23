@@ -16,21 +16,24 @@ extension Schema {
     func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
         var createBuilder = CreateTableBuilder()
         builder(&createBuilder)
-        return self.append(statements: [
-            self.grammar.compileCreate(table: table, columns: createBuilder.createColumns)
-        ])
+        
+        let createColumns = self.grammar.compileCreate(table: table, columns: createBuilder.createColumns)
+        let createIndexes = self.grammar.compileCreateIndexes(table: table, indexes: createBuilder.createIndices)
+        self.append(statements: [createColumns] + createIndexes)
     }
     
     func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
         var alterBuilder = AlterTableBuilder(table: table)
         builder(&alterBuilder)
-        let renames = alterBuilder.renameColumns.map {
-            self.grammar.compileRenameColumn(table: table, column: $0.column, to: $0.to)
-        }
-        return self.append(statements: renames + [
-            self.grammar.compileTableChange(table: table, dropColumns: alterBuilder.dropColumns,
-                                            addColumns: alterBuilder.addColumns)
-        ])
+        
+        let changes = self.grammar.compileTableChange(table: table, dropColumns: alterBuilder.dropColumns,
+                                                      addColumns: alterBuilder.addColumns)
+        let createIndexes = self.grammar.compileCreateIndexes(table: table, indexes: alterBuilder.createIndices)
+        let renames = alterBuilder.renameColumns
+            .map { self.grammar.compileRenameColumn(table: table, column: $0.column, to: $0.to) }
+        let dropIndexes = alterBuilder.dropIndices
+            .map { self.grammar.compileDropIndex(table: table, indexName: $0) }
+        self.append(statements: changes + renames + dropIndexes + createIndexes)
     }
     
     func drop(table: String) {

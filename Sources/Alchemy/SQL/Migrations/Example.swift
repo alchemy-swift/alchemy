@@ -4,7 +4,7 @@ struct Sample: Migration {
         schema.create(table: "users") {
             $0.uuid("id").primary()
             $0.string("name").nullable(false)
-            $0.string("email").nullable(false).unique().index()
+            $0.string("email").nullable(false).unique()
             $0.uuid("mom").references("id", on: "")
         }
         schema.drop(table: "referrals")

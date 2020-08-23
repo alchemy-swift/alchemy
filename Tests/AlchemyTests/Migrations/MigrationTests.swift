@@ -53,22 +53,24 @@ final class MigrationTests: XCTestCase {
     
     func testCreateIndex() {
         XCTAssertEqual(Schema {
+            $0.create(table: "some_table") { table in
+                table.string("email")
+                table.addIndex(columns: ["email"], isUnique: true)
+            }
+            
             $0.alter(table: "users") { table in
-                
+                table.addIndex(columns: ["foo", "bar"], isUnique: false)
+                table.addIndex(columns: ["baz"], isUnique: true)
             }
         }.statements, [
             SQL("""
-                CREATE TABLE users (
-                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4()
-                    bmi float8 DEFAULT 15.0
-                    email text NOT NULL UNIQUE
-                    age int DEFAULT 21
-                    is_pro bool
-                    created_at timestampz
-                    some_json json DEFAULT {"name":"Josh","age":26}
-                    parent_id uuid REFERENCES users(id)
+                CREATE TABLE some_table (
+                    email text
                 )
-                """)
+                """),
+            SQL("CREATE UNIQUE INDEX some_table_email_key ON some_table"),
+            SQL("CREATE INDEX users_foo_bar_idx ON users"),
+            SQL("CREATE UNIQUE INDEX users_baz_key ON users"),
         ])
     }
     

@@ -1,7 +1,8 @@
 import Foundation
 
-final class CreateTableBuilder: ColumnCreator {
+final class CreateTableBuilder: ColumnCreator, IndexCreator {
     var builders: [ColumnBuilderErased] = []
+    var createIndices: [CreateIndex] = []
 }
 
 final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
@@ -41,11 +42,6 @@ final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
     
     @discardableResult func unique() -> Self {
         self.appending(modifier: "UNIQUE")
-    }
-    
-    @discardableResult func index() -> Self {
-        // TODO, maybe should @ table level ?
-        self.appending(modifier: "todo")
     }
     
     private func appending(modifier: String) -> Self {
