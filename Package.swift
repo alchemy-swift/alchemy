@@ -10,22 +10,10 @@ let package = Package(
         .iOS(.v13),
     ],
     products: [
-        .library(
-            name: "Alchemy",
-            targets: ["Alchemy"]
-        ),
-        .library(
-            name: "Fusion",
-            targets: ["Fusion"]
-        ),
-        .library(
-            name: "Papyrus",
-            targets: ["Papyrus"]
-        ),
-        .library(
-            name: "PapyrusIOS",
-            targets: ["PapyrusIOS"]
-        ),
+        .library(name: "Alchemy", targets: ["Alchemy"]),
+        .library(name: "Fusion", targets: ["Fusion"]),
+        .library(name: "Papyrus", targets: ["Papyrus"]),
+        .library(name: "PapyrusIOS", targets: ["PapyrusIOS"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -61,29 +49,11 @@ let package = Package(
                 "CBcrypt",
             ]
         ),
-        .target(
-            name: "Example",
-            dependencies: ["Alchemy"]
-        ),
-        .target(
-            name: "CBcrypt",
-            dependencies: []
-        ),
-        .target(
-            name: "Papyrus",
-            dependencies: []
-        ),
-        .target(
-            name: "Fusion",
-            dependencies: []
-        ),
-        .target(
-            name: "PapyrusIOS",
-            dependencies: ["Papyrus", "Alamofire"]
-        ),
-        .testTarget(
-            name: "AlchemyTests",
-            dependencies: ["Alchemy"]
-        ),
+        .target(name: "Example", dependencies: ["Alchemy"]),
+        .target(name: "CBcrypt", dependencies: []),
+        .target(name: "Papyrus", dependencies: []),
+        .target(name: "Fusion", dependencies: []),
+        .target(name: "PapyrusIOS", dependencies: ["Papyrus", "Alamofire"]),
+        .testTarget(name: "AlchemyTests", dependencies: ["Alchemy"]),
     ]
 )

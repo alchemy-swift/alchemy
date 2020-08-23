@@ -1,52 +1,10 @@
 import Foundation
 
-protocol ColumnCreator {
-    var createColumns: [CreateColumn] { get set }
+final class CreateTableBuilder: ColumnCreator {
+    var builders: [ColumnBuilderErased] = []
 }
 
-struct CreateTableBuilder: ColumnCreator {
-    var createColumns: [CreateColumn] = []
-}
-
-extension ColumnCreator {
-    @discardableResult func increments(_ column: String) -> ColumnBuilder<Int> {
-        ColumnBuilder(name: column, type: "int")
-    }
-    
-    @discardableResult func int(_ column: String) -> ColumnBuilder<Int> {
-        ColumnBuilder(name: column, type: "int")
-    }
-    
-    @discardableResult func double(_ column: String) -> ColumnBuilder<Double> {
-        ColumnBuilder(name: column, type: "float8")
-    }
-    
-    @discardableResult func string(_ column: String) -> ColumnBuilder<String> {
-        ColumnBuilder(name: column, type: "text")
-    }
-    
-    @discardableResult func text(_ column: String) -> ColumnBuilder<String> {
-        ColumnBuilder(name: column, type: "text")
-    }
-    
-    @discardableResult func uuid(_ column: String) -> ColumnBuilder<UUID> {
-        ColumnBuilder(name: column, type: "uuid")
-    }
-    
-    @discardableResult func bool(_ column: String) -> ColumnBuilder<Bool> {
-        ColumnBuilder(name: column, type: "bool")
-    }
-    
-    @discardableResult func timestamp(_ column: String) -> ColumnBuilder<Date> {
-        ColumnBuilder(name: column, type: "timestampz")
-    }
-    
-    @discardableResult func json(_ column: String) -> ColumnBuilder<SQLJSON> {
-        ColumnBuilder(name: column, type: "json")
-    }
-}
-
-struct ColumnBuilder<T: Sequelizable> {
+final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
     private let name: String
     private let type: String
     private var modifiers: [String]
@@ -91,9 +49,12 @@ struct ColumnBuilder<T: Sequelizable> {
     }
     
     private func appending(modifier: String) -> Self {
-        var this = self
-        this.modifiers.append(modifier)
-        return this
+        self.modifiers.append(modifier)
+        return self
+    }
+    
+    func toCreate() -> CreateColumn {
+        CreateColumn(column: self.name, type: self.type, constraints: self.modifiers)
     }
 }
 
