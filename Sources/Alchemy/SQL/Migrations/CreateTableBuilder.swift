@@ -2,7 +2,7 @@ import Foundation
 
 final class CreateTableBuilder: ColumnCreator, IndexCreator {
     var builders: [ColumnBuilderErased] = []
-    var createIndices: [CreateIndex] = []
+    var createIndexes: [CreateIndex] = []
 }
 
 final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {

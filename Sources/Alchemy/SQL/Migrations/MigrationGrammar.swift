@@ -15,18 +15,17 @@ class MigrationGrammar {
         SQL("DROP TABLE \(table)")
     }
     
-    func compileTableChange(table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
+    func compileAlter(table: String, dropColumns: [DropColumn], addColumns: [CreateColumn]) -> [SQL] {
         guard !dropColumns.isEmpty || !addColumns.isEmpty else {
             return []
         }
         
-        return [
-            SQL("""
-                ALTER TABLE \(table)
-                \(dropColumns.map { "DROP COLUMN \($0)" }.joined(separator: ",\n"))
-                \(addColumns.map { "ADD COLUMN \($0.toSQL())" }.joined(separator: ",\n"))
-                """)
-        ]
+        let adds = addColumns.map { "ADD COLUMN \($0.toSQL())" }
+        let drops = dropColumns.map { "DROP COLUMN \($0.column)" }
+        return [SQL("""
+                    ALTER TABLE \(table)
+                    \((adds + drops).joined(separator: ",\n"))
+                    """)]
     }
     
     func compileRenameColumn(table: String, column: String, to: String) -> SQL {

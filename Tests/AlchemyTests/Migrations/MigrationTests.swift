@@ -7,23 +7,7 @@ final class MigrationTests: XCTestCase {
         let age = 26
     }
     
-    func testDropTable() {
-        XCTAssertEqual(Schema {
-            $0.drop(table: "users")
-        }.statements, [
-            SQL("DROP TABLE users")
-        ])
-    }
-    
-    func testRenameTable() {
-        XCTAssertEqual(Schema {
-            $0.rename(table: "foo", to: "bar")
-        }.statements, [
-            SQL("ALTER TABLE foo RENAME TO bar")
-        ])
-    }
-    
-    func testCreateTable() {
+    func testTables() {
         XCTAssertEqual(Schema {
             $0.create(table: "users") { table in
                 table.uuid("id").primary().default(expression: "uuid_generate_v4()")
@@ -35,6 +19,8 @@ final class MigrationTests: XCTestCase {
                 table.json("some_json").default(val: SomeJSON().sql)
                 table.uuid("parent_id").references("id", on: "users")
             }
+            $0.rename(table: "foo", to: "bar")
+            $0.drop(table: "baz")
         }.statements, [
             SQL("""
                 CREATE TABLE users (
@@ -47,18 +33,37 @@ final class MigrationTests: XCTestCase {
                     some_json json DEFAULT {"name":"Josh","age":26}
                     parent_id uuid REFERENCES users(id)
                 )
-                """)
+                """),
+            SQL("ALTER TABLE foo RENAME TO bar"),
+            SQL("DROP TABLE baz")
         ])
     }
     
-    func testCreateIndex() {
-        XCTAssertEqual(Schema {
+    func testIndexes() {
+        let states = Schema {
             $0.create(table: "some_table") { table in
                 table.string("email")
                 table.addIndex(columns: ["email"], isUnique: true)
             }
             
             $0.alter(table: "users") { table in
+                table.addIndex(columns: ["foo", "bar"], isUnique: false)
+                table.addIndex(columns: ["baz"], isUnique: true)
+                table.drop(index: "some_index_name_idx")
+            }
+        }.statements
+        
+        for s in states {
+            print(s.query)
+        }
+        
+        XCTAssertEqual(Schema {
+            $0.create(table: "some_table") { table in
+                table.string("email")
+                table.addIndex(columns: ["email"], isUnique: true)
+            }
+            $0.alter(table: "users") { table in
+                table.drop(index: "some_index_name_idx")
                 table.addIndex(columns: ["foo", "bar"], isUnique: false)
                 table.addIndex(columns: ["baz"], isUnique: true)
             }
@@ -69,25 +74,29 @@ final class MigrationTests: XCTestCase {
                 )
                 """),
             SQL("CREATE UNIQUE INDEX some_table_email_key ON some_table"),
+            SQL("DROP INDEX some_index_name_idx"),
             SQL("CREATE INDEX users_foo_bar_idx ON users"),
             SQL("CREATE UNIQUE INDEX users_baz_key ON users"),
         ])
     }
     
-    func testDropIndex() {
-        XCTFail()
-    }
-    
-    func testDropColumn() {
-        XCTFail()
-    }
-    
-    func testRenameColumn() {
-        XCTFail()
-    }
-    
-    func testAddColumn() {
-        XCTFail()
+    func testAlterTable() {
+        XCTAssertEqual(Schema {
+            $0.alter(table: "users") { table in
+                table.drop(column: "email")
+                table.rename(column: "Name", to: "name")
+                table.string("some_string").default(val: "hello")
+                table.drop(column: "other")
+            }
+        }.statements, [
+            SQL("""
+                ALTER TABLE users
+                ADD COLUMN some_string text DEFAULT 'hello',
+                DROP COLUMN email,
+                DROP COLUMN other
+                """),
+            SQL("ALTER TABLE users RENAME COLUMN Name TO name"),
+        ])
     }
 }
 

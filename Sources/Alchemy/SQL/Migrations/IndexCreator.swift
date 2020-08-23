@@ -1,7 +1,7 @@
 import Foundation
 
 protocol IndexCreator: class {
-    var createIndices: [CreateIndex] { get set }
+    var createIndexes: [CreateIndex] { get set }
 }
 
 struct CreateIndex {
@@ -11,6 +11,6 @@ struct CreateIndex {
 
 extension IndexCreator {
     func addIndex(columns: [String], isUnique: Bool) {
-        self.createIndices.append(CreateIndex(columns: columns, isUnique: isUnique))
+        self.createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
     }
 }

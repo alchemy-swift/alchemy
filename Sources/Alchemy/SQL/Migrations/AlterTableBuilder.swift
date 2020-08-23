@@ -4,14 +4,12 @@ final class AlterTableBuilder: ColumnCreator, IndexCreator {
     let table: String
     
     /// Columns
-    var dropColumns: [String] = []
-    var addColumns: [CreateColumn] = []
+    var dropColumns: [DropColumn] = []
     var renameColumns: [RenameColumn] = []
     
     /// Indexes
-    var dropIndices: [String] = []
-    
-    var createIndices: [CreateIndex] = []
+    var dropIndexes: [String] = []
+    var createIndexes: [CreateIndex] = []
     var builders: [ColumnBuilderErased] = []
     
     init(table: String) {
@@ -21,15 +19,23 @@ final class AlterTableBuilder: ColumnCreator, IndexCreator {
 
 extension AlterTableBuilder {
     func drop(column: String) {
-        self.dropColumns.append(column)
+        self.dropColumns.append(DropColumn(column: column))
     }
     
     func rename(column: String, to: String) {
         self.renameColumns.append(RenameColumn(column: column, to: to))
+    }
+    
+    func drop(index: String) {
+        self.dropIndexes.append(index)
     }
 }
 
 struct RenameColumn {
     let column: String
     let to: String
+}
+
+struct DropColumn {
+    let column: String
 }
