@@ -28,22 +28,24 @@ final class MigrationTests: XCTestCase {
             $0.create(table: "users") { table in
                 table.uuid("id").primary().default(expression: "uuid_generate_v4()")
                 table.double("bmi").default(val: 15.0)
-                table.string("name")
+                table.string("email").nullable(false).unique()
                 table.int("age").default(val: 21)
                 table.bool("is_pro")
                 table.timestamp("created_at")
                 table.json("some_json").default(val: SomeJSON().sql)
+                table.uuid("parent_id").references("id", on: "users")
             }
         }.statements, [
             SQL("""
                 CREATE TABLE users (
                     id uuid PRIMARY KEY DEFAULT uuid_generate_v4()
                     bmi float8 DEFAULT 15.0
-                    name text
+                    email text NOT NULL UNIQUE
                     age int DEFAULT 21
                     is_pro bool
                     created_at timestampz
                     some_json json DEFAULT {"name":"Josh","age":26}
+                    parent_id uuid REFERENCES users(id)
                 )
                 """)
         ])
