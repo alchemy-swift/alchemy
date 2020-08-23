@@ -19,7 +19,7 @@ final class MigrationTests: XCTestCase {
     }
     
     func testCreateTable() {
-        XCTAssertEqual(Schema {
+        let schema = Schema {
             $0.create(table: "users") { table in
                 table.uuid("id").primary().default(expression: "uuid_generate_v4()")
                 table.string("name")
@@ -27,8 +27,23 @@ final class MigrationTests: XCTestCase {
                 table.bool("is_pro")
                 table.timestamp("created_at")
             }
-        }.statements, [
-            SQL("ALTER TABLE foo RENAME TO bar")
+        }
+        
+        for statement in schema.statements {
+            print("\(statement.query)")
+            print("Bindings: \(statement.bindings.count)")
+        }
+        
+        XCTAssertEqual(schema.statements, [
+            SQL("""
+                CREATE TABLE users (
+                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4()
+                    name text
+                    age int DEFAULT 21
+                    is_pro bool
+                    created_at timestampz
+                )
+                """)
         ])
     }
 }

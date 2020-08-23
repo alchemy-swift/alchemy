@@ -20,7 +20,7 @@ final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
     }
     
     @discardableResult func `default`(val: T) -> Self {
-        self.appending(modifier: "DEFAULT \(val.toSQL())")
+        self.appending(modifier: "DEFAULT \(val.toSQL().query)")
     }
     
     @discardableResult func nullable(_ isNullable: Bool = true) -> Self {

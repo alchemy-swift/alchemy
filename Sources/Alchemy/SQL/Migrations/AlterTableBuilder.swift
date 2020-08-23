@@ -36,6 +36,10 @@ struct CreateColumn {
 
 extension CreateColumn {
     func toSQL() -> String {
-        "\(column) \(type) \(constraints.joined(separator: " "))"
+        var baseSQL = "\(column) \(type)"
+        if !constraints.isEmpty {
+            baseSQL.append(" \(constraints.joined(separator: " "))")
+        }
+        return baseSQL
     }
 }
