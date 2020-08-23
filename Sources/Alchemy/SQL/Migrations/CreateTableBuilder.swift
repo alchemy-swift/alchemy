@@ -102,3 +102,9 @@ struct SQLJSON: Sequelizable {
         return SQL(string)
     }
 }
+
+extension Encodable {
+    var sql: SQLJSON {
+        SQLJSON(value: self)
+    }
+}

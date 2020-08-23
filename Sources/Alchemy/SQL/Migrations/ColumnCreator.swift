@@ -32,10 +32,6 @@ extension ColumnCreator {
         self.appendAndReturn(builder: ColumnBuilder(name: column, type: "text"))
     }
     
-    @discardableResult func text(_ column: String) -> ColumnBuilder<String> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "text"))
-    }
-    
     @discardableResult func uuid(_ column: String) -> ColumnBuilder<UUID> {
         self.appendAndReturn(builder: ColumnBuilder(name: column, type: "uuid"))
     }
