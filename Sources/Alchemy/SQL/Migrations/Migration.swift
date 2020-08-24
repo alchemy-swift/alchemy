@@ -23,7 +23,7 @@ extension Schema {
     }
     
     public func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
-        var alterBuilder = AlterTableBuilder(table: table)
+        var alterBuilder = AlterTableBuilder()
         builder(&alterBuilder)
         
         let changes = self.grammar.compileAlter(table: table, dropColumns: alterBuilder.dropColumns,

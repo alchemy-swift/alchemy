@@ -1,4 +1,4 @@
-class MigrationGrammar {
+open class MigrationGrammar {
     func compileCreate(table: String, columns: [CreateColumn]) -> SQL {
         SQL("""
             CREATE TABLE \(table) (

@@ -1,22 +1,30 @@
 import Foundation
 
-public class ColumnCreator {
+public class CreateTableBuilder {
+    var createIndexes: [CreateIndex] = []
     var columnBuilders: [ColumnBuilderErased] = []
-}
-
-extension ColumnCreator {
+    
     var createColumns: [CreateColumn] {
         self.columnBuilders.map { $0.toCreate() }
     }
+}
+
+extension CreateTableBuilder {
+    func addIndex(columns: [String], isUnique: Bool) {
+        self.createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
+    }
+}
+
+struct CreateIndex {
+    let columns: [String]
+    let isUnique: Bool
 }
 
 struct CreateColumn {
     let column: String
     let type: String
     let constraints: [String]
-}
-
-extension CreateColumn {
+    
     func toSQL() -> String {
         var baseSQL = "\(column) \(type)"
         if !constraints.isEmpty {
@@ -26,12 +34,7 @@ extension CreateColumn {
     }
 }
 
-extension ColumnCreator {
-    private func appendAndReturn<T: Sequelizable>(builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
-        self.columnBuilders.append(builder)
-        return builder
-    }
-    
+extension CreateTableBuilder {
     @discardableResult public func increments(_ column: String) -> CreateColumnBuilder<Int> {
         self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "int"))
     }
@@ -62,6 +65,11 @@ extension ColumnCreator {
     
     @discardableResult public func json(_ column: String) -> CreateColumnBuilder<SQLJSON> {
         self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "json"))
+    }
+    
+    private func appendAndReturn<T: Sequelizable>(builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
+        self.columnBuilders.append(builder)
+        return builder
     }
 }
 
