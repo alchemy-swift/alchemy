@@ -1,4 +1,4 @@
-protocol Migration {
+public protocol Migration {
     func up(schema: Schema)
     func down(schema: Schema)
 }
@@ -13,7 +13,7 @@ public class Schema {
 }
 
 extension Schema {
-    func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
+    public func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
         var createBuilder = CreateTableBuilder()
         builder(&createBuilder)
         
@@ -22,7 +22,7 @@ extension Schema {
         self.append(statements: [createColumns] + createIndexes)
     }
     
-    func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
+    public func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
         var alterBuilder = AlterTableBuilder(table: table)
         builder(&alterBuilder)
         
@@ -37,15 +37,15 @@ extension Schema {
         self.append(statements: changes + renames + dropIndexes + createIndexes)
     }
     
-    func drop(table: String) {
+    public func drop(table: String) {
         self.append(statements: [self.grammar.compileDrop(table: table)])
     }
     
-    func rename(table: String, to: String) {
+    public func rename(table: String, to: String) {
         self.append(statements: [self.grammar.compileRename(table: table, to: to)])
     }
     
-    func raw(sql: String) {
+    public func raw(sql: String) {
         self.append(statements: [SQL(sql, bindings: [])])
     }
 }

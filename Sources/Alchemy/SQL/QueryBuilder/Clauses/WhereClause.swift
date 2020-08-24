@@ -15,7 +15,7 @@ public struct WhereValue {
 }
 
 extension WhereValue: WhereClause {
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         if self.value.isNil {
             if self.op == .notEqualTo {
                 return SQL("\(boolean) \(key) IS NOT NULL")
@@ -39,7 +39,7 @@ public struct WhereColumn {
 }
 
 extension WhereColumn: WhereClause {
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         return SQL("\(boolean) \(first) \(op) \(second.description)")
     }
 }
@@ -52,7 +52,7 @@ public struct WhereNested {
 }
 
 extension WhereNested: WhereClause {
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         let query = self.closure(Query(database: self.database))
         let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
         let clauses = QueryHelpers.removeLeadingBoolean(
@@ -76,7 +76,7 @@ public struct WhereIn {
 }
 
 extension WhereIn: WhereClause {
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
         return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
     }
@@ -90,7 +90,7 @@ public struct WhereRaw {
 }
 
 extension WhereRaw: WhereClause {
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         return SQL("\(boolean) \(self.query)", bindings: values)
     }
 }

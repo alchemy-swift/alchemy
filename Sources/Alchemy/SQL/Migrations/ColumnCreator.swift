@@ -1,12 +1,12 @@
 import Foundation
 
-protocol ColumnCreator: class {
-    var builders: [ColumnBuilderErased] { get set }
+public class ColumnCreator {
+    var columnBuilders: [ColumnBuilderErased] = []
 }
 
 extension ColumnCreator {
     var createColumns: [CreateColumn] {
-        self.builders.map { $0.toCreate() }
+        self.columnBuilders.map { $0.toCreate() }
     }
 }
 
@@ -27,41 +27,41 @@ extension CreateColumn {
 }
 
 extension ColumnCreator {
-    private func appendAndReturn<T: Sequelizable>(builder: ColumnBuilder<T>) -> ColumnBuilder<T> {
-        self.builders.append(builder)
+    private func appendAndReturn<T: Sequelizable>(builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
+        self.columnBuilders.append(builder)
         return builder
     }
     
-    @discardableResult func increments(_ column: String) -> ColumnBuilder<Int> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "int"))
+    @discardableResult public func increments(_ column: String) -> CreateColumnBuilder<Int> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "int"))
     }
     
-    @discardableResult func int(_ column: String) -> ColumnBuilder<Int> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "int"))
+    @discardableResult public func int(_ column: String) -> CreateColumnBuilder<Int> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "int"))
     }
     
-    @discardableResult func double(_ column: String) -> ColumnBuilder<Double> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "float8"))
+    @discardableResult public func double(_ column: String) -> CreateColumnBuilder<Double> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "float8"))
     }
     
-    @discardableResult func string(_ column: String) -> ColumnBuilder<String> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "text"))
+    @discardableResult public func string(_ column: String) -> CreateColumnBuilder<String> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "text"))
     }
     
-    @discardableResult func uuid(_ column: String) -> ColumnBuilder<UUID> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "uuid"))
+    @discardableResult public func uuid(_ column: String) -> CreateColumnBuilder<UUID> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "uuid"))
     }
     
-    @discardableResult func bool(_ column: String) -> ColumnBuilder<Bool> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "bool"))
+    @discardableResult public func bool(_ column: String) -> CreateColumnBuilder<Bool> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "bool"))
     }
     
-    @discardableResult func timestamp(_ column: String) -> ColumnBuilder<Date> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "timestampz"))
+    @discardableResult public func timestamp(_ column: String) -> CreateColumnBuilder<Date> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "timestampz"))
     }
     
-    @discardableResult func json(_ column: String) -> ColumnBuilder<SQLJSON> {
-        self.appendAndReturn(builder: ColumnBuilder(name: column, type: "json"))
+    @discardableResult public func json(_ column: String) -> CreateColumnBuilder<SQLJSON> {
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "json"))
     }
 }
 

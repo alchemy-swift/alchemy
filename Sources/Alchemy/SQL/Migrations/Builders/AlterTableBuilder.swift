@@ -1,6 +1,6 @@
 import Foundation
 
-final class AlterTableBuilder: ColumnCreator, IndexCreator {
+public final class AlterTableBuilder: ColumnCreator, IndexCreator {
     let table: String
     
     /// Columns
@@ -10,7 +10,6 @@ final class AlterTableBuilder: ColumnCreator, IndexCreator {
     /// Indexes
     var dropIndexes: [String] = []
     var createIndexes: [CreateIndex] = []
-    var builders: [ColumnBuilderErased] = []
     
     init(table: String) {
         self.table = table
@@ -18,15 +17,15 @@ final class AlterTableBuilder: ColumnCreator, IndexCreator {
 }
 
 extension AlterTableBuilder {
-    func drop(column: String) {
+    public func drop(column: String) {
         self.dropColumns.append(DropColumn(column: column))
     }
     
-    func rename(column: String, to: String) {
+    public func rename(column: String, to: String) {
         self.renameColumns.append(RenameColumn(column: column, to: to))
     }
     
-    func drop(index: String) {
+    public func drop(index: String) {
         self.dropIndexes.append(index)
     }
 }

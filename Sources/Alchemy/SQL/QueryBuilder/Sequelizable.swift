@@ -1,6 +1,6 @@
 import Foundation
 
 /// Something that can be turned into SQL.
-protocol Sequelizable {
+public protocol Sequelizable {
     func toSQL() -> SQL
 }

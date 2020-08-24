@@ -1,3 +1,5 @@
+import Alchemy
+
 struct Sample: Migration {
     func up(schema: Schema) {
         schema.rename(table: "todos", to: "user_todos")

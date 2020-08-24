@@ -12,7 +12,7 @@ public struct OrderClause {
 }
 
 extension OrderClause: Sequelizable {
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         if let raw = column as? Raw {
             return raw
         }

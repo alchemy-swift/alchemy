@@ -1,11 +1,4 @@
-import Foundation
-
-final class CreateTableBuilder: ColumnCreator, IndexCreator {
-    var builders: [ColumnBuilderErased] = []
-    var createIndexes: [CreateIndex] = []
-}
-
-final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
+public final class CreateColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
     private let name: String
     private let type: String
     private var modifiers: [String]
@@ -16,15 +9,15 @@ final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
         self.modifiers = modifiers
     }
     
-    @discardableResult func `default`(expression: String) -> Self {
+    @discardableResult public func `default`(expression: String) -> Self {
         self.appending(modifier: "DEFAULT \(expression)")
     }
     
-    @discardableResult func `default`(val: T) -> Self {
+    @discardableResult public func `default`(val: T) -> Self {
         self.appending(modifier: "DEFAULT \(val.toSQL().query)")
     }
     
-    @discardableResult func nullable(_ isNullable: Bool = true) -> Self {
+    @discardableResult public func nullable(_ isNullable: Bool = true) -> Self {
         guard !isNullable else {
             return self
         }
@@ -32,15 +25,15 @@ final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
         return self.appending(modifier: "NOT NULL")
     }
     
-    @discardableResult func references(_ column: String, on table: String) -> Self {
+    @discardableResult public func references(_ column: String, on table: String) -> Self {
         self.appending(modifier: "REFERENCES \(table)(\(column))")
     }
     
-    @discardableResult func primary() -> Self {
+    @discardableResult public func primary() -> Self {
         self.appending(modifier: "PRIMARY KEY")
     }
     
-    @discardableResult func unique() -> Self {
+    @discardableResult public func unique() -> Self {
         self.appending(modifier: "UNIQUE")
     }
     
@@ -55,38 +48,38 @@ final class ColumnBuilder<T: Sequelizable>: ColumnBuilderErased {
 }
 
 extension Bool: Sequelizable {
-    func toSQL() -> SQL { SQL("\(self)") }
+    public func toSQL() -> SQL { SQL("\(self)") }
 }
 
 extension UUID: Sequelizable {
-    func toSQL() -> SQL { SQL("'\(self.uuidString)'") }
+    public func toSQL() -> SQL { SQL("'\(self.uuidString)'") }
 }
 
 extension String: Sequelizable {
-    func toSQL() -> SQL { SQL("'\(self)'") }
+    public func toSQL() -> SQL { SQL("'\(self)'") }
 }
 
 extension Int: Sequelizable {
-    func toSQL() -> SQL { SQL("\(self)") }
+    public func toSQL() -> SQL { SQL("\(self)") }
 }
 
 extension Double: Sequelizable {
-    func toSQL() -> SQL { SQL("\(self)") }
+    public func toSQL() -> SQL { SQL("\(self)") }
 }
 
 extension Date: Sequelizable {
     private static let sqlFormatter = ISO8601DateFormatter()
-    func toSQL() -> SQL { SQL("\(Date.sqlFormatter.string(from: self))") }
+    public func toSQL() -> SQL { SQL("\(Date.sqlFormatter.string(from: self))") }
 }
 
-struct SQLJSON: Sequelizable {
+public struct SQLJSON: Sequelizable {
     private var erased: () throws -> Data
     
     init<T: Encodable>(value: T, encoder: JSONEncoder = JSONEncoder()) {
         self.erased = { try encoder.encode(value) }
     }
 
-    func toSQL() -> SQL {
+    public func toSQL() -> SQL {
         guard let data = try? self.erased() else {
             fatalError("Error encoding SQLJSON.")
         }
@@ -96,11 +89,5 @@ struct SQLJSON: Sequelizable {
         }
         
         return SQL(string)
-    }
-}
-
-extension Encodable {
-    var sql: SQLJSON {
-        SQLJSON(value: self)
     }
 }
