@@ -6,7 +6,7 @@ import AsyncHTTPClient
 import Fusion
 import NIO
 
-/// Global singleton accessor & convenient typealias for a default database.
+/// Global singleton accessor & convenient typealias for a default client.
 public typealias Client = HTTPClientDefault
 public struct HTTPClientDefault {
     public static var `default`: HTTPClient {
