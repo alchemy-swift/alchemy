@@ -1,9 +1,9 @@
 # Alchemy
 
-Alchemy is a Swift web framework for building the backend of your next or current project. It offers...
+Alchemy is a Swift web framework for building the backend of your next project. It offers...
 
 - Elegant, Swifty APIs for all the things you need to build a backend including REST Routing, Jobs & Schedulers, Database access, a QueryBuilder & ORM, and much more
-- A CLI & libraries built around facilitating shared code between your server & iOS clients. Write less code & develop full stack features,end to end.
+- A CLI & libraries built around facilitating shared code between your server & iOS clients. Write less code & rapidly develop full stack features, end to end.
 - Extensive documentation, guides and tutorials to keep you focused on building your project.
 
 ## Getting Started
