@@ -1,7 +1,7 @@
 import Foundation
 import NIO
 
-let kMigrationTable = "migrations"
+let kMigrationTable = "alchemy_migrations"
 
 extension Database {
     /// Applies `migration.up` to this database.

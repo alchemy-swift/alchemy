@@ -57,7 +57,7 @@ extension DatabaseField: Equatable {
 }
 
 private struct SomeStruct: Codable {
-    let immutableString: String = "Josh"
+    var immutableString: String = "Josh"
     var data: Data = Data()
     var string: String = "Sir"
     var uuid: UUID = UUID()
@@ -87,23 +87,23 @@ private struct StoredPropertyStruct: DatabaseCodable {
     static var tableName = "stored_property"
     
     struct SomeJSON: DatabaseJSON {
-        let string = "text"
+        var string = "text"
     }
     
     var id: UUID? = UUID()
-    let string = "value"
-    let int = 1
-    let double = 1.0
-    let bool = false
-    let date = Date()
-    let json = SomeJSON()
+    var string = "value"
+    var int = 1
+    var double = 1.0
+    var bool = false
+    var date = Date()
+    var json = SomeJSON()
 }
 
 private struct InvalidPropertyStruct: DatabaseCodable {
     static var tableName = "invalid_property"
     
     var id: UUID? = UUID()
-    let data = Data()
+    var data = Data()
 }
 
 private enum CodingKeys: String, CodingKey {
