@@ -105,11 +105,11 @@ struct DatabaseTestController {
 }
 
 struct SampleJSON: Codable {
-    let one = "value1"
-    let two = "value2"
-    let three = "value3"
-    let four = 4
-    let date = Date()
+    var one = "value1"
+    var two = "value2"
+    var three = "value3"
+    var four = 4
+    var date = Date()
 }
 
 struct LoggingMiddleware: Middleware {
