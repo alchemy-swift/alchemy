@@ -15,8 +15,28 @@ import Fusion
 import NIO
 import NIOHTTP1
 import NIOHTTP2
+import ArgumentParser
+
+public struct Alchemy<A: Application>: ParsableCommand {
+    @Option
+    var host = "::1"
+
+    @Option
+    var port = 8888
+    
+    @Flag(help: "Run migrations, instead of serving")
+    var migrate = false
+    
+    public init() {}
+    
+    public func run() throws {
+        try A.init().run()
+    }
+}
 
 public protocol Application {
+    init()
+    
     func setup()
 }
 
@@ -25,13 +45,12 @@ enum BindTo {
     case unixDomainSocket(path: String)
 }
 
-struct StartupArgs {
-    let target: BindTo
-    let htdocs: String
+enum StartupArgs {
+    case serve(target: BindTo)
+    case migrate
 }
 
 public extension Application {
-    
     private func parseArgs() -> StartupArgs {
         // First argument is the program path
         let arguments = CommandLine.arguments.dropFirst(0) // just to get an ArraySlice<String> from [String]
@@ -40,7 +59,6 @@ public extension Application {
         
         let defaultHost = "::1"
         let defaultPort = 8888
-        let htdocs = "/dev/null/"
 
         let bindTarget: BindTo
 
@@ -57,7 +75,7 @@ public extension Application {
             bindTarget = .ip(host: defaultHost, port: defaultPort)
         }
         
-        return StartupArgs(target: bindTarget, htdocs: htdocs)
+        return .serve(target: bindTarget)
     }
     
     func run() throws {
@@ -73,6 +91,19 @@ public extension Application {
         
         let args = self.parseArgs()
 
+        switch args {
+        case .migrate:
+            self.migrate(group: group)
+        case .serve(let target):
+            try self.startServing(target: target, group: group)
+        }
+    }
+    
+    private func migrate(group: MultiThreadedEventLoopGroup) {
+        print("Migrate time")
+    }
+    
+    private func startServing(target: BindTo, group: MultiThreadedEventLoopGroup) throws {
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
                 channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
@@ -96,7 +127,7 @@ public extension Application {
         }
 
         let channel = try { () -> Channel in
-            switch args.target {
+            switch target {
             case .ip(let host, let port):
                 return try socketBootstrap.bind(host: host, port: port).wait()
             case .unixDomainSocket(let path):
@@ -110,7 +141,7 @@ public extension Application {
         
         let localAddress: String = "\(channelLocalAddress)"
         
-        print("Server started and listening on \(localAddress), htdocs path \(args.htdocs)")
+        print("Server started and listening on \(localAddress).")
 
         // This will never unblock as we don't close the ServerChannel
         try channel.closeFuture.wait()
@@ -118,4 +149,3 @@ public extension Application {
         print("Server closed")
     }
 }
-

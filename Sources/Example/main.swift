@@ -1,4 +1,3 @@
 import Alchemy
 
-let app = APIServer()
-try app.run()
+Alchemy<ExampleApplication>.main()

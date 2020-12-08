@@ -1,6 +1,6 @@
 import Alchemy
 
-struct Sample: Migration {
+struct _20200119117000CreateUsers: Migration {
     func up(schema: Schema) {
         schema.rename(table: "todos", to: "user_todos")
         schema.create(table: "users") {

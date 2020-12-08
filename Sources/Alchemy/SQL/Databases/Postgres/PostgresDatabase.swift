@@ -10,6 +10,7 @@ public final class PostgresDatabase: Database {
     private let pool: ConnectionPool
 
     public let grammar: Grammar = PostgresGrammar()
+    public var migrations: [Migration] = []
     
     public init(
         config: PostgresConfig,

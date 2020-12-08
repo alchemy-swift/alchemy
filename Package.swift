@@ -1,4 +1,4 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -25,13 +25,15 @@ let package = Package(
         .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.0"),
         .package(url: "https://github.com/vapor/mysql-kit", from: "4.0.0-rc.1.6"),
         .package(url: "https://github.com/Azoy/Echo", .branch("master")),
-        .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0")
+        .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
     ],
     targets: [
         .target(
             name: "Alchemy",
             dependencies: [
                 /// External dependencies
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "Echo", package: "Echo"),
                 .product(name: "PostgresKit", package: "postgres-kit"),

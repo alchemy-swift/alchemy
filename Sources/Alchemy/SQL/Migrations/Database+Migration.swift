@@ -4,6 +4,13 @@ import NIO
 let kMigrationTable = "alchemy_migrations"
 
 extension Database {
+    
+    /// Registers the migration to this database. They can be applied or rolled back via
+    /// `alch migrate` and `alch migrate --rollback` respectively.
+    public func register<M: Migration>(migration: M) {
+        
+    }
+    
     /// Applies `migration.up` to this database.
     public func migrate<M: Migration>(_ migration: M) {
         let migrationName = name(of: M.self)

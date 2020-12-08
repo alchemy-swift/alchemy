@@ -3,8 +3,8 @@ import PostgresNIO
 
 /// Example of adding a custom db.
 public final class MongoDatabase: Database {
-
     public let grammar = Grammar()
+    public var migrations: [Migration] = []
 
     public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
         fatalError()

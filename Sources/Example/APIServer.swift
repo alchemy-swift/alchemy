@@ -2,7 +2,7 @@ import Alchemy
 import Foundation
 import NIO
 
-struct APIServer: Application {
+struct ExampleApplication: Application {
     @Inject var postgres: PostgresDatabase
     @Inject var mysql: MySQLDatabase
     @Inject var router: HTTPRouter
@@ -66,6 +66,12 @@ struct APIServer: Application {
                 $0.on(.GET, at: "/select", do: DatabaseTestController().select)
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
             }
+        
+        DB.default.migrations.append(contentsOf: [
+            _20200119117000CreateUsers()
+        ])
+        
+        print("Migrate: \(DB.default.migrations.count)")
     }
 }
 
