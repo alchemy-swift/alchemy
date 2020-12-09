@@ -64,10 +64,8 @@ extension Database {
                 AlchemyMigration.query(database: self).getAll()
             }
     }
-}
-
-extension Database {
-    func downMigrations(_ migrations: [Migration]) -> EventLoopFuture<Void> {
+    
+    private func downMigrations(_ migrations: [Migration]) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for m in migrations {
             let schema = m.downSchema()
@@ -83,7 +81,7 @@ extension Database {
         return elf
     }
     
-    func upMigrations(_ migrations: [Migration], batch: Int) -> EventLoopFuture<Void> {
+    private func upMigrations(_ migrations: [Migration], batch: Int) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for m in migrations {
             let schema = m.upSchema()
