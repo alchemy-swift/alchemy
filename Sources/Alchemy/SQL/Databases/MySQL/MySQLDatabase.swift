@@ -8,6 +8,7 @@ public final class MySQLDatabase: Database {
     private let pool: ConnectionPool
 
     public let grammar: Grammar = MySQLGrammar()
+    public var migrations: [Migration] = []
 
     public init(config: MySQLConfig, eventLoopGroup: EventLoopGroup) {
         //  Initialize the pool.

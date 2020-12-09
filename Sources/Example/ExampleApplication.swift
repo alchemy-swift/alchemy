@@ -2,7 +2,7 @@ import Alchemy
 import Foundation
 import NIO
 
-struct APIServer: Application {
+struct ExampleApplication: Application {
     @Inject var postgres: PostgresDatabase
     @Inject var mysql: MySQLDatabase
     @Inject var router: HTTPRouter
@@ -66,6 +66,12 @@ struct APIServer: Application {
                 $0.on(.GET, at: "/select", do: DatabaseTestController().select)
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
             }
+        
+        DB.default.migrations.append(contentsOf: [
+            _20200119117000CreateUsers(),
+            _20200219117000CreateTodos(),
+            _20200319117000RenameTodos(),
+        ] as [Migration])
     }
 }
 
@@ -105,11 +111,11 @@ struct DatabaseTestController {
 }
 
 struct SampleJSON: Codable {
-    let one = "value1"
-    let two = "value2"
-    let three = "value3"
-    let four = 4
-    let date = Date()
+    var one = "value1"
+    var two = "value2"
+    var three = "value3"
+    var four = 4
+    var date = Date()
 }
 
 struct LoggingMiddleware: Middleware {

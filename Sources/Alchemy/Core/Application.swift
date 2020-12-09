@@ -15,9 +15,16 @@ import Fusion
 import NIO
 import NIOHTTP1
 import NIOHTTP2
+import ArgumentParser
 
 public protocol Application {
     func setup()
+    init()
+}
+
+enum StartupArgs {
+    case serve(target: BindTo)
+    case migrate(rollback: Bool = false)
 }
 
 enum BindTo {
@@ -25,54 +32,36 @@ enum BindTo {
     case unixDomainSocket(path: String)
 }
 
-struct StartupArgs {
-    let target: BindTo
-    let htdocs: String
-}
-
-public extension Application {
-    
-    private func parseArgs() -> StartupArgs {
-        // First argument is the program path
-        let arguments = CommandLine.arguments.dropFirst(0) // just to get an ArraySlice<String> from [String]
-        let arg1 = arguments.dropFirst().first
-        let arg2 = arguments.dropFirst(2).first
-        
-        let defaultHost = "::1"
-        let defaultPort = 8888
-        let htdocs = "/dev/null/"
-
-        let bindTarget: BindTo
-
-        switch (arg1, arg1.flatMap(Int.init), arg2, arg2.flatMap(Int.init)) {
-        case (.some(let h), _ , _, .some(let p)):
-            /* second arg an integer --> host port [htdocs] */
-            bindTarget = .ip(host: h, port: p)
-        case (_, .some(let p), _, _):
-            /* first arg an integer --> port [htdocs] */
-            bindTarget = .ip(host: defaultHost, port: p)
-        case (.some(let portString), .none, _, .none):
-            bindTarget = .unixDomainSocket(path: portString)
-        default:
-            bindTarget = .ip(host: defaultHost, port: defaultPort)
-        }
-        
-        return StartupArgs(target: bindTarget, htdocs: htdocs)
-    }
-    
-    func run() throws {
+extension Application {
+    func launch(_ args: StartupArgs) throws {
         // Setup environment
         _ = Env.current
         
-        // Get the global MultiThreadedEventLoopGroup
+        // Get the global `MultiThreadedEventLoopGroup`
         let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
-
+        
         // First, setup the application (on an `EventLoop` from the global group so `Loop.current` can be
         // used.)
-        _ = group.next().submit(self.setup)
-        
-        let args = self.parseArgs()
-
+        let setup = group.next()
+            .submit(self.setup)
+            
+        switch args {
+        case .migrate(let rollback):
+            // Migrations need to be run on an `EventLoop`.
+            try setup
+                .flatMap { self.migrate(rollback: rollback, group: group) }
+                .wait()
+            print("Migrations finished!")
+        case .serve(let target):
+            try self.startServing(target: target, group: group)
+        }
+    }
+    
+    private func migrate(rollback: Bool, group: MultiThreadedEventLoopGroup) -> EventLoopFuture<Void> {
+        rollback ? DB.default.rollbackMigrations() : DB.default.migrate()
+    }
+    
+    private func startServing(target: BindTo, group: MultiThreadedEventLoopGroup) throws {
         func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
                 channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
@@ -96,7 +85,7 @@ public extension Application {
         }
 
         let channel = try { () -> Channel in
-            switch args.target {
+            switch target {
             case .ip(let host, let port):
                 return try socketBootstrap.bind(host: host, port: port).wait()
             case .unixDomainSocket(let path):
@@ -110,12 +99,9 @@ public extension Application {
         
         let localAddress: String = "\(channelLocalAddress)"
         
-        print("Server started and listening on \(localAddress), htdocs path \(args.htdocs)")
+        print("Server started and listening on \(localAddress).")
 
         // This will never unblock as we don't close the ServerChannel
         try channel.closeFuture.wait()
-
-        print("Server closed")
     }
 }
-

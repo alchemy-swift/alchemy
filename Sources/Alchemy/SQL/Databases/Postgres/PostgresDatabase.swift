@@ -10,6 +10,7 @@ public final class PostgresDatabase: Database {
     private let pool: ConnectionPool
 
     public let grammar: Grammar = PostgresGrammar()
+    public var migrations: [Migration] = []
     
     public init(
         config: PostgresConfig,
@@ -53,7 +54,8 @@ public final class PostgresDatabase: Database {
     
     public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
     {
-        self.pool.withConnection(logger: nil, on: loop) { conn in
+        print("SQL: \(sql)")
+        return self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(
                 self.positionBindings(sql),
                 values.map { $0.toPostgresData() }
