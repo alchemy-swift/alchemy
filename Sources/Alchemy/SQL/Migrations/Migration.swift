@@ -3,6 +3,24 @@ public protocol Migration {
     func down(schema: Schema)
 }
 
+extension Migration {
+    var name: String {
+        Alchemy.name(of: Self.self)
+    }
+    
+    func upSchema() -> Schema {
+        let schema = Schema()
+        self.up(schema: schema)
+        return schema
+    }
+    
+    func downSchema() -> Schema {
+        let schema = Schema()
+        self.down(schema: schema)
+        return schema
+    }
+}
+
 public class Schema {
     private var grammar = MigrationGrammar()
     var statements: [SQL] = []

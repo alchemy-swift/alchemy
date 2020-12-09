@@ -29,7 +29,7 @@ final class MigrationTests: XCTestCase {
                     email text NOT NULL UNIQUE
                     age int DEFAULT 21
                     is_pro bool
-                    created_at timestampz
+                    created_at timestamptz
                     some_json json DEFAULT {"name":"Josh","age":26}
                     parent_id uuid REFERENCES users(id)
                 )

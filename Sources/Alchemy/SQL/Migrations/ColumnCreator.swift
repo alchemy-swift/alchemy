@@ -60,7 +60,7 @@ extension CreateTableBuilder {
     }
     
     @discardableResult public func timestamp(_ column: String) -> CreateColumnBuilder<Date> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "timestampz"))
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "timestamptz"))
     }
     
     @discardableResult public func json(_ column: String) -> CreateColumnBuilder<SQLJSON> {

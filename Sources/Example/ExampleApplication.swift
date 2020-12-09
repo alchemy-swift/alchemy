@@ -67,11 +67,10 @@ struct ExampleApplication: Application {
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
             }
         
-        DB.default.migrations.append(contentsOf: [
-            _20200119117000CreateUsers()
-        ])
-        
-        print("Migrate: \(DB.default.migrations.count)")
+        DB.default.migrations
+            .append(contentsOf: [
+                _20200119117000CreateUsers()
+            ])
     }
 }
 

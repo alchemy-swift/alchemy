@@ -1,3 +1,3 @@
 import Alchemy
 
-Alchemy<ExampleApplication>.main()
+Launch<ExampleApplication>.main()

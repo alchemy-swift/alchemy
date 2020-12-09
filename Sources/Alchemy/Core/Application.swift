@@ -17,27 +17,14 @@ import NIOHTTP1
 import NIOHTTP2
 import ArgumentParser
 
-public struct Alchemy<A: Application>: ParsableCommand {
-    @Option
-    var host = "::1"
-
-    @Option
-    var port = 8888
-    
-    @Flag(help: "Run migrations, instead of serving")
-    var migrate = false
-    
-    public init() {}
-    
-    public func run() throws {
-        try A.init().run()
-    }
+public protocol Application {
+    func setup()
+    init()
 }
 
-public protocol Application {
-    init()
-    
-    func setup()
+enum StartupArgs {
+    case serve(target: BindTo)
+    case migrate(rollback: Bool = false)
 }
 
 enum BindTo {
@@ -45,62 +32,35 @@ enum BindTo {
     case unixDomainSocket(path: String)
 }
 
-enum StartupArgs {
-    case serve(target: BindTo)
-    case migrate
-}
-
-public extension Application {
-    private func parseArgs() -> StartupArgs {
-        // First argument is the program path
-        let arguments = CommandLine.arguments.dropFirst(0) // just to get an ArraySlice<String> from [String]
-        let arg1 = arguments.dropFirst().first
-        let arg2 = arguments.dropFirst(2).first
-        
-        let defaultHost = "::1"
-        let defaultPort = 8888
-
-        let bindTarget: BindTo
-
-        switch (arg1, arg1.flatMap(Int.init), arg2, arg2.flatMap(Int.init)) {
-        case (.some(let h), _ , _, .some(let p)):
-            /* second arg an integer --> host port [htdocs] */
-            bindTarget = .ip(host: h, port: p)
-        case (_, .some(let p), _, _):
-            /* first arg an integer --> port [htdocs] */
-            bindTarget = .ip(host: defaultHost, port: p)
-        case (.some(let portString), .none, _, .none):
-            bindTarget = .unixDomainSocket(path: portString)
-        default:
-            bindTarget = .ip(host: defaultHost, port: defaultPort)
-        }
-        
-        return .serve(target: bindTarget)
-    }
-    
-    func run() throws {
+extension Application {
+    func launch(_ args: StartupArgs) throws {
         // Setup environment
         _ = Env.current
         
-        // Get the global MultiThreadedEventLoopGroup
+        // Get the global `MultiThreadedEventLoopGroup`
         let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
-
+        
         // First, setup the application (on an `EventLoop` from the global group so `Loop.current` can be
         // used.)
-        _ = group.next().submit(self.setup)
-        
-        let args = self.parseArgs()
-
+        let setup = group.next()
+            .submit(self.setup)
+            
         switch args {
-        case .migrate:
-            self.migrate(group: group)
+        case .migrate(let rollback):
+            // Migrations need to be run on an `EventLoop`.
+            try setup
+                .flatMap { self.migrate(rollback: rollback, group: group) }
+                .wait()
+            print("Migrations finished!")
         case .serve(let target):
             try self.startServing(target: target, group: group)
         }
     }
     
-    private func migrate(group: MultiThreadedEventLoopGroup) {
-        print("Migrate time")
+    private func migrate(rollback: Bool, group: MultiThreadedEventLoopGroup)
+        -> EventLoopFuture<Void>
+    {
+        return DB.default.migrate()
     }
     
     private func startServing(target: BindTo, group: MultiThreadedEventLoopGroup) throws {
@@ -145,7 +105,5 @@ public extension Application {
 
         // This will never unblock as we don't close the ServerChannel
         try channel.closeFuture.wait()
-
-        print("Server closed")
     }
 }
