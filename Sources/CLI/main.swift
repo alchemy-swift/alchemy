@@ -1,0 +1,1 @@
+AlchemyCLI.main()
