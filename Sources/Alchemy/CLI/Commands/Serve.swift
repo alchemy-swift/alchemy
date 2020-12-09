@@ -9,7 +9,7 @@ struct Serve<A: Application>: ParsableCommand {
     var host = "::1"
 
     @Option
-    var port = lar
+    var port = 8888
     
     @Option
     var unixSocket: String?
