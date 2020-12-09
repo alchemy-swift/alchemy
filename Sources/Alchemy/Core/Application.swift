@@ -57,10 +57,8 @@ extension Application {
         }
     }
     
-    private func migrate(rollback: Bool, group: MultiThreadedEventLoopGroup)
-        -> EventLoopFuture<Void>
-    {
-        return DB.default.migrate()
+    private func migrate(rollback: Bool, group: MultiThreadedEventLoopGroup) -> EventLoopFuture<Void> {
+        rollback ? DB.default.rollbackMigrations() : DB.default.migrate()
     }
     
     private func startServing(target: BindTo, group: MultiThreadedEventLoopGroup) throws {

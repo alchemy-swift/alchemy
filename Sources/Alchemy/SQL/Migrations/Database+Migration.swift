@@ -1,8 +1,8 @@
 import Foundation
 import NIO
 
-let kMigrationTable = "_alchemy_migrations"
-let kMigrationTableCreateQuery =
+private let kMigrationTable = "_alchemy_migrations"
+private let kMigrationTableCreateQuery =
     """
     CREATE TABLE IF NOT EXISTS _alchemy_migrations (
         id SERIAL PRIMARY KEY,
@@ -12,7 +12,7 @@ let kMigrationTableCreateQuery =
     )
     """
 
-struct AlchemyMigration: Model {
+private struct AlchemyMigration: Model {
     static var tableName: String = kMigrationTable
     
     var id: Int?
@@ -67,7 +67,7 @@ extension Database {
     
     private func downMigrations(_ migrations: [Migration]) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
-        for m in migrations {
+        for m in migrations.sorted(by: { $0.name > $1.name }) {
             let schema = m.downSchema()
             elf = elf.flatMap { self.runStatements(statements: schema.statements) }
                 .flatMap {

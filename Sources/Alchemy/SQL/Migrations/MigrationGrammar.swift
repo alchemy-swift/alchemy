@@ -2,7 +2,7 @@ open class MigrationGrammar {
     func compileCreate(table: String, columns: [CreateColumn]) -> SQL {
         SQL("""
             CREATE TABLE \(table) (
-                \(columns.map { $0.toSQL() }.joined(separator: "\n    "))
+                \(columns.map { $0.toSQL() }.joined(separator: ",\n    "))
             )
             """)
     }
