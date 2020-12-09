@@ -37,7 +37,7 @@ public class Grammar {
     func compileJoins(_ query: Query, joins: [JoinClause]?) -> SQL? {
         guard let joins = joins else { return nil }
         var bindings: [DatabaseValue] = []
-        let query = joins.compactMap { join in
+        let query = joins.compactMap { join -> String? in
             guard let whereSQL = compileWheres(join) else {
                 return nil
             }
@@ -45,9 +45,9 @@ public class Grammar {
             if let nestedJoins = join.joins,
                 let nestedSQL = compileJoins(query, joins: nestedJoins) {
                 bindings += nestedSQL.bindings
-                return trim("\(join.type) join (\(join.table)\(nestedSQL.query)) \(whereSQL.query)")
+                return self.trim("\(join.type) join (\(join.table)\(nestedSQL.query)) \(whereSQL.query)")
             }
-            return trim("\(join.type) join \(join.table) \(whereSQL.query)")
+            return self.trim("\(join.type) join \(join.table) \(whereSQL.query)")
         }.joined(separator: " ")
         return SQL(query, bindings: bindings)
     }
