@@ -5,15 +5,9 @@ private let kQuickstartRepo = "git@github.com:joshuawright11/quickstart.git"
 private let kTempDirectory = "/tmp/alchemy-quickstart"
 private let kServerOnlyDirectory = "ServerOnly"
 private let kServerAppSharedDirectory = "ServerAppShared"
-private let kServerPackageDirectory = "ServerAppShared/Server"
-private let kSharedPackageDirectory = "ServerAppShared/Shared"
-
-private enum ExistingProject {
-    /// There is a .xcodeproj in the working directory.
-    case project(named: String)
-    /// There is a .xcworkspace in the working directory.
-    case workspace(named: String)
-}
+private let kServerPackageDirectory = "Server"
+private let kSharedPackageDirectory = "Shared"
+private let kXcodeprojName = "AlchemyQuickstart.xcodeproj"
 
 /// What project template does the user want downloaded?
 private enum TemplateType: CaseIterable {
@@ -29,19 +23,22 @@ private enum TemplateType: CaseIterable {
         case .server:
             return "Server only"
         case .serverShared:
-            return "Server + Framework for shared code"
+            return "Server + Shared framework (useful for integrating into existing xcode projects)"
         case .serverSharediOS:
             return "Server + iOS App + Shared framework"
         }
     }
 }
 
-/// When the desired `TemplateType` is downloaded, what should be done with it?
+/// The kind of project that should be created.
 private enum NewProjectType {
-    /// Create a new project / workspace with it.
-    case fresh
-    /// Attempt to integrate it with an existing project or workspace.
-    case integration
+    /// A server only package.
+    case server
+    /// A shared package and a server package that has it as a dependency.
+    case serverShared
+    /// A shared package, a server package, and an iOS app target. The server & app depend on the shared
+    /// package and there is a `.xcodeproj`.
+    case serverSharedApp
 }
 
 struct NewProject: ParsableCommand {
@@ -54,79 +51,37 @@ struct NewProject: ParsableCommand {
         let wd = try Process().shell("pwd")
         print(wd)
         
-        print("Downloading quickstart project...")
+        print("Cloning quickstart project...")
         // Blow away the temp directory so git doesn't complain if it already exists.
         _ = try Process().shell("rm -rf \(kTempDirectory)")
         _ = try Process().shell("git clone \(kQuickstartRepo) \(kTempDirectory)")
         
-        switch try self.detectExistingProjects() {
-        case .project(let name):
-            let response = Process().queryUser(
-                query: "Found an existing project, '\(name)'. Would you like to integrate with it?",
-                choices: ["Yes", "No"]
-            )
-            
-            if response == 0 {
-                self.integrate(with: .project(named: name))
-            } else {
-                try self.createFreshProject()
-            }
-        case .workspace(let name):
-            let response = Process().queryUser(
-                query: "Found an existing workspace, '\(name)'. Would you like to integrate with it?",
-                choices: ["Yes", "No"]
-            )
-            
-            if response == 0 {
-                self.integrate(with: .workspace(named: name))
-            } else {
-                try self.createFreshProject()
-            }
-        case .none:
-            try self.createFreshProject()
-        }
+        try self.createProject()
     }
     
-    private func detectExistingProjects() throws -> ExistingProject? {
-        print("Checking for existing projects...")
-        let string = try Process().shell("find * -maxdepth 0 -name '*.swift' -o -name '*.md'")
-        let matches = string.split(separator: "\n")
-        let projects = matches.filter { $0.hasSuffix(".xcodeproj") }
-        let workspaces = matches.filter { $0.hasSuffix(".xcworkspace") }
-        
-        if let workspace = workspaces.first.map(String.init) {
-            return .workspace(named: workspace)
-        } else if let project = projects.first.map(String.init) {
-            return .project(named: project)
-        } else {
-            return nil
-        }
-    }
-    
-    private func integrate(with: ExistingProject) {
-        switch self.queryTemplateType(allowed: [.server, .serverShared]) {
-        case .server:
-            break
-            // Clone server, integrate with proj or workspace
-        case .serverShared:
-            break
-            // Clone server & shared, integrate with proj or workspace
-        default:
-            // This shouldn't be possible.
-            break
-        }
-    }
-    
-    private func createFreshProject() throws {
+    private func createProject() throws {
         switch self.queryTemplateType() {
         case .server:
             _ = try Process().shell("cp -r \(kTempDirectory)/\(kServerOnlyDirectory) \(self.name)")
+            print("Created package at '\(self.name)'.")
         case .serverShared:
-            break
-            // Clone server, shared
+            let serverDirectory = "\(kTempDirectory)/\(kServerAppSharedDirectory)/\(kServerPackageDirectory)"
+            let sharedDirectory = "\(kTempDirectory)/\(kServerAppSharedDirectory)/\(kSharedPackageDirectory)"
+            let shouldUppercase = self.name.first?.isUppercase ?? false
+            let serverSuffix = shouldUppercase ? "Server" : "-server"
+            let sharedSuffix = shouldUppercase ? "Shared" : "-shared"
+            let serverDestination = "Server"
+            let sharedDestination = "Shared"
+            
+            _ = try Process().shell("cp -r \(serverDirectory) \(serverDestination)")
+            _ = try Process().shell("cp -r \(sharedDirectory) \(sharedDestination)")
+            print("Created packages at '\(serverDestination)' & '\(sharedDestination)'.")
         case .serverSharediOS:
-            break
-            // Clone server, shared, iOS
+            _ = try Process().shell("cp -r \(kTempDirectory)/\(kServerAppSharedDirectory) \(self.name)")
+            
+            let projectTarget = "\(self.name)/\(self.name).xcodeproj"
+            _ = try Process().shell("mv \(self.name)/\(kXcodeprojName) \(projectTarget)")
+            print("Created project at '\(self.name)'. Use the project file '\(projectTarget)'.")
         }
     }
     
