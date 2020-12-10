@@ -1,9 +1,13 @@
 import ArgumentParser
 import Foundation
 
-private let kQuickstartRepo = ""
+private let kQuickstartRepo = "git@github.com:joshuawright11/quickstart.git"
+private let kTempDirectory = "/tmp/alchemy-quickstart"
+private let kServerOnlyDirectory = "ServerOnly"
+private let kServerAppSharedDirectory = "ServerAppShared"
+private let kServerPackageDirectory = "ServerAppShared/Server"
+private let kSharedPackageDirectory = "ServerAppShared/Shared"
 
-/// The context of this command; is there an existing XCode project, workspace, or nothing in this directory?
 private enum ExistingProject {
     /// There is a .xcodeproj in the working directory.
     case project(named: String)
@@ -43,8 +47,19 @@ private enum NewProjectType {
 struct NewProject: ParsableCommand {
     static var configuration = CommandConfiguration(commandName: "new")
     
+    @Argument
+    var name: String
+    
     func run() throws {
-        switch self.detectExistingProjects() {
+        let wd = try Process().shell("pwd")
+        print(wd)
+        
+        print("Downloading quickstart project...")
+        // Blow away the temp directory so git doesn't complain if it already exists.
+        _ = try Process().shell("rm -rf \(kTempDirectory)")
+        _ = try Process().shell("git clone \(kQuickstartRepo) \(kTempDirectory)")
+        
+        switch try self.detectExistingProjects() {
         case .project(let name):
             let response = Process().queryUser(
                 query: "Found an existing project, '\(name)'. Would you like to integrate with it?",
@@ -54,7 +69,7 @@ struct NewProject: ParsableCommand {
             if response == 0 {
                 self.integrate(with: .project(named: name))
             } else {
-                self.createFreshProject()
+                try self.createFreshProject()
             }
         case .workspace(let name):
             let response = Process().queryUser(
@@ -65,16 +80,16 @@ struct NewProject: ParsableCommand {
             if response == 0 {
                 self.integrate(with: .workspace(named: name))
             } else {
-                self.createFreshProject()
+                try self.createFreshProject()
             }
         case .none:
-            self.createFreshProject()
+            try self.createFreshProject()
         }
     }
     
-    private func detectExistingProjects() -> ExistingProject? {
+    private func detectExistingProjects() throws -> ExistingProject? {
         print("Checking for existing projects...")
-        let string = Process().shell("ls -d *.xcodeproj *.xcworkspace 2>/dev/null")
+        let string = try Process().shell("find * -maxdepth 0 -name '*.swift' -o -name '*.md'")
         let matches = string.split(separator: "\n")
         let projects = matches.filter { $0.hasSuffix(".xcodeproj") }
         let workspaces = matches.filter { $0.hasSuffix(".xcworkspace") }
@@ -91,8 +106,10 @@ struct NewProject: ParsableCommand {
     private func integrate(with: ExistingProject) {
         switch self.queryTemplateType(allowed: [.server, .serverShared]) {
         case .server:
+            break
             // Clone server, integrate with proj or workspace
         case .serverShared:
+            break
             // Clone server & shared, integrate with proj or workspace
         default:
             // This shouldn't be possible.
@@ -100,14 +117,15 @@ struct NewProject: ParsableCommand {
         }
     }
     
-    private func createFreshProject() {
+    private func createFreshProject() throws {
         switch self.queryTemplateType() {
         case .server:
-            // Clone server
+            _ = try Process().shell("cp -r \(kTempDirectory)/\(kServerOnlyDirectory) \(self.name)")
         case .serverShared:
+            break
             // Clone server, shared
         case .serverSharediOS:
-            Process().shell("git clone ")
+            break
             // Clone server, shared, iOS
         }
     }
