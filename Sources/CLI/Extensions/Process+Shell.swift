@@ -33,8 +33,6 @@ extension Process {
                 .reduce("") { $0 + String($1) }
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         } else {
-            print("command: \(command)")
-            print("term: \(self.terminationStatus)")
             throw ShellError(output: error)
         }
     }

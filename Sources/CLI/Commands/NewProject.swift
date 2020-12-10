@@ -48,9 +48,6 @@ struct NewProject: ParsableCommand {
     var name: String
     
     func run() throws {
-        let wd = try Process().shell("pwd")
-        print(wd)
-        
         print("Cloning quickstart project...")
         // Blow away the temp directory so git doesn't complain if it already exists.
         _ = try Process().shell("rm -rf \(kTempDirectory)")
