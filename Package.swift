@@ -51,6 +51,13 @@ let package = Package(
                 "CBcrypt",
             ]
         ),
+        .target(
+            name: "CLI",
+            dependencies: [
+                "Alchemy",
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ]
+        ),
         .target(name: "Example", dependencies: ["Alchemy"]),
         .target(name: "CBcrypt", dependencies: []),
         .target(name: "Papyrus", dependencies: []),
