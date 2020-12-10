@@ -67,9 +67,6 @@ struct NewProject: ParsableCommand {
         case .serverShared:
             let serverDirectory = "\(kTempDirectory)/\(kServerAppSharedDirectory)/\(kServerPackageDirectory)"
             let sharedDirectory = "\(kTempDirectory)/\(kServerAppSharedDirectory)/\(kSharedPackageDirectory)"
-            let shouldUppercase = self.name.first?.isUppercase ?? false
-            let serverSuffix = shouldUppercase ? "Server" : "-server"
-            let sharedSuffix = shouldUppercase ? "Shared" : "-shared"
             let serverDestination = "Server"
             let sharedDestination = "Shared"
             
@@ -81,6 +78,8 @@ struct NewProject: ParsableCommand {
             
             let projectTarget = "\(self.name)/\(self.name).xcodeproj"
             _ = try Process().shell("mv \(self.name)/\(kXcodeprojName) \(projectTarget)")
+            // Rename relevant scheme containers so the iOS scheme loads properly.
+            _ = try Process().shell("find \(self.name) -type f -name '*.xcscheme' -print0 | xargs -0 sed -i '' -e 's/AlchemyQuickstart/\(self.name)/g'")
             print("Created project at '\(self.name)'. Use the project file '\(projectTarget)'.")
         }
     }
