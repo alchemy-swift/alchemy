@@ -1,10 +1,10 @@
 import ArgumentParser
 import Foundation
 
-private let kQuickstartRepo = "git@github.com:joshuawright11/quickstart.git"
+private let kQuickstartRepo = "git@github.com:joshuawright11/alchemy.git"
 private let kTempDirectory = "/tmp/alchemy-quickstart"
-private let kServerOnlyDirectory = "ServerOnly"
-private let kServerAppSharedDirectory = "ServerAppShared"
+private let kServerOnlyDirectory = "Quickstart/ServerOnly"
+private let kServerAppSharedDirectory = "Quickstart/ServerAppShared"
 private let kServerPackageDirectory = "Server"
 private let kSharedPackageDirectory = "Shared"
 private let kXcodeprojName = "AlchemyQuickstart.xcodeproj"
