@@ -33,7 +33,7 @@ struct Migrate: ParsableCommand {
 
             let destinationURL = URL(fileURLWithPath: "\(migrationLocation)/\(fileName).swift")
             try template.write(to: destinationURL, atomically: true, encoding: .utf8)
-            print("Created migration '\(fileName)' at \(migrationLocation)")
+            print("Created migration '\(fileName)' at \(migrationLocation). Don't forget to add it to `DB.default.migrations`!")
         }
         
         private func migrationTemplate(name: String) -> String {

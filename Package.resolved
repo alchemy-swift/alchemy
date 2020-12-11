@@ -29,15 +29,6 @@
         }
       },
       {
-        "package": "Echo",
-        "repositoryURL": "https://github.com/Azoy/Echo",
-        "state": {
-          "branch": "master",
-          "revision": "f3ba95c4f9eeb72a63c84dc6f944fe1852990df9",
-          "version": null
-        }
-      },
-      {
         "package": "mysql-kit",
         "repositoryURL": "https://github.com/vapor/mysql-kit",
         "state": {
