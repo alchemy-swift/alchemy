@@ -7,7 +7,8 @@ struct HTTPRouterResponder: HTTPResponder {
     
     func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
         catchError {
-            self.globalMiddlewares.run(on: request)
+            self.globalMiddlewares
+                .run(on: request)
                 .flatMap { request in
                     guard let response = self.router.handle(request: request) else {
                         return request.eventLoop

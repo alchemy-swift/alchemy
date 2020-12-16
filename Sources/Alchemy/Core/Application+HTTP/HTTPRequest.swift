@@ -7,12 +7,14 @@ public final class HTTPRequest {
     /// The default JSONDecoder with which to decode HTTP request bodies.
     public static var defaultJSONDecoder = JSONDecoder()
     
-    /// The EventLoop is stored in the HTTP request so that promises can be created
+    /// The EventLoop is stored in the HTTP request so that promises can be
+    /// created.
     public let eventLoop: EventLoop
     
     /// The head contains all request "metadata" like the URI and request method
     ///
-    /// The headers are also found in the head, and they are often used to describe the body as well
+    /// The headers are also found in the head, and they are often used to
+    /// describe the body as well.
     public let head: HTTPRequestHead
     
     /// The url components of this request.
@@ -21,7 +23,8 @@ public final class HTTPRequest {
     /// The any parameters inside the path.
     public var pathParameters: [PathParameter] = []
     
-    /// The bodyBuffer is internal because the HTTPBody API is exposed for simpler access
+    /// The bodyBuffer is internal because the HTTPBody API is exposed for
+    /// simpler access.
     var bodyBuffer: ByteBuffer?
     
     /// Any information set by a middleware.
@@ -58,11 +61,20 @@ extension HTTPRequest {
     }
     
     /// Returns the first `PathParameter` for the given key, if there is one.
+    ///
+    /// Use this to fetch any parameters from the path.
+    /// ```
+    /// router.on(.POST, at: "/users/:user_id") { request in
+    ///     let theUserID = request.pathParameter(named: "user_id")?.stringValue
+    ///     ...
+    /// }
+    /// ```
     public func pathParameter(named key: String) -> PathParameter? {
         self.pathParameters.first(where: { $0.parameter == "key" })
     }
     
-    /// The body is a wrapper used to provide simpler access to body data like JSON.
+    /// The body is a wrapper used to provide simple access to any body data,
+    /// such as JSON.
     public var body: HTTPBody? {
         guard let bodyBuffer = bodyBuffer else {
             return nil
@@ -71,94 +83,56 @@ extension HTTPRequest {
         return HTTPBody(buffer: bodyBuffer)
     }
     
-    /// Sets a value associated with this request. Useful for setting objects with middleware.
+    /// Sets a value associated with this request. Useful for setting objects
+    /// with middleware.
+    ///
+    /// - Parameter value: the value
+    /// - Returns: self, with the new value set internally for access with
+    ///            `self.get(Value.self)`.
+    ///
+    /// ```
+    /// struct ExampleMiddleware: Middleware {
+    ///     func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
+    ///         let someData: SomeData = ...
+    ///         request.set(someData)
+    ///         return request.eventLoop.future(request)
+    ///     }
+    /// }
+    ///
+    /// router
+    ///     .middleware(ExampleMiddleware())
+    ///     .on(.GET, at: "/example") { request in
+    ///         let theData = try request.get(SomeData.self)
+    ///     }
+    ///
+    /// ```
     public func set<T>(_ value: T) -> Self {
         self.middlewareData[identifier(of: T.self)] = value
         return self
     }
     
-    /// Gets a value associated with this request, throws if there is not one of type `T` already set.
+    /// Gets a value associated with this request, throws if there is not a
+    /// value of type `T` already set.
+    ///
+    /// - Parameter type: the type of the associated value to get from the
+    ///                   request.
+    /// - Throws: a `AssociatedValueError` if there isn't a value of type `T`
+    ///           found associated with the request.
+    /// - Returns: the value of type `T` from the request.
     public func get<T>(_ type: T.Type = T.self) throws -> T {
         try self.middlewareData[identifier(of: T.self)]
-            .unwrap(as: type, or: RoutingError("Couldn't find type `\(name(of: type))` on this request"))
+            .unwrap(
+                as: type,
+                or: AssociatedValueError(
+                    "Couldn't find type `\(name(of: type))` on this request"
+                )
+            )
     }
 }
 
-public enum HTTPAuth {
-    case basic(HTTPBasicAuth)
-    case bearer(HTTPBearerAuth)
-}
-
-extension HTTPRequest {
-    /// Get auth, if there is one
-    public func getAuth() -> HTTPAuth? {
-        guard var authString = self.headers.first(name: "Authorization") else {
-            return nil
-        }
-        
-        if authString.starts(with: "Basic ") {
-            authString.removeFirst(6)
-            
-            guard let base64Data = Data(base64Encoded: authString),
-                let authString = String(data: base64Data, encoding: .utf8) else
-            {
-                // Or maybe we should throw error?
-                return nil
-            }
-            
-            let components = authString.components(separatedBy: ":")
-            guard let username = components.first else {
-                return nil
-            }
-            
-            let password = components.dropFirst().joined()
-            
-            return .basic(HTTPBasicAuth(username: username, password: password))
-        } else if authString.starts(with: "Bearer ") {
-            authString.removeFirst(7)
-            return .bearer(HTTPBearerAuth(token: authString))
-        } else {
-            return nil
-        }
-    }
-    
-    /// Get basic auth, if there is one
-    public func basicAuth() -> HTTPBasicAuth? {
-        guard let auth = self.getAuth() else {
-            return nil
-        }
-        
-        if case let .basic(authData) = auth {
-            return authData
-        } else {
-            return nil
-        }
-    }
-    
-    /// Get bearer auth, if there is one
-    public func bearerAuth() -> HTTPBearerAuth? {
-        guard let auth = self.getAuth() else {
-            return nil
-        }
-        
-        if case let .bearer(authData) = auth {
-            return authData
-        } else {
-            return nil
-        }
-    }
-}
-
-public struct HTTPBasicAuth {
-    public let username: String
-    public let password: String
-}
-
-public struct HTTPBearerAuth {
-    public let token: String
-}
-
-struct RoutingError: Error {
-    let info: String
-    init(_ info: String) { self.info = info }
+/// Error thrown when the user tries to `.get` an assocaited value from an
+/// `HTTPRequest` but one isn't set.
+struct AssociatedValueError: Error {
+    let message: String
+    init(_ message: String) { self.message = message }
 }
