@@ -24,7 +24,6 @@ public struct HTTPBody: ExpressibleByStringLiteral {
         self.buffer = buffer
         self.mimeType = mimeType
     }
-    
      
     /// Creates a new body containing the text with MIME type `text/plain`.
     ///
@@ -85,7 +84,8 @@ extension HTTPBody {
     /// - Parameter encoding: the `String.Encoding` value to decode with.
     ///                       Defaults to `.utf8`.
     /// - Returns: the string decoded from the contents of this body.
-    public func decodeString(with encoding: String.Encoding = .utf8) -> String? {
+    public func decodeString(with encoding: String.Encoding = .utf8) -> String?
+    {
         String(data: self.data, encoding: encoding)
     }
     
@@ -106,9 +106,10 @@ extension HTTPBody {
     ///              `HTTPRequest.defaultJSONEncoder`.
     /// - Throws: any errors encountered during decoding.
     /// - Returns: the decoded object of type `type`.
-    public func decodeJSON<D: Decodable>(as type: D.Type = D.self, with decoder: JSONDecoder = HTTPRequest.defaultJSONDecoder)
-        throws -> D
-    {
+    public func decodeJSON<D: Decodable>(
+        as type: D.Type = D.self,
+        with decoder: JSONDecoder = HTTPRequest.defaultJSONDecoder
+    ) throws -> D {
         return try decoder.decode(type, from: data)
     }
 }
