@@ -2,7 +2,7 @@ import AsyncHTTPClient
 import Fusion
 import NIO
 
-/// Global singleton accessor & convenient typealias for a default client.
+/// A global singleton accessor & convenient typealias for a default client.
 ///
 /// - Note: see
 /// [async-http-client](https://github.com/swift-server/async-http-client)
@@ -22,7 +22,7 @@ import NIO
 /// ```
 public typealias Client = HTTPClientDefault
 
-/// Struct for wrapping a default `HTTPClient` for convenieny use. See `Client`.
+/// Struct for wrapping a default `HTTPClient` for convenient use. See `Client`.
 public struct HTTPClientDefault {
     /// The default HTTPClient for easy access.
     public static var `default`: HTTPClient {
