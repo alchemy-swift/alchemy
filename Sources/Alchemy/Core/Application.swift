@@ -108,7 +108,7 @@ extension Application {
                 }
         }
 
-        let socketBootstrap = ServerBootstrap(group: group)
+        let serverBootstrap = ServerBootstrap(group: group)
             // Specify backlog and enable SO_REUSEADDR for the server itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(
@@ -134,9 +134,9 @@ extension Application {
         let channel = try { () -> Channel in
             switch socket {
             case .ip(let host, let port):
-                return try socketBootstrap.bind(host: host, port: port).wait()
+                return try serverBootstrap.bind(host: host, port: port).wait()
             case .unix(let path):
-                return try socketBootstrap.bind(unixDomainSocketPath: path)
+                return try serverBootstrap.bind(unixDomainSocketPath: path)
                     .wait()
             }
         }()

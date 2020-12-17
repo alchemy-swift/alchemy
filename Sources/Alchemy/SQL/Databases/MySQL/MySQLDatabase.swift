@@ -9,7 +9,7 @@ public final class MySQLDatabase: Database {
     public var grammar: Grammar = MySQLGrammar()
     public var migrations: [Migration] = []
 
-    public init(config: DatabaseConfig, eventLoopGroup: EventLoopGroup) {
+    public init(config: DatabaseConfig) {
         //  Initialize the pool.
         let mysqlConfig: MySQLConfiguration
         switch config.socket {
@@ -33,14 +33,14 @@ public final class MySQLDatabase: Database {
 
         let pool = EventLoopGroupConnectionPool(
             source: MySQLConnectionSource(configuration: mysqlConfig),
-            on: eventLoopGroup
+            on: MultiThreadedEventLoopGroup.global()
         )
 
         self.pool = pool
     }
     
-    public func runRawQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: nil, on: loop) { conn in
+    public func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
+        self.pool.withConnection(logger: nil, on: Loop.current) { conn in
             conn.query(sql, values.map { $0.toMySQLData() })
                 .map { $0 }
         }

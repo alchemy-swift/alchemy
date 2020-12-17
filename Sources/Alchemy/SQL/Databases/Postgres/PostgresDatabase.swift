@@ -45,10 +45,9 @@ public final class PostgresDatabase: Database {
     
     public func runRawQuery(
         _ sql: String,
-        values: [DatabaseValue],
-        on loop: EventLoop
+        values: [DatabaseValue]
     ) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: nil, on: loop) { conn in
+        self.pool.withConnection(logger: nil, on: Loop.current) { conn in
             conn.query(
                 self.positionBindings(sql),
                 values.map { $0.toPostgresData() }

@@ -21,13 +21,13 @@ extension EventLoopFuture {
 
 /// Takes a throwing block & returns either the `EventLoopFuture<T>` that block creates or an errored
 /// `EventLoopFuture<T>` if the closure threw an error.
-public func catchError<T>(on loop: EventLoop = Loop.current, _ closure: () throws -> EventLoopFuture<T>)
-    -> EventLoopFuture<T>
-{
+public func catchError<T>(
+    _ closure: () throws -> EventLoopFuture<T>
+) -> EventLoopFuture<T> {
     do {
         return try closure()
     }
     catch {
-        return loop.future(error: error)
+        return Loop.future(error: error)
     }
 }

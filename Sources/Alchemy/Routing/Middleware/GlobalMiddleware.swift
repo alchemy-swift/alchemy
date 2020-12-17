@@ -9,7 +9,7 @@ public final class GlobalMiddlewares {
     }
     
     func run(on request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
-        var returnFuture = request.eventLoop.future(request)
+        var returnFuture = Loop.future(value: request)
         for middleware in self.erasedMiddlewares {
             returnFuture = returnFuture.flatMap { middleware($0) }
         }

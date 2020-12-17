@@ -2,15 +2,15 @@ import NIO
 
 extension Model {
     /// Get all of the models of this type.
-    public static func all(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<[Self]> {
+    public static func all(db: Database = DB.default) -> EventLoopFuture<[Self]> {
         Self.query(database: db)
-            .getAll(on: loop)
+            .getAll()
     }
     
     /// Saves the `Model` to the `Database`. If the model's id is nil, it inserts it. If the id is
     /// not nil, it updates.
-    public func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Self> {
-        catchError(on: loop) {
+    public func save(db: Database = DB.default) -> EventLoopFuture<Self> {
+        catchError {
             if let id = self.id {
                 return try Self.query()
                     .where("id" == id)
@@ -26,19 +26,19 @@ extension Model {
     }
     
     /// Deletes this model from the database.
-    public func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
-        catchError(on: loop) {
+    public func delete(db: Database = DB.default) -> EventLoopFuture<Void> {
+        catchError {
             let idField = try self.idField()
             return Self.query(database: db)
                 .where(WhereValue(key: idField.column, op: .equals, value: idField.value))
-                .delete(on: loop)
+                .delete()
                 .voided()
         }
     }
 
     /// Reloads this item from the database and passes a new, updated object in an EventLoopFuture.
-    public func sync(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Self> {
-        catchError(on: loop) {
+    public func sync(db: Database = DB.default) -> EventLoopFuture<Self> {
+        catchError {
             guard let id = self.id else {
                 throw RuneError(info: "Can't sync an object without an `id`.")
             }
@@ -70,8 +70,8 @@ extension Model {
 
 extension Array where Element: Model {
     /// Create or update each element in this array. Runs two queries; one to update & one to insert.
-    public func save(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Self> {
-        catchError(on: loop) {
+    public func save(db: Database = DB.default) -> EventLoopFuture<Self> {
+        catchError {
             Element.query(database: db)
                 .insert(try self.map { try $0.dictionary() })
                 .map { _ in self }
@@ -79,8 +79,8 @@ extension Array where Element: Model {
     }
 
     /// Delete all objects in this array.
-    public func delete(db: Database = DB.default, loop: EventLoop = Loop.current) -> EventLoopFuture<Void> {
-        catchError(on: loop) {
+    public func delete(db: Database = DB.default) -> EventLoopFuture<Void> {
+        catchError {
             Element.query()
                 .where(key: "id", in: self.compactMap { $0.id })
                 .delete()

@@ -3,14 +3,13 @@ import NIO
 
 extension PostgresDatabase: SingletonService {
     public static func singleton(in container: Container) throws -> PostgresDatabase {
-        let group = try container.resolve(MultiThreadedEventLoopGroup.self)
-        return PostgresDatabase(config: .postgres, eventLoopGroup: group)
+        PostgresDatabase(config: .postgres)
     }
 }
 
-private extension PostgresConfig {
-    static let postgres = PostgresConfig(
-        socket: .ipAddress(
+private extension DatabaseConfig {
+    static let postgres = DatabaseConfig(
+        socket: .ip(
             host: Env.DB_HOST!,
             port: Env.DB_PORT!
         ),

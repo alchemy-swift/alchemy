@@ -7,10 +7,6 @@ public final class HTTPRequest {
     /// The default JSONDecoder with which to decode HTTP request bodies.
     public static var defaultJSONDecoder = JSONDecoder()
     
-    /// The EventLoop is stored in the HTTP request so that promises can be
-    /// created.
-    public let eventLoop: EventLoop
-    
     /// The head contains all request "metadata" like the URI and request method
     ///
     /// The headers are also found in the head, and they are often used to
@@ -31,8 +27,7 @@ public final class HTTPRequest {
     var middlewareData: [ObjectIdentifier: Any] = [:]
     
     /// This initializer is necessary because the `bodyBuffer` is a private property
-    init(eventLoop: EventLoop, head: HTTPRequestHead, bodyBuffer: ByteBuffer?) {
-        self.eventLoop = eventLoop
+    init(head: HTTPRequestHead, bodyBuffer: ByteBuffer?) {
         self.head = head
         self.bodyBuffer = bodyBuffer
         self.components = URLComponents(string: head.uri)

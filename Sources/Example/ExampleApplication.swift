@@ -123,6 +123,6 @@ struct LoggingMiddleware: Middleware {
     
     func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
         Log.info("Got a request to \(request.path).")
-        return request.eventLoop.future(request)
+        return Loop.future(value: request)
     }
 }

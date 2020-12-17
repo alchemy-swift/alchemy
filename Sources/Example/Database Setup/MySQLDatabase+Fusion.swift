@@ -3,14 +3,13 @@ import NIO
 
 extension MySQLDatabase: SingletonService {
     public static func singleton(in container: Container) throws -> MySQLDatabase {
-        let group = try container.resolve(MultiThreadedEventLoopGroup.self)
-        return MySQLDatabase(config: .mysql, eventLoopGroup: group)
+        MySQLDatabase(config: .mysql)
     }
 }
 
-private extension MySQLConfig {
-    static let mysql = MySQLConfig(
-        socket: .ipAddress(host: "127.0.0.1", port: 32773),
+private extension DatabaseConfig {
+    static let mysql = DatabaseConfig(
+        socket: .ip(host: "127.0.0.1", port: 32773),
         database: "alchemy",
         username: "root",
         password: "hallow"

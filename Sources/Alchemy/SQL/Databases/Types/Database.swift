@@ -63,12 +63,10 @@ public protocol Database {
     ///   - values: an array, `[DatabaseValue]`, that will replace the '?'s in
     ///             `sql`. Ensure there are the same amnount of values as there
     ///             are '?'s in `sql`.
-    ///   - loop: the `EventLoop` to run this query on.
     /// - Returns: an `EventLoopFuture` of the rows returned by the query.
     func runRawQuery(
         _ sql: String,
-        values: [DatabaseValue],
-        on loop: EventLoop
+        values: [DatabaseValue]
     ) -> EventLoopFuture<[DatabaseRow]>
     
     /// Called when the database connection will shut down.
@@ -83,9 +81,8 @@ extension Database {
     
     public func runRawQuery(
         _ sql: String,
-        values: [DatabaseValue] = [],
-        on loop: EventLoop = Loop.current
+        values: [DatabaseValue] = []
     ) -> EventLoopFuture<[DatabaseRow]> {
-        self.runRawQuery(sql, values: values, on: loop)
+        self.runRawQuery(sql, values: values)
     }
 }

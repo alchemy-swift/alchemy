@@ -81,3 +81,9 @@ public final class Container {
         String(reflecting: type)
     }
 }
+
+extension SingletonService {
+    static func resolve(from container: Container) throws -> Self {
+        try container.resolve(Self.self)
+    }
+}

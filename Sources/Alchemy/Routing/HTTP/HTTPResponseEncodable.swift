@@ -3,38 +3,38 @@ import NIO
 /// Represents something that can be turned into an `EventLoopFuture<HTTPResponse>`.
 public protocol HTTPResponseEncodable {
     /// Takes the response and turns it into an `EventLoopFuture`
-    func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse>
+    func encode() throws -> EventLoopFuture<HTTPResponse>
 }
 
 /// Conform common closure return types to HTTPResponseEncodable
 
 extension Array: HTTPResponseEncodable where Element: Encodable {
-    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }
 
 extension HTTPResponse: HTTPResponseEncodable {
-    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        eventLoop.makeSucceededFuture(self)
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        Loop.future(value: self)
     }
 }
 
 extension EventLoopFuture: HTTPResponseEncodable where Value: HTTPResponseEncodable {
-    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        self.throwingFlatMap { try $0.encode(on: eventLoop) }
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        self.throwingFlatMap { try $0.encode() }
     }
 }
 
 extension String: HTTPResponseEncodable {
-    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: HTTPBody(text: self)))
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        Loop.future(value: HTTPResponse(status: .ok, body: HTTPBody(text: self)))
     }
 }
 
 extension Encodable {
-    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }
 
@@ -42,8 +42,8 @@ extension Encodable {
 struct VoidCodable: Codable {}
 
 extension VoidCodable: HTTPResponseEncodable {
-    public func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }
 
@@ -55,7 +55,7 @@ struct CodableWrapper: Encodable, HTTPResponseEncodable {
         try obj.encode(to: encoder)
     }
     
-    func encode(on eventLoop: EventLoop) throws -> EventLoopFuture<HTTPResponse> {
-        eventLoop.makeSucceededFuture(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    func encode() throws -> EventLoopFuture<HTTPResponse> {
+        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }

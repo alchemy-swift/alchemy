@@ -75,7 +75,6 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
             }
       
             self.request = HTTPRequest(
-                eventLoop: context.eventLoop,
                 head: requestHead,
                 bodyBuffer: body
             )
