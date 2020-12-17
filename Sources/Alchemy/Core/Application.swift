@@ -36,23 +36,13 @@ public protocol Application {
 /// The parameters for what the application should do on startup. Currently
 /// can either `serve` or `migrate`.
 enum StartupArgs {
-    /// Serve to a specific `BindTo` target. Routes using the singleton
-    /// `HTTPRouter`.
-    case serve(target: BindTo)
+    /// Serve to a specific socket. Routes using the singleton `HTTPRouter`.
+    case serve(socket: Socket)
     
     /// Migrate using any migrations added to DB.default. `rollback` indicates
     /// whether all new migrations should be run in a new batch (`false`) or if
     /// the latest batch should be rolled back (`true`).
     case migrate(rollback: Bool = false)
-}
-
-/// The bind target used when serving (i.e. where the server can be reached).
-/// Either an ip host & port target or a unix socket path.
-enum BindTo {
-    /// Serve from an ip address `host` at port `port`.
-    case ip(host: String, port: Int)
-    /// Serve from a unix domain socket (IPC socket) at path `path`.
-    case unixDomainSocket(path: String)
 }
 
 extension Application {
@@ -78,8 +68,8 @@ extension Application {
                 .flatMap { self.migrate(rollback: rollback) }
                 .wait()
             print("Migrations finished!")
-        case .serve(let target):
-            try self.startServing(target: target, group: group)
+        case .serve(let socket):
+            try self.startServing(socket: socket, group: group)
         }
     }
     
@@ -99,13 +89,13 @@ extension Application {
     ///
     /// - Note: this function never unblocks for the lifecycle of the server.
     /// - Parameters:
-    ///   - target: the target where the server should bind (listen for requests
+    ///   - socket: the socket where the server should bind (listen for requests
     ///             at).
     ///   - group: a `MultiThreadedEventLoopGroup` for fetching `EventLoop`s to
     ///            handle requests on.
     /// - Throws: any errors encountered when bootstrapping the server.
     private func startServing(
-        target: BindTo,
+        socket: Socket,
         group: MultiThreadedEventLoopGroup
     ) throws {
         func childChannelInitializer(
@@ -142,10 +132,10 @@ extension Application {
         }
 
         let channel = try { () -> Channel in
-            switch target {
+            switch socket {
             case .ip(let host, let port):
                 return try socketBootstrap.bind(host: host, port: port).wait()
-            case .unixDomainSocket(let path):
+            case .unix(let path):
                 return try socketBootstrap.bind(unixDomainSocketPath: path)
                     .wait()
             }

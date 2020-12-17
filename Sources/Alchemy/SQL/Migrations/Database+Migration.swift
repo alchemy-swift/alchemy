@@ -100,7 +100,7 @@ extension Database {
         var elf = Loop.current.future()
         for statement in statements {
             elf = elf.flatMap { _ in
-                self.runQuery(statement.query, values: statement.bindings, on: Loop.current)
+                self.runRawQuery(statement.query, values: statement.bindings, on: Loop.current)
                     .voided()
             }
         }

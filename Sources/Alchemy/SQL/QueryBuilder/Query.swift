@@ -2,9 +2,8 @@ import Foundation
 import NIO
 
 public class Query: Sequelizable {
-
     let database: Database
-
+    
     private(set) var columns: [Raw] = []
     private(set) var from: String?
     private(set) var joins: [JoinClause]? = nil
@@ -22,7 +21,7 @@ public class Query: Sequelizable {
     }
 
     public func toSQL() -> SQL {
-        return (try? database.grammar.compileSelect(query: self))
+        return (try? self.database.grammar.compileSelect(query: self))
             ?? SQL()
     }
 
@@ -288,8 +287,8 @@ public class Query: Sequelizable {
             self.select(columns)
         }
         do {
-            let sql = try database.grammar.compileSelect(query: self)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileSelect(query: self)
+            return self.database.runRawQuery(sql.query, values: sql.bindings, on: loop)
         }
         catch let error {
             return loop.makeFailedFuture(error)
@@ -335,8 +334,8 @@ public class Query: Sequelizable {
 
     public func insert(_ values: [OrderedDictionary<String, Parameter>], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
         do {
-            let sql = try database.grammar.compileInsert(self, values: values)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileInsert(self, values: values)
+            return self.database.runRawQuery(sql.query, values: sql.bindings, on: loop)
         }
         catch let error {
             return loop.makeFailedFuture(error)
@@ -345,8 +344,8 @@ public class Query: Sequelizable {
 
     public func update(values: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
         do {
-            let sql = try database.grammar.compileUpdate(self, values: values)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileUpdate(self, values: values)
+            return self.database.runRawQuery(sql.query, values: sql.bindings, on: loop)
         }
         catch let error {
             return loop.makeFailedFuture(error)
@@ -355,8 +354,8 @@ public class Query: Sequelizable {
 
     public func delete(on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
         do {
-            let sql = try database.grammar.compileDelete(self)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileDelete(self)
+            return self.database.runRawQuery(sql.query, values: sql.bindings, on: loop)
         }
         catch let error {
             return loop.makeFailedFuture(error)

@@ -21,9 +21,8 @@ struct Serve<A: Application>: ParsableCommand {
     var unixSocket: String?
     
     func run() throws {
-        let bindTarget: BindTo = self.unixSocket
-            .map { .unixDomainSocket(path: $0) } ??
-            .ip(host: self.host, port: self.port)
-        try A().launch(.serve(target: bindTarget))
+        let socket: Socket = self.unixSocket
+            .map { .unix(path: $0) } ?? .ip(host: self.host, port: self.port)
+        try A().launch(.serve(socket: socket))
     }
 }

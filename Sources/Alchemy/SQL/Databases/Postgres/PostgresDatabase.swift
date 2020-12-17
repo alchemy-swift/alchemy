@@ -6,20 +6,19 @@ import NIO
 public final class PostgresDatabase: Database {
     private typealias ConnectionPool = EventLoopGroupConnectionPool<PostgresConnectionSource>
     
-    private let config: PostgresConfig
     private let pool: ConnectionPool
 
     public let grammar: Grammar = PostgresGrammar()
     public var migrations: [Migration] = []
     
     public init(
-        config: PostgresConfig,
+        config: DatabaseConfig,
         eventLoopGroup: EventLoopGroup = try! Container.global.resolve(MultiThreadedEventLoopGroup.self)
     ) {
         //  Initialize the pool.
         let postgresConfig: PostgresConfiguration
         switch config.socket {
-        case .ipAddress(let host, let port):
+        case .ip(let host, let port):
             postgresConfig = .init(
                 hostname: host,
                 port: port,
@@ -27,7 +26,7 @@ public final class PostgresDatabase: Database {
                 password: config.password,
                 database: config.database
             )
-        case .unixSocket(let name):
+        case .unix(let name):
             postgresConfig = .init(
                 unixDomainSocketPath: name,
                 username: config.username,
@@ -41,21 +40,15 @@ public final class PostgresDatabase: Database {
             on: eventLoopGroup
         )
         
-        self.config = config
         self.pool = pool
     }
     
-    public func runRawQuery(_ sql: String, on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool
-            .withConnection(logger: nil, on: loop) { $0.query(sql) }
-            // Required for type inference.
-            .map { $0.rows }
-    }
-    
-    public func runQuery(_ sql: String, values: [DatabaseValue], on loop: EventLoop) -> EventLoopFuture<[DatabaseRow]>
-    {
-        print("SQL: \(sql)")
-        return self.pool.withConnection(logger: nil, on: loop) { conn in
+    public func runRawQuery(
+        _ sql: String,
+        values: [DatabaseValue],
+        on loop: EventLoop
+    ) -> EventLoopFuture<[DatabaseRow]> {
+        self.pool.withConnection(logger: nil, on: loop) { conn in
             conn.query(
                 self.positionBindings(sql),
                 values.map { $0.toPostgresData() }
@@ -64,7 +57,7 @@ public final class PostgresDatabase: Database {
     }
     
     public func shutdown() {
-        self.pool.shutdown()
+        try! self.pool.syncShutdownGracefully()
     }
 
     private func positionBindings(_ sql: String) -> String {
