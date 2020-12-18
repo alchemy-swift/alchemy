@@ -12,17 +12,17 @@ public protocol DatabaseRow {
     /// - Returns: the field at `column`.
     func getField(column: String) throws -> DatabaseField
     
-    /// Decode a `DatabaseCodable` type `D` from this row.
+    /// Decode a `Model` type `D` from this row.
     ///
     /// The default implementation of this function populates the properties of
     /// `D` with the value of the column named the same as the property.
     ///
     /// - Parameter type: the type to decode from this row.
-    func decode<D: DatabaseCodable>(_ type: D.Type) throws -> D
+    func decode<D: Model>(_ type: D.Type) throws -> D
 }
 
 extension DatabaseRow {
-    public func decode<D: DatabaseCodable>(_ type: D.Type) throws -> D {
+    public func decode<D: Model>(_ type: D.Type) throws -> D {
         // For each stored coding key, pull out the column name.
         // Will need to write a custom decoder that pulls out of a database row.
         try D(from: DatabaseRowDecoder(row: self, keyMappingStrategy: D.keyMappingStrategy))

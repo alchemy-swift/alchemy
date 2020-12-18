@@ -1,6 +1,6 @@
 import Foundation
 
-/// Decoder for decoding `Decodable` types from a `DatabaseRow`. Properties of the `Decodable` type
+/// Decoder for decoding `Model` types from a `DatabaseRow`. Properties of the `Decodable` type
 /// are matched to columns with matching names (either the same name or a specific name mapping
 /// based on the supplied `keyMappingStrategy`).
 struct DatabaseRowDecoder: Decoder {

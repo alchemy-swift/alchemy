@@ -1,6 +1,6 @@
 import Foundation
 
-/// Used for turning any `DatabaseCodable` into an array of `DatabaseField`s (column/value
+/// Used for turning any `Model` into an array of `DatabaseField`s (column/value
 /// combinations) based on its stored properties.
 final class DatabaseFieldReader: Encoder {
     /// Used for keeping track of the database fields pulled off the object encoded to this encoder.
@@ -23,12 +23,12 @@ final class DatabaseFieldReader: Encoder {
         self.mappingStrategy = mappingStrategy
     }
     
-    /// Read and return the stored properties of an `DatabaseCodable` object as a `[DatabaseField]`.
+    /// Read and return the stored properties of an `Model` object as a `[DatabaseField]`.
     ///
-    /// - Parameter value: the `DatabaseCodable` instance to read from.
+    /// - Parameter value: the `Model` instance to read from.
     /// - Throws: a `DatabaseCodingError` if there is an error reading fields from `value`.
     /// - Returns: an array of `DatabaseField`s representing the properties of `value`.
-    func getFields<D: DatabaseCodable>(of value: D) throws -> [DatabaseField] {
+    func getFields<D: Model>(of value: D) throws -> [DatabaseField] {
         try value.encode(to: self)
         let toReturn = self.readFields
         self.readFields = []
@@ -41,11 +41,11 @@ final class DatabaseFieldReader: Encoder {
     }
 
     func unkeyedContainer() -> UnkeyedEncodingContainer {
-        fatalError("`DatabaseCodable`s should never encode to an unkeyed container.")
+        fatalError("`Model`s should never encode to an unkeyed container.")
     }
 
     func singleValueContainer() -> SingleValueEncodingContainer {
-        fatalError("`DatabaseCodable`s should never encode to a single value container.")
+        fatalError("`Model`s should never encode to a single value container.")
     }
 }
 
@@ -73,7 +73,7 @@ private struct _SingleValueEncoder: Encoder {
     }
     
     func unkeyedContainer() -> UnkeyedEncodingContainer {
-        fatalError("Arrays aren't supported by `DatabaseCodable`.")
+        fatalError("Arrays aren't supported by `Model`.")
     }
     
     func singleValueContainer() -> SingleValueEncodingContainer {
@@ -194,19 +194,19 @@ private struct _KeyedEncodingContainer<Key: CodingKey> : KeyedEncodingContainerP
     mutating func nestedContainer<NestedKey>(
         keyedBy keyType: NestedKey.Type, forKey key: Key
     ) -> KeyedEncodingContainer<NestedKey> where NestedKey: CodingKey {
-        fatalError("Nested coding of `DatabaseCodable` not supported.")
+        fatalError("Nested coding of `Model` not supported.")
     }
 
     mutating func nestedUnkeyedContainer(forKey key: Key) -> UnkeyedEncodingContainer {
-        fatalError("Nested coding of `DatabaseCodable` not supported.")
+        fatalError("Nested coding of `Model` not supported.")
     }
 
     mutating func superEncoder() -> Encoder {
-        fatalError("Superclass encoding of `DatabaseCodable` not supported.")
+        fatalError("Superclass encoding of `Model` not supported.")
     }
 
     mutating func superEncoder(forKey key: Key) -> Encoder {
-        fatalError("Superclass encoding of `DatabaseCodable` not supported.")
+        fatalError("Superclass encoding of `Model` not supported.")
     }
 }
 

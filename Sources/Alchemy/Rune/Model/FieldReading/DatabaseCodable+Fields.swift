@@ -1,5 +1,5 @@
-extension DatabaseCodable {
-    /// Returns all `DatabaseField`s on a `DatabaseCodable` object. Useful for inserting or updating
+extension Model {
+    /// Returns all `DatabaseField`s on a `Model` object. Useful for inserting or updating
     /// values into a database.
     ///
     /// - Throws: a `DatabaseCodingError` if there is an error creating any of the fields of this

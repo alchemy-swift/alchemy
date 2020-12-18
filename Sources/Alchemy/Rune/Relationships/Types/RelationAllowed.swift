@@ -1,5 +1,5 @@
 /// So that `Model` & `Model?` can have similar functionality.
-public protocol RelationAllowed: Codable {
+public protocol RelationAllowed {
     associatedtype Value: Model
     var elementType: Value.Type { get }
 
@@ -9,7 +9,7 @@ public protocol RelationAllowed: Codable {
 extension Model where Value == Self {
     public var elementType: Self.Type { Self.self }
     public static func from(_ value: Value?) throws -> Self {
-        try value.unwrap(or: RuneError(info: "Expected non nil"))
+        try value.unwrap(or: RuneError.relationshipWasNil)
     }
 }
 

@@ -10,7 +10,7 @@ import Foundation
 /// Since Swift's naming convention is camelCase, your corresponding database
 /// model will probably look like this:
 /// ```
-/// struct User: DatabaseCodable {
+/// struct User: Model {
 ///     var id: Int?
 ///     let email: String
 ///     let firstName: String // doesn't match database field of `first_name`

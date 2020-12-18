@@ -5,11 +5,11 @@ import NIO
 /// Cron. Can kill once there's a real datastore backed jobs service.
 ///
 /// ```
-/// ` self.scheduler
-/// `   .schedule(UpdateQueries(), every: 1.days.at(hr: 12))
-/// `   .schedule(SyncSubscriptions(), every: 1.days.at(hr: 9, min: 27, sec: 43))
-/// `   .schedule(RunQueries(), every: 1.minutes.at(sec: 30))
-/// `   .schedule(CheckAlerts(), every: 1.minutes.at(sec: 00))
+/// self.scheduler
+///     .schedule(UpdateQueries(), every: 1.days.at(hr: 12))
+///     .schedule(SyncSubscriptions(), every: 1.days.at(hr: 9, min: 27, sec: 43))
+///     .schedule(RunQueries(), every: 1.minutes.at(sec: 30))
+///     .schedule(CheckAlerts(), every: 1.minutes.at(sec: 00))
 /// ```
 public struct Scheduler: FactoryService {
     @Inject var group: MultiThreadedEventLoopGroup

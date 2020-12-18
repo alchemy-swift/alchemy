@@ -1,4 +1,4 @@
-/// An error encountered when decoding a `DatabaseCodable` from a `DatabaseRow` or encoding it to
+/// An error encountered when decoding a `Model` from a `DatabaseRow` or encoding it to
 /// a `[DatabaseField]`.
 struct DatabaseCodingError: Error {
     /// What went wrong.
