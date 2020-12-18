@@ -14,11 +14,11 @@ extension Model {
             if let id = self.id {
                 return try Self.query()
                     .where("id" == id)
-                    .update(values: try self.dictionary().unorderedDictionary)
+                    .update(values: try self.fieldDictionary().unorderedDictionary)
                     .map { _ in self }
             } else {
                 return Self.query(database: db)
-                    .insert(try self.dictionary())
+                    .insert(try self.fieldDictionary())
                     .flatMapThrowing { try $0.first.unwrap(or: RuneError(info: "Unable to find first element.")) }
                     .flatMapThrowing { try $0.decode(Self.self) }
             }
@@ -28,9 +28,9 @@ extension Model {
     /// Deletes this model from the database.
     public func delete(db: Database = DB.default) -> EventLoopFuture<Void> {
         catchError {
-            let idField = try self.idField()
+            let idField = try self.getID()
             return Self.query(database: db)
-                .where(WhereValue(key: idField.column, op: .equals, value: idField.value))
+                .where("id" == idField)
                 .delete()
                 .voided()
         }
@@ -73,7 +73,7 @@ extension Array where Element: Model {
     public func save(db: Database = DB.default) -> EventLoopFuture<Self> {
         catchError {
             Element.query(database: db)
-                .insert(try self.map { try $0.dictionary() })
+                .insert(try self.map { try $0.fieldDictionary() })
                 .map { _ in self }
         }
     }
