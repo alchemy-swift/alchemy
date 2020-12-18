@@ -72,78 +72,78 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
-        return try self.row.getField(columnName: self.string(for: key)).value.isNil
+        return try self.row.getField(column: self.string(for: key)).value.isNil
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
-        return try self.row.getField(columnName: self.string(for: key)).bool()
+        return try self.row.getField(column: self.string(for: key)).bool()
     }
     
     func decode(_ type: String.Type, forKey key: Key) throws -> String {
-        return try self.row.getField(columnName: self.string(for: key)).string()
+        return try self.row.getField(column: self.string(for: key)).string()
     }
     
     func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
-        return try self.row.getField(columnName: self.string(for: key)).double()
+        return try self.row.getField(column: self.string(for: key)).double()
     }
     
     func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
-        return Float(try self.row.getField(columnName: self.string(for: key)).double())
+        return Float(try self.row.getField(column: self.string(for: key)).double())
     }
     
     func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
-        return try self.row.getField(columnName: self.string(for: key)).int()
+        return try self.row.getField(column: self.string(for: key)).int()
     }
     
     func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
-        return Int8(try self.row.getField(columnName: self.string(for: key)).int())
+        return Int8(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
-        return Int16(try self.row.getField(columnName: self.string(for: key)).int())
+        return Int16(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
-        return Int32(try self.row.getField(columnName: self.string(for: key)).int())
+        return Int32(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
-        return Int64(try self.row.getField(columnName: self.string(for: key)).int())
+        return Int64(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
-        return UInt(try self.row.getField(columnName: self.string(for: key)).int())
+        return UInt(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
-        return UInt8(try self.row.getField(columnName: self.string(for: key)).int())
+        return UInt8(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
-        return UInt16(try self.row.getField(columnName: self.string(for: key)).int())
+        return UInt16(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
-        return UInt32(try self.row.getField(columnName: self.string(for: key)).int())
+        return UInt32(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
-        return UInt64(try self.row.getField(columnName: self.string(for: key)).int())
+        return UInt64(try self.row.getField(column: self.string(for: key)).int())
     }
     
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
         if type == UUID.self {
-            return try self.row.getField(columnName: self.string(for: key)).uuid() as! T
+            return try self.row.getField(column: self.string(for: key)).uuid() as! T
         } else if type == Date.self {
-            return try self.row.getField(columnName: self.string(for: key)).date() as! T
+            return try self.row.getField(column: self.string(for: key)).date() as! T
         } else if type is AnyBelongsTo.Type {
-            let field = try self.row.getField(columnName: self.string(for: key) + "_id")
+            let field = try self.row.getField(column: self.string(for: key) + "_id")
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is AnyHas.Type {
             // Special case the AnyHas to decode the coding key.
             return try T(from: DatabaseFieldDecoder(field: .init(column: "key", value: .string(key.stringValue))))
         } else {
-            let field = try self.row.getField(columnName: self.string(for: key))
+            let field = try self.row.getField(column: self.string(for: key))
             return try T(from: DatabaseFieldDecoder(field: field))
         }
     }
@@ -236,7 +236,7 @@ private struct _SingleValueDecodingContainer: SingleValueDecodingContainer {
         } else if type == UUID.self {
             return try self.field.uuid() as! T
         } else {
-            throw PostgresError("Decode a type from a single value container is not supported \(type).")
+            throw DatabaseError("Decode a type from a single value container is not supported \(type).")
         }
     }
 }

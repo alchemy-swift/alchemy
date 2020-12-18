@@ -221,9 +221,8 @@ private func propertyType<E: Encodable>(of value: E) throws -> DatabaseValue? {
         return .bool(value)
     } else if let value = value as? String {
         return .string(value)
-    } else if let value = value as? DatabaseJSON {
-        return .json(try value.toJSONData())
     } else {
-        return nil
+        let jsonData = try JSONEncoder().encode(value)
+        return .json(jsonData)
     }
 }

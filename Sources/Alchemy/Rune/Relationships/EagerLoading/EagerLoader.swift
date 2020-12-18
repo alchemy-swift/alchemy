@@ -45,7 +45,7 @@ struct EagerLoader<From: Model, To: RelationAllowed> {
                     var dict: [From.Value.Identifier: [To.Value]] = [:]
                     for row in toResults {
                         let toVal = try row.decode(To.Value.self)
-                        let fromID = try From.Value.Identifier.from(field: try row.getField(columnName: fromString))
+                        let fromID = try From.Value.Identifier(field: try row.getField(column: fromString))
                         
                         if let array = dict[fromID] {
                             dict[fromID] = array + [toVal]

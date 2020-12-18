@@ -317,7 +317,7 @@ public class Query: Sequelizable {
             .first()
             .flatMapThrowing {
                 if let column = $0?.allColumns.first {
-                    return try $0?.getField(columnName: column).int()
+                    return try $0?.getField(column: column).int()
                 }
                 return nil
         }

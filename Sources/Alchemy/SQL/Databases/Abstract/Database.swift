@@ -73,7 +73,7 @@ public protocol Database {
     func shutdown()
 }
 
-// Extensions for default data.
+// Extensions for default data. Docs above.
 extension Database {
     public func query() -> Query {
         Query(database: self)

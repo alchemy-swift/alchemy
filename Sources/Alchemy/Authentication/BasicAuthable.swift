@@ -105,7 +105,7 @@ public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
                         throw HTTPError(.unauthorized)
                     }
                     
-                    let passwordHash = try firstRow.getField(columnName: B.passwordHashKeyString).string()
+                    let passwordHash = try firstRow.getField(column: B.passwordHashKeyString).string()
                     
                     guard try B.verify(password: basicAuth.password, passwordHash: passwordHash) else {
                         throw HTTPError(.unauthorized)
