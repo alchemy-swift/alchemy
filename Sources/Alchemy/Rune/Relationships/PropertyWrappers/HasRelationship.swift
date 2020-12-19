@@ -24,7 +24,7 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
     ///           This is an implementation detail leaking out, sorry another way hasn't been found.
     ///   - key: the `KeyPath` of the relationship on `To` that points to `From`.
     ///   - keyString: the string name of the column on `To` that points to `From`'s id.
-    public init(
+    public required init(
         this: String,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
         keyString: String
@@ -53,7 +53,7 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
     ///            relationship.
     ///   - fromString: the column name on the pivot table that references the `From` table's id.
     ///   - toString: the column name on the pivot table that references the `To` table's id.
-    public init<Through: Model>(
+    public required init<Through: Model>(
         named: String,
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,

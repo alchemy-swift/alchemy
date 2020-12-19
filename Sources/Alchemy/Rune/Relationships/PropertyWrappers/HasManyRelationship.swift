@@ -24,6 +24,32 @@ public final class HasManyRelationship<
     /// _relationship_ type is needed, such as during eager loads.
     public var projectedValue: From.HasMany<To> { self }
 
+    // MARK: Overrides
+    
+    public required init(
+        this: String,
+        to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
+        keyString: String
+    ) {
+        super.init(this: this, to: key, keyString: keyString)
+    }
+    
+    public required init<Through: Model>(
+        named: String,
+        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
+        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
+        fromString: String,
+        toString: String
+    ) {
+        super.init(
+            named: named,
+            from: fromKey,
+            to: toKey,
+            fromString: fromString,
+            toString: toString
+        )
+    }
+    
     // MARK: Relationship
     
     public func loadRelationships(
