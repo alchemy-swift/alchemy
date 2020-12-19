@@ -23,7 +23,7 @@ struct PetsController {
     }
     
     func createPet(_ req: HTTPRequest) -> EventLoopFuture<Pet> {
-        Pet(id: nil, name: "Melvin", type: .dog, owner: .init(1))
+        Pet(id: nil, name: "Melvin", type: .dog, owner: .init(UUID()))
             .save()
     }
     

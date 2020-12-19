@@ -4,7 +4,7 @@
 ///  `Singleton`: Injects a single instance.
 /// `Identified`: Injects a single instance per value of a `Hashable` Identifier.
 ///    `Factory`: Injects a new instance each time.
-public protocol Fusable { }
+public protocol Fusable {}
 
 /// How to get this to work nicely with protocols & mocking?
 /// eg....

@@ -4,7 +4,7 @@ struct User: Model, BasicAuthable {
     static var tableName: String = "users"
     static var usernameKeyString: String = "email"
     
-    var id: Int?
+    var id: UUID?
     let email: String
     let passwordHash: String
     let name: String
@@ -24,6 +24,18 @@ struct UserToken: Model, TokenAuthable {
     
     @BelongsTo
     var user: User
+    
+    @BelongsTo
+    var user2: User?
+    
+    @HasMany
+    var user3: [User]
+    
+    @HasOne
+    var user4: User?
+    
+    @HasOne
+    var user5: User
 }
 
 enum PetType: Int, Codable {

@@ -59,7 +59,7 @@ extension Database {
     
     /// Gets existing migrations. Creates the migration table if it doesn't already exist.
     private func getMigrations() -> EventLoopFuture<[AlchemyMigration]> {
-        self.runRawQuery(kMigrationTableCreateQuery, on: Loop.current)
+        self.runRawQuery(kMigrationTableCreateQuery)
             .flatMap { _ in
                 AlchemyMigration.query(database: self).getAll()
             }
@@ -100,7 +100,7 @@ extension Database {
         var elf = Loop.current.future()
         for statement in statements {
             elf = elf.flatMap { _ in
-                self.runQuery(statement.query, values: statement.bindings, on: Loop.current)
+                self.runRawQuery(statement.query, values: statement.bindings)
                     .voided()
             }
         }

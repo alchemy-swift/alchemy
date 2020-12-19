@@ -2,9 +2,8 @@ import Foundation
 import NIO
 
 public class Query: Sequelizable {
-
     let database: Database
-
+    
     private(set) var columns: [Raw] = []
     private(set) var from: String?
     private(set) var joins: [JoinClause]? = nil
@@ -22,7 +21,7 @@ public class Query: Sequelizable {
     }
 
     public func toSQL() -> SQL {
-        return (try? database.grammar.compileSelect(query: self))
+        return (try? self.database.grammar.compileSelect(query: self))
             ?? SQL()
     }
 
@@ -283,29 +282,29 @@ public class Query: Sequelizable {
         return offset((page - 1) * perPage).limit(perPage)
     }
 
-    public func get(_ columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func get(_ columns: [Column]? = nil) -> EventLoopFuture<[DatabaseRow]> {
         if let columns = columns {
             self.select(columns)
         }
         do {
-            let sql = try database.grammar.compileSelect(query: self)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileSelect(query: self)
+            return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return loop.makeFailedFuture(error)
+            return Loop.future(error: error)
         }
     }
 
-    public func first(_ columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
+    public func first(_ columns: [Column]? = nil) -> EventLoopFuture<DatabaseRow?> {
         return self.limit(1)
-            .get(columns, on: loop)
+            .get(columns)
             .map { $0.first }
     }
 
-    public func find(field: DatabaseField, columns: [Column]? = nil, on loop: EventLoop = Loop.current) -> EventLoopFuture<DatabaseRow?> {
+    public func find(field: DatabaseField, columns: [Column]? = nil) -> EventLoopFuture<DatabaseRow?> {
         self.wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
         return self.limit(1)
-            .get(columns, on: loop)
+            .get(columns)
             .map { $0.first }
     }
 
@@ -318,7 +317,7 @@ public class Query: Sequelizable {
             .first()
             .flatMapThrowing {
                 if let column = $0?.allColumns.first {
-                    return try $0?.getField(columnName: column).int()
+                    return try $0?.getField(column: column).int()
                 }
                 return nil
         }
@@ -329,42 +328,39 @@ public class Query: Sequelizable {
     //    exists()
     //
 
-    public func insert(_ value: OrderedDictionary<String, Parameter>, on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func insert(_ value: OrderedDictionary<String, Parameter>) -> EventLoopFuture<[DatabaseRow]> {
         return insert([value])
     }
 
-    public func insert(_ values: [OrderedDictionary<String, Parameter>], on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func insert(_ values: [OrderedDictionary<String, Parameter>]) -> EventLoopFuture<[DatabaseRow]> {
         do {
-            let sql = try database.grammar.compileInsert(self, values: values)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileInsert(self, values: values)
+            return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return loop.makeFailedFuture(error)
+            return Loop.future(error: error)
         }
     }
 
-    public func update(values: [String: Parameter], on loop: EventLoop = Loop.current) throws -> EventLoopFuture<[DatabaseRow]> {
+    public func update(values: [String: Parameter]) throws -> EventLoopFuture<[DatabaseRow]> {
         do {
-            let sql = try database.grammar.compileUpdate(self, values: values)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileUpdate(self, values: values)
+            return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return loop.makeFailedFuture(error)
+            return Loop.future(error: error)
         }
     }
 
-    public func delete(on loop: EventLoop = Loop.current) -> EventLoopFuture<[DatabaseRow]> {
+    public func delete() -> EventLoopFuture<[DatabaseRow]> {
         do {
-            let sql = try database.grammar.compileDelete(self)
-            return self.database.runQuery(sql.query, values: sql.bindings, on: loop)
+            let sql = try self.database.grammar.compileDelete(self)
+            return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return loop.makeFailedFuture(error)
+            return Loop.future(error: error)
         }
     }
-
-    //    updateOrInsert()
-    //    delete(id = null)
 }
 
 

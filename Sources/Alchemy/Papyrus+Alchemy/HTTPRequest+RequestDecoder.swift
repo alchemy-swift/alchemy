@@ -49,11 +49,11 @@ struct HTTPRequestDecoder: Decoder {
     
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
         /// This is for arrays, which we currently support in other ways.
-        throw DatabaseDecodingError("This shouldn't be called; top level is keyed.")
+        throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
     
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        throw DatabaseDecodingError("This shouldn't be called; top level is keyed.")
+        throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
 }
 

@@ -1,47 +1,63 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the SwiftNIO open source project
-//
-// Copyright (c) 2017-2018 Apple Inc. and the SwiftNIO project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of SwiftNIO project authors
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
+/// Much of this heavily inspired / ripped from [apple/swift-nio-examples](
+/// https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
 import Fusion
 import NIO
 import NIOHTTP1
-import NIOHTTP2
-import ArgumentParser
 
+/// The core type for an Alchemy application. Implement this & it's `setup`
+/// function, then call `Launch<CustomApplication>.main()` in your `main.swift`.
+///
+/// ```
+/// // MyApplication.swift
+/// struct MyApplication: Application {
+///     @Inject router: Router
+///
+///     func setup() {
+///         self.router.on(.GET, "/hello") { _ in
+///             return "Hello, world!"
+///         }
+///         ...
+///     }
+/// }
+///
+/// // main.swift
+/// Launch<MyApplication>.main()
+/// ```
 public protocol Application {
+    /// Called before any launch command is run. Called AFTER any environment is
+    /// loaded and the global `MultiThreadedEventLoopGroup` is set. Called on an
+    /// event loop, so `Loop.current` is available for use if needed.
     func setup()
+    
+    /// Required empty initializer.
     init()
 }
 
+/// The parameters for what the application should do on startup. Currently
+/// can either `serve` or `migrate`.
 enum StartupArgs {
-    case serve(target: BindTo)
+    /// Serve to a specific socket. Routes using the singleton `HTTPRouter`.
+    case serve(socket: Socket)
+    
+    /// Migrate using any migrations added to DB.default. `rollback` indicates
+    /// whether all new migrations should be run in a new batch (`false`) or if
+    /// the latest batch should be rolled back (`true`).
     case migrate(rollback: Bool = false)
 }
 
-enum BindTo {
-    case ip(host: String, port: Int)
-    case unixDomainSocket(path: String)
-}
-
 extension Application {
+    /// Launch the application with the provided startup arguments. It will
+    /// either `serve` or `migrate`.
+    ///
+    /// - Parameter args: what the application should do when it's launched.
+    /// - Throws: any error that may be encountered in booting the application.
     func launch(_ args: StartupArgs) throws {
-        // Setup environment
-        _ = Env.current
-        
         // Get the global `MultiThreadedEventLoopGroup`
-        let group = try Container.global.resolve(MultiThreadedEventLoopGroup.self)
+        let group = try Container.global
+            .resolve(MultiThreadedEventLoopGroup.self)
         
-        // First, setup the application (on an `EventLoop` from the global group so `Loop.current` can be
-        // used.)
+        // First, setup the application (on an `EventLoop` from the global group
+        // so `Loop.current` can be used inside it.)
         let setup = group.next()
             .submit(self.setup)
             
@@ -49,35 +65,66 @@ extension Application {
         case .migrate(let rollback):
             // Migrations need to be run on an `EventLoop`.
             try setup
-                .flatMap { self.migrate(rollback: rollback, group: group) }
+                .flatMap { self.migrate(rollback: rollback) }
                 .wait()
             print("Migrations finished!")
-        case .serve(let target):
-            try self.startServing(target: target, group: group)
+        case .serve(let socket):
+            try self.startServing(socket: socket, group: group)
         }
     }
     
-    private func migrate(rollback: Bool, group: MultiThreadedEventLoopGroup) -> EventLoopFuture<Void> {
+    /// Run migrations on `DB.default`, optionally rolling back the latest
+    /// batch.
+    ///
+    /// - Parameter rollback: if true, the latest batch of migrations will be
+    ///                       rolled back
+    /// - Returns: an `EventLoopFuture<Void>` that completes when the migrations
+    ///            are finished.
+    private func migrate(rollback: Bool) -> EventLoopFuture<Void> {
         rollback ? DB.default.rollbackMigrations() : DB.default.migrate()
     }
     
-    private func startServing(target: BindTo, group: MultiThreadedEventLoopGroup) throws {
-        func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
-            channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
-                channel.pipeline.addHandler(HTTPHandler(responder: HTTPRouterResponder()))
-            }
+    /// Start serving at the given target. Routing is handled by the singleton
+    /// `HTTPRouter`.
+    ///
+    /// - Note: this function never unblocks for the lifecycle of the server.
+    /// - Parameters:
+    ///   - socket: the socket where the server should bind (listen for requests
+    ///             at).
+    ///   - group: a `MultiThreadedEventLoopGroup` for fetching `EventLoop`s to
+    ///            handle requests on.
+    /// - Throws: any errors encountered when bootstrapping the server.
+    private func startServing(
+        socket: Socket,
+        group: MultiThreadedEventLoopGroup
+    ) throws {
+        func childChannelInitializer(
+            channel: Channel
+        ) -> EventLoopFuture<Void> {
+            channel.pipeline
+                .configureHTTPServerPipeline(withErrorHandling: true)
+                .flatMap { channel.pipeline
+                    .addHandler(HTTPHandler(responder: HTTPRouterResponder()))
+                }
         }
 
-        let socketBootstrap = ServerBootstrap(group: group)
+        let serverBootstrap = ServerBootstrap(group: group)
             // Specify backlog and enable SO_REUSEADDR for the server itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
-            .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
+            .serverChannelOption(
+                ChannelOptions
+                    .socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR),
+                value: 1
+            )
 
             // Set the handlers that are applied to the accepted Channels
             .childChannelInitializer(childChannelInitializer(channel:))
 
             // Enable SO_REUSEADDR for the accepted Channels
-            .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
+            .childChannelOption(
+                ChannelOptions
+                    .socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR),
+                value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
         defer {
@@ -85,11 +132,12 @@ extension Application {
         }
 
         let channel = try { () -> Channel in
-            switch target {
+            switch socket {
             case .ip(let host, let port):
-                return try socketBootstrap.bind(host: host, port: port).wait()
-            case .unixDomainSocket(let path):
-                return try socketBootstrap.bind(unixDomainSocketPath: path).wait()
+                return try serverBootstrap.bind(host: host, port: port).wait()
+            case .unix(let path):
+                return try serverBootstrap.bind(unixDomainSocketPath: path)
+                    .wait()
             }
         }()
 

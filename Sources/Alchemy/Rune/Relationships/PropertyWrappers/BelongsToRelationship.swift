@@ -1,21 +1,44 @@
 import NIO
 
+/// A type erased `BelongsToRelationship`. Used for special casing decoding behavior for
+/// `BelongsTo`s.
 public protocol AnyBelongsTo {}
 
 @propertyWrapper
-/// The child of a one to many or a one to one.
-public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>: AnyBelongsTo, Codable, Relationship {
+/// The child of a 1 - M or a 1 - 1 relationship. Backed by an identifier of the parent, when
+/// encoded to a database, this type attempt to write that identifier to a column named 
+/// `<property-name>_id`.
+///
+/// Example:
+/// ```
+/// struct Pet: Model {
+///     static let table = "pets"
+///     ...
+///
+///     @BelongsTo
+///     var owner: User // The ID value of this User will be stored under the `owner_id` column in
+///                     // the `pets` table.
+/// }
+/// ```
+public final class BelongsToRelationship<
+    Child: Model,
+    Parent: ModelMaybeOptional
+>: AnyBelongsTo, Codable, Relationship {
     public typealias From = Child
     public typealias To = Parent
     
+    /// The identifier of this relationship's parent.
     public var id: Parent.Value.Identifier! {
         didSet {
             self.value = nil
         }
     }
-
+    
+    /// The underlying relationship object, if there is one. Populated by eager loading.
     private var value: Parent?
     
+    /// The related `Model` object. Accessing this will `fatalError` if the relationship is not
+    /// already loaded via eager loading or set manually.
     public var wrappedValue: Parent {
         get {
             guard let value = self.value else { fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!") }
@@ -23,29 +46,39 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
         }
         set { self.value = newValue }
     }
-
+    
+    /// The projected value of this property wrapper is itself. Used for when a reference to the
+    /// _relationship_ type is needed, such as during eager loads.
+    public var projectedValue: Child.BelongsTo<Parent> {
+        self
+    }
+    
+    /// Initialize this relationship with an `Identifier` of the `Parent` type.
+    ///
+    /// - Parameter parentID: the identifier of the `Parent` to which this child belongs.
     public init(_ parentID: Parent.Value.Identifier) {
         self.id = parentID
     }
     
+    /// Initialize this relationship with an instance of `Parent`.
+    ///
+    /// - Parameter parent: the `Parent` object to which this child belongs.
     public init(_ parent: Parent.Value) {
         guard let id = parent.id else {
             fatalError("Can't form a relation with an unidentified object.")
         }
 
         self.id = id
-        // From only throws if this is passed nil; can force try here.
-        self.value = try! Parent.from(parent)
+        // `.from` only throws if it's passed nil so this will always succeed.
+        self.value = try? Parent.from(parent)
     }
-
-    public var projectedValue: BelongsToRelationship<Child, Parent> {
-        self
-    }
-
-    public func load(
-        _ from: [Child],
-        with nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
-        from eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
+    
+    // MARK: Relationship
+    
+    public func loadRelationships(
+        for from: [Child],
+        query nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
+        into eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
     {
         let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
         let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
@@ -65,12 +98,16 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationAllowed>:
             }
     }
 
+    // MARK: Codable
+    
     public func encode(to encoder: Encoder) throws {
+        // When encoding to the database, just encode the Parent's ID.
         var container = encoder.singleValueContainer()
         try container.encode(self.id)
     }
     
     public init(from decoder: Decoder) throws {
+        // When decode from a database, just decode the Parent's ID.
         self.id = try decoder.singleValueContainer().decode(Parent.Value.Identifier.self)
     }
 }

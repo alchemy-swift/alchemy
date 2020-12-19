@@ -7,14 +7,14 @@ struct HTTPRouterResponder: HTTPResponder {
     
     func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
         catchError {
-            self.globalMiddlewares.run(on: request)
+            self.globalMiddlewares
+                .run(on: request)
                 .flatMap { request in
                     guard let response = self.router.handle(request: request) else {
-                        return request.eventLoop
-                            .makeSucceededFuture(HTTPResponse(status: .notFound, body: nil))
+                        return Loop.future(value: HTTPResponse(status: .notFound, body: nil))
                     }
                     
-                    return response.throwingFlatMap { try $0.encode(on: request.eventLoop) }
+                    return response.throwingFlatMap { try $0.encode() }
                 }
         }
     }

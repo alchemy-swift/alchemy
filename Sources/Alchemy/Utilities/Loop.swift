@@ -9,4 +9,12 @@ public struct Loop {
 
         return current
     }
+    
+    public static func future<T>(error: Error) -> EventLoopFuture<T> {
+        Loop.current.makeFailedFuture(error)
+    }
+    
+    public static func future<T>(value: T) -> EventLoopFuture<T> {
+        Loop.current.makeSucceededFuture(value)
+    }
 }

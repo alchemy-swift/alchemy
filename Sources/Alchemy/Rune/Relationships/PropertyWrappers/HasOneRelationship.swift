@@ -1,12 +1,21 @@
 import NIO
 
 @propertyWrapper
-public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRelationship<From, To>, Encodable, Relationship
-{
+/// Either side of a 1 - 1 relationship. The details of this relationship are defined in the
+/// initializers inherited from `HasRelationship`.
+public final class HasOneRelationship<
+    From: Model,
+    To: ModelMaybeOptional
+>: HasRelationship<From, To>, Encodable, Relationship {
+    /// Internal value for storing the `To` object of this relationship, when it is loaded.
     private var value: To?
     
+    /// The projected value of this property wrapper is itself. Used for when a reference to the
+    /// _relationship_ type is needed, such as during eager loads.
     public var projectedValue: HasOneRelationship<From, To> { self }
 
+    /// The related `To` object. Accessing this will `fatalError` if the relationship is not already
+    /// loaded via eager loading or set manually.
     public var wrappedValue: To {
         get {
             guard let value = self.value else { fatalError("Please load first") }
@@ -15,17 +24,14 @@ public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRela
         set { self.value = newValue }
     }
     
-    public init(value: To) {
-        super.init()
-        self.value = value
-    }
+    // MARK: Overrides
     
-    public required init(this: String, to key: KeyPath<To.Value, To.Value.BelongsTo<From>>, keyString: String) {
+    public required init(
+        this: String,
+        to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
+        keyString: String
+    ) {
         super.init(this: this, to: key, keyString: keyString)
-    }
-    
-    public required init(from decoder: Decoder) throws {
-        try super.init(from: decoder)
     }
     
     public required init<Through: Model>(
@@ -35,13 +41,21 @@ public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRela
         fromString: String,
         toString: String
     ) {
-        super.init(named: named, from: fromKey, to: toKey, fromString: fromString, toString: toString)
+        super.init(
+            named: named,
+            from: fromKey,
+            to: toKey,
+            fromString: fromString,
+            toString: toString
+        )
     }
     
-    public func load(
-        _ from: [From],
-        with nestedQuery: @escaping (ModelQuery<To.Value>) -> ModelQuery<To.Value>,
-        from eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
+    // MARK: Relationship
+    
+    public func loadRelationships(
+        for from: [From],
+        query nestedQuery: @escaping (ModelQuery<To.Value>) -> ModelQuery<To.Value>,
+        into eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
     {
         self.eagerLoadClosure(nestedQuery)(from)
             .flatMapThrowing { dict in
@@ -55,13 +69,12 @@ public final class HasOneRelationship<From: Model, To: RelationAllowed>: HasRela
                 return updatedResults
         }
     }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        if let value = self.value as? To.Value {
-            try container.encode(value)
-        } else {
-            try container.encodeNil()
-        }
+    
+    // MARK: Codable
+    
+    public required init(from decoder: Decoder) throws {
+        try super.init(from: decoder)
     }
+
+    public func encode(to encoder: Encoder) throws {}
 }
