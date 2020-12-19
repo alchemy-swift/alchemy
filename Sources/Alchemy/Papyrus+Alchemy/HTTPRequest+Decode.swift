@@ -3,7 +3,7 @@ import Papyrus
 /// WIP: Something that can be encoded to and decoded from an HTTP request
 ///
 /// Should probably be moved to `SwiftAPI` repo.
-//public protocol RequestCodable {}
+/// public protocol RequestCodable {}
 
 /// Request validations
 /// (Handle through typed Middleware):
@@ -11,7 +11,7 @@ import Papyrus
 ///
 /// (Handle with Request.validate(expectedType)):
 /// 2. Controller level: validate expected input (params unique to the request)
-
+///
 /// Validation
 /// ----------
 /// Validate a type from a request, automatically loading the correct info from the right places, denoted by

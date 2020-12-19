@@ -1,7 +1,7 @@
 import NIO
 import NIOHTTP1
 
-/// Any type that can respond to HTTP requests.
+/// A type that can respond to HTTP requests.
 protocol HTTPResponder {
     func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse>
 }

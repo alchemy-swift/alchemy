@@ -5,15 +5,15 @@ import NIO
 struct ExampleApplication: Application {
     @Inject var postgres: PostgresDatabase
     @Inject var mysql: MySQLDatabase
-    @Inject var router: HTTPRouter
-    @Inject var globalMiddlewares: GlobalMiddlewares
+    @Inject var router: Router
     
     func setup() {
         DB.default = self.postgres
         
-        self.globalMiddlewares
-            // Applied to all incoming requests.
-            .add(LoggingMiddleware(text: "Received request:"))
+        // Applied to all incoming requests.
+        Router.globalMiddlewares = [
+            LoggingMiddleware(text: "Received request:")
+        ]
         
         self.router
             // Applied to all subsequent routes

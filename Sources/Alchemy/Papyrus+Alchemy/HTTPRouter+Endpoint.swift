@@ -4,7 +4,7 @@ import NIO
 
 extension Empty: HTTPResponseEncodable {}
 
-public extension HTTPRouter {
+public extension Router {
     /// Register an Endpoint.
     func register<Req, Res>(_ endpoint: Endpoint<Req, Res>,
                             use closure: @escaping (HTTPRequest, Req) throws -> EventLoopFuture<Res>)
