@@ -31,7 +31,7 @@ public class ModelQuery<M: Model>: Query {
     ///             will happen and how to handle it. A potential ways of doing this could be to
     ///             call eager loading @ the `.decode` level of a `DatabaseRow`, but that's too
     ///             complicated for now).
-    private var eagerLoads: [([M]) -> EventLoopFuture<[M]>] = []
+    private var eagerLoadQueries: [([M]) -> EventLoopFuture<[M]>] = []
     
     /// Gets all models matching this query from the database.
     ///
@@ -125,18 +125,14 @@ public class ModelQuery<M: Model>: Query {
         _ relationshipKeyPath: KeyPath<M, R>,
         nested: @escaping NestedEagerLoads<R.To.Value> = { $0 }
     ) -> ModelQuery<M> where R.From == M {
-        self.eagerLoads.append { results in
+        self.eagerLoadQueries.append { results in
             // If there are no results, don't need to eager load.
             guard let firstResult = results.first else {
                 return Loop.future(value: [])
             }
 
             return firstResult[keyPath: relationshipKeyPath]
-                .load(
-                    results,
-                    with: nested,
-                    from: relationshipKeyPath
-                )
+                .loadRelationships(for: results, query: nested, into: relationshipKeyPath)
         }
         
         return self
@@ -149,7 +145,7 @@ public class ModelQuery<M: Model>: Query {
     /// - Returns: a future containing the loaded models that will have all specified relationships
     ///            loaded.
     private func evaluateEagerLoads(for models: [M]) -> EventLoopFuture<[M]> {
-        self.eagerLoads
+        self.eagerLoadQueries
             .reduce(Loop.future(value: models)) { future, eagerLoad in
                 future.flatMap { eagerLoad($0) }
             }

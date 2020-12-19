@@ -8,8 +8,9 @@ extension PostgresRow: DatabaseRow {
     }
     
     public func getField(column: String) throws -> DatabaseField {
-        try self.column(column)
-            .unwrap(or: DatabaseError("No column named '\(column)' was found."))
+        print("AC: \(self.allColumns)")
+        return try self.column(column)
+            .unwrap(or: DatabaseError("No column named `\(column)` was found."))
             .toDatabaseField(from: column)
     }
 }

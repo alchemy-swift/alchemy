@@ -8,7 +8,7 @@ import Foundation
 ///            `init(from: Decoder)` or `func encode(to: Encoder)`. Override those at your own risk!
 ///            You might be able to get away with it, but it could also break things in unexpected
 ///            ways.
-public protocol Model: Codable, Identifiable, RelationAllowed {
+public protocol Model: Codable, Identifiable, ModelMaybeOptional {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
     
@@ -50,15 +50,19 @@ public protocol Model: Codable, Identifiable, RelationAllowed {
 }
 
 extension Model {
+    public static var tableName: String {
+        String(describing: Self.self)
+    }
+    
     public static var keyMappingStrategy: DatabaseKeyMappingStrategy {
         .convertToSnakeCase
     }
     
-    static var jsonDecoder: JSONDecoder {
+    public static var jsonDecoder: JSONDecoder {
         JSONDecoder()
     }
     
-    static var jsonEncoder: JSONEncoder {
+    public static var jsonEncoder: JSONEncoder {
         JSONEncoder()
     }
     

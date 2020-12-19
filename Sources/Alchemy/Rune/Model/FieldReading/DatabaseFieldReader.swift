@@ -184,8 +184,6 @@ private struct _KeyedEncodingContainer<Key: CodingKey> : KeyedEncodingContainerP
         } else if value is AnyBelongsTo {
             // Special case parent relationships to append a `_id` after the property name.
             try value.encode(to: _SingleValueEncoder(column: keyString + "_id", encoder: self.encoder))
-        } else if value is AnyHas {
-            // do nothing
         } else {
             try value.encode(to: _SingleValueEncoder(column: keyString, encoder: self.encoder))
         }
@@ -232,8 +230,6 @@ private func databaseValue<E: Encodable>(of value: E) throws -> DatabaseValue? {
         return .bool(value)
     } else if let value = value as? String {
         return .string(value)
-    } else if let _ = value as? AnyHas {
-        return nil
     } else if let _ = value as? AnyBelongsTo {
         return nil
     } else {
