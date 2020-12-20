@@ -1,30 +1,11 @@
 import Foundation
 import NIO
 
-private let kMigrationTable = "_alchemy_migrations"
-private let kMigrationTableCreateQuery =
-    """
-    CREATE TABLE IF NOT EXISTS _alchemy_migrations (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        batch INT NOT NULL,
-        run_at TIMESTAMPTZ NOT NULL
-    )
-    """
-
-private struct AlchemyMigration: Model {
-    static var tableName: String = kMigrationTable
-    
-    var id: Int?
-    let name: String
-    let batch: Int
-    let runAt: Date?
-}
-
 extension Database {
-    /// Applies all outstanding migrations to the database.
+    /// Applies all outstanding migrations to the database in a single batch. Migrations are read
+    /// from `database.migrations`.
     ///
-    /// Migrations are read from database.migrations.
+    /// - Returns: a future that completes when all migrations have been applied.
     public func migrate() -> EventLoopFuture<Void> {
         // 1. Get all already migrated migrations
         return self.getMigrations()
@@ -41,7 +22,9 @@ extension Database {
             .flatMap(self.upMigrations)
     }
     
-    /// Rolls back the latest migration operation.
+    /// Rolls back the latest migration batch.
+    ///
+    /// - Returns: a future that completes when the rollback is complete.
     public func rollbackMigrations() -> EventLoopFuture<Void> {
         self.getMigrations()
             .map { alreadyMigrated -> [Migration] in
@@ -57,19 +40,26 @@ extension Database {
             .flatMap(self.downMigrations)
     }
     
-    /// Gets existing migrations. Creates the migration table if it doesn't already exist.
+    /// Gets any existing migrations. Creates the migration table if it doesn't already exist.
+    ///
+    /// - Returns: a future containing an array of all the migrations that have been applied to this
+    ///            database.
     private func getMigrations() -> EventLoopFuture<[AlchemyMigration]> {
-        self.runRawQuery(kMigrationTableCreateQuery)
+        self.runRawQuery(AlchemyMigration.creationQuery)
             .flatMap { _ in
                 AlchemyMigration.query(database: self).getAll()
             }
     }
     
+    /// Run the `.down` functions of an array of migrations, in order.
+    ///
+    /// - Parameter migrations: the migrations to rollback on this database.
+    /// - Returns: a future that completes when the rollback is finished.
     private func downMigrations(_ migrations: [Migration]) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for m in migrations.sorted(by: { $0.name > $1.name }) {
-            let schema = m.downSchema()
-            elf = elf.flatMap { self.runStatements(statements: schema.statements) }
+            let statements = m.downStatements(for: self.grammar)
+            elf = elf.flatMap { self.runStatements(statements: statements) }
                 .flatMap {
                     AlchemyMigration.query()
                         .where("name" == m.name)
@@ -81,11 +71,18 @@ extension Database {
         return elf
     }
     
+    /// Run the `.up` functions of an array of migrations in order.
+    ///
+    /// - Parameters:
+    ///   - migrations: the migrations to apply to this database.
+    ///   - batch: the migration batch of these migrations. Based on any existing batches that have
+    ///            been applied on the database.
+    /// - Returns: a future that completes when the migration is applied.
     private func upMigrations(_ migrations: [Migration], batch: Int) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for m in migrations {
-            let schema = m.upSchema()
-            elf = elf.flatMap { self.runStatements(statements: schema.statements) }
+            let statements = m.upStatements(for: self.grammar)
+            elf = elf.flatMap { self.runStatements(statements: statements) }
                 .flatMap {
                     AlchemyMigration(name: m.name, batch: batch, runAt: Date())
                         .save(db: self)
@@ -96,6 +93,10 @@ extension Database {
         return elf
     }
     
+    /// Consecutively run a list of SQL statements on this database.
+    ///
+    /// - Parameter statements: the statements to consecutively run.
+    /// - Returns: a future that completes when all statements have been run.
     private func runStatements(statements: [SQL]) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for statement in statements {
