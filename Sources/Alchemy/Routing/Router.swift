@@ -42,7 +42,7 @@ public final class Router: SingletonService {
     ///                 before handling. Defaults to nil.
     private init(basePath: String? = nil, middleware: MiddlewareClosure? = nil) {
         self.basePath = basePath ?? ""
-        self.middleware = middleware ?? { .new(value: $0) }
+        self.middleware = middleware ?? { .new($0) }
     }
     
     /// Attempts to handle a request via child handlers. Returns nil if no child handler can handle

@@ -53,7 +53,7 @@ public class ModelQuery<M: Model>: Query {
                 if let result = result {
                     return self.evaluateEagerLoads(for: [result]).map { $0.first }
                 } else {
-                    return Loop.future(value: nil)
+                    return .new(nil)
                 }
             }
     }
@@ -128,7 +128,7 @@ public class ModelQuery<M: Model>: Query {
         self.eagerLoadQueries.append { results in
             // If there are no results, don't need to eager load.
             guard let firstResult = results.first else {
-                return Loop.future(value: [])
+                return .new([])
             }
 
             return firstResult[keyPath: relationshipKeyPath]
@@ -146,7 +146,7 @@ public class ModelQuery<M: Model>: Query {
     ///            loaded.
     private func evaluateEagerLoads(for models: [M]) -> EventLoopFuture<[M]> {
         self.eagerLoadQueries
-            .reduce(Loop.future(value: models)) { future, eagerLoad in
+            .reduce(.new(models)) { future, eagerLoad in
                 future.flatMap { eagerLoad($0) }
             }
     }

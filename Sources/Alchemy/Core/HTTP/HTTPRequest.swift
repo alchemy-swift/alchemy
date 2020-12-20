@@ -90,7 +90,7 @@ extension HTTPRequest {
     ///     func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
     ///         let someData: SomeData = ...
     ///         request.set(someData)
-    ///         return request.eventLoop.future(request)
+    ///         return .new(value: request)
     ///     }
     /// }
     ///

@@ -16,7 +16,7 @@ extension Array: HTTPResponseEncodable where Element: Encodable {
     // MARK: HTTPResponseEncodable
     
     public func encode() throws -> EventLoopFuture<HTTPResponse> {
-        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }
 
@@ -24,7 +24,7 @@ extension HTTPResponse: HTTPResponseEncodable {
     // MARK: HTTPResponseEncodable
     
     public func encode() throws -> EventLoopFuture<HTTPResponse> {
-        Loop.future(value: self)
+        .new(self)
     }
 }
 
@@ -32,7 +32,9 @@ extension EventLoopFuture: HTTPResponseEncodable where Value: HTTPResponseEncoda
     // MARK: HTTPResponseEncodable
     
     public func encode() throws -> EventLoopFuture<HTTPResponse> {
-        self.throwingFlatMap { try $0.encode() }
+        self.flatMap { res in
+            catchError { try res.encode() }
+        }
     }
 }
 
@@ -40,6 +42,6 @@ extension String: HTTPResponseEncodable {
     // MARK: HTTPResponseEncodable
     
     public func encode() throws -> EventLoopFuture<HTTPResponse> {
-        Loop.future(value: HTTPResponse(status: .ok, body: HTTPBody(text: self)))
+        .new(HTTPResponse(status: .ok, body: HTTPBody(text: self)))
     }
 }

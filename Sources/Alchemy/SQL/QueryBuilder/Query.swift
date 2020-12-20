@@ -291,7 +291,7 @@ public class Query: Sequelizable {
             return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return Loop.future(error: error)
+            return .new(error: error)
         }
     }
 
@@ -338,7 +338,7 @@ public class Query: Sequelizable {
             return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return Loop.future(error: error)
+            return .new(error: error)
         }
     }
 
@@ -348,7 +348,7 @@ public class Query: Sequelizable {
             return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return Loop.future(error: error)
+            return .new(error: error)
         }
     }
 
@@ -358,7 +358,7 @@ public class Query: Sequelizable {
             return self.database.runRawQuery(sql.query, values: sql.bindings)
         }
         catch let error {
-            return Loop.future(error: error)
+            return .new(error: error)
         }
     }
 }

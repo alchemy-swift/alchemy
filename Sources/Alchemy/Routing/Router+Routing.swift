@@ -114,7 +114,7 @@ extension VoidCodable: HTTPResponseEncodable {
     // MARK: HTTPResponseEncodable
     
     func encode() throws -> EventLoopFuture<HTTPResponse> {
-        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }
 
@@ -125,6 +125,6 @@ extension Encodable {
     // MARK: HTTPResponseEncodable
     
     public func encode() throws -> EventLoopFuture<HTTPResponse> {
-        Loop.future(value: HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }
