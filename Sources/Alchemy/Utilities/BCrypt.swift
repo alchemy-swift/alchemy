@@ -1,6 +1,8 @@
+/// All credit to https://github.com/vapor/vapor/blob/master/Sources/Vapor/Bcrypt/Bcrypt.swift
+///
+/// This depends on the supplied `CBCrypt` C library.
 import CBcrypt
 
-// MARK: BCrypt
 /// Creates and verifies BCrypt hashes.
 ///
 /// Use BCrypt to create hashes for sensitive information like passwords.

@@ -2,20 +2,42 @@ import NIO
 import NIOHTTP1
 
 extension Router {
+    /// Adds a handler at a given method and path.
+    ///
+    /// - Parameters:
+    ///   - method: the method of requests this handler will handle.
+    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
+    ///           `:` (See `PathParameter`).
+    ///   - action: the handler to respond to a matching request with.
+    /// - Returns: this router for continuing to build a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String = "",
-                   do action: @escaping (Input) throws -> Output) -> Self {
+    public func on(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (HTTPRequest) throws -> HTTPResponseEncodable
+    ) -> Self {
         self.add(handler: action, for: method, path: path)
         return self
     }
 }
 
-/// `Void` sugar, since `Void` can't conform to a protocol.
-extension Router where Output == HTTPResponseEncodable {
-    /// For `Void`.
+/// These extensions are all sugar for defining handlers, since it's not possible to conform all
+/// handler return types we wish to support to `HTTPResponseEncodable`.
+extension Router {
+    /// Adds a handler at a given method and path.
+    ///
+    /// - Parameters:
+    ///   - method: the method of requests this handler will handle.
+    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
+    ///           `:` (See `PathParameter`).
+    ///   - action: the handler to respond to a matching request with.
+    /// - Returns: this router for continuing to build a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String = "",
-                   do action: @escaping (Input) throws -> Void) -> Self {
+    public func on(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (HTTPRequest) throws -> Void
+    ) -> Self {
         self.add(
             handler: { out -> VoidCodable in
                 try action(out)
@@ -27,37 +49,82 @@ extension Router where Output == HTTPResponseEncodable {
         return self
     }
     
-    /// For `EventLoopFuture<Void>`.
+    /// Adds a handler at a given method and path.
+    ///
+    /// - Parameters:
+    ///   - method: the method of requests this handler will handle.
+    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
+    ///           `:` (See `PathParameter`).
+    ///   - action: the handler to respond to a matching request with.
+    /// - Returns: this router for continuing to build a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String = "",
-                   do action: @escaping (Input) throws -> EventLoopFuture<Void>) -> Self {
+    public func on(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (HTTPRequest) throws -> EventLoopFuture<Void>
+    ) -> Self {
         self.add(handler: { try action($0).map { VoidCodable() } }, for: method, path: path)
+        return self
+    }
+    
+    /// Adds a handler at a given method and path.
+    ///
+    /// - Parameters:
+    ///   - method: the method of requests this handler will handle.
+    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
+    ///           `:` (See `PathParameter`).
+    ///   - action: the handler to respond to a matching request with.
+    /// - Returns: this router for continuing to build a handler chain.
+    @discardableResult
+    public func on<E: Encodable>(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (HTTPRequest) throws -> E
+    ) -> Self {
+        self.add(handler: { try action($0).encode() }, for: method, path: path)
+        return self
+    }
+    
+    /// Adds a handler at a given method and path.
+    ///
+    /// - Parameters:
+    ///   - method: the method of requests this handler will handle.
+    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
+    ///           `:` (See `PathParameter`).
+    ///   - action: the handler to respond to a matching request with.
+    /// - Returns: this router for continuing to build a handler chain.
+    @discardableResult
+    public func on<E: Encodable>(
+        _ method: HTTPMethod,
+        at path: String = "",
+        do action: @escaping (HTTPRequest) throws -> EventLoopFuture<E>
+    ) -> Self {
+        self.add(
+            handler: { try action($0).flatMapThrowing { try $0.encode() } },
+            for: method, path: path
+        )
         return self
     }
 }
 
-/// `Codable` sugar; protocol extensions can't have inheritence clauses so we can't conform
-/// `Codable` to `HTTPResponseEncodable`.
-extension Router where Output == HTTPResponseEncodable {
-    /// For `Codable`.
-    @discardableResult
-    public func on<E: Encodable>(
-        _ method: HTTPMethod,
-        at path: String = "",
-        do action: @escaping (Input) throws -> E
-    ) -> Self {
-        self.add(handler: { CodableWrapper(obj: try action($0)) }, for: method, path: path)
-        return self
-    }
+/// Used as the response for a handler returns `Void` or `EventLoopFuture<Void>`.
+private struct VoidCodable: Codable {}
+
+extension VoidCodable: HTTPResponseEncodable {
+    // MARK: HTTPResponseEncodable
     
-    /// For `EventLoopFuture<E: Encodable>`.
-    @discardableResult
-    public func on<E: Encodable>(
-        _ method: HTTPMethod,
-        at path: String = "",
-        do action: @escaping (Input) throws -> EventLoopFuture<E>
-    ) -> Self {
-        self.add(handler: { try action($0).map(CodableWrapper.init) }, for: method, path: path)
-        return self
+    func encode() throws -> EventLoopFuture<HTTPResponse> {
+        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    }
+}
+
+// Sadly `Swift` doesn't allow a protocol to conform to another protocol in extensions, but we can
+// at least add the implementation here (and a special case router `.on` specifcally for
+// `Encodable`) types.
+extension Encodable {
+    // MARK: HTTPResponseEncodable
+    
+    public func encode() throws -> EventLoopFuture<HTTPResponse> {
+        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
     }
 }

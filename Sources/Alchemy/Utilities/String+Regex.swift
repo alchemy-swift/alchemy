@@ -1,9 +1,17 @@
 import Foundation
 
 extension String {
+    /// Replace all instances of a regex pattern with a string, determined by a closure.
+    ///
+    /// - Parameters:
+    ///   - pattern: the pattern to replace.
+    ///   - callback: the closure used to define replacements for the pattern. Takes an index and a
+    ///               string that is the token to replace.
+    /// - Returns: the string with replaced patterns.
     func replaceAll(matching pattern: String, callback: (Int, String) -> String?) -> String {
         let expression = try! NSRegularExpression(pattern: pattern, options: [])
-        let matches = expression.matches(in: self, options: [], range: NSRange(startIndex..<endIndex, in: self))
+        let matches = expression
+            .matches(in: self, options: [], range: NSRange(startIndex..<endIndex, in: self))
         let size = matches.count - 1
         return matches.reversed()
             .enumerated()

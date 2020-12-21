@@ -4,7 +4,7 @@ import XCTest
 final class MigrationTests: XCTestCase {
     private struct SomeJSON: Encodable {
         let name = "Josh"
-        let age = 26
+        let age = 27
     }
     
     func testTables() {
@@ -12,10 +12,10 @@ final class MigrationTests: XCTestCase {
             $0.create(table: "users") { table in
                 table.uuid("id").primary().default(expression: "uuid_generate_v4()")
                 table.double("bmi").default(val: 15.0)
-                table.string("email").nullable(false).unique()
+                table.string("email").notNull().unique()
                 table.int("age").default(val: 21)
                 table.bool("is_pro")
-                table.timestamp("created_at")
+                table.date("created_at")
                 table.json("some_json").default(val: SomeJSON().sql)
                 table.uuid("parent_id").references("id", on: "users")
             }
@@ -102,7 +102,7 @@ final class MigrationTests: XCTestCase {
 
 extension Schema {
     convenience init(setup: (Schema) -> Void) {
-        self.init()
+        self.init(grammar: Grammar())
         setup(self)
     }
 }

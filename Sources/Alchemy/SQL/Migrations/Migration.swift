@@ -1,69 +1,40 @@
+/// A `Migration` provides functionality for adding and rolling back changes to the schema of a
+/// relational database.
 public protocol Migration {
+    /// The schema changes that should be run when applying this migration to a database.
+    ///
+    /// - Parameter schema: the schema to build changes on.
     func up(schema: Schema)
+    
+    /// The schema changes that should be run when rolling back this migration to a database.
+    ///
+    /// - Parameter schema: the schema to build changes on.
     func down(schema: Schema)
 }
 
 extension Migration {
+    /// The name of this migration.
     var name: String {
         Alchemy.name(of: Self.self)
     }
     
-    func upSchema() -> Schema {
-        let schema = Schema()
+    /// Returns SQL statements for running the `.up` function of this migration.
+    ///
+    /// - Parameter grammar: the grammar to generate statements with.
+    /// - Returns: the statements to run to apply this migration.
+    func upStatements(for grammar: Grammar) -> [SQL] {
+        let schema = Schema(grammar: grammar)
         self.up(schema: schema)
-        return schema
+        return schema.statements
     }
     
-    func downSchema() -> Schema {
-        let schema = Schema()
+    /// Returns SQL statements for running the `.down` function of this migration.
+    ///
+    /// - Parameter grammar: the grammar to generate statements with.
+    /// - Returns: the statements to run to rollback this migration.
+    func downStatements(for grammar: Grammar) -> [SQL] {
+        let schema = Schema(grammar: grammar)
         self.down(schema: schema)
-        return schema
-    }
-}
-
-public class Schema {
-    private var grammar = MigrationGrammar()
-    var statements: [SQL] = []
-    
-    func append(statements: [SQL]) {
-        self.statements = self.statements + statements
-    }
-}
-
-extension Schema {
-    public func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
-        var createBuilder = CreateTableBuilder()
-        builder(&createBuilder)
-        
-        let createColumns = self.grammar.compileCreate(table: table, columns: createBuilder.createColumns)
-        let createIndexes = self.grammar.compileCreateIndexes(table: table, indexes: createBuilder.createIndexes)
-        self.append(statements: [createColumns] + createIndexes)
-    }
-    
-    public func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
-        var alterBuilder = AlterTableBuilder()
-        builder(&alterBuilder)
-        
-        let changes = self.grammar.compileAlter(table: table, dropColumns: alterBuilder.dropColumns,
-                                                      addColumns: alterBuilder.createColumns)
-        let renames = alterBuilder.renameColumns
-            .map { self.grammar.compileRenameColumn(table: table, column: $0.column, to: $0.to) }
-        let dropIndexes = alterBuilder.dropIndexes
-            .map { self.grammar.compileDropIndex(table: table, indexName: $0) }
-        let createIndexes = self.grammar
-            .compileCreateIndexes(table: table, indexes: alterBuilder.createIndexes)
-        self.append(statements: changes + renames + dropIndexes + createIndexes)
-    }
-    
-    public func drop(table: String) {
-        self.append(statements: [self.grammar.compileDrop(table: table)])
-    }
-    
-    public func rename(table: String, to: String) {
-        self.append(statements: [self.grammar.compileRename(table: table, to: to)])
-    }
-    
-    public func raw(sql: String) {
-        self.append(statements: [SQL(sql, bindings: [])])
+        return schema.statements
     }
 }

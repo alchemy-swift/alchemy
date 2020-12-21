@@ -132,7 +132,7 @@ struct LoggingMiddleware: Middleware {
         //
         // If the operation is synchronous, just create a new `EventLoopFuture`
         // given the `eventLoop` of the current request.
-        return request.eventLoop.future(request)
+        return .new(request)
     }
 }
 ```
@@ -158,8 +158,7 @@ Sometimes you may want a Middleware to add some data to an `HTTPRequest`. You ca
 struct ExperimentMiddleware {
     func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
         let config: ExperimentConfig = ...
-        request.set(config)
-        return request.eventLoop.future(request)
+        return .new(request.set(config))
     }
 }
 

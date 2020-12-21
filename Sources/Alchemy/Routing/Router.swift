@@ -1,36 +1,56 @@
 import NIO
 import NIOHTTP1
 
+/// The escape character for escaping path parameters.
+///
+/// e.g. /users/:userID/todos/:todoID would have path parameters named `userID` and `todoID`.
 fileprivate let kRouterPathParameterEscape = ":"
 
+/// This key is used for storing handlers in a dictionary for quick lookup.
 private struct HTTPKey: Hashable {
-    // The path of the request, relative to the host.
+    /// The path of the request, relative to the host.
     let fullPath: String
-    // The method of the request.
+    /// The method of the request.
     let method: HTTPMethod
 }
 
-/// Router. Takes an `HTTPRequest` and routes it to a handler.
-///
-/// `Input` represents the type the router passes to a handler.
-/// `Output` represents the type the router expects back from a handler.
-public final class Router<Input, Output> {
-    typealias MiddlewareClosure = (HTTPRequest) -> EventLoopFuture<Input>
+/// An `Router` responds to HTTP requests from the client. Specifically, it takes an `HTTPRequest`
+/// and routes it to a handler that returns an `HTTPResponseEncodable`.
+public final class Router: SingletonService {
+    /// Represents a middleware closure for this router.
+    typealias MiddlewareClosure = (HTTPRequest) -> EventLoopFuture<HTTPRequest>
     
+    /// The path of this router, used for storing the path when the user calls `.path(...)`.
     private let basePath: String
+    
     /// Middleware to apply to any requests before passing to a handler.
     private let middleware: MiddlewareClosure
-    /// Child routers, erased to a closure.
-    private var erasedChildren: [((HTTPRequest) -> EventLoopFuture<Output>?)] = []
+    
+    /// Child routers, erased to a closure. Ordered in the order that they should respond to a
+    /// request.
+    private var erasedChildren: [((HTTPRequest) -> EventLoopFuture<HTTPResponseEncodable>?)] = []
+    
     /// Handlers to route requests to.
-    private var handlers: [HTTPKey: (Input) throws -> Output] = [:]
-
-    init(basePath: String = "", middleware: @escaping MiddlewareClosure) {
-        self.basePath = basePath
-        self.middleware = middleware
+    private var handlers: [HTTPKey: (HTTPRequest) throws -> HTTPResponseEncodable] = [:]
+    
+    /// Creates a new router with an optional base path.
+    ///
+    /// - Parameters:
+    ///   - basePath: any string that should be prepended to all handler URIs added to this router.
+    ///               Defaults to nil.
+    ///   - middleware: any middleware closure that should be run on a request routed by this router
+    ///                 before handling. Defaults to nil.
+    private init(basePath: String? = nil, middleware: MiddlewareClosure? = nil) {
+        self.basePath = basePath ?? ""
+        self.middleware = middleware ?? { .new($0) }
     }
     
-    private func childrenHandle(request: HTTPRequest) -> EventLoopFuture<Output>? {
+    /// Attempts to handle a request via child handlers. Returns nil if no child handler can handle
+    /// the request.
+    ///
+    /// - Parameter request: the request to pass off to this router's child handlers.
+    /// - Returns: a response future if a child was able to handle the reqeust, nil if not.
+    private func childrenHandle(request: HTTPRequest) -> EventLoopFuture<HTTPResponseEncodable>? {
         for child in self.erasedChildren {
             if let output = child(request) {
                 return output
@@ -40,22 +60,36 @@ public final class Router<Input, Output> {
         return nil
     }
     
-    func add(handler: @escaping (Input) throws -> Output, for method: HTTPMethod, path: String) {
+    /// Adds a handler to this router. A handler takes an `HTTPRequest` and returns an
+    /// `HTTPResponseEncodable`.
+    ///
+    /// - Parameters:
+    ///   - handler: the closure for handling a request matching the given method and path.
+    ///   - method: the method of a request this handler expects.
+    ///   - path: the path of a requst this handler can handle.
+    func add(handler: @escaping (HTTPRequest) throws -> HTTPResponseEncodable, for method: HTTPMethod, path: String) {
         self.handlers[HTTPKey(fullPath: self.basePath + path, method: method)] = handler
     }
     
-    func handle(request: HTTPRequest) -> EventLoopFuture<Output>? {
+    /// Attempts to handle a request. If the request has any dynamic path parameters in its URI,
+    /// this will parse those out from the actual URI and set them on the `HTTPRequest` before
+    /// passing it to the handler closure.
+    ///
+    /// - Parameter request: the request this router will attempt to handle.
+    /// - Returns: a future containing the response of the handler if there was a matching handler.
+    ///            nil if there were no matching handlers.
+    func handle(request: HTTPRequest) -> EventLoopFuture<HTTPResponseEncodable>? {
         for (key, value) in self.handlers {
             guard request.method == key.method else {
                 continue
             }
             
-            let matchResult = request.path.matchAndParseParameters(routablePath: key.fullPath)
-            guard matchResult.isMatch else {
+            let (isMatch, parameters) = request.path.matchAndParseParameters(routablePath: key.fullPath)
+            guard isMatch else {
                 continue
             }
             
-            request.pathParameters = matchResult.parsedPathParameters
+            request.pathParameters = parameters
             
             return self.middleware(request)
                 .flatMapThrowing { try value($0) }
@@ -64,9 +98,13 @@ public final class Router<Input, Output> {
         return self.childrenHandle(request: request)
     }
     
-    // A middleware that does something, but doesn't change the type
-    public func middleware<M: Middleware>(_ middleware: M) -> Router<Input, Output> {
-        let router = Router { req in
+    /// Returns a new router, a child of this one, that will apply the given middleware to any
+    /// requests handled by it.
+    ///
+    /// - Parameter middleware: the middleware which will intercept all requests on this new router.
+    /// - Returns: the new router with the middleware.
+    public func middleware<M: Middleware>(_ middleware: M) -> Self {
+        let router = Self { req in
             middleware.intercept(req)
                 .flatMap { self.middleware($0) }
         }
@@ -74,43 +112,54 @@ public final class Router<Input, Output> {
         return router
     }
 
-    /// Update the path for subsequent requests in the router chain.
-    public func path(_ path: String) -> Router<Input, Output> {
-        let router = Router(basePath: self.basePath + path, middleware: self.middleware)
+    /// Returns a new router, a child of this one, that will prepend the given string to the URIs of
+    /// all it's handlers.
+    ///
+    /// - Parameter path: the string to prepend to the URIs of all the new router's handlers.
+    /// - Returns: the newly created `Router`, a child of `self`.
+    public func path(_ path: String) -> Self {
+        let router = Self(basePath: self.basePath + path, middleware: self.middleware)
         self.erasedChildren.append(router.handle)
         return router
+    }
+    
+    /// Middleware that will be applied to all requests of the application, regardless of whether
+    /// they are able to be handled or not. Global middlewares intercept request in the order of
+    /// this array, before any other middleware does.
+    public static var globalMiddlewares: [Middleware] = []
+    
+    // MARK: SingletonService
+    
+    public static func singleton(in container: Container) throws -> Router {
+        Router()
     }
 }
 
 extension HTTPMethod: Hashable {
+    // MARK: Hashable
+    
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.rawValue)
     }
 }
 
 extension String {
-    fileprivate struct RouterMatchResult {
-        let isMatch: Bool
-        let parsedPathParameters: [PathParameter]
-        
-        static func `true`(_ params: [PathParameter]) -> RouterMatchResult {
-            RouterMatchResult(isMatch: true, parsedPathParameters: params)
-        }
-        
-        static func `false`(_ params: [PathParameter]) -> RouterMatchResult {
-            RouterMatchResult(isMatch: false, parsedPathParameters: params)
-        }
-    }
-    
-    /// Indicates whether `self` matches a given `routablePath`. Any matching path parameters, denoted by
-    /// their starting escape character `kRouterPathParameterEscape`, are returned as well.
-    fileprivate func matchAndParseParameters(routablePath: String) -> RouterMatchResult {
+    /// Indicates whether `self` matches a given `routablePath`. Any matching path parameters in the
+    /// routablePath, denoted by their starting escape character `kRouterPathParameterEscape`, are
+    /// returned as well.
+    ///
+    /// - Parameter routablePath: the routing path to test this string against.
+    /// - Returns: a tuple with a `Bool` indicating whether the path was a match & any
+    ///            `PathParameter`s that were extracted.
+    fileprivate func matchAndParseParameters(
+        routablePath: String
+    ) -> (isMatch: Bool, pathParameters: [PathParameter]) {
         let pathParts = self.split(separator: "/")
         let routablePathParts = routablePath.split(separator: "/")
         var parameters: [PathParameter] = []
         
         guard pathParts.count == routablePathParts.count else {
-            return .false(parameters)
+            return (false, parameters)
         }
         
         for (index, pathPart) in pathParts.enumerated() {
@@ -126,10 +175,10 @@ extension String {
             }
             
             if pathPart != routablePathPart {
-                return .false(parameters)
+                return (false, parameters)
             }
         }
         
-        return .true(parameters)
+        return (true, parameters)
     }
 }
