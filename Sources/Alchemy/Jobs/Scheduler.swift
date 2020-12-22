@@ -11,13 +11,13 @@ import NIO
 ///     .schedule(RunQueries(), every: 1.minutes.at(sec: 30))
 ///     .schedule(CheckAlerts(), every: 1.minutes.at(sec: 00))
 /// ```
-public struct Scheduler: SingletonService {
+public struct Scheduler {
     /// The global `MultiThreadedEventLoopGroup` for scheduling work on.
-    @Inject var group: MultiThreadedEventLoopGroup
+    @Inject var group: EventLoopGroup
     
     /// The loop on which Job scheduling will be done. Note that the actual Jobs will be run on
     /// `EventLoop`s dequeued from the application's `MultiThreadedEventLoopGroup`.
-    private var scheduleLoop: EventLoop
+    let scheduleLoop: EventLoop
     
     /// Schedules a `Job` at a recurring interval.
     ///
@@ -41,11 +41,5 @@ public struct Scheduler: SingletonService {
             }
         
         return self
-    }
-    
-    // MARK: SingletonService
-
-    public static func singleton(in container: Container) throws -> Scheduler {
-        Scheduler(scheduleLoop: Loop.current)
     }
 }

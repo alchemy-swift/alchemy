@@ -36,7 +36,7 @@ public final class MySQLDatabase: Database {
                     )
                 }
             }()),
-            on: MultiThreadedEventLoopGroup.global()
+            on: Container.global.resolve(EventLoopGroup.self)
         )
     }
     
