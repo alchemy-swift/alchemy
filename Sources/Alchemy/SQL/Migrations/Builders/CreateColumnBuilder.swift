@@ -113,7 +113,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
         json: E,
         encoder: JSONEncoder = JSONEncoder()
     ) throws -> Self {
-        let jsonData = try encoder.encode(encodable)
+        let jsonData = try encoder.encode(json)
         let jsonString = String(decoding: jsonData, as: UTF8.self)
         return self.appending(modifier: "DEFAULT '\(jsonString)'::jsonb")
     }
