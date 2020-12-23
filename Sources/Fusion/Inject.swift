@@ -25,10 +25,10 @@ public class Inject<Service> {
     /// injecting. Used for storing any identifiers of a `MultitonService`.
     var identifier: AnyHashable?
     
-    /// This should never be called; `subscript` should intercept all calls through here.
+    /// An instance of the service this property wrapper is injecting.
     public var wrappedValue: Service {
-        get { fatalError("This should never be called.") }
-        set { fatalError("This should never be called.") }
+        get { self.resolve(in: .global) }
+        set { fatalError("Injected services shouldn't be set manually.") }
     }
     
     /// Create the property wrapper with no identifier.
@@ -57,7 +57,7 @@ public class Inject<Service> {
         set {
             // This setter is needed so that the propert wrapper will have a `WritableKeyPath` for
             // using this subscript.
-            fatalError("Services should not be set.")
+            fatalError("Injected services shouldn't be set manually.")
         }
     }
 }

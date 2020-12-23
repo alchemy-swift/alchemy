@@ -3,12 +3,28 @@ import Foundation
 import NIO
 
 struct ExampleApplication: Application {
-    @Inject var postgres: PostgresDatabase
-    @Inject var mysql: MySQLDatabase
     @Inject var router: Router
     
     func setup() {
-        DB.default = self.postgres
+        // Register global database
+        Container.global.register(singleton: Database.self) { _ in
+            PostgresDatabase(config: .postgres)
+        }
+        
+        Container.global.register(String.self) { _ in
+            "Hello from injection"
+        }
+        
+        var database = Container.global.resolve(Database.self)
+        
+        let ep = FriendAPI().friends
+        print("ep: \(ep.baseURL)")
+        let ep2 = FriendAPI2(baseURL: "LOL!").friends
+        print("ep2: \(ep2.baseURL)")
+        let ij = TestingInject()
+        print("ij: \(ij.string)")
+        
+        DB.default = database
         
         // Applied to all incoming requests.
         Router.globalMiddlewares = [
@@ -67,7 +83,7 @@ struct ExampleApplication: Application {
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
             }
         
-        DB.default.migrations.append(contentsOf: [
+        database.migrations.append(contentsOf: [
             _20200119117000CreateUsers(),
             _20200219117000CreateTodos(),
             _20200319117000RenameTodos(),
@@ -125,4 +141,9 @@ struct LoggingMiddleware: Middleware {
         Log.info("Got a request to \(request.path).")
         return .new(request)
     }
+}
+
+struct TestingInject {
+    @Inject
+    var string: String
 }

@@ -1,11 +1,11 @@
 @testable import Alchemy
 
 struct TestAPI {
-    @POST("/v1/accounts/{userID}/transfer")
+    @POST("/v1/accounts/:userID/transfer")
     var test: Endpoint<TestReqDTO, TestResDTO>
 }
 
-struct TestReqDTO: RequestCodable {
+struct TestReqDTO: EndpointRequest {
     @Path   var userID: String
     @HTTPQuery  var number: Int
     @HTTPQuery  var someThings: [String]

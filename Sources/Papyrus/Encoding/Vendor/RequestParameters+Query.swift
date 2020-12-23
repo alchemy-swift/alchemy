@@ -1,6 +1,6 @@
 import Foundation
 
-/// Ripped off of https://github.com/Alamofire/Alamofire
+/// Courtesy of https://github.com/Alamofire/Alamofire .
 extension EncodingHelper {
     /// Creates a percent-escaped, URL encoded query string components from the given key-value pair recursively.
     ///

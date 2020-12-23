@@ -14,7 +14,7 @@ public protocol API {
 extension API {
     /// Request an endpoint with an empty request type & a non-empty Response type.
     public func request<Res>(_ endpoint: Endpoint<Papyrus.Empty, Res>) -> DataRequest {
-        self.session.request(baseURL + endpoint.basePath, method: endpoint.method.af)
+        self.session.request(baseURL + endpoint.path, method: endpoint.method.af)
     }
     
     /// Request an endpoint with a non-empty Response & Request type.

@@ -1,29 +1,29 @@
 import Foundation
 
 /// Conform your request objects to this.
-public extension Endpoint {
-    func parameters(dto: Req) throws -> RequestParameters {
+extension Endpoint {
+    public func parameters(dto: Req) throws -> RequestParameters {
         let helper = EncodingHelper(dto)
         return RequestParameters(
             method: self.method,
             headers: helper.getHeaders(),
-            basePath: self.basePath,
+            basePath: self.path,
             query: helper.queryString(),
-            fullPath: try helper.getFullPath(self.basePath),
+            fullPath: try helper.getFullPath(self.path),
             body: try helper.getBody()
         )
     }
 }
 
 public struct RequestParameters {
-    public let method: HTTPReqMethod
+    public let method: EndpointMethod
     public let headers: [String: String]
     public let basePath: String
     public let query: String
     public let fullPath: String
     public let body: (content: AnyEncodable, contentType: ContentType)?
     
-    public static func just(url: String, method: HTTPReqMethod) -> RequestParameters {
+    public static func just(url: String, method: EndpointMethod) -> RequestParameters {
         RequestParameters(method: method, headers: [:], basePath: url, query: "", fullPath: url, body: nil)
     }
     
@@ -44,10 +44,6 @@ struct EncodingHelper {
     private var paths: [String: AnyPath] = [:]
 
     fileprivate init<T>(_ value: T) {
-        if let value = value as? BodyCodable {
-            self.bodies["body"] = ErasedBody(content: value.toAny(), contentType: .json)
-            return
-        }
         Mirror(reflecting: value)
             .children
             .forEach { child in
@@ -72,16 +68,6 @@ struct EncodingHelper {
         try self.replacedPath(basePath) + self.queryString()
     }
 
-    private func replacedPath(_ basePath: String) throws -> String {
-        try self.paths.reduce(into: basePath) { basePath, component in
-            guard basePath.contains(":\(component.key)") else {
-                throw PapyrusError("Tried to encode path component '\(component.key)' but didn't find any instance of ':\(component.key)' in the path.")
-            }
-
-            basePath = basePath.replacingOccurrences(of: ":\(component.key)", with: component.value.value)
-        }
-    }
-
     func queryString() -> String {
         self.queries.isEmpty ? "" :
             "?" + self.queries.sorted { $0.key < $1.key }
@@ -103,6 +89,16 @@ struct EncodingHelper {
     func getHeaders() -> [String: String] {
         self.headers.reduce(into: [String: String]()) { dict, val in
             dict[val.key] = val.value.value
+        }
+    }
+    
+    private func replacedPath(_ basePath: String) throws -> String {
+        try self.paths.reduce(into: basePath) { basePath, component in
+            guard basePath.contains(":\(component.key)") else {
+                throw PapyrusError("Tried to encode path component '\(component.key)' but didn't find any instance of ':\(component.key)' in the path.")
+            }
+
+            basePath = basePath.replacingOccurrences(of: ":\(component.key)", with: component.value.value)
         }
     }
 }

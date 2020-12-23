@@ -9,7 +9,7 @@ final class EncodingTests: XCTestCase {
         let params = try testAPI.test.parameters(dto: reqDTO)
         XCTAssert(params.fullPath.hasPrefix("/v1/accounts/1234/transfer"))
         XCTAssert(params.fullPath.hasSuffix("?number=1"))
-        XCTAssert(params.method == .POST)
+        XCTAssert(params.method == .post)
         
         /// Todo data test
     }
