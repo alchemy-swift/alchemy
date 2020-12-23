@@ -5,8 +5,8 @@ public protocol AnyHeader {
 
 @propertyWrapper
 public struct Header: Codable, AnyHeader {
-    public var wrappedValue: String
     public var keyOverride: String?
+    public var wrappedValue: String
     public var value: String { wrappedValue }
     
     public init(wrappedValue: String) {

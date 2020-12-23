@@ -6,7 +6,9 @@
 /// `EndpointGroup`.
 ///
 /// `Endpoint`s are intended to be used on either client or server for requesting external endpoints
-/// or on server for providing and validating endpoints.
+/// or on server for providing and validating endpoints. There are partner libraries (
+/// `PapyrusAlamofire` and `Alchemy`) for requesting or validating endpoints on client or server
+/// platforms.
 public struct Endpoint<Request: EndpointRequest, Response: Codable> {
     /// The method, or verb, of this endpoint.
     public let method: EndpointMethod
@@ -39,11 +41,16 @@ extension EndpointRequest {
     ///   - request: the request to initialize this type from.
     /// - Throws: any error encountered while decoding this type from the request.
     public init(from request: DecodableRequest) throws {
-        try self.init(from: RequestDecoder(request: request, keyMapping: { $0 }))
+        try self.init(from: RequestDecoder(request: request))
     }
 }
 
 extension DecodableRequest {
+    /// Decodes the given `EndpointRequest` type from this request.
+    ///
+    /// - Parameter requestType: the type to decode. Defaults to E.self.
+    /// - Throws: an error encountered while decoding the type.
+    /// - Returns: an instance of `E` decoded from this request.
     public func decodeRequest<E: EndpointRequest>(_ requestType: E.Type = E.self) throws -> E {
         try E(from: self)
     }

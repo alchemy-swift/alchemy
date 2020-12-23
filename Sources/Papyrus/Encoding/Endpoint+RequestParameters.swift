@@ -96,7 +96,7 @@ private struct EncodingHelper {
 
                 let sanitizedLabel = String(label.dropFirst())
                 if let query = child.value as? AnyQuery {
-                    self.queries[sanitizedLabel] = query
+                    self.queries[query.keyOverride ?? sanitizedLabel] = query
                 } else if let body = child.value as? AnyBody {
                     self.bodies[sanitizedLabel] = body
                 } else if let header = child.value as? AnyHeader {

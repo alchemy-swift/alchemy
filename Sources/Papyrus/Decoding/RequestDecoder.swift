@@ -33,9 +33,6 @@ struct RequestDecoder: Decoder {
     /// The `DecodableRequest` from which fields on the `EndpointRequest` will be decoded.
     let request: DecodableRequest
     
-    /// Any mapping from the `CodingKey` names to their keys on the request.
-    let keyMapping: KeyMapping
-    
     // MARK: Decoder
     
     var codingPath: [CodingKey] = []
@@ -44,7 +41,7 @@ struct RequestDecoder: Decoder {
     func container<Key>(
         keyedBy type: Key.Type
     ) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
-        KeyedDecodingContainer(KeyedContainer(request: self.request, keyMapping: self.keyMapping))
+        KeyedDecodingContainer(KeyedContainer(request: self.request))
     }
     
     func unkeyedContainer() throws -> UnkeyedDecodingContainer { try error() }
@@ -80,9 +77,6 @@ private struct RequestComponentDecoder: Decoder {
 private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     /// The request from which we are decoding.
     let request: DecodableRequest
-    
-    /// Any mapping from the property name of the field to it's request-component-key counterpart.
-    let keyMapping: KeyMapping
     
     // MARK: KeyedDecodingContainerProtocol
     
