@@ -3,7 +3,15 @@ import Papyrus
 import NIO
 
 public extension Router {
-    /// Register an Endpoint.
+    /// Registers a `Papyrus.Endpoint` to a `Router`. When an incoming request matches the path of
+    /// the `Endpoint`, the `Endpoint.Request` will automatically be decoded from the incoming
+    /// `HTTPRequest` for use in the provided handler.
+    ///
+    /// - Parameters:
+    ///   - endpoint: the endpoint to register on this router.
+    ///   - closure: the handler for handling incoming requests that match this endpoint's path.
+    ///              This handler expects a future containing an instance of the endpoint's response
+    ///              type.
     func register<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
         use closure: @escaping (HTTPRequest, Req) throws -> EventLoopFuture<Res>
@@ -13,7 +21,13 @@ public extension Router {
         }
     }
     
-    /// Register an Endpoint with Empty request type.
+    /// Registers a `Papyrus.Endpoint` that has an `Empty` request type, to a `Router`.
+    ///
+    /// - Parameters:
+    ///   - endpoint: the endpoint to register on this router.
+    ///   - closure: the handler for handling incoming requests that match this endpoint's path.
+    ///              This handler expects a future containing an instance of the endpoint's response
+    ///              type.
     func register<Res>(
         _ endpoint: Endpoint<Empty, Res>,
         use closure: @escaping (HTTPRequest) throws -> EventLoopFuture<Res>
@@ -21,7 +35,13 @@ public extension Router {
         self.on(endpoint.method.nio, at: endpoint.path, do: closure)
     }
     
-    /// Register an Endpoint with a `Void` response type.
+    /// Registers a `Papyrus.Endpoint` that has an `Empty` response type, to a `Router`. When an
+    /// incoming request matches the path of the `Endpoint`, the `Endpoint.Request` will automatically
+    /// be decoded from the incoming `HTTPRequest` for use in the provided handler.
+    ///
+    /// - Parameters:
+    ///   - endpoint: the endpoint to register on this router.
+    ///   - closure: the handler for handling incoming requests that match this endpoint's path.
     func register<Req>(
         _ endpoint: Endpoint<Req, Empty>,
         use closure: @escaping (HTTPRequest, Req) throws -> EventLoopFuture<Void>
@@ -34,6 +54,8 @@ public extension Router {
 }
 
 extension HTTPRequest: DecodableRequest {
+    // MARK: DecodableRequest
+    
     public func getHeader(for key: String) throws -> String {
         try self.headers.first(name: key)
             .unwrap(or: PapyrusError("Expected `\(key)` in the request headers."))
@@ -59,12 +81,14 @@ extension HTTPRequest: DecodableRequest {
                 .unwrap(or: PapyrusError("There was no body in this request."))
                 .decodeJSON(as: T.self)
         } catch {
-            throw PapyrusError("Encountered an error decoding the body to type `\(T.self)`: \(error)")
+            throw PapyrusError("Encountered an error decoding the body to type `\(T.self)`: "
+                                + "\(error)")
         }
     }
 }
 
 extension EndpointMethod {
+    /// Converts the Papyrus HTTP verb type to it's NIO equivalent.
     fileprivate var nio: HTTPMethod {
         HTTPMethod(rawValue: self.rawValue)
     }

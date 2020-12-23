@@ -1,202 +1,172 @@
-typealias KeyMappingStrategy = (String) -> String
+/// The strategy for mapping the property names in the `DecodableRequest` type to their correlating
+/// fields (header, query, path parameter, etc) on a request.
+typealias KeyMapping = (String) -> String
 
-/// Decodes a `EndpointRequest` from a `HTTPRequest`.
-struct HTTPRequestDecoder: Decoder {
-    var codingPath: [CodingKey] = []
-    var userInfo: [CodingUserInfoKey : Any] = [:]
-    let request: DecodableRequest
-    
-    let keyMappingStrategy: KeyMappingStrategy
-    
-    init(request: DecodableRequest, keyMappingStrategy: @escaping KeyMappingStrategy) {
-        self.request = request
-        self.keyMappingStrategy = keyMappingStrategy
-    }
-    
-    func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
-        KeyedDecodingContainer(KeyedContainer(request: self.request, keyMappingStrategy: self.keyMappingStrategy))
-    }
-    
-    func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        /// This is for arrays, which we currently support in other ways.
-        throw PapyrusError("This shouldn't be called; top level is keyed.")
-    }
-    
-    func singleValueContainer() throws -> SingleValueDecodingContainer {
-        throw PapyrusError("This shouldn't be called; top level is keyed.")
-    }
+/// Throws an error letting the user know of the acceptable properties on an `EndpointRequest`.
+///
+/// - Throws: guaranteed to throw a `PapyrusError`.
+/// - Returns: a generic type, though this never returns.
+private func error<T>() throws -> T {
+    throw PapyrusError("Only properties wrapped by @Body, @Path, @Header, or @Query are " +
+                        "supported on an `EndpointRequest`")
 }
 
-private struct HTTPParamDecoder: Decoder {
+/// A component of an HTTP request.
+private enum RequestComponent {
+    /// The request body.
+    case body
+    
+    /// The request headers.
+    case header
+    
+    /// The request query string.
+    case query
+    
+    /// The request path.
+    case path
+}
+
+/// Decodes a `EndpointRequest` from a `DecodableRequest`. Technically, this can decode any
+/// `Decodable` type, but it will error out on any field that isn't `@Body`, `@Header`, `@Path` or
+/// `@Query`.
+struct RequestDecoder: Decoder {
+    /// The `DecodableRequest` from which fields on the `EndpointRequest` will be decoded.
+    let request: DecodableRequest
+    
+    /// Any mapping from the `CodingKey` names to their keys on the request.
+    let keyMapping: KeyMapping
+    
+    // MARK: Decoder
+    
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
+
+    func container<Key>(
+        keyedBy type: Key.Type
+    ) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
+        KeyedDecodingContainer(KeyedContainer(request: self.request, keyMapping: self.keyMapping))
+    }
+    
+    func unkeyedContainer() throws -> UnkeyedDecodingContainer { try error() }
+    func singleValueContainer() throws -> SingleValueDecodingContainer { try error() }
+}
+
+/// Decodes a value from a single component of the request.
+private struct RequestComponentDecoder: Decoder {
+    /// The request to decode from.
     let request: DecodableRequest
-    let param: HTTPParameter
+    
+    /// The parameter of the request to decode from.
+    let param: RequestComponent
+    
+    /// The key to decode with.
     let key: String
+
+    // MARK: Decoder
     
-    func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
-        throw PapyrusError("`container` shouldn't be called; this is only for single values.")
-    }
+    var codingPath: [CodingKey] = []
+    var userInfo: [CodingUserInfoKey : Any] = [:]
     
-    func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        throw PapyrusError("`unkeyedContainer` shouldn't be called; this is only for single values.")
-    }
+    func container<Key>(keyedBy type: Key.Type) throws
+        -> KeyedDecodingContainer<Key> where Key : CodingKey { try error() }
+    func unkeyedContainer() throws -> UnkeyedDecodingContainer { try error() }
     
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        HTTPRequestSingleValueDecodingContainer(request: self.request, parameter: self.param, key: self.key)
+        RequestComponentContainer(request: self.request, parameter: self.param, key: self.key)
     }
 }
 
+/// A keyed container for routing which request component a value should decode from.
 private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
-    /// Used for debugging only I believe; ignoring for now.
-    var codingPath: [CodingKey] = []
-    
-    /// From what I can tell this is only used in custom `decodes` (which we will explicitly say not to do
-    /// since it will break a lot of database coding logic).
-    ///
-    /// Can't populate here since there is no way to match database column strings to the original coding key,
-    /// without an inverse of the `DatabaseKeyMappingStrategy`.
-    ///
-    /// Consider coding key `userID` that when using snake case mapping gets mapped to `user_id`. We coudln't
-    /// convert that back properly, since there would be no way to know if it was `userId` or `userID`.
-    var allKeys: [Key] {
-        []
-    }
-    
+    /// The request from which we are decoding.
     let request: DecodableRequest
-    let keyMappingStrategy: KeyMappingStrategy
     
-    private func string(for key: Key) -> String {
-        self.keyMappingStrategy(key.stringValue)
-    }
+    /// Any mapping from the property name of the field to it's request-component-key counterpart.
+    let keyMapping: KeyMapping
     
-    func contains(_ key: Key) -> Bool {
-        fatalError("`contains` unsupported")
-    }
+    // MARK: KeyedDecodingContainerProtocol
     
-    func decodeNil(forKey key: Key) throws -> Bool {
-        throw PapyrusError("`decodeNil` unsupported.")
-    }
-    
-    func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
-        throw PapyrusError("`bool` unsupported.")
-    }
-    
-    func decode(_ type: String.Type, forKey key: Key) throws -> String {
-        throw PapyrusError("`string` unsupported.")
-    }
-    
-    func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
-        throw PapyrusError("`double` unsupported.")
-    }
-    
-    func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
-        throw PapyrusError("`float` unsupported.")
-    }
-    
-    func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
-        throw PapyrusError("`int` unsupported.")
-    }
-    
-    func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
-        throw PapyrusError("`int8` unsupported.")
-    }
-    
-    func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
-        throw PapyrusError("`int16` unsupported.")
-    }
-    
-    func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
-        throw PapyrusError("`int32` unsupported.")
-    }
-    
-    func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
-        throw PapyrusError("`int64` unsupported.")
-    }
-    
-    func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
-        throw PapyrusError("`uint` unsupported.")
-    }
-    
-    func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
-        throw PapyrusError("`uint8` unsupported.")
-    }
-    
-    func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
-        throw PapyrusError("`uint16` unsupported.")
-    }
-    
-    func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
-        throw PapyrusError("`uint32` unsupported.")
-    }
-    
-    func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
-        throw PapyrusError("`uint64` unsupported.")
-    }
+    var codingPath: [CodingKey] = []
+    var allKeys: [Key] = []
     
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
         if type is AnyHeader.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .header, key: key.stringValue))
+            return try T(
+                from: RequestComponentDecoder(
+                    request: self.request,
+                    param: .header,
+                    key: key.stringValue
+                )
+            )
         } else if type is AnyBody.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .body, key: key.stringValue))
+            return try T(
+                from: RequestComponentDecoder(
+                    request: self.request,
+                    param: .body,
+                    key: key.stringValue
+                )
+            )
         } else if type is AnyQuery.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .query, key: key.stringValue))
+            return try T(
+                from: RequestComponentDecoder(
+                    request: self.request,
+                    param: .query,
+                    key: key.stringValue
+                )
+            )
         } else if type is AnyPath.Type {
-            return try T(from: HTTPParamDecoder(request: self.request, param: .path, key: key.stringValue))
+            return try T(
+                from: RequestComponentDecoder(
+                    request: self.request,
+                    param: .path,
+                    key: key.stringValue
+                )
+            )
         } else {
-            throw PapyrusError("`\(type)` unsupported.")
+            return try error()
         }
     }
     
-    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        throw PapyrusError("This shouldn't be called? http nextedContainer")
-    }
-    
-    func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-        throw PapyrusError("This shouldn't be called? http nestedUnkeyedContainer")
-    }
-    
-    func superDecoder() throws -> Decoder {
-        throw PapyrusError("This shouldn't be called? http superDecoder")
-    }
-    
-    func superDecoder(forKey key: Key) throws -> Decoder {
-        throw PapyrusError("This shouldn't be called? http superDecoder(forKey:)")
-    }
+    func contains(_ key: Key) -> Bool { true }
+    func decodeNil(forKey key: Key) throws -> Bool { try error() }
+    func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool { try error() }
+    func decode(_ type: String.Type, forKey key: Key) throws -> String { try error() }
+    func decode(_ type: Double.Type, forKey key: Key) throws -> Double { try error() }
+    func decode(_ type: Float.Type, forKey key: Key) throws -> Float { try error() }
+    func decode(_ type: Int.Type, forKey key: Key) throws -> Int { try error() }
+    func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 { try error() }
+    func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 { try error() }
+    func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 { try error() }
+    func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 { try error() }
+    func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt { try error() }
+    func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 { try error() }
+    func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 { try error() }
+    func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 { try error() }
+    func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 { try error() }
+    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws
+        -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey { try error() }
+    func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer { try error() }
+    func superDecoder() throws -> Decoder { try error() }
+    func superDecoder(forKey key: Key) throws -> Decoder { try error() }
 }
 
-private enum HTTPParameter {
-    case body, header, query, path
-}
-
-private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingContainer {
-    var codingPath: [CodingKey] = []
-    
+/// A single value container for decoding a value from a specific request component.
+private struct RequestComponentContainer: SingleValueDecodingContainer {
     let request: DecodableRequest
-    let parameter: HTTPParameter
+    let parameter: RequestComponent
     let key: String
     
-    func decodeNil() -> Bool {
-        fatalError("`optional` not supported yet")
-    }
+    // MARK: SingleValueDecodingContainer
     
-    func decode(_ type: Bool.Type) throws -> Bool {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `bool`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `bool`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `bool`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `bool`")
-        }
-    }
+    var codingPath: [CodingKey] = []
+    
+    func decodeNil() -> Bool { false }
+    func decode(_ type: Bool.Type) throws -> Bool { try unsupported(type) }
     
     func decode(_ type: String.Type) throws -> String {
         switch self.parameter {
         case .body:
-            throw PapyrusError("`body` doesn't suport `string`")
+            return try unsupported(type)
         case .header:
             return try self.request.getHeader(for: self.key)
         case .path:
@@ -206,179 +176,44 @@ private struct HTTPRequestSingleValueDecodingContainer: SingleValueDecodingConta
         }
     }
     
-    func decode(_ type: Double.Type) throws -> Double {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `double`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `double`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `double`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `double`")
-        }
-    }
-    
-    func decode(_ type: Float.Type) throws -> Float {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `float`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `float`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `float`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `float`")
-        }
-    }
-    
-    func decode(_ type: Int.Type) throws -> Int {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `int`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `int`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `int`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `int`")
-        }
-    }
-    
-    func decode(_ type: Int8.Type) throws -> Int8 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `int8`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `int8`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `int8`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `int8`")
-        }
-    }
-    
-    func decode(_ type: Int16.Type) throws -> Int16 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `int16`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `int16`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `int16`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `int16`")
-        }
-    }
-    
-    func decode(_ type: Int32.Type) throws -> Int32 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `int32`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `int32`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `int32`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `int32`")
-        }
-    }
-    
-    func decode(_ type: Int64.Type) throws -> Int64 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `int64`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `int64`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `int64`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `int64`")
-        }
-    }
-    
-    func decode(_ type: UInt.Type) throws -> UInt {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `uint`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `uint`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `uint`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `uint`")
-        }
-    }
-    
-    func decode(_ type: UInt8.Type) throws -> UInt8 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `uint8`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `uint8`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `uint8`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `uint8`")
-        }
-    }
-    
-    func decode(_ type: UInt16.Type) throws -> UInt16 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `uint16`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `uint16`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `uint16`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `uint16`")
-        }
-    }
-    
-    func decode(_ type: UInt32.Type) throws -> UInt32 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `uint32`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `uint32`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `uint32`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `uint32`")
-        }
-    }
-    
-    func decode(_ type: UInt64.Type) throws -> UInt64 {
-        switch self.parameter {
-        case .body:
-            throw PapyrusError("`body` doesn't suport `uint64`")
-        case .header:
-            throw PapyrusError("`header` doesn't suport `uint64`")
-        case .path:
-            throw PapyrusError("`path` doesn't suport `uint64`")
-        case .query:
-            throw PapyrusError("`query` doesn't suport `uint64`")
-        }
-    }
+    func decode(_ type: Double.Type) throws -> Double { try unsupported(type) }
+    func decode(_ type: Float.Type) throws -> Float { try unsupported(type) }
+    func decode(_ type: Int.Type) throws -> Int { try unsupported(type) }
+    func decode(_ type: Int8.Type) throws -> Int8 { try unsupported(type) }
+    func decode(_ type: Int16.Type) throws -> Int16 { try unsupported(type) }
+    func decode(_ type: Int32.Type) throws -> Int32 { try unsupported(type) }
+    func decode(_ type: Int64.Type) throws -> Int64 { try unsupported(type) }
+    func decode(_ type: UInt.Type) throws -> UInt { try unsupported(type) }
+    func decode(_ type: UInt8.Type) throws -> UInt8 { try unsupported(type) }
+    func decode(_ type: UInt16.Type) throws -> UInt16 { try unsupported(type) }
+    func decode(_ type: UInt32.Type) throws -> UInt32 { try unsupported(type) }
+    func decode(_ type: UInt64.Type) throws -> UInt64 { try unsupported(type) }
     
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
         switch self.parameter {
         case .body:
             return try request.getBody()
         case .header:
-            throw PapyrusError("`header` doesn't suport `T`")
+            return try unsupported(type)
         case .path:
-            throw PapyrusError("`path` doesn't suport `T`")
+            return try unsupported(type)
         case .query:
             if type is String.Type {
                 return try request.getQuery(for: self.key) as! T
             } else if type is Optional<String>.Type {
                 return try request.getQuery(for: self.key) as! T
             } else {
-                throw PapyrusError("`query` doesn't suport Encodable `T` of type \(T.self)")
+                return try unsupported(type)
             }
         }
+    }
+    
+    /// Throws an error letting the user know this component / type combo isn't supported _yet_.
+    ///
+    /// - Throws: guaranteed to throw a `PapyrusError`.
+    /// - Returns: a generic type, though this never returns.
+    private func unsupported<T>(_ type: T.Type) throws -> T {
+        throw PapyrusError("decoding a `\(type)` from the \(self.parameter) isn't supported yet.")
     }
 }
 

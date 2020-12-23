@@ -1,4 +1,12 @@
+/// A Papyrus related error.
 public struct PapyrusError: Error {
-    public let info: String
-    public init(_ info: String) { self.info = info }
+    /// What went wrong.
+    public let message: String
+    
+    /// Create an error with the specified message.
+    ///
+    /// - Parameter message: what went wrong.
+    public init(_ message: String) {
+        self.message = message
+    }
 }

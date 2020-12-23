@@ -17,11 +17,6 @@ public protocol AnyBody {
     var contentType: ContentType { get }
 }
 
-struct ErasedBody: AnyBody {
-    var content: AnyEncodable
-    var contentType: ContentType
-}
-
 public enum ContentType {
     case json, urlEncoded
 }
@@ -57,11 +52,5 @@ public struct Body<Value: Codable>: Codable, AnyBody {
     
     public func encode(to encoder: Encoder) throws {
         // do nothing
-    }
-}
-
-extension Encodable {
-    func toAny() -> AnyEncodable {
-        .init(self)
     }
 }

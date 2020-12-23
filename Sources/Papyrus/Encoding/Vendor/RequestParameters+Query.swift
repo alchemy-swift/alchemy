@@ -1,7 +1,7 @@
 import Foundation
 
 /// Courtesy of https://github.com/Alamofire/Alamofire .
-extension EncodingHelper {
+extension String {
     /// Creates a percent-escaped, URL encoded query string components from the given key-value pair recursively.
     ///
     /// - Parameters:
@@ -9,23 +9,23 @@ extension EncodingHelper {
     ///   - value: Value of the query component.
     ///
     /// - Returns: The percent-escaped, URL encoded query string components.
-    public func queryComponents(fromKey key: String, value: Any) -> [(String, String)] {
+    public static func queryComponents(fromKey key: String, value: Any) -> [(String, String)] {
         var components: [(String, String)] = []
 
         if let dictionary = value as? [String: Any] {
             for (nestedKey, value) in dictionary {
-                components += queryComponents(fromKey: "\(key)[\(nestedKey)]", value: value)
+                components += self.queryComponents(fromKey: "\(key)[\(nestedKey)]", value: value)
             }
         } else if let array = value as? [Any] {
             for value in array {
-                components += queryComponents(fromKey: ArrayEncoding.brackets.encode(key: key), value: value)
+                components += self.queryComponents(fromKey: ArrayEncoding.brackets.encode(key: key), value: value)
             }
         } else if let value = value as? NSNumber {
-            components.append((escape(key), escape("\(value)")))
+            components.append((self.escape(key), self.escape("\(value)")))
         } else if let bool = value as? Bool {
-            components.append((escape(key), escape(BoolEncoding.numeric.encode(value: bool))))
+            components.append((self.escape(key), self.escape(BoolEncoding.numeric.encode(value: bool))))
         } else {
-            components.append((escape(key), escape("\(value)")))
+            components.append((self.escape(key), self.escape("\(value)")))
         }
 
         return components
@@ -37,7 +37,7 @@ extension EncodingHelper {
     /// - Parameter string: `String` to be percent-escaped.
     ///
     /// - Returns:          The percent-escaped `String`.
-    public func escape(_ string: String) -> String {
+    public static func escape(_ string: String) -> String {
         return string.addingPercentEncoding(withAllowedCharacters: .afURLQueryAllowed) ?? string
     }
 }
