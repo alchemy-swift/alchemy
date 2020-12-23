@@ -16,7 +16,7 @@ private struct HTTPKey: Hashable {
 
 /// An `Router` responds to HTTP requests from the client. Specifically, it takes an `HTTPRequest`
 /// and routes it to a handler that returns an `HTTPResponseEncodable`.
-public final class Router: SingletonService {
+public final class Router {
     /// Represents a middleware closure for this router.
     typealias MiddlewareClosure = (HTTPRequest) -> EventLoopFuture<HTTPRequest>
     
@@ -40,7 +40,7 @@ public final class Router: SingletonService {
     ///               Defaults to nil.
     ///   - middleware: any middleware closure that should be run on a request routed by this router
     ///                 before handling. Defaults to nil.
-    private init(basePath: String? = nil, middleware: MiddlewareClosure? = nil) {
+    init(basePath: String? = nil, middleware: MiddlewareClosure? = nil) {
         self.basePath = basePath ?? ""
         self.middleware = middleware ?? { .new($0) }
     }
@@ -127,12 +127,6 @@ public final class Router: SingletonService {
     /// they are able to be handled or not. Global middlewares intercept request in the order of
     /// this array, before any other middleware does.
     public static var globalMiddlewares: [Middleware] = []
-    
-    // MARK: SingletonService
-    
-    public static func singleton(in container: Container) throws -> Router {
-        Router()
-    }
 }
 
 extension HTTPMethod: Hashable {

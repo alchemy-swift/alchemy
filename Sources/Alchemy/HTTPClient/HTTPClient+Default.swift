@@ -38,7 +38,7 @@ public struct HTTPClientDefault {
     /// The under the hood default `HTTPClient`, separate because we need the
     /// `syncShutdown` in the setter above.
     private static var _default: HTTPClient = {
-        let multi = try! Container.global.resolve(MultiThreadedEventLoopGroup.self)
-        return HTTPClient(eventLoopGroupProvider: .shared(multi))
+        let eventLoopGroup = Container.global.resolve(EventLoopGroup.self)
+        return HTTPClient(eventLoopGroupProvider: .shared(eventLoopGroup))
     }()
 }

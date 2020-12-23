@@ -107,13 +107,15 @@ extension CreateColumnBuilder where Default == SQLJSON {
     /// - Parameters:
     ///   - json: some `Encodable` type to encode and set as the default value for this column.
     ///   - encoder: an `Encoder` for encoding the `json` parameter. Defaults to `JSONEncoder()`.
-    /// - Throws: any error encountered during encoding.
     /// - Returns: this column builder.
     @discardableResult public func `default`<E: Encodable>(
         json: E,
         encoder: JSONEncoder = JSONEncoder()
-    ) throws -> Self {
-        let jsonData = try encoder.encode(json)
+    ) -> Self {
+        guard let jsonData = try? encoder.encode(json) else {
+            fatalError("Unable to encode JSON of type `\(E.self)` during migration.")
+        }
+        
         let jsonString = String(decoding: jsonData, as: UTF8.self)
         return self.appending(modifier: "DEFAULT '\(jsonString)'::jsonb")
     }

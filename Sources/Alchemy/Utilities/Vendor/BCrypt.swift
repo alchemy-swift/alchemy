@@ -1,4 +1,4 @@
-/// All credit to https://github.com/vapor/vapor/blob/master/Sources/Vapor/Bcrypt/Bcrypt.swift
+/// Courtesy of https://github.com/vapor/vapor
 ///
 /// This depends on the supplied `CBCrypt` C library.
 import CBcrypt

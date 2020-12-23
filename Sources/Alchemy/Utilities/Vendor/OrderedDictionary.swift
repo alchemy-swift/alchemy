@@ -1,4 +1,4 @@
-/// All credit to https://github.com/lukaskubanek/OrderedDictionary
+/// Courtesy of https://github.com/lukaskubanek/OrderedDictionary
 ///
 /// A generic collection for storing key-value pairs in an ordered manner.
 ///

@@ -38,7 +38,7 @@ public final class PostgresDatabase: Database {
                     )
                 }
             }()),
-            on: MultiThreadedEventLoopGroup.global()
+            on: Container.global.resolve(EventLoopGroup.self)
         )
     }
     

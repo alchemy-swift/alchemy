@@ -52,13 +52,27 @@ extension Application {
     /// - Parameter args: what the application should do when it's launched.
     /// - Throws: any error that may be encountered in booting the application.
     func launch(_ args: StartupArgs) throws {
-        // Get the global `MultiThreadedEventLoopGroup`
-        let group = try Container.global
-            .resolve(MultiThreadedEventLoopGroup.self)
+        // Register the global `EventLoopGroup`.
+        Container.global.register(singleton: EventLoopGroup.self) { _ in
+            MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        }
         
-        // First, setup the application (on an `EventLoop` from the global group
-        // so `Loop.current` can be used inside it.)
-        let setup = group.next()
+        // Register the global `Router`.
+        Container.global.register(singleton: Router.self) { _ in
+            Router()
+        }
+        
+        // Register the global `Scheduler`.
+        Container.global.register(singleton: Scheduler.self) { _ in
+            Scheduler(scheduleLoop: Loop.current)
+        }
+        
+        // Get the global `EventLoopGroup`.
+        let eventLoopGroup = Container.global.resolve(EventLoopGroup.self)
+        
+        // First, setup the application (ensure setup is run on an `EventLoop` for `Loop.current`
+        // access inside of it).
+        let setup = eventLoopGroup.next()
             .submit(self.setup)
             
         switch args {
@@ -69,7 +83,7 @@ extension Application {
                 .wait()
             print("Migrations finished!")
         case .serve(let socket):
-            try self.startServing(socket: socket, group: group)
+            try self.startServing(socket: socket, group: eventLoopGroup)
         }
     }
     
@@ -84,20 +98,14 @@ extension Application {
         rollback ? DB.default.rollbackMigrations() : DB.default.migrate()
     }
     
-    /// Start serving at the given target. Routing is handled by the singleton
-    /// `HTTPRouter`.
+    /// Start serving at the given target. Routing is handled by the singleton `HTTPRouter`.
     ///
     /// - Note: this function never unblocks for the lifecycle of the server.
     /// - Parameters:
-    ///   - socket: the socket where the server should bind (listen for requests
-    ///             at).
-    ///   - group: a `MultiThreadedEventLoopGroup` for fetching `EventLoop`s to
-    ///            handle requests on.
+    ///   - socket: the socket where the server should bind (listen for requests at).
+    ///   - group: a `MultiThreadedEventLoopGroup` for fetching `EventLoop`s to handle requests on.
     /// - Throws: any errors encountered when bootstrapping the server.
-    private func startServing(
-        socket: Socket,
-        group: MultiThreadedEventLoopGroup
-    ) throws {
+    private func startServing(socket: Socket, group: EventLoopGroup) throws {
         func childChannelInitializer(
             channel: Channel
         ) -> EventLoopFuture<Void> {

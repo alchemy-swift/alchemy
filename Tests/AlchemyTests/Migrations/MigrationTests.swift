@@ -16,7 +16,7 @@ final class MigrationTests: XCTestCase {
                 table.int("age").default(val: 21)
                 table.bool("is_pro")
                 table.date("created_at")
-                table.json("some_json").default(val: SomeJSON().sql)
+                table.json("some_json").default(json: SomeJSON())
                 table.uuid("parent_id").references("id", on: "users")
             }
             $0.rename(table: "foo", to: "bar")

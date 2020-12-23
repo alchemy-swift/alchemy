@@ -1,5 +1,7 @@
 import Foundation
 
+/// Courtesy of https://github.com/vapor/vapor.
+/// 
 /// Encodes `Encodable` instances to `application/x-www-form-urlencoded` data.
 ///
 ///     print(user) /// User

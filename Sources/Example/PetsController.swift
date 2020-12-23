@@ -28,8 +28,10 @@ struct PetsController {
     }
     
     func vaccinate(_ req: HTTPRequest) throws -> EventLoopFuture<Void> {
-        let petID = try Int(try req.pathComponent(for: "pet_id")).unwrap(or: PetError("not int"))
-        let vaccineID = try Int(try req.pathComponent(for: "vaccine_id")).unwrap(or: PetError("not int"))
+        let petID = try Int((req.pathParameter(named: "pet_id")?.stringValue ?? ""))
+                                .unwrap(or: PetError("not int"))
+        let vaccineID = try Int((req.pathParameter(named: "vaccine_id")?.stringValue ?? ""))
+                                    .unwrap(or: PetError("not int"))
         
         return PetVaccine(pet: .init(petID), vaccine: .init(vaccineID))
             .save()
