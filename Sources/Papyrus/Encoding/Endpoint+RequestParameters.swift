@@ -72,13 +72,13 @@ private struct EncodingHelper {
     private var bodies: [String: AnyBody] = [:]
     
     /// Erased storage of any `@Header`s on the request.
-    private var headers: [String: AnyHeader] = [:]
+    private var headers: [String: Header] = [:]
     
     /// Erased storage of any `@Query`s on the request.
     private var queries: [String: AnyQuery] = [:]
     
     /// Erased storage of any `@Path`s on the request.
-    private var paths: [String: AnyPath] = [:]
+    private var paths: [String: Path] = [:]
     
     /// Initialize from a generic `EndpointRequest`.
     ///
@@ -99,9 +99,9 @@ private struct EncodingHelper {
                     self.queries[query.keyOverride ?? sanitizedLabel] = query
                 } else if let body = child.value as? AnyBody {
                     self.bodies[sanitizedLabel] = body
-                } else if let header = child.value as? AnyHeader {
+                } else if let header = child.value as? Header {
                     self.headers[header.keyOverride ?? sanitizedLabel] = header
-                } else if let path = child.value as? AnyPath {
+                } else if let path = child.value as? Path {
                     self.paths[sanitizedLabel] = path
                 }
             }
@@ -149,7 +149,7 @@ private struct EncodingHelper {
     ///
     /// - Returns: a `[String: String]` representing the headers of this request.
     func getHeaders() -> [String: String] {
-        self.headers.reduce(into: [:]) { $0[$1.key] = $1.value.value }
+        self.headers.reduce(into: [:]) { $0[$1.key] = $1.value.wrappedValue }
     }
     
     /// Given a `basePath`, returns a string representing the base path with all path component
@@ -167,7 +167,8 @@ private struct EncodingHelper {
                 throw PapyrusError("Tried to encode path component '\(component.key)' but didn't find any instance of ':\(component.key)' in the path.")
             }
 
-            basePath = basePath.replacingOccurrences(of: ":\(component.key)", with: component.value.value)
+            basePath = basePath
+                .replacingOccurrences(of: ":\(component.key)", with: component.value.wrappedValue)
         }
     }
 }

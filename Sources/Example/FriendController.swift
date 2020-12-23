@@ -18,7 +18,18 @@ struct FriendsController {
     }
 }
 
-struct AddFriendDTO: EndpointRequest {}
+struct AddFriendDTO: EndpointRequest {
+    @Path        var userID: String
+    @HTTPQuery   var number: Int
+    @HTTPQuery   var someThings: [String]
+    @Header      var value: String
+    @Body(.json) var obj: TestObj
+}
+
+struct TestObj: Codable {
+    let string: String
+}
+
 struct RemoveFriendDTO: EndpointRequest {}
 struct MessageFriendDTO: EndpointRequest {}
 

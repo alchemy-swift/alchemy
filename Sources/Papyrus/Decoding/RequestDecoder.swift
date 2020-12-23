@@ -84,7 +84,7 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     var allKeys: [Key] = []
     
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
-        if type is AnyHeader.Type {
+        if type is Header.Type {
             return try T(
                 from: RequestComponentDecoder(
                     request: self.request,
@@ -108,7 +108,7 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
                     key: key.stringValue
                 )
             )
-        } else if type is AnyPath.Type {
+        } else if type is Path.Type {
             return try T(
                 from: RequestComponentDecoder(
                     request: self.request,
