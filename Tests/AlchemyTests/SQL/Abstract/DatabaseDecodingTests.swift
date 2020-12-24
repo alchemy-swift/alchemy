@@ -1,7 +1,7 @@
 @testable import Alchemy
 import XCTest
 
-final class DatabaseEncodingTests: XCTestCase {
+final class DatabaseDecodingTests: XCTestCase {
     func testEncodingCustomEnum() {
         
     }
