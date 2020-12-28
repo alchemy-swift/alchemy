@@ -6,7 +6,7 @@ extension Model {
     ///           instance.
     /// - Returns: an array of database fields representing the stored properties of `self`.
     public func fields() throws -> [DatabaseField] {
-        try DatabaseFieldReader(Self.keyMappingStrategy).getFields(of: self)
+        try ModelFieldReader(Self.keyMappingStrategy).getFields(of: self)
     }
     
     /// Returns an ordered dictionary of column names to `Parameter` values, appropriate for working

@@ -55,7 +55,7 @@ extension Model {
     }
     
     public static var keyMappingStrategy: DatabaseKeyMappingStrategy {
-        .convertToSnakeCase
+        .useDefaultKeys
     }
     
     public static var jsonDecoder: JSONDecoder {

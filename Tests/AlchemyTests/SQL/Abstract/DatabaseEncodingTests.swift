@@ -13,11 +13,12 @@ final class DatabaseEncodingTests: XCTestCase {
             date: date,
             bool: true,
             double: 3.14159,
-            json: json
+            json: json,
+            stringEnum: .third,
+            intEnum: .two
         )
         
         let jsonData = try JSONEncoder().encode(json)
-        print(String(data: jsonData, encoding: .utf8)!)
         let expectedFields: [DatabaseField] = [
             DatabaseField(column: "string", value: .string("one")),
             DatabaseField(column: "int", value: .int(2)),
@@ -26,6 +27,8 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "bool", value: .bool(true)),
             DatabaseField(column: "double", value: .double(3.14159)),
             DatabaseField(column: "json", value: .json(jsonData)),
+            DatabaseField(column: "stringEnum", value: .string("third")),
+            DatabaseField(column: "intEnum", value: .int(1)),
         ]
         
         XCTAssertEqual(expectedFields, try model.fields())
@@ -58,6 +61,14 @@ private struct DatabaseJSON: Codable {
     var val2: Date
 }
 
+private enum IntEnum: Int, ModelEnum {
+    case one, two, three
+}
+
+private enum StringEnum: String, ModelEnum {
+    case first, second, third
+}
+
 private struct TestModel: Model {
     var id: Int?
     var string: String
@@ -67,6 +78,8 @@ private struct TestModel: Model {
     var bool: Bool
     var double: Double
     var json: DatabaseJSON
+    var stringEnum: StringEnum
+    var intEnum: IntEnum
 }
 
 private struct CustomKeyedModel: Model {
@@ -75,6 +88,8 @@ private struct CustomKeyedModel: Model {
     var valueTwo: Int = 0
     var valueThreeInt: Int = 1
     var snake_case: String = "bar"
+    
+    static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
 }
 
 private struct CustomDecoderModel: Model {

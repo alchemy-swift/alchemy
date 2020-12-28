@@ -2,7 +2,7 @@ import Foundation
 
 /// Used for turning any `Model` into an array of `DatabaseField`s (column/value
 /// combinations) based on its stored properties.
-final class DatabaseFieldReader<M: Model>: Encoder {
+final class ModelFieldReader<M: Model>: Encoder {
     /// Used for keeping track of the database fields pulled off the object encoded to this encoder.
     fileprivate var readFields: [DatabaseField] = []
     
@@ -57,7 +57,7 @@ private struct _SingleValueEncoder<M: Model>: Encoder {
     
     /// The `DatabaseFieldReader` that is being used to read the stored properties of an object.
     /// Need to pass it around so various containers can add to it's `readFields`.
-    let encoder: DatabaseFieldReader<M>
+    let encoder: ModelFieldReader<M>
     
     // MARK: Encoder
     
@@ -89,7 +89,7 @@ private struct _SingleValueEncodingContainer<
     
     /// The `DatabaseFieldReader` that is being used to read the stored properties of an object.
     /// Need to pass it around so various containers can add to it's `readFields`.
-    var encoder: DatabaseFieldReader<M>
+    var encoder: ModelFieldReader<M>
     
     // MARK: SingleValueEncodingContainer
     
@@ -170,7 +170,7 @@ private struct _KeyedEncodingContainer<
     M: Model,
     Key: CodingKey
 >: KeyedEncodingContainerProtocol, ModelValueReader {
-    var encoder: DatabaseFieldReader<M>
+    var encoder: ModelFieldReader<M>
 
     // MARK: KeyedEncodingContainerProtocol
     
@@ -245,6 +245,8 @@ extension ModelValueReader {
             return .string(value)
         } else if let _ = value as? AnyBelongsTo {
             return nil
+        } else if let modelEnum = value as? ModelEnum {
+            return modelEnum.databaseValue()
         } else {
             // Assume anything else is JSON.
             let jsonData = try M.jsonEncoder.encode(value)
