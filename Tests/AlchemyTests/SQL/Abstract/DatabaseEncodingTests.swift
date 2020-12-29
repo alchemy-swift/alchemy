@@ -80,6 +80,7 @@ private struct TestModel: Model {
     var json: DatabaseJSON
     var stringEnum: StringEnum
     var intEnum: IntEnum
+    var optional: String?
 }
 
 private struct CustomKeyedModel: Model {

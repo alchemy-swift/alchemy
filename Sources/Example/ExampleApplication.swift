@@ -68,6 +68,7 @@ struct ExampleApplication: Application {
             .group(path: "/db") {
                 $0.on(.GET, at: "/select", do: DatabaseTestController().select)
                 $0.on(.GET, at: "/insert", do: DatabaseTestController().insert)
+                $0.on(.GET, at: "/update", do: DatabaseTestController().update)
             }
         
         database.migrations.append(contentsOf: [
@@ -86,8 +87,20 @@ struct MiscError: Error {
     }
 }
 
+struct Testing: Codable {
+    var age = 28
+    var name = "Joshua"
+}
+
 struct DatabaseTestController {
     @Inject var db: MySQLDatabase
+    
+    func update(req: HTTPRequest) throws -> EventLoopFuture<Void> {
+        try User.query()
+            .where("id" == UUID(uuidString: "95dd20ec-c151-4dcd-8f86-364b99631aa8"))
+            .update(values: ["some_json": DatabaseValue.json(nil)])
+            .voided()
+    }
     
     func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
         Rental.query()

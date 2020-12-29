@@ -137,11 +137,9 @@ extension Array where Element: Model {
     /// - Returns: a future that completes when all models in this array are deleted from the
     ///            database.
     public func delete(db: Database = DB.default) -> EventLoopFuture<Void> {
-        catchError {
-            Element.query(database: db)
-                .where(key: "id", in: self.compactMap { $0.id })
-                .delete()
-                .voided()
-        }
+        Element.query(database: db)
+            .where(key: "id", in: self.compactMap { $0.id })
+            .delete()
+            .voided()
     }
 }
