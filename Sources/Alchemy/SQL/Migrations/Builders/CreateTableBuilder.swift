@@ -2,12 +2,22 @@ import Foundation
 
 /// A builder with useful functions for creating a table.
 public class CreateTableBuilder {
+    /// The grammar with which this builder will compile SQL statements.
+    let grammar: Grammar
+    
     /// Any indexes that should be created.
     var createIndexes: [CreateIndex] = []
     
     /// All the columns to create on this table.
     var createColumns: [CreateColumn] {
         self.columnBuilders.map { $0.toCreate() }
+    }
+    
+    /// Create a table builder with the given grammar.
+    ///
+    /// - Parameter grammar: the grammar with which this builder will compile SQL statements.
+    init(grammar: Grammar) {
+        self.grammar = grammar
     }
     
     /// References to the builders for all the columns on this table. Need to store these since they
@@ -22,7 +32,7 @@ public class CreateTableBuilder {
     /// - Parameters:
     ///   - columns: the names of the column(s) in this index.
     ///   - isUnique: whether this index will be unique.
-    func addIndex(columns: [String], isUnique: Bool) {
+    public func addIndex(columns: [String], isUnique: Bool) {
         self.createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
     }
     
@@ -31,7 +41,7 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func increments(_ column: String) -> CreateColumnBuilder<Int> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "serial"))
+        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .increments))
     }
     
     /// Adds an `Int` column.
@@ -39,7 +49,7 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func int(_ column: String) -> CreateColumnBuilder<Int> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "int"))
+        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .int))
     }
     
     /// Adds a `Double` column.
@@ -47,15 +57,19 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func double(_ column: String) -> CreateColumnBuilder<Double> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "float8"))
+        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .double))
     }
     
     /// Adds an `String` column.
     ///
     /// - Parameter column: the name of the column to add.
+    /// - Parameter length: the max length of this string. Defaults to `.limit(255)`.
     /// - Returns: a builder for adding modifiers to the column.
-    @discardableResult public func string(_ column: String) -> CreateColumnBuilder<String> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "text"))
+    @discardableResult public func string(
+        _ column: String,
+        length: StringLength = .limit(255)
+    ) -> CreateColumnBuilder<String> {
+        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .string(length)))
     }
     
     /// Adds a `UUID` column.
@@ -63,7 +77,8 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func uuid(_ column: String) -> CreateColumnBuilder<UUID> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "uuid"))
+        let builder = CreateColumnBuilder<UUID>(grammar: self.grammar, name: column, type: .uuid)
+        return self.appendAndReturn(builder: builder)
     }
     
     /// Adds a `Bool` column.
@@ -71,7 +86,8 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func bool(_ column: String) -> CreateColumnBuilder<Bool> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "bool"))
+        let builder = CreateColumnBuilder<Bool>(grammar: self.grammar, name: column, type: .bool)
+        return self.appendAndReturn(builder: builder)
     }
     
     /// Adds a `Date` column.
@@ -79,7 +95,8 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func date(_ column: String) -> CreateColumnBuilder<Date> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "timestamptz"))
+        let builder = CreateColumnBuilder<Date>(grammar: self.grammar, name: column, type: .date)
+        return self.appendAndReturn(builder: builder)
     }
     
     /// Adds a JSON column.
@@ -87,7 +104,8 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func json(_ column: String) -> CreateColumnBuilder<SQLJSON> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "json"))
+        let builder = CreateColumnBuilder<SQLJSON>(grammar: self.grammar, name: column, type: .json)
+        return self.appendAndReturn(builder: builder)
     }
     
     /// Adds a column builder to this table builder & returns it.
@@ -115,7 +133,10 @@ struct CreateIndex {
     /// - Parameter table: the name of the table this index will be created on.
     /// - Returns: an SQL string for creating this index on the given table.
     func toSQL(table: String) -> String {
-        "CREATE \(self.isUnique ? "UNIQUE " : "")INDEX \(self.name(table: table)) ON \(table)"
+        let indexType = self.isUnique ? "UNIQUE INDEX" : "INDEX"
+        let indexName = self.name(table: table)
+        let indexColumns = "(\(self.columns.joined(separator: ", ")))"
+        return "CREATE \(indexType) \(indexName) ON \(table) \(indexColumns)"
     }
     
     /// Generate the name of this index given the table it will be created on.
@@ -138,7 +159,7 @@ struct CreateColumn {
     let column: String
     
     /// The type string.
-    let type: String
+    let type: ColumnType
     
     /// Any constraints.
     let constraints: [String]
@@ -146,8 +167,8 @@ struct CreateColumn {
     /// Convert this `CreateColumn` to a `String` for inserting into an SQL statement.
     ///
     /// - Returns: the SQL `String` describing this column.
-    func toSQL() -> String {
-        var baseSQL = "\(self.column) \(self.type)"
+    func toSQL(with grammar: Grammar) -> String {
+        var baseSQL = "\(self.column) \(grammar.typeString(for: self.type))"
         if !self.constraints.isEmpty {
             baseSQL.append(" \(self.constraints.joined(separator: " "))")
         }
