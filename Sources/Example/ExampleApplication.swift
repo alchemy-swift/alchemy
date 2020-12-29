@@ -11,18 +11,7 @@ struct ExampleApplication: Application {
             PostgresDatabase(config: .postgres)
         }
         
-        Container.global.register(String.self) { _ in
-            "Hello from injection"
-        }
-        
         var database = Container.global.resolve(Database.self)
-        
-        let ep = FriendAPI().friends
-        print("ep: \(ep.baseURL)")
-        let ep2 = FriendAPI2(baseURL: "LOL!").friends
-        print("ep2: \(ep2.baseURL)")
-        let ij = TestingInject()
-        print("ij: \(ij.string)")
         
         DB.default = database
         
@@ -32,8 +21,6 @@ struct ExampleApplication: Application {
         ]
         
         self.router
-            // Applied to all subsequent routes
-            .middleware(LoggingMiddleware(text: "Handling request:"))
             // `GET /json`
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
             // Group all pet requests

@@ -3,13 +3,9 @@ import Foundation
 /// Decoder for decoding `Model` types from a `DatabaseRow`. Properties of the `Decodable` type
 /// are matched to columns with matching names (either the same name or a specific name mapping
 /// based on the supplied `keyMappingStrategy`).
-struct DatabaseRowDecoder: Decoder {
+struct DatabaseRowDecoder<M: Model>: Decoder {
     /// The row that will be decoded out of.
     let row: DatabaseRow
-    
-    /// The key mapping strategy for correlating the `Decodable` type's property names (from its
-    /// `CodingKey`s) to database column names.
-    let keyMappingStrategy: DatabaseKeyMappingStrategy
     
     // MARK: Decoder
     
@@ -20,7 +16,7 @@ struct DatabaseRowDecoder: Decoder {
         keyedBy type: Key.Type
     ) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
         KeyedDecodingContainer(
-            KeyedContainer(row: self.row, keyMappingStrategy: self.keyMappingStrategy)
+            KeyedContainer<Key, M>(row: self.row)
         )
     }
     
@@ -37,12 +33,9 @@ struct DatabaseRowDecoder: Decoder {
 }
 
 /// A `KeyedDecodingContainerProtocol` used to decode keys from a `DatabaseRow`.
-private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
+private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerProtocol {
     /// The row to decode from.
     let row: DatabaseRow
-    
-    /// The strategy for mapping `CodingKey` strings to `DatabaseRow` fields.
-    let keyMappingStrategy: DatabaseKeyMappingStrategy
     
     // MARK: KeyedDecodingContainerProtocol
     
@@ -119,6 +112,7 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
         } else if type == Date.self {
             return try self.row.getField(column: self.string(for: key)).date() as! T
         } else if type is AnyBelongsTo.Type {
+            print("\(key.stringValue): \(type)")
             // Keys to parent relationships are special cased to add `_id` after the field name.
             let field = try self.row.getField(column: self.string(for: key) + "_id")
             return try T(from: DatabaseFieldDecoder(field: field))
@@ -126,9 +120,12 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
             // Special case the `AnyHas` to decode the coding key.
             let field = DatabaseField(column: "key", value: .string(key.stringValue))
             return try T(from: DatabaseFieldDecoder(field: field))
-        } else {
+        } else if type is ModelEnum.Type {
             let field = try self.row.getField(column: self.string(for: key))
             return try T(from: DatabaseFieldDecoder(field: field))
+        } else {
+            let field = try self.row.getField(column: self.string(for: key))
+            return try M.jsonDecoder.decode(T.self, from: field.json())
         }
     }
     
@@ -156,6 +153,6 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     /// - Parameter key: the `CodingKey` to map.
     /// - Returns: the column name that `key` is mapped to.
     private func string(for key: Key) -> String {
-        self.keyMappingStrategy.map(input: key.stringValue)
+        M.keyMappingStrategy.map(input: key.stringValue)
     }
 }

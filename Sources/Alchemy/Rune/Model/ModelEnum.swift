@@ -10,26 +10,7 @@
 ///     var id: Int?
 ///     var name: String
 ///     var isDone: Bool
-///     var priority: TaskPriority
+///     var priority: TaskPriority // Usable for storing to and from an SQL database.
 /// }
 /// ```
-protocol ModelEnum: Codable {
-    /// A `DatabaseValue` representing the raw value of this enum.
-    func databaseValue() -> DatabaseValue?
-}
-
-extension RawRepresentable where RawValue == String {
-    // MARK: ModelEnum
-    
-    public func databaseValue() -> DatabaseValue? {
-        .string(self.rawValue)
-    }
-}
-
-extension RawRepresentable where RawValue == Int {
-    // MARK: ModelEnum
-    
-    public func databaseValue() -> DatabaseValue? {
-        .int(self.rawValue)
-    }
-}
+typealias ModelEnum = Codable & Parameter

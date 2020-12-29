@@ -2,7 +2,7 @@ import NIO
 
 /// A type erased `BelongsToRelationship`. Used for special casing decoding behavior for
 /// `BelongsTo`s.
-public protocol AnyBelongsTo {}
+protocol AnyBelongsTo {}
 
 @propertyWrapper
 /// The child of a 1 - M or a 1 - 1 relationship. Backed by an identifier of the parent, when
@@ -73,6 +73,16 @@ public final class BelongsToRelationship<
         self.value = try? Parent.from(parent)
     }
     
+    /// Initializes this `BelongsToRelationship` with nil values. Should only be called on a
+    /// `BelongsTo` that has an `Optional` `Parent` type.
+    ///
+    /// - Parameter nil: a void closure. Ideally this signature would be `init()` but that seems to
+    ///                  throw a compiler error related to property wrappers.
+    private init(nil: Void) {
+        self.id = nil
+        self.value = nil
+    }
+    
     // MARK: Relationship
     
     public func loadRelationships(
@@ -107,7 +117,20 @@ public final class BelongsToRelationship<
     }
     
     public init(from decoder: Decoder) throws {
-        // When decode from a database, just decode the Parent's ID.
-        self.id = try decoder.singleValueContainer().decode(Parent.Value.Identifier.self)
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self.id = nil
+        } else {
+            // When decode from a database, just decode the Parent's ID.
+            self.id = try container.decode(Parent.Value.Identifier.self)
+        }
+    }
+}
+
+extension BelongsToRelationship: ExpressibleByNilLiteral where Parent: AnyOptional {
+    // MARK: ExpressibleByNilLiteral
+    
+    public convenience init(nilLiteral: ()) {
+        self.init(nil: nilLiteral)
     }
 }

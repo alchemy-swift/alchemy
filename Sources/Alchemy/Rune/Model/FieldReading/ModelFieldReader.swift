@@ -231,23 +231,12 @@ extension ModelValueReader {
     /// - Throws: an `EncodingError` if there is an issue encoding a value perceived to be JSON.
     /// - Returns: a `DatabaseValue` representing `value` or `nil` if value is a Rune Relationship.
     fileprivate func databaseValue<E: Encodable>(of value: E) throws -> DatabaseValue? {
-        if let value = value as? UUID {
-            return .uuid(value)
-        } else if let value = value as? Date {
-            return .date(value)
-        } else if let value = value as? Int {
-            return .int(value)
-        } else if let value = value as? Double {
-            return .double(value)
-        } else if let value = value as? Bool {
-            return .bool(value)
-        } else if let value = value as? String {
-            return .string(value)
-        } else if let _ = value as? AnyBelongsTo {
+        if let value = value as? Parameter {
+            return value.value
+        } else if value is AnyBelongsTo || value is AnyHas {
             return nil
-        } else if let modelEnum = value as? ModelEnum {
-            return modelEnum.databaseValue()
         } else {
+            print("Got type: \(E.self)")
             // Assume anything else is JSON.
             let jsonData = try M.jsonEncoder.encode(value)
             return .json(jsonData)

@@ -11,7 +11,8 @@ struct PetsController {
     }
     
     func createUser(_ req: HTTPRequest) throws -> EventLoopFuture<User> {
-        User(id: nil, email: "josh@test.com", passwordHash: try Bcrypt.hash("password"), name: "Josh")
+        User(bmi: 20.0, email: "josh@test.com", age: 27, isPro: true, createdAt: Date(),
+             passwordHash: try Bcrypt.hash("password"), parent: nil)
             .save()
     }
     
