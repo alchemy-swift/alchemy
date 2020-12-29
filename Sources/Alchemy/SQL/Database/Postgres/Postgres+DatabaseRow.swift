@@ -8,8 +8,7 @@ extension PostgresRow: DatabaseRow {
     }
     
     public func getField(column: String) throws -> DatabaseField {
-        print("AC: \(self.allColumns)")
-        return try self.column(column)
+        try self.column(column)
             .unwrap(or: DatabaseError("No column named `\(column)` was found."))
             .toDatabaseField(from: column)
     }
@@ -24,19 +23,19 @@ extension PostgresData {
     init(_ value: DatabaseValue) {
         switch value {
         case .bool(let value):
-            self = value.map(PostgresData.init(bool:)) ?? .null
+            self = value.map(PostgresData.init(bool:)) ?? PostgresData(type: .bool)
         case .date(let value):
-            self = value.map(PostgresData.init(date:)) ?? .null
+            self = value.map(PostgresData.init(date:)) ?? PostgresData(type: .date)
         case .double(let value):
-            self = value.map(PostgresData.init(double:)) ?? .null
+            self = value.map(PostgresData.init(double:)) ?? PostgresData(type: .float8)
         case .int(let value):
-            self = value.map(PostgresData.init(int:)) ?? .null
+            self = value.map(PostgresData.init(int:)) ?? PostgresData(type: .int4)
         case .json(let value):
-            self = value.map(PostgresData.init(json:)) ?? .null
+            self = value.map(PostgresData.init(json:)) ?? PostgresData(type: .json)
         case .string(let value):
-            self = value.map(PostgresData.init(string:)) ?? .null
+            self = value.map(PostgresData.init(string:)) ?? PostgresData(type: .text)
         case .uuid(let value):
-            self = value.map(PostgresData.init(uuid:)) ?? .null
+            self = value.map(PostgresData.init(uuid:)) ?? PostgresData(type: .uuid)
         }
     }
     

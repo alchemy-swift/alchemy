@@ -30,9 +30,24 @@ public protocol Model: Codable, Identifiable, ModelMaybeOptional {
     /// ```
     static var tableName: String { get }
     
-    /// How should the Swift `CodingKey`s be mapped to database columns?
-    /// Defaults to `convertToSnakeCase`. Can be overridden on a per-type basis.
+    /// How should the Swift `CodingKey`s be mapped to database columns? Defaults to
+    /// `.useDefaultKeys`. Can be overridden on a per-type basis.
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
+    
+    /// When mapping a `Model` to an SQL table, `@BelongsTo` properties will have their property
+    /// names suffixed by this `String`. Defaults to `Id`. This value is affected by
+    /// `keyMappingStrategy`, so if the `keyMappingStrategy` of the database is
+    /// `.convertToSnakeCase`, the default suffix will effectively be `_id`.
+    ///
+    /// Usage:
+    /// ```
+    /// struct User: Model {
+    ///     ...
+    ///     @BelongsTo
+    ///     var parent: User // will map to column `parentId` of type `User.ID`.
+    /// }
+    /// ```
+    static var belongsToColumnSuffix: String { get }
     
     /// The `JSONDecoder` to use when decoding any JSON fields of this type.
     /// A JSON field is any `Codable` field that doesn't have a corresponding
@@ -55,7 +70,11 @@ extension Model {
     }
     
     public static var keyMappingStrategy: DatabaseKeyMappingStrategy {
-        .convertToSnakeCase
+        .useDefaultKeys
+    }
+    
+    public static var belongsToColumnSuffix: String {
+        "Id"
     }
     
     public static var jsonDecoder: JSONDecoder {

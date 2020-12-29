@@ -3,7 +3,7 @@
 /// If there were a table with columns "id", "email", "phone" and a row with
 /// values 1 ,"josh@alchemy.dev", "(555) 555-5555",
 /// `DatabaseField(column: id, .int(1))` would represent a field on that table.
-public struct DatabaseField {
+public struct DatabaseField: Equatable {
     /// The name of the column this value came from.
     public let column: String
     /// The value of this field.

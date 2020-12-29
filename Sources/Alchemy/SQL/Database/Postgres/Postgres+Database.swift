@@ -46,17 +46,10 @@ public final class PostgresDatabase: Database {
         _ sql: String,
         values: [DatabaseValue]
     ) -> EventLoopFuture<[DatabaseRow]> {
-        print("Query: \(sql)")
+        print("Runnning: \(sql)")
         return self.pool.withConnection(logger: nil, on: Loop.current) { conn in
-            conn.query(
-                self.positionBindings(sql),
-                values.map(PostgresData.init)
-            ).map {
-                for row in $0.rows {
-                    print("row: \(row.rowDescription.fields.map(\.name))")
-                }
-                return $0.rows
-            }
+            conn.query(self.positionBindings(sql), values.map(PostgresData.init) )
+                .map { $0.rows }
         }
     }
     

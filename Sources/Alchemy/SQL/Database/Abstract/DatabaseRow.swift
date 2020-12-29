@@ -22,9 +22,9 @@ public protocol DatabaseRow {
 }
 
 extension DatabaseRow {
-    public func decode<D: Model>(_ type: D.Type) throws -> D {
+    public func decode<M: Model>(_ type: M.Type) throws -> M {
         // For each stored coding key, pull out the column name.
         // Will need to write a custom decoder that pulls out of a database row.
-        try D(from: DatabaseRowDecoder(row: self, keyMappingStrategy: D.keyMappingStrategy))
+        try M(from: DatabaseRowDecoder<M>(row: self))
     }
 }

@@ -111,7 +111,7 @@ public final class Container {
             return self.assertType(of: instance)
         } else if let resolver = self.resolvers[key] {
             let instance: T = self.assertType(of: resolver.factory(self, identifier))
-            if resolver.behavior != .singleton {
+            if resolver.behavior == .singleton {
                 self.instances[key] = instance
             }
             return instance

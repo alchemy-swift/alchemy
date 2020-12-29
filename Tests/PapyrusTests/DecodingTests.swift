@@ -1,5 +1,5 @@
 import XCTest
-@testable import Alchemy
+@testable import Papyrus
 
 final class DecodingTests: XCTestCase {
     func testExample() {

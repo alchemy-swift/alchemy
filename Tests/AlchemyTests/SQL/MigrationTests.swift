@@ -24,13 +24,13 @@ final class MigrationTests: XCTestCase {
         }.statements, [
             SQL("""
                 CREATE TABLE users (
-                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4()
-                    bmi float8 DEFAULT 15.0
-                    email text NOT NULL UNIQUE
-                    age int DEFAULT 21
-                    is_pro bool
-                    created_at timestamptz
-                    some_json json DEFAULT {"name":"Josh","age":26}
+                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    bmi float8 DEFAULT 15.0,
+                    email text NOT NULL UNIQUE,
+                    age int DEFAULT 21,
+                    is_pro bool,
+                    created_at timestamptz,
+                    some_json json DEFAULT '{"name":"Josh","age":27}'::jsonb,
                     parent_id uuid REFERENCES users(id)
                 )
                 """),

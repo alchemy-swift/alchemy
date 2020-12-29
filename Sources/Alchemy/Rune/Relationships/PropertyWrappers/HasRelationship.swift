@@ -2,7 +2,7 @@ import NIO
 
 /// A type erased `HasRelationship`. Used for special casing decoding behavior for `HasMany` or
 /// `HasOne`s.
-public protocol AnyHas {}
+protocol AnyHas {}
 
 /// Contains shared behavior for "has" relationships, particularly around eager loading
 /// functionality.

@@ -62,7 +62,8 @@ public final class HasManyRelationship<
                 var updatedResults = [From]()
                 for result in from {
                     let values = dict[result.id as! From.Value.Identifier]
-                    result[keyPath: eagerLoadKeyPath].wrappedValue = try values?.map { try To.from($0) } ?? []
+                    let wrappedValue = try values?.map { try To.from($0) } ?? []
+                    result[keyPath: eagerLoadKeyPath].wrappedValue = wrappedValue
                     updatedResults.append(result)
                 }
 

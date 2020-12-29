@@ -1,4 +1,4 @@
-@testable import Alchemy
+@testable import Papyrus
 
 struct TestAPI {
     @POST("/v1/accounts/:userID/transfer")

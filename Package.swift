@@ -62,5 +62,7 @@ let package = Package(
         .target(name: "Fusion", dependencies: []),
         .target(name: "PapyrusAlamofire", dependencies: ["Papyrus", "Alamofire"]),
         .testTarget(name: "AlchemyTests", dependencies: ["Alchemy"]),
+        .testTarget(name: "PapyrusTests", dependencies: ["Papyrus"]),
+        .testTarget(name: "FusionTests", dependencies: ["Fusion"]),
     ]
 )
