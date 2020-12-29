@@ -15,7 +15,8 @@ final class DatabaseEncodingTests: XCTestCase {
             double: 3.14159,
             json: json,
             stringEnum: .third,
-            intEnum: .two
+            intEnum: .two,
+            belongsTo: .init(5)
         )
         
         let jsonData = try JSONEncoder().encode(json)
@@ -29,19 +30,21 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "json", value: .json(jsonData)),
             DatabaseField(column: "stringEnum", value: .string("third")),
             DatabaseField(column: "intEnum", value: .int(1)),
+            DatabaseField(column: "belongsToId", value: .int(5)),
         ]
         
         XCTAssertEqual(expectedFields, try model.fields())
     }
     
     func testKeyMapping() throws {
-        let model = CustomKeyedModel()
+        let model = CustomKeyedModel(belongsTo: .init(9))
         let fields = try model.fields()
         XCTAssertEqual([
             "val_1",
             "value_two",
             "value_three_int",
-            "snake_case"
+            "snake_case",
+            "belongs_to_id"
         ], fields.map(\.column))
     }
     
@@ -80,7 +83,15 @@ private struct TestModel: Model {
     var json: DatabaseJSON
     var stringEnum: StringEnum
     var intEnum: IntEnum
-    var optional: String?
+    
+    @BelongsTo
+    var belongsTo: TestModel
+    
+    @HasOne(this: "test", to: \.$belongsTo, keyString: "belongs_to_id")
+    var hasOne: TestModel
+    
+    @HasMany(this: "test", to: \.$belongsTo, keyString: "belongs_to_id")
+    var hasMany: [TestModel]
 }
 
 private struct CustomKeyedModel: Model {
@@ -89,6 +100,9 @@ private struct CustomKeyedModel: Model {
     var valueTwo: Int = 0
     var valueThreeInt: Int = 1
     var snake_case: String = "bar"
+    
+    @BelongsTo
+    var belongsTo: CustomKeyedModel
     
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
 }

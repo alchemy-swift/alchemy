@@ -25,7 +25,7 @@ final class EagerLoadStorage {
     
     /// A dict for mapping relationship names to their erased eager loading closure. Accessing this
     /// is threadsafe.
-    private static var dict: [String: Any] = [:] {
+    private static var dict: [String: Any] {
         get {
             self.lock.lock()
             defer { self.lock.unlock() }

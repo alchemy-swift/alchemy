@@ -183,13 +183,19 @@ private struct _KeyedEncodingContainer<
     }
 
     mutating func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
-        let keyString = self.encoder.mappingStrategy.map(input: key.stringValue)
         if let theType = try self.databaseValue(of: value) {
+            let keyString = self.encoder.mappingStrategy.map(input: key.stringValue)
             self.encoder.readFields.append(DatabaseField(column: keyString, value: theType))
         } else if value is AnyBelongsTo {
-            // Special case parent relationships to append a `_id` after the property name.
-            try value.encode(to: _SingleValueEncoder<M>(column: keyString + "_id", encoder: self.encoder))
+            // Special case parent relationships to append `M.belongsToColumnSuffix` to the property
+            // name.
+            let keyString = self.encoder.mappingStrategy
+                .map(input: key.stringValue + M.belongsToColumnSuffix)
+            try value.encode(
+                to: _SingleValueEncoder<M>(column: keyString, encoder: self.encoder)
+            )
         } else {
+            let keyString = self.encoder.mappingStrategy.map(input: key.stringValue)
             try value.encode(to: _SingleValueEncoder<M>(column: keyString, encoder: self.encoder))
         }
     }
@@ -236,7 +242,6 @@ extension ModelValueReader {
         } else if value is AnyBelongsTo || value is AnyHas {
             return nil
         } else {
-            print("Got type: \(E.self)")
             // Assume anything else is JSON.
             let jsonData = try M.jsonEncoder.encode(value)
             return .json(jsonData)

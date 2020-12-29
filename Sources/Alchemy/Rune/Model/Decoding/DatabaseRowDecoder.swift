@@ -112,9 +112,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
         } else if type == Date.self {
             return try self.row.getField(column: self.string(for: key)).date() as! T
         } else if type is AnyBelongsTo.Type {
-            print("\(key.stringValue): \(type)")
-            // Keys to parent relationships are special cased to add `_id` after the field name.
-            let field = try self.row.getField(column: self.string(for: key) + "_id")
+            let field = try self.row.getField(column: self.string(for: key, includeIdSuffix: true))
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is AnyHas.Type {
             // Special case the `AnyHas` to decode the coding key.
@@ -150,9 +148,15 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     /// Returns the database column string for a `CodingKey` given this container's
     /// `keyMappingStrategy`.
     ///
+    /// Keys to parent relationships are special cased to append `M.belongsToColumnSuffix` to the
+    /// field name.
+    ///
     /// - Parameter key: the `CodingKey` to map.
+    /// - Parameter includeIdSuffix: whether `M.belongsToColumnSuffix` should be appended to
+    ///                              `key.stringValue` _before_ being mapped.
     /// - Returns: the column name that `key` is mapped to.
-    private func string(for key: Key) -> String {
-        M.keyMappingStrategy.map(input: key.stringValue)
+    private func string(for key: Key, includeIdSuffix: Bool = false) -> String {
+        let value = key.stringValue + (includeIdSuffix ? M.belongsToColumnSuffix : "")
+        return M.keyMappingStrategy.map(input: value)
     }
 }
