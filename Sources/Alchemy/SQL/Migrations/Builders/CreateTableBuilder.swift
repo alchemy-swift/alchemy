@@ -22,7 +22,7 @@ public class CreateTableBuilder {
     /// - Parameters:
     ///   - columns: the names of the column(s) in this index.
     ///   - isUnique: whether this index will be unique.
-    func addIndex(columns: [String], isUnique: Bool) {
+    public func addIndex(columns: [String], isUnique: Bool) {
         self.createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
     }
     
@@ -31,7 +31,7 @@ public class CreateTableBuilder {
     /// - Parameter column: the name of the column to add.
     /// - Returns: a builder for adding modifiers to the column.
     @discardableResult public func increments(_ column: String) -> CreateColumnBuilder<Int> {
-        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "serial"))
+        self.appendAndReturn(builder: CreateColumnBuilder(name: column, type: "SERIAL"))
     }
     
     /// Adds an `Int` column.
