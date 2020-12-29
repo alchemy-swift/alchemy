@@ -8,11 +8,14 @@ protocol ColumnBuilderErased {
 ///
 /// `Default` is a Swift type that can be used to add a default value to this column.
 public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderErased {
+    /// The grammar of this builder.
+    private let grammar: Grammar
+    
     /// The name of the column.
     private let name: String
     
     /// The type string of the column.
-    private let type: String
+    private let type: ColumnType
     
     /// Any modifiers of the column.
     private var modifiers: [String]
@@ -20,10 +23,12 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     /// Create with a name, a type, and a modifier array.
     ///
     /// - Parameters:
+    ///   - grammar: the grammar with which to compile statements from this builder.
     ///   - name: the name of the column to create.
     ///   - type: the type of the column to create.
     ///   - modifiers: any modifiers of the column.
-    init(name: String, type: String, modifiers: [String] = []) {
+    init(grammar: Grammar, name: String, type: ColumnType, modifiers: [String] = []) {
+        self.grammar = grammar
         self.name = name
         self.type = type
         self.modifiers = modifiers
@@ -42,7 +47,12 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     /// - Parameter expression: a default value for this column.
     /// - Returns: this column builder.
     @discardableResult public func `default`(val: Default) -> Self {
-        self.appending(modifier: "DEFAULT \(val.toSQL().query)")
+        // Janky, but MySQL requires parenthases around text (but not varchar...) literals.
+        if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
+            return self.appending(modifier: "DEFAULT (\(val.toSQL().query))")
+        }
+        
+        return self.appending(modifier: "DEFAULT \(val.toSQL().query)")
     }
     
     /// Define this column as not nullable.
@@ -99,7 +109,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
     /// - Parameter jsonString: a JSON `String` to set as the default for this column.
     /// - Returns: this column builder.
     @discardableResult public func `default`(jsonString: String) -> Self {
-        self.appending(modifier: "DEFAULT '\(jsonString)'::jsonb")
+        self.appending(modifier: "DEFAULT \(self.grammar.jsonLiteral(from: jsonString))")
     }
     
     /// Adds an `Encodable` as the default for this column.
@@ -117,7 +127,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
         }
         
         let jsonString = String(decoding: jsonData, as: UTF8.self)
-        return self.appending(modifier: "DEFAULT '\(jsonString)'::jsonb")
+        return self.appending(modifier: "DEFAULT \(self.grammar.jsonLiteral(from: jsonString))")
     }
 }
 
@@ -153,11 +163,16 @@ extension Double: Sequelizable {
 
 extension Date: Sequelizable {
     /// The date formatter for turning this `Date` into an SQL string.
-    private static let sqlFormatter = ISO8601DateFormatter()
+    private static let sqlFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.timeZone = TimeZone(abbreviation: "GMT")
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return df
+    }()
     
     // MARK: Sequelizable
     
-    public func toSQL() -> SQL { SQL("\(Date.sqlFormatter.string(from: self))") }
+    public func toSQL() -> SQL { SQL("'\(Date.sqlFormatter.string(from: self))'") }
 }
 
 /// A type used to signify that a column on a database has a JSON type.

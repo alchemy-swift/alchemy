@@ -179,7 +179,7 @@ public class Grammar {
     func compileCreate(table: String, columns: [CreateColumn]) -> SQL {
         SQL("""
             CREATE TABLE \(table) (
-                \(columns.map { $0.toSQL() }.joined(separator: ",\n    "))
+                \(columns.map { $0.toSQL(with: self) }.joined(separator: ",\n    "))
             )
             """)
     }
@@ -197,7 +197,7 @@ public class Grammar {
             return []
         }
         
-        let adds = addColumns.map { "ADD COLUMN \($0.toSQL())" }
+        let adds = addColumns.map { "ADD COLUMN \($0.toSQL(with: self))" }
         let drops = dropColumns.map { "DROP COLUMN \($0)" }
         return [SQL("""
                     ALTER TABLE \(table)
@@ -216,6 +216,36 @@ public class Grammar {
     func compileDropIndex(table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName)")
     }
+    
+    func typeString(for type: ColumnType) -> String {
+        switch type {
+        case .bool:
+            return "bool"
+        case .date:
+            return "timestamptz"
+        case .double:
+            return "float8"
+        case .increments:
+            return "SERIAL"
+        case .int:
+            return "int"
+        case .json:
+            return "json"
+        case .string(let length):
+            switch length {
+            case .unlimited:
+                return "text"
+            case .limit(let characters):
+                return "varchar(\(characters))"
+            }
+        case .uuid:
+            return "uuid"
+        }
+    }
+    
+    func jsonLiteral(from jsonString: String) -> String {
+        "'\(jsonString)'::jsonb"
+    }
 
     private func parameterize(_ values: [Parameter]) -> String {
         return values.map { parameter($0) }.joined(separator: ", ")
@@ -231,4 +261,18 @@ public class Grammar {
     private func trim(_ value: String) -> String {
         return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+}
+
+/// An abstraction around various supported SQL column types. `Grammar`s will map the `ColumnType`
+/// to the backing dialect type string.
+enum ColumnType {
+    case increments, int, double, string(StringLength), uuid, bool, date, json
+}
+
+/// The length of an SQL string column in characters.
+public enum StringLength {
+    /// This value of this column can be any number of characters.
+    case unlimited
+    /// This value of this column must be at most the provided number of characters.
+    case limit(Int)
 }

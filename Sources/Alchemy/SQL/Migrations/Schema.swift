@@ -19,7 +19,7 @@ public class Schema {
     ///   - table: the name of the table to create.
     ///   - builder: a closure passing an object for building the new table.
     public func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
-        var createBuilder = CreateTableBuilder()
+        var createBuilder = CreateTableBuilder(grammar: self.grammar)
         builder(&createBuilder)
         
         let createColumns = self.grammar
@@ -35,7 +35,7 @@ public class Schema {
     ///   - table: the table to alter.
     ///   - builder: a closure passing a builder for defining what should be altered.
     public func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
-        var alterBuilder = AlterTableBuilder()
+        var alterBuilder = AlterTableBuilder(grammar: self.grammar)
         builder(&alterBuilder)
         
         let changes = self.grammar.compileAlter(
