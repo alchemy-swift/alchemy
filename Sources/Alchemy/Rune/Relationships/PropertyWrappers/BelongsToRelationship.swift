@@ -112,7 +112,6 @@ public final class BelongsToRelationship<
     
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
-            print("yo: \(type(of: encoder))")
             try self.value.encode(to: encoder)
         } else {
             // When encoding to the database, just encode the Parent's ID.
