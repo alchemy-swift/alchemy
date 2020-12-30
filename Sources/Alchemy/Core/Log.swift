@@ -12,45 +12,70 @@ import Logging
 /// // In Application.setup...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
-///
-///
 public struct Log {
-    /// The default logger to which all logs will be logged. It has label
-    /// `alchemy_default_logger`.
-    public static var logger = Logger(label: "alchemy_default_logger")
+    /// The logger to which all logs will be logged. By default it's a logger with label `alchemy`.
+    public static var logger = Logger(label: "alchemy")
     
     /// Log a message with the `Logger.Level.trace` log level.
-    public static func trace(_ message: String) {
-        Log.logger.trace(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func trace(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.trace(.init(stringLiteral: message), metadata: metadata)
     }
     
     /// Log a message with the `Logger.Level.trace` log level.
-    public static func debug(_ message: String) {
-        Log.logger.debug(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func debug(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.debug(.init(stringLiteral: message), metadata: metadata)
     }
     
     /// Log a message with the `Logger.Level.info` log level.
-    public static func info(_ message: String) {
-        Log.logger.info(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func info(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.info(.init(stringLiteral: message), metadata: metadata)
     }
     
     /// Log a message with the `Logger.Level.notice` log level.
-    public static func notice(_ message: String) {
-        Log.logger.notice(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func notice(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.notice(.init(stringLiteral: message), metadata: metadata)
     }
     
     /// Log a message with the `Logger.Level.warning` log level.
-    public static func warning(_ message: String) {
-        Log.logger.warning(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func warning(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.warning(.init(stringLiteral: message), metadata: metadata)
     }
     
     /// Log a message with the `Logger.Level.error` log level.
-    public static func error(_ message: String) {
-        Log.logger.error(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func error(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.error(.init(stringLiteral: message), metadata: metadata)
     }
     
     /// Log a message with the `Logger.Level.critical` log level.
-    public static func critical(_ message: String) {
-        Log.logger.critical(.init(stringLiteral: message))
+    ///
+    /// - Parameters:
+    ///   - message: the message to log.
+    ///   - metadata: any metadata (a typealias of `[String: Logger.MetadataType]`) to log.
+    public static func critical(_ message: String, metadata: Logger.Metadata? = nil) {
+        Log.logger.critical(.init(stringLiteral: message), metadata: metadata)
     }
 }

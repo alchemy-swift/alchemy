@@ -6,6 +6,8 @@ struct ExampleApplication: Application {
     @Inject var router: Router
     
     func setup() {
+        Log.info("Hello from setup.")
+        
         // Register global database
         Container.global.register(singleton: Database.self) { _ in
             PostgresDatabase(config: .postgres)
