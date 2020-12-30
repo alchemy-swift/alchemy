@@ -8,8 +8,8 @@ protocol AnyQuery {
 }
 
 @propertyWrapper
-/// Represents a query item on an endpoint.
-public struct HTTPQuery<Value: Codable>: Codable, AnyQuery {
+/// Represents a value in the query of an endpoint's URL.
+public struct URLQuery<Value: Codable>: Codable, AnyQuery {
     /// The value of the query item.
     public var wrappedValue: Value
 
