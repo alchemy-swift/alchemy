@@ -31,7 +31,7 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     static var tableName: String { get }
     
     /// How should the Swift `CodingKey`s be mapped to database columns? Defaults to
-    /// `.useDefaultKeys`. Can be overridden on a per-type basis.
+    /// `.convertToSnakeCase`. Can be overridden on a per-type basis.
     static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
     
     /// When mapping a `Model` to an SQL table, `@BelongsTo` properties will have their property
