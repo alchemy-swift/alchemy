@@ -122,12 +122,14 @@ private struct EncodingHelper {
     /// - Returns: a `String` with the queries of this request or an empty string if this request
     ///            has no queries.
     func queryString() -> String {
-        self.queries.isEmpty ? "" :
-            "?" + self.queries.sorted { $0.key < $1.key }
+        self.queries.isEmpty ? "" : "?" + self.queries
+            .sorted { $0.key < $1.key }
             .reduce(into: []) { list, query in
                 list += String.queryComponents(fromKey: query.key, value: query.value.value)
             }
-            .map { "\($0)" + ($1.isEmpty ? "" : "=\($1)") }
+            .map { (key: String, value: String) in
+                "\(key)" + (value.isEmpty ? "" : "=\(value)")
+            }
             .joined(separator: "&")
     }
     

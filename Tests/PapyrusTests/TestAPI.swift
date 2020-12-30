@@ -1,47 +1,77 @@
 @testable import Papyrus
 
-struct TestAPI {
-    @POST("/v1/accounts/:userID/transfer")
-    var post: Endpoint<TestReqDTO, TestResDTO>
+final class TestAPI: EndpointGroup {
+    @POST("/foo/:path1/bar")
+    var post: Endpoint<TestRequest, Empty>
     
-    @GET("/get")
-    var get: Endpoint<Empty, Empty>
+    @PUT("/body")
+    var urlBody: Endpoint<TestURLBody, Empty>
     
-    @DELETE("/get")
+    @POST("/multiple")
+    var multipleBodies: Endpoint<MultipleBodies, Empty>
+    
+    @GET("/query")
+    var queryCodable: Endpoint<TestQueryCodable, Empty>
+    
+    @DELETE("/delete")
     var delete: Endpoint<Empty, Empty>
     
-    @PUT("/get")
-    var put: Endpoint<Empty, Empty>
-    
-    @PATCH("/get")
+    @PATCH("/patch")
     var patch: Endpoint<Empty, Empty>
     
     @CUSTOM(method: "CONNECT", "/connect")
     var custom: Endpoint<Empty, Empty>
 }
 
-struct TestReqDTO: EndpointRequest {
+struct TestRequest: EndpointRequest {
     @Path
-    var userID: String
+    var path1: String
     
     @URLQuery
-    var number: Int
+    var query1: Int
     
     @URLQuery
-    var someThings: [String]
+    var query2: String?
+    
+    @URLQuery
+    var query3: String?
+    
+    @URLQuery
+    var query4: [String]
+    
+    @URLQuery
+    var query5: [String]
     
     @Header
-    var value: String
+    var header1: String
     
     @Body
-    var obj: SomeJSON
+    var body: SomeJSON
+}
+
+struct TestURLBody: EndpointRequest {
+    @Body(.urlEncoded)
+    var body: SomeJSON
+    
+    init(body: SomeJSON) {
+        self.body = body
+    }
+}
+
+struct TestQueryCodable: EndpointRequest {
+    @URLQuery
+    var body: SomeJSON
+}
+
+struct MultipleBodies: EndpointRequest {
+    @Body
+    var body1 = SomeJSON(string: "foo", int: 0)
+    
+    @Body
+    var body2 = SomeJSON(string: "bar", int: 1)
 }
 
 struct SomeJSON: Codable {
     var string: String
     var int: Int
-}
-
-struct TestResDTO: Codable {
-    let string: String
 }

@@ -1,5 +1,17 @@
 import Foundation
 
+/// Need to detect if types are optional so we can avoid putting nil in a query.
+private protocol AnyOptional {
+    /// The erased, unwrapped value of this optional.
+    var unwrappedAny: Any? { get }
+}
+
+extension Optional: AnyOptional {
+    var unwrappedAny: Any? {
+        self.map { $0 as Any }
+    }
+}
+
 /// Courtesy of https://github.com/Alamofire/Alamofire .
 extension String {
     /// Creates a percent-escaped, URL encoded query string components from the given key-value pair recursively.
@@ -24,6 +36,10 @@ extension String {
             components.append((self.escape(key), self.escape("\(value)")))
         } else if let bool = value as? Bool {
             components.append((self.escape(key), self.escape(BoolEncoding.numeric.encode(value: bool))))
+        } else if let optional = value as? AnyOptional {
+            if let unwrapped = optional.unwrappedAny {
+                components += self.queryComponents(fromKey: key, value: unwrapped)
+            }
         } else {
             components.append((self.escape(key), self.escape("\(value)")))
         }
