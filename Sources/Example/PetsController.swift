@@ -3,17 +3,21 @@ import Foundation
 import NIO
 
 struct PetsController {
-    func getUsers(_ req: HTTPRequest) -> EventLoopFuture<[User]> {
-        User.query()
-            .with(\.$pet)
-            .with(\.$pets)
+    func getOwners(_ req: HTTPRequest) -> EventLoopFuture<[Owner]> {
+        Owner.query()
+            .with(\.$license)
+            .with(\.$pets) {
+                $0.with(\.$vaccines)
+            }
             .getAll()
     }
     
-    func createUser(_ req: HTTPRequest) throws -> EventLoopFuture<User> {
-        User(bmi: 20.0, email: "josh@test.com", age: 27, isPro: true, createdAt: Date(),
-             passwordHash: try Bcrypt.hash("password"), parent: nil)
-            .save()
+    func createOwner(_ req: HTTPRequest) throws -> EventLoopFuture<Owner> {
+        Owner(name: UUID().uuidString).save()
+    }
+    
+    func createLicense(_ req: HTTPRequest) throws -> EventLoopFuture<License> {
+        License(code: UUID().uuidString, owner: .init(0)).save()
     }
     
     func getPets(_ req: HTTPRequest) -> EventLoopFuture<[Pet]> {
@@ -24,17 +28,11 @@ struct PetsController {
     }
     
     func createPet(_ req: HTTPRequest) -> EventLoopFuture<Pet> {
-        Pet(id: nil, name: "Melvin", type: .dog, owner: .init(UUID()))
-            .save()
+        Pet(name: UUID().uuidString, owner: .init(0)).save()
     }
     
     func vaccinate(_ req: HTTPRequest) throws -> EventLoopFuture<Void> {
-        let petID = try Int((req.pathParameter(named: "pet_id")?.stringValue ?? ""))
-                                .unwrap(or: PetError("not int"))
-        let vaccineID = try Int((req.pathParameter(named: "vaccine_id")?.stringValue ?? ""))
-                                    .unwrap(or: PetError("not int"))
-        
-        return PetVaccine(pet: .init(petID), vaccine: .init(vaccineID))
+        return PetVaccine(pet: .init(0), vaccine: .init(0))
             .save()
             .voided()
     }

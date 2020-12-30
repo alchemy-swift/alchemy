@@ -8,7 +8,7 @@ import Foundation
 ///            `init(from: Decoder)` or `func encode(to: Encoder)`. Override those at your own risk!
 ///            You might be able to get away with it, but it could also break things in unexpected
 ///            ways.
-public protocol Model: Codable, Identifiable, ModelMaybeOptional {
+public protocol Model: Identifiable, ModelMaybeOptional {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
     
@@ -70,7 +70,7 @@ extension Model {
     }
     
     public static var keyMappingStrategy: DatabaseKeyMappingStrategy {
-        .useDefaultKeys
+        .convertToSnakeCase
     }
     
     public static var belongsToColumnSuffix: String {

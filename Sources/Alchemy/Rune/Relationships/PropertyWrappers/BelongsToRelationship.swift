@@ -111,9 +111,14 @@ public final class BelongsToRelationship<
     // MARK: Codable
     
     public func encode(to encoder: Encoder) throws {
-        // When encoding to the database, just encode the Parent's ID.
-        var container = encoder.singleValueContainer()
-        try container.encode(self.id)
+        if !(encoder is ModelEncoder) {
+            print("yo: \(type(of: encoder))")
+            try self.value.encode(to: encoder)
+        } else {
+            // When encoding to the database, just encode the Parent's ID.
+            var container = encoder.singleValueContainer()
+            try container.encode(self.id)
+        }
     }
     
     public init(from decoder: Decoder) throws {

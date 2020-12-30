@@ -13,4 +13,4 @@
 ///     var priority: TaskPriority // Usable for storing to and from an SQL database.
 /// }
 /// ```
-typealias ModelEnum = Codable & Parameter
+public typealias ModelEnum = Codable & Parameter

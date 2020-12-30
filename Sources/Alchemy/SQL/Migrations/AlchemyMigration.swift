@@ -1,22 +1,27 @@
 /// The migration table to store migrations in.
 private let kMigrationTable = "_alchemy_migrations"
-/// A query to run to create the migration table, if it doesn't exist.
-private let kMigrationTableCreateQuery =
-    """
-    CREATE TABLE IF NOT EXISTS _alchemy_migrations (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        batch INT NOT NULL,
-        run_at TIMESTAMPTZ NOT NULL
-    )
-    """
+
+/// A migration for adding the `AlchemyMigration` table.
+struct AddAlchemyMigration: Migration {
+    func up(schema: Schema) {
+        schema.create(table: kMigrationTable, ifNotExists: true) {
+            $0.increments("id").primary()
+            $0.string("name").notNull()
+            $0.int("batch").notNull()
+            $0.date("run_at").notNull()
+        }
+    }
+    
+    func down(schema: Schema) {
+        schema.drop(table: kMigrationTable)
+    }
+}
 
 /// Represents a table for storing migration data. Alchemy will use this table for keeping track of
 /// the various batches of migrations that have been run.
 struct AlchemyMigration: Model {
     static var tableName: String = kMigrationTable
-    /// A query for creating this table.
-    static var creationQuery: String { kMigrationTableCreateQuery }
+    static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
     
     /// Serial primary key.
     var id: Int?

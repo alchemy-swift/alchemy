@@ -17,13 +17,22 @@ public class Schema {
     ///
     /// - Parameters:
     ///   - table: the name of the table to create.
+    ///   - ifNotExists: if the query should silently not be run if the table already exists.
+    ///                  Defaults to `false`.
     ///   - builder: a closure passing an object for building the new table.
-    public func create(table: String, builder: (inout CreateTableBuilder) -> Void) {
+    public func create(
+        table: String,
+        ifNotExists: Bool = false,
+        builder: (inout CreateTableBuilder) -> Void
+    ) {
         var createBuilder = CreateTableBuilder(grammar: self.grammar)
         builder(&createBuilder)
         
-        let createColumns = self.grammar
-            .compileCreate(table: table, columns: createBuilder.createColumns)
+        let createColumns = self.grammar.compileCreate(
+            table: table,
+            ifNotExists: ifNotExists,
+            columns: createBuilder.createColumns
+        )
         let createIndexes = self.grammar
             .compileCreateIndexes(table: table, indexes: createBuilder.createIndexes)
         self.statements.append(contentsOf: [createColumns] + createIndexes)

@@ -28,9 +28,9 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "bool", value: .bool(true)),
             DatabaseField(column: "double", value: .double(3.14159)),
             DatabaseField(column: "json", value: .json(jsonData)),
-            DatabaseField(column: "stringEnum", value: .string("third")),
-            DatabaseField(column: "intEnum", value: .int(1)),
-            DatabaseField(column: "belongsToId", value: .int(5)),
+            DatabaseField(column: "string_enum", value: .string("third")),
+            DatabaseField(column: "int_enum", value: .int(1)),
+            DatabaseField(column: "belongs_to_id", value: .int(5)),
         ]
         
         XCTAssertEqual(expectedFields, try model.fields())
@@ -40,11 +40,11 @@ final class DatabaseEncodingTests: XCTestCase {
         let model = CustomKeyedModel(belongsTo: .init(9))
         let fields = try model.fields()
         XCTAssertEqual([
-            "val_1",
-            "value_two",
-            "value_three_int",
+            "val1",
+            "valueTwo",
+            "valueThreeInt",
             "snake_case",
-            "belongs_to_id"
+            "belongsToId"
         ], fields.map(\.column))
     }
     
@@ -104,7 +104,7 @@ private struct CustomKeyedModel: Model {
     @BelongsTo
     var belongsTo: CustomKeyedModel
     
-    static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
+    static var keyMappingStrategy: DatabaseKeyMappingStrategy { .useDefaultKeys }
 }
 
 private struct CustomDecoderModel: Model {

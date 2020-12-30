@@ -33,7 +33,7 @@ public protocol Relationship {
 /// This protocol exists so that `Model?` and `Model` can be treated similarly in relationship
 /// property wrappers. Sometimes a relationship may be optional, sometimes it may be required.
 /// Alchemy supports both cases.
-public protocol ModelMaybeOptional {
+public protocol ModelMaybeOptional: Codable {
     /// The underlying `Model` type. `Self` if this is a `Model`, `Wrapped` if this is a `Model?`.
     associatedtype Value: Model
     
