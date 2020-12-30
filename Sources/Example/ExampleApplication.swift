@@ -28,10 +28,11 @@ struct ExampleApplication: Application {
             // Group all pet requests
             .group(path: "/pets") {
                 let controller = PetsController()
-                $0.on(.POST, at: "/user", do: controller.createUser)
-                $0.on(.GET, at: "/user", do: controller.getUsers)
+                $0.on(.POST, at: "/owner", do: controller.createOwner)
+                $0.on(.GET, at: "/owner", do: controller.getOwners)
                 $0.on(.POST, at: "/pet", do: controller.createPet)
                 $0.on(.GET, at: "/pet", do: controller.getPets)
+                $0.on(.GET, at: "/license", do: controller.createLicense)
                 $0.on(.POST, at: "/vaccinate/:pet_id/:vaccine_id", do: controller.vaccinate)
             }
             // Group all requests to /users
@@ -73,11 +74,12 @@ struct ExampleApplication: Application {
                 $0.on(.GET, at: "/update", do: DatabaseTestController().update)
             }
         
-        database.migrations.append(contentsOf: [
-            _20200119117000CreateUsers(),
-            _20200219117000CreateTodos(),
-            _20200319117000RenameTodos(),
-        ] as [Migration])
+        database.migrations
+            .append(contentsOf: [
+                _20201229164212CreatePets(),
+            ])
+
+        _ = database.migrate()
     }
 }
 

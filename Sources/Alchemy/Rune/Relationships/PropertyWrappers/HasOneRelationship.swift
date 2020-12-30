@@ -76,5 +76,9 @@ public final class HasOneRelationship<
         try super.init(from: decoder)
     }
 
-    public func encode(to encoder: Encoder) throws {}
+    public func encode(to encoder: Encoder) throws {
+        if !(encoder is ModelEncoder) {
+            try self.value.encode(to: encoder)
+        }
+    }
 }

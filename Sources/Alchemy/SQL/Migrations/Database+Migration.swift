@@ -45,7 +45,8 @@ extension Database {
     /// - Returns: a future containing an array of all the migrations that have been applied to this
     ///            database.
     private func getMigrations() -> EventLoopFuture<[AlchemyMigration]> {
-        self.runRawQuery(AlchemyMigration.creationQuery)
+        let createMigrationsTable = AddAlchemyMigration().upStatements(for: self.grammar).first!
+        return self.runRawQuery(createMigrationsTable.query)
             .flatMap { _ in
                 AlchemyMigration.query(database: self).getAll()
             }

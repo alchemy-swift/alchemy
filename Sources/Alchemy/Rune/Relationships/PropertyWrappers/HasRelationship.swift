@@ -7,7 +7,7 @@ protocol AnyHas {}
 /// Contains shared behavior for "has" relationships, particularly around eager loading
 /// functionality.
 ///
-/// - Warning: Eager loading for `HasRelationship`s is a janky mess since there isn't a good way to
+/// - Warning: Eager loading for `HasRelationship`s is a bit janky since there isn't a good way to
 /// associate data with a property wrapper that persists when the `Model` is encoded / decoded.
 ///
 /// It does work though :)
@@ -89,7 +89,7 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
                 from: From.self,
                 to: To.self,
                 fromStored: codingKey
-            ) else { fatalError("Unable to find the data of this relationship ;_;") }
+            ) else { fatalError("Unable to find the eager loading behavior of this relationship.") }
         
         self.eagerLoadClosure = loadClosure
     }

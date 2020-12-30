@@ -16,7 +16,7 @@ protocol TestMigration: Migration {
 
 struct Migration1: TestMigration {
     func up(schema: Schema) {
-        schema.create(table: "users") {
+        schema.create(table: "users", ifNotExists: true) {
             $0.uuid("id").primary().default(expression: "uuid_generate_v4()")
             $0.double("bmi").default(val: 15.0)
             $0.string("email").notNull().unique()
@@ -38,7 +38,7 @@ struct Migration1: TestMigration {
     var expectedUpStatementsPostgreSQL: [SQL] {
         [
             SQL("""
-                CREATE TABLE users (
+                CREATE TABLE IF NOT EXISTS users (
                     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
                     bmi float8 DEFAULT 15.0,
                     email varchar(255) NOT NULL UNIQUE,
@@ -60,7 +60,7 @@ struct Migration1: TestMigration {
     var expectedUpStatementsMySQL: [SQL] {
         [
             SQL("""
-                CREATE TABLE users (
+                CREATE TABLE IF NOT EXISTS users (
                     id varchar(36) PRIMARY KEY DEFAULT uuid_generate_v4(),
                     bmi double DEFAULT 15.0,
                     email varchar(255) NOT NULL UNIQUE,

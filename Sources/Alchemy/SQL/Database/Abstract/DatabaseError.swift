@@ -1,5 +1,5 @@
 /// An error encountered when interacting with a `Database`.
-struct DatabaseError: Error {
+public struct DatabaseError: Error {
     /// What went wrong.
     let message: String
     

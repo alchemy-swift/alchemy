@@ -73,7 +73,11 @@ public final class HasManyRelationship<
     
     // MARK: Codable
     
-    public func encode(to encoder: Encoder) throws {}
+    public func encode(to encoder: Encoder) throws {
+        if !(encoder is ModelEncoder) {
+            try self.value.encode(to: encoder)
+        }
+    }
     
     public required init(from decoder: Decoder) throws {
         try super.init(from: decoder)

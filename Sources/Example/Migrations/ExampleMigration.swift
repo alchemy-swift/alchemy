@@ -49,3 +49,43 @@ struct _20200319117000RenameTodos: Migration {
         schema.rename(table: "user_todos", to: "todos")
     }
 }
+
+struct _20201229164212CreatePets: Migration {
+    func up(schema: Schema) {
+        schema.create(table: "owners") {
+            $0.increments("id").primary()
+            $0.string("name").notNull()
+        }
+        
+        schema.create(table: "vaccines") {
+            $0.increments("id").primary()
+            $0.string("name").notNull()
+        }
+        
+        schema.create(table: "pets") {
+            $0.increments("id").primary()
+            $0.string("name").notNull()
+            $0.int("owner_id").references("id", on: "owners")
+        }
+        
+        schema.create(table: "licenses") {
+            $0.increments("id").primary()
+            $0.string("code").notNull()
+            $0.int("owner_id").references("id", on: "owners")
+        }
+        
+        schema.create(table: "pet_vaccines") {
+            $0.increments("id").primary()
+            $0.int("pet_id").references("id", on: "pets")
+            $0.int("vaccine_id").references("id", on: "vaccines")
+        }
+    }
+    
+    func down(schema: Schema) {
+        schema.drop(table: "owners")
+        schema.drop(table: "vaccines")
+        schema.drop(table: "pets")
+        schema.drop(table: "licenses")
+        schema.drop(table: "pet_vaccines")
+    }
+}

@@ -85,7 +85,7 @@ extension MySQLData {
             let value = DatabaseValue.date(try validateNil(self.time?.date))
             return DatabaseField(column: column, value: value)
         case .time:
-            fatalError("Times aren't supported yet.")
+            throw DatabaseError("Times aren't supported yet.")
         case .float, .decimal, .double:
             let value = DatabaseValue.double(try validateNil(self.double))
             return DatabaseField(column: column, value: value)

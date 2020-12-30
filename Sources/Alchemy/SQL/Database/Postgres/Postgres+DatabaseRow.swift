@@ -79,7 +79,7 @@ extension PostgresData {
             let value = DatabaseValue.date(try validateNil(self.date))
             return DatabaseField(column: column, value: value)
         case .time, .timetz:
-            fatalError("Times aren't supported yet.")
+            throw DatabaseError("Times aren't supported yet.")
         case .float4, .float8:
             let value = DatabaseValue.double(try validateNil(self.double))
             return DatabaseField(column: column, value: value)

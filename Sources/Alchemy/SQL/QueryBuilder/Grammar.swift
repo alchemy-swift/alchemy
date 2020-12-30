@@ -176,9 +176,9 @@ public class Grammar {
     
     // MARK: - Migration Compiling
     
-    func compileCreate(table: String, columns: [CreateColumn]) -> SQL {
+    func compileCreate(table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
         SQL("""
-            CREATE TABLE \(table) (
+            CREATE TABLE\(ifNotExists ? " IF NOT EXISTS" : "") \(table) (
                 \(columns.map { $0.toSQL(with: self) }.joined(separator: ",\n    "))
             )
             """)

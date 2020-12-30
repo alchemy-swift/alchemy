@@ -1,8 +1,11 @@
 import Foundation
 
+/// Used so `Relationship` types can know not to encode themselves to a `ModelEncoder`.
+protocol ModelEncoder: Encoder {}
+
 /// Used for turning any `Model` into an array of `DatabaseField`s (column/value
 /// combinations) based on its stored properties.
-final class ModelFieldReader<M: Model>: Encoder {
+final class ModelFieldReader<M: Model>: ModelEncoder {
     /// Used for keeping track of the database fields pulled off the object encoded to this encoder.
     fileprivate var readFields: [DatabaseField] = []
     
@@ -51,7 +54,7 @@ final class ModelFieldReader<M: Model>: Encoder {
 
 /// Encoder helper for pulling out `DatabaseField`s from any fields that encode to a
 /// `SingleValueEncodingContainer`.
-private struct _SingleValueEncoder<M: Model>: Encoder {
+private struct _SingleValueEncoder<M: Model>: ModelEncoder {
     /// The database column to which a value encoded here should map to.
     let column: String
     

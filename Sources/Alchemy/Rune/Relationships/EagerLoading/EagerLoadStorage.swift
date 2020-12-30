@@ -19,6 +19,10 @@ import Foundation
 /// 1 would be best, since the behavior should be tied to the relationship, but I don't think it
 /// will be possible to initialize without losing the info in the default propertyWrapper
 /// initializer, so 2 will likely need to be the way moving forward.
+///
+/// Also, the only reason this works is because when initializing property wrappers from a decoder,
+/// for some reason the provided init is called before the decoder init is called, giving us a
+/// chance to cache the eager load closure if it hasn't been already.
 final class EagerLoadStorage {
     /// Lock for keeping static access of this property threadsafe.
     private static let lock = NSRecursiveLock()
