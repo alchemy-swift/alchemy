@@ -55,6 +55,15 @@ public class Query: Sequelizable {
         return self
     }
 
+    /// Join data from a separate table into the current query.
+    ///
+    /// - Parameters:
+    ///   - table: the table to be joined
+    ///   - first: the column from the current query to be matched
+    ///   - op: the `Operator` to be used in the comparison
+    ///   - second: the column from the joining table to be matched
+    ///   - type: the `JoinType` of the sql join
+    /// - Returns: a the current query builder `Query` to chain future queries to
     public func join(
         table: String,
         first: String,
@@ -189,10 +198,13 @@ public class Query: Sequelizable {
         return self.whereRaw(sql: sql, bindings: bindings, boolean: .or)
     }
 
-    @discardableResult
     public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereColumn(first: first, op: op, second: Expression(second), boolean: boolean))
         return self
+    }
+
+    public func orWhereColumn(first: String, op: Operator, second: String) -> Self {
+        return self.whereColumn(first: first, op: op, second: second, boolean: = .or)
     }
 
     public func whereNull(
@@ -322,11 +334,6 @@ public class Query: Sequelizable {
                 return nil
         }
     }
-
-    //
-    //    paginate(perPage, columns, page)
-    //    exists()
-    //
 
     public func insert(_ value: OrderedDictionary<String, Parameter>) -> EventLoopFuture<[DatabaseRow]> {
         return insert([value])
