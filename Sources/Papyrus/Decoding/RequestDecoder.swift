@@ -6,13 +6,10 @@ typealias KeyMapping = (String) -> String
 private enum RequestComponent {
     /// The request body.
     case body
-    
     /// The request headers.
     case header
-    
     /// The request query string.
     case query
-    
     /// The request path.
     case path
 }

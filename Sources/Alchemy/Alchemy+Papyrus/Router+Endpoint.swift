@@ -56,22 +56,19 @@ public extension Router {
 extension HTTPRequest: DecodableRequest {
     // MARK: DecodableRequest
     
-    public func getHeader(for key: String) throws -> String {
-        try self.headers.first(name: key)
-            .unwrap(or: PapyrusError("Expected `\(key)` in the request headers."))
+    public func getHeader(for key: String) -> String? {
+        self.headers.first(name: key)
     }
     
-    public func getQuery(for key: String) throws -> String {
-        try (self.queryItems
+    public func getQuery(for key: String) -> String? {
+        self.queryItems
             .filter ({ $0.name == key })
             .first?
-            .value)
-            .unwrap(or: PapyrusError("Expected `\(key)` in the request query"))
+            .value
     }
     
-    public func getPathComponent(for key: String) throws -> String {
-        try self.pathParameters.first(where: { $0.parameter == key })
-            .unwrap(or: PapyrusError("Expected `\(key)` in the request path components."))
+    public func getPathComponent(for key: String) -> String? {
+        self.pathParameters.first(where: { $0.parameter == key })?
             .stringValue
     }
     
