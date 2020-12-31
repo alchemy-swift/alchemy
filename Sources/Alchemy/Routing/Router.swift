@@ -201,7 +201,7 @@ private struct ChainedMiddleware: Middleware {
     
     func intercept(
         _ request: Request,
-        next: @escaping MiddlewareNext
+        next: @escaping Next
     ) -> EventLoopFuture<Response> {
         self.first.intercept(request) { request in
             self.second.intercept(request, next: next)

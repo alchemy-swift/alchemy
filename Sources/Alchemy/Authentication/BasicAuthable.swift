@@ -91,7 +91,7 @@ extension BasicAuthable {
 public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
     public func intercept(
         _ request: Request,
-        next: @escaping MiddlewareNext
+        next: @escaping Next
     ) -> EventLoopFuture<Response> {
         catchError {
             guard let basicAuth = request.basicAuth() else {

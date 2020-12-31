@@ -33,12 +33,12 @@ import NIO
 public protocol Middleware {
     /// The expected closure tyoe of a `Middleware.intercept`'s next parameter. It is a closure that
     /// expects a request and returns a future containing a response.
-    typealias MiddlewareNext = (Request) -> EventLoopFuture<Response>
+    typealias Next = (Request) -> EventLoopFuture<Response>
     
     /// Intercept a requst, returning a future with a request when whatever this middleware needs to
     /// do is finished.
     ///
     /// - Parameter request: the incoming request to intercept, then pass along the middleware /
     ///                      handler chain.
-    func intercept(_ request: Request, next: @escaping MiddlewareNext) -> EventLoopFuture<Response>
+    func intercept(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response>
 }

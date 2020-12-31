@@ -143,7 +143,7 @@ struct SampleJSON: Codable {
 struct LoggingMiddleware: Middleware {
     let text: String
     
-    func intercept(_ request: Request, next: @escaping MiddlewareNext) -> EventLoopFuture<Response> {
+    func intercept(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
         Log.info(self.text)
         return next(request)
             .map {

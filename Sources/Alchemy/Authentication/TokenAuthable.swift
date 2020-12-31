@@ -70,7 +70,7 @@ extension TokenAuthable {
 public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
     public func intercept(
         _ request: Request,
-        next: @escaping MiddlewareNext
+        next: @escaping Next
     ) -> EventLoopFuture<Response> {
         catchError {
             guard let bearerAuth = request.bearerAuth() else {
