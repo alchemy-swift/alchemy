@@ -78,7 +78,8 @@ extension HTTPRequest: DecodableRequest {
     public func getBody<T>() throws -> T where T : Decodable {
         do {
             return try self.body
-                .unwrap(or: PapyrusError("There was no body in this request."))
+                .unwrap(or: PapyrusError("There was no body in this request. Note that decoding"
+                                            + " @Body(.urlEncoded) isn't supported yet."))
                 .decodeJSON(as: T.self)
         } catch {
             throw PapyrusError("Encountered an error decoding the body to type `\(T.self)`: "

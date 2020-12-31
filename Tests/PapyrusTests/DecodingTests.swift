@@ -3,39 +3,43 @@ import XCTest
 
 final class DecodingTests: XCTestCase {
     func testDecodeRequest() throws {
-        let decodedRequest = try TestRequest(from: MockRequest())
-        XCTAssertEqual(decodedRequest.header1, "header1")
-        XCTAssertEqual(decodedRequest.path1, "path1")
+        let body = try JSONEncoder().encode(SomeJSON(string: "baz", int: 0))
+        let mockRequest = MockRequest(
+            headers: ["header1": "foo"],
+            paths: ["path1": "bar"],
+            queries: [
+                "query1": 1,
+                "query3": "three",
+            ],
+            bodyData: body
+        )
+        let decodedRequest = try DecodeTestRequest(from: mockRequest)
+        XCTAssertEqual(decodedRequest.header1, "foo")
+        XCTAssertEqual(decodedRequest.path1, "bar")
         XCTAssertEqual(decodedRequest.query1, 1)
-        XCTAssertEqual(decodedRequest.query2, "query2")
-        XCTAssertEqual(decodedRequest.query3, "query3")
-        XCTAssertEqual(decodedRequest.query4, ["query2"])
-        XCTAssertEqual(decodedRequest.query5, ["query5"])
-        XCTAssertEqual(decodedRequest.body.string, "test")
+        XCTAssertEqual(decodedRequest.query2, nil)
+        XCTAssertEqual(decodedRequest.query3, "three")
+        XCTAssertEqual(decodedRequest.query4, nil)
+        XCTAssertEqual(decodedRequest.body.string, "baz")
         XCTAssertEqual(decodedRequest.body.int, 0)
     }
     
-    func testDecodeURLBody() throws {
-        let decodedRequest = try TestURLBody(from: MockRequest())
-        XCTAssertEqual(decodedRequest.body.string, "test1")
-        XCTAssertEqual(decodedRequest.body.int, 1)
-    }
-    
-    func testDecodeMultipleBodyThrows() {
-        XCTAssertThrowsError(try MultipleBodies(from: MockRequest()))
+    /// Decoding `@Body` with content `urlEncoded` isn't supported yet.
+    func testDecodeURLBodyThrows() throws {
+        XCTAssertThrowsError(try TestURLBody(from: MockRequest()))
     }
 }
 
 struct MockRequest: DecodableRequest {
     let headers: [String: String]
     let paths: [String: String]
-    let queries: [String: String]
+    let queries: [String: Any]
     let bodyData: Data?
     
     init(
         headers: [String: String] = [:],
         paths: [String: String] = [:],
-        queries: [String: String] = [:],
+        queries: [String: Any] = [:],
         bodyData: Data? = nil
     ) {
         self.headers = headers
@@ -44,19 +48,42 @@ struct MockRequest: DecodableRequest {
         self.bodyData = bodyData
     }
     
-    func getHeader(for key: String) throws -> String {
-        self.headers[key] ?? ""
+    func getHeader(for key: String) -> String? {
+        self.headers[key]
     }
     
-    func getQuery(for key: String) throws -> String {
-        self.queries[key] ?? ""
+    func getQuery(for key: String) -> String? {
+        self.queries[key].map { "\($0)" }
     }
     
-    func getPathComponent(for key: String) throws -> String {
-        self.paths[key] ?? ""
+    func getPathComponent(for key: String) -> String? {
+        self.paths[key]
     }
     
-    func getBody<T>() throws -> T where T : Decodable {
+    func getBody<T: Decodable>() throws -> T {
         try JSONDecoder().decode(T.self, from: self.bodyData ?? Data())
     }
+}
+
+struct DecodeTestRequest: EndpointRequest {
+    @Path
+    var path1: String
+    
+    @URLQuery
+    var query1: Int
+    
+    @URLQuery
+    var query2: Int?
+    
+    @URLQuery
+    var query3: String?
+    
+    @URLQuery
+    var query4: String?
+    
+    @Header
+    var header1: String
+    
+    @Body
+    var body: SomeJSON
 }
