@@ -13,13 +13,13 @@ extension Endpoint {
     /// - Returns: a `DataRequest` for tracking the response.
     public func request(_ request: Request, session: Session = .default) throws -> DataRequest {
         let requestParameters = try self.parameters(dto: request)
+        let contentType = requestParameters.body?.contentType ?? .json
         return session.request(
             self.baseURL + requestParameters.fullPath,
             method: requestParameters.method.af,
             parameters: requestParameters.body?.content,
-            // No need to handle any path parameter encoding, since that's baked into the
-            // `.fullPath` above.
-            encoder: JSONParameterEncoder.default,
+            encoder: contentType == .json ?
+                JSONParameterEncoder.default : URLEncodedFormParameterEncoder.default,
             headers: HTTPHeaders(requestParameters.headers)
         )
     }

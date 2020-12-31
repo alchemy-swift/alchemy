@@ -34,6 +34,11 @@ public class Inject<Service> {
     /// Create the property wrapper with no identifier.
     public init() {}
     
+    /// Create the property wrapper with an identifier.
+    public init<H: Hashable>(_ identifier: H) {
+        self.identifier = identifier
+    }
+    
     /// Resolves an instance of `Service` from the given container.
     ///
     /// - Parameter container: the container to resolve a `Service` from.

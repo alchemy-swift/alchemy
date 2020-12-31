@@ -96,11 +96,11 @@ private struct EncodingHelper {
 
                 let sanitizedLabel = String(label.dropFirst())
                 if let query = child.value as? AnyQuery {
-                    self.queries[query.keyOverride ?? sanitizedLabel] = query
+                    self.queries[sanitizedLabel] = query
                 } else if let body = child.value as? AnyBody {
                     self.bodies[sanitizedLabel] = body
                 } else if let header = child.value as? Header {
-                    self.headers[header.keyOverride ?? sanitizedLabel] = header
+                    self.headers[sanitizedLabel] = header
                 } else if let path = child.value as? Path {
                     self.paths[sanitizedLabel] = path
                 }
@@ -122,12 +122,14 @@ private struct EncodingHelper {
     /// - Returns: a `String` with the queries of this request or an empty string if this request
     ///            has no queries.
     func queryString() -> String {
-        self.queries.isEmpty ? "" :
-            "?" + self.queries.sorted { $0.key < $1.key }
+        self.queries.isEmpty ? "" : "?" + self.queries
+            .sorted { $0.key < $1.key }
             .reduce(into: []) { list, query in
                 list += String.queryComponents(fromKey: query.key, value: query.value.value)
             }
-            .map { "\($0)" + ($1.isEmpty ? "" : "=\($1)") }
+            .map { (key: String, value: String) in
+                "\(key)" + (value.isEmpty ? "" : "=\(value)")
+            }
             .joined(separator: "&")
     }
     

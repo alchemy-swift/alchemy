@@ -180,8 +180,6 @@ private struct _KeyedEncodingContainer<
     var codingPath = [CodingKey]()
 
     mutating func encodeNil(forKey key: Key) throws {
-        /// Unfortunately auto generated codable functions are special cased to never call this...
-        /// How can we update an object's field to nil?
         print("Got nil for \(self.encoder.mappingStrategy.map(input: key.stringValue)).")
     }
 

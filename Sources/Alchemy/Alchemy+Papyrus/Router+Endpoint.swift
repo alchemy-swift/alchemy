@@ -56,29 +56,27 @@ public extension Router {
 extension HTTPRequest: DecodableRequest {
     // MARK: DecodableRequest
     
-    public func getHeader(for key: String) throws -> String {
-        try self.headers.first(name: key)
-            .unwrap(or: PapyrusError("Expected `\(key)` in the request headers."))
+    public func getHeader(for key: String) -> String? {
+        self.headers.first(name: key)
     }
     
-    public func getQuery(for key: String) throws -> String {
-        try (self.queryItems
+    public func getQuery(for key: String) -> String? {
+        self.queryItems
             .filter ({ $0.name == key })
             .first?
-            .value)
-            .unwrap(or: PapyrusError("Expected `\(key)` in the request query"))
+            .value
     }
     
-    public func getPathComponent(for key: String) throws -> String {
-        try self.pathParameters.first(where: { $0.parameter == key })
-            .unwrap(or: PapyrusError("Expected `\(key)` in the request path components."))
+    public func getPathComponent(for key: String) -> String? {
+        self.pathParameters.first(where: { $0.parameter == key })?
             .stringValue
     }
     
     public func getBody<T>() throws -> T where T : Decodable {
         do {
             return try self.body
-                .unwrap(or: PapyrusError("There was no body in this request."))
+                .unwrap(or: PapyrusError("There was no body in this request. Note that decoding"
+                                            + " @Body(.urlEncoded) isn't supported yet."))
                 .decodeJSON(as: T.self)
         } catch {
             throw PapyrusError("Encountered an error decoding the body to type `\(T.self)`: "

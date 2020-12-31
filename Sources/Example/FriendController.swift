@@ -20,8 +20,8 @@ struct FriendsController {
 
 struct AddFriendDTO: EndpointRequest {
     @Path        var userID: String
-    @HTTPQuery   var number: Int
-    @HTTPQuery   var someThings: [String]
+    @URLQuery   var number: Int
+    @URLQuery   var someThings: [String]
     @Header      var value: String
     @Body(.json) var obj: TestObj
 }
