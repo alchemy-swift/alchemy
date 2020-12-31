@@ -2,8 +2,8 @@ import Foundation
 import NIO
 import NIOHTTP1
 
-/// A simplified HTTPRequest type as you'll come across in many web frameworks
-public final class HTTPRequest {
+/// A simplified Request type as you'll come across in many web frameworks
+public final class Request {
     /// The default JSONDecoder with which to decode HTTP request bodies.
     public static var defaultJSONDecoder = JSONDecoder()
     
@@ -34,7 +34,7 @@ public final class HTTPRequest {
     }
 }
 
-extension HTTPRequest {
+extension Request {
     /// The HTTPMethod of the request.
     public var method: HTTPMethod {
         self.head.method
@@ -87,7 +87,7 @@ extension HTTPRequest {
     ///
     /// ```
     /// struct ExampleMiddleware: Middleware {
-    ///     func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
+    ///     func intercept(_ request: Request) -> EventLoopFuture<Request> {
     ///         let someData: SomeData = ...
     ///         request.set(someData)
     ///         return .new(value: request)
@@ -126,7 +126,7 @@ extension HTTPRequest {
 }
 
 /// Error thrown when the user tries to `.get` an assocaited value from an
-/// `HTTPRequest` but one isn't set.
+/// `Request` but one isn't set.
 struct AssociatedValueError: Error {
     let message: String
     init(_ message: String) { self.message = message }

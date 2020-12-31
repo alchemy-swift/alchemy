@@ -1,6 +1,6 @@
 import Foundation
 
-extension HTTPRequest {
+extension Request {
     /// Get any authorization data from the request's `Authorization` header.
     ///
     /// - Returns: an `HTTPAuth` representing relevant info in the
@@ -75,7 +75,7 @@ extension HTTPRequest {
 /// A type representing any auth that may be on an HTTP request. Supports
 /// `Basic` and `Bearer`.
 public enum HTTPAuth {
-    /// The basic auth of an HTTPRequest. Corresponds to a header that looks
+    /// The basic auth of an Request. Corresponds to a header that looks
     /// like `Authorization: Basic <base64-encoded-username-password>`.
     public struct Basic {
         /// The username of this authorization. Comes before the colon in the
@@ -88,7 +88,7 @@ public enum HTTPAuth {
         public let password: String
     }
 
-    /// The bearer auth of an HTTPRequest. Corresponds to a header that looks
+    /// The bearer auth of an Request. Corresponds to a header that looks
     /// like `Authorization: Bearer <token>`.
     public struct Bearer {
         /// The token in the `Authorization` header value.

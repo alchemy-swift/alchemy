@@ -14,88 +14,33 @@ private struct HTTPKey: Hashable {
     let method: HTTPMethod
 }
 
-/// An `Router` responds to HTTP requests from the client. Specifically, it takes an `HTTPRequest`
+/// An `Router` responds to HTTP requests from the client. Specifically, it takes an `Request`
 /// and routes it to a handler that returns an `HTTPResponseEncodable`.
 public final class Router {
-    /// Represents a middleware closure for this router.
-    typealias MiddlewareClosure = (HTTPRequest) -> EventLoopFuture<HTTPRequest>
+    /// `Middleware` that will be applied to all requests of this router, regardless of whether they
+    /// are able to be handled or not. Global middlewares intercept request in the order of this
+    /// array, before any other middleware does.
+    public var globalMiddlewares: [Middleware] = []
     
     /// The path of this router, used for storing the path when the user calls `.path(...)`.
     private let basePath: String
-    
-    /// Middleware to apply to any requests before passing to a handler.
-    private let middleware: MiddlewareClosure
-    
-    /// Child routers, erased to a closure. Ordered in the order that they should respond to a
-    /// request.
-    private var erasedChildren: [((HTTPRequest) -> EventLoopFuture<HTTPResponseEncodable>?)] = []
-    
+    /// A middleware to apply to any requests before passing it to a handler.
+    private let middleware: Middleware?
+    /// Child routers. Ordered in the order that they should respond to a request.
+    private var children: [Router] = []
     /// Handlers to route requests to.
-    private var handlers: [HTTPKey: (HTTPRequest) throws -> HTTPResponseEncodable] = [:]
+    private var handlers: [HTTPKey: (Request) throws -> HTTPResponseEncodable] = [:]
     
     /// Creates a new router with an optional base path.
     ///
     /// - Parameters:
     ///   - basePath: any string that should be prepended to all handler URIs added to this router.
     ///               Defaults to nil.
-    ///   - middleware: any middleware closure that should be run on a request routed by this router
-    ///                 before handling. Defaults to nil.
-    init(basePath: String? = nil, middleware: MiddlewareClosure? = nil) {
+    ///   - middleware: any middleware that should be run on a request routed by this router before
+    ///                 handling. Defaults to `nil`.
+    init(basePath: String? = nil, middleware: Middleware? = nil) {
         self.basePath = basePath ?? ""
-        self.middleware = middleware ?? { .new($0) }
-    }
-    
-    /// Attempts to handle a request via child handlers. Returns nil if no child handler can handle
-    /// the request.
-    ///
-    /// - Parameter request: the request to pass off to this router's child handlers.
-    /// - Returns: a response future if a child was able to handle the reqeust, nil if not.
-    private func childrenHandle(request: HTTPRequest) -> EventLoopFuture<HTTPResponseEncodable>? {
-        for child in self.erasedChildren {
-            if let output = child(request) {
-                return output
-            }
-        }
-        
-        return nil
-    }
-    
-    /// Adds a handler to this router. A handler takes an `HTTPRequest` and returns an
-    /// `HTTPResponseEncodable`.
-    ///
-    /// - Parameters:
-    ///   - handler: the closure for handling a request matching the given method and path.
-    ///   - method: the method of a request this handler expects.
-    ///   - path: the path of a requst this handler can handle.
-    func add(handler: @escaping (HTTPRequest) throws -> HTTPResponseEncodable, for method: HTTPMethod, path: String) {
-        self.handlers[HTTPKey(fullPath: self.basePath + path, method: method)] = handler
-    }
-    
-    /// Attempts to handle a request. If the request has any dynamic path parameters in its URI,
-    /// this will parse those out from the actual URI and set them on the `HTTPRequest` before
-    /// passing it to the handler closure.
-    ///
-    /// - Parameter request: the request this router will attempt to handle.
-    /// - Returns: a future containing the response of the handler if there was a matching handler.
-    ///            nil if there were no matching handlers.
-    func handle(request: HTTPRequest) -> EventLoopFuture<HTTPResponseEncodable>? {
-        for (key, value) in self.handlers {
-            guard request.method == key.method else {
-                continue
-            }
-            
-            let (isMatch, parameters) = request.path.matchAndParseParameters(routablePath: key.fullPath)
-            guard isMatch else {
-                continue
-            }
-            
-            request.pathParameters = parameters
-            
-            return self.middleware(request)
-                .flatMapThrowing { try value($0) }
-        }
-        
-        return self.childrenHandle(request: request)
+        self.middleware = middleware
     }
     
     /// Returns a new router, a child of this one, that will apply the given middleware to any
@@ -104,12 +49,15 @@ public final class Router {
     /// - Parameter middleware: the middleware which will intercept all requests on this new router.
     /// - Returns: the new router with the middleware.
     public func middleware<M: Middleware>(_ middleware: M) -> Self {
-        let router = Self { req in
-            middleware.intercept(req)
-                .flatMap { self.middleware($0) }
+        /// need to add my middleware
+        var newRouter: Self
+        if let first = self.middleware {
+            newRouter = Self(middleware: ChainedMiddleware(first: first, second: middleware))
+        } else {
+            newRouter = Self(middleware: middleware)
         }
-        self.erasedChildren.append(router.handle)
-        return router
+        self.children.append(newRouter)
+        return newRouter
     }
 
     /// Returns a new router, a child of this one, that will prepend the given string to the URIs of
@@ -118,15 +66,79 @@ public final class Router {
     /// - Parameter path: the string to prepend to the URIs of all the new router's handlers.
     /// - Returns: the newly created `Router`, a child of `self`.
     public func path(_ path: String) -> Self {
-        let router = Self(basePath: self.basePath + path, middleware: self.middleware)
-        self.erasedChildren.append(router.handle)
-        return router
+        let newRouter = Self(basePath: self.basePath + path, middleware: self.middleware)
+        self.children.append(newRouter)
+        return newRouter
     }
     
-    /// Middleware that will be applied to all requests of the application, regardless of whether
-    /// they are able to be handled or not. Global middlewares intercept request in the order of
-    /// this array, before any other middleware does.
-    public static var globalMiddlewares: [Middleware] = []
+    /// Adds a handler to this router. A handler takes an `Request` and returns an
+    /// `HTTPResponseEncodable`.
+    ///
+    /// - Parameters:
+    ///   - handler: the closure for handling a request matching the given method and path.
+    ///   - method: the method of a request this handler expects.
+    ///   - path: the path of a requst this handler can handle.
+    func add(
+        handler: @escaping (Request) throws -> HTTPResponseEncodable,
+        for method: HTTPMethod,
+        path: String
+    ) {
+        self.handlers[HTTPKey(fullPath: self.basePath + path, method: method)] = handler
+    }
+    
+    /// Handles a request. If the request has any dynamic path parameters in its URI,
+    /// this will parse those out from the actual URI and set them on the `Request` before
+    /// passing it to the handler closure.
+    ///
+    /// - Parameter request: the request this router will handle.
+    /// - Returns: a future containing the response of a handler or a `.notFound` response if there
+    ///            was not a matching handler.
+    func handle(request: Request) -> EventLoopFuture<Response> {
+        guard let handlerFuture = self.handleIfAble(request: request) else {
+            return .new(Response(status: .notFound, body: nil))
+        }
+        
+        return handlerFuture
+    }
+    
+    /// Handles a request if either this router or any of it's children are able to.
+    ///
+    /// - Parameter request: the request to handle.
+    /// - Returns: a future with the response of the handler or nil if neither this router nor its
+    ///            children are able to handle the request.
+    private func handleIfAble(request: Request) -> EventLoopFuture<Response>? {
+        for (key, value) in self.handlers {
+            guard request.method == key.method else {
+                continue
+            }
+            
+            let (isMatch, parameters) = request.path
+                .matchAndParseParameters(routablePath: key.fullPath)
+            guard isMatch else {
+                continue
+            }
+            
+            request.pathParameters = parameters
+            
+            if let mw = self.middleware {
+                return mw.intercept(request) { request in
+                    catchError { try value(request).encode() }
+                }
+            } else {
+                return catchError {
+                    try value(request).encode()
+                }
+            }
+        }
+        
+        for child in self.children {
+            if let response = child.handleIfAble(request: request) {
+                return response
+            }
+        }
+        
+        return nil
+    }
 }
 
 extension HTTPMethod: Hashable {
@@ -174,5 +186,25 @@ extension String {
         }
         
         return (true, parameters)
+    }
+}
+
+/// A `Middleware` that is the combination of two `Middleware`s. On `intercept`, `first.intercept`
+/// is run, followed by `second.intercept`.
+private struct ChainedMiddleware: Middleware {
+    /// The first middleware to run when this middleware intercepts a request.
+    fileprivate let first: Middleware
+    /// The second middleware to run when this middleware intercepts a request.
+    fileprivate let second: Middleware
+    
+    // MARK: Middleware
+    
+    func intercept(
+        _ request: Request,
+        next: @escaping Next
+    ) -> EventLoopFuture<Response> {
+        self.first.intercept(request) { request in
+            self.second.intercept(request, next: next)
+        }
     }
 }

@@ -1,31 +1,23 @@
 import Fusion
 import NIO
 
-/// Used for responding to all incoming `HTTPRequest`s in a serving `Application`.
+/// Used for responding to all incoming `Request`s in a serving `Application`.
 struct HTTPRouterResponder: HTTPResponder {
     /// The global, singleton router.
     @Inject var router: Router
     
     // MARK: HTTPResponder
     
-    func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
-        Router.globalMiddlewares
-            // First apply global middlewares, in order.
-            .reduce(EventLoopFuture<HTTPRequest>.new(request)) {
-                $0.flatMap($1.intercept)
+    func respond(to request: Request) -> EventLoopFuture<Response> {
+        var handlerClosure = self.router.handle
+        
+        for middleware in self.router.globalMiddlewares.reversed() {
+            let lastHandler = handlerClosure
+            handlerClosure = { request in
+                middleware.intercept(request, next: lastHandler)
             }
-            // Then, send to the router.
-            .flatMap { request in
-                guard let response = self.router.handle(request: request) else {
-                    // If the router doesn't handle the request, return a 404.
-                    return .new(HTTPResponse(status: .notFound, body: nil))
-                }
-                
-                // If the router CAN handle the request, turn the returned
-                // `HTTPResponseEncodable` into an `HTTPResponse`.
-                return response.flatMap { res in
-                    catchError { try res.encode() }
-                }
-            }
+        }
+        
+        return handlerClosure(request)
     }
 }

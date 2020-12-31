@@ -1,17 +1,17 @@
 import Alchemy
 
 struct FriendsController {
-    func add(req: HTTPRequest) throws -> Void {
+    func add(req: Request) throws -> Void {
         let authedUser = try req.get(User.self)
         let dto = try req.decodeRequest(AddFriendDTO.self)
     }
 
-    func remove(req: HTTPRequest) throws -> Void {
+    func remove(req: Request) throws -> Void {
         let authedUser = try req.get(User.self)
         let dto = try req.decodeRequest(RemoveFriendDTO.self)
     }
 
-    func message(req: HTTPRequest) throws -> Void {
+    func message(req: Request) throws -> Void {
         let authedUser = try req.get(User.self)
         let dto = try req.decodeRequest(MessageFriendDTO.self)
         let ep = FriendAPI().friends
