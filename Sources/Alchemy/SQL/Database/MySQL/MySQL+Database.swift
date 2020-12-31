@@ -10,6 +10,8 @@ public final class MySQLDatabase: Database {
     public var grammar: Grammar = MySQLGrammar()
     public var migrations: [Migration] = []
 
+    deinit { self.shutdown() }
+    
     /// Initialize with the given configuration. The configuration will be
     /// connected to when a query is run.
     ///
