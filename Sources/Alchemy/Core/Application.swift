@@ -1,4 +1,4 @@
-/// Much of this heavily inspired / ripped from [apple/swift-nio-examples](
+/// Much of this is courtesy of [apple/swift-nio-examples](
 /// https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
 import Fusion
 import NIO
