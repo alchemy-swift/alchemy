@@ -18,8 +18,10 @@ struct ExampleApplication: Application {
         DB.default = database
         
         // Applied to all incoming requests.
-        Router.globalMiddlewares = [
-            LoggingMiddleware(text: "Received request:")
+        self.router.globalMiddlewares = [
+            LoggingMiddleware(text: "First."),
+            LoggingMiddleware(text: "Second."),
+            LoggingMiddleware(text: "Third.")
         ]
         
         self.router
@@ -141,9 +143,13 @@ struct SampleJSON: Codable {
 struct LoggingMiddleware: Middleware {
     let text: String
     
-    func intercept(_ request: Request) -> EventLoopFuture<Request> {
-        Log.info("Got a request to \(request.path).")
-        return .new(request)
+    func intercept(_ request: Request, next: @escaping MiddlewareNext) -> EventLoopFuture<Response> {
+        Log.info(self.text)
+        return next(request)
+            .map {
+                Log.info(self.text)
+                return $0
+            }
     }
 }
 
