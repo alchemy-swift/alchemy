@@ -9,23 +9,15 @@ struct HTTPRouterResponder: HTTPResponder {
     // MARK: HTTPResponder
     
     func respond(to request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
-        Router.globalMiddlewares
-            // First apply global middlewares, in order.
-            .reduce(EventLoopFuture<HTTPRequest>.new(request)) {
-                $0.flatMap($1.intercept)
+        var handlerClosure = self.router.handle
+        
+        for middleware in self.router.globalMiddlewares.reversed() {
+            let lastHandler = handlerClosure
+            handlerClosure = { request in
+                middleware.intercept(request, next: lastHandler)
             }
-            // Then, send to the router.
-            .flatMap { request in
-                guard let response = self.router.handle(request: request) else {
-                    // If the router doesn't handle the request, return a 404.
-                    return .new(HTTPResponse(status: .notFound, body: nil))
-                }
-                
-                // If the router CAN handle the request, turn the returned
-                // `HTTPResponseEncodable` into an `HTTPResponse`.
-                return response.flatMap { res in
-                    catchError { try res.encode() }
-                }
-            }
+        }
+        
+        return handlerClosure(request)
     }
 }
