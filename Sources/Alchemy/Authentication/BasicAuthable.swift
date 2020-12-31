@@ -90,9 +90,9 @@ extension BasicAuthable {
 /// row in the database, an `HTTPError(.unauthorized)` will be thrown.
 public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
     public func intercept(
-        _ request: HTTPRequest,
-        next: @escaping (HTTPRequest) -> EventLoopFuture<HTTPResponse>
-    ) -> EventLoopFuture<HTTPResponse> {
+        _ request: Request,
+        next: @escaping MiddlewareNext
+    ) -> EventLoopFuture<Response> {
         catchError {
             guard let basicAuth = request.basicAuth() else {
                 throw HTTPError(.unauthorized)

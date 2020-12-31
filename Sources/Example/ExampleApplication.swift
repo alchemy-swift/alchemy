@@ -99,20 +99,20 @@ struct Testing: Codable {
 struct DatabaseTestController {
     @Inject var db: MySQLDatabase
     
-    func update(req: HTTPRequest) throws -> EventLoopFuture<Void> {
+    func update(req: Request) throws -> EventLoopFuture<Void> {
         try User.query()
             .where("id" == UUID(uuidString: "95dd20ec-c151-4dcd-8f86-364b99631aa8"))
             .update(values: ["some_json": DatabaseValue.json(nil)])
             .voided()
     }
     
-    func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
+    func select(req: Request) -> EventLoopFuture<Int?> {
         Rental.query()
             .where("num_beds" >= 1)
             .count(as: "rentals_count")
     }
     
-    func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
+    func insert(req: Request) throws -> EventLoopFuture<String> {
         Rental.query(database: self.db)
             .insert([
                 [
@@ -141,7 +141,7 @@ struct SampleJSON: Codable {
 struct LoggingMiddleware: Middleware {
     let text: String
     
-    func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
+    func intercept(_ request: Request) -> EventLoopFuture<Request> {
         Log.info("Got a request to \(request.path).")
         return .new(request)
     }

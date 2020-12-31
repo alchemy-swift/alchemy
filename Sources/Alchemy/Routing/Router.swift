@@ -14,7 +14,7 @@ private struct HTTPKey: Hashable {
     let method: HTTPMethod
 }
 
-/// An `Router` responds to HTTP requests from the client. Specifically, it takes an `HTTPRequest`
+/// An `Router` responds to HTTP requests from the client. Specifically, it takes an `Request`
 /// and routes it to a handler that returns an `HTTPResponseEncodable`.
 public final class Router {
     /// `Middleware` that will be applied to all requests of this router, regardless of whether they
@@ -29,7 +29,7 @@ public final class Router {
     /// Child routers. Ordered in the order that they should respond to a request.
     private var children: [Router] = []
     /// Handlers to route requests to.
-    private var handlers: [HTTPKey: (HTTPRequest) throws -> HTTPResponseEncodable] = [:]
+    private var handlers: [HTTPKey: (Request) throws -> HTTPResponseEncodable] = [:]
     
     /// Creates a new router with an optional base path.
     ///
@@ -71,7 +71,7 @@ public final class Router {
         return newRouter
     }
     
-    /// Adds a handler to this router. A handler takes an `HTTPRequest` and returns an
+    /// Adds a handler to this router. A handler takes an `Request` and returns an
     /// `HTTPResponseEncodable`.
     ///
     /// - Parameters:
@@ -79,7 +79,7 @@ public final class Router {
     ///   - method: the method of a request this handler expects.
     ///   - path: the path of a requst this handler can handle.
     func add(
-        handler: @escaping (HTTPRequest) throws -> HTTPResponseEncodable,
+        handler: @escaping (Request) throws -> HTTPResponseEncodable,
         for method: HTTPMethod,
         path: String
     ) {
@@ -87,15 +87,15 @@ public final class Router {
     }
     
     /// Handles a request. If the request has any dynamic path parameters in its URI,
-    /// this will parse those out from the actual URI and set them on the `HTTPRequest` before
+    /// this will parse those out from the actual URI and set them on the `Request` before
     /// passing it to the handler closure.
     ///
     /// - Parameter request: the request this router will handle.
     /// - Returns: a future containing the response of a handler or a `.notFound` response if there
     ///            was not a matching handler.
-    func handle(request: HTTPRequest) -> EventLoopFuture<HTTPResponse> {
+    func handle(request: Request) -> EventLoopFuture<Response> {
         guard let handlerFuture = self.handleIfAble(request: request) else {
-            return .new(HTTPResponse(status: .notFound, body: nil))
+            return .new(Response(status: .notFound, body: nil))
         }
         
         return handlerFuture
@@ -106,7 +106,7 @@ public final class Router {
     /// - Parameter request: the request to handle.
     /// - Returns: a future with the response of the handler or nil if neither this router nor its
     ///            children are able to handle the request.
-    private func handleIfAble(request: HTTPRequest) -> EventLoopFuture<HTTPResponse>? {
+    private func handleIfAble(request: Request) -> EventLoopFuture<Response>? {
         for (key, value) in self.handlers {
             guard request.method == key.method else {
                 continue
@@ -200,9 +200,9 @@ private struct ChainedMiddleware: Middleware {
     // MARK: Middleware
     
     func intercept(
-        _ request: HTTPRequest,
-        next: @escaping (HTTPRequest) -> EventLoopFuture<HTTPResponse>
-    ) -> EventLoopFuture<HTTPResponse> {
+        _ request: Request,
+        next: @escaping MiddlewareNext
+    ) -> EventLoopFuture<Response> {
         self.first.intercept(request) { request in
             self.second.intercept(request, next: next)
         }

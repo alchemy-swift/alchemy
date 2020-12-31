@@ -14,7 +14,7 @@ public extension Router {
     ///              type.
     func register<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
-        use closure: @escaping (HTTPRequest, Req) throws -> EventLoopFuture<Res>
+        use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
     ) where Req: Decodable, Res: HTTPResponseEncodable {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
@@ -30,21 +30,21 @@ public extension Router {
     ///              type.
     func register<Res>(
         _ endpoint: Endpoint<Empty, Res>,
-        use closure: @escaping (HTTPRequest) throws -> EventLoopFuture<Res>
+        use closure: @escaping (Request) throws -> EventLoopFuture<Res>
     ) where Res: HTTPResponseEncodable {
         self.on(endpoint.method.nio, at: endpoint.path, do: closure)
     }
     
     /// Registers a `Papyrus.Endpoint` that has an `Empty` response type, to a `Router`. When an
     /// incoming request matches the path of the `Endpoint`, the `Endpoint.Request` will automatically
-    /// be decoded from the incoming `HTTPRequest` for use in the provided handler.
+    /// be decoded from the incoming `Request` for use in the provided handler.
     ///
     /// - Parameters:
     ///   - endpoint: the endpoint to register on this router.
     ///   - closure: the handler for handling incoming requests that match this endpoint's path.
     func register<Req>(
         _ endpoint: Endpoint<Req, Empty>,
-        use closure: @escaping (HTTPRequest, Req) throws -> EventLoopFuture<Void>
+        use closure: @escaping (Request, Req) throws -> EventLoopFuture<Void>
     ) where Req: Decodable {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
@@ -53,7 +53,7 @@ public extension Router {
     }
 }
 
-extension HTTPRequest: DecodableRequest {
+extension Request: DecodableRequest {
     // MARK: DecodableRequest
     
     public func getHeader(for key: String) -> String? {

@@ -69,9 +69,9 @@ extension TokenAuthable {
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
     public func intercept(
-        _ request: HTTPRequest,
-        next: @escaping (HTTPRequest) -> EventLoopFuture<HTTPResponse>
-    ) -> EventLoopFuture<HTTPResponse> {
+        _ request: Request,
+        next: @escaping MiddlewareNext
+    ) -> EventLoopFuture<Response> {
         catchError {
             guard let bearerAuth = request.bearerAuth() else {
                 throw HTTPError(.unauthorized)
