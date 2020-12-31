@@ -13,6 +13,8 @@ public final class PostgresDatabase: Database {
     public let grammar: Grammar = PostgresGrammar()
     public var migrations: [Migration] = []
     
+    deinit { self.shutdown() }
+    
     /// Initialize with the given configuration. The configuration will be
     /// connected to when a query is run.
     ///
@@ -46,8 +48,7 @@ public final class PostgresDatabase: Database {
         _ sql: String,
         values: [DatabaseValue]
     ) -> EventLoopFuture<[DatabaseRow]> {
-        print("Runnning: \(sql)")
-        return self.pool.withConnection(logger: nil, on: Loop.current) { conn in
+        self.pool.withConnection(logger: nil, on: Loop.current) { conn in
             conn.query(self.positionBindings(sql), values.map(PostgresData.init) )
                 .map { $0.rows }
         }

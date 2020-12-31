@@ -6,7 +6,7 @@ struct ExampleApplication: Application {
     @Inject var router: Router
     
     func setup() {
-        Log.info("Hello from setup.")
+        Log.info("Hello from setup \(System.coreCount).")
         
         // Register global database
         Container.global.register(singleton: Database.self) { _ in
