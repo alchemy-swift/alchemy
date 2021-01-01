@@ -1,8 +1,10 @@
-# 🧪 Alchemy
+<p align="center">
+<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
+<a href="https://github.com/joshuawright11/alchemy/releases"><img src="https://img.shields.io/github/release/joshuawright11/alchemy.svg" alt="Latest Release"></a>
+<a href="https://github.com/joshuawright11/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joshuawright11/alchemy.svg" alt="License"></a>
+</p>
 
-![Swift](https://img.shields.io/badge/Swift-5.3-orange.svg)
-![MIT](https://img.shields.io/github/license/joshuawright11/alchemy.svg)
-![release](https://img.shields.io/github/release/joshuawright11/alchemy.svg)
+## About Alchemy
 
 Alchemy is a Swift web framework for building backends. It makes your development experience...
 
