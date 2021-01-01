@@ -20,11 +20,19 @@ public class Query: Sequelizable {
         self.database = database
     }
 
+    /// Get the raw `SQL` for a given query
+    ///
+    /// - Returns: A `SQL` value wrapper containing the executable query and bindings
     public func toSQL() -> SQL {
         return (try? self.database.grammar.compileSelect(query: self))
             ?? SQL()
     }
 
+    /// Set the columns that should be returned by the query.
+    ///
+    /// - Parameters:
+    ///   - columns: An array of columns to be returned by the query.
+    /// - Returns: The current query builder `Query` to chain future queries to
     @discardableResult
     public func select(_ columns: [Column] = ["*"]) -> Self {
 
@@ -67,7 +75,7 @@ public class Query: Sequelizable {
         return self.table("\(table) as \(alias)")
     }
 
-    /// Join data from a separate table into the current query.
+    /// Join data from a separate table into the current query data.
     ///
     /// - Parameters:
     ///   - table: The table to be joined
@@ -94,6 +102,14 @@ public class Query: Sequelizable {
         return self
     }
 
+    /// Left join data from a separate table into the current query data.
+    ///
+    /// - Parameters:
+    ///   - table: The table to be joined
+    ///   - first: The column from the current query to be matched
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - second: The column from the joining table to be matched
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func leftJoin(
         table: String,
         first: String,
@@ -109,6 +125,14 @@ public class Query: Sequelizable {
         )
     }
 
+    /// Right join data from a separate table into the current query data.
+    ///
+    /// - Parameters:
+    ///   - table: The table to be joined
+    ///   - first: The column from the current query to be matched
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - second: The column from the joining table to be matched
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func rightJoin(
         table: String,
         first: String,
@@ -124,6 +148,14 @@ public class Query: Sequelizable {
         )
     }
 
+    /// Cross join data from a separate table into the current query data.
+    ///
+    /// - Parameters:
+    ///   - table: The table to be joined
+    ///   - first: The column from the current query to be matched
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - second: The column from the joining table to be matched
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func crossJoin(
         table: String,
         first: String,
@@ -161,6 +193,59 @@ public class Query: Sequelizable {
         return self.where(clause)
     }
 
+    /// Add a nested where clause that is a group of combined clauses.
+    /// This can be used for logically grouping where clauses
+    /// like you would inside of an if statement. Each clause
+    /// is wrapped in parenthesis.
+    ///
+    /// For example if you want to logically ensure a user is under 30 and
+    /// named Paul, or over the age of 50 having any name, you could use a nested
+    /// where clause along with a separate where value clause:
+    /// ```
+    /// DB.query()
+    /// .from("users")
+    /// .where {
+    ///     $0.where("age" < 30)
+    ///      .orWhere("first_name" == "Paul")
+    /// }
+    /// .where("age" > 50)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - closure: A `WhereNestedClosure` that provides a nested query to attach
+    ///   nested where clauses to.
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
+    public func `where`(_ closure: @escaping WhereNestedClosure, boolean: WhereBoolean = .and) -> Self {
+        self.wheres.append(
+            WhereNested(
+                database: database,
+                closure: closure,
+                boolean: boolean
+            )
+        )
+        return self
+    }
+
+    /// A helper for adding an **or** `where` nested closure query.
+    ///
+    /// - Parameters:
+    ///   - closure: A `WhereNestedClosure` that provides a nested query to attach
+    ///   nested where clauses to.
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
+    public func orWhere(_ closure: @escaping WhereNestedClosure) -> Self {
+        return self.where(closure, boolean: .or)
+    }
+
+    /// Add a query requiring that a column match any values in a given array.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - values: The values that the column should not match
+    ///   - type: How the match should happen (*in* or *notIn*)
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func `where`(
         key: String,
         in values: [Parameter],
@@ -176,6 +261,13 @@ public class Query: Sequelizable {
         return self
     }
 
+    /// A helper for adding an **or** variant of the `where(key:in:)` clause.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - values: The values that the column should not match
+    ///   - type: How the match should happen (*in* or *notIn*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhere(key: String, in values: [Parameter], type: WhereIn.InType = .in) -> Self {
         return self.where(
             key: key,
@@ -185,29 +277,35 @@ public class Query: Sequelizable {
         )
     }
 
-    public func `where`(_ closure: @escaping WhereNestedClosure, boolean: WhereBoolean = .and) -> Self {
-        self.wheres.append(
-            WhereNested(
-                database: database,
-                closure: closure,
-                boolean: boolean
-            )
-        )
-        return self
-    }
-
-    public func orWhere(_ closure: @escaping WhereNestedClosure) -> Self {
-        return self.where(closure, boolean: .or)
-    }
-
+    /// Add a query requiring that a column not match any values in a given array.
+    /// This is a helper method for the where in method.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - values: The values that the column should not match
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func whereNot(key: String, in values: [Parameter], boolean: WhereBoolean = .and) -> Self {
         return self.where(key: key, in: values, type: .notIn, boolean: boolean)
     }
 
+    /// A helper for adding an **or** `whereNot` clause.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - values: The values that the column should not match
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhereNot(key: String, in values: [Parameter]) -> Self {
         return self.where(key: key, in: values, type: .notIn, boolean: .or)
     }
 
+    /// Add a raw SQL where clause to your query.
+    ///
+    /// - Parameters:
+    ///   - sql: A string representing the SQL where clause to be run.
+    ///   - bindings: Any variables that should be passed into the SQL
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func whereRaw(sql: String, bindings: [Parameter], boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereRaw(
             query: sql,
@@ -217,19 +315,47 @@ public class Query: Sequelizable {
         return self
     }
 
+    /// A helper for adding an **or** `whereRaw` clause.
+    ///
+    /// - Parameters:
+    ///   - sql: A string representing the SQL where clause to be run.
+    ///   - bindings: Any variables that should be passed into the SQL
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhereRaw(sql: String, bindings: [Parameter]) -> Self {
         return self.whereRaw(sql: sql, bindings: bindings, boolean: .or)
     }
 
+    /// Add a where clause requiring that two columns match each other
+    ///
+    /// - Parameters:
+    ///   - first: The first column to match against
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - second: The second column to match against
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereColumn(first: first, op: op, second: Expression(second), boolean: boolean))
         return self
     }
 
+    /// A helper for adding an **or** `whereColumn` clause.
+    ///
+    /// - Parameters:
+    ///   - first: The first column to match against
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - second: The second column to match against
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhereColumn(first: String, op: Operator, second: String) -> Self {
         return self.whereColumn(first: first, op: op, second: second, boolean: = .or)
     }
 
+    /// Add a where clause requiring that a column be null.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    ///   - not: Should the value be null or not null
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func whereNull(
         key: String,
         boolean: WhereBoolean = .and,
@@ -243,14 +369,30 @@ public class Query: Sequelizable {
         return self
     }
 
+    /// A helper for adding an **or** `whereNull` clause.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhereNull(key: String) -> Self {
         return self.whereNull(key: key, boolean: .or)
     }
 
+    /// Add a where clause requiring that a column not be null.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func whereNotNull(key: String, boolean: WhereBoolean = .and) -> Self {
         return self.whereNull(key: key, boolean: boolean, not: true)
     }
 
+    /// A helper for adding an **or** `whereNotNull` clause.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhereNotNull(key: String) -> Self {
         return self.whereNotNull(key: key, boolean: .or)
     }
@@ -306,6 +448,9 @@ public class Query: Sequelizable {
         return self.orderBy(OrderClause(column: column, direction: direction))
     }
 
+    /// Set query to only return distinct entries.
+    ///
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func distinct() -> Self {
         self._distinct = true
         return self
@@ -338,7 +483,7 @@ public class Query: Sequelizable {
     /// A helper method to be used when needing to page returned results.
     /// Internally this uses the `limit` and `offset` methods.
     ///
-    /// Note: Paging starts at index 1, not zero
+    /// - Note: Paging starts at index 1, not zero
     ///
     /// - Parameters:
     ///   - page: What `page` of results to offset by
@@ -347,6 +492,7 @@ public class Query: Sequelizable {
     public func forPage(_ page: Int, perPage: Int = 25) -> Self {
         return offset((page - 1) * perPage).limit(perPage)
     }
+    
 
     public func get(_ columns: [Column]? = nil) -> EventLoopFuture<[DatabaseRow]> {
         if let columns = columns {
