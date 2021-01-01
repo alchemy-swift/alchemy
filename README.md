@@ -119,7 +119,7 @@ struct MyApplication: Application {
 
     func setup() {
         let todosAPI = TodosAPI()
-        self.router.register(todosAPI.getAll) { (request: Request, endpointRequest: GetAllRequest)  in
+        self.router.register(todosAPI.getAll) { request, endpointRequest in
             let isDone = endpointRequest.unfinishedOnly ? [false] : [true, false]
             return Todo.query()
                 .where("isDone", in: isDone)
@@ -140,7 +140,7 @@ import Shared
 let todosAPI = TodosAPI(baseURL: "http://localhost")
 let requestData = TodosAPI.GetAllRequest(count: 50, unfinishedOnly: true)
 todosAPI.getAll
-    .request(GetAllRequest(count: 50, unfinishedOnly: true)) { (response: AFDataResponse<Data?>, todos: [TodoDTO]) in
+    .request(requestData) { response, todos in
         for todo in todos {
             print("Got todo: \(todo.name)")
         }
