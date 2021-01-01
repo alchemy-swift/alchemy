@@ -13,8 +13,7 @@ public class Query: Sequelizable {
     private(set) var orders: [OrderClause] = []
     private(set) var limit: Int? = nil
     private(set) var offset: Int? = nil
-
-    private(set) var _distinct = false
+    private(set) var isDistinct = false
 
     public init(database: Database) {
         self.database = database
@@ -333,6 +332,7 @@ public class Query: Sequelizable {
     ///   - second: The second column to match against
     ///   - boolean: How the clause should be appended (*and* or *or*)
     /// - Returns: The current query builder `Query` to chain future queries to
+    @discardableResult
     public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereColumn(first: first, op: op, second: Expression(second), boolean: boolean))
         return self
@@ -346,7 +346,7 @@ public class Query: Sequelizable {
     ///   - second: The second column to match against
     /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhereColumn(first: String, op: Operator, second: String) -> Self {
-        return self.whereColumn(first: first, op: op, second: second, boolean: = .or)
+        return self.whereColumn(first: first, op: op, second: second, boolean: .or)
     }
 
     /// Add a where clause requiring that a column be null.
@@ -397,18 +397,36 @@ public class Query: Sequelizable {
         return self.whereNotNull(key: key, boolean: .or)
     }
 
-
+    /// Add a having clause to filter results from aggregate functions.
+    ///
+    /// - Parameters:
+    ///   - clause: A `WhereValue` clause matching a column to a value
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func having(_ clause: WhereValue) -> Self {
         self.havings.append(clause)
         return self
     }
 
+    /// An alias for `having(_ clause:) ` that appends an or clause instead of an and clause.
+    ///
+    /// - Parameters:
+    ///   - clause: A `WhereValue` clause matching a column to a value
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orHaving(_ clause: WhereValue) -> Self {
         var clause = clause
         clause.boolean = .or
         return self.having(clause)
     }
 
+    /// Add a having clause to filter results from aggregate functions that matches
+    /// a given key to a provided value.
+    ///
+    /// - Parameters:
+    ///   - key: The column to match against
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - value: The value that the column should  match
+    ///   - boolean: How the clause should be appended (*and* or *or*)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func having(key: String, op: Operator, value: Parameter, boolean: WhereBoolean = .and) -> Self {
         return self.having(WhereValue(
             key: key,
@@ -452,7 +470,7 @@ public class Query: Sequelizable {
     ///
     /// - Returns: The current query builder `Query` to chain future queries to
     public func distinct() -> Self {
-        self._distinct = true
+        self.isDistinct = true
         return self
     }
 
@@ -492,8 +510,14 @@ public class Query: Sequelizable {
     public func forPage(_ page: Int, perPage: Int = 25) -> Self {
         return offset((page - 1) * perPage).limit(perPage)
     }
-    
 
+    /// Run a select query and return the database rows.
+    ///
+    /// - Note: Optional columns can be provided that override the original select columns.
+    /// - Parameters:
+    ///   - columns: (Optional) the columns you would like returned
+    /// - Returns: An `EventLoopFuture` to be run that contains the returned rows
+    ///     from the database
     public func get(_ columns: [Column]? = nil) -> EventLoopFuture<[DatabaseRow]> {
         if let columns = columns {
             self.select(columns)
@@ -507,12 +531,27 @@ public class Query: Sequelizable {
         }
     }
 
+    /// Run a select query and return the first database row only row.
+    ///
+    /// - Note: Optional columns can be provided that override the original select columns.
+    /// - Parameters:
+    ///   - columns: (Optional) the columns you would like returned
+    /// - Returns: An `EventLoopFuture` to be run that contains the returned row
+    ///     from the database
     public func first(_ columns: [Column]? = nil) -> EventLoopFuture<DatabaseRow?> {
         return self.limit(1)
             .get(columns)
             .map { $0.first }
     }
 
+    /// Run a select query that looks for a single row matching the given database
+    /// column and value.
+    ///
+    /// - Note: Optional columns can be provided that override the original select columns.
+    /// - Parameters:
+    ///   - columns: (Optional) the columns you would like returned
+    /// - Returns: An `EventLoopFuture` to be run that contains the returned row
+    ///     from the database
     public func find(field: DatabaseField, columns: [Column]? = nil) -> EventLoopFuture<DatabaseRow?> {
         self.wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
         return self.limit(1)
@@ -520,6 +559,12 @@ public class Query: Sequelizable {
             .map { $0.first }
     }
 
+    /// Find the total count of the rows that match the given query.
+    ///
+    /// - Parameters:
+    ///   - column: What column to count
+    ///   - name: The alias that can be used for renaming the returned count
+    /// - Returns: An `EventLoopFuture` to be run that contains the returned count value
     public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int?> {
         var query = "COUNT(\(column))"
         if let name = name {
@@ -535,10 +580,20 @@ public class Query: Sequelizable {
         }
     }
 
+    /// Perform an insert and create a database row from the provided data.
+    ///
+    /// - Parameters:
+    ///   - value: A dictionary containing the values to be inserted
+    /// - Returns: An `EventLoopFuture` to be run that contains the inserted rows
     public func insert(_ value: OrderedDictionary<String, Parameter>) -> EventLoopFuture<[DatabaseRow]> {
         return insert([value])
     }
 
+    /// Perform an insert and create database rows from the provided data.
+    ///
+    /// - Parameters:
+    ///   - value: An array of dictionaries containing the values to be inserted
+    /// - Returns: An `EventLoopFuture` to be run that contains the inserted rows
     public func insert(_ values: [OrderedDictionary<String, Parameter>]) -> EventLoopFuture<[DatabaseRow]> {
         do {
             let sql = try self.database.grammar.compileInsert(self, values: values)
@@ -549,6 +604,11 @@ public class Query: Sequelizable {
         }
     }
 
+    /// Perform an update on all data matching the query in the builder with the values provided.
+    ///
+    /// - Parameters:
+    ///   - values: An dictionary containing the values to be updated
+    /// - Returns: An `EventLoopFuture` to be run that will update all matched rows
     public func update(values: [String: Parameter]) throws -> EventLoopFuture<[DatabaseRow]> {
         do {
             let sql = try self.database.grammar.compileUpdate(self, values: values)
@@ -559,7 +619,9 @@ public class Query: Sequelizable {
         }
     }
 
-    
+    /// Perform a deletion on all data matching the given query.
+    ///
+    /// - Returns: An `EventLoopFuture` to be run that will delete all matched rows
     public func delete() -> EventLoopFuture<[DatabaseRow]> {
         do {
             let sql = try self.database.grammar.compileDelete(self)

@@ -24,7 +24,7 @@ public class Grammar {
     }
 
     private func compileColumns(_ query: Query, columns: [Raw]) -> SQL {
-        let select = query._distinct ? "select distinct" : "select"
+        let select = query.isDistinct ? "select distinct" : "select"
         let (sql, bindings) = QueryHelpers.groupSQL(values: columns)
         return SQL("\(select) \(sql.joined(separator: ", "))", bindings: bindings)
     }
