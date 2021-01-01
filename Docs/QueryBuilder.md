@@ -19,8 +19,8 @@ self.db.query() // Start a query using a database variable
 ### Get all rows
 ```swift
 DB.query()
-.from("users")
-.get()
+  .from("users")
+  .get()
 ```
 
 ### Get a single row
@@ -30,16 +30,16 @@ If you are only wanting to select a single row from the database table, you have
 To select the first row only from a query, use the `first` method.
 ```swift
 DB.query()
-.from("users")
-.where("name", "Steve")
-.first()
+  .from("users")
+  .where("name", "Steve")
+  .first()
 ```
 
 If you want to get a single record based on a given column, you can use the `find` method. This will return the first record matching the criteria.
 ```swift
 DB.query()
-.from("users")
-.find()
+  .from("users")
+  .find()
 ```
 
 
@@ -52,9 +52,9 @@ Sometimes you may want to select just a subset of columns to return. While the `
 
 ```swift 
 DB.query()
-	.from("users")
-	.select(["first_name", "last_name"])
-	.get()
+  .from("users")
+  .select(["first_name", "last_name"])
+  .get()
 ```
 
 
@@ -65,12 +65,13 @@ You can easily join data from separate tables using the query builder. The `join
 
 ```swift
 DB.query()
-    .from("users")
-    .join(table: "orders", first: "users.id", op: .equals, second: "orders.user_id")
-    .get()
+  .from("users")
+  .join(table: "orders", first: "users.id", op: .equals, second: "orders.user_id")
+  .get()
 ```
 
 There are helper methods available for `leftJoin`, `rightJoin` and `crossJoin` that you can use that take the same basic parameters.
+
 
 
 
@@ -83,9 +84,9 @@ If you are wanting to filter down your results this can be done by using the `wh
 
 ```swift
 DB.query()
-    .from("users")
-    .where("age" > 20)
-    .get()
+  .from("users")
+  .where("age" > 20)
+  .get()
 ```
 
 
@@ -96,9 +97,9 @@ Alternatively you can manually create a `WhereValue` clause manually:
 
 ```swift
 DB.query()
-    .from("users")
-    .where(WhereValue(key: "age", op: .equals, value: 10))
-    .get()
+  .from("users")
+  .where(WhereValue(key: "age", op: .equals, value: 10))
+  .get()
 ```
 
 
@@ -109,10 +110,10 @@ By default chaining where clauses will be joined together using the `and` operat
 
 ```swift
 DB.query()
-    .from("users")
-    .where("age" > 20)
-    .orWhere("age" < 50)
-    .get()
+  .from("users")
+  .where("age" > 20)
+  .orWhere("age" < 50)
+  .get()
 ```
 
 
@@ -123,16 +124,16 @@ If you need to group where clauses together, you can do so by using a closure. T
 
 ```swift
 DB.query()
-    .from("users")
-    .where {
-        $0.where("age" < 30)
-            .orWhere("first_name" == "Paul")
-    }
-    .orWhere {
-        $0.where("age" > 50)
-            .orWhere("first_name" == "Karen")
-    }
-    .get()
+  .from("users")
+  .where {
+    $0.where("age" < 30)
+      .orWhere("first_name" == "Paul")
+  }
+  .orWhere {
+    $0.where("age" > 50)
+      .orWhere("first_name" == "Karen")
+  }
+  .get()
 ```
 
 The provided example would produce the following SQL:
@@ -153,9 +154,9 @@ The `whereNull` method ensures that the given column is not null.
 
 ```swift
 DB.query()
-    .from("users")
-    .whereNull("last_name")
-    .get()
+  .from("users")
+  .whereNull("last_name")
+  .get()
 ```
 
 #### Where In
@@ -164,9 +165,9 @@ The `where(key: String, in values [Parameter])` method lets you pass an array of
 
 ```swift
 DB.query()
-    .from("users")
-    .where(key: "age", in: [10,20,30])
-    .get()
+  .from("users")
+  .where(key: "age", in: [10,20,30])
+  .get()
 ```
 
 
@@ -178,19 +179,19 @@ To group results together, you can use the `groupBy` method:
 
 ```swift
 DB.query()
-    .from("users")
-    .groupBy("age")
-    .get()
+  .from("users")
+  .groupBy("age")
+  .get()
 ```
 
 If you need to filter the grouped by rows, you can use the `having` method which performs similar to a `where` clause.
 
 ```swift
 DB.query()
-    .from("users")
-    .groupBy("age")
-    .having("age" > 100)
-    .get()
+  .from("users")
+  .groupBy("age")
+  .having("age" > 100)
+  .get()
 ```
 
 
@@ -201,19 +202,19 @@ You can sort results of a query by using the `orderBy` method.
 
 ```swift
 DB.query()
-    .from("users")
-    .orderBy(column: "first_name", direction: .asc)
-    .get()
+  .from("users")
+  .orderBy(column: "first_name", direction: .asc)
+  .get()
 ```
 
 If you need to sort by multiple columns, you can add `orderBy` as many times as needed. Sorting is based on call order.
 
 ```swift
 DB.query()
-    .from("users")
-    .orderBy(column: "first_name", direction: .asc)
-    .orderBy(column: "last_name", direction: .desc)
-    .get()
+  .from("users")
+  .orderBy(column: "first_name", direction: .asc)
+  .orderBy(column: "last_name", direction: .desc)
+  .get()
 ```
 
 
@@ -224,18 +225,18 @@ If all you are looking for is to break a query down into chunks for paging, the 
 
 ```swift
 DB.query()
-    .from("users")
-    .forPage(page: 1, perPage: 25)
-    .get()
+  .from("users")
+  .forPage(page: 1, perPage: 25)
+  .get()
 ```
 
 Otherwise, you can also define limits and offsets manually:
 ```swift
 DB.query()
-    .from("users")
-    .offset(50)
-    .limit(10)
-    .get()
+  .from("users")
+  .offset(50)
+  .limit(10)
+  .get()
 ```
 
 
@@ -246,11 +247,11 @@ You can insert records using the query builder as well. To do so, start a chain 
 
 ```swift
 DB.query()
-    .table("users")
-    .insert([
-        "first_name": "Steve",
-        "last_name": "Jobs"
-    ])
+  .table("users")
+  .insert([
+    "first_name": "Steve",
+    "last_name": "Jobs"
+  ])
 ```
 
 
@@ -261,11 +262,11 @@ Updating records is just as easy as inserting, however you also get the benefit 
 
 ```swift
 DB.query()
-    .table("users")
-    .where("id" == 10)
-    .update(values: [
-        "first_name": "Ashley"
-    ])
+  .table("users")
+  .where("id" == 10)
+  .update(values: [
+    "first_name": "Ashley"
+  ])
 ```
 
 
@@ -276,9 +277,9 @@ The `delete` method works similar to how `update` did. It uses the query builder
 
 ```swift
 DB.query()
-    .table("users")
-    .where("name" == "Peter")
-    .delete()
+  .table("users")
+  .where("name" == "Peter")
+  .delete()
 ```
 
 
@@ -289,7 +290,7 @@ To get the total number of records that match a query you can use the `count` me
 
 ```swift
 DB.query()
-    .from("rentals")
-    .where("num_beds" >= 1)
-    .count(as: "rentals_count")
+  .from("rentals")
+  .where("num_beds" >= 1)
+  .count(as: "rentals_count")
 ```
