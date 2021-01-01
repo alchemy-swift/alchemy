@@ -9,10 +9,83 @@
 Alchemy is a Swift web framework for building backends. It makes your development experience...
 
 - **Swifty**. Concise, expressive APIs built with the best parts of Swift.
-- **Safe**. Swift is built for safety. It's typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
+- **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
 - **Rapid**. Write less code & rapidly develop full stack features, end to end. The CLI & supporting libraries (Papyrus, Fusion) are built around facilitating shared code & providing type safety between your server & iOS clients.
 - **Easy**. With elegant syntax, 100% documentation, and guides touching on nearly every feature, Alchemy is designed to help you build backends faster, not get in the way.
 - **Simple**. Juggle less Xcode projects by keeping your full stack Swift code in a monorepo containing your iOS app, Alchemy Server & Shared code. The CLI will help you get started.
+
+## Some Examples
+
+### Hello world
+
+```swift
+import Alchemy
+
+struct MyServerApp: Application {
+    @Inject router: Router
+
+    func setup() {
+        self.router.on(.post, at: "/hello") { request in
+            "Hello, World!"
+        }
+    }
+}
+```
+
+### Querying with Rune ORM
+```swift
+import Alchemy
+
+struct Todo: Model {
+    static var let tableName = "todos"
+
+    var id: Int?
+    let name: String
+    let isDone: Bool
+    
+    @BelongsTo
+    let user: User
+}
+
+DB.default = PostgresDatabase(...)
+
+Todo.query()
+    .where("isDone" == false)
+    .with(\.$user)
+    .getAll()
+    .whenSuccess { todos in
+        for todo in todos {
+            print("\(todo.user.name) hasn't finished \(todo.name)!")
+        }
+    }
+```
+
+### Sharing network interfaces between iOS & server.
+```swift
+// MyProject/Server/MyApplication.swift
+struct MyApplication: Application {
+    @Inject router: Router
+
+    func setup() {
+        let todosAPI = TodosAPI()
+        self.router.register(todosAPI.getAll) { request in
+            // Enforces a return type of the expected response, in this case, `[Todo]`.
+            return []
+        }
+    }
+}
+```
+```swift
+// MyProject/Shared/UsersAPI.swift
+
+public struct TodosAPI: EndpointGroup {
+    @GET("/todos")
+    public var getAll: Endpoint<Empty, [Todo]>
+}
+```
+```swift
+// MyProject/iOS/LoginView.swift
+```
 
 ## Getting Started
 
