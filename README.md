@@ -79,7 +79,7 @@ Todo.query()
 ### Using Papyrus to share network interfaces between iOS & server.
 **Papyrus** helps you keep network interfaces type-safe across your Alchemy server & Swift clients. **Alchemy** provides first class support for providing & consuming Papyrus APIs. **iOS/macOS** clients can use **PapyrusAlamofire** for consuming Papyrus APIs.
 
-First, define a shared interface for your API. Note the `@URLQuery` property wrapper tells API consumers to put `count` & `unfinishedOnly` in the query of the request. API providers will know to look for these values in the request query.
+First, define a shared interface for your API. Note the `@URLQuery` property wrapper tells API consumers to put `count` & `unfinishedOnly` in the query of the request. API providers will know to look for these values in the incoming request's query.
 ```swift
 // MyProject/Shared/TodosAPI.swift
 import Papyrus
