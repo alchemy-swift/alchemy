@@ -18,7 +18,9 @@ self.db.query() // Start a query using a database variable
 
 ### Get all rows
 ```swift
-DB.query().from("users").get()
+DB.query()
+.from("users")
+.get()
 ```
 
 ### Get a single row
@@ -28,17 +30,18 @@ If you are only wanting to select a single row from the database table, you have
 To select the first row only from a query, use the `first` method.
 ```swift
 DB.query()
-	.from("users")
-	.where("name", "Steve")
-	.first()
+.from("users")
+.where("name", "Steve")
+.first()
 ```
 
 If you want to get a single record based on a given column, you can use the `find` method. This will return the first record matching the criteria.
 ```swift
 DB.query()
-	.from("users")
-	.find()
+.from("users")
+.find()
 ```
+
 
 
 ## Select
@@ -62,9 +65,9 @@ You can easily join data from separate tables using the query builder. The `join
 
 ```swift
 DB.query()
-	.from("users")
-	.join(table: "orders", first: "users.id", op: .equals, second: "orders.user_id")
-	.get()
+    .from("users")
+    .join(table: "orders", first: "users.id", op: .equals, second: "orders.user_id")
+    .get()
 ```
 
 There are helper methods available for `leftJoin`, `rightJoin` and `crossJoin` that you can use that take the same basic parameters.
@@ -80,9 +83,9 @@ If you are wanting to filter down your results this can be done by using the `wh
 
 ```swift
 DB.query()
-	.from("users")
-	.where("age" > 20)
-	.get()
+    .from("users")
+    .where("age" > 20)
+    .get()
 ```
 
 
@@ -93,9 +96,9 @@ Alternatively you can manually create a `WhereValue` clause manually:
 
 ```swift
 DB.query()
-	.from("users")
-	.where(WhereValue(key: "age", op: .equals, value: 10))
-	.get()
+    .from("users")
+    .where(WhereValue(key: "age", op: .equals, value: 10))
+    .get()
 ```
 
 
@@ -106,30 +109,36 @@ By default chaining where clauses will be joined together using the `and` operat
 
 ```swift
 DB.query()
-	.from("users")
-	.where("age" > 20)
-	.orWhere("age" < 50)
-	.get()
+    .from("users")
+    .where("age" > 20)
+    .orWhere("age" < 50)
+    .get()
 ```
 
 
 
 ### Grouping Where Clauses
 
-If you need to group where clauses together, you can do so by using a closure.
+If you need to group where clauses together, you can do so by using a closure. This will execute those clauses together within parenthesis to achieve your desired logical grouping.
 
 ```swift
 DB.query()
-	.from("users")
-	.where {
-    $0.where("age" < 30)
-    	.orWhere("first_name" == "Paul")
-  }
-	.orWhere {
-    $0.where("age" > 50)
-    	.orWhere("first_name" == "Karen")
-  }
-	.get()
+    .from("users")
+    .where {
+        $0.where("age" < 30)
+            .orWhere("first_name" == "Paul")
+    }
+    .orWhere {
+        $0.where("age" > 50)
+            .orWhere("first_name" == "Karen")
+    }
+    .get()
+```
+
+The provided example would produce the following SQL:
+
+```sql
+select * from users where (age < 50 or first_name = 'Paul') and (age > 50 or first_name = 'Karen')
 ```
 
 
@@ -144,9 +153,9 @@ The `whereNull` method ensures that the given column is not null.
 
 ```swift
 DB.query()
-	.from("users")
-	.whereNull("last_name")
-	.get()
+    .from("users")
+    .whereNull("last_name")
+    .get()
 ```
 
 #### Where In
@@ -155,13 +164,11 @@ The `where(key: String, in values [Parameter])` method lets you pass an array of
 
 ```swift
 DB.query()
-	.from("users")
-	.where(key: "age", in: [10,20,30])
-	.get()
+    .from("users")
+    .where(key: "age", in: [10,20,30])
+    .get()
 ```
 
-
- 
 
 ## Ordering, Grouping, Paging
 
@@ -171,19 +178,19 @@ To group results together, you can use the `groupBy` method:
 
 ```swift
 DB.query()
-	.from("users")
-	.groupBy("age")
-	.get()
+    .from("users")
+    .groupBy("age")
+    .get()
 ```
 
 If you need to filter the grouped by rows, you can use the `having` method which performs similar to a `where` clause.
 
 ```swift
 DB.query()
-	.from("users")
-	.groupBy("age")
-	.having("age" > 100)
-	.get()
+    .from("users")
+    .groupBy("age")
+    .having("age" > 100)
+    .get()
 ```
 
 
@@ -235,31 +242,54 @@ DB.query()
 
 ## Inserting
 
+You can insert records using the query builder as well. To do so, start a chain with only a table name, and then pass the record you wish to insert. You can additionally pass in an array of records to do a bulk insert.
+
 ```swift
-User.query().insert([
-    [
+DB.query()
+    .table("users")
+    .insert([
         "first_name": "Steve",
         "last_name": "Jobs"
-    ]
-])
+    ])
 ```
 
 
 
 ## Updating
 
+Updating records is just as easy as inserting, however you also get the benefit of the rest of the query builder chain. Any where clauses that have been added are used to match which records you want to update. For example, if you wanted to update a single user based on an ID, you could do so as follows:
+
 ```swift
-User.query()
+DB.query()
+    .table("users")
     .where("id" == 10)
-    .update(values: ["some_json": DatabaseValue.json(nil)])
+    .update(values: [
+        "first_name": "Ashley"
+    ])
 ```
+
+
 
 ## Deleting
 
-## Counting
+The `delete` method works similar to how `update` did. It uses the query builder chain to determine what records match, but then instead of updating them, it deletes them. If you wanted to delete all users whose name is Peter, you could do that as so:
 
 ```swift
-Rental.query()
-	.where("num_beds" >= 1)
-	.count(as: "rentals_count")
+DB.query()
+    .table("users")
+    .where("name" == "Peter")
+    .delete()
+```
+
+
+
+## Counting
+
+To get the total number of records that match a query you can use the `count` method. 
+
+```swift
+DB.query()
+    .from("rentals")
+    .where("num_beds" >= 1)
+    .count(as: "rentals_count")
 ```
