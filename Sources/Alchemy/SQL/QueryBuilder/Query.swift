@@ -43,27 +43,39 @@ public class Query: Sequelizable {
         return self
     }
 
-    public func from(table: String, as alias: String? = nil) -> Self {
-
-        //TODO: Allow for selecting from subqueries
-
-        guard let alias = alias else {
-            self.from = table
-            return self
-        }
-        self.from = "\(table) as \(alias)"
+    /// Set the table to perform a query from.
+    ///
+    /// - Parameters:
+    ///   - table: The table to run the query on
+    /// - Returns: The current query builder `Query` to chain future queries to
+    public func table(_ table: String) -> Self {
+        self.from = table
         return self
+    }
+
+    /// An alias for `table(_ table: String)` to be used when running
+    /// a `select` query that also lets you alias the table name.
+    ///
+    /// - Parameters:
+    ///   - table: The table to select data from
+    ///   - alias: An optional alias to use in place of table name
+    /// - Returns: The current query builder `Query` to chain future queries to
+    public func from(table: String, as alias: String? = nil) -> Self {
+        guard let alias = alias else {
+            return self.table(table)
+        }
+        return self.table("\(table) as \(alias)")
     }
 
     /// Join data from a separate table into the current query.
     ///
     /// - Parameters:
-    ///   - table: the table to be joined
-    ///   - first: the column from the current query to be matched
-    ///   - op: the `Operator` to be used in the comparison
-    ///   - second: the column from the joining table to be matched
-    ///   - type: the `JoinType` of the sql join
-    /// - Returns: a the current query builder `Query` to chain future queries to
+    ///   - table: The table to be joined
+    ///   - first: The column from the current query to be matched
+    ///   - op: The `Operator` to be used in the comparison
+    ///   - second: The column from the joining table to be matched
+    ///   - type: The `JoinType` of the sql join
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func join(
         table: String,
         first: String,
@@ -127,11 +139,22 @@ public class Query: Sequelizable {
         )
     }
 
+    /// Add a basic where clause to the query to filter down results.
+    ///
+    /// - Parameters:
+    ///   - clause: A `WhereValue` clause matching a column to a given value.
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func `where`(_ clause: WhereValue) -> Self {
         self.wheres.append(clause)
         return self
     }
 
+    /// An alias for `where(_ clause: WhereValue) ` that appends an or
+    /// query instead of an and query.
+    ///
+    /// - Parameters:
+    ///   - clause: A `WhereValue` clause matching a column to a given value.
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orWhere(_ clause: WhereValue) -> Self {
         var clause = clause
         clause.boolean = .or
@@ -253,18 +276,33 @@ public class Query: Sequelizable {
         )
     }
 
+    /// Group returned data by a given column.
+    ///
+    /// - Parameters:
+    ///   - group: The table column to group data on
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func groupBy(_ group: String) -> Self {
         self.groups.append(group)
         return self
     }
 
+    /// Order the data from the query based on given clause.
+    ///
+    /// - Parameters:
+    ///   - order: The `OrderClause` that defines the ordering
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orderBy(_ order: OrderClause) -> Self {
         self.orders.append(order)
         return self
     }
 
+    /// Order the data from the query based on a column and direction.
+    ///
+    /// - Parameters:
+    ///   - column: The column to order data by
+    ///   - direction: The `OrderClause.Sort` direction (either `asc` or `desc`)
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func orderBy(column: Column, direction: OrderClause.Sort = .asc) -> Self {
-        //TODO: Add support for sort subquery
         return self.orderBy(OrderClause(column: column, direction: direction))
     }
 
@@ -273,13 +311,21 @@ public class Query: Sequelizable {
         return self
     }
 
-
-
+    /// Offset the returned results by a given amount.
+    ///
+    /// - Parameters:
+    ///   - value: An amount representing the offset.
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func offset(_ value: Int) -> Self {
         self.offset = max(0, value)
         return self
     }
 
+    /// Limit the returned results to a given amount.
+    ///
+    /// - Parameters:
+    ///   - value: An amount to cap the total result at.
+    /// - Returns: The current query builder `Query` to chain future queries to
     public func limit(_ value: Int) -> Self {
         if (value >= 0) {
             self.limit = value
@@ -289,8 +335,16 @@ public class Query: Sequelizable {
         return self
     }
 
-    // Paging starts at index 1, not zero
-    public func forPage(page: Int, perPage: Int = 25) -> Self {
+    /// A helper method to be used when needing to page returned results.
+    /// Internally this uses the `limit` and `offset` methods.
+    ///
+    /// Note: Paging starts at index 1, not zero
+    ///
+    /// - Parameters:
+    ///   - page: What `page` of results to offset by
+    ///   - perPage: How many results to show on each page
+    /// - Returns: The current query builder `Query` to chain future queries to
+    public func forPage(_ page: Int, perPage: Int = 25) -> Self {
         return offset((page - 1) * perPage).limit(perPage)
     }
 
@@ -359,6 +413,7 @@ public class Query: Sequelizable {
         }
     }
 
+    
     public func delete() -> EventLoopFuture<[DatabaseRow]> {
         do {
             let sql = try self.database.grammar.compileDelete(self)
