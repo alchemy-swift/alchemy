@@ -6,7 +6,7 @@
 
 ## About Alchemy
 
-Alchemy is a Swift web framework for building backends. It makes your development experience...
+Alchemy is a Swift web framework for building the backend of your next mobile app. It makes your development experience...
 
 - **Swifty**. Concise, expressive APIs built with the best parts of Swift.
 - **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
@@ -14,14 +14,16 @@ Alchemy is a Swift web framework for building backends. It makes your developmen
 - **Easy**. With elegant syntax, 100% documentation, and guides touching on nearly every feature, Alchemy is designed to help you build backends faster, not get in the way.
 - **Simple**. Juggle less Xcode projects by keeping your full stack Swift code in a monorepo containing your iOS app, Alchemy Server & Shared code. The CLI will help you get started.
 
-## Some Examples
+## Code Samples
+Alchemy is built to be both swifty and easy to follow. There's tons of examples in the [Guides](Documentation/0_GettingStarted.md) and [quickstart projects](Quickstart/) but here's a few examples.
 
-### Hello world
+### Hello, World!
 
 ```swift
 import Alchemy
 
 struct MyServerApp: Application {
+    // The global app router
     @Inject router: Router
 
     func setup() {
@@ -30,12 +32,27 @@ struct MyServerApp: Application {
         }
     }
 }
+
+// main.swift
+Launch<MyServerApp>.main()
 ```
 
-### Querying with Rune ORM
+### Databases & Rune ORM
+Raw queries, a Query builder, and an ORM (Rune), are all provided for interacting with SQL databases.
 ```swift
 import Alchemy
 
+// Setup the default database.
+DB.default = PostgresDatabase(
+    DatabaseConfig(
+        socket: .ip(host: "localhost", port: 5432),
+        database: "alchemy",
+        username: "admin",
+        password: "password"
+    )
+)
+
+// Create a model matching a table
 struct Todo: Model {
     static var let tableName = "todos"
 
@@ -47,8 +64,7 @@ struct Todo: Model {
     let user: User
 }
 
-DB.default = PostgresDatabase(...)
-
+// Query the model
 Todo.query()
     .where("isDone" == false)
     .with(\.$user)
@@ -60,32 +76,81 @@ Todo.query()
     }
 ```
 
-### Sharing network interfaces between iOS & server.
+### Using Papyrus to share network interfaces between iOS & server.
+**Papyrus** helps you keep network interfaces type-safe across your Alchemy server & Swift clients. **Alchemy** provides first class support for providing & consuming Papyrus APIs. **iOS/macOS** clients can use **PapyrusAlamofire** for consuming Papyrus APIs.
+
+First, define a shared interface for your API. Note the `@URLQuery` property wrapper tells API consumers to put `count` & `unfinishedOnly` in the query of the request. API providers will know to look for these values in the request query.
 ```swift
+// MyProject/Shared/TodosAPI.swift
+import Papyrus
+
+public struct TodoDTO {
+    public let id: Int
+    public let name: String
+    public let isDone: Bool 
+    
+    public init(...)
+}
+
+public struct TodosAPI: EndpointGroup {
+    @GET("/todos")
+    public var getAll: Endpoint<GetAllRequest, [TodoDTO]>
+
+    public struct GetAllRequest: EndpointRequest {
+        @URLQuery
+        public let count: Int
+
+        @URLQuery
+        public let unfinishedOnly: Bool
+
+        public init(...)
+    }
+}
+```
+
+Then, register this endpoint in your Alchemy server's router. Alchemy will automatically decode `GetAllRequest` from the incoming request & will enforce that the return type of the handler matches the expected return type of the endpoint, `[TodoDTO]`.
+```swift
+import Alchemy
+import Shared
+
 // MyProject/Server/MyApplication.swift
 struct MyApplication: Application {
     @Inject router: Router
 
     func setup() {
         let todosAPI = TodosAPI()
-        self.router.register(todosAPI.getAll) { request in
-            // Enforces a return type of the expected response, in this case, `[Todo]`.
-            return []
+        self.router.register(todosAPI.getAll) { (request: Request, endpointRequest: GetAllRequest)  in
+            let isDone = endpointRequest.unfinishedOnly ? [false] : [true, false]
+            return Todo.query()
+                .where("isDone", in: isDone)
+                .limit(endpointRequest.count)
+                .getAll()
+                .mapEach { TodoDTO(id: $0.id!, name: $0.name, isDone: $0.isDone) }
         }
     }
 }
 ```
-```swift
-// MyProject/Shared/UsersAPI.swift
 
-public struct TodosAPI: EndpointGroup {
-    @GET("/todos")
-    public var getAll: Endpoint<Empty, [Todo]>
-}
-```
+Finally, request the endpoint from your client. The request properties are automatically put in the right place and the `[TodoDTO]` response type is automatically parsed from the server response.
 ```swift
-// MyProject/iOS/LoginView.swift
+// MyProject/iOS/TodosView.swift
+import PapyrusAlamofire
+import Shared
+
+let todosAPI = TodosAPI(baseURL: "http://localhost")
+let requestData = TodosAPI.GetAllRequest(count: 50, unfinishedOnly: true)
+todosAPI.getAll
+    .request(GetAllRequest(count: 50, unfinishedOnly: true)) { (response: AFDataResponse<Data?>, todos: [TodoDTO]) in
+        for todo in todos {
+            print("Got todo: \(todo.name)")
+        }
+    }
 ```
+Note that you can also use Papyrus to consume 3rd party APIs on both client _and_ server. Just create an interface for the APIs and request them.
+
+### More Examples
+
+Browse the [guides](Documentation/0_GettingStarted.md) for examples of advanced routing, .env files, complex queries, security & authentication, making http requests, database migrations & much more.
 
 ## Getting Started
 
@@ -104,7 +169,7 @@ alchemy new
 
 ### Manually
 
-If you prefer not to use the CLI, you can clone a sample project full of example code from the [Quickstart directory](https://github.com/joshuawright11/alchemy/tree/main/Quickstart).
+If you prefer not to use the CLI, you can clone a sample project full of example code from the [Quickstart directory](Quickstart/).
 
 If you'd rather start with an empty slate, you can create a new Xcode project (likely a package) and add alchemy to the `Package.swift` file.
 ```swift

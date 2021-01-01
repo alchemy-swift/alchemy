@@ -91,3 +91,11 @@ extension EndpointMethod {
         HTTPMethod(rawValue: self.rawValue)
     }
 }
+
+extension EndpointGroup {
+    /// Initializes an EndpointGroup with an empty `baseURL`. Should only be used when _providing_
+    /// (i.e. `router.register(group.someEndpoint)`) not _consuming_ endpoints.
+    public convenience init() {
+        self.init(baseURL: "")
+    }
+}
