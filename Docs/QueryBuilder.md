@@ -2,6 +2,7 @@
 
 Alchemy offers first class support for building and running database queries through a chaining query builder. It can be used for the majority of database operations, otherwise you can always run pure SQL as well. The syntax is heavily inspired by Knex and Laravel.
 
+<br>
 
 ## Running Database Queries
 
@@ -42,7 +43,7 @@ DB.query()
   .find()
 ```
 
-
+<br>
 
 ## Select
 
@@ -57,7 +58,7 @@ DB.query()
   .get()
 ```
 
-
+<br>
 
 ## Joins
 
@@ -72,9 +73,7 @@ DB.query()
 
 There are helper methods available for `leftJoin`, `rightJoin` and `crossJoin` that you can use that take the same basic parameters.
 
-
-
-
+<br>
 
 ## Where Clauses
 
@@ -102,8 +101,6 @@ DB.query()
   .get()
 ```
 
-
-
 ### Or Where Clauses
 
 By default chaining where clauses will be joined together using the `and` operator. If you ever need to swift the operator to `or` you can do so by using the `orWhere` method.
@@ -115,8 +112,6 @@ DB.query()
   .orWhere("age" < 50)
   .get()
 ```
-
-
 
 ### Grouping Where Clauses
 
@@ -141,8 +136,6 @@ The provided example would produce the following SQL:
 ```sql
 select * from users where (age < 50 or first_name = 'Paul') and (age > 50 or first_name = 'Karen')
 ```
-
-
 
 ### Additional Where Clauses
 
@@ -170,6 +163,7 @@ DB.query()
   .get()
 ```
 
+<br>
 
 ## Ordering, Grouping, Paging
 
@@ -194,8 +188,6 @@ DB.query()
   .get()
 ```
 
-
-
 ### Ordering
 
 You can sort results of a query by using the `orderBy` method. 
@@ -217,8 +209,6 @@ DB.query()
   .get()
 ```
 
-
-
 ### Paging, Limits & Offsets
 
 If all you are looking for is to break a query down into chunks for paging, the easiest way to accomplish that is to use the `forPage` method. It will automatically set the limits and offsets appropriate for a page size you define.
@@ -239,7 +229,7 @@ DB.query()
   .get()
 ```
 
-
+<br>
 
 ## Inserting
 
@@ -254,7 +244,7 @@ DB.query()
   ])
 ```
 
-
+<br>
 
 ## Updating
 
@@ -269,7 +259,7 @@ DB.query()
   ])
 ```
 
-
+<br>
 
 ## Deleting
 
@@ -282,7 +272,7 @@ DB.query()
   .delete()
 ```
 
-
+<br>
 
 ## Counting
 
