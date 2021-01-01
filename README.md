@@ -1,4 +1,8 @@
-# Alchemy
+# 🧪 Alchemy
+
+![Swift](https://img.shields.io/badge/Swift-5.3-orange.svg)
+![MIT](https://img.shields.io/github/license/joshuawright11/alchemy.svg)
+![release](https://img.shields.io/github/release/joshuawright11/alchemy.svg)
 
 Alchemy is a Swift web framework for building backends. It makes your development experience...
 
@@ -74,11 +78,8 @@ Our top priorities right now are:
 
 ## Contributing
 
-Ask **Questions** on Stack Overflow with the tag `alchemy-swift` you can also ask us in [Discord](https://discord.gg/Dnhh4yJe).
+- Ask **questions** on Stack Overflow with the tag `alchemy-swift`. You can also ask us in [Discord](https://discord.gg/Dnhh4yJe).
+- Report **bugs** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) (ideally with a failing test case) or [Discord](https://discord.gg/CDZWAda3).
+- Submit **feature requests** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) or bring them up on [Discord](https://discord.gg/9CZ4ksvn).
 
-Submit **Bugs** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) (ideally with a failing test case) or [Discord](https://discord.gg/CDZWAda3).
-
-Submit **Feature Requests** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) or bring em up on [Discord](https://discord.gg/9CZ4ksvn).
-
-Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups. Check out this guide for some tips on contributing to Alchemy.
-
+Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups.
