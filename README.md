@@ -15,7 +15,7 @@ Alchemy is a Swift web framework for building the backend of your next mobile ap
 - **Simple**. Juggle less Xcode projects by keeping your full stack Swift code in a monorepo containing your iOS app, Alchemy Server & Shared code. The CLI will help you get started.
 
 ## Code Samples
-Alchemy is built to be both swifty and easy to follow. There's tons of examples in the [Guides](Documentation/0_GettingStarted.md) and [quickstart projects](Quickstart/) but here's a few examples.
+Alchemy is built to be both swifty and easy to follow. There is tons of sample code in the [Guides](Documentation/0_GettingStarted.md) and [quickstart projects](Quickstart/) but here are a few examples.
 
 ### Hello, World!
 
@@ -150,7 +150,7 @@ Note that you can also use Papyrus to consume 3rd party APIs on both client _and
 
 ### More Examples
 
-Browse the [guides](Documentation/0_GettingStarted.md) for examples of advanced routing, .env files, complex queries, security & authentication, making http requests, database migrations & much more.
+Browse the [guides](Documentation/0_GettingStarted.md) for examples of advanced routing, `.env` files, complex queries, security & authentication, making http requests, database migrations & much more.
 
 ## Getting Started
 
