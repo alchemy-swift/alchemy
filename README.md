@@ -23,7 +23,7 @@ Alchemy is built to be both swifty and easy to follow. There is tons of sample c
 import Alchemy
 
 struct MyServerApp: Application {
-    // The global app router
+    // Inject the global app router
     @Inject router: Router
 
     func setup() {
