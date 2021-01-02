@@ -2,26 +2,14 @@
 /// fields (header, query, path parameter, etc) on a request.
 typealias KeyMapping = (String) -> String
 
-/// Throws an error letting the user know of the acceptable properties on an `EndpointRequest`.
-///
-/// - Throws: guaranteed to throw a `PapyrusError`.
-/// - Returns: a generic type, though this never returns.
-private func error<T>() throws -> T {
-    throw PapyrusError("Only properties wrapped by @Body, @Path, @Header, or @Query are " +
-                        "supported on an `EndpointRequest`")
-}
-
 /// A component of an HTTP request.
 private enum RequestComponent {
     /// The request body.
     case body
-    
     /// The request headers.
     case header
-    
     /// The request query string.
     case query
-    
     /// The request path.
     case path
 }
@@ -162,11 +150,11 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
         case .body:
             return try unsupported(type)
         case .header:
-            return try self.request.getHeader(for: self.key)
+            return try self.request.getHeader(for: self.key).unwrap(or: self.nilError())
         case .path:
-            return try self.request.getPathComponent(for: self.key)
+            return try self.request.getPathComponent(for: self.key).unwrap(or: self.nilError())
         case .query:
-            return try self.request.getQuery(for: self.key)
+            return try self.request.getQuery(for: self.key).unwrap(or: self.nilError())
         }
     }
     
@@ -186,18 +174,32 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
         switch self.parameter {
         case .body:
-            return try request.getBody()
+            return try self.request.getBody()
         case .header:
-            return try unsupported(type)
+            return try self.unsupported(type)
         case .path:
-            return try unsupported(type)
+            return try self.unsupported(type)
         case .query:
             if type is String.Type {
-                return try request.getQuery(for: self.key) as! T
+                return try self.request.getQuery(for: self.key).unwrap(or: self.nilError()) as! T
             } else if type is Optional<String>.Type {
-                return try request.getQuery(for: self.key) as! T
+                return self.request.getQuery(for: self.key) as! T
+            } else if type is Int.Type {
+                let query = try self.request.getQuery(for: self.key).unwrap(or: self.nilError())
+                let int = try Int(query)
+                    .unwrap(or: PapyrusError("Found a query value for key `\(self.key)` but it was"
+                                                + " `\(query)` which can't be cast to an `Int`."))
+                return int as! T
+            } else if type is Optional<Int>.Type {
+                let int = try self.request.getQuery(for: self.key)
+                    .map { string in
+                        try Int(string)
+                            .unwrap(or: PapyrusError("Found a query item for key `\(self.key)` but"
+                                                        + " it wasn't an `Int`."))
+                    }
+                return int as! T
             } else {
-                return try unsupported(type)
+                return try self.unsupported(type)
             }
         }
     }
@@ -209,5 +211,21 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
     private func unsupported<T>(_ type: T.Type) throws -> T {
         throw PapyrusError("decoding a `\(type)` from the \(self.parameter) isn't supported yet.")
     }
+    
+    /// Generates a `PapyrusError` with a message describing a nil value for a key that was
+    /// expected.
+    ///
+    /// - Returns: the error to throw when a value is missing.
+    private func nilError() -> PapyrusError {
+        PapyrusError("Expected a non-nil value for key `\(self.key)` but the value was nil.")
+    }
 }
 
+/// Throws an error letting the user know of the acceptable properties on an `EndpointRequest`.
+///
+/// - Throws: guaranteed to throw a `PapyrusError`.
+/// - Returns: a generic type, though this never returns.
+private func error<T>() throws -> T {
+    throw PapyrusError("Only properties wrapped by @Body, @Path, @Header, or @Query are " +
+                        "supported on an `EndpointRequest`")
+}

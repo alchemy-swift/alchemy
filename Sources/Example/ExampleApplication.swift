@@ -6,7 +6,7 @@ struct ExampleApplication: Application {
     @Inject var router: Router
     
     func setup() {
-        Log.info("Hello from setup.")
+        Log.info("Hello from setup \(System.coreCount).")
         
         // Register global database
         Container.global.register(singleton: Database.self) { _ in
@@ -18,8 +18,10 @@ struct ExampleApplication: Application {
         DB.default = database
         
         // Applied to all incoming requests.
-        Router.globalMiddlewares = [
-            LoggingMiddleware(text: "Received request:")
+        self.router.globalMiddlewares = [
+            LoggingMiddleware(text: "First."),
+            LoggingMiddleware(text: "Second."),
+            LoggingMiddleware(text: "Third.")
         ]
         
         self.router
@@ -99,20 +101,20 @@ struct Testing: Codable {
 struct DatabaseTestController {
     @Inject var db: MySQLDatabase
     
-    func update(req: HTTPRequest) throws -> EventLoopFuture<Void> {
+    func update(req: Request) throws -> EventLoopFuture<Void> {
         try User.query()
             .where("id" == UUID(uuidString: "95dd20ec-c151-4dcd-8f86-364b99631aa8"))
             .update(values: ["some_json": DatabaseValue.json(nil)])
             .voided()
     }
     
-    func select(req: HTTPRequest) -> EventLoopFuture<Int?> {
+    func select(req: Request) -> EventLoopFuture<Int?> {
         Rental.query()
             .where("num_beds" >= 1)
             .count(as: "rentals_count")
     }
     
-    func insert(req: HTTPRequest) throws -> EventLoopFuture<String> {
+    func insert(req: Request) throws -> EventLoopFuture<String> {
         Rental.query(database: self.db)
             .insert([
                 [
@@ -141,9 +143,13 @@ struct SampleJSON: Codable {
 struct LoggingMiddleware: Middleware {
     let text: String
     
-    func intercept(_ request: HTTPRequest) -> EventLoopFuture<HTTPRequest> {
-        Log.info("Got a request to \(request.path).")
-        return .new(request)
+    func intercept(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
+        Log.info(self.text)
+        return next(request)
+            .map {
+                Log.info(self.text)
+                return $0
+            }
     }
 }
 

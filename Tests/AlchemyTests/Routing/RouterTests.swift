@@ -6,7 +6,7 @@
 //let kMinTimeout: TimeInterval = 0.01
 //
 //final class RouterTests: XCTestCase {
-//    typealias TestRouter = Router<HTTPRequest, String>
+//    typealias TestRouter = Router<Request, String>
 //
 //    private var router = TestRouter { $0.eventLoop.future($0) }
 //    private var loop = EmbeddedEventLoop()

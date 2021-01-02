@@ -14,7 +14,7 @@ extension Router {
     public func on(
         _ method: HTTPMethod,
         at path: String = "",
-        do action: @escaping (HTTPRequest) throws -> HTTPResponseEncodable
+        do action: @escaping (Request) throws -> HTTPResponseEncodable
     ) -> Self {
         self.add(handler: action, for: method, path: path)
         return self
@@ -36,7 +36,7 @@ extension Router {
     public func on(
         _ method: HTTPMethod,
         at path: String = "",
-        do action: @escaping (HTTPRequest) throws -> Void
+        do action: @escaping (Request) throws -> Void
     ) -> Self {
         self.add(
             handler: { out -> VoidCodable in
@@ -61,7 +61,7 @@ extension Router {
     public func on(
         _ method: HTTPMethod,
         at path: String = "",
-        do action: @escaping (HTTPRequest) throws -> EventLoopFuture<Void>
+        do action: @escaping (Request) throws -> EventLoopFuture<Void>
     ) -> Self {
         self.add(handler: { try action($0).map { VoidCodable() } }, for: method, path: path)
         return self
@@ -79,7 +79,7 @@ extension Router {
     public func on<E: Encodable>(
         _ method: HTTPMethod,
         at path: String = "",
-        do action: @escaping (HTTPRequest) throws -> E
+        do action: @escaping (Request) throws -> E
     ) -> Self {
         self.add(handler: { try action($0).encode() }, for: method, path: path)
         return self
@@ -97,7 +97,7 @@ extension Router {
     public func on<E: Encodable>(
         _ method: HTTPMethod,
         at path: String = "",
-        do action: @escaping (HTTPRequest) throws -> EventLoopFuture<E>
+        do action: @escaping (Request) throws -> EventLoopFuture<E>
     ) -> Self {
         self.add(
             handler: { try action($0).flatMapThrowing { try $0.encode() } },
@@ -113,8 +113,8 @@ private struct VoidCodable: Codable {}
 extension VoidCodable: HTTPResponseEncodable {
     // MARK: HTTPResponseEncodable
     
-    func encode() throws -> EventLoopFuture<HTTPResponse> {
-        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    func encode() throws -> EventLoopFuture<Response> {
+        .new(Response(status: .ok, body: try HTTPBody(json: self)))
     }
 }
 
@@ -124,7 +124,7 @@ extension VoidCodable: HTTPResponseEncodable {
 extension Encodable {
     // MARK: HTTPResponseEncodable
     
-    public func encode() throws -> EventLoopFuture<HTTPResponse> {
-        .new(HTTPResponse(status: .ok, body: try HTTPBody(json: self)))
+    public func encode() throws -> EventLoopFuture<Response> {
+        .new(Response(status: .ok, body: try HTTPBody(json: self)))
     }
 }

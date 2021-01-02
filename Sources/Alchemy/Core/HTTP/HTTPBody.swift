@@ -52,13 +52,13 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     /// - Parameters:
     ///   - json: the object to encode into the body.
     ///   - encoder: a customer encoder to encoder the JSON with. Defaults to
-    ///              `HTTPResponse.defaultJSONEncoder`.
+    ///              `Response.defaultJSONEncoder`.
     /// - Throws: Any error thrown during encoding.
     public init<E: Encodable>(
         json: E,
-        encoder: JSONEncoder = HTTPResponse.defaultJSONEncoder
+        encoder: JSONEncoder = Response.defaultJSONEncoder
     ) throws {
-        let data = try HTTPResponse.defaultJSONEncoder.encode(json)
+        let data = try Response.defaultJSONEncoder.encode(json)
         self.init(data: data, mimeType: "application/json")
     }
 
@@ -103,12 +103,12 @@ extension HTTPBody {
     /// - Parameters:
     ///   - type: the Decodable type to which the body should be decoded.
     ///   - decoder: the Decoder with which to decode. Defaults to
-    ///              `HTTPRequest.defaultJSONEncoder`.
+    ///              `Request.defaultJSONEncoder`.
     /// - Throws: any errors encountered during decoding.
     /// - Returns: the decoded object of type `type`.
     public func decodeJSON<D: Decodable>(
         as type: D.Type = D.self,
-        with decoder: JSONDecoder = HTTPRequest.defaultJSONDecoder
+        with decoder: JSONDecoder = Request.defaultJSONDecoder
     ) throws -> D {
         return try decoder.decode(type, from: data)
     }

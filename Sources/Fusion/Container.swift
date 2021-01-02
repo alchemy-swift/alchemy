@@ -59,26 +59,45 @@ public final class Container {
         })
     }
     
-    /// Register a multiton service to this container. MultitonService is like a singleton except
-    /// that the factory closure is called once _per identifier value_ of the `MultitonService`.
-    /// When a multiton is resolved with an id value for the first time, a new instance of the
-    /// service is created and associated with that id value. Subsequent resolves with that id will
-    /// return the created value.
-    ///
-    /// See `MultitonService`.
+    /// Register a identified singleton service to this container. Singleton means that it's factory
+    /// closure will be called _once_ per unique identifier and that value will be returned each
+    /// time the service is resolved.
     ///
     /// - Parameters:
     ///   - service: the type of the service to register.
     ///   - factory: the closure for instantiating an instance of the service.
-    public func register<M: MultitonService>(
-        multiton service: M.Type,
-        factory: @escaping (Container, M.Identifier) -> M
+    public func register<S, H: Hashable>(
+        singleton service: S.Type,
+        identifier: H,
+        factory: @escaping (Container) -> S
     ) {
-        let key = self.storageKey(for: service, identifier: nil)
-        self.resolvers[key] = (.singleton, { factory($0, $1 as! M.Identifier) })
+        let key = self.storageKey(for: service, identifier: identifier)
+        self.resolvers[key] = (.singleton, { container, _ in
+            factory(container)
+        })
+    }
+    
+    /// Resolves a service, returning an instance of it, if one is registered.
+    ///
+    /// - Parameter service: the type of the service to resolve.
+    /// - Returns: an instance of the service.
+    public func resolveOptional<T>(_ service: T.Type) -> T? {
+        self._resolve(service, identifier: nil)
+    }
+    
+    /// Resolves a service with the given `identifier`, returning an instance of it if one is
+    /// registered.
+    ///
+    /// - Parameter service: the type of the service to resolve.
+    /// - Parameter identifier: the identifier of the service to resolve.
+    /// - Returns: an instance of the service.
+    public func resolveOptional<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T? {
+        self._resolve(service, identifier: identifier)
     }
     
     /// Resolves a service, returning an instance of it.
+    ///
+    /// This will `fatalError` if the service isn't registered.
     ///
     /// - Parameter service: the type of the service to resolve.
     /// - Returns: an instance of the service.
@@ -86,13 +105,14 @@ public final class Container {
         self.assertNotNil(self._resolve(service, identifier: nil))
     }
     
-    /// Resolves a `MultitonService`, returning an instance associated with the given identifier.
+    /// Resolves a service with the given `identifier`, returning an instance of it.
     ///
-    /// - Parameters:
-    ///   - service: the type of the service to resolve.
-    ///   - identifier: the identifier for resolving this `MultitonService`.
-    /// - Returns: an instance of this `MultitonService` for the given identifier.
-    public func resolve<M: MultitonService>(multiton service: M.Type, identifier: M.Identifier) -> M {
+    /// This will `fatalError` if the service isn't registered.
+    ///
+    /// - Parameter service: the type of the service to resolve.
+    /// - Parameter identifier: the identifier of the service to resolve.
+    /// - Returns: an instance of the service.
+    public func resolve<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T {
         self.assertNotNil(self._resolve(service, identifier: identifier))
     }
     
@@ -117,9 +137,8 @@ public final class Container {
             return instance
         } else if let instance = self.parent?._resolve(service, identifier: identifier) {
             return instance
-        } else {
-            return nil
         }
+        return nil
     }
     
     /// A key for local storage of instances and factories of services. It's the type name & the

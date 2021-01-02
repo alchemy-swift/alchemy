@@ -1,4 +1,4 @@
-/// Much of this heavily inspired / ripped from [apple/swift-nio-examples](
+/// Much of this is courtesy of [apple/swift-nio-examples](
 /// https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
 import Fusion
 import NIO
@@ -81,10 +81,17 @@ extension Application {
             try setup
                 .flatMap { self.migrate(rollback: rollback) }
                 .wait()
-            print("Migrations finished!")
+            Log.info("Migrations finished!")
         case .serve(let socket):
             try self.startServing(socket: socket, group: eventLoopGroup)
         }
+        
+        try self.shutdown(group: eventLoopGroup)
+    }
+    
+    func shutdown(group: EventLoopGroup) throws {
+        try group.syncShutdownGracefully()
+        try Thread.shutdown()
     }
     
     /// Run migrations on `DB.default`, optionally rolling back the latest
@@ -135,10 +142,6 @@ extension Application {
                 value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
-        defer {
-            try! group.syncShutdownGracefully()
-        }
-
         let channel = try { () -> Channel in
             switch socket {
             case .ip(let host, let port):
@@ -153,9 +156,7 @@ extension Application {
             fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
         }
         
-        let localAddress: String = "\(channelLocalAddress)"
-        
-        print("Server started and listening on \(localAddress).")
+        Log.info("Server started and listening on \(channelLocalAddress).")
 
         // This will never unblock as we don't close the ServerChannel
         try channel.closeFuture.wait()
