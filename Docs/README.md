@@ -7,23 +7,24 @@ Note that `import Alchemy` will also import the Fusion and Papyrus libraries, bu
 
 ### The Basics
 0. [Getting Started](0_GettingStarted.md)
-1. [Architecture](1_Architecture.md)
-2. [Fusion: Dependency Injection](2_Fusion.md)
+1. [Architecture](1a_Architecture.md)
+2. [Configuration](1b_Configuration.md)
+3. [Fusion: Services & Dependency Injection](2_Fusion.md)
 
 ### Routing & HTTP
-3. [Routing: Basics](3a_RoutingBasics.md)
-4. [Routing: Middleware](3b_RoutingMiddleware.md)
-5. [Papyrus: Network Interfaces](4_Papyrus.md)
+4. [Routing: Basics](3a_RoutingBasics.md)
+5. [Routing: Middleware](3b_RoutingMiddleware.md)
+6. [Papyrus: Network Interfaces](4_Papyrus.md)
 
 ### Database & Rune ORM
-6. [Database: Basics](5a_DatabaseBasics.md)
-7. [Database: Query Builder](5b_DatabaseQueryBuilder.md)
-8. [Database: Migrations](5c_DatabaseMigrations.md)
-9. [Rune: Basics](6a_RuneBasics.md)
-10. [Rune: Relationships](6b_RuneRelationships.md)
+7. [Database: Basics](5a_DatabaseBasics.md)
+8. [Database: Query Builder](5b_DatabaseQueryBuilder.md)
+9. [Database: Migrations](5c_DatabaseMigrations.md)
+10. [Rune: Basics](6a_RuneBasics.md)
+11. [Rune: Relationships](6b_RuneRelationships.md)
 
 ### Advanced
-11. [Security](7_Security.md)
-12. [Digging Deeper](8_DiggingDeeper.md)
+12. [Security](7_Security.md)
+13. [Digging Deeper](8_DiggingDeeper.md)
 
 

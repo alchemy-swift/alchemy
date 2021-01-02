@@ -78,6 +78,6 @@ Run your server, make a GET request to `localhost:8888/hello` and you should get
 ## Start Coding!
 Congrats, you're off to the races! Check out the rest of the guides for what you can do with Alchemy.
 
-_Up next: [Architecture](1_Architecture.md)_
+_Up next: [Architecture](1a_Architecture.md)_
 
 _[Table of Contents](/Docs)_

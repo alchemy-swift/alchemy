@@ -43,14 +43,3 @@ Should you need an `EventLoopGroup` for other `NIO` based libraries, you can acc
 ```swift
 let globalGroup: EventLoopGroup = Container.resolve(EventLoopGroup.self)
 ```
-
-## Custom Run Arguments
-When Alchemy is run, it takes arguments that modify how it runs. By default, it listens for requests on `::1` aka `localhost` at port `8888`. You can pass it `--port {some_port}` and `--host {some_host}` flags to alter that. You can also pass it a `--unixSocket {some_socket}` flag if you want it to listen on a unix socket.
-
-There are other commands that can be passed such as `migrate`, but these are discussed in other parts of the guides.
-
-If you're running it from Xcode, you can configure flags passed on launch by editing the current scheme and navigating to `Run` -> `Arguments`.
-
-_Up next: [Services & Fusion](2_Fusion.md)_
-
-_[Table of Contents](/Docs)_
