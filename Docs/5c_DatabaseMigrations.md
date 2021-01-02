@@ -1,4 +1,4 @@
-# Migrations
+# Database: Migrations
 
 Migrations are a key part of development experience. They apply or rollback changes to the schema of your database and are typically used when adding new models or removing old models.
 
@@ -75,3 +75,8 @@ schema.rename(table: "createdAt", to: "created_at")
 // Run as a subsequent, independent SQL command.
 schema.raw(table: "SOME SQL")
 ```
+
+
+_Next page: [Rune: Basics](6a_RuneBasics.md)_
+
+_[Table of Contents](/Docs)_

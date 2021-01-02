@@ -1,3 +1,5 @@
+# Digging Deeper
+
 # Jobs
 
 Right now there isn't any notion of queued jobs (backed by Redis, SQL, etc), but it's high on the priority list.
@@ -54,3 +56,21 @@ scheduler
     // Runs every minute @ X:XX:30.
     .schedule(CheckAPIStatus(), every: 1.minutes.at(sec: 30))
 ```
+
+# Logging
+
+To aid with logging, Alchemy provides a thin wrapper on top of `swift-log`.
+
+You can conveniently log to the various levels via the `Log` struct.
+
+```swift
+Log.trace("Here")
+Log.debug("Testing")
+Log.info("Hello")
+Log.notice("FYI")
+Log.warning("Hmmm")
+Log.error("Uh oh")
+Log.critical("Houston, we have a problem")
+```
+
+_[Table of Contents](/Docs)_

@@ -8,14 +8,14 @@
 
 Alchemy is a Swift web framework for building the backend of your next mobile app. It makes your development experience...
 
-- **Swifty**. Concise, expressive APIs built with the best parts of Swift.
-- **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
-- **Rapid**. Write less code & rapidly develop full stack features, end to end. The CLI & supporting libraries (Papyrus, Fusion) are built around facilitating shared code & providing type safety between your server & iOS clients.
-- **Easy**. With elegant syntax, 100% documentation, and guides touching on nearly every feature, Alchemy is designed to help you build backends faster, not get in the way.
+- **Easy**. Elegant syntax, 100% documentation, and guides touching on nearly every feature. Alchemy is designed to help you build backends faster, not get in the way.
 - **Simple**. Juggle less Xcode projects by keeping your full stack Swift code in a monorepo containing your iOS app, Alchemy Server & Shared code. The CLI will help you get started.
+- **Rapid**. Write less code & rapidly develop full stack features, end to end. The CLI & supporting libraries (Papyrus, Fusion) are built around facilitating shared code & providing type safety between your server & iOS clients.
+- **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
+- **Swifty**. Concise, expressive APIs built with the best parts of Swift.
 
 ## Code Samples
-Alchemy is built to be both swifty and easy to follow. There is tons of sample code in the [Guides](Documentation/0_GettingStarted.md) and [quickstart projects](Quickstart/) but here are a few examples.
+There is tons of sample code in the [**guides**](Documentation/) and [**quickstart projects**](Quickstart/) but here are a few examples.
 
 ### Hello, World!
 
@@ -27,7 +27,7 @@ struct MyServerApp: Application {
     @Inject router: Router
 
     func setup() {
-        self.router.on(.post, at: "/hello") { request in
+        self.router.on(.get, at: "/hello") { request in
             "Hello, World!"
         }
     }
@@ -38,7 +38,7 @@ Launch<MyServerApp>.main()
 ```
 
 ### Databases & Rune ORM
-Raw queries, a Query builder, and an ORM (Rune), are all provided for interacting with SQL databases.
+Rune, the ORM, is built on top of Swift's Codable, making database querying a cinch.
 ```swift
 import Alchemy
 
@@ -76,10 +76,12 @@ Todo.query()
     }
 ```
 
-### Using Papyrus to share network interfaces between iOS & server.
-**Papyrus** helps you keep network interfaces type-safe across your Alchemy server & Swift clients. **Alchemy** provides first class support for providing & consuming Papyrus APIs. **iOS/macOS** clients can use **PapyrusAlamofire** for consuming Papyrus APIs.
+### Type safe networking interfaces between client and server.
+**Papyrus**, and IDL-like network layer, helps you keep network interfaces type-safe across your Alchemy server & Swift clients. **Alchemy** provides first class support for providing _and_ consuming Papyrus APIs. **iOS/macOS** clients can use **PapyrusAlamofire** for consuming Papyrus APIs.
 
-First, define a shared interface for your API. Note the `@URLQuery` property wrapper tells API consumers to put `count` & `unfinishedOnly` in the query of the request. API providers will know to look for these values in the incoming request's query.
+---
+
+First, define a shared interface for your API. Note the `@URLQuery` property wrapper tells API consumers and producers that `count` & `unfinishedOnly` belong in the query of the request. This info allows for automatic request "encoding" & "decoding" from clients and servers.
 ```swift
 // MyProject/Shared/TodosAPI.swift
 import Papyrus
@@ -108,7 +110,7 @@ public struct TodosAPI: EndpointGroup {
 }
 ```
 
-Then, register this endpoint in your Alchemy server's router. Alchemy will automatically decode `GetAllRequest` from the incoming request & will enforce that the return type of the handler matches the expected return type of the endpoint, `[TodoDTO]`.
+Then, register this endpoint in your Alchemy server's router. Alchemy will automatically decode `GetAllRequest` from the right spots in the incoming request & will enforce that the return type of the handler matches the expected return type of the endpoint, `[TodoDTO]`.
 ```swift
 import Alchemy
 import Shared
@@ -131,7 +133,7 @@ struct MyApplication: Application {
 }
 ```
 
-Finally, request the endpoint from your client. The request properties are automatically put in the right place and the `[TodoDTO]` response type is automatically parsed from the server response.
+Finally, request the endpoint from your client. The request properties are automatically put in the query because of the `@URLQuery` wrappers and the `[TodoDTO]` response type is automatically parsed from the server's response.
 ```swift
 // MyProject/iOS/TodosView.swift
 import PapyrusAlamofire
