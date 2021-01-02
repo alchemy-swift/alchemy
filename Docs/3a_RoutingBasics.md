@@ -1,5 +1,9 @@
 # Routing: Basics
 
+## Handling Requests
+
+When a request comes through the host & port on which your server is listening, it immediately gets routed into the global `Router`.
+
 Alchemy has built in support for routing incoming HTTP REST requests. Routing happens through a singleton `HTTPRouter` class.
 
 Access it via injection & register routes to it, likely in the `setup()` of your `Application` type.
