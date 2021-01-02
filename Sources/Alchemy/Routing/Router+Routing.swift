@@ -14,7 +14,7 @@ extension Router {
     public func on(
         _ method: HTTPMethod,
         at path: String = "",
-        do action: @escaping (Request) throws -> HTTPResponseEncodable
+        do action: @escaping (Request) throws -> ResponseConvertible
     ) -> Self {
         self.add(handler: action, for: method, path: path)
         return self
@@ -22,7 +22,7 @@ extension Router {
 }
 
 /// These extensions are all sugar for defining handlers, since it's not possible to conform all
-/// handler return types we wish to support to `HTTPResponseEncodable`.
+/// handler return types we wish to support to `ResponseConvertible`.
 extension Router {
     /// Adds a handler at a given method and path.
     ///
@@ -110,10 +110,10 @@ extension Router {
 /// Used as the response for a handler returns `Void` or `EventLoopFuture<Void>`.
 private struct VoidCodable: Codable {}
 
-extension VoidCodable: HTTPResponseEncodable {
-    // MARK: HTTPResponseEncodable
+extension VoidCodable: ResponseConvertible {
+    // MARK: ResponseConvertible
     
-    func encode() throws -> EventLoopFuture<Response> {
+    func convert() throws -> EventLoopFuture<Response> {
         .new(Response(status: .ok, body: try HTTPBody(json: self)))
     }
 }
@@ -122,7 +122,7 @@ extension VoidCodable: HTTPResponseEncodable {
 // at least add the implementation here (and a special case router `.on` specifcally for
 // `Encodable`) types.
 extension Encodable {
-    // MARK: HTTPResponseEncodable
+    // MARK: ResponseConvertible
     
     public func encode() throws -> EventLoopFuture<Response> {
         .new(Response(status: .ok, body: try HTTPBody(json: self)))

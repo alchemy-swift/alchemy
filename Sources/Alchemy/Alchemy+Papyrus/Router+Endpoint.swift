@@ -15,7 +15,7 @@ public extension Router {
     func register<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
         use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
-    ) where Req: Decodable, Res: HTTPResponseEncodable {
+    ) where Req: Decodable, Res: ResponseConvertible {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
         }
@@ -31,7 +31,7 @@ public extension Router {
     func register<Res>(
         _ endpoint: Endpoint<Empty, Res>,
         use closure: @escaping (Request) throws -> EventLoopFuture<Res>
-    ) where Res: HTTPResponseEncodable {
+    ) where Res: ResponseConvertible {
         self.on(endpoint.method.nio, at: endpoint.path, do: closure)
     }
     

@@ -12,11 +12,11 @@ The faster you finish handling a request, the sooner the `EventLoop` it's runnin
 
 ### Caveat 2: **Use non-blocking APIs (`EventLoopFuture`) when doing async tasks**
 
-Often, handling a request involves waiting for other servers / services to do something such as making a database query or making an external HTTP request. So as not to block event loops, Alchemy leverages `EventLoopFuture`s (a "future" that completes on an event loop) when making these asynchronous requests. These will let the current `EventLoop` handle more work & requests while waiting for a response from the asynchronous service.
+Often, handling a request involves waiting for other servers / services to do something such as making a database query or making an external HTTP request. So as not to block event loops, Alchemy leverages `EventLoopFuture`. `EventLoopFuture<T>` is the Swift server world's version of a `Future`. It represents an asynchronous operation that hasn't yet completed, but will complete on a specific `EventLoop` with either an `Error` or a value of `T`.
 
 If you've worked with other future types or `RxSwift` before, these should be straighforward; the API reference is [here](https://apple.github.io/swift-nio/docs/current/NIO/Classes/EventLoopFuture.html). If you haven't, think of them as functional sugar around a value that you'll get in the future (i.e. is being fetched asynchronously). You can chain functions that change the value (`.map { ... }`) or change the value asynchronously (`.flatMap { ... }`) and then respond to the value (or an error) when it's finally resolved.
 
-### Creating a new `EventLoopFuture`
+#### Creating a new `EventLoopFuture`
 
 If needed, you can easily create a new future associated with the current `EventLoop` via `EventLoopFuture<SomeType>.new(error:)` or `EventLoopFuture<SomeType>.new(_ value:)`. These will resolve immediately on the current `EventLoop` with the value or error passed to them.
 

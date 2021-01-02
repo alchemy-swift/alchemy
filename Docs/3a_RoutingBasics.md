@@ -2,36 +2,31 @@
 
 ## Handling Requests
 
-When a request comes through the host & port on which your server is listening, it immediately gets routed into the global `Router`.
+When a request comes through the host & port on which your server is listening, it immediately gets routed into the `Router` registered to `Container.global`.
 
-Alchemy has built in support for routing incoming HTTP REST requests. Routing happens through a singleton `HTTPRouter` class.
+Access it via injection & register handlers to it, likely in the `setup()` of your `Application` type.
 
-Access it via injection & register routes to it, likely in the `setup()` of your `Application` type.
+Handlers are defined with the `.on(method:at:do:)` function, which takes an `HTTPMethod`, a path, and a handler. The handler is a closure that accepts a `Request` and returns a `ResponseConvertable`.
 
 ```swift
 struct ExampleApp: Application {
-    // HTTPRouter conforms to SingletonService so can be used 
-    // with @Inject out of the box.
-    @Inject var router: HTTPRouter
-    ...
+    @Inject var router: Router
 
     func setup() {
-        ...
         self.router
-            .on(.GET, at: "/hello", do: { request in "Howdy!" })
+            .on(.GET, at: "/hello") { request in 
+                "Hello, World!" 
+            }
     }
 }
 ```
 
-## Routing requests
+## ResponseEncodable
 
-The router comes with a variety of functions to help you route all incoming `REST` requests, including the demonstrated `.on(method:at:do:)`.
+Out of the box, Alchemy conforms most types you'd need to return from a handler to `ResponseConvertible`.
 
-Pass it an `HTTPMethod`, a path, and a handler. The handler takes an HTTPRequest and must return something that conforms to `HTTPResponseEncodable`. 
+### Anything `Codable`
 
-Out of the box, Alchemy conforms most types you'd need to return from a handler to `HTTPResponseEncodable` including...
-
-...Anything `Codable`
 ```swift
 /// String
 router.on(.GET, at: "/string", do: { _ in "Howdy!" })
@@ -51,7 +46,15 @@ router.on(.GET, at: "/todo", do: { _ in
 })
 ```
 
-...`Void`
+### a `Response`
+
+```swift
+router.on(.GET, at: "/response") { _ in 
+    Response(status: .ok, body: HTTPBody(text: "Hello from /response"))
+}
+```
+
+### `Void`
 
 ```swift 
 router.on(.GET, at: "/testing_query") { request in
@@ -59,7 +62,7 @@ router.on(.GET, at: "/testing_query") { request in
 }
 ```
 
-...an `EventLoopFuture<Void>` or `EventLoopFuture<T: Codable>`.
+### an `EventLoopFuture<Void>` or `EventLoopFuture<T: Codable>`.
 
 ```swift
 router.on(.GET, at: "/todos") { _ in
@@ -71,9 +74,9 @@ func loadTodosFromDatabase() -> EventLoopFuture<[Todo]> {
 }
 ```
 
-*Note*
+*Note* an `EventLoopFuture<T>` is the Swift server world's version of a `Future`. See [Architecture](1a_Architecture.md).
 
-An `EventLoopFuture<T>` is the Swift server world's version of a `Future`. It represents an asynchronous operation that hasn't yet completed, but will complete with either an `Error` or a value of `T`. It comes from [swift-nio]().
+### Chaining Requests
 
 To keep code clean, `.on` returns the router so requests can be chained.
 
@@ -109,45 +112,40 @@ struct UserController {
 router.group(path: "/users") {
     let controller = UserController()
 
-    // `POST /users`
-    $0.on(.POST, do: controller.create)
-
-    // `POST /users/reset`
-    $0.on(.POST, at: "/reset", do: controller.reset)
-
-    // `POST /users/login`
-    $0.on(.POST, at: "/login", do: controller.login)
+    $0.on(.POST, do: controller.create) // `POST /users`
+    $0.on(.POST, at: "/reset", do: controller.reset) // `POST /users/reset`
+    $0.on(.POST, at: "/login", do: controller.login) // `POST /users/login`
 }
 ```
 
 ## Errors
 
-Routing in Alchemy is heavily integrated with Swift's built in error handling. Middleware & handler functions & closures allow for synchronous code to `throw`.
+Routing in Alchemy is heavily integrated with Swift's built in error handling. [Middleware](3b_RoutingMiddleware.md) & handlers allow for synchronous code to `throw`.
 
-If an error is thrown either synchronously or asynchronously through an `EventLoopFuture`, it will be caught & mapped to an `HTTPResponse`.
+If an error is thrown or an `EventLoopFuture` results in an error, it will be caught & mapped to an `Response`.
 
-Generic errors will result in an `HTTPResponse` with a status code of 500, but if an `HTTPError` is thrown, the response will contain the status code & message of the error.
+Generic errors will result in an `Response` with a status code of 500, but if an `HTTPError` is thrown, the response will contain the status code & message of the error.
 
 ```swift
 struct SomeError: Error {}
 
 router
-    .on(.GET, "/foo", { _ in
+    .on(.GET, at: "/foo") { _ in
         // Will result in a 500 response with a generic error message.
         throw SomeError()
-    })
-    .on(.GET, "/bar", { _ in
+    }
+    .on(.GET, at: "/bar") { _ in
         // Will result in a 404 response with the custom message.
         throw HTTPError(status: .notFound, message: "This endpoint doesn't exist!")
-    })
+    }
 ```
 
 ## Path parameters
 
-Dynamic path parameters can be added with a variable name prefaced by a colon. The value of that request can be resolved in the handler from the HTTPRequest object.
+Dynamic path parameters can be added with a variable name prefaced by a colon (`:`). The value will be parsed and accessible in the handler.
 
 ```swift
-router.on(.GET, "/users/:userID") { req in
+router.on(.GET, at: "/users/:userID") { req in
     let userID: String? = req.pathParameter(named: "userID")
     ...
 }
@@ -157,10 +155,10 @@ As long as they have different names, you can have as many path parameters as yo
 
 ## Accessing request data
 
-Data you might need to get off of an incoming request is in the `HTTPRequest` type. While not exhaustive, below are some common use cases.
+Data you might need to get off of an incoming request is in the `Request` type.
 
 ```swift
-router.on(.POST, "/users") { req in
+router.on(.POST, "/users/:userID") { req in
     // Headers
     let authHeader: String? = req.headers.first(name: "Authorization")
     
@@ -172,8 +170,6 @@ router.on(.POST, "/users") { req in
     let thePath: String? = req.path
 
     // Path parameters
-    //
-    // (Assume registered path was `/users/:userID`)
     let userID: String? = req.pathParameter(named: "userID")
 
     // Method
@@ -189,7 +185,6 @@ router.on(.POST, "/users") { req in
     let bearerAuth: HTTPBearerAuth? = req.bearerAuth()
 }
 ```
-
 
 _Next page: [Routing: Middleware](3b_RoutingMiddleware.md)_
 

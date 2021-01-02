@@ -15,7 +15,7 @@ private struct HTTPKey: Hashable {
 }
 
 /// An `Router` responds to HTTP requests from the client. Specifically, it takes an `Request`
-/// and routes it to a handler that returns an `HTTPResponseEncodable`.
+/// and routes it to a handler that returns an `ResponseConvertible`.
 public final class Router {
     /// `Middleware` that will be applied to all requests of this router, regardless of whether they
     /// are able to be handled or not. Global middlewares intercept request in the order of this
@@ -29,7 +29,7 @@ public final class Router {
     /// Child routers. Ordered in the order that they should respond to a request.
     private var children: [Router] = []
     /// Handlers to route requests to.
-    private var handlers: [HTTPKey: (Request) throws -> HTTPResponseEncodable] = [:]
+    private var handlers: [HTTPKey: (Request) throws -> ResponseConvertible] = [:]
     
     /// Creates a new router with an optional base path.
     ///
@@ -72,14 +72,14 @@ public final class Router {
     }
     
     /// Adds a handler to this router. A handler takes an `Request` and returns an
-    /// `HTTPResponseEncodable`.
+    /// `ResponseConvertible`.
     ///
     /// - Parameters:
     ///   - handler: the closure for handling a request matching the given method and path.
     ///   - method: the method of a request this handler expects.
     ///   - path: the path of a requst this handler can handle.
     func add(
-        handler: @escaping (Request) throws -> HTTPResponseEncodable,
+        handler: @escaping (Request) throws -> ResponseConvertible,
         for method: HTTPMethod,
         path: String
     ) {
@@ -122,11 +122,11 @@ public final class Router {
             
             if let mw = self.middleware {
                 return mw.intercept(request) { request in
-                    catchError { try value(request).encode() }
+                    catchError { try value(request).convert() }
                 }
             } else {
                 return catchError {
-                    try value(request).encode()
+                    try value(request).convert()
                 }
             }
         }
