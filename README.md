@@ -54,7 +54,7 @@ DB.default = PostgresDatabase(
 
 // Create a model matching a table
 struct Todo: Model {
-    static var let tableName = "todos"
+    static let tableName = "todos"
 
     var id: Int?
     let name: String
