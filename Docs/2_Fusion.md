@@ -1,3 +1,5 @@
+# Fusion: Services & Dependency Injection
+
 Injection
 ===
 Alchemy uses `Fusion` to aid with dependency injection.
@@ -50,3 +52,8 @@ There are a few types that Alchemy automatically injects into the global contain
 
 - `Router`: a global router registered for your app during setup.
 - `MultiThreadedEventLoopGroup`: the `EventLoopGroup` for your app to use for getting `EventLoop`s.
+
+
+_Next page: [Routing: Basics](3a_RoutingBasics.md)_
+
+_[Table of Contents](/Docs)_

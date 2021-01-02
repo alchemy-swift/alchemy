@@ -18,4 +18,6 @@ targets: [
 
 If you'd like your client to request endpoints on a `Papyrus` interface through Alamofire, add `PapyrusAlamofire` to your client target's dependencies instead of `Papyrus`; likely through `File` -> `Swift Packages` -> `Add Package Dependency`.
 
-_Next page: [Database: Basics](4a_DatabaseBasics.md)_
+_Next page: [Database: Basics](5a_DatabaseBasics.md)_
+
+_[Table of Contents](/Docs)_
