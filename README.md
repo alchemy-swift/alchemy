@@ -15,7 +15,7 @@ Alchemy is a Swift web framework for building the backend of your next mobile ap
 - **Swifty**. Concise, expressive APIs built with the best parts of Swift.
 
 ## Code Samples
-Alchemy is built to be both swifty and easy to follow. There is tons of sample code in the [Guides](Documentation/0_GettingStarted.md) and [quickstart projects](Quickstart/) but here are a few examples.
+There is tons of sample code in the [**guides**](Documentation/) and [**quickstart projects**](Quickstart/) but here are a few examples.
 
 ### Hello, World!
 
@@ -27,7 +27,7 @@ struct MyServerApp: Application {
     @Inject router: Router
 
     func setup() {
-        self.router.on(.post, at: "/hello") { request in
+        self.router.on(.get, at: "/hello") { request in
             "Hello, World!"
         }
     }
