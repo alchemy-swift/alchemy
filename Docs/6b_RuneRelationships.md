@@ -135,34 +135,118 @@ Homework.query()
 
 ## HasMany
 
-A "HasMany" relationship represents the Parent side of a 1-M or a M-M relationship.
+A "HasMany" relationship represents the Parent side of a 1-M or a M-M relationship. The method of resolving the relationship is defined in the initializer of the `@HasMany(...)` wrapper.
 
-/// JOSH YOU WERE HERE
+### One to Many
+
+The parent of a 1-M relationship is typically the opposite side of a `@BelongsTo` relationship; there is some foreign key on a child Model that references this `Model`. With `Rune`, this can be represented with the following:
+
+```swift
+struct Owner: Model {
+    ...
+
+    @HasMany(via: \.$owner)
+    var pets: [Pet]
+}
+```
+
+In this case, `Pet` has an `@BelongsTo` relationship to `Owner`. By providing the `KeyPath` of that relationship, Rune has enough information to eager load the `Pet`s referencing this `Owner`. Eager loading a `@HasMany` is the same syntax as `@BelongsTo`.
+
+```swift
+Owner.query()
+    .with(\.$pets)
+    .getAll()
+    .whenSuccess { owners in
+        for owner in owners {
+            print("Owner \(owner.name) has \(owner.pets.count) pets.")
+        }
+    }
+```
+
+Note, Rune is assuming the foreign key on the `Pet` model is the snake_cased name of the query type suffixed with `_id`. So, in this case, Rune assumes the foreign key column on the `Pet` model is `owner_id`.
+
+You may override the foreign key column by passing an additional argument to the `@HasMany` initializer.
+
+```swift
+@HasMany(via: \.$owner, keyString: "owner_id")
+var pets: [Pet]
+```
 
 ### Has Many Through
 
-### Has Many Via
+`@HasMany` can also represent either side of a M-M relationship. This is a relationship where each side of the relationship may be linked to one or more Models on the other side, typically by a "Pivot table". For example, a `Student` may have multiple `Course`s and a `Course` may have multiple `Student`s. With Alchemy, this relationship behavior is also defined in the `@HasMany` initializer.
+
+```swift
+struct Student: Model {
+    ...
+
+    @HasMany(from: \StudentCourse.$student, to: \.$course)
+    var courses: [Course]
+}
+
+struct Course: Model {
+    ...
+
+    @HasMany(from: \StudentCourse.$course, to: \.$student)
+    var students: [Student]
+}
+
+struct StudentCourse: Model {
+    ...
+
+    @BelongsTo var student: Student
+    @BelongsTo var course: Course
+}
+```
+
+The `@HasMany` initializer is given two `KeyPath`s on a pivot table (in this case `StudentCourse`) and Rune is given enough information to eager load this relationship in a query.
+
+```swift
+Student.query()
+    .with(\.$courses)
+    .getAll() // `Student.courses` will be loaded.
+```
+
+Note that, once again, Rune is inferring the reference keys on the pivot table to be the snake_cased name of the type suffixed by "_id". In this case, `student_id` and `course_id`. Like before, you may provide custom key `String`s in the initializer.
+
+```swift
+struct Student: Model {
+    ...
+
+    @HasMany(
+        from: \StudentCourse.$student, 
+        to: \.$course, 
+        fromKey: "student_id", 
+        toKey: "course_id"
+    )
+    var courses: [Course]
+}
+```
 
 ## HasOne
 
-A "HasOne" relationship represents the Parent side of a 1-1 relationship. It property wrapper, `@HasOne`, functions almost identical to a `@HasMany`, except that it's wrapped type is either `Model?` or `Model`, instead of `[Model]`.
+A "HasOne" relationship represents the Parent side of a 1-1 relationship, either via a foreign key on another `Model` or a pivot table. `@HasOne`, functions almost identical to a `@HasMany`, except that it's wrapped type is either `Model?` or `Model`, instead of `[Model]`. This means that when eager loading, it just fetches the first item that matches the relationship query.
 
-It can be initialized with the same two initializers as `@HasMany`.
+It can be initialized with the same two initializers as `@HasMany` & eager loaded in the same way.
 
 ```swift
 struct Driver {
-    @HasOne(this: "license", to: \.$owner, keyString: "owner_id")
+    @HasOne(to: \.$driver)
     var license: License
 
-    @HasOne(
-        named: "vaccines",
-        from: \PetVaccine.$pet,
-        to: \.$vaccine,
-        fromString: "pet_id",
-        toString: "vaccine_id"
-    )
+    @HasOne(from: \DriverCars.$driver, to: \.$car)
     var car: Car
 }
+
+Driver.query()
+    .with(\.$license)
+    .with(\.$car)
+    .getAll()
+    .whenSuccess { drivers in
+        for driver in drivers {
+            // `driver.license` and `driver.car` are loaded.
+        }
+    }
 ```
 
 _Next page: [Security](7_Security.md)_

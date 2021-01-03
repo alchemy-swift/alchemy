@@ -41,7 +41,7 @@ public enum DatabaseKeyMappingStrategy {
     ///                    type's property
     /// - Returns: the output string, representing the column of the database's
     ///            table.
-    func map(input: String) -> String {
+    public func map(input: String) -> String {
         switch self {
         case .convertToSnakeCase:
             return input.camelCaseToSnakeCase()

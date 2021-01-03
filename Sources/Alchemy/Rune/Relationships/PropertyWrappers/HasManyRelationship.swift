@@ -31,7 +31,7 @@ public final class HasManyRelationship<
     public required init(
         this: String,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
-        keyString: String = "\(To.Value.self)_id"
+        keyString: String = From.keyMappingStrategy.map(input: "\(To.Value.self)Id")
     ) {
         super.init(this: this, to: key, keyString: keyString)
     }
@@ -40,8 +40,8 @@ public final class HasManyRelationship<
         named: String,
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
-        fromString: String = "\(From.self)".lowercased() + "_id",
-        toString: String = "\(To.Value.self)".lowercased() + "_id"
+        fromString: String = Through.keyMappingStrategy.map(input: "\(From.self)Id"),
+        toString: String = Through.keyMappingStrategy.map(input: "\(To.Value.self)Id")
     ) {
         super.init(
             named: named,
