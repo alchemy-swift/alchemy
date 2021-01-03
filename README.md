@@ -6,13 +6,28 @@
 
 ## About Alchemy
 
-Alchemy is a Swift web framework for building the backend of your next mobile app. It makes your development experience...
+Alchemy is a batteries included Swift web framework. It's designed to make your development experience...
 
-- **Easy**. Elegant syntax, 100% documentation, and guides touching on nearly every feature. Alchemy is designed to help you build backends faster, not get in the way.
-- **Simple**. Juggle less Xcode projects by keeping your full stack Swift code in a monorepo containing your iOS app, Alchemy Server & Shared code. The CLI will help you get started.
-- **Rapid**. Write less code & rapidly develop full stack features, end to end. The CLI & supporting libraries (Papyrus, Fusion) are built around facilitating shared code & providing type safety between your server & iOS clients.
+- **Smooth**. Elegant syntax, 100% documentation, and extensive guides touching on every feature. Alchemy is designed to help you build backends faster, not get in the way.
+- **Simple**. Context-switch less by writing full stack Swift. Keep the codebase simple with all your iOS, server, and shared code in a single Xcode workspace.
+- **Rapid**. Quickly develop full stack features, end to end. Write less code by using supporting libraries ([Papyrus](Docs/4_Papyrus.md), [Fusion](Docs/2_Fusion.md)) to shared code & providing type safety between your server & iOS/macOS clients.
 - **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
 - **Swifty**. Concise, expressive APIs built with the best parts of Swift.
+
+## What can it do?
+
+Out of the box, Alchemy includes...
+
+- Simple, fast routing.
+- Expressive ORM and query builder.
+- Powerful dependency injection & service containers.
+- Database agnostic schema migrations.
+- Cron-like job scheduling.
+- Sending APNS (push notifications).
+- Supporting libraries for defining type safe network APIs between Swift clients & server. 
+- 100% code docs, extensive guides, full featured quickstart projects.
+- Env file support, customizable middleware, non-blocking APIs for heavy work loads, automatic ORM based authentication, and more.
+- Elegant APIs built on top of rock solid official Swift Server frameworks and libraries such as SwiftLog, SwiftNIO, PostgresNIO & AsyncHTTPClient.
 
 ## Code Samples
 There is tons of sample code in the [**guides**](Documentation/) and [**quickstart projects**](Quickstart/) but here are a few examples.
@@ -38,7 +53,9 @@ Launch<MyServerApp>.main()
 ```
 
 ### Databases & Rune ORM
+
 Rune, the ORM, is built on top of Swift's Codable, making database querying a cinch.
+
 ```swift
 import Alchemy
 
@@ -77,6 +94,7 @@ Todo.query()
 ```
 
 ### Type safe networking interfaces between client and server.
+
 **Papyrus**, and IDL-like network layer, helps you keep network interfaces type-safe across your Alchemy server & Swift clients. **Alchemy** provides first class support for providing _and_ consuming Papyrus APIs. **iOS/macOS** clients can use **PapyrusAlamofire** for consuming Papyrus APIs.
 
 ---
@@ -196,7 +214,7 @@ For server targets, they're included when you `import Alchemy`. For installation
 ### [Guides](Documentation/0_GettingStarted.md)
 Reading the guides is the recommended way of getting up to speed. They provide a step by step walkthrough of just about everything Alchemy has to offer as well as essential core backend concepts for developers new to server side development.
 
-**Note**: These guides are made to be followed by both people with backend experience and iOS devs with little to no backend experience. If something is confusing or difficult to understand please let us know on [Discord](https://discord.gg/Dnhh4yJe)!
+**Note**: If something is confusing or difficult to understand please let us know on [Discord](https://discord.gg/Dnhh4yJe)!
 
 ### [API Reference](https://github.com/joshuawright11/alchemy/wiki)
 The inline comments are extensive and full of examples. You can check it out in the codebase or a generated version on the [Github wiki](https://github.com/joshuawright11/alchemy/wiki).

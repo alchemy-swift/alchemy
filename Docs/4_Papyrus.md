@@ -95,7 +95,6 @@ While a response would look like
         "name": "Be awesome",
         "isComplete": true
     },
-    ...
 ]
 ```
 
@@ -241,7 +240,8 @@ To request an endpoint, create the `EndpointGroup` with a `baseURL` and call `re
 Requesting the the `TodosAPI.getAll` endpoint from above looks the same on both client and server.
 
 ```swift
-import Alchemy (or PapyrusAlamofire on client)
+// `import PapyrusAlamofire` on client
+import Alchemy
 
 let todosAPI = TodosAPI(baseURL: "http://localhost:8888")
 todosAPI.getAll

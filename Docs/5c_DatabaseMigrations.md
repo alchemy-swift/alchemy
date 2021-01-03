@@ -109,6 +109,60 @@ schema.rename(table: "createdAt", to: "created_at")
 schema.raw(table: "drop schema public cascade")
 ```
 
+## Running a Migration
+
+To begin, you need to ensure that your migrations are registered on `Global.database`. You can should do this in your `Application.setup` function.
+
+```swift
+// Make sure to register a database with 
+// Container.register(Database.self) { ... } first!
+Global.database.migrations = [
+    _20201220142243CreateUsers(),
+    _20201222181209CreateTodos(),
+    _20201225094501RenameTodos(),
+]
+```
+
+### Via Command
+
+#### Applying
+
+You can then apply all outstanding migration in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Global.database` instead of serving.
+
+```bash
+# Applies all outstanding migrations
+./MyServer migrate 
+```
+
+#### Rolling Back
+
+You can pass the `--rollback` flag to instead rollback the latest bactch of migrations.
+
+```bash
+# Rolls back the most recent batch of migrations
+./MyServer migrate --rollback
+```
+
+**Note**: Alchemy keeps track of run migrations and the current batch in a `_alchemy_migrations` table of your database. You can delete this table to clear all records of migrations.
+
+### Via Code
+
+#### Applying
+
+You may also migrate your database in code. The future will complete when the migration is finished.
+
+```swift
+let future = database.migrate()
+```
+
+#### Rolling Back
+
+Rolling back the latest migration batch is also possible in code.
+
+```swift
+let future = database.rollbackMigrations()
+```
+
 _Next page: [Rune: Basics](6a_RuneBasics.md)_
 
 _[Table of Contents](/Docs)_

@@ -55,7 +55,6 @@ struct EagerLoader<From: Model, To: ModelMaybeOptional> {
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
         fromString: String,
         toString: String,
-        // TODO: This doesn't work, yet.
         nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
     ) -> EagerLoadClosure<From, To> {
         return { from in

@@ -41,7 +41,10 @@ public final class BelongsToRelationship<
     /// already loaded via eager loading or set manually.
     public var wrappedValue: Parent {
         get {
-            guard let value = self.value else { fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!") }
+            guard let value = self.value else {
+                fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!")
+            }
+            
             return value
         }
         set { self.value = newValue }
