@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Alchemy makes interacting with SQL databases a breeze using either raw SQL, an fully featured [query builder](5b_DatabaseQueryBuilder.md), or an ORM, [Rune](6a_RuneBasics.md).
+Alchemy makes interacting with SQL databases a breeze using either raw SQL or the fully featured [query builder](5b_DatabaseQueryBuilder.md) and ORM, [Rune](6a_RuneBasics.md).
 
 ## Connecting to a Database
 
