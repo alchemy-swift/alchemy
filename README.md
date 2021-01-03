@@ -6,13 +6,27 @@
 
 ## About Alchemy
 
-Alchemy is a Swift web framework for building the backend of your next mobile app. It makes your development experience...
+Alchemy is a batteries included Swift web framework. It's designed to make your development experience...
 
-- **Easy**. Elegant syntax, 100% documentation, and guides touching on nearly every feature. Alchemy is designed to help you build backends faster, not get in the way.
-- **Simple**. Juggle less Xcode projects by keeping your full stack Swift code in a monorepo containing your iOS app, Alchemy Server & Shared code. The CLI will help you get started.
-- **Rapid**. Write less code & rapidly develop full stack features, end to end. The CLI & supporting libraries (Papyrus, Fusion) are built around facilitating shared code & providing type safety between your server & iOS clients.
+- **Smooth**. Elegant syntax, 100% documentation, and extensive guides touching on every feature. Alchemy is designed to help you build backends faster, not get in the way.
+- **Simple**. Context-switch less by writing full stack Swift. Keep the codebase simple with all your iOS, server, and shared code in a single Xcode workspace.
+- **Rapid**. Quickly develop full stack features, end to end. Write less code by using supporting libraries ([Papyrus](Docs/4_Papyrus.md), [Fusion](Docs/2_Fusion.md)) to shared code & providing type safety between your server & iOS/macOS clients.
 - **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
 - **Swifty**. Concise, expressive APIs built with the best parts of Swift.
+
+## What's can it do?
+
+Out of the box, Alchemy includes...
+
+- Simple, fast routing.
+- Dead simple dependency injection.
+- Expressive ORM and query builder.
+- Database agnostic schema migrations.
+- Cron-like job scheduling.
+- Sending APNS (push notifications).
+- Supporting libraries for defining type safe APIs between Swift clients & server. 
+- 100% API docs, extensive guides, quickstart projects
+- Environments from env files, customizable middleware, async APIs for heavy work loads, automatic token & basic auth, and more
 
 ## Code Samples
 There is tons of sample code in the [**guides**](Documentation/) and [**quickstart projects**](Quickstart/) but here are a few examples.
