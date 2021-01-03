@@ -1,10 +1,10 @@
 # Fusion: Services & Dependency Injection
 
-Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties. DI helps keep your code modular, testable and maintainable.
+Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties.
 
-## Using Fusion in non-server targets
+## Why Use Dependency Injection?
 
-When you `import Alchemy`, you automatically import Fusion. If you'd like to use Fusion in a non-server target, you can add `Fusion` as a dependency through SPM and import it via `import Fusion`.
+DI helps keep your code modular, testable and maintainable. It lets you define services in one place so that you may easily swap them for other implementations down the road or during tests.
 
 ## Registering & Resolving Services
 
@@ -221,6 +221,10 @@ Container.register(singleton: Database.self) { _ in
     PostgresDatabase(...)
 }
 ```
+
+## Using Fusion in non-server targets
+
+When you `import Alchemy`, you automatically import Fusion. If you'd like to use Fusion in a non-server target, you can add `Fusion` as a dependency through SPM and import it via `import Fusion`.
 
 _Next page: [Routing: Basics](3a_RoutingBasics.md)_
 

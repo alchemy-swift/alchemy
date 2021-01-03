@@ -24,6 +24,8 @@ A single Xcode project with an Alchemy server, iOS app, and shared package. The 
 
 This creates two packages, an Alchemy server & a package the server depends on. Useful for integrating into existing iOS projects, just drag and drop into the existing Xcode project, and have your iOS app depend on the shared package.
 
+**Note**: for the packages to load, you'll likely need to close and re-open your project after dragging and dropping in the server & shared packages.
+
 #### Server only
 
 A single package that's just an Alchemy server.
