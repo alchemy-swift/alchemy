@@ -15,7 +15,7 @@ public final class HasManyRelationship<
     public var wrappedValue: [To] {
         get {
             guard let value = self.value else {
-                fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!")
+                fatalError("Relationship of type `\(name(of: To.self))` was not loaded!")
             }
             return value
         }
@@ -31,7 +31,7 @@ public final class HasManyRelationship<
     public required init(
         this: String,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
-        keyString: String
+        keyString: String = "\(To.Value.self)_id"
     ) {
         super.init(this: this, to: key, keyString: keyString)
     }
@@ -40,8 +40,8 @@ public final class HasManyRelationship<
         named: String,
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
-        fromString: String,
-        toString: String
+        fromString: String = "\(From.self)".lowercased() + "_id",
+        toString: String = "\(To.Value.self)".lowercased() + "_id"
     ) {
         super.init(
             named: named,

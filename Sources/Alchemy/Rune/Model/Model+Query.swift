@@ -70,49 +70,6 @@ public class ModelQuery<M: Model>: Query {
             .flatMapThrowing { try $0.unwrap(or: error) }
     }
     
-    /// Throws an error if a query with the specified where clause returns a value. The opposite of
-    /// `unwrapFirstWhere(...)`.
-    ///
-    /// Useful for detecting if a value with a key that may conflict (such as a unique email)
-    /// already exists on a table.
-    ///
-    /// - Parameters:
-    ///   - where: the where clause to attempt to match.
-    ///   - error: the error that will be thrown, should a query with the where clause find a
-    ///            result.
-    ///   - db: the database to query. Defaults to `DB.default`.
-    /// - Returns: a future that will result in an error out if there is a row on the table matching
-    ///            the given `where` clause.
-    public static func ensureNotExists(
-        _ where: WhereValue,
-        else error: Error,
-        db: Database = DB.default
-    ) -> EventLoopFuture<Void> {
-        Self.query(database: db)
-            .where(`where`)
-            .first()
-            .flatMapThrowing { try $0.map { _ in throw error } }
-    }
-    
-    /// Gets the first element that meets the given where value. Throws an error if no results
-    /// match. The opposite of `ensureNotExists(...)`.
-    ///
-    /// - Parameters:
-    ///   - where: the table will be queried for a row matching this clause.
-    ///   - error: the error to throw should the query find no results.
-    ///   - db: the database to query. Defaults to `DB.default`.
-    /// - Returns: a future containing the first result matching the `where` clause. Will result in
-    ///            `error` if no result is found.
-    public static func unwrapFirstWhere(
-        _ where: WhereValue,
-        or error: Error,
-        db: Database = DB.default
-    ) -> EventLoopFuture<Self> {
-        Self.query(database: db)
-            .where(`where`)
-            .unwrapFirst(or: error)
-    }
-    
     /// Eager loads (loads a related `Model`) a `Relationship` on this model.
     ///
     /// Eager loads are evaluated in a single query per eager load after the initial model query has
