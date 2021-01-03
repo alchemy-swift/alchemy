@@ -19,14 +19,14 @@ Alchemy is a batteries included Swift web framework. It's designed to make your 
 Out of the box, Alchemy includes...
 
 - Simple, fast routing.
-- Dead simple dependency injection.
+- Powerful dependency injection.
 - Expressive ORM and query builder.
 - Database agnostic schema migrations.
 - Cron-like job scheduling.
 - Sending APNS (push notifications).
 - Supporting libraries for defining type safe APIs between Swift clients & server. 
 - 100% API docs, extensive guides, quickstart projects
-- Environments from env files, customizable middleware, async APIs for heavy work loads, automatic token & basic auth, and more
+- Env file support, customizable middleware, non-blocking APIs for heavy work loads, authentication middleware, and more
 
 ## Code Samples
 There is tons of sample code in the [**guides**](Documentation/) and [**quickstart projects**](Quickstart/) but here are a few examples.
@@ -210,7 +210,7 @@ For server targets, they're included when you `import Alchemy`. For installation
 ### [Guides](Documentation/0_GettingStarted.md)
 Reading the guides is the recommended way of getting up to speed. They provide a step by step walkthrough of just about everything Alchemy has to offer as well as essential core backend concepts for developers new to server side development.
 
-**Note**: These guides are made to be followed by both people with backend experience and iOS devs with little to no backend experience. If something is confusing or difficult to understand please let us know on [Discord](https://discord.gg/Dnhh4yJe)!
+**Note**: If something is confusing or difficult to understand please let us know on [Discord](https://discord.gg/Dnhh4yJe)!
 
 ### [API Reference](https://github.com/joshuawright11/alchemy/wiki)
 The inline comments are extensive and full of examples. You can check it out in the codebase or a generated version on the [Github wiki](https://github.com/joshuawright11/alchemy/wiki).

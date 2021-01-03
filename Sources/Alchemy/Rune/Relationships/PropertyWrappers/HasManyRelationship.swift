@@ -14,7 +14,9 @@ public final class HasManyRelationship<
     /// already loaded via eager loading or set manually.
     public var wrappedValue: [To] {
         get {
-            guard let value = self.value else { fatalError("Please load first") }
+            guard let value = self.value else {
+                fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!")
+            }
             return value
         }
         set { self.value = newValue }
