@@ -12,7 +12,7 @@ public struct Thread {
     /// - Parameter task: the work to run.
     /// - Returns: a future containing the result of the expensive work that completes on the
     ///            current `EventLoop`.
-    public static func run<T>(_ task: @escaping () -> T) -> EventLoopFuture<T> {
+    public static func run<T>(_ task: @escaping () throws -> T) -> EventLoopFuture<T> {
         // Start the pool only when first used. This way there's no excess threads for users that
         // don't use them.
         self.pool.start()

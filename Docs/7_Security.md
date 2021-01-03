@@ -1,14 +1,150 @@
 # Security
 
+Alchemy provides built in support for Bcrypt hashing and automatic authentication via Rune & `Middleware`.
+
 ## Bcrypt
+
+A standard practice is to never store plain text passwords in your database. Bcrypt is a password hasing function that creats a one way hash of a plaintext password. It's a expensive CPU-wise, so it will help protect against your hashed passwords from being cracked through brute forced.
+
+It's simple to use.
+
+```swift
+let hashedPassword = Bcrypt.hash("password")
+let isPasswordValid = Bcrypt.verify("password", hashedPassword) // true
+```
+
+Because it's expensive, you may want to run this off of an `EventLoop` thread. For convenience, there's an API for that. This will run Bcrypt on a separate thread and complete back on the initiating `EventLoop`.
+
+```swift
+Bcrypt.hashAsync("password")
+    .whenSuccess { hashedPassword in
+        // do something with the hashed password
+    }
+
+Bcrypt.verifyAsync("password", hashedPassword)
+    .whenSuccess { isMatch in
+        print("Was a match? \(isMatch).")
+    }
+```
 
 ## Request Auth
 
+`Request` makes it easy to pull `Authorization` information off an incoming request. 
+
+### Authorization: Basic
+
+You can access `Basic` auth info via `.basicAuth() -> HTTPAuth.Basic?`.
+
+```swift
+let request: Request = ...
+if let basic = request.basicAuth() {
+    print("Got basic auth. Username: \(basic.username) Password: \(basic.password)")
+}
+```
+
+### Authorization: Bearer
+
+You can also get `Bearer` auth info via `.bearerAuth() -> HTTPAuth.Bearer?`.
+
+```swift
+let request: Request = ...
+if let bearer = request.bearerAuth() {
+    print("Got bearer auth with Token: \(bearer.token)")
+}
+```
+
+### Authorization: Either
+
+You can also get any `Basic` or `Bearer` auth from the request.
+
+```swift
+let request: Request = ...
+if let auth = request.getAuth() {
+    switch auth {
+    case .bearer(let bearer):
+        print("Request had Basic auth!")
+    case .basic(let basic):
+        print("Request had Basic auth!")
+    }
+}
+```
+
 ## Auth Middleware
+
+Incoming `Request` can be automatically authorized against your Rune `Model`s by conform your `Model`s to "authable" protocols and protecting routes with the generated `Middleware`.
 
 ### Basic Auth Middleware
 
+To authenticate via the `Authorization: Basic ...` headers on incoming `Request`s, conform your Rune `Model` that stores usernames and password hashes to `BasicAuthable`.
+
+```swift
+struct User: Model, BasicAuthable {
+    var id: Int?
+    let username: String
+    let passwordHash: String
+}
+```
+
+Now, put `User.basicAuthMiddleware()` in front of any endpoints that need basic auth. When the request comes in, the `Middleware` will compare the username and password in the `Authorization: Basic ...` headers to the username and password hash of the `User` model. If the credentials are valid, the `Middleware` will set the relevant `User` instance on the `Request`, which can then be accessed via `request.get(User.self)`.
+
+If the credentials aren't valid, or there is no `Authorization: Basic ...` header, the Middleware will throw an `HTTPError(.unauthorized)`.
+
+```swift
+router.middleWare(User.basicAuthMiddleware())
+    .on(.GET, at: "/login") { req in
+        let authedUser = try req.get(User.self)
+    }
+```
+
+Note that Rune is inferring a username at column `"username"` and password hash at column `"password_hash"` when verifying credentials. You may set custom columns by overriding the `usernameKeyString` or `passwordHashKeyString` of your `Model`.
+
+```swift
+struct User: Model, BasicAuthable {
+    static let usernameKeyString = "email"
+    static let passwordKeyString = "hashed_password"
+
+    var id: Int?
+    let email: String
+    let hashedPassword: String
+}
+```
+
 ### Token Auth Middleware
+
+Simlarly, to authenticate via the `Authorization: Bearer ...` headers on incoming `Request`s, conform your Rune `Model` that stores access token values to `TokenAuthable`. Note that this time, you'll need to specify a `BelongsTo` relationship to the User type this token authorizes.
+
+```swift
+struct UserToken: Model, BasicAuthable {
+    var id: Int?
+    let value: String
+
+    @BelongsTo
+    var user: User
+}
+```
+
+Like with `Basic` auth, put the `UserToken.tokenAuthMiddleware()` in front of endpoints that are protected by bearer authorization. The `Middleware` will automatically parse out tokens from incoming `Request`s and validate them via the `UserToken` type. If the token matches a `UserToken` row, the related `User` will be `.set()` on the `Request` for access in a handler.
+
+```swift
+router.middleWare(UserToken.tokenAuthMiddleware())
+    .on(.GET, at: "/todos") { req in
+        let authedUser = try req.get(User.self)
+    }
+```
+
+Note that Rune is again inferring a `"value"` column on the `UserToken` to which it will compare the tokens on incoming `Request`s. This can be customized by overriding the `valueKeyString` property of your `Model`.
+
+```swift
+struct UserToken: Model, BasicAuthable {
+    static let valueKeyString = "token_string"
+    
+    var id: Int?
+    let tokenString: String
+
+    @BelongsTo
+    var user: User
+}
+```
 
 _Next page: [Digging Deeper](8_DiggingDeeper.md)_
 
