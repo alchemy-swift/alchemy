@@ -13,10 +13,10 @@ import NIO
 ///     .get(url: "https://swift.org")
 ///     .whenComplete { result in
 ///         switch result {
-///             case .failure(let error):
-///                 ...
-///             case .success(let response):
-///                 ...
+///         case .failure(let error):
+///             ...
+///         case .success(let response):
+///             ...
 ///         }
 ///     }
 /// ```
