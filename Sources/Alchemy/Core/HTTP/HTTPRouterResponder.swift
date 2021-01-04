@@ -14,10 +14,18 @@ struct HTTPRouterResponder: HTTPResponder {
         for middleware in self.router.globalMiddlewares.reversed() {
             let lastHandler = handlerClosure
             handlerClosure = { request in
-                middleware.intercept(request, next: lastHandler)
+                catchError {
+                    try middleware.intercept(request) { request in
+                        catchError {
+                            try lastHandler(request)
+                        }
+                    }
+                }
             }
         }
         
-        return handlerClosure(request)
+        return catchError {
+            try handlerClosure(request)
+        }
     }
 }

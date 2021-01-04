@@ -90,12 +90,13 @@ public final class Router {
     /// this will parse those out from the actual URI and set them on the `Request` before
     /// passing it to the handler closure.
     ///
-    /// - Parameter request: the request this router will handle.
-    /// - Returns: a future containing the response of a handler or a `.notFound` response if there
+    /// - Parameter request: The request this router will handle.
+    /// - Throws: Any error encoutered while handling the request.
+    /// - Returns: A future containing the response of a handler or a `.notFound` response if there
     ///            was not a matching handler.
-    func handle(request: Request) -> EventLoopFuture<Response> {
-        guard let handlerFuture = self.handleIfAble(request: request) else {
-            return .new(Response(status: .notFound, body: nil))
+    func handle(request: Request) throws -> EventLoopFuture<Response> {
+        guard let handlerFuture = try self.handleIfAble(request: request) else {
+            throw HTTPError(.notFound)
         }
         
         return handlerFuture
@@ -103,10 +104,11 @@ public final class Router {
     
     /// Handles a request if either this router or any of it's children are able to.
     ///
-    /// - Parameter request: the request to handle.
-    /// - Returns: a future with the response of the handler or nil if neither this router nor its
+    /// - Parameter request: The request to handle.
+    /// - Throws: If there is an error handling the request.
+    /// - Returns: A future with the response of the handler or nil if neither this router nor its
     ///            children are able to handle the request.
-    private func handleIfAble(request: Request) -> EventLoopFuture<Response>? {
+    private func handleIfAble(request: Request) throws -> EventLoopFuture<Response>? {
         for (key, value) in self.handlers {
             guard request.method == key.method else {
                 continue
@@ -121,18 +123,16 @@ public final class Router {
             request.pathParameters = parameters
             
             if let mw = self.middleware {
-                return mw.intercept(request) { request in
+                return try mw.intercept(request) { request in
                     catchError { try value(request).convert() }
                 }
             } else {
-                return catchError {
-                    try value(request).convert()
-                }
+                return try value(request).convert()
             }
         }
         
         for child in self.children {
-            if let response = child.handleIfAble(request: request) {
+            if let response = try child.handleIfAble(request: request) {
                 return response
             }
         }
@@ -199,12 +199,11 @@ private struct ChainedMiddleware: Middleware {
     
     // MARK: Middleware
     
-    func intercept(
-        _ request: Request,
-        next: @escaping Next
-    ) -> EventLoopFuture<Response> {
-        self.first.intercept(request) { request in
-            self.second.intercept(request, next: next)
+    func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+        try self.first.intercept(request) { request in
+            catchError {
+                try self.second.intercept(request, next: next)
+            }
         }
     }
 }
