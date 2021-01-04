@@ -126,7 +126,7 @@ struct Todo: Model {
 
 ## Decoding from `DatabaseRow`
 
-`Model`s may "decoded" from a `DatabaseRow` that was the result of a raw query or query builder query. The `Model`'s properties will be mapped to their relevant columns, factoring in any custom `keyMappingStrategy`. This will throw an error if there is an issue while decoding, such as a missing column.
+`Model`s may be "decoded" from a `DatabaseRow` that was the result of a raw query or query builder query. The `Model`'s properties will be mapped to their relevant columns, factoring in any custom `keyMappingStrategy`. This will throw an error if there is an issue while decoding, such as a missing column.
 
 ```swift
 struct User: Model {

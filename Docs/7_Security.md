@@ -4,7 +4,7 @@ Alchemy provides built in support for Bcrypt hashing and automatic authenticatio
 
 ## Bcrypt
 
-A standard practice is to never store plain text passwords in your database. Bcrypt is a password hasing function that creats a one way hash of a plaintext password. It's a expensive CPU-wise, so it will help protect against your hashed passwords from being cracked through brute forced.
+A standard practice is to never store plain text passwords in your database. Bcrypt is a password hashing function that creates a one way hash of a plaintext password. It's an expensive process CPU-wise, so it will help protect your passwords from being easily cracked through brute forcing.
 
 It's simple to use.
 
@@ -71,7 +71,7 @@ if let auth = request.getAuth() {
 
 ## Auth Middleware
 
-Incoming `Request` can be automatically authorized against your Rune `Model`s by conform your `Model`s to "authable" protocols and protecting routes with the generated `Middleware`.
+Incoming `Request` can be automatically authorized against your Rune `Model`s by conforming your `Model`s to "authable" protocols and protecting routes with the generated `Middleware`.
 
 ### Basic Auth Middleware
 
@@ -111,7 +111,7 @@ struct User: Model, BasicAuthable {
 
 ### Token Auth Middleware
 
-Simlarly, to authenticate via the `Authorization: Bearer ...` headers on incoming `Request`s, conform your Rune `Model` that stores access token values to `TokenAuthable`. Note that this time, you'll need to specify a `BelongsTo` relationship to the User type this token authorizes.
+Similarly, to authenticate via the `Authorization: Bearer ...` headers on incoming `Request`s, conform your Rune `Model` that stores access token values to `TokenAuthable`. Note that this time, you'll need to specify a `BelongsTo` relationship to the User type this token authorizes.
 
 ```swift
 struct UserToken: Model, BasicAuthable {

@@ -127,7 +127,7 @@ Global.database.migrations = [
 
 #### Applying
 
-You can then apply all outstanding migration in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Global.database` instead of serving.
+You can then apply all outstanding migrations in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Global.database` instead of serving.
 
 ```bash
 # Applies all outstanding migrations
@@ -136,14 +136,14 @@ You can then apply all outstanding migration in a single batch by passing the `m
 
 #### Rolling Back
 
-You can pass the `--rollback` flag to instead rollback the latest bactch of migrations.
+You can pass the `--rollback` flag to instead rollback the latest batch of migrations.
 
 ```bash
 # Rolls back the most recent batch of migrations
 ./MyServer migrate --rollback
 ```
 
-**Note**: Alchemy keeps track of run migrations and the current batch in a `_alchemy_migrations` table of your database. You can delete this table to clear all records of migrations.
+**Note**: Alchemy keeps track of run migrations and the current batch in your database. You can delete this table to clear all records of migrations.
 
 ### Via Code
 

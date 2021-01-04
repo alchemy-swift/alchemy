@@ -59,7 +59,7 @@ This would result in the `owner` property being mapped to column `owner_parent_i
 
 ## Eager Loading Relationships
 
-In order to access a relationship property of a queried `Model`, you need to load that relationship first. You can "eager load" it using the `.with()` function on a `ModelQuery`. Eager loading refers to preemptively, or "eagerly", loading a relationship before it is used.
+In order to access a relationship property of a queried `Model`, you need to load that relationship first. You can "eager load" it using the `.with()` function on a `ModelQuery`. Eager loading refers to preemptively, or "eagerly", loading a relationship before it is used. Eager loading also solves the N+1 problem; if N `Pet`s are returned with a query, you won't need to run N queries to find each of their `Owner`s. Instead, a single, followup query will be run that finds all `Owner`s for all `Pet`s fetched.
 
 This function takes a `KeyPath` to a relationship and runs a query to fetch it when the initial query is finished.
 
