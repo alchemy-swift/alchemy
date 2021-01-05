@@ -6,8 +6,6 @@ struct ExampleApplication: Application {
     @Inject var router: Router
     
     func setup() {
-        Log.info("Hello from setup \(System.coreCount).")
-        
         // Register global database
         Container.global.register(singleton: Database.self) { _ in
             PostgresDatabase(config: .postgres)
@@ -76,12 +74,12 @@ struct ExampleApplication: Application {
                 $0.on(.GET, at: "/update", do: DatabaseTestController().update)
             }
         
-        database.migrations
-            .append(contentsOf: [
-                _20201229164212CreatePets(),
-            ])
-
-        _ = database.migrate()
+//        database.migrations
+//            .append(contentsOf: [
+//                _20201229164212CreatePets(),
+//            ])
+//
+//        _ = database.migrate()
     }
 }
 

@@ -12,13 +12,13 @@ import Foundation
 /// Now your router will serve the files that are in the `public` directory.
 struct StaticFileMiddleware: Middleware {
     /// The directory from which static files will be served.
-    private let publicDirectory: String
+    private let directory: String
     
     /// Creates a new middleware to serve static files from a given directory.
     ///
-    /// - Parameter publicDirectory: The directory to server static files from.
-    init(from publicDirectory: String) {
-        self.publicDirectory = publicDirectory
+    /// - Parameter directory: The directory to server static files from. Defaults to "public/"
+    init(from directory: String = "public/") {
+        self.directory = directory.hasSuffix("/") ? directory : "\(directory)/"
     }
     
     // MARK: Middleware
@@ -32,11 +32,21 @@ struct StaticFileMiddleware: Middleware {
         }
         
         // Ensure path doesn't contain any parent directories.
-        guard !request.path.contains("../") else {
+        guard !sanitizedPath.contains("../") else {
             throw HTTPError(.forbidden)
         }
         
+        let filePath = self.directory + sanitizedPath
+        
         // See if there's a file at the given path
-        throw HTTPError(.badRequest)
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDirectory)
+        
+        if exists && !isDirectory.boolValue {
+            fatalError()
+            // load the file & return it
+        } else {
+            return next(request)
+        }
     }
 }

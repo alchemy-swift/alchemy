@@ -54,10 +54,7 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     ///   - encoder: a customer encoder to encoder the JSON with. Defaults to
     ///              `Response.defaultJSONEncoder`.
     /// - Throws: Any error thrown during encoding.
-    public init<E: Encodable>(
-        json: E,
-        encoder: JSONEncoder = Response.defaultJSONEncoder
-    ) throws {
+    public init<E: Encodable>(json: E, encoder: JSONEncoder = Response.defaultJSONEncoder) throws {
         let data = try Response.defaultJSONEncoder.encode(json)
         self.init(data: data, mimeType: "application/json")
     }
@@ -84,8 +81,7 @@ extension HTTPBody {
     /// - Parameter encoding: the `String.Encoding` value to decode with.
     ///                       Defaults to `.utf8`.
     /// - Returns: the string decoded from the contents of this body.
-    public func decodeString(with encoding: String.Encoding = .utf8) -> String?
-    {
+    public func decodeString(with encoding: String.Encoding = .utf8) -> String? {
         String(data: self.data, encoding: encoding)
     }
     

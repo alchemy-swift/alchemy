@@ -32,7 +32,7 @@ public final class HasOneRelationship<
     public required init(
         this: String,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
-        keyString: String = From.keyMappingStrategy.map(input: "\(To.Value.self)Id")
+        keyString: String = "Id"
     ) {
         super.init(this: this, to: key, keyString: keyString)
     }

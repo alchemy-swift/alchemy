@@ -113,46 +113,20 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
     /// - Returns: an `EventLoopFuture` that completes when the response is written.
     @discardableResult
     private func writeResponse(
-        _ response: EventLoopFuture<Response>,
+        _ responseFuture: EventLoopFuture<Response>,
         to context: ChannelHandlerContext
     ) -> EventLoopFuture<Void> {
-        func writeBody(_ buffer: ByteBuffer) {
-            context.write(self.wrapOutboundOut(.body(IOData.byteBuffer(buffer))), promise: nil)
-        }
-    
-        func writeHead(_ head: HTTPResponseHead) {
-            context.write(self.wrapOutboundOut(.head(head)), promise: nil)
-        }
-    
-        let responded = response.map { response -> Void in
-            var responseHead = response.head
-            responseHead.headers.remove(name: "content-length")
-      
-            if let body = response.body {
-                let buffer = body.buffer
-                responseHead.headers.add(name: "content-length", value: String(buffer.writerIndex))
-        
-                if let mimeType = body.mimeType {
-                    responseHead.headers.remove(name: "content-type")
-                    responseHead.headers.add(name: "content-type", value: mimeType)
+        return responseFuture.flatMap { response in
+            let responseWriter = HTTPResponseWriter(handler: self, context: context)
+            responseWriter.completionPromise.futureResult.whenComplete { _ in
+                if self.closeAfterResponse {
+                    context.close(promise: nil)
                 }
-        
-                writeHead(response.head)
-                writeBody(buffer)
-            } else {
-                writeHead(response.head)
             }
-        }.flatMap {
-            return context.writeAndFlush(self.wrapOutboundOut(.end(nil)))
+            
+            response.write(to: responseWriter)
+            return responseWriter.completionPromise.futureResult
         }
-    
-        responded.whenComplete { _ in
-            if self.closeAfterResponse {
-                context.close(promise: nil)
-            }
-        }
-    
-        return responded
     }
     
     /// Handler for when the channel read is complete.
@@ -160,5 +134,47 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
     /// - Parameter context: the context to send events to.
     func channelReadComplete(context: ChannelHandlerContext) {
         context.flush()
+    }
+}
+
+/// Used for writing a response to a remote peer with an `HTTPHandler`.
+private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
+    /// A promise to hook into for when the writing is finished.
+    let completionPromise: EventLoopPromise<Void>
+    
+    /// The handler in which this writer is writing.
+    private let handler: HTTPHandler<R>
+    
+    /// The context that should be written to.
+    private let context: ChannelHandlerContext
+    
+    /// Initialize
+    /// - Parameters:
+    ///   - handler: The handler in which this response is writing inside.
+    ///   - context: The context to write responses to.
+    init(handler: HTTPHandler<R>, context: ChannelHandlerContext) {
+        self.handler = handler
+        self.context = context
+        self.completionPromise = context.eventLoop.makePromise()
+    }
+    
+    // MARK: ResponseWriter
+    
+    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
+        let version = HTTPVersion(major: 1, minor: 1)
+        let head = HTTPResponseHead(version: version, status: status, headers: headers)
+        self.context.write(self.handler.wrapOutboundOut(.head(head)), promise: nil)
+    }
+    
+    func writeBody(_ body: ByteBuffer) {
+        self.context.writeAndFlush(
+            self.handler.wrapOutboundOut(.body(IOData.byteBuffer(body))),
+            promise: nil
+        )
+    }
+    
+    func writeEnd() {
+        self.context.writeAndFlush(self.handler.wrapOutboundOut(.end(nil)), promise: nil)
+        self.completionPromise.succeed(())
     }
 }

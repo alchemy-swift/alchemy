@@ -91,7 +91,7 @@ public final class Router {
     /// passing it to the handler closure.
     ///
     /// - Parameter request: The request this router will handle.
-    /// - Throws: Any error encoutered while handling the request.
+    /// - Throws: Any error encountered while handling the request.
     /// - Returns: A future containing the response of a handler or a `.notFound` response if there
     ///            was not a matching handler.
     func handle(request: Request) throws -> EventLoopFuture<Response> {
