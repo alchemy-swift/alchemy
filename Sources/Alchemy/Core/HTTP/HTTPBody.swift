@@ -9,7 +9,7 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     private static let allocator = ByteBufferAllocator()
     
     /// The binary data in this body.
-    let buffer: ByteBuffer
+    public let buffer: ByteBuffer
     
     /// The mime type of the data stored in this body. Used to set the
     /// `content-type` header when sending back a response.

@@ -25,6 +25,20 @@ struct ExampleApplication: Application {
         self.router
             // `GET /json`
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
+            .on(.GET, at: "/stream") { request in
+                Response { writer in
+                    writer.writeHead()
+                    Loop.current.scheduleTask(in: .seconds(2)) {
+                        let body = HTTPBody(stringLiteral: "Foo")
+                        writer.writeBody(body.buffer)
+                    }
+                    Loop.current.scheduleTask(in: .seconds(3)) {
+                        let body = HTTPBody(stringLiteral: "Bar")
+                        writer.writeBody(body.buffer)
+                        writer.writeEnd()
+                    }
+                }
+            }
             // Group all pet requests
             .group(path: "/pets") {
                 let controller = PetsController()

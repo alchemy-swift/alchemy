@@ -90,3 +90,10 @@ public protocol ResponseWriter {
     /// written.
     func writeEnd()
 }
+
+extension ResponseWriter {
+    // Convenience default parameters for `writeHead`.
+    public func writeHead(status: HTTPResponseStatus = .ok, _ headers: HTTPHeaders = HTTPHeaders()) {
+        self.writeHead(status: status, headers)
+    }
+}
