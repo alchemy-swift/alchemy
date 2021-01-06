@@ -201,7 +201,7 @@ public class Query: Sequelizable {
     /// named Paul, or over the age of 50 having any name, you could use a nested
     /// where clause along with a separate where value clause:
     /// ```
-    /// DB.query()
+    /// Query
     /// .from("users")
     /// .where {
     ///     $0.where("age" < 30)
@@ -608,7 +608,7 @@ public class Query: Sequelizable {
     /// For example if you wanted to update the first name of a user whose ID equals 10, you could
     /// do so as follows:
     /// ```
-    /// DB.query()
+    /// Query
     ///     .table("users")
     ///     .where("id" == 10)
     ///     .update(values: [
