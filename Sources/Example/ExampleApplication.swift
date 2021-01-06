@@ -6,8 +6,6 @@ struct ExampleApplication: Application {
     @Inject var router: Router
     
     func setup() {
-        Log.info("Hello from setup \(System.coreCount).")
-        
         // Register global database
         Container.global.register(singleton: Database.self) { _ in
             PostgresDatabase(config: .postgres)
@@ -19,6 +17,7 @@ struct ExampleApplication: Application {
         
         // Applied to all incoming requests.
         self.router.globalMiddlewares = [
+            StaticFileMiddleware(),
             LoggingMiddleware(text: "First."),
             LoggingMiddleware(text: "Second."),
             LoggingMiddleware(text: "Third.")
@@ -27,6 +26,20 @@ struct ExampleApplication: Application {
         self.router
             // `GET /json`
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
+            .on(.GET, at: "/stream") { request in
+                Response { writer in
+                    writer.writeHead()
+                    Loop.current.scheduleTask(in: .seconds(2)) {
+                        let body = HTTPBody(stringLiteral: "Foo")
+                        writer.writeBody(body.buffer)
+                    }
+                    Loop.current.scheduleTask(in: .seconds(3)) {
+                        let body = HTTPBody(stringLiteral: "Bar")
+                        writer.writeBody(body.buffer)
+                        writer.writeEnd()
+                    }
+                }
+            }
             // Group all pet requests
             .group(path: "/pets") {
                 let controller = PetsController()
@@ -76,12 +89,12 @@ struct ExampleApplication: Application {
                 $0.on(.GET, at: "/update", do: DatabaseTestController().update)
             }
         
-        database.migrations
-            .append(contentsOf: [
-                _20201229164212CreatePets(),
-            ])
-
-        _ = database.migrate()
+//        database.migrations
+//            .append(contentsOf: [
+//                _20201229164212CreatePets(),
+//            ])
+//
+//        _ = database.migrate()
     }
 }
 
@@ -144,10 +157,10 @@ struct LoggingMiddleware: Middleware {
     let text: String
     
     func intercept(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
-        Log.info(self.text)
+        Log.info(self.text + " for \(request.method.rawValue) \(request.path)")
         return next(request)
             .map {
-                Log.info(self.text)
+                Log.info(self.text + " for \(request.method.rawValue) \(request.path)")
                 return $0
             }
     }

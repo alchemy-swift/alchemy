@@ -5,7 +5,6 @@ import NIO
 struct PetsController {
     func getOwners(_ req: Request) -> EventLoopFuture<[Owner]> {
         Owner.query()
-            .with(\.$license)
             .with(\.$pets) {
                 $0.with(\.$vaccines)
             }

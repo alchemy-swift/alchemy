@@ -12,9 +12,6 @@ struct Owner: Model {
     
     @HasMany(this: "pets", to: \.$owner)
     var pets: [Pet]
-    
-    @HasOne(this: "license", to: \.$owner)
-    var license: License?
 }
 
 struct License: Model {
