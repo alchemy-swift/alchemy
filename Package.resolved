@@ -92,6 +92,15 @@
         }
       },
       {
+        "package": "swift-backtrace",
+        "repositoryURL": "https://github.com/swift-server/swift-backtrace.git",
+        "state": {
+          "branch": null,
+          "revision": "f2fd8c4845a123419c348e0bc4b3839c414077d5",
+          "version": "1.2.0"
+        }
+      },
+      {
         "package": "swift-crypto",
         "repositoryURL": "https://github.com/apple/swift-crypto.git",
         "state": {
@@ -161,6 +170,15 @@
           "branch": null,
           "revision": "5a352330c09a323e59ebd99afdf4ca3964c217bc",
           "version": "1.9.1"
+        }
+      },
+      {
+        "package": "swift-service-lifecycle",
+        "repositoryURL": "https://github.com/swift-server/swift-service-lifecycle.git",
+        "state": {
+          "branch": null,
+          "revision": "a7356e142b083938c63e559b78e35f7f82627a79",
+          "version": "1.0.0-alpha.6"
         }
       }
     ]

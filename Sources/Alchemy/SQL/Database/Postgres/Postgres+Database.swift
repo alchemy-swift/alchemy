@@ -46,8 +46,7 @@ public final class PostgresDatabase: Database {
         _ sql: String,
         values: [DatabaseValue]
     ) -> EventLoopFuture<[DatabaseRow]> {
-        print(sql)
-        return self.pool.withConnection(logger: nil, on: Services.eventLoop) { conn in
+        self.pool.withConnection(logger: nil, on: Services.eventLoop) { conn in
             conn.query(self.positionBindings(sql), values.map(PostgresData.init) )
                 .map { $0.rows }
         }

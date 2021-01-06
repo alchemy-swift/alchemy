@@ -27,6 +27,7 @@ let package = Package(
         .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
         .package(name: "Plot", url: "https://github.com/johnsundell/plot.git", from: "0.8.0"),
+        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha"),
     ],
     targets: [
         .target(
@@ -44,6 +45,7 @@ let package = Package(
                 .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "Plot", package: "Plot"),
+                .product(name: "LifecycleNIOCompat", package: "swift-service-lifecycle"),
                 
                 /// Internal dependencies
                 "Papyrus",

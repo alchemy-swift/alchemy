@@ -26,6 +26,15 @@ extension EventLoopFuture {
     }
 }
 
+extension EventLoopFuture where Value == Void {
+    /// Creates a new successed `EventLoopFuture` on the current `EventLoop`.
+    ///
+    /// - Returns: a created future that will resolve immediately.
+    public static func new() -> EventLoopFuture<Void> {
+        .new(())
+    }
+}
+
 /// Takes a throwing block & returns either the `EventLoopFuture<T>` that block creates or an errored
 /// `EventLoopFuture<T>` if the closure threw an error.
 ///
