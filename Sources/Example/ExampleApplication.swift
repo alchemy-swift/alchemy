@@ -40,18 +40,7 @@ struct ExampleApplication: Application {
                 }
             }
             .on(.GET, at: "/html") { _ in
-                HTML(
-                    .head(
-                        .title("My website"),
-                        .stylesheet("styles.css")
-                    ),
-                    .body(
-                        .div(
-                            .h1("My website"),
-                            .p("Writing HTML in Swift is pretty great!")
-                        )
-                    )
-                )
+                HomeView(title: "Sup", favoriteAnimals: ["dog", "cat", "chicken", "whale"])
             }
             // Group all pet requests
             .group(path: "/pets") {
