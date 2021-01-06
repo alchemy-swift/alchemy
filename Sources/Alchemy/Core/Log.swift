@@ -1,7 +1,7 @@
 import Logging
 
 /// Convenience struct for logging logs of various levels to a default `Logger`.
-/// By default, this logger has label `alchemy_default_logger`.
+/// By default, this logger has label `Alchemy`.
 ///
 /// ```
 /// Log.debug("Hello, world!")
@@ -13,8 +13,8 @@ import Logging
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
 public struct Log {
-    /// The logger to which all logs will be logged. By default it's a logger with label `alchemy`.
-    public static var logger = Logger(label: "alchemy")
+    /// The logger to which all logs will be logged. By default it's a logger with label `Alchemy`.
+    public static var logger = Logger(label: "Alchemy")
     
     /// Log a message with the `Logger.Level.trace` log level.
     ///

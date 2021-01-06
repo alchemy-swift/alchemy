@@ -1,5 +1,6 @@
 import AsyncHTTPClient
 import Fusion
+import Lifecycle
 import NIO
 
 /// Provides easy access to some commonly used services in Alchemy. These services are Injected from
@@ -98,8 +99,13 @@ extension Services {
         Container.global.resolve(NIOThreadPool.self)
     }
     
+    /// A `ServiceLifecycle` hooking into this application's lifecycle.
+    public static var lifecycle: ServiceLifecycle {
+        Container.global.resolve(ServiceLifecycle.self)
+    }
+    
     /// Register some commonly used services to `Container.global`.
-    internal static func bootstrap() {
+    internal static func bootstrap(lifecycle: ServiceLifecycle) {
         // `Router`
         Container.global.register(singleton: Router.self) { _ in
             Router()
@@ -135,6 +141,11 @@ extension Services {
             let pool = NIOThreadPool(numberOfThreads: System.coreCount)
             pool.start()
             return pool
+        }
+        
+        // `ServiceLifecycle`
+        Container.global.register(singleton: ServiceLifecycle.self) { _ in
+            return lifecycle
         }
     }
     
