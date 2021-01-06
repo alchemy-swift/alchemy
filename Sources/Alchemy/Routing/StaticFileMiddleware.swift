@@ -17,7 +17,7 @@ public struct StaticFileMiddleware: Middleware {
     private let directory: String
     
     /// The file IO helper for streaming files.
-    private let fileIO = NonBlockingFileIO(threadPool: Thread.pool)
+    private let fileIO = NonBlockingFileIO(threadPool: Services.threadPool)
     
     /// Used for allocating buffers when pulling out file data.
     private let bufferAllocator = ByteBufferAllocator()
@@ -70,7 +70,7 @@ public struct StaticFileMiddleware: Middleware {
                     byteCount: fileSizeBytes,
                     chunkSize: NonBlockingFileIO.defaultChunkSize,
                     allocator: self.bufferAllocator,
-                    eventLoop: Loop.current,
+                    eventLoop: Services.eventLoop,
                     chunkHandler: { buffer in
                         responseWriter.writeBody(buffer)
                         return .new(())

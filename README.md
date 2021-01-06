@@ -37,7 +37,7 @@ There is tons of sample code in the [**guides**](Documentation/) and [**quicksta
 ```swift
 import Alchemy
 
-struct MyServerApp: Application {
+struct MyServer: Application {
     // Inject the global app router
     @Inject router: Router
 
@@ -49,7 +49,7 @@ struct MyServerApp: Application {
 }
 
 // main.swift
-Launch<MyServerApp>.main()
+MyServer.launch()
 ```
 
 ### Databases & Rune ORM
@@ -60,7 +60,7 @@ Rune, the ORM, is built on top of Swift's Codable, making database querying a ci
 import Alchemy
 
 // Setup the default database.
-DB.default = PostgresDatabase(
+Services.db = PostgresDatabase(
     DatabaseConfig(
         socket: .ip(host: "localhost", port: 5432),
         database: "alchemy",

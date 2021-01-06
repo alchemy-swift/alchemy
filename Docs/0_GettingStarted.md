@@ -73,7 +73,7 @@ struct MyApplication: Application {
 Then add a `main.swift` with...
 
 ```swift
-Launch<MyApplication>.main()
+MyApplication.launch()
 ```
 Run your server, make a GET request to `localhost:8888/hello` and you should get `"Hello, World!"` as the response.
 

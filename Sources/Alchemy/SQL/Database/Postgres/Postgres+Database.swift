@@ -13,8 +13,6 @@ public final class PostgresDatabase: Database {
     public let grammar: Grammar = PostgresGrammar()
     public var migrations: [Migration] = []
     
-    deinit { self.shutdown() }
-    
     /// Initialize with the given configuration. The configuration will be
     /// connected to when a query is run.
     ///
@@ -49,14 +47,14 @@ public final class PostgresDatabase: Database {
         values: [DatabaseValue]
     ) -> EventLoopFuture<[DatabaseRow]> {
         print(sql)
-        return self.pool.withConnection(logger: nil, on: Loop.current) { conn in
+        return self.pool.withConnection(logger: nil, on: Services.eventLoop) { conn in
             conn.query(self.positionBindings(sql), values.map(PostgresData.init) )
                 .map { $0.rows }
         }
     }
     
-    public func shutdown() {
-        try! self.pool.syncShutdownGracefully()
+    public func shutdown() throws {
+        try self.pool.syncShutdownGracefully()
     }
 
     /// The Alchemy query builder constructs bindings with question marks ('?')

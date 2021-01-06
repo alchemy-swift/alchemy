@@ -1,6 +1,6 @@
 /// A protocol for automatically authenticating incoming requests based on their
 /// `Authentication: Basic ...` header. When the request is intercepted by the
-/// `BasicAuthMiddleware<T>`, it will query the table of `T` in `DB.default`
+/// `BasicAuthMiddleware<T>`, it will query the table of `T` in `Services.db`
 /// for a row that has a matching username & validate the password. If the row
 /// exists & the password matches, the type `T` will be `set` on the request.
 ///
@@ -74,7 +74,7 @@ extension BasicAuthable {
     }
     
     /// A `Middleware` configured to validate the `Authentication: Basic ...`
-    /// header of requests for a matching username/password in `DB.default`.
+    /// header of requests for a matching username/password in `Services.db`.
     ///
     /// - Returns: a `BasicAuthMiddleware<Self>` for authenticating requests.
     public static func basicAuthMiddleware() -> BasicAuthMiddleware<Self> {

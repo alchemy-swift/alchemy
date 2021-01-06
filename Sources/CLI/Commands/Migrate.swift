@@ -20,10 +20,14 @@ struct Migrate: ParsableCommand {
         var name: String
         
         func run() throws {
-            guard let migrationLocations = try? Process().shell("find Sources -type d -name 'Migrations'").split(separator: "\n"),
-                  let migrationLocation = migrationLocations.first else
+            var migrationLocation = "Sources"
+            if
+                let migrationLocations = try? Process()
+                    .shell("find Sources -type d -name 'Migrations'")
+                    .split(separator: "\n"),
+                let migrationsFolder = migrationLocations.first
             {
-                throw MigrationError(info: "No 'Migrations/' directory found. Please ensure you're in an Alchemy project directory.")
+                migrationLocation = String(migrationsFolder)
             }
             
             let dateFormatter = DateFormatter()
@@ -33,7 +37,7 @@ struct Migrate: ParsableCommand {
 
             let destinationURL = URL(fileURLWithPath: "\(migrationLocation)/\(fileName).swift")
             try template.write(to: destinationURL, atomically: true, encoding: .utf8)
-            print("Created migration '\(fileName)' at \(migrationLocation). Don't forget to add it to `DB.default.migrations`!")
+            print("Created migration '\(fileName)' at \(migrationLocation). Don't forget to add it to `Services.db.migrations`!")
         }
         
         private func migrationTemplate(name: String) -> String {

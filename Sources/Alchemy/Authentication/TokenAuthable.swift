@@ -4,7 +4,7 @@ import Foundation
 /// A protocol for automatically authenticating incoming requests based on their
 /// `Authentication: Bearer ...` header. When the request is intercepted by a
 /// related `TokenAuthMiddleware<T>`, it will query the table of `T` in
-/// `DB.default` for a row that has a matching token value. If the exists, the
+/// `Services.db` for a row that has a matching token value. If the exists, the
 /// correlating `User` type will be queried and `set` on the request.
 ///
 /// ```
@@ -53,7 +53,7 @@ extension TokenAuthable {
     public static var valueKeyString: String { "value" }
     
     /// A `Middleware` configured to validate the `Authentication: Bearer ...`
-    /// header of requests for a matching token in `DB.default`.
+    /// header of requests for a matching token in `Services.db`.
     ///
     /// - Returns: a `TokenAuthMiddleware<Self>` for authenticating requests.
     public static func tokenAuthMiddleware() -> TokenAuthMiddleware<Self> {
