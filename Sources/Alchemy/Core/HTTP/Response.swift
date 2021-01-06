@@ -43,6 +43,23 @@ public struct Response {
         self.body = body
     }
     
+    /// Initialize this response with a closure that will be called, allowing you to directly write
+    /// headers, body, and end to the response. The request connection will be left open until you
+    /// `.writeEnd()` to the closure's `ResponseWriter`.
+    ///
+    /// Usage:
+    /// ```
+    /// router.on(.GET, "/stream") {
+    ///     Response { writer in
+    ///         writer.writeHead(...)
+    ///         writer.writeBody(...)
+    ///         writer.writeEnd()
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// - Parameter writer: A closure take a `ResponseWriter` and using it to write response data to
+    ///                     a remote peer.
     public init(_ writer: @escaping (ResponseWriter) -> Void) {
         self.head = HTTPResponseHead(version: HTTPVersion(major: 1, minor: 1), status: .ok)
         self.body = nil

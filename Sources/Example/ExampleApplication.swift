@@ -156,10 +156,10 @@ struct LoggingMiddleware: Middleware {
     let text: String
     
     func intercept(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
-        Log.info(self.text)
+        Log.info(self.text + " for \(request.method.rawValue) \(request.path)")
         return next(request)
             .map {
-                Log.info(self.text)
+                Log.info(self.text + " for \(request.method.rawValue) \(request.path)")
                 return $0
             }
     }

@@ -94,7 +94,7 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
                         Log.error("Encountered server error: \(error).")
                         return Response(
                             status: .internalServerError,
-                            body: HTTPBody(text: "server error")
+                            body: HTTPBody(text: "Server error")
                         )
                     }
                 }
