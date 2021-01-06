@@ -54,7 +54,6 @@ let package = Package(
         .target(
             name: "CLI",
             dependencies: [
-                "Alchemy",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),

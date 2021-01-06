@@ -20,10 +20,14 @@ struct Migrate: ParsableCommand {
         var name: String
         
         func run() throws {
-            guard let migrationLocations = try? Process().shell("find Sources -type d -name 'Migrations'").split(separator: "\n"),
-                  let migrationLocation = migrationLocations.first else
+            var migrationLocation = "Sources"
+            if
+                let migrationLocations = try? Process()
+                    .shell("find Sources -type d -name 'Migrations'")
+                    .split(separator: "\n"),
+                let migrationsFolder = migrationLocations.first
             {
-                throw MigrationError(info: "No 'Migrations/' directory found. Please ensure you're in an Alchemy project directory.")
+                migrationLocation = String(migrationsFolder)
             }
             
             let dateFormatter = DateFormatter()

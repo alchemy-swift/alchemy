@@ -37,7 +37,7 @@ There is tons of sample code in the [**guides**](Documentation/) and [**quicksta
 ```swift
 import Alchemy
 
-struct MyServerApp: Application {
+struct MyServer: Application {
     // Inject the global app router
     @Inject router: Router
 
@@ -49,7 +49,7 @@ struct MyServerApp: Application {
 }
 
 // main.swift
-Launch<MyServerApp>.main()
+MyServer.launch()
 ```
 
 ### Databases & Rune ORM
