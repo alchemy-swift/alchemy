@@ -25,7 +25,7 @@ extension Endpoint {
     ///            `HTTPClient`.
     public func request(
         _ dto: Request,
-        with client: HTTPClient = Client.default,
+        with client: HTTPClient = Services.client,
         decoder: JSONDecoder = JSONDecoder()
     ) throws -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
         client.performRequest(
@@ -47,7 +47,7 @@ extension Endpoint where Request == Empty {
     /// - Returns: a future containing the decoded `Endpoint.Response` as well as the raw response
     ///            of the `HTTPClient`.
     public func request(
-        with client: HTTPClient = Client.default,
+        with client: HTTPClient = Services.client,
         decoder: JSONDecoder = JSONDecoder()
     ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
         client.performRequest(

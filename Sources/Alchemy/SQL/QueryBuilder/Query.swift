@@ -643,6 +643,33 @@ public class Query: Sequelizable {
     }
 }
 
+extension Query {
+    /// Shortcut for running a query with the given table on `Services.db`.
+    ///
+    /// - Parameters:
+    ///   - table: The table to run the query on.
+    /// - Returns: The current query builder `Query` to chain future queries to.
+    public static func table(_ table: String) -> Query {
+        Services.db.query().table(table)
+    }
+
+    /// Shortcut for running a query with the given table on `Services.db`.
+    ///
+    /// An alias for `table(_ table: String)` to be used when running a `select` query that also
+    /// lets you alias the table name.
+    ///
+    /// - Parameters:
+    ///   - table: The table to select data from.
+    ///   - alias: An alias to use in place of table name. Defaults to `nil`.
+    /// - Returns: The current query builder `Query` to chain future queries to.
+    public static func from(table: String, as alias: String? = nil) -> Query {
+        guard let alias = alias else {
+            return Query.table(table)
+        }
+        return Query.table("\(table) as \(alias)")
+    }
+}
+
 
 extension String {
     public static func ==(lhs: String, rhs: Parameter) -> WhereValue {

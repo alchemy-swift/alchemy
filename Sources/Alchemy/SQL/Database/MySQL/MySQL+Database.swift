@@ -10,8 +10,6 @@ public final class MySQLDatabase: Database {
     public var grammar: Grammar = MySQLGrammar()
     public var migrations: [Migration] = []
 
-    deinit { self.shutdown() }
-    
     /// Initialize with the given configuration. The configuration will be
     /// connected to when a query is run.
     ///
@@ -43,13 +41,13 @@ public final class MySQLDatabase: Database {
     }
     
     public func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: nil, on: Loop.current) { conn in
+        self.pool.withConnection(logger: nil, on: Services.eventLoop) { conn in
             conn.query(sql, values.map(MySQLData.init))
                 .map { $0 }
         }
     }
     
-    public func shutdown() {
-        try! self.pool.syncShutdownGracefully()
+    public func shutdown() throws {
+        try self.pool.syncShutdownGracefully()
     }
 }

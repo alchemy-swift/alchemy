@@ -19,7 +19,7 @@ import NIO
 /// struct AsyncMiddleware: Middleware {
 ///     func intercept(_ request: Request) -> EventLoopFuture<Request> {
 ///         // Run some async operation
-///         DB.default
+///         Services.db
 ///             .runRawQuery(...)
 ///             .map { someData in
 ///                 // Set some data on the request for access in other Middleware or router

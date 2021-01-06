@@ -3,36 +3,28 @@ import Foundation
 import NIO
 
 struct ExampleApplication: Application {
-    @Inject var router: Router
-    
     func setup() {
         // Register global database
-        Container.global.register(singleton: Database.self) { _ in
-            PostgresDatabase(config: .postgres)
-        }
-        
-        var database = Container.global.resolve(Database.self)
-        
-        DB.default = database
+        Services.db = PostgresDatabase(config: .postgres)
         
         // Applied to all incoming requests.
-        self.router.globalMiddlewares = [
+        Services.router.globalMiddlewares = [
             StaticFileMiddleware(),
             LoggingMiddleware(text: "First."),
             LoggingMiddleware(text: "Second."),
             LoggingMiddleware(text: "Third.")
         ]
         
-        self.router
+        Services.router
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
             .on(.GET, at: "/stream") { request in
                 Response { writer in
                     writer.writeHead()
-                    Loop.current.scheduleTask(in: .seconds(2)) {
+                    Services.eventLoop.scheduleTask(in: .seconds(2)) {
                         let body = HTTPBody(stringLiteral: "Foo")
                         writer.writeBody(body.buffer)
                     }
-                    Loop.current.scheduleTask(in: .seconds(3)) {
+                    Services.eventLoop.scheduleTask(in: .seconds(3)) {
                         let body = HTTPBody(stringLiteral: "Bar")
                         writer.writeBody(body.buffer)
                         writer.writeEnd()
@@ -91,12 +83,10 @@ struct ExampleApplication: Application {
                 $0.on(.GET, at: "/update", do: DatabaseTestController().update)
             }
         
-//        database.migrations
-//            .append(contentsOf: [
-//                _20201229164212CreatePets(),
-//            ])
-//
-//        _ = database.migrate()
+        Services.db.migrations
+            .append(contentsOf: [
+                _20201229164212CreatePets(),
+            ])
     }
 }
 

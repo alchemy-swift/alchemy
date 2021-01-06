@@ -70,7 +70,9 @@ public protocol Database {
     ) -> EventLoopFuture<[DatabaseRow]>
     
     /// Called when the database connection will shut down.
-    func shutdown()
+    ///
+    /// - Throws: Any error that occurred when shutting down.
+    func shutdown() throws
 }
 
 // Extensions for default data. Docs above.

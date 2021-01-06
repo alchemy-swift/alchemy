@@ -39,7 +39,7 @@ enum StartupArgs {
     /// Serve to a specific socket. Routes using the singleton `HTTPRouter`.
     case serve(socket: Socket)
     
-    /// Migrate using any migrations added to DB.default. `rollback` indicates
+    /// Migrate using any migrations added to Services.db. `rollback` indicates
     /// whether all new migrations should be run in a new batch (`false`) or if
     /// the latest batch should be rolled back (`true`).
     case migrate(rollback: Bool = false)
@@ -52,49 +52,27 @@ extension Application {
     /// - Parameter args: what the application should do when it's launched.
     /// - Throws: any error that may be encountered in booting the application.
     func launch(_ args: StartupArgs) throws {
-        // Register the global `EventLoopGroup`.
-        Container.global.register(singleton: EventLoopGroup.self) { _ in
-            MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        }
+        // Bootstrap core Alchemy services.
+        Services.bootstrap()
         
-        // Register the global `Router`.
-        Container.global.register(singleton: Router.self) { _ in
-            Router()
-        }
-        
-        // Register the global `Scheduler`.
-        Container.global.register(singleton: Scheduler.self) { _ in
-            Scheduler(scheduleLoop: Loop.current)
-        }
-        
-        // Get the global `EventLoopGroup`.
-        let eventLoopGroup = Container.global.resolve(EventLoopGroup.self)
-        
-        // First, setup the application (ensure setup is run on an `EventLoop` for `Loop.current`
-        // access inside of it).
-        let setup = eventLoopGroup.next()
-            .submit(self.setup)
+        // First, run `setup()` on an `EventLoop`.
+        let setup = Services.eventLoopGroup.next().submit(self.setup)
             
         switch args {
         case .migrate(let rollback):
             // Migrations need to be run on an `EventLoop`.
-            try setup
-                .flatMap { self.migrate(rollback: rollback) }
+            try setup.flatMap { self.migrate(rollback: rollback) }
                 .wait()
             Log.info("Migrations finished!")
         case .serve(let socket):
-            try self.startServing(socket: socket, group: eventLoopGroup)
+            try setup.wait()
+            try self.startServing(socket: socket, group: Services.eventLoopGroup)
         }
         
-        try self.shutdown(group: eventLoopGroup)
+        try Services.shutdown()
     }
     
-    func shutdown(group: EventLoopGroup) throws {
-        try group.syncShutdownGracefully()
-        try Thread.shutdown()
-    }
-    
-    /// Run migrations on `DB.default`, optionally rolling back the latest
+    /// Run migrations on `Services.db`, optionally rolling back the latest
     /// batch.
     ///
     /// - Parameter rollback: if true, the latest batch of migrations will be
@@ -102,7 +80,7 @@ extension Application {
     /// - Returns: an `EventLoopFuture<Void>` that completes when the migrations
     ///            are finished.
     private func migrate(rollback: Bool) -> EventLoopFuture<Void> {
-        rollback ? DB.default.rollbackMigrations() : DB.default.migrate()
+        rollback ? Services.db.rollbackMigrations() : Services.db.migrate()
     }
     
     /// Start serving at the given target. Routing is handled by the singleton `HTTPRouter`.
