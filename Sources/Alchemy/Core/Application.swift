@@ -174,7 +174,7 @@ private final class Server: Runner {
     }
     
     func shutdown() -> EventLoopFuture<Void> {
-        self.channel?.close() ?? .new()
+        self.channel?.close() ?? Services.eventLoopGroup.future()
     }
 }
 

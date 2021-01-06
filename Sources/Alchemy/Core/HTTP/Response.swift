@@ -7,6 +7,13 @@ public struct Response {
     /// The default `JSONEncoder` with which to encode JSON responses.
     public static var defaultJSONEncoder = JSONEncoder()
     
+    /// The default response for when there is an error along the routing chain that does not
+    /// conform to `ResponseConvertible`.
+    public static var defaultErrorResponse = Response(
+        status: .internalServerError,
+        body: HTTPBody(text: "Server error")
+    )
+    
     /// The success or failure status and HTTP headers.
     public let head: HTTPResponseHead
   

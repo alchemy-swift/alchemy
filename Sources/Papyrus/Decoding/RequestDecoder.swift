@@ -186,16 +186,14 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
                 return self.request.getQuery(for: self.key) as! T
             } else if type is Int.Type {
                 let query = try self.request.getQuery(for: self.key).unwrap(or: self.nilError())
-                let int = try Int(query)
-                    .unwrap(or: PapyrusError("Found a query value for key `\(self.key)` but it was"
-                                                + " `\(query)` which can't be cast to an `Int`."))
+                let errorMessage = "`\(self.key)` was `\(query)`. It must be an `Int`."
+                let int = try Int(query).unwrap(or: PapyrusValidationError(errorMessage))
                 return int as! T
             } else if type is Optional<Int>.Type {
                 let int = try self.request.getQuery(for: self.key)
-                    .map { string in
-                        try Int(string)
-                            .unwrap(or: PapyrusError("Found a query item for key `\(self.key)` but"
-                                                        + " it wasn't an `Int`."))
+                    .map { string -> Int in
+                        let errorMessage = "`\(self.key)` was `\(string)`. It must be an `Int`."
+                        return try Int(string).unwrap(or: PapyrusValidationError(errorMessage))
                     }
                 return int as! T
             } else {
@@ -216,8 +214,8 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
     /// expected.
     ///
     /// - Returns: the error to throw when a value is missing.
-    private func nilError() -> PapyrusError {
-        PapyrusError("Expected a non-nil value for key `\(self.key)` but the value was nil.")
+    private func nilError() -> PapyrusValidationError {
+        PapyrusValidationError("Need a value for key `\(self.key)` in the `\(self.parameter)`.")
     }
 }
 

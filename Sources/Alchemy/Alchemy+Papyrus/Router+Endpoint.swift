@@ -12,10 +12,11 @@ public extension Router {
     ///   - closure: the handler for handling incoming requests that match this endpoint's path.
     ///              This handler expects a future containing an instance of the endpoint's response
     ///              type.
+    /// - Returns: `self`, for chaining more requests.
     func register<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
         use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
-    ) where Req: Decodable, Res: ResponseConvertible {
+    ) -> Self where Req: Decodable, Res: ResponseConvertible {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
         }
@@ -28,10 +29,11 @@ public extension Router {
     ///   - closure: the handler for handling incoming requests that match this endpoint's path.
     ///              This handler expects a future containing an instance of the endpoint's response
     ///              type.
+    /// - Returns: `self`, for chaining more requests.
     func register<Res>(
         _ endpoint: Endpoint<Empty, Res>,
         use closure: @escaping (Request) throws -> EventLoopFuture<Res>
-    ) where Res: ResponseConvertible {
+    ) -> Self where Res: ResponseConvertible {
         self.on(endpoint.method.nio, at: endpoint.path, do: closure)
     }
     
@@ -42,14 +44,25 @@ public extension Router {
     /// - Parameters:
     ///   - endpoint: the endpoint to register on this router.
     ///   - closure: the handler for handling incoming requests that match this endpoint's path.
+    /// - Returns: `self`, for chaining more requests.
     func register<Req>(
         _ endpoint: Endpoint<Req, Empty>,
         use closure: @escaping (Request, Req) throws -> EventLoopFuture<Void>
-    ) where Req: Decodable {
+    ) -> Self where Req: Decodable {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
                 .map(Empty.init)
         }
+    }
+}
+
+// Provide a custom response for when `PapyrusValidationError`s are thrown.
+extension PapyrusValidationError: ResponseConvertible {
+    // MARK: ResponseConvertible
+    
+    public func convert() throws -> EventLoopFuture<Response> {
+        let body = try HTTPBody(json: ["validation_error": self.message])
+        return .new(Response(status: .badRequest, body: body))
     }
 }
 
@@ -73,14 +86,16 @@ extension Request: DecodableRequest {
     }
     
     public func getBody<T>() throws -> T where T : Decodable {
+        let body = try self.body.unwrap(or: PapyrusValidationError("Expecting a request body."))
         do {
-            return try self.body
-                .unwrap(or: PapyrusError("There was no body in this request. Note that decoding"
-                                            + " @Body(.urlEncoded) isn't supported yet."))
-                .decodeJSON(as: T.self)
+            return try body.decodeJSON(as: T.self)
+        } catch let DecodingError.keyNotFound(key, _) {
+            throw PapyrusValidationError("Missing field `\(key.stringValue)` from request body.")
+        } catch let DecodingError.typeMismatch(type, context) {
+            let key = context.codingPath.last?.stringValue ?? "unknown"
+            throw PapyrusValidationError("Request body field `\(key)` should be a `\(type)`.")
         } catch {
-            throw PapyrusError("Encountered an error decoding the body to type `\(T.self)`: "
-                                + "\(error)")
+            throw PapyrusValidationError("Invalid request body.")
         }
     }
 }
