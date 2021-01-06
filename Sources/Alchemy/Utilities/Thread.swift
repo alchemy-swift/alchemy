@@ -4,7 +4,9 @@ import NIO
 public struct Thread {
     /// The thread pool for running expensive work on. By default, this pool has a number of threads
     /// equal to the number of logical cores on this machine.
-    static let pool: NIOThreadPool = {
+    ///
+    /// This pool is created and started when first accessed.
+    public static let pool: NIOThreadPool = {
         let pool = NIOThreadPool(numberOfThreads: System.coreCount)
         pool.start()
         return pool

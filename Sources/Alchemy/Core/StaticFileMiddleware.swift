@@ -1,5 +1,6 @@
 import Foundation
 import NIO
+import NIOHTTP1
 
 /// Middleware for serving static files from a given directory.
 ///
@@ -48,7 +49,7 @@ public struct StaticFileMiddleware: Middleware {
         
         if exists && !isDirectory.boolValue {
             let fileInfo = try FileManager.default.attributesOfItem(atPath: filePath)
-            guard let fileSize = (fileInfo[.size] as? NSNumber)?.intValue else {
+            guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
                 Log.error("Attempted to access file at `\(filePath)` but it didn't have a size.")
                 throw HTTPError(.internalServerError)
             }
@@ -56,11 +57,18 @@ public struct StaticFileMiddleware: Middleware {
             let fileHandle = try NIOFileHandle(path: filePath)
             let response = EventLoopFuture<Response>.new(
                 Response { responseWriter in
-                    // Load the file in chunkes, streaming it.
-                    responseWriter.writeHead(status: .ok)
+                    var headers: HTTPHeaders = ["content-length": "\(fileSizeBytes)"]
+                    if let ext = filePath.components(separatedBy: ".").last,
+                       let mediaType = MediaType(fileExtension: ext) {
+                        headers.add(name: "content-type", value: mediaType.value)
+                    }
+                    
+                    responseWriter.writeHead(status: .ok, headers)
+                    
+                    // Load the file in chunks, streaming it.
                     self.fileIO.readChunked(
                         fileHandle: fileHandle,
-                        byteCount: fileSize,
+                        byteCount: fileSizeBytes,
                         chunkSize: NonBlockingFileIO.defaultChunkSize,
                         allocator: self.bufferAllocator,
                         eventLoop: Loop.current,
