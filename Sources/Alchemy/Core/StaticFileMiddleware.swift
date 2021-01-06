@@ -11,7 +11,7 @@ import NIO
 /// ]
 /// ```
 /// Now your router will serve the files that are in the `public` directory.
-struct StaticFileMiddleware: Middleware {
+public struct StaticFileMiddleware: Middleware {
     /// The directory from which static files will be served.
     private let directory: String
     
@@ -21,16 +21,22 @@ struct StaticFileMiddleware: Middleware {
     /// Used for allocating buffers when pulling out file data.
     private let bufferAllocator = ByteBufferAllocator()
     
-    /// Creates a new middleware to serve static files from a given directory.
+    /// Creates a new middleware to serve static files from a given directory. Directory defaults to
+    /// "public/".
     ///
     /// - Parameter directory: The directory to server static files from. Defaults to "public/"
-    init(from directory: String = "public/") {
+    public init(from directory: String = "public/") {
         self.directory = directory.hasSuffix("/") ? directory : "\(directory)/"
     }
     
     // MARK: Middleware
     
-    func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+    public func intercept(
+        _ request: Request,
+        next: @escaping Next
+    ) throws -> EventLoopFuture<Response> {
+        print("YO!")
+        
         // Ignore non `GET` requests.
         guard request.method == .GET else {
             return next(request)
@@ -41,6 +47,8 @@ struct StaticFileMiddleware: Middleware {
         // See if there's a file at the given path
         var isDirectory: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDirectory)
+        print("File exists? \(exists) \(filePath)")
+        print("Current: \(FileManager.default.currentDirectoryPath)")
         
         if exists && !isDirectory.boolValue {
             let fileInfo = try FileManager.default.attributesOfItem(atPath: filePath)
@@ -53,6 +61,7 @@ struct StaticFileMiddleware: Middleware {
             let response = EventLoopFuture<Response>.new(
                 Response { responseWriter in
                     // Load the file in chunkes, streaming it.
+                    responseWriter.writeHead(status: .ok)
                     self.fileIO.readChunked(
                         fileHandle: fileHandle,
                         byteCount: fileSize,
@@ -63,7 +72,12 @@ struct StaticFileMiddleware: Middleware {
                             responseWriter.writeBody(buffer)
                             return .new(())
                         }
-                    ).whenComplete { result in
+                    )
+                    .flatMapThrowing {
+                        try fileHandle.close()
+                    }
+                    .whenComplete { result in
+                        try? fileHandle.close()
                         switch result {
                         case .failure(let error):
                             // Not a ton that can be done in the case of an error, not sure what
@@ -98,7 +112,7 @@ struct StaticFileMiddleware: Middleware {
         }
         
         // Route / to
-        if path.isEmpty {
+        if sanitizedPath.isEmpty {
             sanitizedPath = "index.html"
         }
         

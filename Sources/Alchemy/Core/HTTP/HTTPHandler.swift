@@ -88,7 +88,7 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
                     if let error = error as? HTTPError {
                         return Response(
                             status: error.status,
-                            body: try HTTPBody(json: error.message.map { ["message": $0 ] } ?? [:] )
+                            body: try error.message.map { try HTTPBody(json: ["message": $0]) }
                         )
                     } else {
                         Log.error("Encountered server error: \(error).")

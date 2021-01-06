@@ -17,6 +17,7 @@ struct ExampleApplication: Application {
         
         // Applied to all incoming requests.
         self.router.globalMiddlewares = [
+            StaticFileMiddleware(),
             LoggingMiddleware(text: "First."),
             LoggingMiddleware(text: "Second."),
             LoggingMiddleware(text: "Third.")
