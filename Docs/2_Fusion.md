@@ -38,14 +38,13 @@ You may also resolve a service with the `@Inject` property wrapper. The instance
 @Inject var database: Database
 ```
 
-### Global Container Shorthand
+### `Services`
 
-Container has static `register` / `resolve` functions that automatically register or resolve from the global container.
+`Alchemy` contains a `Services` type providing convenient static variables for injecting commonly used services from the global container.
 
 ```swift
-// These are equivalent
-Container.register(...)
-Container.global.register(...)
+// Injects a `Router` from `Container.global`.
+let router: Router = Services.router
 ```
 
 ### Cross service dependencies
