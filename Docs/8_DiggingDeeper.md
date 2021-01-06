@@ -110,6 +110,100 @@ Global.httpClient
     }
 ```
 
+## Returning HTML
+
+Out of the box, Alchemy supports [Plot](https://github.com/JohnSundell/Plot), a Swift DSL for writing type safe HTML. With Plot, returning HTML is dead simple and elegant. You can do so straight from a `Router` handler.
+
+```swift
+self.router.on(.GET) {
+    HTML {
+        .head(
+            .title("My website"),
+            .stylesheet("styles.css")
+        ),
+        .body(
+            .div(
+                .h1(.class("title"), "My website"),
+                .p("Writing HTML in Swift is pretty great!")
+            )
+        )
+    }
+}
+```
+
+### Control Flow
+
+Plot also supports inline control flow with conditionals, loops, and even unwrapping. It's the perfect, type safe substitute for a templating language.
+
+```swift
+let animals: [String] = ...
+let showSubtitle: Bool = ...
+let username: String? = ...
+HTML {
+    .head(
+        .title("My website"),
+        .stylesheet("styles.css")
+    ),
+    .body(
+        .div(
+            .h1("My favorite animals are..."),
+            .if(showSubtitle, 
+                .h2("You found the subtitle")
+            ),
+            .ul(.forEach(animals) {
+                .li(.class("name"), .text($0))
+            }),
+            .unwrap(username) {
+                .p("Hello, \(username)")
+            }
+        )
+    )
+}
+```
+
+### HTMLView
+
+You can use the `HTMLView` type to help organizing your projects view and pages. It is a simple protocol with a single requirement, `var content: HTML`. Like `HTML`, `HTMLView`s can be returned directly from a `Router` handler.
+
+```swift
+struct HomeView: HTMLView {
+    let showSubtitle: Bool
+    let animals: [String]
+    let username: String?
+
+    var content: HTML {
+        HTML {
+            .head(
+                .title("My website"),
+                .stylesheet("styles.css")
+            ),
+            .body(
+                .div(
+                    .h1("My favorite animals are..."),
+                    .if(self.showSubtitle, 
+                        .h2("You found the subtitle")
+                    ),
+                    .ul(.forEach(self.animals) {
+                        .li(.class("name"), .text($0))
+                    }),
+                    .unwrap(self.username) {
+                        .p("Hello, \(username)")
+                    }
+                )
+            )
+        }
+    }
+}
+
+router.on(.GET) { _ in
+    HomeView(showSubtitle: true, animals: ["Orangutan", "Axolotl", "Echidna"], username: "Kendra")
+}
+```
+
+### Plot Docs
+
+Check out the [Plot docs](https://github.com/JohnSundell/Plot) for everything you can do with it.
+
 ## Serving Static Files
 
 If you'd like to serve files from a static directory, there's a `Middleware` for that. It will match incoming requests to files in the directory, streaming those back to the client if they exist. By default, it serves from `Public/` but you may pass a custom path in the initializer if you like. 
@@ -146,7 +240,7 @@ http://localhost:8888/index.html
 http://localhost:8888/css/style.css
 http://localhost:8888/js/app.js
 http://localhost:8888/images/puppy.png
-http://localhost:8888/ (will route to index.html)
+http://localhost:8888/ (by default, will return any `index.html` file)
 ```
 
 **Note**: The given directory is relative to your server's working directory. If you are using Xcode, be sure to set a custom working directory to your project where the static file directory is.
