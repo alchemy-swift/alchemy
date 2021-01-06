@@ -13,26 +13,27 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     
     /// The mime type of the data stored in this body. Used to set the
     /// `content-type` header when sending back a response.
-    public let mimeType: String?
+    public let mimeType: MIMEType?
     
     /// Creates a new body from a binary `NIO.ByteBuffer`.
     ///
     /// - Parameters:
     ///    - buffer: the buffer holding the data in the body.
     ///    - mimeType: the MIME type of data in the body.
-    public init(buffer: ByteBuffer, mimeType: String? = nil) {
+    public init(buffer: ByteBuffer, mimeType: MIMEType? = nil) {
         self.buffer = buffer
         self.mimeType = mimeType
     }
      
     /// Creates a new body containing the text with MIME type `text/plain`.
     ///
-    /// - Parameter text: the string contents of the body.
-    public init(text: String) {
+    /// - Parameter text: The string contents of the body.
+    /// - Parameter mimeType: The media type of this text. Defaults to `.plainText` ("text/plain").
+    public init(text: String, mimeType: MIMEType = .plainText) {
         var buffer = HTTPBody.allocator.buffer(capacity: text.utf8.count)
         buffer.writeString(text)
         self.buffer = buffer
-        self.mimeType = "text/plain"
+        self.mimeType = mimeType
     }
     
     /// Creates a new body from a binary `Foundation.Data`.
@@ -40,7 +41,7 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     /// - Parameters:
     ///   - data: the data in the body.
     ///   - mimeType: the MIME type of the body.
-    public init(data: Data, mimeType: String? = nil) {
+    public init(data: Data, mimeType: MIMEType? = nil) {
         var buffer = HTTPBody.allocator.buffer(capacity: data.count)
         buffer.writeBytes(data)
         self.buffer = buffer
@@ -56,7 +57,7 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     /// - Throws: Any error thrown during encoding.
     public init<E: Encodable>(json: E, encoder: JSONEncoder = Response.defaultJSONEncoder) throws {
         let data = try Response.defaultJSONEncoder.encode(json)
-        self.init(data: data, mimeType: "application/json")
+        self.init(data: data, mimeType: .json)
     }
 
     /// Create a body via a string literal.

@@ -5,3 +5,4 @@
 @_exported import Foundation
 @_exported import Fusion
 @_exported import Papyrus
+@_exported import Plot
