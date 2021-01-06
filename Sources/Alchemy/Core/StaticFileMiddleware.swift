@@ -35,8 +35,6 @@ public struct StaticFileMiddleware: Middleware {
         _ request: Request,
         next: @escaping Next
     ) throws -> EventLoopFuture<Response> {
-        print("YO!")
-        
         // Ignore non `GET` requests.
         guard request.method == .GET else {
             return next(request)
@@ -47,8 +45,6 @@ public struct StaticFileMiddleware: Middleware {
         // See if there's a file at the given path
         var isDirectory: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDirectory)
-        print("File exists? \(exists) \(filePath)")
-        print("Current: \(FileManager.default.currentDirectoryPath)")
         
         if exists && !isDirectory.boolValue {
             let fileInfo = try FileManager.default.attributesOfItem(atPath: filePath)
