@@ -110,4 +110,45 @@ Global.httpClient
     }
 ```
 
+## Serving Static Files
+
+If you'd like to serve files from a static directory, there's a `Middleware` for that. It will match incoming requests to files in the directory, streaming those back to the client if they exist. By default, it serves from `Public/` but you may pass a custom path in the initializer if you like. 
+
+Consider a `Public` directory in your project with a few files.
+
+```
+│
+├── Public
+│   ├── css
+│   │   └── style.css
+│   ├── js
+│   │   └── app.js
+│   ├── images
+│   │   └── puppy.png
+│   └── index.html
+│
+├── Sources
+├── Tests
+└── Package.swift
+```
+
+You could use the following code to serve files from that directory.
+
+```swift
+router.globalMiddlewares = [
+    StaticFileMiddleware()
+]
+```
+
+Now, assets in the `Public/` directory can be requested.
+``` 
+http://localhost:8888/index.html
+http://localhost:8888/css/style.css
+http://localhost:8888/js/app.js
+http://localhost:8888/images/puppy.png
+http://localhost:8888/ (will route to index.html)
+```
+
+**Note**: The given directory is relative to your server's working directory. If you are using Xcode, be sure to set a custom working directory to your project where the static file directory is.
+
 _[Table of Contents](/Docs)_
