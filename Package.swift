@@ -26,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/mysql-kit", from: "4.0.0-rc.1.6"),
         .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
+        .package(name: "Plot", url: "https://github.com/johnsundell/plot.git", from: "0.8.0"),
     ],
     targets: [
         .target(
@@ -42,6 +43,7 @@ let package = Package(
                 .product(name: "NIOHTTP1", package: "swift-nio"),
                 .product(name: "NIOHTTP2", package: "swift-nio-http2"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "Plot", package: "Plot"),
                 
                 /// Internal dependencies
                 "Papyrus",
@@ -56,7 +58,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),
-        .target(name: "Example", dependencies: ["Alchemy"]),
+        .target(name: "Example", dependencies: ["Alchemy"], resources: [.copy("Public")]),
         .target(name: "CBcrypt", dependencies: []),
         .target(name: "Papyrus", dependencies: []),
         .target(name: "Fusion", dependencies: []),

@@ -26,7 +26,7 @@ public struct StaticFileMiddleware: Middleware {
     /// "public/".
     ///
     /// - Parameter directory: The directory to server static files from. Defaults to "public/"
-    public init(from directory: String = "public/") {
+    public init(from directory: String = "Public/") {
         self.directory = directory.hasSuffix("/") ? directory : "\(directory)/"
     }
     
@@ -59,7 +59,7 @@ public struct StaticFileMiddleware: Middleware {
                 // Set any relevant headers based off the file info.
                 var headers: HTTPHeaders = ["content-length": "\(fileSizeBytes)"]
                 if let ext = filePath.components(separatedBy: ".").last,
-                   let mediaType = MediaType(fileExtension: ext) {
+                   let mediaType = MIMEType(fileExtension: ext) {
                     headers.add(name: "content-type", value: mediaType.value)
                 }
                 responseWriter.writeHead(status: .ok, headers)

@@ -24,7 +24,6 @@ struct ExampleApplication: Application {
         ]
         
         self.router
-            // `GET /json`
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
             .on(.GET, at: "/stream") { request in
                 Response { writer in
@@ -39,6 +38,20 @@ struct ExampleApplication: Application {
                         writer.writeEnd()
                     }
                 }
+            }
+            .on(.GET, at: "/html") { _ in
+                HTML(
+                    .head(
+                        .title("My website"),
+                        .stylesheet("styles.css")
+                    ),
+                    .body(
+                        .div(
+                            .h1("My website"),
+                            .p("Writing HTML in Swift is pretty great!")
+                        )
+                    )
+                )
             }
             // Group all pet requests
             .group(path: "/pets") {

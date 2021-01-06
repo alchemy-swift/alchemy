@@ -33,7 +33,7 @@ public struct Response {
     public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: HTTPBody?) {
         var headers = headers
         headers.replaceOrAdd(name: "content-length", value: String(body?.buffer.writerIndex ?? 0))
-        body?.mimeType.map { headers.replaceOrAdd(name: "content-type", value: $0) }
+        body?.mimeType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
         
         self.head = HTTPResponseHead(
             version: HTTPVersion(major: 1, minor: 1),
