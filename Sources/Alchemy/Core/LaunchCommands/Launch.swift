@@ -13,3 +13,10 @@ public struct Launch<A: Application>: ParsableCommand {
     
     public init() {}
 }
+
+extension Application {
+    /// Launch this application. By default it serves, see `Launch` for subcommands and options.
+    public static func launch() {
+        Launch<Self>.main()
+    }
+}

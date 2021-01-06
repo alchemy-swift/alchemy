@@ -4,8 +4,8 @@ import Fusion
 import NIO
 import NIOHTTP1
 
-/// The core type for an Alchemy application. Implement this & it's `setup`
-/// function, then call `Launch<CustomApplication>.main()` in your `main.swift`.
+/// The core type for an Alchemy application. Implement this & it's `setup` function, then call
+/// `MyApplication.launch()` in your `main.swift`.
 ///
 /// ```
 /// // MyApplication.swift
@@ -21,7 +21,7 @@ import NIOHTTP1
 /// }
 ///
 /// // main.swift
-/// Launch<MyApplication>.main()
+/// MyApplication.launch()
 /// ```
 public protocol Application {
     /// Called before any launch command is run. Called AFTER any environment is
