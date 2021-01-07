@@ -33,9 +33,9 @@ final class EncodingTests: XCTestCase {
             ].joined())
         )
         XCTAssertNotNil(params.body)
-        XCTAssertEqual(params.body!.contentType, .json)
+        XCTAssertEqual(params.bodyEncoding, .json)
         
-        let bodyData = try JSONEncoder().encode(params.body!.content)
+        let bodyData = try JSONEncoder().encode(params.body)
         let expectedData = try JSONEncoder().encode(SomeJSON(string: "foo", int: 1))
         XCTAssertEqual(bodyData, expectedData)
     }
@@ -45,7 +45,7 @@ final class EncodingTests: XCTestCase {
             .parameters(dto: TestURLBody(body: SomeJSON(string: "test", int: 0)))
         XCTAssertEqual(params.method, .put)
         XCTAssert(params.fullPath.hasPrefix("/body"))
-        XCTAssertEqual(params.body?.contentType, .urlEncoded)
+        XCTAssertEqual(params.bodyEncoding, .urlEncoded)
     }
     
     func testMultipleBodyThrows() throws {

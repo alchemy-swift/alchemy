@@ -174,7 +174,7 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
         switch self.parameter {
         case .body:
-            return try self.request.getBody()
+            return try self.request.getBody(encoding: .json)
         case .header:
             return try self.unsupported(type)
         case .path:

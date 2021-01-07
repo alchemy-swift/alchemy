@@ -26,5 +26,5 @@ public protocol DecodableRequest {
     ///
     /// - Throws: any error thrown in decoding the request body to `T`.
     /// - Returns: an instance of `T`, decoded from this requests body.
-    func getBody<T: Decodable>() throws -> T
+    func getBody<T: Decodable>(encoding: BodyEncoding) throws -> T
 }

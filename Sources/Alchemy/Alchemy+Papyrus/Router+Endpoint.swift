@@ -85,7 +85,7 @@ extension Request: DecodableRequest {
             .stringValue
     }
     
-    public func getBody<T>() throws -> T where T : Decodable {
+    public func getBody<T>(encoding: BodyEncoding) throws -> T where T: Decodable {
         let body = try self.body.unwrap(or: PapyrusValidationError("Expecting a request body."))
         do {
             return try body.decodeJSON(as: T.self)

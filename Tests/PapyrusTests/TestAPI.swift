@@ -50,7 +50,9 @@ struct TestRequest: EndpointRequest {
 }
 
 struct TestURLBody: EndpointRequest {
-    @Body(.urlEncoded)
+    static var bodyEncoding: BodyEncoding = .urlEncoded
+    
+    @Body
     var body: SomeJSON
     
     init(body: SomeJSON) {

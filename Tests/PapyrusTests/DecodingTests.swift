@@ -60,7 +60,7 @@ struct MockRequest: DecodableRequest {
         self.paths[key]
     }
     
-    func getBody<T: Decodable>() throws -> T {
+    func getBody<T: Decodable>(encoding: BodyEncoding) throws -> T {
         try JSONDecoder().decode(T.self, from: self.bodyData ?? Data())
     }
 }
