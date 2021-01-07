@@ -14,8 +14,8 @@
         "package": "alchemy",
         "repositoryURL": "https://github.com/joshuawright11/alchemy",
         "state": {
-          "branch": "master",
-          "revision": "73f915dcf9cb27ab917ee375bac669a9f9b163bd",
+          "branch": "main",
+          "revision": "b9526052c205d1fc46f4182738bb6e227af323a2",
           "version": null
         }
       },
@@ -38,15 +38,6 @@
         }
       },
       {
-        "package": "Echo",
-        "repositoryURL": "https://github.com/Azoy/Echo",
-        "state": {
-          "branch": "master",
-          "revision": "f3ba95c4f9eeb72a63c84dc6f944fe1852990df9",
-          "version": null
-        }
-      },
-      {
         "package": "mysql-kit",
         "repositoryURL": "https://github.com/vapor/mysql-kit",
         "state": {
@@ -62,6 +53,15 @@
           "branch": null,
           "revision": "4cbef4c0903c9792ff1f8dc4b55532276fa70c99",
           "version": "1.3.2"
+        }
+      },
+      {
+        "package": "Plot",
+        "repositoryURL": "https://github.com/johnsundell/plot.git",
+        "state": {
+          "branch": null,
+          "revision": "61e828949ca6f84071bde65c8fc046cf74b7d1a2",
+          "version": "0.8.0"
         }
       },
       {
@@ -98,6 +98,15 @@
           "branch": null,
           "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
           "version": "0.3.1"
+        }
+      },
+      {
+        "package": "swift-backtrace",
+        "repositoryURL": "https://github.com/swift-server/swift-backtrace.git",
+        "state": {
+          "branch": null,
+          "revision": "f2fd8c4845a123419c348e0bc4b3839c414077d5",
+          "version": "1.2.0"
         }
       },
       {
@@ -170,6 +179,15 @@
           "branch": null,
           "revision": "5a352330c09a323e59ebd99afdf4ca3964c217bc",
           "version": "1.9.1"
+        }
+      },
+      {
+        "package": "swift-service-lifecycle",
+        "repositoryURL": "https://github.com/swift-server/swift-service-lifecycle.git",
+        "state": {
+          "branch": null,
+          "revision": "a7356e142b083938c63e559b78e35f7f82627a79",
+          "version": "1.0.0-alpha.6"
         }
       }
     ]
