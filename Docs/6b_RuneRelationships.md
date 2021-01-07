@@ -251,7 +251,7 @@ Driver.query()
 
 ## HasRelationship Caveat
 
-There is a niche caveat when eager loading `HasOne` and `HasMany` relationships. The eager loading of these relies on caching load behavior. Without going into the implementation details, this means that if there are two of the same relationships, with the same type signatures, on the same `Model`, the eager loader won't know which eager loading behavior to use and the behavior will be undefined. 
+There is a niche caveat when eager loading `HasOne` and `HasMany` relationships. Eager loading them relies on caching load behavior. Without going into the implementation details, this means that if there are two of the same relationships, with the same type signatures, on the same `Model`, the eager loader won't know which eager loading behavior to use and the behavior will be undefined. 
 
 This isn't a scenario you'll encounter much, if at all, but if you do have two "Has" relationships for which **all** the following are true...
 
