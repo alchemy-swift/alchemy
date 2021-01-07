@@ -103,6 +103,10 @@ extension HTTPClient {
                         )
                     }
                     
+                    if Response.self == Empty.self {
+                        return (Empty.value as! Response, response)
+                    }
+                    
                     guard let responseJSON = try response.body
                             .map({ HTTPBody(buffer: $0) })?
                             .decodeJSON(as: Response.self, with: decoder) else {

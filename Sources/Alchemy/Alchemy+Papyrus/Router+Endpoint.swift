@@ -51,7 +51,7 @@ public extension Router {
     ) -> Self where Req: Decodable {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
-                .map(Empty.init)
+                .map { Empty.value }
         }
     }
 }

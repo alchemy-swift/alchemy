@@ -2,6 +2,6 @@
 ///
 /// A workaround for not being able to conform `Void` to `Codable`.
 public struct Empty: EndpointRequest {
-    /// Initialize the empty object.
-    public init() {}
+    /// Static `Empty` instance used for all `Empty` responses and requests.
+    public static let value = Empty()
 }
