@@ -50,7 +50,6 @@ struct EagerLoader<From: Model, To: ModelMaybeOptional> {
     /// - Returns: a closure containing a map of `From` identifiers to the array of `To` instances
     ///            associated with that From instance, by this relationship.
     static func through<Through: Model>(
-        named: String,
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
         fromString: String,
