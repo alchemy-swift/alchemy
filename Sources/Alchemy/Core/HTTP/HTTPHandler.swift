@@ -84,18 +84,14 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
       
             // Responds to the request
             let response = responder.respond(to: request)
-                .flatMapErrorThrowing { error in
-                    if let error = error as? HTTPError {
-                        return Response(
-                            status: error.status,
-                            body: try error.message.map { try HTTPBody(json: ["message": $0]) }
-                        )
-                    } else {
-                        Log.error("Encountered server error: \(error).")
-                        return Response(
-                            status: .internalServerError,
-                            body: HTTPBody(text: "Server error")
-                        )
+                .flatMapError { error in
+                    catchError {
+                        if let error = error as? ResponseConvertible {
+                            return try error.convert()
+                        } else {
+                            Log.error("Encountered server error: \(error).")
+                            return .new(Response.defaultErrorResponse)
+                        }
                     }
                 }
             self.request = nil

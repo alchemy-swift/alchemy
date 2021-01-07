@@ -10,8 +10,11 @@ struct Owner: Model {
     var id: Int?
     let name: String
     
-    @HasMany(this: "pets", to: \.$owner)
+    @HasMany(to: \.$owner)
     var pets: [Pet]
+    
+    @HasOne(to: \.$owner)
+    var pet: Pet?
 }
 
 struct License: Model {
@@ -33,7 +36,7 @@ struct Pet: Model {
     @BelongsTo
     var owner: Owner
     
-    @HasMany(named: "vaccines", from: \PetVaccine.$pet, to: \.$vaccine)
+    @HasMany(from: \PetVaccine.$pet, to: \.$vaccine)
     var vaccines: [Vaccine]
 }
 

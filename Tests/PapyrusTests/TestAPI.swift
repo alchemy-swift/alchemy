@@ -42,6 +42,12 @@ struct TestRequest: EndpointRequest {
     @URLQuery
     var query5: [String]
     
+    @URLQuery
+    var query6: Bool?
+    
+    @URLQuery
+    var query7: Bool
+    
     @Header
     var header1: String
     
@@ -50,7 +56,9 @@ struct TestRequest: EndpointRequest {
 }
 
 struct TestURLBody: EndpointRequest {
-    @Body(.urlEncoded)
+    static var bodyEncoding: BodyEncoding = .urlEncoded
+    
+    @Body
     var body: SomeJSON
     
     init(body: SomeJSON) {

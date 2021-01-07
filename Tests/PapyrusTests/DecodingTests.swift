@@ -10,6 +10,7 @@ final class DecodingTests: XCTestCase {
             queries: [
                 "query1": 1,
                 "query3": "three",
+                "query6": true,
             ],
             bodyData: body
         )
@@ -60,7 +61,7 @@ struct MockRequest: DecodableRequest {
         self.paths[key]
     }
     
-    func getBody<T: Decodable>() throws -> T {
+    func getBody<T: Decodable>(encoding: BodyEncoding) throws -> T {
         try JSONDecoder().decode(T.self, from: self.bodyData ?? Data())
     }
 }
@@ -80,6 +81,12 @@ struct DecodeTestRequest: EndpointRequest {
     
     @URLQuery
     var query4: String?
+    
+    @URLQuery
+    var query5: Bool?
+    
+    @URLQuery
+    var query6: Bool
     
     @Header
     var header1: String

@@ -87,10 +87,10 @@ private struct TestModel: Model {
     @BelongsTo
     var belongsTo: TestModel
     
-    @HasOne(this: "test", to: \.$belongsTo, keyString: "belongs_to_id")
+    @HasOne(to: \.$belongsTo)
     var hasOne: TestModel
     
-    @HasMany(this: "test", to: \.$belongsTo, keyString: "belongs_to_id")
+    @HasMany(to: \.$belongsTo)
     var hasMany: [TestModel]
 }
 

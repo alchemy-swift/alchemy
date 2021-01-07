@@ -30,8 +30,24 @@ public struct Endpoint<Request: EndpointRequest, Response: Codable> {
     }
 }
 
+/// Indicates the type of a request's body. The content type affects how and where the content is
+/// encoded.
+public enum BodyEncoding {
+    /// The content of this request is encoded to its body as JSON.
+    case json
+    /// The content of this request is encoded to its URL.
+    case urlEncoded
+}
+
 /// A type that can be the `Request` type of an `Endpoint`.
-public protocol EndpointRequest: Codable {}
+public protocol EndpointRequest: Codable {
+    /// The method of encoding for the request body. Defaults to `.json`.
+    static var bodyEncoding: BodyEncoding { get }
+}
+
+extension EndpointRequest {
+    public static var bodyEncoding: BodyEncoding { .json }
+}
 
 extension EndpointRequest {
     /// Initialize this request data from a `DecodableRequest`. Useful for loading expected request

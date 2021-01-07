@@ -15,7 +15,13 @@ struct ExampleApplication: Application {
             LoggingMiddleware(text: "Third.")
         ]
         
+        let friendsAPI = FriendAPI()
+        
         Services.router
+            .register(friendsAPI.add) { request, dto in
+                Log.info("Made it to friends handler. \(dto.userID)")
+                return .new()
+            }
             .on(.GET, at: "/json", do: { _ in SampleJSON() })
             .on(.GET, at: "/stream") { request in
                 Response { writer in
