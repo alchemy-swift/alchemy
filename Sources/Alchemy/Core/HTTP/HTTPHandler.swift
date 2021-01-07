@@ -139,6 +139,9 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
 
 /// Used for writing a response to a remote peer with an `HTTPHandler`.
 private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
+    /// The HTTP version we're working with.
+    static private var httpVersion: HTTPVersion { HTTPVersion(major: 1, minor: 1) }
+    
     /// A promise to hook into for when the writing is finished.
     let completionPromise: EventLoopPromise<Void>
     
@@ -161,7 +164,7 @@ private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
     // MARK: ResponseWriter
     
     func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
-        let version = HTTPVersion(major: 1, minor: 1)
+        let version = HTTPResponseWriter.httpVersion
         let head = HTTPResponseHead(version: version, status: status, headers: headers)
         self.context.write(self.handler.wrapOutboundOut(.head(head)), promise: nil)
     }

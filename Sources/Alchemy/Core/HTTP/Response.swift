@@ -1,14 +1,17 @@
 import NIO
 import NIOHTTP1
 
-/// A type representing the response from an HTTP endpoint. This response can be
-/// a failure or success case depending on the status code in the `head`.
-public struct Response {
+/// A type representing the response from an HTTP endpoint. This response can be a failure or
+/// success case depending on the status code in the `head`.
+public final class Response {
     /// The default `JSONEncoder` with which to encode JSON responses.
     public static var defaultJSONEncoder = JSONEncoder()
     
-    /// The success or failure status and HTTP headers.
-    public let head: HTTPResponseHead
+    /// The success or failure status response code.
+    public var status: HTTPResponseStatus
+    
+    /// The HTTP headers.
+    public var headers: HTTPHeaders
   
     /// The body which contains any data you want to send back to the client
     /// This can be HTML, an image or JSON among many other data types.
@@ -35,11 +38,8 @@ public struct Response {
         headers.replaceOrAdd(name: "content-length", value: String(body?.buffer.writerIndex ?? 0))
         body?.mimeType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
         
-        self.head = HTTPResponseHead(
-            version: HTTPVersion(major: 1, minor: 1),
-            status: status,
-            headers: headers
-        )
+        self.status = status
+        self.headers = headers
         self.body = body
     }
     
@@ -61,7 +61,8 @@ public struct Response {
     /// - Parameter writer: A closure take a `ResponseWriter` and using it to write response data to
     ///                     a remote peer.
     public init(_ writer: @escaping (ResponseWriter) -> Void) {
-        self.head = HTTPResponseHead(version: HTTPVersion(major: 1, minor: 1), status: .ok)
+        self.status = .ok
+        self.headers = HTTPHeaders()
         self.body = nil
         self._writerClosure = writer
     }
@@ -77,7 +78,7 @@ public struct Response {
     ///
     /// - Parameter writer: An abstraction around writing data to a remote peer.
     private func defaultWriterClosure(writer: ResponseWriter) {
-        writer.writeHead(status: self.head.status, self.head.headers)
+        writer.writeHead(status: self.status, self.headers)
         if let body = self.body {
             writer.writeBody(body.buffer)
         }
