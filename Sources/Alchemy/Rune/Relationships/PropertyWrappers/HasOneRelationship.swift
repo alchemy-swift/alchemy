@@ -30,22 +30,22 @@ public final class HasOneRelationship<
     // MARK: Overrides
     
     public required init(
-        this: String,
+        propertyName: String? = nil,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
-        keyString: String = "Id"
+        keyString: String = To.Value.keyMappingStrategy.map(input: "\(From.self)Id")
     ) {
-        super.init(this: this, to: key, keyString: keyString)
+        super.init(propertyName: propertyName, to: key, keyString: keyString)
     }
     
     public required init<Through: Model>(
-        named: String,
+        propertyName: String? = nil,
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
         fromString: String = Through.keyMappingStrategy.map(input: "\(From.self)Id"),
         toString: String = Through.keyMappingStrategy.map(input: "\(To.Value.self)Id")
     ) {
         super.init(
-            named: named,
+            propertyName: propertyName,
             from: fromKey,
             to: toKey,
             fromString: fromString,

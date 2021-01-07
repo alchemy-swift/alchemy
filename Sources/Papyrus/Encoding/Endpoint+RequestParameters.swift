@@ -15,7 +15,8 @@ extension Endpoint {
             basePath: self.path,
             query: helper.queryString(),
             fullPath: try helper.getFullPath(self.path),
-            body: try helper.getBody()
+            body: try helper.getBody(),
+            bodyEncoding: Request.bodyEncoding
         )
     }
 }
@@ -37,9 +38,11 @@ public struct RequestComponents {
     /// The full path of this request, including any path parameters _and_ the query string.
     public let fullPath: String
     
-    /// The body of this request. The content of the body as well as the content type for encoding
-    /// it.
-    public let body: (content: AnyEncodable, contentType: ContentType)?
+    /// The body of this request.
+    public let body: AnyEncodable?
+    
+    /// Body encoding.
+    public let bodyEncoding: BodyEncoding
     
     /// Creates a simple `RequestComponents` with just a url and an endpoint method.
     ///
@@ -48,7 +51,15 @@ public struct RequestComponents {
     ///   - method: the method of the request.
     /// - Returns: the `RequestComponents` representing a request with the given `url` and `method`.
     public static func just(url: String, method: EndpointMethod) -> RequestComponents {
-        RequestComponents(method: method, headers: [:], basePath: url, query: "", fullPath: url, body: nil)
+        RequestComponents(
+            method: method,
+            headers: [:],
+            basePath: url,
+            query: "",
+            fullPath: url,
+            body: nil,
+            bodyEncoding: .json
+        )
     }
     
     /// Creates a string representing any URL parameters this request should have. This returns nil
@@ -57,12 +68,12 @@ public struct RequestComponents {
     /// - Throws: any error encountered while encoding the `self.body.content` to a URL `String`.
     /// - Returns: the url parameters string of this request, or nil if it has none.
     public func urlParams() throws -> String? {
-        guard let body = body, body.contentType == .urlEncoded else {
+        guard let body = self.body, self.bodyEncoding == .urlEncoded else {
             return nil
         }
         
         let encoder = URLFormEncoder()
-        return try encoder.encode(body.content)
+        return try encoder.encode(body)
     }
 }
 
@@ -138,13 +149,13 @@ private struct EncodingHelper {
     /// - Throws: an error if there is more than one `@Body` on the `EndpointRequest` used to
     ///           generate this helper.
     /// - Returns: a typle representing the content and content type of this request's body.
-    func getBody() throws -> (content: AnyEncodable, contentType: ContentType)? {
+    func getBody() throws -> AnyEncodable? {
         guard self.bodies.count <= 1 else {
             throw PapyrusError("Only one `@Body` attribute is allowed per request. This will likely"
                                 + " be a `Codable` type with all the body's fields on it.")
         }
         
-        return self.bodies.first.map { ($0.value.content, $0.value.contentType) }
+        return self.bodies.first.map { $0.value.content }
     }
     
     /// Generates the headers of this request.

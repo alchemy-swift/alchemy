@@ -47,22 +47,23 @@ final class EagerLoadStorage {
 
     /// Store an erased eager loading closure in a lookup dictionary.
     static func store<From: Model, To: ModelMaybeOptional>(
-        from: From.Type = From.self,
-        to: To.Type = To.self,
-        fromStored: String,
+        relationship: HasRelationship<From, To>.Type,
+        uniqueKey: String?,
         loadClosure: @escaping NestedEagerLoadClosure<From, To>
     ) {
-        let key = "\(From.tableName)_\(To.Value.tableName)_\(fromStored)"
+        let id = uniqueKey ?? "default"
+        let key = "\(relationship)_\(id)"
         dict[key] = loadClosure
     }
     
     /// Fetch an erased eager loading closure from the lookup dictionary.
     static func get<From: Model, To: ModelMaybeOptional>(
-        from: From.Type,
-        to: To.Type,
-        fromStored: String
+        relationship: HasRelationship<From, To>.Type,
+        uniqueKey: String
     ) -> NestedEagerLoadClosure<From, To>? {
-        let key = "\(From.tableName)_\(To.Value.tableName)_\(fromStored)"
+        let key = "\(relationship)_\(uniqueKey)"
+        let fallback = "\(relationship)_default"
         return dict[key] as? NestedEagerLoadClosure<From, To>
+            ?? dict[fallback] as? NestedEagerLoadClosure<From, To>
     }
 }

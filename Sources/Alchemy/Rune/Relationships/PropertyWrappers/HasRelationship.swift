@@ -6,11 +6,6 @@ protocol AnyHas {}
 
 /// Contains shared behavior for "has" relationships, particularly around eager loading
 /// functionality.
-///
-/// - Warning: Eager loading for `HasRelationship`s is a bit janky since there isn't a good way to
-/// associate data with a property wrapper that persists when the `Model` is encoded / decoded.
-///
-/// It does work though :)
 public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decodable {
     /// Erased behavior for how to eager load this relationship.
     var eagerLoadClosure: NestedEagerLoadClosure<From, To>!
@@ -19,22 +14,21 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
     /// that has a reference to `From.id`.
     ///
     /// - Parameters:
-    ///   - this: a unique name for this. The name must be unique on a `From` / `To` type basis.
+    ///   - this: The name of this property. The name must be unique on a `From` / `To` type basis.
     ///           i.e. for each relationship to `To` on type `From`, there must be a unique name.
     ///           This is an implementation detail leaking out, sorry another way hasn't been found.
     ///   - key: the `KeyPath` of the relationship on `To` that points to `From`.
     ///   - keyString: the string name of the column on `To` that points to `From`'s id.
     public required init(
-        this: String,
+        propertyName: String? = nil,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
         keyString: String
     ) {
         self.eagerLoadClosure = { EagerLoader<From, To>.via(key: key, keyString: keyString, nestedQuery: $0!) }
         
         EagerLoadStorage.store(
-            from: From.self,
-            to: To.self,
-            fromStored: this,
+            relationship: Self.self,
+            uniqueKey: propertyName,
             loadClosure: self.eagerLoadClosure
         )
     }
@@ -54,7 +48,7 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
     ///   - fromString: the column name on the pivot table that references the `From` table's id.
     ///   - toString: the column name on the pivot table that references the `To` table's id.
     public required init<Through: Model>(
-        named: String,
+        propertyName: String? = nil,
         from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
         to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
         fromString: String,
@@ -62,7 +56,6 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
     ) {
         self.eagerLoadClosure = {
             EagerLoader<From, To>.through(
-                named: named,
                 from: fromKey,
                 to: toKey,
                 fromString: fromString,
@@ -72,9 +65,8 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
         }
 
         EagerLoadStorage.store(
-            from: From.self,
-            to: To.self,
-            fromStored: named,
+            relationship: Self.self,
+            uniqueKey: propertyName,
             loadClosure: self.eagerLoadClosure
         )
     }
@@ -86,10 +78,11 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
         let codingKey = try container.decode(String.self)
         
         guard let loadClosure = EagerLoadStorage.get(
-                from: From.self,
-                to: To.self,
-                fromStored: codingKey
-            ) else { fatalError("Unable to find the eager loading behavior of this relationship.") }
+            relationship: Self.self,
+            uniqueKey: codingKey
+        ) else {
+            fatalError("Unable to find a relationship with `property` name `\(codingKey.value)`!")
+        }
         
         self.eagerLoadClosure = loadClosure
     }

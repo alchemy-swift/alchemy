@@ -249,6 +249,52 @@ Driver.query()
     }
 ```
 
+## HasRelationship Caveat
+
+There is a niche caveat when eager loading `HasOne` and `HasMany` relationships. Eager loading them relies on caching load behavior. Without going into the implementation details, this means that if there are two of the same relationships, with the same type signatures, on the same `Model`, the eager loader won't know which eager loading behavior to use and the behavior will be undefined. 
+
+This isn't a scenario you'll encounter much, if at all, but if you do have two "Has" relationships for which **all** the following are true...
+
+1. they both wrap properties on the same `Model`
+
+AND
+
+2. they are the same type (both are `HasOne`, both are `HasMany`)
+
+AND
+
+3. they wrap the same type (i.e. both `User` or both `[User]` or both `User?`)
+
+... you'll need to pass them both their wrapping property name in their initializer so that the eager loader can differentiate between the two.
+
+```swift
+struct Flight: Model {
+    // BelongsTo<Person> - don't need `propertyName`; not a `HasOne` or `HasMany` relationship
+    @BelongsTo
+    var pilot: Person 
+
+    // BelongsTo<Person> - don't need `propertyName`; not a `HasOne` or `HasMany` relationship
+    @BelongsTo
+    var copilot: Person 
+
+    // HasOne<Person> - don't need `propertyName`; type signature is unique on this `Model`
+    @HasOne(to: \.$crewLeadForFlight, keyString: "crew_lead_for_flight_id")
+    var crewLead: Person 
+
+    // HasOne<Person?> - don't need `propertyName`; type signature is unique on this `Model`
+    @HasOne(to: \.$backupPilotForFlight, "backup_pilot_for_flight")
+    var extraPilot: Person? 
+
+    // HasMany<[Person]> - need `propertyName` because `crew` has the same type signature.
+    @HasMany(propertyName: "passengers", from: \FlightPassengers.$flight, to: \.$person) 
+    var passengers: [Person]
+
+    // HasMany<[Person]> - need `propertyName` because `passengers` has the same type signature.
+    @HasMany(propertyName: "crew", from: \FlightCrew.$flight, to: \.$person) 
+    var crew: [Person]                                 
+}
+```
+
 _Next page: [Security](7_Security.md)_
 
 _[Table of Contents](/Docs)_
