@@ -17,6 +17,8 @@ final class EncodingTests: XCTestCase {
                 query3: nil,
                 query4: ["three", "six"],
                 query5: [],
+                query6: nil,
+                query7: true,
                 header1: "header_value",
                 body: SomeJSON(string: "foo", int: 1)
             )
@@ -24,12 +26,14 @@ final class EncodingTests: XCTestCase {
         XCTAssertEqual(params.method, .post)
         XCTAssert(params.fullPath.hasPrefix("/foo/one/bar"))
         XCTAssertEqual(params.headers, ["header1": "header_value"])
+        print("suffix: \(params.fullPath)")
         XCTAssert(
             params.fullPath.hasSuffix([
                 "?query1=0",
                 "&query2=two",
                 "&query4%5B%5D=three",
                 "&query4%5B%5D=six",
+                "&query7=1",
             ].joined())
         )
         XCTAssertNotNil(params.body)

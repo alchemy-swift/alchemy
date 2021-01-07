@@ -10,6 +10,7 @@ final class DecodingTests: XCTestCase {
             queries: [
                 "query1": 1,
                 "query3": "three",
+                "query6": true,
             ],
             bodyData: body
         )
@@ -80,6 +81,12 @@ struct DecodeTestRequest: EndpointRequest {
     
     @URLQuery
     var query4: String?
+    
+    @URLQuery
+    var query5: Bool?
+    
+    @URLQuery
+    var query6: Bool
     
     @Header
     var header1: String

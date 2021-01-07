@@ -180,22 +180,32 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
         case .path:
             return try self.unsupported(type)
         case .query:
+            // Messy. Not sure of another way than manually support each type.
+            let queryString = self.request.getQuery(for: self.key)
             if type is String.Type {
-                return try self.request.getQuery(for: self.key).unwrap(or: self.nilError()) as! T
+                return try queryString.unwrap(or: self.nilError()) as! T
             } else if type is Optional<String>.Type {
-                return self.request.getQuery(for: self.key) as! T
+                return queryString as! T
             } else if type is Int.Type {
-                let query = try self.request.getQuery(for: self.key).unwrap(or: self.nilError())
+                let query = try queryString.unwrap(or: self.nilError())
                 let errorMessage = "`\(self.key)` was `\(query)`. It must be an `Int`."
                 let int = try Int(query).unwrap(or: PapyrusValidationError(errorMessage))
                 return int as! T
             } else if type is Optional<Int>.Type {
-                let int = try self.request.getQuery(for: self.key)
-                    .map { string -> Int in
-                        let errorMessage = "`\(self.key)` was `\(string)`. It must be an `Int`."
-                        return try Int(string).unwrap(or: PapyrusValidationError(errorMessage))
-                    }
-                return int as! T
+                return try queryString.map { string -> Int in
+                    let errorMessage = "`\(self.key)` was `\(string)`. It must be an `Int`."
+                    return try Int(string).unwrap(or: PapyrusValidationError(errorMessage))
+                } as! T
+            } else if type is Bool.Type {
+                let query = try queryString.unwrap(or: self.nilError())
+                let errorMessage = "`\(self.key)` was `\(query)`. It must be a `Bool`."
+                let bool = try query.bool.unwrap(or: PapyrusValidationError(errorMessage))
+                return bool as! T
+            } else if type is Optional<Bool>.Type {
+                return try queryString.map { string -> Bool in
+                    let errorMessage = "`\(self.key)` was `\(string)`. It must be a `Bool`."
+                    return try string.bool.unwrap(or: PapyrusValidationError(errorMessage))
+                } as! T
             } else {
                 return try self.unsupported(type)
             }
@@ -226,4 +236,18 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
 private func error<T>() throws -> T {
     throw PapyrusError("Only properties wrapped by @Body, @Path, @Header, or @Query are " +
                         "supported on an `EndpointRequest`")
+}
+
+extension String {
+    /// Converts a `String` to a `Bool`.
+    fileprivate var bool: Bool? {
+        switch self.lowercased() {
+        case "true", "t", "yes", "y", "1":
+            return true
+        case "false", "f", "no", "n", "0":
+            return false
+        default:
+            return nil
+        }
+    }
 }
