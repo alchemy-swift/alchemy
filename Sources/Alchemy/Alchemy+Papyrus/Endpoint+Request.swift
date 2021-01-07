@@ -77,10 +77,10 @@ extension HTTPClient {
             var headers = HTTPHeaders(parameters.headers.map { $0 })
             var bodyData: Data?
             
-            if parameters.body?.contentType == .json {
+            if parameters.bodyEncoding == .json {
                 headers.add(name: "Content-Type", value: "application/json")
-                bodyData = try parameters.body.map { try JSONEncoder().encode($0.content) }
-            } else if parameters.body?.contentType == .urlEncoded,
+                bodyData = try parameters.body.map { try JSONEncoder().encode($0) }
+            } else if parameters.bodyEncoding == .urlEncoded,
                       let urlParams = try parameters.urlParams() {
                 headers.add(name: "Content-Type", value: "application/x-www-form-urlencoded")
                 bodyData = urlParams.data(using: .utf8)

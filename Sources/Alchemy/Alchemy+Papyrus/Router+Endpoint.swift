@@ -38,8 +38,8 @@ public extension Router {
     }
     
     /// Registers a `Papyrus.Endpoint` that has an `Empty` response type, to a `Router`. When an
-    /// incoming request matches the path of the `Endpoint`, the `Endpoint.Request` will automatically
-    /// be decoded from the incoming `Request` for use in the provided handler.
+    /// incoming request matches the path of the `Endpoint`, the `Endpoint.Request` will
+    /// automatically be decoded from the incoming `Request` for use in the provided handler.
     ///
     /// - Parameters:
     ///   - endpoint: the endpoint to register on this router.
