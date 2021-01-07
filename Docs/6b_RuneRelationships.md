@@ -253,10 +253,12 @@ Driver.query()
 
 There is a niche caveat when eager loading `HasOne` and `HasMany` relationships. The eager loading of these relies on caching load behavior. Without going into the implementation details, this means that if there are two of the same relationships, with the same type signatures, on the same `Model`, the eager loader won't know which eager loading behavior to use and the behavior will be undefined. 
 
-This isn't a scenario you'll encounter much, if at all, but if you do have two "Has" relationships for which all the following are true...
+This isn't a scenario you'll encounter much, if at all, but if you do have two "Has" relationships for which _all_ the following are true...
 
 - they both wrap properties on the same `Model`
+AND
 - they are the same type (both are `HasOne`, both are `HasMany`)
+AND
 - they wrap the same type (i.e. both `User` or both `[User]` or both `User?`)
 
 ... you'll need to pass them both their wrapping property name in their initializer so that the eager loader can differentiate between the two.
