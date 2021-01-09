@@ -4,10 +4,10 @@ public protocol Controller {
     /// Add this controller's handlers to a router.
     ///
     /// - Parameter router: The Router on which to add handlers.
-    func route(_ router: Router)
+    func route(_ router: Application)
 }
 
-extension Router {
+extension Application {
     /// Adds a controller to this route.
     ///
     /// - Parameter controller: The controller to handle routes on this router.

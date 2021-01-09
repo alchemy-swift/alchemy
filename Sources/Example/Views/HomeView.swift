@@ -1,21 +1,25 @@
 import Alchemy
 
 struct HomeView: HTMLView {
-    let title: String
-    let favoriteAnimals: [String]
-
+    let greetings: [String]
+    let name: String?
+    
     var content: HTML {
         HTML(
             .head(
-                .title(self.title),
-                .stylesheet("styles.css")
+                .title("My website"),
+                .stylesheet("styles/home.css"),
+                .script("js/home.js")
             ),
             .body(
                 .div(
-                    .h1(.class("title"), "My favorite animals are"),
-                    .ul(.forEach(self.favoriteAnimals) {
-                        .li(.class("name"), .text($0))
-                    })
+                    .h1("My website"),
+                    .ul(.forEach(self.greetings) {
+                        .li(.class("greeting"), .text($0))
+                    }),
+                    .unwrap(self.name) {
+                        .p("Welcome, \($0)!")
+                    }
                 )
             )
         )

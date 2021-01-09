@@ -13,8 +13,8 @@ struct App: Application {
     
     private func jobs() {
         Services.scheduler
-            .schedule(SampleJob(), every: 2.hours)
-            .schedule(NotifyUnfinishedTodos(), every: 1.days.at(hr: 18))
+            .every(2.hours, run: SampleJob())
+            .every(1.days.at(hr: 18), run: NotifyUnfinishedTodos())
     }
     
     private func database() {
@@ -55,7 +55,7 @@ struct App: Application {
             .on(.GET) { (request: Request) -> HomeView in
                 HomeView(
                     greetings: ["Bonjour!", "¡Hola!", "Hallo!"],
-                    name: request.getQuery(for: "name")
+                    name: request.query(for: "name")
                 )
             }
             
@@ -63,7 +63,7 @@ struct App: Application {
             .controller(AuthController())
             
             // Protect subsequent routes in the chain behind token auth
-            .middleware(UserToken.tokenAuthMiddleware())
+            .use(UserToken.tokenAuthMiddleware())
             .controller(UsersController())
             .controller(TodoController())
     }

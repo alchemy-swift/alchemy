@@ -22,11 +22,11 @@ public struct Scheduler {
     /// Schedules a `Job` at a recurring interval.
     ///
     /// - Parameters:
-    ///   - job: the `Job` to schedule.
     ///   - frequency: the frequency at which this `Job` should be run. See `Frequency` for API.
+    ///   - job: the `Job` to schedule.
     /// - Returns: this `Scheduler` with which more `Job`s can be scheduled.
     @discardableResult
-    public func schedule<J: Job>(_ job: J, every frequency: Frequency) -> Scheduler {
+    public func every<J: Job>(_ frequency: Frequency, run job: J) -> Scheduler {
         /// A single loop will do all the scheduling for now.
         self.scheduleLoop
             .scheduleRepeatedTask(

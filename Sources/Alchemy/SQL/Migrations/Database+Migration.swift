@@ -48,7 +48,7 @@ extension Database {
         let createMigrationsTable = AddAlchemyMigration().upStatements(for: self.grammar).first!
         return self.runRawQuery(createMigrationsTable.query)
             .flatMap { _ in
-                AlchemyMigration.query(database: self).getAll()
+                AlchemyMigration.query(database: self).allModels()
             }
     }
     

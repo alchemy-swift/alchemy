@@ -49,19 +49,19 @@ struct MockRequest: DecodableRequest {
         self.bodyData = bodyData
     }
     
-    func getHeader(for key: String) -> String? {
+    func header(for key: String) -> String? {
         self.headers[key]
     }
     
-    func getQuery(for key: String) -> String? {
+    func query(for key: String) -> String? {
         self.queries[key].map { "\($0)" }
     }
     
-    func getPathComponent(for key: String) -> String? {
+    func pathComponent(for key: String) -> String? {
         self.paths[key]
     }
     
-    func getBody<T: Decodable>(encoding: BodyEncoding) throws -> T {
+    func decodeBody<T: Decodable>(encoding: BodyEncoding) throws -> T {
         try JSONDecoder().decode(T.self, from: self.bodyData ?? Data())
     }
 }

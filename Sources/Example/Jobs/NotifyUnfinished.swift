@@ -6,7 +6,7 @@ struct NotifyUnfinishedTodos: Job {
         Todo.query()
             .with(\.$user)
             .where("is_complete" == false)
-            .getAll()
+            .allModels()
             .map { _ in
                 // Todo: notify users of unfinished tasks
             }

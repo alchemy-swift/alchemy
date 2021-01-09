@@ -17,6 +17,17 @@ private struct HTTPKey: Hashable {
 /// An `Router` responds to HTTP requests from the client. Specifically, it takes an `Request`
 /// and routes it to a handler that returns an `ResponseConvertible`.
 public final class Router {
+    ///
+    ///
+    ///
+    
+//    // handlers
+//    [
+//    "/": somefunc,
+//    "/post": somefunc,
+//    "/dddd": somefunc,
+//    ]
+    
     /// `Middleware` that will be applied to all requests of this router, regardless of whether they
     /// are able to be handled or not. Global middlewares intercept request in the order of this
     /// array, before any other middleware does.
@@ -48,8 +59,8 @@ public final class Router {
     ///
     /// - Parameter middleware: the middleware which will intercept all requests on this new router.
     /// - Returns: the new router with the middleware.
-    public func middleware<M: Middleware>(_ middleware: M) -> Self {
-        /// need to add my middleware
+    @discardableResult
+    func use<M: Middleware>(_ middleware: M) -> Self {
         var newRouter: Self
         if let first = self.middleware {
             newRouter = Self(middleware: ChainedMiddleware(first: first, second: middleware))
@@ -65,7 +76,8 @@ public final class Router {
     ///
     /// - Parameter path: the string to prepend to the URIs of all the new router's handlers.
     /// - Returns: the newly created `Router`, a child of `self`.
-    public func path(_ path: String) -> Self {
+    @discardableResult
+    func path(_ path: String) -> Self {
         let newRouter = Self(basePath: self.basePath + path, middleware: self.middleware)
         self.children.append(newRouter)
         return newRouter

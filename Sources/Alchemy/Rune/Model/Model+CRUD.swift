@@ -8,7 +8,7 @@ extension Model {
     /// - Returns: an `EventLoopFuture` with an array of this model, loaded from the database.
     public static func all(db: Database = Services.db) -> EventLoopFuture<[Self]> {
         Self.query(database: db)
-            .getAll()
+            .allModels()
     }
     
     /// Throws an error if a query with the specified where clause returns a value. The opposite of
@@ -122,7 +122,7 @@ extension Array where Element: Model {
     /// - Parameter db: the database to insert the models into. Defaults to `Services.db`.
     /// - Returns: a future that contains copies of all models in this array, updated to reflect any
     ///            changes in the model caused by inserting.
-    public func insert(db: Database = Services.db) -> EventLoopFuture<Self> {
+    public func insertAll(db: Database = Services.db) -> EventLoopFuture<Self> {
         catchError {
             Element.query(database: db)
                 .insert(try self.map { try $0.fieldDictionary() })
@@ -136,7 +136,7 @@ extension Array where Element: Model {
     /// - Parameter db: the database to delete from. Defaults to `Services.db`.
     /// - Returns: a future that completes when all models in this array are deleted from the
     ///            database.
-    public func delete(db: Database = Services.db) -> EventLoopFuture<Void> {
+    public func deleteAll(db: Database = Services.db) -> EventLoopFuture<Void> {
         Element.query(database: db)
             .where(key: "id", in: self.compactMap { $0.id })
             .delete()

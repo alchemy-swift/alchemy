@@ -1,3 +1,1 @@
-import Alchemy
-
-ExampleApplication.launch()
+App.launch()

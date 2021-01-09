@@ -1,4 +1,4 @@
-extension Router {
+extension Application {
     /// Groups a set of endpoints by a path. This path is prepended to all endpoints set in the
     /// given closure, but none in the request chain that continues after the `.group`.
     ///
@@ -8,7 +8,7 @@ extension Router {
     /// - Returns: a router to continue building the router chain. This router will NOT prepend the
     ///            path to subsequently defined requests, unlike `Router.path(...)`.
     @discardableResult
-    public func group(path: String, configure: (Router) -> Void) -> Router {
+    public func group(path: String, configure: (Application) -> Void) -> Self {
         configure(self.path(path))
         return self
     }
@@ -24,8 +24,8 @@ extension Router {
     /// - Returns: a router to continue building the handler chain. This router will NOT intercept
     ///            request with the given `middleware`, unlike `Router.middleware(...)`.
     @discardableResult
-    public func group<M: Middleware>(middleware: M, configure: (Router) -> Void) -> Router {
-        configure(self.middleware(middleware))
+    public func group<M: Middleware>(middleware: M, configure: (Application) -> Void) -> Self {
+        configure(self.use(middleware))
         return self
     }
 }

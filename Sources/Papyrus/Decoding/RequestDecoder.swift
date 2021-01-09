@@ -150,11 +150,11 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
         case .body:
             return try unsupported(type)
         case .header:
-            return try self.request.getHeader(for: self.key).unwrap(or: self.nilError())
+            return try self.request.header(for: self.key).unwrap(or: self.nilError())
         case .path:
-            return try self.request.getPathComponent(for: self.key).unwrap(or: self.nilError())
+            return try self.request.pathComponent(for: self.key).unwrap(or: self.nilError())
         case .query:
-            return try self.request.getQuery(for: self.key).unwrap(or: self.nilError())
+            return try self.request.query(for: self.key).unwrap(or: self.nilError())
         }
     }
     
@@ -174,14 +174,14 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
         switch self.parameter {
         case .body:
-            return try self.request.getBody(encoding: .json)
+            return try self.request.decodeBody(encoding: .json)
         case .header:
             return try self.unsupported(type)
         case .path:
             return try self.unsupported(type)
         case .query:
             // Messy. Not sure of another way than manually support each type.
-            let queryString = self.request.getQuery(for: self.key)
+            let queryString = self.request.query(for: self.key)
             if type is String.Type {
                 return try queryString.unwrap(or: self.nilError()) as! T
             } else if type is Optional<String>.Type {

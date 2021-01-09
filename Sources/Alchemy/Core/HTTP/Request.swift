@@ -101,6 +101,7 @@ extension Request {
     ///     }
     ///
     /// ```
+    @discardableResult
     public func set<T>(_ value: T) -> Self {
         self.middlewareData[identifier(of: T.self)] = value
         return self
