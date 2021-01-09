@@ -1,8 +1,23 @@
+/// A trie that stores objects at each node. Supports wildcard path
+/// elements denoted by a ":" at the beginning.
 final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
-    var storage: [StorageKey: StorageObject] = [:]
-    var children: [String: RouterTrieNode] = [:]
-    var wildcardChildren: [String: RouterTrieNode] = [:]
+    /// Storage of the objects at this node.
+    private var storage: [StorageKey: StorageObject] = [:]
+    /// This node's children, mapped by their path for instant lookup.
+    private var children: [String: RouterTrieNode] = [:]
+    /// Any children with wildcards in their path.
+    private var wildcardChildren: [String: RouterTrieNode] = [:]
     
+    /// Search this node & it's children for an object at a path,
+    /// stored with the given key.
+    ///
+    /// - Parameters:
+    ///   - path: The path of the object to search for. If this is
+    ///   empty, it is assumed the object can only be at this node.
+    ///   - storageKey: The key by which the object is stored.
+    /// - Returns: A tuple containing the object and any parsed path
+    ///   parameters. `nil` if the object isn't in this node or its
+    ///   children.
     func search(path: [String], storageKey: StorageKey) -> (StorageObject, [PathParameter])? {
         if let first = path.first {
             let newPath = Array(path.dropFirst())
@@ -25,13 +40,22 @@ final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
         }
     }
     
+    /// Inserts a value at the given path with a storage key.
+    ///
+    /// - Parameters:
+    ///   - path: The path to the node where this value should be
+    ///   stored.
+    ///   - storageKey: The key by which to store the value.
+    ///   - value: The value to store.
     func insert(path: [String], storageKey: StorageKey, value: StorageObject) {
         if let first = path.first {
-            let child = Self()
-            child.insert(path: Array(path.dropFirst()), storageKey: storageKey, value: value)
             if first.hasPrefix(":") {
+                let child = self.wildcardChildren[first] ?? Self()
+                child.insert(path: Array(path.dropFirst()), storageKey: storageKey, value: value)
                 self.wildcardChildren[first] = child
             } else {
+                let child = self.children[first] ?? Self()
+                child.insert(path: Array(path.dropFirst()), storageKey: storageKey, value: value)
                 self.children[first] = child
             }
         } else {
