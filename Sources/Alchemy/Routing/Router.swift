@@ -22,32 +22,17 @@ public final class Router {
     /// `Middleware` that will be applied to all requests of this router, regardless of whether they
     /// are able to be handled or not. Global middlewares intercept request in the order of this
     /// array, before any other middleware does.
-    public var globalMiddlewares: [Middleware] = []
+    var globalMiddlewares: [Middleware] = []
     
     /// Current middleware of this router.
-    private var middlewares: [Middleware] = []
+    var middlewares: [Middleware] = []
     
     /// A trie that holds all the handlers.
-    private let trie = RouteTrieNode<HTTPKey, RouterHandler>()
+    private let trie = RouterTrieNode<HTTPKey, RouterHandler>()
     
     /// Creates a new router.
     init() {}
     
-    /// Returns a new router, a child of this one, that will apply the given middleware to any
-    /// requests handled by it.
-    ///
-    /// - Parameter middleware: the middleware which will intercept all requests on this new router.
-    /// - Returns: the new router with the middleware.
-    @discardableResult
-    func use(_ middleware: Middleware) -> Self {
-        self.middlewares.append(middleware)
-        return self
-    }
-    
-    func popMiddleware() {
-        _ = self.middlewares.popLast()
-    }
-
     /// Adds a handler to this router. A handler takes an `Request` and returns an
     /// `ResponseConvertible`.
     ///

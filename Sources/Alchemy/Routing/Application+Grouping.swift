@@ -11,8 +11,9 @@ extension Application {
     ///            request with the given `middleware`, unlike `Router.middleware(...)`.
     @discardableResult
     public func group<M: Middleware>(middleware: M, configure: (Application) -> Void) -> Self {
-        configure(self.use(middleware))
-        self.popMiddleware()
+        Services.router.middlewares.append(middleware)
+        configure(self)
+        _ = Services.router.middlewares.popLast()
         return self
     }
 }

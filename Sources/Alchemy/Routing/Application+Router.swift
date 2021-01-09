@@ -8,7 +8,7 @@ extension Application {
     /// - Returns: the new router with the middleware.
     @discardableResult
     public func useAll<M: Middleware>(_ middleware: M) -> Self {
-        Services.router.use(middleware)
+        Services.router.globalMiddlewares.append(middleware)
         return self
     }
     
@@ -19,11 +19,7 @@ extension Application {
     /// - Returns: the new router with the middleware.
     @discardableResult
     public func use<M: Middleware>(_ middleware: M) -> Self {
-        Services.router.use(middleware)
+        Services.router.middlewares.append(middleware)
         return self
-    }
-    
-    func popMiddleware() {
-        Services.router.popMiddleware()
     }
 }

@@ -1,7 +1,7 @@
-final class RouteTrieNode<StorageKey: Hashable, StorageObject> {
+final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
     var storage: [StorageKey: StorageObject] = [:]
-    var children: [String: RouteTrieNode] = [:]
-    var wildcardChildren: [String: RouteTrieNode] = [:]
+    var children: [String: RouterTrieNode] = [:]
+    var wildcardChildren: [String: RouterTrieNode] = [:]
     
     func search(path: [String], storageKey: StorageKey) -> (StorageObject, [PathParameter])? {
         if let first = path.first {
