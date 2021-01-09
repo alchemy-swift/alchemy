@@ -12,8 +12,8 @@ struct AuthController: Controller {
         let password: String
     }
     
-    func route(_ router: Router) {
-        router
+    func route(_ app: Application) {
+        app
             .on(.POST, at: "/signup") { req -> EventLoopFuture<User> in
                 let dto: SignupDTO = try req.decodeBody()
                 return User.ensureNotExists("email" == dto.email, else: HTTPError(.conflict))

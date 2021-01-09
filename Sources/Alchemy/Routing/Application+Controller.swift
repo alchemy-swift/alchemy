@@ -4,7 +4,7 @@ public protocol Controller {
     /// Add this controller's handlers to a router.
     ///
     /// - Parameter router: The Router on which to add handlers.
-    func route(_ router: Application)
+    func route(_ app: Application)
 }
 
 extension Application {

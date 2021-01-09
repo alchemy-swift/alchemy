@@ -38,24 +38,23 @@ struct App: Application {
     }
     
     private func route() {
-        // Adds Middleware to be applied to all requests.
-        Services.router.globalMiddlewares = [
+        self
             // Services static files from the "Public/" directory
-            StaticFileMiddleware(),
+            .useAll(StaticFileMiddleware())
+            
             // Handles CORS preflights and headers
-            CORSMiddleware()
-        ]
-        
-        Services.router
+            .useAll(CORSMiddleware())
+            
             // A simple api
-            .on(.GET, at: "/hello") { _ in
+            .get("/hello") { _ in
                 "Hello, World!"
             }
+            
             // A simple web page
-            .on(.GET) { (request: Request) -> HomeView in
+            .get {
                 HomeView(
                     greetings: ["Bonjour!", "¡Hola!", "Hallo!"],
-                    name: request.query(for: "name")
+                    name: $0.query(for: "name")
                 )
             }
             

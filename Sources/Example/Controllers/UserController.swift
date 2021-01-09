@@ -1,8 +1,8 @@
 import Alchemy
 
 struct UsersController: Controller {
-    func route(_ router: Router) {
-        router
+    func route(_ app: Application) {
+        app
             // Get the current user
             .on(.GET, at: "/user") {
                 try $0.get(User.self)

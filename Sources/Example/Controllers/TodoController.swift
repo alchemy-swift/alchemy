@@ -6,8 +6,8 @@ struct TodoController: Controller {
         let tagIDs: [Int]
     }
     
-    func route(_ router: Router) {
-        router
+    func route(_ app: Application) {
+        app
             // Get all todos
             .on(.GET, at: "/todos") { req -> EventLoopFuture<[Todo]> in
                 let userID = try req.get(User.self).id
