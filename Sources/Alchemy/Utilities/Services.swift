@@ -159,4 +159,13 @@ extension Services {
         try Services.threadPool.syncShutdownGracefully()
         try Services.eventLoopGroup.syncShutdownGracefully()
     }
+    
+    /// Mocks many common services. Should be called in the `setUp()`
+    /// function of test cases.
+    public static func mock() {
+        Container.global = Container()
+        Container.global.register(singleton: Router.self) { _ in Router() }
+        Container.global.register(EventLoop.self) { _ in EmbeddedEventLoop() }
+        Container.global.register(singleton: EventLoopGroup.self) { _ in MultiThreadedEventLoopGroup(numberOfThreads: 1) }
+    }
 }

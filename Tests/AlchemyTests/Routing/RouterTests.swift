@@ -7,22 +7,20 @@ let kMinTimeout: TimeInterval = 0.01
 
 final class RouterTests: XCTestCase {
     private var app = TestApp()
-    private var loop = EmbeddedEventLoop()
 
     override func setUp() {
         super.setUp()
-        Container.global = Container()
-        Container.global.register(singleton: Router.self) { _ in Router() }
-        Container.global.register(EventLoop.self) { _ in EmbeddedEventLoop() }
+        Services.mock()
         self.app = TestApp()
-        self.loop = EmbeddedEventLoop()
     }
-
+    
     func testMatch() throws {
-        self.app.register(.getEmpty)
+        self.app.get { _ in "Hello, world!" }
+        self.app.post { _ in 1 }
         self.app.register(.get1)
         self.app.register(.post1)
-        XCTAssertEqual(try self.app.request(.getEmpty), TestRequest.getEmpty.response)
+        XCTAssertEqual(try self.app.request(TestRequest(method: .GET, path: "", response: "")), "Hello, world!")
+        XCTAssertEqual(try self.app.request(TestRequest(method: .POST, path: "", response: "")), "1")
         XCTAssertEqual(try self.app.request(.get1), TestRequest.get1.response)
         XCTAssertEqual(try self.app.request(.post1), TestRequest.post1.response)
     }
