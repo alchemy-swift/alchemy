@@ -108,16 +108,15 @@ public struct FrequencyTyped<T: TimeUnit>: Frequency {
     
     public func timeUntilNext() -> TimeAmount {
         let now = Date()
-        let calendar = Calendar.current
         let components = DateComponents(
-            calendar: calendar,
             hour: self.startHr,
             minute: self.startMin,
             second: self.startSec,
             weekday: self.startDay?.rawValue
         )
-        let nextTime = calendar
-            .nextDate(after: now, matching: components, matchingPolicy: .nextTime)!
+        
+        let nextTime = Calendar.current
+            .nextDate(after: now, matching: components, matchingPolicy: .nextTime) ?? Date()
         let interval = Int64(nextTime.timeIntervalSince(now) * 1000)
         return .milliseconds(interval)
     }

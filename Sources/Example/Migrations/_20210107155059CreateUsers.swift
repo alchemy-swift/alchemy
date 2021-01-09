@@ -3,6 +3,7 @@ import Alchemy
 // Add / drop tables for `User` and `UserToken` models.
 struct _20210107155059CreateUsers: Migration {
     func up(schema: Schema) {
+        // Create a table backing `User`.
         schema.create(table: "users") {
             $0.int("id").primary()
             $0.string("name").notNull()
@@ -10,6 +11,7 @@ struct _20210107155059CreateUsers: Migration {
             $0.string("hashed_password").notNull()
         }
         
+        // Create a table backing `UserToken`.
         schema.create(table: "user_tokens") {
             $0.int("id").primary()
             $0.string("value").notNull()

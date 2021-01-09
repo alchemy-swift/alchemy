@@ -3,6 +3,7 @@ import Alchemy
 // Add / drop tables for `Todo`, `Tag`, and `TodoTag` models.
 struct _20210107155107CreateTodos: Migration {
     func up(schema: Schema) {
+        // Create a table backing `Todo`.
         schema.create(table: "todos") {
             $0.int("id").primary()
             $0.string("name").notNull()
@@ -10,6 +11,7 @@ struct _20210107155107CreateTodos: Migration {
             $0.int("user_id").references("id", on: "users").notNull()
         }
         
+        // Create a table backing `Tag`.
         schema.create(table: "tags") {
             $0.int("id").primary()
             $0.string("name").notNull()
@@ -17,6 +19,7 @@ struct _20210107155107CreateTodos: Migration {
             $0.int("user_id").references("id", on: "users").notNull()
         }
         
+        // Create a table backing `TodoTag`.
         schema.create(table: "todo_tags") {
             $0.int("id").primary()
             $0.int("todo_id").references("id", on: "todos").notNull()
