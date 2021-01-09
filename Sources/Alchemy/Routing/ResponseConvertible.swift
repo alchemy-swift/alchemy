@@ -42,6 +42,6 @@ extension String: ResponseConvertible {
     // MARK: ResponseConvertible
     
     public func convert() throws -> EventLoopFuture<Response> {
-        .new(Response(status: .ok, body: HTTPBody(text: self)))
+        return .new(Response(status: .ok, body: HTTPBody(text: self)))
     }
 }

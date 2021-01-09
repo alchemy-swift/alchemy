@@ -24,7 +24,7 @@ public final class Router {
     var middlewares: [Middleware] = []
     
     /// A trie that holds all the handlers.
-    private let trie = RouterTrieNode<HTTPKey, RouterHandler>()
+    private let trie = RouterTrieNode<HTTPMethod, RouterHandler>()
     
     /// Creates a new router.
     init() {}
@@ -42,16 +42,17 @@ public final class Router {
         for method: HTTPMethod,
         path: String
     ) {
-        let key = HTTPKey(method: method, path: path)
         let splitPath = path.split(separator: "/").map(String.init)
-        self.trie.insert(path: splitPath, storageKey: key) {
+        let middlewareClosures = self.middlewares.reversed().map(Middleware.intercept)
+        self.trie.insert(path: splitPath, storageKey: method) {
             var next = { request in
                 catchError { try handler(request).convert() }
             }
             
-            for middleware in self.middlewares.reversed() {
+            for middleware in middlewareClosures {
+                let oldNext = next
                 next = { request in
-                    catchError { try middleware.intercept(request, next: next) }
+                    catchError { try middleware(request, oldNext) }
                 }
             }
             
@@ -69,9 +70,8 @@ public final class Router {
     /// - Returns: A future containing the response of a handler or a
     /// `.notFound` response if there was not a matching handler.
     func handle(request: Request) throws -> EventLoopFuture<Response> {
-        let key = HTTPKey(method: request.method, path: request.path)
         let splitPath = request.path.split(separator: "/").map(String.init)
-        guard let hit = self.trie.search(path: splitPath, storageKey: key) else {
+        guard let hit = self.trie.search(path: splitPath, storageKey: request.method) else {
             return try HTTPError(.notFound).convert()
         }
         
@@ -79,14 +79,6 @@ public final class Router {
         
         return try hit.0(request)
     }
-}
-
-/// A key used for storing handlers in a dictionary for quick lookup.
-private struct HTTPKey: Hashable {
-    /// The method of the request.
-    let method: HTTPMethod
-    /// The path of the request, relative to the host.
-    let path: String
 }
 
 extension HTTPMethod: Hashable {

@@ -29,8 +29,7 @@ final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
                         continue
                     }
                     
-                    val.1.append(PathParameter(parameter: wildcard, stringValue: first))
-                    
+                    val.1.insert(PathParameter(parameter: wildcard, stringValue: first), at: 0)
                     return val
                 }
                 return nil
@@ -50,9 +49,10 @@ final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
     func insert(path: [String], storageKey: StorageKey, value: StorageObject) {
         if let first = path.first {
             if first.hasPrefix(":") {
-                let child = self.wildcardChildren[first] ?? Self()
+                let firstWithoutEscape = String(first.dropFirst())
+                let child = self.wildcardChildren[firstWithoutEscape] ?? Self()
                 child.insert(path: Array(path.dropFirst()), storageKey: storageKey, value: value)
-                self.wildcardChildren[first] = child
+                self.wildcardChildren[firstWithoutEscape] = child
             } else {
                 let child = self.children[first] ?? Self()
                 child.insert(path: Array(path.dropFirst()), storageKey: storageKey, value: value)
