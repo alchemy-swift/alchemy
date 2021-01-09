@@ -8,51 +8,30 @@ fileprivate let kRouterPathParameterEscape = ":"
 
 /// This key is used for storing handlers in a dictionary for quick lookup.
 private struct HTTPKey: Hashable {
-    /// The path of the request, relative to the host.
-    let fullPath: String
     /// The method of the request.
     let method: HTTPMethod
+    /// The path of the request, relative to the host.
+    let path: String
 }
 
 /// An `Router` responds to HTTP requests from the client. Specifically, it takes an `Request`
 /// and routes it to a handler that returns an `ResponseConvertible`.
 public final class Router {
-    ///
-    ///
-    ///
-    
-//    // handlers
-//    [
-//    "/": somefunc,
-//    "/post": somefunc,
-//    "/dddd": somefunc,
-//    ]
+    private typealias RouterHandler = (Request) throws -> EventLoopFuture<Response>
     
     /// `Middleware` that will be applied to all requests of this router, regardless of whether they
     /// are able to be handled or not. Global middlewares intercept request in the order of this
     /// array, before any other middleware does.
     public var globalMiddlewares: [Middleware] = []
     
-    /// The path of this router, used for storing the path when the user calls `.path(...)`.
-    private let basePath: String
-    /// A middleware to apply to any requests before passing it to a handler.
-    private let middleware: Middleware?
-    /// Child routers. Ordered in the order that they should respond to a request.
-    private var children: [Router] = []
-    /// Handlers to route requests to.
-    private var handlers: [HTTPKey: (Request) throws -> ResponseConvertible] = [:]
+    /// Current middleware of this router.
+    private var middlewares: [Middleware] = []
     
-    /// Creates a new router with an optional base path.
-    ///
-    /// - Parameters:
-    ///   - basePath: any string that should be prepended to all handler URIs added to this router.
-    ///               Defaults to nil.
-    ///   - middleware: any middleware that should be run on a request routed by this router before
-    ///                 handling. Defaults to `nil`.
-    init(basePath: String? = nil, middleware: Middleware? = nil) {
-        self.basePath = basePath ?? ""
-        self.middleware = middleware
-    }
+    /// A trie that holds all the handlers.
+    private let trie = RouteTrieNode<HTTPKey, RouterHandler>()
+    
+    /// Creates a new router.
+    init() {}
     
     /// Returns a new router, a child of this one, that will apply the given middleware to any
     /// requests handled by it.
@@ -60,29 +39,15 @@ public final class Router {
     /// - Parameter middleware: the middleware which will intercept all requests on this new router.
     /// - Returns: the new router with the middleware.
     @discardableResult
-    func use<M: Middleware>(_ middleware: M) -> Self {
-        var newRouter: Self
-        if let first = self.middleware {
-            newRouter = Self(middleware: ChainedMiddleware(first: first, second: middleware))
-        } else {
-            newRouter = Self(middleware: middleware)
-        }
-        self.children.append(newRouter)
-        return newRouter
-    }
-
-    /// Returns a new router, a child of this one, that will prepend the given string to the URIs of
-    /// all it's handlers.
-    ///
-    /// - Parameter path: the string to prepend to the URIs of all the new router's handlers.
-    /// - Returns: the newly created `Router`, a child of `self`.
-    @discardableResult
-    func path(_ path: String) -> Self {
-        let newRouter = Self(basePath: self.basePath + path, middleware: self.middleware)
-        self.children.append(newRouter)
-        return newRouter
+    func use(_ middleware: Middleware) -> Self {
+        self.middlewares.append(middleware)
+        return self
     }
     
+    func popMiddleware() {
+        _ = self.middlewares.popLast()
+    }
+
     /// Adds a handler to this router. A handler takes an `Request` and returns an
     /// `ResponseConvertible`.
     ///
@@ -95,7 +60,21 @@ public final class Router {
         for method: HTTPMethod,
         path: String
     ) {
-        self.handlers[HTTPKey(fullPath: self.basePath + path, method: method)] = handler
+        let key = HTTPKey(method: method, path: path)
+        let splitPath = path.split(separator: "/").map(String.init)
+        self.trie.insert(path: splitPath, storageKey: key) {
+            var next: (Request) -> EventLoopFuture<Response> = { request in
+                catchError { try handler(request).convert() }
+            }
+            
+            for middleware in self.middlewares.reversed() {
+                next = { request in
+                    catchError { try middleware.intercept(request, next: next) }
+                }
+            }
+            
+            return next($0)
+        }
     }
     
     /// Handles a request. If the request has any dynamic path parameters in its URI,
@@ -107,49 +86,15 @@ public final class Router {
     /// - Returns: A future containing the response of a handler or a `.notFound` response if there
     ///            was not a matching handler.
     func handle(request: Request) throws -> EventLoopFuture<Response> {
-        guard let handlerFuture = try self.handleIfAble(request: request) else {
-            throw HTTPError(.notFound)
+        let key = HTTPKey(method: request.method, path: request.path)
+        let splitPath = request.path.split(separator: "/").map(String.init)
+        guard let hit = self.trie.search(path: splitPath, storageKey: key) else {
+            return try HTTPError(.notFound).convert()
         }
         
-        return handlerFuture
-    }
-    
-    /// Handles a request if either this router or any of it's children are able to.
-    ///
-    /// - Parameter request: The request to handle.
-    /// - Throws: If there is an error handling the request.
-    /// - Returns: A future with the response of the handler or nil if neither this router nor its
-    ///            children are able to handle the request.
-    private func handleIfAble(request: Request) throws -> EventLoopFuture<Response>? {
-        for (key, value) in self.handlers {
-            guard request.method == key.method else {
-                continue
-            }
-            
-            let (isMatch, parameters) = request.path
-                .matchAndParseParameters(routablePath: key.fullPath)
-            guard isMatch else {
-                continue
-            }
-            
-            request.pathParameters = parameters
-            
-            if let mw = self.middleware {
-                return try mw.intercept(request) { request in
-                    catchError { try value(request).convert() }
-                }
-            } else {
-                return try value(request).convert()
-            }
-        }
+        request.pathParameters = hit.1
         
-        for child in self.children {
-            if let response = try child.handleIfAble(request: request) {
-                return response
-            }
-        }
-        
-        return nil
+        return try hit.0(request)
     }
 }
 
