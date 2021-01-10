@@ -96,7 +96,7 @@ public final class BelongsToRelationship<
         let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
         let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
         return nestedQuery(initialQuery)
-            .getAll()
+            .allModels()
             .flatMapThrowing { parents in
                 var updatedResults = [Child]()
                 let dict = Dictionary(grouping: parents, by: { $0.id! })

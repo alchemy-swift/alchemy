@@ -36,7 +36,7 @@ public class ModelQuery<M: Model>: Query {
     /// Gets all models matching this query from the database.
     ///
     /// - Returns: a future containing all models matching this query.
-    public func getAll() -> EventLoopFuture<[M]> {
+    public func allModels() -> EventLoopFuture<[M]> {
         self.get(["\(M.tableName).*"])
             .flatMapThrowing { try $0.map { try $0.decode(M.self) } }
             .flatMap { self.evaluateEagerLoads(for: $0) }
@@ -46,7 +46,7 @@ public class ModelQuery<M: Model>: Query {
     ///
     /// - Returns: a future containing the first model matching this query or nil if this query has
     ///            no results.
-    public func getFirst() -> EventLoopFuture<M?> {
+    public func firstModel() -> EventLoopFuture<M?> {
         self.first(["\(M.tableName).*"])
             .flatMapThrowing { try $0?.decode(M.self) }
             .flatMap { result -> EventLoopFuture<M?> in
@@ -66,7 +66,7 @@ public class ModelQuery<M: Model>: Query {
     /// - Returns: a future containing the unwrapped first result of this query, or the supplied
     ///            error if no result was found.
     public func unwrapFirst(or error: Error = RuneError.notFound) -> EventLoopFuture<M> {
-        self.getFirst()
+        self.firstModel()
             .flatMapThrowing { try $0.unwrap(or: error) }
     }
     

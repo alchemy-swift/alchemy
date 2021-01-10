@@ -80,9 +80,16 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
             return T.query()
                 .where(T.valueKeyString == bearerAuth.token)
                 .with(T.userKey)
-                .getFirst()
+                .firstModel()
                 .flatMapThrowing { try $0.unwrap(or: HTTPError(.unauthorized)) }
-                .flatMap { next(request.set($0[keyPath: T.userKey].wrappedValue)) }
+                .flatMap {
+                    request
+                        // Set the token
+                        .set($0)
+                        // Set the user
+                        .set($0[keyPath: T.userKey].wrappedValue)
+                    return next(request)
+                }
         }
     }
 }

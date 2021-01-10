@@ -5,19 +5,19 @@ public protocol DecodableRequest {
     ///
     /// - Parameter key: the key of the header.
     /// - Returns: the value of the header for the given key, if it exists.
-    func getHeader(for key: String) -> String?
+    func header(for key: String) -> String?
     
     /// Get a url query value for a given key.
     ///
     /// - Parameter key: the key of the query.
     /// - Returns: the value of the query for the given key, if it exists.
-    func getQuery(for key: String) -> String?
+    func query(for key: String) -> String?
     
     /// Get a path component for a given key.
     ///
     /// - Parameter key: the key of the path component.
     /// - Returns: the value of the path component for the given key, if it exists.
-    func getPathComponent(for key: String) -> String?
+    func pathComponent(for key: String) -> String?
     
     /// Decode the body of a request as JSON.
     ///
@@ -26,5 +26,5 @@ public protocol DecodableRequest {
     ///
     /// - Throws: any error thrown in decoding the request body to `T`.
     /// - Returns: an instance of `T`, decoded from this requests body.
-    func getBody<T: Decodable>(encoding: BodyEncoding) throws -> T
+    func decodeBody<T: Decodable>(encoding: BodyEncoding) throws -> T
 }

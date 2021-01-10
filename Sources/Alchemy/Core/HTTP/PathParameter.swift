@@ -11,7 +11,8 @@ public struct PathParameter: Equatable {
         init(_ message: String) { self.message = message }
     }
     
-    /// The escaped parameter that was matched. Something like `:user_id`
+    /// The escaped parameter that was matched, _without_ the colon.
+    /// Something like `user_id` if `:user_id` was in the path.
     public let parameter: String
     /// The actual string value of the parameter.
     public let stringValue: String

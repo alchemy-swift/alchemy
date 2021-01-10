@@ -2,7 +2,7 @@ import Foundation
 import Papyrus
 import NIO
 
-public extension Router {
+public extension Application {
     /// Registers a `Papyrus.Endpoint` to a `Router`. When an incoming request matches the path of
     /// the `Endpoint`, the `Endpoint.Request` will automatically be decoded from the incoming
     /// `HTTPRequest` for use in the provided handler.
@@ -13,7 +13,7 @@ public extension Router {
     ///              This handler expects a future containing an instance of the endpoint's response
     ///              type.
     /// - Returns: `self`, for chaining more requests.
-    func register<Req, Res>(
+    func on<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
         use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
     ) -> Self where Req: Decodable, Res: ResponseConvertible {
@@ -30,11 +30,11 @@ public extension Router {
     ///              This handler expects a future containing an instance of the endpoint's response
     ///              type.
     /// - Returns: `self`, for chaining more requests.
-    func register<Res>(
+    func on<Res>(
         _ endpoint: Endpoint<Empty, Res>,
-        use closure: @escaping (Request) throws -> EventLoopFuture<Res>
+        handler: @escaping (Request) throws -> EventLoopFuture<Res>
     ) -> Self where Res: ResponseConvertible {
-        self.on(endpoint.method.nio, at: endpoint.path, do: closure)
+        self.on(endpoint.method.nio, at: endpoint.path, handler: handler)
     }
     
     /// Registers a `Papyrus.Endpoint` that has an `Empty` response type, to a `Router`. When an
@@ -45,12 +45,12 @@ public extension Router {
     ///   - endpoint: the endpoint to register on this router.
     ///   - closure: the handler for handling incoming requests that match this endpoint's path.
     /// - Returns: `self`, for chaining more requests.
-    func register<Req>(
+    func on<Req>(
         _ endpoint: Endpoint<Req, Empty>,
-        use closure: @escaping (Request, Req) throws -> EventLoopFuture<Void>
+        handler: @escaping (Request, Req) throws -> EventLoopFuture<Void>
     ) -> Self where Req: Decodable {
         self.on(endpoint.method.nio, at: endpoint.path) {
-            try closure($0, try Req(from: $0))
+            try handler($0, try Req(from: $0))
                 .map { Empty.value }
         }
     }
@@ -69,23 +69,23 @@ extension PapyrusValidationError: ResponseConvertible {
 extension Request: DecodableRequest {
     // MARK: DecodableRequest
     
-    public func getHeader(for key: String) -> String? {
+    public func header(for key: String) -> String? {
         self.headers.first(name: key)
     }
     
-    public func getQuery(for key: String) -> String? {
+    public func query(for key: String) -> String? {
         self.queryItems
             .filter ({ $0.name == key })
             .first?
             .value
     }
     
-    public func getPathComponent(for key: String) -> String? {
+    public func pathComponent(for key: String) -> String? {
         self.pathParameters.first(where: { $0.parameter == key })?
             .stringValue
     }
     
-    public func getBody<T>(encoding: BodyEncoding) throws -> T where T: Decodable {
+    public func decodeBody<T>(encoding: BodyEncoding = .json) throws -> T where T: Decodable {
         let body = try self.body.unwrap(or: PapyrusValidationError("Expecting a request body."))
         do {
             return try body.decodeJSON(as: T.self)

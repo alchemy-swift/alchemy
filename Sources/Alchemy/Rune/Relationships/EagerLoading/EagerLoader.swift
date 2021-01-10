@@ -32,7 +32,7 @@ struct EagerLoader<From: Model, To: ModelMaybeOptional> {
             let initialQuery = To.Value.query()
                 .where(key: keyString, in: idsToSearch)
             return (nestedQuery?(initialQuery) ?? initialQuery)
-                .getAll()
+                .allModels()
                 .flatMapThrowing { Dictionary(grouping: $0, by: { $0[keyPath: key].id! }) }
         }
     }
