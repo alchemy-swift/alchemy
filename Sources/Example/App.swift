@@ -3,21 +3,45 @@ import Alchemy
 struct App: Application {
     // The entrypoint of your application. Configure everything here.
     func setup() {
-        // Setup jobs
-        self.jobs()
+        // Setup routes
+        self.routes()
         // Setup database & migrations
         self.database()
-        // Setup routes
-        self.route()
+        // Setup jobs
+        self.jobs()
     }
     
-    private func jobs() {
-        // Scheduler schedules recurring jobs.
-        Services.scheduler
-            // `SampleJob` will run every 2 hours, starting on boot.
-            .every(2.hours, run: SampleJob())
-            // `OtherJob` will run every day at 18:00 (6 pm).
-            .every(1.days.at(hr: 18), run: OtherJob())
+    private func routes() {
+        self
+            // Services static files from the "Public/" directory
+            .useAll(StaticFileMiddleware())
+            
+            // Handles CORS preflights and headers
+            .useAll(CORSMiddleware())
+            
+            // A simple api
+            .get("/hello") { _ in
+                "Hello, World!"
+            }
+            
+            // A simple web page
+            .get {
+                HomeView(
+                    greetings: ["Bonjour!", "Hola!", "Hallo!"],
+                    name: $0.query(for: "name")
+                )
+            }
+            
+            // Controllers are abstractions around groups of routes.
+            //
+            // This function adds all routes added in the
+            // `AuthController.route`.
+            .controller(AuthController())
+            
+            // Protect subsequent routes in the chain behind token auth
+            .use(UserToken.tokenAuthMiddleware())
+            .controller(UsersController())
+            .controller(TodoController())
     }
     
     private func database() {
@@ -52,36 +76,12 @@ struct App: Application {
         ]
     }
     
-    private func route() {
-        self
-            // Services static files from the "Public/" directory
-            .useAll(StaticFileMiddleware())
-            
-            // Handles CORS preflights and headers
-            .useAll(CORSMiddleware())
-            
-            // A simple api
-            .get("/hello") { _ in
-                "Hello, World!"
-            }
-            
-            // A simple web page
-            .get {
-                HomeView(
-                    greetings: ["Bonjour!", "Hola!", "Hallo!"],
-                    name: $0.query(for: "name")
-                )
-            }
-            
-            // Controllers are abstractions around groups of routes.
-            //
-            // This function adds all routes added in the
-            // `AuthController.route`.
-            .controller(AuthController())
-            
-            // Protect subsequent routes in the chain behind token auth
-            .use(UserToken.tokenAuthMiddleware())
-            .controller(UsersController())
-            .controller(TodoController())
+    private func jobs() {
+        // Scheduler schedules recurring jobs.
+        Services.scheduler
+            // `SampleJob` will run every 2 hours, starting on boot.
+            .every(2.hours, run: SampleJob())
+            // `OtherJob` will run every day at 18:00 (6 pm).
+            .every(1.days.at(hr: 18), run: OtherJob())
     }
 }

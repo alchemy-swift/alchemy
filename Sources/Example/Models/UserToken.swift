@@ -13,8 +13,8 @@ struct UserToken: Model, TokenAuthable {
     static var userKey: KeyPath<UserToken, BelongsTo<User>> = \.$user
     
     var id: Int?
-    var value: String
-    var createdAt: Date
+    var value: String = UUID().uuidString
+    var createdAt: Date = Date()
 
     @BelongsTo
     var user: User

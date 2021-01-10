@@ -1,1 +1,1 @@
-console.log('Hello from js/home.hs!');
+console.log('Hello from js/home.js!');
