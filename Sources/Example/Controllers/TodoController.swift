@@ -2,7 +2,7 @@ import Alchemy
 
 struct TodoController: Controller {
     /// A DTO representing the data needed to create a `Todo`.
-    private struct TodoDTO: Codable {
+    private struct TodoCreateDTO: Codable {
         let name: String
         let tagIDs: [Int]
     }
@@ -25,7 +25,7 @@ struct TodoController: Controller {
             // Create a todo, with tags
             .post("/todo") { req -> EventLoopFuture<Todo> in
                 let user = try req.get(User.self)
-                let dto: TodoDTO = try req.decodeBody()
+                let dto: TodoCreateDTO = try req.decodeBody()
                 // Create a new `Todo`...
                 return Todo(name: dto.name, isComplete: false, user: .init(user))
                     // Save it...
