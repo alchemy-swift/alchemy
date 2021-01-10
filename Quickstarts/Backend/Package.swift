@@ -4,26 +4,21 @@
 import PackageDescription
 
 let package = Package(
-    name: "Server",
+    name: "Backend",
     platforms: [
         .macOS(.v10_15)
     ],
     products: [
-        .library(name: "Server", targets: ["Server"]),
+        .library(name: "Backend", targets: ["Backend"]),
     ],
     dependencies: [
         .package(url: "https://github.com/joshuawright11/alchemy", .branch("main")),
     ],
     targets: [
         .target(
-            name: "Server",
+            name: "Backend",
             dependencies: [
                 .product(name: "Alchemy", package: "alchemy"),
-            ]),
-        .testTarget(
-            name: "ServerTests",
-            dependencies: [
-                "Server"
             ]),
     ]
 )
