@@ -1,3 +1,4 @@
+<p align="center"><img src="https://user-images.githubusercontent.com/6025554/104148840-ae4ef580-5388-11eb-8bb6-b62a096c1df4.png" width="500"></a></p>
 <p align="center">
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/joshuawright11/alchemy/releases"><img src="https://img.shields.io/github/release/joshuawright11/alchemy.svg" alt="Latest Release"></a>
