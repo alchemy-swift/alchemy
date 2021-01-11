@@ -13,10 +13,11 @@ public extension Application {
     ///              This handler expects a future containing an instance of the endpoint's response
     ///              type.
     /// - Returns: `self`, for chaining more requests.
+    @discardableResult
     func on<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
         use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
-    ) -> Self where Req: Decodable, Res: ResponseConvertible {
+    ) -> Self {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
         }
@@ -30,10 +31,11 @@ public extension Application {
     ///              This handler expects a future containing an instance of the endpoint's response
     ///              type.
     /// - Returns: `self`, for chaining more requests.
+    @discardableResult
     func on<Res>(
         _ endpoint: Endpoint<Empty, Res>,
         handler: @escaping (Request) throws -> EventLoopFuture<Res>
-    ) -> Self where Res: ResponseConvertible {
+    ) -> Self {
         self.on(endpoint.method.nio, at: endpoint.path, handler: handler)
     }
     
@@ -48,7 +50,7 @@ public extension Application {
     func on<Req>(
         _ endpoint: Endpoint<Req, Empty>,
         handler: @escaping (Request, Req) throws -> EventLoopFuture<Void>
-    ) -> Self where Req: Decodable {
+    ) -> Self {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try handler($0, try Req(from: $0))
                 .map { Empty.value }

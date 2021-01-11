@@ -343,13 +343,3 @@ private struct VoidResponse: ResponseConvertible {
         .new(Response(status: .ok, body: nil))
     }
 }
-// Sadly `Swift` doesn't allow a protocol to conform to another protocol in extensions, but we can
-// at least add the implementation here (and a special case router `.on` specifically for
-// `Encodable`) types.
-extension Encodable {
-    // MARK: ResponseConvertible
-    
-    public func encode() throws -> EventLoopFuture<Response> {
-        .new(Response(status: .ok, body: try HTTPBody(json: self)))
-    }
-}
