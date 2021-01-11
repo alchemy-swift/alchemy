@@ -22,7 +22,7 @@
 		0300F7A12582A74F003A1238 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0300F7A32582A74F003A1238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0335BE492582ABF1007E3800 /* Shared */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Shared; sourceTree = "<group>"; };
-		0335BE4A2582AC02007E3800 /* Server */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Server; sourceTree = "<group>"; };
+		0335BE4A2582AC02007E3800 /* Backend */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Backend; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,7 +41,7 @@
 			isa = PBXGroup;
 			children = (
 				0300F7992582A74E003A1238 /* iOS */,
-				0335BE4A2582AC02007E3800 /* Server */,
+				0335BE4A2582AC02007E3800 /* Backend */,
 				0335BE492582ABF1007E3800 /* Shared */,
 				0300F7982582A74E003A1238 /* Products */,
 				036E775E2582ACFD00B39231 /* Frameworks */,

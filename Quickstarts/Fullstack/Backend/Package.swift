@@ -4,28 +4,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "Server",
+    name: "Backend",
     platforms: [
         .macOS(.v10_15)
     ],
     products: [
-        .library(name: "Server", targets: ["Server"]),
+        .library(name: "Backend", targets: ["Backend"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/joshuawright11/alchemy", .branch("master")),
-        .package(path: "../Shared"),
+        .package(url: "https://github.com/joshuawright11/alchemy", .branch("main")),
+        .package(path: "Shared"),
     ],
     targets: [
         .target(
-            name: "Server",
+            name: "Backend",
             dependencies: [
                 .product(name: "Alchemy", package: "alchemy"),
-                "Shared",
-            ]),
-        .testTarget(
-            name: "ServerTests",
-            dependencies: [
-                "Server"
+                .product(name: "Shared", package: "Shared"),
             ]),
     ]
 )
