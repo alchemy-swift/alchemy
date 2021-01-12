@@ -17,7 +17,7 @@ public extension Application {
     func on<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
         use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
-    ) -> Self {
+    ) -> Self where Res: Codable {
         self.on(endpoint.method.nio, at: endpoint.path) {
             try closure($0, try Req(from: $0))
         }
