@@ -41,7 +41,7 @@ extension UserAPI {
     // MARK: - UserAPI DTOs
     
     /// A user.
-    public struct UserDTO: Codable {
+    public struct UserDTO: Codable, Identifiable {
         public let id: Int
         public let name: String
         public let email: String
@@ -54,7 +54,7 @@ extension UserAPI {
     }
     
     /// A tag.
-    public struct TagDTO: Codable {
+    public struct TagDTO: Codable, Identifiable {
         public enum Color: Int, Codable {
             case red, green, blue, orange, purple
         }

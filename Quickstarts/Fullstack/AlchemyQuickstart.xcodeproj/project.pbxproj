@@ -8,21 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		0300F79B2582A74E003A1238 /* QuickstartApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0300F79A2582A74E003A1238 /* QuickstartApp.swift */; };
-		0300F79D2582A74E003A1238 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0300F79C2582A74E003A1238 /* ContentView.swift */; };
 		0300F79F2582A74F003A1238 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0300F79E2582A74F003A1238 /* Assets.xcassets */; };
 		0300F7A22582A74F003A1238 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0300F7A12582A74F003A1238 /* Preview Assets.xcassets */; };
 		036E77602582ACFD00B39231 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 036E775F2582ACFD00B39231 /* Shared */; };
+		03888DE125AD2DBC00E3E4B7 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03888DE025AD2DBC00E3E4B7 /* AuthView.swift */; };
+		03888DE525AD2DD300E3E4B7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03888DE425AD2DD300E3E4B7 /* HomeView.swift */; };
+		03ABEF5525AD2ED7009D00B2 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ABEF5425AD2ED7009D00B2 /* Storage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0300F7972582A74E003A1238 /* iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0300F79A2582A74E003A1238 /* QuickstartApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickstartApp.swift; sourceTree = "<group>"; };
-		0300F79C2582A74E003A1238 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0300F79E2582A74F003A1238 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0300F7A12582A74F003A1238 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0300F7A32582A74F003A1238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0335BE492582ABF1007E3800 /* Shared */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Shared; sourceTree = "<group>"; };
 		0335BE4A2582AC02007E3800 /* Backend */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Backend; sourceTree = "<group>"; };
+		03888DE025AD2DBC00E3E4B7 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		03888DE425AD2DD300E3E4B7 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		03ABEF5425AD2ED7009D00B2 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,7 +64,9 @@
 			isa = PBXGroup;
 			children = (
 				0300F79A2582A74E003A1238 /* QuickstartApp.swift */,
-				0300F79C2582A74E003A1238 /* ContentView.swift */,
+				03888DE025AD2DBC00E3E4B7 /* AuthView.swift */,
+				03888DE425AD2DD300E3E4B7 /* HomeView.swift */,
+				03ABEF5425AD2ED7009D00B2 /* Storage.swift */,
 				0300F79E2582A74F003A1238 /* Assets.xcassets */,
 				0300F7A32582A74F003A1238 /* Info.plist */,
 				0300F7A02582A74F003A1238 /* Preview Content */,
@@ -129,6 +135,8 @@
 				Base,
 			);
 			mainGroup = 0300F78E2582A74E003A1238;
+			packageReferences = (
+			);
 			productRefGroup = 0300F7982582A74E003A1238 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -155,8 +163,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0300F79D2582A74E003A1238 /* ContentView.swift in Sources */,
+				03888DE525AD2DD300E3E4B7 /* HomeView.swift in Sources */,
 				0300F79B2582A74E003A1238 /* QuickstartApp.swift in Sources */,
+				03888DE125AD2DBC00E3E4B7 /* AuthView.swift in Sources */,
+				03ABEF5525AD2ED7009D00B2 /* Storage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

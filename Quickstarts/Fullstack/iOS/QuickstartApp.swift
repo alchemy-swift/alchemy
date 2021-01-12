@@ -4,7 +4,7 @@ import SwiftUI
 struct QuickstartApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
         }
     }
 }

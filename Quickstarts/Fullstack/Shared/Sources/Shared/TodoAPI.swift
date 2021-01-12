@@ -48,11 +48,11 @@ extension TodoAPI {
     // MARK: - TodoAPI DTOs
     
     /// A todo item, with associated tags.
-    public struct TodoDTO: Codable {
-        let id: Int
-        let name: String
-        let isComplete: Bool
-        let tags: [UserAPI.TagDTO]
+    public struct TodoDTO: Codable, Identifiable {
+        public let id: Int
+        public let name: String
+        public let isComplete: Bool
+        public let tags: [UserAPI.TagDTO]
         
         public init(id: Int, name: String, isComplete: Bool, tags: [UserAPI.TagDTO]) {
             self.id = id
