@@ -47,6 +47,7 @@ public extension Application {
     ///   - endpoint: the endpoint to register on this router.
     ///   - closure: the handler for handling incoming requests that match this endpoint's path.
     /// - Returns: `self`, for chaining more requests.
+    @discardableResult
     func on<Req>(
         _ endpoint: Endpoint<Req, Empty>,
         handler: @escaping (Request, Req) throws -> EventLoopFuture<Void>

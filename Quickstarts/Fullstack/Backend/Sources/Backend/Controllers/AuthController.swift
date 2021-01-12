@@ -55,9 +55,3 @@ struct AuthController: Controller {
             }
     }
 }
-
-extension AuthAPI.TokenDTO: ResponseConvertible {
-    public func convert() throws -> EventLoopFuture<Response> {
-        try self.convert()
-    }
-}

@@ -49,20 +49,8 @@ extension Tag {
     }
 }
 
-extension UserAPI.TagDTO: ResponseConvertible {
-    public func convert() throws -> EventLoopFuture<Response> {
-        try self.convert()
-    }
-}
-
 extension User {
     func toDTO() throws -> UserAPI.UserDTO {
         UserAPI.UserDTO(id: try self.getID(), name: self.name, email: self.email)
-    }
-}
-
-extension UserAPI.UserDTO: ResponseConvertible {
-    public func convert() throws -> EventLoopFuture<Response> {
-        try self.convert()
     }
 }

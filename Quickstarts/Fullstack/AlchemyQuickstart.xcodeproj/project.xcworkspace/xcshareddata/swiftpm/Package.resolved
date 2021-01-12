@@ -14,8 +14,8 @@
         "package": "alchemy",
         "repositoryURL": "https://github.com/joshuawright11/alchemy",
         "state": {
-          "branch": "main",
-          "revision": "5a30c5627cdd01eba9b48bff746bbed78f86b53f",
+          "branch": "fullstack-quickstart",
+          "revision": "53c3803dedd7c5551e7801296b2d933f361d62b3",
           "version": null
         }
       },
