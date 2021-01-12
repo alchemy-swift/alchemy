@@ -15,7 +15,7 @@
         "repositoryURL": "https://github.com/joshuawright11/alchemy",
         "state": {
           "branch": "main",
-          "revision": "5a30c5627cdd01eba9b48bff746bbed78f86b53f",
+          "revision": "6c95cafdcea85b8b2dfbe055debe8e20d1b79390",
           "version": null
         }
       },
@@ -78,8 +78,8 @@
         "repositoryURL": "https://github.com/vapor/postgres-nio.git",
         "state": {
           "branch": null,
-          "revision": "072b6850fff26f5dc11caa4d4813da8cf45455fa",
-          "version": "1.4.2"
+          "revision": "2808c4ff334c20073de92e735dac5587ba398b0d",
+          "version": "1.4.1"
         }
       },
       {

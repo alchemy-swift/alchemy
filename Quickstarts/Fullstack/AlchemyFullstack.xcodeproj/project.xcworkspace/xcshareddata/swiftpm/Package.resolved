@@ -12,10 +12,10 @@
       },
       {
         "package": "alchemy",
-        "repositoryURL": "https://github.com/joshuawright11/alchemy",
+        "repositoryURL": "git@github.com:joshuawright11/alchemy.git",
         "state": {
-          "branch": "main",
-          "revision": "5a30c5627cdd01eba9b48bff746bbed78f86b53f",
+          "branch": "fullstack-quickstart",
+          "revision": "3a6e26fda1035e78cedf2f33bd2b9f70dbaa4c78",
           "version": null
         }
       },
