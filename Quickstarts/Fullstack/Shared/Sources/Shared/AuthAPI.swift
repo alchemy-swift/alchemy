@@ -12,7 +12,7 @@ extension AuthAPI {
     
     // MARK: - AuthAPI Requests
 
-    /// A request for creating a new user.
+    /// Request data for creating a new user.
     public struct SignupRequest: EndpointRequest {
         public struct DTO: Codable {
             public let name: String
@@ -34,7 +34,7 @@ extension AuthAPI {
         }
     }
     
-    /// A request for logging in.
+    /// Request data for logging in.
     public struct LoginRequest: EndpointRequest {
         public struct DTO: Codable {
             public let email: String

@@ -15,7 +15,7 @@ extension TodoAPI {
     
     // MARK: - TodoAPI Requests
     
-    /// A request for creating a new todo.
+    /// Request data for creating a new todo.
     public struct CreateTodoRequest: EndpointRequest {
         public struct DTO: Codable {
             public let name: String
@@ -35,24 +35,30 @@ extension TodoAPI {
         }
     }
     
-    /// A request for deleting a todo.
+    /// Request data for deleting a todo.
     public struct DeleteTodoRequest: EndpointRequest {
         @Path
-        var todoID: String
+        public var todoID: String
         
-        init(todoID: String) {
+        public init(todoID: String) {
             self.todoID = todoID
         }
     }
     
     // MARK: - TodoAPI DTOs
     
-    /// A todo item.
+    /// A todo item, with associated tags.
     public struct TodoDTO: Codable {
         let id: Int
         let name: String
         let isComplete: Bool
-        
         let tags: [UserAPI.TagDTO]
+        
+        public init(id: Int, name: String, isComplete: Bool, tags: [UserAPI.TagDTO]) {
+            self.id = id
+            self.name = name
+            self.isComplete = isComplete
+            self.tags = tags
+        }
     }
 }

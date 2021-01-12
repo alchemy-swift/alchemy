@@ -1,40 +1,36 @@
 import Alchemy
+import Shared
 
 struct TodoController: Controller {
-    /// A DTO representing the data needed to create a `Todo`.
-    private struct TodoCreateDTO: Codable {
-        let name: String
-        let tagIDs: [Int]
-    }
+    let api = TodoAPI()
     
     func route(_ app: Application) {
         app
             // Get all todos
-            .get("/todo") { req -> EventLoopFuture<[Todo]> in
+            .on(self.api.getAll) { req in
                 // `TokenAuthMiddleware` sets the `User` on the
                 // request making it simple to query their
                 // todos.
                 let userID = try req.get(User.self).getID()
                 return Todo.query()
                     .where("user_id" == userID)
-                    // Load tags as well to return.
+                    // Eager load tags.
                     .with(\.$tags)
                     .allModels()
+                    .flatMapEachThrowing { try $0.toDTO() }
             }
-            
             // Create a todo, with tags
-            .post("/todo") { req -> EventLoopFuture<Todo> in
+            .on(self.api.create) { req, content in
                 let user = try req.get(User.self)
-                let dto: TodoCreateDTO = try req.decodeBody()
                 // Create a new `Todo`...
-                return Todo(name: dto.name, isComplete: false, user: .init(user))
+                return Todo(name: content.dto.name, isComplete: false, user: .init(user))
                     // Save it...
                     .save()
                     // When that is finished...
                     .flatMap { todo in
                         // Query tags with the provided ids...
                         Tag.query()
-                            .where(key: "id", in: dto.tagIDs)
+                            .where(key: "id", in: content.dto.tagIDs)
                             .allModels()
                             // Create `TodoTag`s for each of them...
                             .mapEach { TodoTag(todo: .init(todo), tag: .init($0)) }
@@ -43,15 +39,13 @@ struct TodoController: Controller {
                             // Return the newly created `Todo`.
                             .map { _ in todo }
                     }
+                    .flatMapThrowing { try $0.toDTO() }
             }
-            
             // Delete a todo
-            .delete("/todo/:todoID") { request -> EventLoopFuture<Void> in
-                let userID = try request.get(User.self).getID()
+            .on(self.api.delete) { req, content in
+                let userID = try req.get(User.self).getID()
                 // Fetch the relevant path component...
-                let idString = try request.pathComponent(for: "todoID")
-                    .unwrap(or: HTTPError(.badRequest))
-                let todoID = try Int(idString)
+                let todoID = try Int(content.todoID)
                     .unwrap(or: HTTPError(.badRequest))
                 // Find the `Todo` with the given ID & userID (so
                 // that only the owner of the `Todo` can delete
@@ -73,5 +67,23 @@ struct TodoController: Controller {
                             .flatMap { _ in todo.delete() }
                     }
             }
+    }
+}
+
+extension TodoAPI.TodoDTO: ResponseConvertible {
+    public func convert() throws -> EventLoopFuture<Response> {
+        try self.convert()
+    }
+}
+
+extension Todo {
+    // Convert this `Todo` to the `TodoDTO` expected by `TodoAPI`.
+    func toDTO() throws -> TodoAPI.TodoDTO {
+        TodoAPI.TodoDTO(
+            id: try self.getID(),
+            name: self.name,
+            isComplete: self.isComplete,
+            tags: try self.tags.map { try $0.toDTO() }
+        )
     }
 }

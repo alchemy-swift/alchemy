@@ -1,52 +1,68 @@
 import Alchemy
+import Shared
 
-struct UsersController: Controller {
-    /// A DTO representing the user. While we could directory send
-    /// back the `User` model object, it contains the hashed
-    /// password which should never be sent to the client.
-    private struct UserDTO: Codable {
-        let id: Int
-        let name: String
-        let email: String
-    }
-    
-    /// A DTO containing info needed for creating a tag.
-    private struct TagCreateDTO: Codable {
-        let name: String
-        let color: TagColor
-    }
+struct UserController: Controller {
+    let api = UserAPI()
     
     func route(_ app: Application) {
         app
             // Get the current user
-            .get("/user") { request -> UserDTO in
+            .on(self.api.getUser) { req in
                 // `TokenAuthMiddleware` sets the `User` on the
                 // incoming request, so all we have to do is
                 // `Request.get` it.
-                let user = try request.get(User.self)
-                return UserDTO(id: try user.getID(), name: user.name, email: user.email)
+                .new(try req.get(User.self).toDTO())
             }
             // Get the tags of this user.
-            .get("/user/tag") { request -> EventLoopFuture<[Tag]> in
-                let userID = try request.get(User.self).getID()
+            .on(self.api.getTags) { req in
+                let userID = try req.get(User.self).getID()
                 return Tag.query()
                     .where("user_id" == userID)
                     .allModels()
+                    .flatMapEachThrowing { try $0.toDTO() }
             }
             // Create a tag for this user.
-            .post("/user/tag") { request -> EventLoopFuture<Tag> in
-                let user = try request.get(User.self)
-                let dto: TagCreateDTO = try request.decodeBody()
+            .on(self.api.createTag) { req, content in
+                let user = try req.get(User.self)
                 // Create and save a new tag based on the request
                 // information.
-                return Tag(name: dto.name, color: dto.color, user: .init(user))
+                return Tag(name: content.dto.name, color: TagColor(rawValue: content.dto.color.rawValue)!, user: .init(user))
                     .save()
+                    .flatMapThrowing { try $0.toDTO() }
             }
             // Logout the current user by deleting their token
-            .post("/logout") {
+            .on(self.api.logout) { req, content in
                 // Since `TokenAuthMiddleware` sets a token on this
                 // request, all we have to do is delete that token.
-                try $0.get(UserToken.self).delete()
+                try req.get(UserToken.self).delete()
             }
+    }
+}
+
+extension Tag {
+    func toDTO() throws -> UserAPI.TagDTO {
+        UserAPI.TagDTO(
+            id: try self.getID(),
+            name: self.name,
+            color: UserAPI.TagDTO.Color(rawValue: self.color.rawValue)!
+        )
+    }
+}
+
+extension UserAPI.TagDTO: ResponseConvertible {
+    public func convert() throws -> EventLoopFuture<Response> {
+        try self.convert()
+    }
+}
+
+extension User {
+    func toDTO() throws -> UserAPI.UserDTO {
+        UserAPI.UserDTO(id: try self.getID(), name: self.name, email: self.email)
+    }
+}
+
+extension UserAPI.UserDTO: ResponseConvertible {
+    public func convert() throws -> EventLoopFuture<Response> {
+        try self.convert()
     }
 }

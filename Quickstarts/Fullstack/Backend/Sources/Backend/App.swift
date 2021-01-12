@@ -40,7 +40,7 @@ struct App: Application {
             
             // Protect subsequent routes in the chain behind token auth
             .use(UserToken.tokenAuthMiddleware())
-            .controller(UsersController())
+            .controller(UserController())
             .controller(TodoController())
     }
     

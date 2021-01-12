@@ -18,8 +18,8 @@ extension UserAPI {
     
     // MARK: - UserAPI Requests
     
+    /// Request data for creating a new tag.
     public struct TagCreateRequest: EndpointRequest {
-        /// A DTO containing info needed for creating a tag.
         public struct DTO: Codable {
             public let name: String
             public let color: TagDTO.Color
@@ -31,7 +31,7 @@ extension UserAPI {
         }
         
         @Body
-        var dto: DTO
+        public var dto: DTO
         
         public init(dto: DTO) {
             self.dto = dto
@@ -40,6 +40,7 @@ extension UserAPI {
     
     // MARK: - UserAPI DTOs
     
+    /// A user.
     public struct UserDTO: Codable {
         public let id: Int
         public let name: String
@@ -52,6 +53,7 @@ extension UserAPI {
         }
     }
     
+    /// A tag.
     public struct TagDTO: Codable {
         public enum Color: Int, Codable {
             case red, green, blue, orange, purple
