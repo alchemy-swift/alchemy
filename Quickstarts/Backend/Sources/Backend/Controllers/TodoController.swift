@@ -9,7 +9,13 @@ struct TodoController: Controller {
     
     func route(_ app: Application) {
         app
-            // Get all todos
+            // Get all todos.
+            //
+            // Note that since the Rune `Model`s conform to `Codable`,
+            // we can return them directly to the client as JSON. In
+            // practice, you may want separate models for returning
+            // JSON to the client to keep the logic separate. For
+            // this demo, we can just return the same `Model`.
             .get("/todo") { req -> EventLoopFuture<[Todo]> in
                 // `TokenAuthMiddleware` sets the `User` on the
                 // request making it simple to query their
