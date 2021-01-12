@@ -76,22 +76,23 @@ struct TodoController: Controller {
             }
             // Toggle the completion status of a Todo
             .on(self.api.complete) { req, content in
-                // Convert the path parameter from a `String` to an
-                // `Int`.
+                let userID = try req.get(User.self).getID()
                 let todoID = try Int(content.todoID).unwrap(or: HTTPError(.badRequest))
-                // Get the matching Todo or throw a 404
-                return Todo.unwrapFirstWhere("id" == todoID, or: HTTPError(.notFound))
-                    // Toggle the Todo's completion status, then save
-                    // it.
+                // Find the `Todo` with the given ID & userID (so that
+                // only the owner of the `Todo` can complete it).
+                return Todo.query()
+                    .where("id" == todoID)
+                    .where("user_id" == userID)
+                    .unwrapFirst(or: HTTPError(.notFound))
                     .flatMap { todo -> EventLoopFuture<Todo> in
                         var updated = todo
                         updated.isComplete.toggle()
                         return updated.save()
                     }
-                    .flatMap {
+                    .flatMap { todo in
                         // Reload the Todo with its tags.
                         Todo.query()
-                            .where("id" == $0.id)
+                            .where("id" == todo.id)
                             .with(\.$tags)
                             .firstModel()
                             .unwrap(orError: HTTPError(.internalServerError))
