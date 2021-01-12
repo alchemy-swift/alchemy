@@ -8,6 +8,7 @@ private enum API {
     static let todo = TodoAPI(baseURL: "http://localhost:8888")
 }
 
+// Simple extensions for loading the APIs defined with Papyrus.
 extension Storage {
     
     // MARK: - AuthAPI

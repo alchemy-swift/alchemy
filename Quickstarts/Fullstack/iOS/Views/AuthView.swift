@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct AuthView: View {
-    @State var name: String = ""
-    @State var email: String = ""
-    @State var password: String = ""
-    @State var isLogin: Bool = false
-    @State var showAlert: Bool = false
+    @State private var name: String = ""
+    @State private var email: String = ""
+    @State private var password: String = ""
+    @State private var isLogin: Bool = false
+    @State private var showAlert: Bool = false
     
     var body: some View {
         VStack {
@@ -31,7 +31,7 @@ struct AuthView: View {
         }
     }
     
-    func login() {
+    private func login() {
         guard !self.email.isEmpty && !self.password.isEmpty else {
             self.showAlert = true
             return
@@ -40,7 +40,7 @@ struct AuthView: View {
         Storage.shared.login(email: self.email, password: self.password)
     }
     
-    func signup() {
+    private func signup() {
         guard !self.name.isEmpty && !self.email.isEmpty && !self.password.isEmpty else {
             self.showAlert = true
             return

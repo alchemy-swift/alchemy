@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct CreateTodoView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) private var presentationMode
     
-    @State var name: String = ""
-    @State var tags: [Tag] = []
+    @State private var name: String = ""
+    @State private var tags: [Tag] = []
     
     @ObservedObject
-    var storage = Storage.shared
+    private var storage = Storage.shared
     
     var body: some View {
         NavigationView {
@@ -35,7 +35,7 @@ struct CreateTodoView: View {
         }
     }
     
-    func createTodo() {
+    private func createTodo() {
         guard !self.name.isEmpty else {
             return
         }

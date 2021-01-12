@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct CreateTagView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) private var presentationMode
     
-    @State var name: String = ""
-    @State var color = TagColor.red
+    @State private var name: String = ""
+    @State private var color = TagColor.red
     
     var body: some View {
         NavigationView {
@@ -29,7 +29,7 @@ struct CreateTagView: View {
         }
     }
     
-    func createTag() {
+    private func createTag() {
         guard !self.name.isEmpty else {
             return
         }

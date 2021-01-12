@@ -7,6 +7,8 @@ typealias Tag = UserAPI.TagDTO
 typealias TagColor = UserAPI.TagDTO.Color
 typealias Todo = TodoAPI.TodoDTO
 
+/// Provides central, observable repository of app data for SwiftUI
+/// views to hook up to.
 final class Storage: ObservableObject {
     static let shared = Storage()
     
