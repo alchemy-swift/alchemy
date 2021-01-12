@@ -34,7 +34,11 @@ struct UserController: Controller {
             .on(self.api.logout) { req, content in
                 // Since `TokenAuthMiddleware` sets a token on this
                 // request, all we have to do is delete that token.
-                try req.get(UserToken.self).delete()
+                try req.get(UserToken.self)
+                    .delete()
+                    // Transforms the response type to `Empty` to
+                    // align with the expected Papyrus type.
+                    .emptied()
             }
     }
 }

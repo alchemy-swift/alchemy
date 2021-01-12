@@ -43,55 +43,30 @@ struct TodoController: Controller {
             }
             // Delete a todo
             .on(self.api.delete) { req, content in
-                try self.deleteTodo(req: req, content: content)
-            }
-    }
-    
-    func createTodo(req: Request, content: TodoAPI.CreateTodoRequest) throws -> EventLoopFuture<TodoAPI.TodoDTO> {
-        let user = try req.get(User.self)
-        // Create a new `Todo`...
-        return Todo(name: content.dto.name, isComplete: false, user: .init(user))
-            // Save it...
-            .save()
-            // When that is finished...
-            .flatMap { todo in
-                // Query tags with the provided ids...
-                Tag.query()
-                    .where(key: "id", in: content.dto.tagIDs)
-                    .allModels()
-                    // Create `TodoTag`s for each of them...
-                    .mapEach { TodoTag(todo: .init(todo), tag: .init($0)) }
-                    // Save them all...
-                    .flatMap { $0.insertAll() }
-                    // Return the newly created `Todo`.
-                    .map { _ in todo }
-            }
-            .flatMapThrowing { try $0.toDTO() }
-    }
-    
-    func deleteTodo(req: Request, content: TodoAPI.DeleteTodoRequest) throws -> EventLoopFuture<Void> {
-        let userID = try req.get(User.self).getID()
-        // Fetch the relevant path component...
-        let todoID = try Int(content.todoID)
-            .unwrap(or: HTTPError(.badRequest))
-        // Find the `Todo` with the given ID & userID (so
-        // that only the owner of the `Todo` can delete
-        // it).
-        return Todo.query()
-            .where("id" == Int(todoID))
-            .where("user_id" == userID)
-            .firstModel()
-            // Unwrap it, or return a 404 if it wasn't found.
-            .unwrap(orError: HTTPError(.notFound))
-            // First, delete the `TodoTag`s associated with this
-            // `Todo`
-            .flatMap { todo in
-                TodoTag
-                    .query()
-                    .where("todo_id" == todoID)
-                    .delete()
-                    // Then, delete the todo itself.
-                    .flatMap { _ in todo.delete() }
+                let userID = try req.get(User.self).getID()
+                // Fetch the relevant path component...
+                let todoID = try Int(content.todoID)
+                    .unwrap(or: HTTPError(.badRequest))
+                // Find the `Todo` with the given ID & userID (so
+                // that only the owner of the `Todo` can delete
+                // it).
+                return Todo.query()
+                    .where("id" == Int(todoID))
+                    .where("user_id" == userID)
+                    .firstModel()
+                    // Unwrap it, or return a 404 if it wasn't found.
+                    .unwrap(orError: HTTPError(.notFound))
+                    // First, delete the `TodoTag`s associated with this
+                    // `Todo`
+                    .flatMap { todo in
+                        TodoTag
+                            .query()
+                            .where("todo_id" == todoID)
+                            .delete()
+                            // Then, delete the todo itself.
+                            .flatMap { _ in todo.delete() }
+                    }
+                    .emptied()
             }
     }
 }
