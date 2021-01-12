@@ -38,24 +38,15 @@ public extension Application {
     ) -> Self {
         self.on(endpoint.method.nio, at: endpoint.path, handler: handler)
     }
-    
-    /// Registers a `Papyrus.Endpoint` that has an `Empty` response type, to a `Router`. When an
-    /// incoming request matches the path of the `Endpoint`, the `Endpoint.Request` will
-    /// automatically be decoded from the incoming `Request` for use in the provided handler.
+}
+
+extension EventLoopFuture {
+    /// Changes the `Value` of this future to `Empty`. Used for
+    /// interaction with Papyrus APIs.
     ///
-    /// - Parameters:
-    ///   - endpoint: the endpoint to register on this router.
-    ///   - closure: the handler for handling incoming requests that match this endpoint's path.
-    /// - Returns: `self`, for chaining more requests.
-    @discardableResult
-    func on<Req>(
-        _ endpoint: Endpoint<Req, Empty>,
-        handler: @escaping (Request, Req) throws -> EventLoopFuture<Void>
-    ) -> Self {
-        self.on(endpoint.method.nio, at: endpoint.path) {
-            try handler($0, try Req(from: $0))
-                .map { Empty.value }
-        }
+    /// - Returns: An "empty" `EventLoopFuture`.
+    public func emptied() -> EventLoopFuture<Empty> {
+        self.map { _ in Empty.value }
     }
 }
 

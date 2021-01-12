@@ -20,9 +20,27 @@ struct TodoController: Controller {
                     .flatMapEachThrowing { try $0.toDTO() }
             }
             // Create a todo, with tags
-            .on(self.api.create, handler: { req, content in
-                self.createTodo(req: req, content: content)
-            })
+            .on(self.api.create) { req, content in
+                let user = try req.get(User.self)
+                // Create a new `Todo`...
+                return Todo(name: content.dto.name, isComplete: false, user: .init(user))
+                    // Save it...
+                    .save()
+                    // When that is finished...
+                    .flatMap { todo in
+                        // Query tags with the provided ids...
+                        Tag.query()
+                            .where(key: "id", in: content.dto.tagIDs)
+                            .allModels()
+                            // Create `TodoTag`s for each of them...
+                            .mapEach { TodoTag(todo: .init(todo), tag: .init($0)) }
+                            // Save them all...
+                            .flatMap { $0.insertAll() }
+                            // Return the newly created `Todo`.
+                            .map { _ in todo }
+                    }
+                    .flatMapThrowing { try $0.toDTO() }
+            }
             // Delete a todo
             .on(self.api.delete) { req, content in
                 try self.deleteTodo(req: req, content: content)
