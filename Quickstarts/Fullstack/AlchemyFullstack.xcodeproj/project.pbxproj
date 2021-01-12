@@ -163,7 +163,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0300F7922582A74E003A1238 /* Build configuration list for PBXProject "AlchemyQuickstart" */;
+			buildConfigurationList = 0300F7922582A74E003A1238 /* Build configuration list for PBXProject "AlchemyFullstack" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -378,7 +378,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0300F7922582A74E003A1238 /* Build configuration list for PBXProject "AlchemyQuickstart" */ = {
+		0300F7922582A74E003A1238 /* Build configuration list for PBXProject "AlchemyFullstack" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0300F7A42582A74F003A1238 /* Debug */,

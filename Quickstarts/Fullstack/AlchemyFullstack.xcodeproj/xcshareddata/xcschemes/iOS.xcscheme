@@ -17,7 +17,7 @@
                BlueprintIdentifier = "0300F7962582A74E003A1238"
                BuildableName = "iOS.app"
                BlueprintName = "iOS"
-               ReferencedContainer = "container:AlchemyQuickstart.xcodeproj">
+               ReferencedContainer = "container:AlchemyFullstack.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "0300F7962582A74E003A1238"
             BuildableName = "iOS.app"
             BlueprintName = "iOS"
-            ReferencedContainer = "container:AlchemyQuickstart.xcodeproj">
+            ReferencedContainer = "container:AlchemyFullstack.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "0300F7962582A74E003A1238"
             BuildableName = "iOS.app"
             BlueprintName = "iOS"
-            ReferencedContainer = "container:AlchemyQuickstart.xcodeproj">
+            ReferencedContainer = "container:AlchemyFullstack.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
