@@ -9,6 +9,9 @@ public final class TodoAPI: EndpointGroup {
     
     @DELETE("/todo/:todoID")
     public var delete: Endpoint<DeleteTodoRequest, Empty>
+    
+    @PATCH("/todo/:todoID")
+    public var complete: Endpoint<CompleteTodoRequest, TodoDTO>
 }
 
 extension TodoAPI {
@@ -37,6 +40,16 @@ extension TodoAPI {
     
     /// Request data for deleting a todo.
     public struct DeleteTodoRequest: EndpointRequest {
+        @Path
+        public var todoID: String
+        
+        public init(todoID: String) {
+            self.todoID = todoID
+        }
+    }
+    
+    /// Request data for completing a todo.
+    public struct CompleteTodoRequest: EndpointRequest {
         @Path
         public var todoID: String
         

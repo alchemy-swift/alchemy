@@ -55,7 +55,7 @@ extension UserAPI {
     
     /// A tag.
     public struct TagDTO: Codable, Identifiable {
-        public enum Color: Int, Codable {
+        public enum Color: Int, Codable, CaseIterable {
             case red, green, blue, orange, purple
         }
         

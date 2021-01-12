@@ -36,8 +36,14 @@ struct TodoController: Controller {
                             .mapEach { TodoTag(todo: .init(todo), tag: .init($0)) }
                             // Save them all...
                             .flatMap { $0.insertAll() }
-                            // Return the newly created `Todo`.
-                            .map { _ in todo }
+                            // Reload the new todo with it's tags.
+                            .flatMap { _ in
+                                Todo.query()
+                                    .where("id" == todo.id)
+                                    .with(\.$tags)
+                                    .firstModel()
+                                    .unwrap(orError: HTTPError(.internalServerError))
+                            }
                     }
                     .flatMapThrowing { try $0.toDTO() }
             }
@@ -56,8 +62,8 @@ struct TodoController: Controller {
                     .firstModel()
                     // Unwrap it, or return a 404 if it wasn't found.
                     .unwrap(orError: HTTPError(.notFound))
-                    // First, delete the `TodoTag`s associated with this
-                    // `Todo`
+                    // First, delete the `TodoTag`s associated with
+                    // this `Todo`[.
                     .flatMap { todo in
                         TodoTag
                             .query()
@@ -67,6 +73,31 @@ struct TodoController: Controller {
                             .flatMap { _ in todo.delete() }
                     }
                     .emptied()
+            }
+            // Toggle the completion status of a Todo
+            .on(self.api.complete) { req, content in
+                // Convert the path parameter from a `String` to an
+                // `Int`.
+                let todoID = try Int(content.todoID).unwrap(or: HTTPError(.badRequest))
+                // Get the matching Todo or throw a 404
+                return Todo.unwrapFirstWhere("id" == todoID, or: HTTPError(.notFound))
+                    // Toggle the Todo's completion status, then save
+                    // it.
+                    .flatMap { todo -> EventLoopFuture<Todo> in
+                        var updated = todo
+                        updated.isComplete.toggle()
+                        return updated.save()
+                    }
+                    .flatMap {
+                        // Reload the Todo with its tags.
+                        Todo.query()
+                            .where("id" == $0.id)
+                            .with(\.$tags)
+                            .firstModel()
+                            .unwrap(orError: HTTPError(.internalServerError))
+                    }
+                    // Map to the expected DTO
+                    .flatMapThrowing { try $0.toDTO() }
             }
     }
 }
