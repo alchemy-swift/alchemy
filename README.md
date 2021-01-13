@@ -30,7 +30,7 @@ App.launch()
 - Powerful dependency injection.
 - Typesafe API definitions, sharable between swift clients & server.
 - Concise, elegant APIs built with the best parts of Swift.
-- Extensive [docs](Docs#table-of-contents) and fully featured [quickstart projects](Quickstarts/).
+- Extensive [docs](Docs#docs) and fully featured [quickstart projects](Quickstarts/).
 
 ## Installation
 
@@ -66,7 +66,7 @@ targets: [
 
 ## Documentation
 
-### [Docs](Docs#table-of-contents)
+### [Docs](Docs#docs)
 
 The Docs provide a step by step walkthrough of everything Alchemy has to offer as well as essential core backend concepts for developers new to server side development.
 
