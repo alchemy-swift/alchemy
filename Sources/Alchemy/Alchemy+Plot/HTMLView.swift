@@ -27,7 +27,10 @@ import Foundation
 /// }
 ///
 /// router.route(.GET) {
-///     HomeView(title: "My Website", favoriteAnimals: ["Platypus", "Tapir", "Lemur"])
+///     HomeView(
+///         title: "My Website",
+///         favoriteAnimals: ["Platypus", "Tapir", "Lemur"]
+///     )
 /// }
 /// ```
 public protocol HTMLView: ResponseConvertible {

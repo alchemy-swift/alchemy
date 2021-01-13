@@ -1,40 +1,32 @@
 import Foundation
 
-public class Grammar {
-
-    enum GrammarError: Error {
-        case missingTable
+/// Used for compiling query builders into raw SQL statements.
+open class Grammar {
+    struct GrammarError: Error {
+        let message: String
+        static let missingTable = GrammarError(message: "Missing a table to run the query on.")
     }
 
-    func compileSelect(query: Query) throws -> SQL {
+    // MARK: Compiling Query Builders
+    
+    open func compileSelect(query: Query) throws -> SQL {
         let parts: [SQL?] = [
-            compileColumns(query, columns: query.columns),
-            try compileFrom(query, table: query.from),
-            compileJoins(query, joins: query.joins),
-            compileWheres(query),
-            compileGroups(query, groups: query.groups),
-            compileHavings(query),
-            compileOrders(query, orders: query.orders),
-            compileLimit(query, limit: query.limit),
-            compileOffset(query, offset: query.offset)
+            self.compileColumns(query, columns: query.columns),
+            try self.compileFrom(query, table: query.from),
+            self.compileJoins(query, joins: query.joins),
+            self.compileWheres(query),
+            self.compileGroups(query, groups: query.groups),
+            self.compileHavings(query),
+            self.compileOrders(query, orders: query.orders),
+            self.compileLimit(query, limit: query.limit),
+            self.compileOffset(query, offset: query.offset)
         ]
 
         let (sql, bindings) = QueryHelpers.groupSQL(values: parts)
         return SQL(sql.joined(separator: " "), bindings: bindings)
     }
 
-    private func compileColumns(_ query: Query, columns: [Raw]) -> SQL {
-        let select = query.isDistinct ? "select distinct" : "select"
-        let (sql, bindings) = QueryHelpers.groupSQL(values: columns)
-        return SQL("\(select) \(sql.joined(separator: ", "))", bindings: bindings)
-    }
-
-    private func compileFrom(_ query: Query, table: String?) throws -> SQL {
-        guard let table = table else { throw GrammarError.missingTable }
-        return SQL("from \(table)")
-    }
-
-    func compileJoins(_ query: Query, joins: [JoinClause]?) -> SQL? {
+    open func compileJoins(_ query: Query, joins: [JoinClause]?) -> SQL? {
         guard let joins = joins else { return nil }
         var bindings: [DatabaseValue] = []
         let query = joins.compactMap { join -> String? in
@@ -52,32 +44,12 @@ public class Grammar {
         return SQL(query, bindings: bindings)
     }
 
-    private func compileWheres(_ query: Query) -> SQL? {
-
-        // If we actually have some where clauses, we will strip off the first boolean
-        // operator, which is added by the query builders for convenience so we can
-        // avoid checking for the first clauses in each of the compilers methods.
-
-        // Need to handle nested stuff somehow
-        
-        let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
-        if (sql.count > 0) {
-            let conjunction = query is JoinClause ? "on" : "where"
-            let clauses = QueryHelpers.removeLeadingBoolean(
-                sql.joined(separator: " ")
-            )
-            return SQL("\(conjunction) \(clauses)", bindings: bindings)
-        }
-        return nil
-    }
-
-
-    func compileGroups(_ query: Query, groups: [String]) -> SQL? {
+    open func compileGroups(_ query: Query, groups: [String]) -> SQL? {
         if groups.isEmpty { return nil }
         return SQL("group by \(groups.joined(separator: ", "))")
     }
 
-    func compileHavings(_ query: Query) -> SQL? {
+    open func compileHavings(_ query: Query) -> SQL? {
         let (sql, bindings) = QueryHelpers.groupSQL(values: query.havings)
         if (sql.count > 0) {
             let clauses = QueryHelpers.removeLeadingBoolean(
@@ -88,23 +60,23 @@ public class Grammar {
         return nil
     }
 
-    func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL? {
+    open func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL? {
         if orders.isEmpty { return nil }
         let ordersSQL = orders.map { $0.toSQL().query }.joined(separator: ", ")
         return SQL("order by \(ordersSQL)")
     }
 
-    func compileLimit(_ query: Query, limit: Int?) -> SQL? {
+    open func compileLimit(_ query: Query, limit: Int?) -> SQL? {
         guard let limit = limit else { return nil }
         return SQL("limit \(limit)")
     }
 
-    func compileOffset(_ query: Query, offset: Int?) -> SQL? {
+    open func compileOffset(_ query: Query, offset: Int?) -> SQL? {
         guard let offset = offset else { return nil }
         return SQL("offset \(offset)")
     }
 
-    func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
+    open func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
         
         guard let table = query.from else { throw GrammarError.missingTable }
 
@@ -126,7 +98,7 @@ public class Grammar {
         )
     }
 
-    func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {
+    open func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
         var bindings: [DatabaseValue] = []
         let columnSQL = compileUpdateColumns(query, values: values)
@@ -148,7 +120,7 @@ public class Grammar {
         return SQL(base, bindings: bindings)
     }
 
-    func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> SQL {
+    open func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> SQL {
         var bindings: [DatabaseValue] = []
         var parts: [String] = []
         for value in values {
@@ -164,7 +136,7 @@ public class Grammar {
         return SQL(parts.joined(separator: ", "), bindings: bindings)
     }
 
-    func compileDelete(_ query: Query) throws -> SQL {
+    open func compileDelete(_ query: Query) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
         if let whereSQL = compileWheres(query) {
             return SQL("delete from \(table) \(whereSQL.query)", bindings: whereSQL.bindings)
@@ -174,9 +146,9 @@ public class Grammar {
         }
     }
     
-    // MARK: - Migration Compiling
+    // MARK: - Compiling Migrations
     
-    func compileCreate(table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
+    open func compileCreate(table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
         SQL("""
             CREATE TABLE\(ifNotExists ? " IF NOT EXISTS" : "") \(table) (
                 \(columns.map { $0.toSQL(with: self) }.joined(separator: ",\n    "))
@@ -184,15 +156,15 @@ public class Grammar {
             """)
     }
     
-    func compileRename(table: String, to: String) -> SQL {
+    open func compileRename(table: String, to: String) -> SQL {
         SQL("ALTER TABLE \(table) RENAME TO \(to)")
     }
     
-    func compileDrop(table: String) -> SQL {
+    open func compileDrop(table: String) -> SQL {
         SQL("DROP TABLE \(table)")
     }
     
-    func compileAlter(table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
+    open func compileAlter(table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
         guard !dropColumns.isEmpty || !addColumns.isEmpty else {
             return []
         }
@@ -205,19 +177,19 @@ public class Grammar {
                     """)]
     }
     
-    func compileRenameColumn(table: String, column: String, to: String) -> SQL {
+    open func compileRenameColumn(table: String, column: String, to: String) -> SQL {
         SQL("ALTER TABLE \(table) RENAME COLUMN \(column) TO \(to)")
     }
     
-    func compileCreateIndexes(table: String, indexes: [CreateIndex]) -> [SQL] {
+    open func compileCreateIndexes(table: String, indexes: [CreateIndex]) -> [SQL] {
         indexes.map { SQL($0.toSQL(table: table)) }
     }
     
-    func compileDropIndex(table: String, indexName: String) -> SQL {
+    open func compileDropIndex(table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName)")
     }
     
-    func typeString(for type: ColumnType) -> String {
+    open func typeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
             return "bool"
@@ -243,7 +215,7 @@ public class Grammar {
         }
     }
     
-    func jsonLiteral(from jsonString: String) -> String {
+    open func jsonLiteral(from jsonString: String) -> String {
         "'\(jsonString)'::jsonb"
     }
 
@@ -261,18 +233,65 @@ public class Grammar {
     private func trim(_ value: String) -> String {
         return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    
+    private func compileWheres(_ query: Query) -> SQL? {
+        // If we actually have some where clauses, we will strip off
+        // the first boolean operator, which is added by the query
+        // builders for convenience so we can avoid checking for
+        // the first clauses in each of the compilers methods.
+
+        // Need to handle nested stuff somehow
+        
+        let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
+        if (sql.count > 0) {
+            let conjunction = query is JoinClause ? "on" : "where"
+            let clauses = QueryHelpers.removeLeadingBoolean(
+                sql.joined(separator: " ")
+            )
+            return SQL("\(conjunction) \(clauses)", bindings: bindings)
+        }
+        return nil
+    }
+    
+    private func compileColumns(_ query: Query, columns: [SQL]) -> SQL {
+        let select = query.isDistinct ? "select distinct" : "select"
+        let (sql, bindings) = QueryHelpers.groupSQL(values: columns)
+        return SQL("\(select) \(sql.joined(separator: ", "))", bindings: bindings)
+    }
+
+    private func compileFrom(_ query: Query, table: String?) throws -> SQL {
+        guard let table = table else { throw GrammarError.missingTable }
+        return SQL("from \(table)")
+    }
 }
 
-/// An abstraction around various supported SQL column types. `Grammar`s will map the `ColumnType`
-/// to the backing dialect type string.
-enum ColumnType {
-    case increments, int, double, string(StringLength), uuid, bool, date, json
+/// An abstraction around various supported SQL column types.
+/// `Grammar`s will map the `ColumnType` to the backing
+/// dialect type string.
+public enum ColumnType {
+    /// Self incrementing integer.
+    case increments
+    /// Integer.
+    case int
+    /// Double.
+    case double
+    /// String, with a given max length.
+    case string(StringLength)
+    /// UUID.
+    case uuid
+    /// Boolean.
+    case bool
+    /// Date.
+    case date
+    /// JSON.
+    case json
 }
 
 /// The length of an SQL string column in characters.
 public enum StringLength {
     /// This value of this column can be any number of characters.
     case unlimited
-    /// This value of this column must be at most the provided number of characters.
+    /// This value of this column must be at most the provided number
+    /// of characters.
     case limit(Int)
 }

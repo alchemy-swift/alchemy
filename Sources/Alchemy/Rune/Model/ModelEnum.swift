@@ -1,4 +1,5 @@
-/// A protocol to which enums on `Model`s should conform to.
+/// A protocol to which enums on `Model`s should conform to. The enum
+/// will be modeled in the backing table by it's raw value.
 ///
 /// Usage:
 /// ```
@@ -8,9 +9,9 @@
 ///
 /// struct Todo: Model {
 ///     var id: Int?
-///     var name: String
-///     var isDone: Bool
-///     var priority: TaskPriority // Usable for storing to and from an SQL database.
+///     let name: String
+///     let isDone: Bool
+///     let priority: TaskPriority // Stored as `Int` in the database.
 /// }
 /// ```
 public typealias ModelEnum = Codable & Parameter

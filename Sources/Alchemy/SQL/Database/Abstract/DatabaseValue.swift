@@ -1,14 +1,13 @@
 import Foundation
 
-/// Represents the type / value combo of an SQL database field. These don't
-/// necessarily correspond to a specific SQL database's types; they just
-/// represent the types that Alchemy current supports.
+/// Represents the type / value combo of an SQL database field. These
+/// don't necessarily correspond to a specific SQL database's types;
+/// they just represent the types that Alchemy current supports.
 ///
-/// All fields are optional by default, it's up to the end user to decide if a
-/// nil value in that field is appropriate and potentially throw an error.
+/// All fields are optional by default, it's up to the end user to
+/// decide if a nil value in that field is appropriate and
+/// potentially throw an error.
 public enum DatabaseValue: Equatable {
-    // MARK: - Primitives
-    
     /// An `Int` value.
     case int(Int?)
     /// A `Double` value.
@@ -26,7 +25,7 @@ public enum DatabaseValue: Equatable {
 }
 
 extension DatabaseValue {
-    /// Indicates whether the associated value inside this enum is nil.
+    /// Indicates if the associated value inside this enum is nil.
     public var isNil: Bool {
         switch self {
         case .int(let value):

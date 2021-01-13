@@ -5,7 +5,7 @@ public struct PapyrusError: Error {
     
     /// Create an error with the specified message.
     ///
-    /// - Parameter message: what went wrong.
+    /// - Parameter message: What went wrong.
     public init(_ message: String) {
         self.message = message
     }
@@ -18,7 +18,7 @@ public struct PapyrusValidationError: Error {
     
     /// Create an error with the specified message.
     ///
-    /// - Parameter message: what went wrong.
+    /// - Parameter message: What went wrong.
     public init(_ message: String) {
         self.message = message
     }

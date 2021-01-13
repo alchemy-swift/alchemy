@@ -4,10 +4,10 @@ public struct Header: Codable {
     /// The value of the this header.
     public var wrappedValue: String
     
-    /// Initialize with a header value. The key for this header will be the name of the property
-    /// this wraps.
+    /// Initialize with a header value. The key for this header will
+    /// be the name of the property this wraps.
     ///
-    /// - Parameter wrappedValue: the value of this header.
+    /// - Parameter wrappedValue: The value of this header.
     public init(wrappedValue: String) {
         self.wrappedValue = wrappedValue
     }

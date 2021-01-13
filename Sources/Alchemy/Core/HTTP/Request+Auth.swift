@@ -1,11 +1,12 @@
 import Foundation
 
 extension Request {
-    /// Get any authorization data from the request's `Authorization` header.
+    /// Get any authorization data from the request's `Authorization`
+    /// header.
     ///
-    /// - Returns: an `HTTPAuth` representing relevant info in the
-    ///            `Authorization` header, if it exists. Currently only supports
-    ///            `Basic` and `Bearer` auth.
+    /// - Returns: An `HTTPAuth` representing relevant info in the
+    ///   `Authorization` header, if it exists. Currently only
+    ///   supports `Basic` and `Bearer` auth.
     public func getAuth() -> HTTPAuth? {
         guard var authString = self.headers.first(name: "Authorization") else {
             return nil
@@ -41,8 +42,8 @@ extension Request {
     
     /// Gets any `Basic` authorization data from this request.
     ///
-    /// - Returns: the data from the `Authorization` header, if the
-    ///            authorization type is `Basic`.
+    /// - Returns: The data from the `Authorization` header, if the
+    ///   authorization type is `Basic`.
     public func basicAuth() -> HTTPAuth.Basic? {
         guard let auth = self.getAuth() else {
             return nil
@@ -57,8 +58,8 @@ extension Request {
     
     /// Gets any `Bearer` authorization data from this request.
     ///
-    /// - Returns: the data from the `Authorization` header, if the
-    ///            authorization type is `Bearer`.
+    /// - Returns: The data from the `Authorization` header, if the
+    ///   authorization type is `Bearer`.
     public func bearerAuth() -> HTTPAuth.Bearer? {
         guard let auth = self.getAuth() else {
             return nil
@@ -72,24 +73,25 @@ extension Request {
     }
 }
 
-/// A type representing any auth that may be on an HTTP request. Supports
-/// `Basic` and `Bearer`.
+/// A type representing any auth that may be on an HTTP request.
+/// Supports `Basic` and `Bearer`.
 public enum HTTPAuth {
-    /// The basic auth of an Request. Corresponds to a header that looks
-    /// like `Authorization: Basic <base64-encoded-username-password>`.
+    /// The basic auth of an Request. Corresponds to a header that
+    /// looks like
+    /// `Authorization: Basic <base64-encoded-username-password>`.
     public struct Basic {
-        /// The username of this authorization. Comes before the colon in the
-        /// decoded `Authorization` header value i.e.
+        /// The username of this authorization. Comes before the colon
+        /// in the decoded `Authorization` header value i.e.
         /// `Basic <username>:<password>`.
         public let username: String
-        /// The password of this authorization. Comes before the colon in the
-        /// decoded `Authorization` header value i.e.
+        /// The password of this authorization. Comes before the colon
+        /// in the decoded `Authorization` header value i.e.
         /// `Basic <username>:<password>`.
         public let password: String
     }
 
-    /// The bearer auth of an Request. Corresponds to a header that looks
-    /// like `Authorization: Bearer <token>`.
+    /// The bearer auth of an Request. Corresponds to a header that
+    /// looks like `Authorization: Bearer <token>`.
     public struct Bearer {
         /// The token in the `Authorization` header value.
         /// i.e. `Bearer <token>`.

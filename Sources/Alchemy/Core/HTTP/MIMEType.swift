@@ -1,9 +1,10 @@
 import Foundation
 
-/// An HTTP Media Type. It has a `value: String` appropriate for putting into `Content-Type`
-/// headers.
+/// An HTTP Media Type. It has a `value: String` appropriate for
+/// putting into `Content-Type` headers.
 public struct MIMEType {
-    /// The value of this MIME type, appropriate for `Content-Type` headers.
+    /// The value of this MIME type, appropriate for `Content-Type`
+    /// headers.
     public var value: String
     
     /// Create with a string.
@@ -50,8 +51,9 @@ public struct MIMEType {
 
 // Map of file extensions
 extension MIMEType {
-    /// Creates based off of a known file extension that can be mapped to an appropriate
-    /// `Content-Type` header value. Returns nil if no MIME type is known.
+    /// Creates based off of a known file extension that can be mapped
+    /// to an appropriate `Content-Type` header value. Returns nil if
+    /// no MIME type is known.
     ///
     /// The `.` in front of the file extension is optional.
     ///
@@ -61,7 +63,8 @@ extension MIMEType {
     /// print(mt.value) // "text/html"
     /// ```
     ///
-    /// - Parameter fileExtension: The file extension to look up a MIME type for.
+    /// - Parameter fileExtension: The file extension to look up a
+    ///   MIME type for.
     public init?(fileExtension: String) {
         var noDot = fileExtension
         if noDot.hasPrefix(".") {
@@ -75,7 +78,8 @@ extension MIMEType {
         self = type
     }
     
-    /// A non exhaustive mapping of file extensions to known MIME types.
+    /// A non exhaustive mapping of file extensions to known MIME
+    /// types.
     private static let fileExtensionMapping = [
         "aac":    MIMEType("audio/aac"),
         "abw":    MIMEType("application/x-abiword"),

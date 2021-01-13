@@ -13,16 +13,19 @@ public struct PapyrusClientError: Error {
 }
 
 extension Endpoint {
-    /// Requests a `Papyrus.Endpoint`, returning a future with the decoded `Endpoint.Response`.
+    /// Requests a `Papyrus.Endpoint`, returning a future with the
+    /// decoded `Endpoint.Response`.
     ///
     /// - Parameters:
-    ///   - dto: an instance of the request DTO; `Endpoint.Request`.
-    ///   - client: the HTTPClient to request this with. Defaults to `Client.default`.
-    ///   - decoder: the decoder with which to decode response data to `Endpoint.Response`. Defaults to
-    ///              `JSONDecoder()`.
-    /// - Throws: an error if there is an issue encoding the request or decoding the response.
-    /// - Returns: a future containing the decoded `Endpoint.Response` as well as the raw response of the
-    ///            `HTTPClient`.
+    ///   - dto: An instance of the request DTO; `Endpoint.Request`.
+    ///   - client: The HTTPClient to request this with. Defaults to
+    ///     `Client.default`.
+    ///   - decoder: The decoder with which to decode response data to
+    ///     `Endpoint.Response`. Defaults to `JSONDecoder()`.
+    /// - Throws: An error if there is an issue encoding the request
+    ///   or decoding the response.
+    /// - Returns: A future containing the decoded `Endpoint.Response`
+    ///   as well as the raw response of the `HTTPClient`.
     public func request(
         _ dto: Request,
         with client: HTTPClient = Services.client,
@@ -37,15 +40,17 @@ extension Endpoint {
 }
 
 extension Endpoint where Request == Empty {
-    /// Requests a `Papyrus.Endpoint` where the `Request` type is `Empty`, returning a future with
-    /// the decoded `Endpoint.Response`.
+    /// Requests a `Papyrus.Endpoint` where the `Request` type is
+    /// `Empty`, returning a future with the decoded
+    /// `Endpoint.Response`.
     ///
     /// - Parameters:
-    ///   - client: the HTTPClient to request this with. Defaults to `Client.default`.
-    ///   - decoder: the decoder with which to decode response data to `Endpoint.Response`. Defaults
-    ///              to `JSONDecoder()`.
-    /// - Returns: a future containing the decoded `Endpoint.Response` as well as the raw response
-    ///            of the `HTTPClient`.
+    ///   - client: The HTTPClient to request this with. Defaults to
+    ///     `Client.default`.
+    ///   - decoder: The decoder with which to decode response data to
+    ///     `Endpoint.Response`. Defaults to `JSONDecoder()`.
+    /// - Returns: A future containing the decoded `Endpoint.Response`
+    ///   as well as the raw response of the `HTTPClient`.
     public func request(
         with client: HTTPClient = Services.client,
         decoder: JSONDecoder = JSONDecoder()
@@ -62,11 +67,13 @@ extension HTTPClient {
     /// Performs a request with the given request information.
     ///
     /// - Parameters:
-    ///   - baseURL: the base URL of the endpoint to request.
-    ///   - parameters: information needed to make a request such as method, body, headers, etc.
-    ///   - decoder: a decoder with which to decode the response type, `Response`, from the
-    ///              `HTTPClient.Response`.
-    /// - Returns: a future containing the decoded response and the raw `HTTPClient.Response`.
+    ///   - baseURL: The base URL of the endpoint to request.
+    ///   - parameters: Information needed to make a request such as
+    ///     method, body, headers, etc.
+    ///   - decoder: A decoder with which to decode the response type,
+    ///     `Response`, from the `HTTPClient.Response`.
+    /// - Returns: A future containing the decoded response and the
+    ///   raw `HTTPClient.Response`.
     fileprivate func performRequest<Response: Codable>(
         baseURL: String,
         parameters: RequestComponents,

@@ -1,14 +1,16 @@
-/// `Endpoint` is an abstraction around making REST requests. It includes a `Request` type,
-/// representing the data needed to make the request, and a `Response` type, representing the
+/// `Endpoint` is an abstraction around making REST requests. It
+/// includes a `Request` type, representing the data needed to
+/// make the request, and a `Response` type, representing the
 /// expected response from the server.
 ///
-/// `Endpoint`s are defined via property wrapped (@GET, @POST, etc...) properties on an
-/// `EndpointGroup`.
+/// `Endpoint`s are defined via property wrapped (@GET, @POST, etc...)
+/// properties on an `EndpointGroup`.
 ///
-/// `Endpoint`s are intended to be used on either client or server for requesting external endpoints
-/// or on server for providing and validating endpoints. There are partner libraries (
-/// `PapyrusAlamofire` and `Alchemy`) for requesting or validating endpoints on client or server
-/// platforms.
+/// `Endpoint`s are intended to be used on either client or server for
+/// requesting external endpoints or on server for providing and
+/// validating endpoints. There are partner libraries
+/// (`PapyrusAlamofire` and `Alchemy`) for requesting or
+/// validating endpoints on client or server platforms.
 public struct Endpoint<Request: EndpointRequest, Response: Codable> {
     /// The method, or verb, of this endpoint.
     public let method: EndpointMethod
@@ -21,8 +23,8 @@ public struct Endpoint<Request: EndpointRequest, Response: Codable> {
     
     /// Creates a copy of this `Endpoint` with the provided `baseURL`.
     ///
-    /// - Parameter baseURL: the baseURL of the copy of this `Endpoint`.
-    /// - Returns: a copy of this `Endpoint` with the provided `baseURL`.
+    /// - Parameter baseURL: The baseURL for the `Endpoint`.
+    /// - Returns: A copy of this `Endpoint` with the `baseURL`.
     public func with(baseURL: String) -> Self {
         var copy = self
         copy.baseURL = baseURL
@@ -30,8 +32,8 @@ public struct Endpoint<Request: EndpointRequest, Response: Codable> {
     }
 }
 
-/// Indicates the type of a request's body. The content type affects how and where the content is
-/// encoded.
+/// Indicates the type of a request's body. The content type affects
+/// how and where the content is encoded.
 public enum BodyEncoding {
     /// The content of this request is encoded to its body as JSON.
     case json
@@ -41,7 +43,8 @@ public enum BodyEncoding {
 
 /// A type that can be the `Request` type of an `Endpoint`.
 public protocol EndpointRequest: Codable {
-    /// The method of encoding for the request body. Defaults to `.json`.
+    /// The method of encoding for the request body. Defaults to
+    /// `.json`.
     static var bodyEncoding: BodyEncoding { get }
 }
 
@@ -50,12 +53,13 @@ extension EndpointRequest {
 }
 
 extension EndpointRequest {
-    /// Initialize this request data from a `DecodableRequest`. Useful for loading expected request
-    /// data from incoming requests on the provider of this `Endpoint`.
+    /// Initialize this request data from a `DecodableRequest`. Useful
+    /// for loading expected request data from incoming requests on
+    /// the provider of this `Endpoint`.
     ///
-    /// - Parameters:
-    ///   - request: the request to initialize this type from.
-    /// - Throws: any error encountered while decoding this type from the request.
+    /// - Parameter request: The request to initialize this type from.
+    /// - Throws: Any error encountered while decoding this type from
+    ///   the request.
     public init(from request: DecodableRequest) throws {
         try self.init(from: RequestDecoder(request: request))
     }
@@ -64,9 +68,10 @@ extension EndpointRequest {
 extension DecodableRequest {
     /// Decodes the given `EndpointRequest` type from this request.
     ///
-    /// - Parameter requestType: the type to decode. Defaults to E.self.
-    /// - Throws: an error encountered while decoding the type.
-    /// - Returns: an instance of `E` decoded from this request.
+    /// - Parameter requestType: The type to decode. Defaults to
+    ///   `E.self`.
+    /// - Throws: An error encountered while decoding the type.
+    /// - Returns: An instance of `E` decoded from this request.
     public func decodeRequest<E: EndpointRequest>(_ requestType: E.Type = E.self) throws -> E {
         try E(from: self)
     }

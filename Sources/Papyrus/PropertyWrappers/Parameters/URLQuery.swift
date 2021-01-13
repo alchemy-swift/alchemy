@@ -16,7 +16,7 @@ public struct URLQuery<Value: Codable>: Codable, AnyQuery {
     
     /// Initialize with a query value.
     ///
-    /// - Parameter wrappedValue: the value of this query item.
+    /// - Parameter wrappedValue: The value of this query item.
     public init(wrappedValue: Value) {
         self.wrappedValue = wrappedValue
     }

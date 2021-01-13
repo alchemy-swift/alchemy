@@ -3,8 +3,9 @@ import Fusion
 import Lifecycle
 import NIO
 
-/// Provides easy access to some commonly used services in Alchemy. These services are Injected from
-/// the global `Container`. You can add your own services in extensions if you'd like.
+/// Provides easy access to some commonly used services in Alchemy.
+/// These services are Injected from the global `Container`. You
+/// can add your own services in extensions if you'd like.
 ///
 /// ```
 /// Services.db
@@ -19,8 +20,9 @@ public enum Services {}
 extension Services {
     // MARK: Alchemy Services
     
-    /// The main database of your app. This is **not** registered by default so don't forget to do
-    /// so in your `Application.setup`!
+    /// The main database of your app. By default, this isn't
+    /// registered, so don't forget to do so in your
+    /// `Application.setup`!
     ///
     /// ```
     /// struct MyServer: Application {
@@ -35,8 +37,9 @@ extension Services {
     ///         )
     ///     }
     /// }
-    /// // elsewhere
-    /// Services.db
+    ///
+    /// // Now, `Services.db` is usable elsewhere.
+    /// Services.db // `PostgresDatabase(...)` registered above
     ///     .runRawQuery("select * from users;")
     ///     .whenSuccess { rows in
     ///         print("Got \(rows.count) results!")
@@ -47,7 +50,8 @@ extension Services {
         set { Container.global.register(singleton: Database.self) { _ in newValue } }
     }
     
-    /// The router to which all incoming requests in your application are routed.
+    /// The router to which all incoming requests in your application
+    /// are routed.
     public static var router: Router {
         Container.global.resolve(Router.self)
     }
@@ -59,7 +63,7 @@ extension Services {
     
     /// An `HTTPClient` for making HTTP requests.
     ///
-    /// - Note: see
+    /// - Note: See
     /// [async-http-client](https://github.com/swift-server/async-http-client)
     ///
     /// Usage:
@@ -93,13 +97,15 @@ extension Services {
     
     /// A `NIOThreadPool` for running expensive/blocking work on.
     ///
-    /// By default, this pool has a number of threads equal to the number of logical cores on this
-    /// machine. This pool is created and started when first accessed.
+    /// By default, this pool has a number of threads equal to the
+    /// number of logical cores on this machine. This pool is
+    /// created and started when first accessed.
     public static var threadPool: NIOThreadPool {
         Container.global.resolve(NIOThreadPool.self)
     }
     
-    /// A `ServiceLifecycle` hooking into this application's lifecycle.
+    /// A `ServiceLifecycle` hooking into this application's
+    /// lifecycle.
     public static var lifecycle: ServiceLifecycle {
         Container.global.resolve(ServiceLifecycle.self)
     }
@@ -149,9 +155,10 @@ extension Services {
         }
     }
     
-    /// Register some commonly used services registered to `Container.global`.
+    /// Shutdown some commonly used services registered to
+    /// `Container.global`.
     ///
-    /// This should not be run on `EventLoop`!
+    /// This should not be run on an `EventLoop`!
     static func shutdown() throws {
         try Services.client.syncShutdown()
         // Shutdown the main database, if it exists.
@@ -160,7 +167,7 @@ extension Services {
         try Services.eventLoopGroup.syncShutdownGracefully()
     }
     
-    /// Mocks many common services. Should be called in the `setUp()`
+    /// Mocks many common services. Can be called in the `setUp()`
     /// function of test cases.
     public static func mock() {
         Container.global = Container()

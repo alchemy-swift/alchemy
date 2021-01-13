@@ -7,11 +7,13 @@ import NIOHTTP1
 /// Usage:
 /// ```
 /// self.router.globalMiddlewares = [
-///     // Will server static files from the 'public' directory of your project.
-///     StaticFileMiddleware(from: "public")
+///     // Will server static files from the 'Public' directory of
+///     // your project.
+///     StaticFileMiddleware(from: "Public")
 /// ]
 /// ```
-/// Now your router will serve the files that are in the `public` directory.
+/// Now your router will serve the files that are in the `Public`
+/// directory.
 public struct StaticFileMiddleware: Middleware {
     /// The directory from which static files will be served.
     private let directory: String
@@ -22,10 +24,11 @@ public struct StaticFileMiddleware: Middleware {
     /// Used for allocating buffers when pulling out file data.
     private let bufferAllocator = ByteBufferAllocator()
     
-    /// Creates a new middleware to serve static files from a given directory. Directory defaults to
-    /// "public/".
+    /// Creates a new middleware to serve static files from a given
+    /// directory. Directory defaults to "public/".
     ///
-    /// - Parameter directory: The directory to server static files from. Defaults to "public/"
+    /// - Parameter directory: The directory to server static files
+    ///   from. Defaults to "Public/".
     public init(from directory: String = "Public/") {
         self.directory = directory.hasSuffix("/") ? directory : "\(directory)/"
     }
@@ -83,8 +86,9 @@ public struct StaticFileMiddleware: Middleware {
                     try? fileHandle.close()
                     switch result {
                     case .failure(let error):
-                        // Not a ton that can be done in the case of an error, not sure what
-                        // else can be done besides logging and ending the request.
+                        // Not a ton that can be done in the case of
+                        // an error, not sure what else can be done
+                        // besides logging and ending the request.
                         Log.error("Encountered an error loading a static file: \(error)")
                         responseWriter.writeEnd()
                     case .success:
@@ -104,7 +108,8 @@ public struct StaticFileMiddleware: Middleware {
     ///
     /// - Parameter path: The path to sanitize for file access.
     /// - Throws: An error if the path is forbidden.
-    /// - Returns: The sanitized path, appropriate for loading files from.
+    /// - Returns: The sanitized path, appropriate for loading files
+    ///   from.
     private func sanitizeFilePath(_ path: String) throws -> String {
         var sanitizedPath = path
         

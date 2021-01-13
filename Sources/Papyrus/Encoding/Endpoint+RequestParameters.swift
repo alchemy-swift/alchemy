@@ -1,12 +1,14 @@
 import Foundation
 
 extension Endpoint {
-    /// Gets any information that may be needed to request this `Endpoint`.
+    /// Gets any information that may be needed to request this
+    /// `Endpoint`.
     ///
-    /// - Parameter dto: an instance of `Endpoint.Request`.
-    /// - Throws: any errors that may occur when parsing out data from the `Endpoint`.
-    /// - Returns: a struct containing any information needed to request this endpoint with the
-    ///            provided instance of `Request`.
+    /// - Parameter dto: An instance of `Endpoint.Request`.
+    /// - Throws: any errors that may occur when parsing out data from
+    ///   the `Endpoint`.
+    /// - Returns: A struct containing any information needed to
+    ///   request this endpoint with the provided instance of `Request`.
     public func parameters(dto: Request) throws -> RequestComponents {
         let helper = EncodingHelper(dto)
         return RequestComponents(
@@ -29,13 +31,15 @@ public struct RequestComponents {
     /// Any headers that may be on this request.
     public let headers: [String: String]
     
-    /// The base path of this request, without any path parameters replaced.
+    /// The base path of this request, without any path parameters
+    /// replaced.
     public let basePath: String
     
     /// The query string of this request.
     public let query: String
     
-    /// The full path of this request, including any path parameters _and_ the query string.
+    /// The full path of this request, including any path parameters
+    /// _and_ the query string.
     public let fullPath: String
     
     /// The body of this request.
@@ -44,12 +48,14 @@ public struct RequestComponents {
     /// Body encoding.
     public let bodyEncoding: BodyEncoding
     
-    /// Creates a simple `RequestComponents` with just a url and an endpoint method.
+    /// Creates a simple `RequestComponents` with just a url and an
+    /// endpoint method.
     ///
     /// - Parameters:
-    ///   - url: the url of the request.
-    ///   - method: the method of the request.
-    /// - Returns: the `RequestComponents` representing a request with the given `url` and `method`.
+    ///   - url: The url of the request.
+    ///   - method: The method of the request.
+    /// - Returns: The `RequestComponents` representing a request with
+    ///   the given `url` and `method`.
     public static func just(url: String, method: EndpointMethod) -> RequestComponents {
         RequestComponents(
             method: method,
@@ -62,11 +68,14 @@ public struct RequestComponents {
         )
     }
     
-    /// Creates a string representing any URL parameters this request should have. This returns nil
-    /// if `self.body` is nil or it's content type is not `.urlEncoded`.
+    /// Creates a string representing any URL parameters this request
+    /// should have. This returns nil if `self.body` is nil or it's
+    /// content type is not `.urlEncoded`.
     ///
-    /// - Throws: any error encountered while encoding the `self.body.content` to a URL `String`.
-    /// - Returns: the url parameters string of this request, or nil if it has none.
+    /// - Throws: Any error encountered while encoding the
+    ///   `self.body.content` to a URL `String`.
+    /// - Returns: The url parameters string of this request, or nil
+    ///   if it has none.
     public func urlParams() throws -> String? {
         guard let body = self.body, self.bodyEncoding == .urlEncoded else {
             return nil
@@ -77,7 +86,8 @@ public struct RequestComponents {
     }
 }
 
-/// Private helper type for pulling out the relevant request components from an `EndpointRequest`.
+/// Private helper type for pulling out the relevant request
+/// components from an `EndpointRequest`.
 private struct EncodingHelper {
     /// Erased storage of any `@Boyd`s on the request.
     private var bodies: [String: AnyBody] = [:]
@@ -93,10 +103,11 @@ private struct EncodingHelper {
     
     /// Initialize from a generic `EndpointRequest`.
     ///
-    /// - Warning: Uses `Mirror` so it will have poor efficiency at high volume. Ideally, this will
-    ///            be replaced by a custom `Encoder`.
+    /// - Warning: Uses `Mirror` so it will have poor efficiency at
+    ///   high volume. Ideally, this will be replaced by a custom
+    ///   `Encoder`.
     ///
-    /// - Parameter value: the value to load request data from.
+    /// - Parameter value: The value to load request data from.
     fileprivate init<T: EndpointRequest>(_ value: T) {
         Mirror(reflecting: value)
             .children
@@ -118,20 +129,20 @@ private struct EncodingHelper {
             }
     }
     
-    /// Generates the full path of this request, including any path parameters, queries, or URL
-    /// encoded values.
+    /// Generates the full path of this request, including any path
+    /// parameters, queries, or URL encoded values.
     ///
-    /// - Parameter basePath: the base path of the request.
-    /// - Throws: any error encountered while encoding to the URL.
-    /// - Returns: the full path of this request.
+    /// - Parameter basePath: The base path of the request.
+    /// - Throws: Any error encountered while encoding to the URL.
+    /// - Returns: The full path of this request.
     func getFullPath(_ basePath: String) throws -> String {
         try self.replacedPath(basePath) + self.queryString()
     }
     
     /// Generates and returns the query string of this request.
     ///
-    /// - Returns: a `String` with the queries of this request or an empty string if this request
-    ///            has no queries.
+    /// - Returns: A `String` with the queries of this request or an
+    ///   empty string if this request has no queries.
     func queryString() -> String {
         self.queries.isEmpty ? "" : "?" + self.queries
             .sorted { $0.key < $1.key }
@@ -144,11 +155,13 @@ private struct EncodingHelper {
             .joined(separator: "&")
     }
     
-    /// Returns a tuple representing the content and content type of this request's body.
+    /// Returns a tuple representing the content and content type of
+    /// this request's body.
     ///
-    /// - Throws: an error if there is more than one `@Body` on the `EndpointRequest` used to
-    ///           generate this helper.
-    /// - Returns: a typle representing the content and content type of this request's body.
+    /// - Throws: An error if there is more than one `@Body` on the
+    ///   `EndpointRequest` used to generate this helper.
+    /// - Returns: A type representing the content and content type
+    ///   of this request's body.
     func getBody() throws -> AnyEncodable? {
         guard self.bodies.count <= 1 else {
             throw PapyrusError("Only one `@Body` attribute is allowed per request. This will likely"
@@ -160,20 +173,22 @@ private struct EncodingHelper {
     
     /// Generates the headers of this request.
     ///
-    /// - Returns: a `[String: String]` representing the headers of this request.
+    /// - Returns: A `[String: String]` representing the headers of
+    ///   this request.
     func getHeaders() -> [String: String] {
         self.headers.reduce(into: [:]) { $0[$1.key] = $1.value.wrappedValue }
     }
     
-    /// Given a `basePath`, returns a string representing the base path with all path component
-    /// placeholders replaced by this request's path components.
+    /// Given a `basePath`, returns a string representing the base
+    /// path with all path component placeholders replaced by this
+    /// request's path components.
     ///
-    /// - Parameter basePath: the base path that contains path component placeholders (prefaced by
-    ///                       `:`).
-    /// - Throws: a `PapyrusError` if the request has a path component that doesn't have a matching
-    ///           placeholder in the `basePath`.
-    /// - Returns: the `basePath` with all path component placeholders replaced with their
-    ///            respective values.
+    /// - Parameter basePath: The base path that contains path
+    ///   component placeholders (prefaced by `:`).
+    /// - Throws: A `PapyrusError` if the request has a path component
+    ///   that doesn't have a matching placeholder in the `basePath`.
+    /// - Returns: The `basePath` with all path component placeholders
+    ///   replaced with their respective values.
     private func replacedPath(_ basePath: String) throws -> String {
         try self.paths.reduce(into: basePath) { basePath, component in
             guard basePath.contains(":\(component.key)") else {

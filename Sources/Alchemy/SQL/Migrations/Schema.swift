@@ -1,6 +1,7 @@
 /// Represents the schema of a table in a relational database.
 public class Schema {
-    /// The grammar for how this schema should construct it's SQL statements.
+    /// The grammar for how this schema should construct it's SQL
+    /// statements.
     private let grammar: Grammar
     
     /// The statements to run to create a table matching this schema.
@@ -8,7 +9,8 @@ public class Schema {
     
     /// Initialize a schema with the given grammar.
     ///
-    /// - Parameter grammar: the grammar by which this schema will construct its SQL statements.
+    /// - Parameter grammar: The grammar by which this schema will
+    ///   construct its SQL statements.
     init(grammar: Grammar) {
         self.grammar = grammar
     }
@@ -16,10 +18,10 @@ public class Schema {
     /// Create a table with the supplied builder.
     ///
     /// - Parameters:
-    ///   - table: the name of the table to create.
-    ///   - ifNotExists: if the query should silently not be run if the table already exists.
-    ///                  Defaults to `false`.
-    ///   - builder: a closure passing an object for building the new table.
+    ///   - table: The name of the table to create.
+    ///   - ifNotExists: If the query should silently not be run if
+    ///     the table already exists. Defaults to `false`.
+    ///   - builder: A closure for building the new table.
     public func create(
         table: String,
         ifNotExists: Bool = false,
@@ -41,8 +43,9 @@ public class Schema {
     /// Alter an existing table with the supplied builder.
     ///
     /// - Parameters:
-    ///   - table: the table to alter.
-    ///   - builder: a closure passing a builder for defining what should be altered.
+    ///   - table: The table to alter.
+    ///   - builder: A closure passing a builder for defining what
+    ///     should be altered.
     public func alter(table: String, builder: (inout AlterTableBuilder) -> Void) {
         var alterBuilder = AlterTableBuilder(grammar: self.grammar)
         builder(&alterBuilder)
@@ -63,7 +66,7 @@ public class Schema {
     
     /// Drop a table.
     ///
-    /// - Parameter table: the table to drop.
+    /// - Parameter table: The table to drop.
     public func drop(table: String) {
         self.statements.append(self.grammar.compileDrop(table: table))
     }
@@ -71,15 +74,16 @@ public class Schema {
     /// Rename a table.
     ///
     /// - Parameters:
-    ///   - table: the table to rename.
-    ///   - to: the new name for the table.
+    ///   - table: The table to rename.
+    ///   - to: The new name for the table.
     public func rename(table: String, to: String) {
         self.statements.append(self.grammar.compileRename(table: table, to: to))
     }
     
-    /// Execute a raw SQL statement when running this migration schema.
+    /// Execute a raw SQL statement when running this migration
+    /// schema.
     ///
-    /// - Parameter sql: the raw SQL string to execute.
+    /// - Parameter sql: The raw SQL string to execute.
     public func raw(sql: String) {
         self.statements.append(SQL(sql, bindings: []))
     }

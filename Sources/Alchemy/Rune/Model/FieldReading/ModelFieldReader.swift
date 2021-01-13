@@ -1,16 +1,18 @@
 import Foundation
 
-/// Used so `Relationship` types can know not to encode themselves to a `ModelEncoder`.
+/// Used so `Relationship` types can know not to encode themselves to
+/// a `ModelEncoder`.
 protocol ModelEncoder: Encoder {}
 
-/// Used for turning any `Model` into an array of `DatabaseField`s (column/value
-/// combinations) based on its stored properties.
+/// Used for turning any `Model` into an array of `DatabaseField`s
+/// (column/value combinations) based on its stored properties.
 final class ModelFieldReader<M: Model>: ModelEncoder {
-    /// Used for keeping track of the database fields pulled off the object encoded to this encoder.
+    /// Used for keeping track of the database fields pulled off the
+    /// object encoded to this encoder.
     fileprivate var readFields: [DatabaseField] = []
     
-    /// The mapping strategy for associating `CodingKey`s on an object with column names in a
-    /// database.
+    /// The mapping strategy for associating `CodingKey`s on an object
+    /// with column names in a database.
     fileprivate let mappingStrategy: DatabaseKeyMappingStrategy
     
     // MARK: Encoder
@@ -20,17 +22,21 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     
     /// Create with an associated `DatabaseKeyMappingStrategy`.
     ///
-    /// - Parameter mappingStrategy: the strategy for mapping `CodingKey` string values to the
-    ///                              `column`s of `DatabaseField`s.
+    /// - Parameter mappingStrategy: The strategy for mapping
+    /// `CodingKey` string values to the `column`s of
+    /// `DatabaseField`s.
     init(_ mappingStrategy: DatabaseKeyMappingStrategy) {
         self.mappingStrategy = mappingStrategy
     }
     
-    /// Read and return the stored properties of an `Model` object as a `[DatabaseField]`.
+    /// Read and return the stored properties of an `Model` object as
+    /// a `[DatabaseField]`.
     ///
-    /// - Parameter value: the `Model` instance to read from.
-    /// - Throws: a `DatabaseCodingError` if there is an error reading fields from `value`.
-    /// - Returns: an array of `DatabaseField`s representing the properties of `value`.
+    /// - Parameter value: The `Model` instance to read from.
+    /// - Throws: A `DatabaseCodingError` if there is an error reading
+    ///   fields from `value`.
+    /// - Returns: An array of `DatabaseField`s representing the
+    ///   properties of `value`.
     func getFields(of value: M) throws -> [DatabaseField] {
         try value.encode(to: self)
         let toReturn = self.readFields
@@ -52,14 +58,16 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     }
 }
 
-/// Encoder helper for pulling out `DatabaseField`s from any fields that encode to a
-/// `SingleValueEncodingContainer`.
+/// Encoder helper for pulling out `DatabaseField`s from any fields
+/// that encode to a `SingleValueEncodingContainer`.
 private struct _SingleValueEncoder<M: Model>: ModelEncoder {
-    /// The database column to which a value encoded here should map to.
+    /// The database column to which a value encoded here should map
+    /// to.
     let column: String
     
-    /// The `DatabaseFieldReader` that is being used to read the stored properties of an object.
-    /// Need to pass it around so various containers can add to it's `readFields`.
+    /// The `DatabaseFieldReader` that is being used to read the
+    /// stored properties of an object. Need to pass it around
+    /// so various containers can add to it's `readFields`.
     let encoder: ModelFieldReader<M>
     
     // MARK: Encoder
@@ -87,11 +95,13 @@ private struct _SingleValueEncoder<M: Model>: ModelEncoder {
 private struct _SingleValueEncodingContainer<
     M: Model
 >: SingleValueEncodingContainer, ModelValueReader {
-    /// The database column to which a value encoded to this container should map to.
+    /// The database column to which a value encoded to this container
+    /// should map to.
     let column: String
     
-    /// The `DatabaseFieldReader` that is being used to read the stored properties of an object.
-    /// Need to pass it around so various containers can add to it's `readFields`.
+    /// The `DatabaseFieldReader` that is being used to read the
+    /// stored properties of an object. Need to pass it around
+    /// so various containers can add to it's `readFields`.
     var encoder: ModelFieldReader<M>
     
     // MARK: SingleValueEncodingContainer
@@ -188,8 +198,8 @@ private struct _KeyedEncodingContainer<
             let keyString = self.encoder.mappingStrategy.map(input: key.stringValue)
             self.encoder.readFields.append(DatabaseField(column: keyString, value: theType))
         } else if value is AnyBelongsTo {
-            // Special case parent relationships to append `M.belongsToColumnSuffix` to the property
-            // name.
+            // Special case parent relationships to append
+            // `M.belongsToColumnSuffix` to the property name.
             let keyString = self.encoder.mappingStrategy
                 .map(input: key.stringValue + M.belongsToColumnSuffix)
             try value.encode(
@@ -220,23 +230,25 @@ private struct _KeyedEncodingContainer<
     }
 }
 
-/// Used for passing along the type of the `Model` various containers are working with so that the
-/// `Model`'s custom encoders can be used.
+/// Used for passing along the type of the `Model` various containers
+/// are working with so that the `Model`'s custom encoders can be
+/// used.
 private protocol ModelValueReader {
     /// The `Model` type this field reader is reading from.
     associatedtype M: Model
 }
 
 extension ModelValueReader {
-    /// Returns a `DatabaseValue` for a `Model` value. If the value isn't a supported `DatabaseValue`,
-    /// it is encoded to `Data` returned as `.json(Data)`. This is special cased to return nil if the
-    /// value is a Rune `Relationship`.
+    /// Returns a `DatabaseValue` for a `Model` value. If the value
+    /// isn't a supported `DatabaseValue`, it is encoded to `Data`
+    /// returned as `.json(Data)`. This is special cased to
+    /// return nil if the value is a Rune relationship.
     ///
-    /// Pretty ugly, is there a cleaner way of doing this?
-    ///
-    /// - Parameter value: the value to map to a `DatabaseValue`.
-    /// - Throws: an `EncodingError` if there is an issue encoding a value perceived to be JSON.
-    /// - Returns: a `DatabaseValue` representing `value` or `nil` if value is a Rune Relationship.
+    /// - Parameter value: The value to map to a `DatabaseValue`.
+    /// - Throws: An `EncodingError` if there is an issue encoding a
+    ///   value perceived to be JSON.
+    /// - Returns: A `DatabaseValue` representing `value` or `nil` if
+    ///   value is a Rune relationship.
     fileprivate func databaseValue<E: Encodable>(of value: E) throws -> DatabaseValue? {
         if let value = value as? Parameter {
             return value.value

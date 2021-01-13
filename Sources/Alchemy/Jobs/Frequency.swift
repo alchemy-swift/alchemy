@@ -1,15 +1,16 @@
 import Foundation
 
-/// Represents a frequency that occurs at a `rate` and may have specific requirements for when it
-/// should start running, such as "every day at 9:30 am".
+/// Represents a frequency that occurs at a `rate` and may have
+/// specific requirements for when it should start running,
+/// such as "every day at 9:30 am".
 public protocol Frequency {
     /// The interval at which this `Frequency` is repeated.
     var rate: TimeAmount { get }
     
     /// An interval until the next time this frequency can begin.
     ///
-    /// - Returns: a `TimeAmount` representing the interval between now and when this frequency's
-    ///            start time will next occur.
+    /// - Returns: A `TimeAmount` representing the interval between
+    ///   now and when this frequency's start time will next occur.
     func timeUntilNext() -> TimeAmount
 }
 
@@ -19,43 +20,34 @@ public protocol Frequency {
 public protocol TimeUnit {
     /// Returns a `TimeAmount` for a measure of time with this unit.
     ///
-    /// - Parameter value: the measurement of time.
-    /// - Returns an interval representing `value` units of this `TimeUnit`.
+    /// - Parameter value: The measurement of time.
+    /// - Returns An interval representing `value` units of this
+    ///   `TimeUnit`.
     static func time(_ value: Int64) -> TimeAmount
 }
 
 /// A week of time.
 public struct WeekUnit: TimeUnit {
-    // MARK: TimeUnit
-    
     public static func time(_ value: Int64) -> TimeAmount { .hours(value * 24 * 7) }
 }
 
 /// A day of time.
 public struct DayUnit: TimeUnit {
-    // MARK: TimeUnit
-    
     public static func time(_ value: Int64) -> TimeAmount { .hours(value * 24) }
 }
 
 /// An hour of time.
 public struct HourUnit: TimeUnit {
-    // MARK: TimeUnit
-    
     public static func time(_ value: Int64) -> TimeAmount { .hours(value) }
 }
 
 /// A minute of time.
 public struct MinuteUnit: TimeUnit {
-    // MARK: TimeUnit
-    
     public static func time(_ value: Int64) -> TimeAmount { .minutes(value) }
 }
 
 /// A second of time.
 public struct SecondUnit: TimeUnit {
-    // MARK: TimeUnit
-    
     public static func time(_ value: Int64) -> TimeAmount { .seconds(value) }
 }
 
@@ -81,11 +73,11 @@ public struct FrequencyTyped<T: TimeUnit>: Frequency {
     /// Create a frequency with the given components.
     ///
     /// - Parameters:
-    ///   - value: the value of the unit of time between frequencies.
-    ///   - day: the start day of this frequency.
-    ///   - hr: the start hour of this frequency.
-    ///   - min: the start minute of this frequency.
-    ///   - sec: the start second of this frequency.
+    ///   - value: The value of the unit of time between frequencies.
+    ///   - day: The start day of this frequency.
+    ///   - hr: The start hour of this frequency.
+    ///   - min: The start minute of this frequency.
+    ///   - sec: The start second of this frequency.
     fileprivate init(
         value: Int,
         day: Weekday? = nil,
@@ -130,8 +122,9 @@ public typealias Minutes = FrequencyTyped<MinuteUnit>
 extension Minutes {
     /// When this frequency should first take place.
     ///
-    /// - Parameter sec: a second of a minute (0-59).
-    /// - Returns: a minutely frequency that first takes place at the given component.
+    /// - Parameter sec: A second of a minute (0-59).
+    /// - Returns: A minutely frequency that first takes place at the
+    ///   given component.
     public func at(sec: Int? = nil) -> Minutes {
         Minutes(value: self.value, sec: sec)
     }
@@ -143,9 +136,10 @@ extension Hours {
     /// When this frequency should first take place.
     ///
     /// - Parameters:
-    ///   - min: a minute of an hour (0-59).
-    ///   - sec: a second of a minute (0-59).
-    /// - Returns: an hourly frequency that first takes place at the given components.
+    ///   - min: A minute of an hour (0-59).
+    ///   - sec: A second of a minute (0-59).
+    /// - Returns: An hourly frequency that first takes place at the
+    ///   given components.
     public func at(min: Int? = nil, sec: Int? = nil) -> Hours {
         Hours(value: self.value, min: min, sec: sec)
     }
@@ -157,10 +151,11 @@ extension Days {
     /// When this frequency should first take place.
     ///
     /// - Parameters:
-    ///   - hr: an hour of the day (0-23).
-    ///   - min: a minute of an hour (0-59).
-    ///   - sec: a second of a minute (0-59).
-    /// - Returns: a daily frequency that first takes place at the given components.
+    ///   - hr: An hour of the day (0-23).
+    ///   - min: A minute of an hour (0-59).
+    ///   - sec: A second of a minute (0-59).
+    /// - Returns: A daily frequency that first takes place at the
+    ///   given components.
     public func at(hr: Int? = nil, min: Int? = nil, sec: Int? = nil) -> Days {
         Days(value: self.value, min: min, sec: sec)
     }
@@ -172,11 +167,12 @@ extension Weeks {
     /// When this frequency should first take place.
     ///
     /// - Parameters:
-    ///   - day: a day of the week.
-    ///   - hr: an hour of the day (0-23).
-    ///   - min: a minute of an hour (0-59).
-    ///   - sec: a second of a minute (0-59).
-    /// - Returns: a weekly frequency that first takes place at the given components.
+    ///   - day: A day of the week.
+    ///   - hr: An hour of the day (0-23).
+    ///   - min: A minute of an hour (0-59).
+    ///   - sec: A second of a minute (0-59).
+    /// - Returns: A weekly frequency that first takes place at the
+    ///   given components.
     public func at(_ day: Weekday? = nil, hr: Int? = nil, min: Int? = nil, sec: Int? = nil) -> Weeks {
         Weeks(value: self.value, day: day, hr: hr, min: min, sec: sec)
     }

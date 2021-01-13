@@ -13,7 +13,7 @@ final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
     ///
     /// - Parameters:
     ///   - path: The path of the object to search for. If this is
-    ///   empty, it is assumed the object can only be at this node.
+    ///     empty, it is assumed the object can only be at this node.
     ///   - storageKey: The key by which the object is stored.
     /// - Returns: A tuple containing the object and any parsed path
     ///   parameters. `nil` if the object isn't in this node or its
@@ -43,7 +43,7 @@ final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
     ///
     /// - Parameters:
     ///   - path: The path to the node where this value should be
-    ///   stored.
+    ///     stored.
     ///   - storageKey: The key by which to store the value.
     ///   - value: The value to store.
     func insert(path: [String], storageKey: StorageKey, value: StorageObject) {

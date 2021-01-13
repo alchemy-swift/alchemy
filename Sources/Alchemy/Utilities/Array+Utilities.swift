@@ -1,5 +1,6 @@
 extension Array where Element: Hashable {
-    /// Removes any duplicates from the array while maintaining the original order.
+    /// Removes any duplicates from the array while maintaining the
+    /// original order.
     public var uniques: Array {
         var buffer = Array()
         var added = Set<Element>()
@@ -14,7 +15,8 @@ extension Array where Element: Hashable {
 }
 
 extension Array {
-    /// Allows for safe array lookup, returning nil of the index is out of bounds.
+    /// Allows for safe array lookup, returning nil of the index is
+    /// out of bounds.
     public subscript(safe index: Int) -> Element? {
         guard index >= 0, index < endIndex else {
             return nil

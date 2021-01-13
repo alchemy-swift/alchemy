@@ -27,8 +27,6 @@ public struct SQL {
     }
 }
 
-public typealias Raw = SQL
-
 extension Array where Self.Iterator.Element == SQL {
     public static func +=(lhs: inout Self, rhs: SQL) {
         lhs.append(rhs)

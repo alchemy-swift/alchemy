@@ -1,7 +1,6 @@
 import ArgumentParser
 
-/// Command to launch a given application & either serve or migrate. To be used
-/// in the `main.swift` file of an Alchemy application.
+/// Command to launch a given application & either serve or migrate.
 public struct Launch<A: Application>: ParsableCommand {
     public static var configuration: CommandConfiguration {
         CommandConfiguration(
@@ -15,7 +14,9 @@ public struct Launch<A: Application>: ParsableCommand {
 }
 
 extension Application {
-    /// Launch this application. By default it serves, see `Launch` for subcommands and options.
+    /// Launch this application. By default it serves, see `Launch`
+    /// for subcommands and options. Call this in the `main.swift`
+    /// of your project.
     public static func launch() {
         Launch<Self>.main()
     }

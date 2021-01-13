@@ -33,10 +33,10 @@ public final class Router {
     /// and returns an `ResponseConvertible`.
     ///
     /// - Parameters:
-    ///   - handler: the closure for handling a request matching the
-    ///   given method and path.
-    ///   - method: the method of a request this handler expects.
-    ///   - path: the path of a requst this handler can handle.
+    ///   - handler: The closure for handling a request matching the
+    ///     given method and path.
+    ///   - method: The method of a request this handler expects.
+    ///   - path: The path of a requst this handler can handle.
     func add(
         handler: @escaping (Request) throws -> ResponseConvertible,
         for method: HTTPMethod,
@@ -68,7 +68,7 @@ public final class Router {
     /// - Parameter request: The request this router will handle.
     /// - Throws: Any error encountered while handling the request.
     /// - Returns: A future containing the response of a handler or a
-    /// `.notFound` response if there was not a matching handler.
+    ///   `.notFound` response if there was not a matching handler.
     func handle(request: Request) throws -> EventLoopFuture<Response> {
         let splitPath = request.path.split(separator: "/").map(String.init)
         guard let hit = self.trie.search(path: splitPath, storageKey: request.method) else {
