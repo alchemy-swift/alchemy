@@ -6,25 +6,25 @@ import NIO
 /// Usage:
 /// ```
 /// self.scheduler
-///     .schedule(UpdateQueries(), every: 1.days.at(hr: 12))
-///     .schedule(SyncSubscriptions(), every: 1.days.at(hr: 9, min: 27, sec: 43))
-///     .schedule(RunQueries(), every: 1.minutes.at(sec: 30))
-///     .schedule(CheckAlerts(), every: 1.minutes.at(sec: 00))
+///     .every(1.days.at(hr: 12), run: UpdateQueries())
+///     .every(1.days.at(hr: 9, min: 27, sec: 43), run: SyncSubscriptions())
+///     .every(1.minutes.at(sec: 30), run: RunQueries())
+///     .every(1.minutes, run: CheckAlerts())
 /// ```
 public struct Scheduler {
-    /// The global `MultiThreadedEventLoopGroup` for scheduling work on.
-    @Inject var group: EventLoopGroup
-    
-    /// The loop on which Job scheduling will be done. Note that the actual Jobs will be run on
-    /// `EventLoop`s dequeued from the application's `MultiThreadedEventLoopGroup`.
+    /// The loop on which Job scheduling will be done. Note that the
+    /// actual Jobs will be run on `EventLoop`s dequeued from the
+    /// application's `MultiThreadedEventLoopGroup`.
     let scheduleLoop: EventLoop
     
     /// Schedules a `Job` at a recurring interval.
     ///
     /// - Parameters:
-    ///   - frequency: the frequency at which this `Job` should be run. See `Frequency` for API.
-    ///   - job: the `Job` to schedule.
-    /// - Returns: this `Scheduler` with which more `Job`s can be scheduled.
+    ///   - frequency: The frequency at which this `Job` should be
+    ///     run. See `Frequency`.
+    ///   - job: The `Job` to schedule.
+    /// - Returns: This `Scheduler` with which more `Job`s can be
+    ///   scheduled.
     @discardableResult
     public func every<J: Job>(_ frequency: Frequency, run job: J) -> Scheduler {
         /// A single loop will do all the scheduling for now.
@@ -34,8 +34,8 @@ public struct Scheduler {
                 delay: frequency.rate
             ) { repeatedTask in
                 Log.info("Starting Job `\(name(of: J.self))`.")
-                // for now, never cancel the task.
-                _ = self.group.next()
+                // For now, never cancel the task.
+                _ = Services.eventLoopGroup.next()
                     .flatSubmit(job.run)
                     .map { Log.info("Finished Job `\(name(of: J.self))`.") }
             }

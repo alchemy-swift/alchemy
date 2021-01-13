@@ -1,6 +1,6 @@
 import Foundation
 
-protocol WhereClause: Sequelizable { }
+protocol WhereClause: Sequelizable {}
 
 public enum WhereBoolean: String {
     case and

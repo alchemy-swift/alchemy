@@ -1,12 +1,13 @@
 import NIO
 
-/// A type erased `BelongsToRelationship`. Used for special casing decoding behavior for
-/// `BelongsTo`s.
+/// A type erased `BelongsToRelationship`. Used for special casing
+/// decoding behavior for `BelongsTo`s.
 protocol AnyBelongsTo {}
 
 @propertyWrapper
-/// The child of a 1 - M or a 1 - 1 relationship. Backed by an identifier of the parent, when
-/// encoded to a database, this type attempt to write that identifier to a column named 
+/// The child of a 1 - M or a 1 - 1 relationship. Backed by an
+/// identifier of the parent, when encoded to a database, this
+/// type attempt to write that identifier to a column named 
 /// `<property-name>_id`.
 ///
 /// Example:
@@ -16,8 +17,9 @@ protocol AnyBelongsTo {}
 ///     ...
 ///
 ///     @BelongsTo
-///     var owner: User // The ID value of this User will be stored under the `owner_id` column in
-///                     // the `pets` table.
+///     var owner: User // The ID value of this User will be stored
+///                     // under the `owner_id` column in the
+///                     // `pets` table.
 /// }
 /// ```
 public final class BelongsToRelationship<
@@ -34,11 +36,13 @@ public final class BelongsToRelationship<
         }
     }
     
-    /// The underlying relationship object, if there is one. Populated by eager loading.
+    /// The underlying relationship object, if there is one. Populated
+    /// by eager loading.
     private var value: Parent?
     
-    /// The related `Model` object. Accessing this will `fatalError` if the relationship is not
-    /// already loaded via eager loading or set manually.
+    /// The related `Model` object. Accessing this will `fatalError`
+    /// if the relationship is not already loaded via eager loading
+    /// or set manually.
     public var wrappedValue: Parent {
         get {
             guard let value = self.value else {
@@ -50,13 +54,15 @@ public final class BelongsToRelationship<
         set { self.value = newValue }
     }
     
-    /// The projected value of this property wrapper is itself. Used for when a reference to the
-    /// _relationship_ type is needed, such as during eager loads.
+    /// The projected value of this property wrapper is itself. Used
+    /// for when a reference to the _relationship_ type is needed,
+    /// such as during eager loads.
     public var projectedValue: Child.BelongsTo<Parent> {
         self
     }
     
-    /// Initialize this relationship with an `Identifier` of the `Parent` type.
+    /// Initialize this relationship with an `Identifier` of the
+    /// `Parent` type.
     ///
     /// - Parameter parentID: the identifier of the `Parent` to which this child belongs.
     public init(_ parentID: Parent.Value.Identifier) {
@@ -65,22 +71,26 @@ public final class BelongsToRelationship<
     
     /// Initialize this relationship with an instance of `Parent`.
     ///
-    /// - Parameter parent: the `Parent` object to which this child belongs.
+    /// - Parameter parent: The `Parent` object to which this child
+    ///   belongs.
     public init(_ parent: Parent.Value) {
         guard let id = parent.id else {
             fatalError("Can't form a relation with an unidentified object.")
         }
 
         self.id = id
-        // `.from` only throws if it's passed nil so this will always succeed.
+        // `.from` only throws if it's passed nil so this will always
+        // succeed.
         self.value = try? Parent.from(parent)
     }
     
-    /// Initializes this `BelongsToRelationship` with nil values. Should only be called on a
-    /// `BelongsTo` that has an `Optional` `Parent` type.
+    /// Initializes this `BelongsToRelationship` with nil values.
+    /// Should only be called on a `BelongsTo` that has an
+    /// `Optional` `Parent` type.
     ///
-    /// - Parameter nil: a void closure. Ideally this signature would be `init()` but that seems to
-    ///                  throw a compiler error related to property wrappers.
+    /// - Parameter nil: A void closure. Ideally this signature would
+    ///   be `init()` but that seems to throw a compiler error
+    ///   related to property wrappers.
     private init(nil: Void) {
         self.id = nil
         self.value = nil
@@ -135,8 +145,6 @@ public final class BelongsToRelationship<
 }
 
 extension BelongsToRelationship: ExpressibleByNilLiteral where Parent: AnyOptional {
-    // MARK: ExpressibleByNilLiteral
-    
     public convenience init(nilLiteral: ()) {
         self.init(nil: nilLiteral)
     }

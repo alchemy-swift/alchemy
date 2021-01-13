@@ -1,8 +1,10 @@
 import Foundation
 
-/// Decoder for decoding `Model` types from a `DatabaseRow`. Properties of the `Decodable` type
-/// are matched to columns with matching names (either the same name or a specific name mapping
-/// based on the supplied `keyMappingStrategy`).
+/// Decoder for decoding `Model` types from a `DatabaseRow`.
+/// Properties of the `Decodable` type are matched to
+/// columns with matching names (either the same
+/// name or a specific name mapping based on
+/// the supplied `keyMappingStrategy`).
 struct DatabaseRowDecoder<M: Model>: Decoder {
     /// The row that will be decoded out of.
     let row: DatabaseRow
@@ -26,13 +28,14 @@ struct DatabaseRowDecoder<M: Model>: Decoder {
     }
     
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        /// This is for non-primitives that encode to a single value and should be handled by
-        /// `DatabaseFieldDecoder`.
+        /// This is for non-primitives that encode to a single value
+        /// and should be handled by `DatabaseFieldDecoder`.
         throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
 }
 
-/// A `KeyedDecodingContainerProtocol` used to decode keys from a `DatabaseRow`.
+/// A `KeyedDecodingContainerProtocol` used to decode keys from a
+/// `DatabaseRow`.
 private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerProtocol {
     /// The row to decode from.
     let row: DatabaseRow
@@ -145,16 +148,17 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
         throw DatabaseCodingError("Super decoding isn't supported.")
     }
     
-    /// Returns the database column string for a `CodingKey` given this container's
-    /// `keyMappingStrategy`.
+    /// Returns the database column string for a `CodingKey` given
+    /// this container's `keyMappingStrategy`.
     ///
-    /// Keys to parent relationships are special cased to append `M.belongsToColumnSuffix` to the
-    /// field name.
+    /// Keys to parent relationships are special cased to append
+    /// `M.belongsToColumnSuffix` to the field name.
     ///
-    /// - Parameter key: the `CodingKey` to map.
-    /// - Parameter includeIdSuffix: whether `M.belongsToColumnSuffix` should be appended to
-    ///                              `key.stringValue` _before_ being mapped.
-    /// - Returns: the column name that `key` is mapped to.
+    /// - Parameter key: The `CodingKey` to map.
+    /// - Parameter includeIdSuffix: Whether `M.belongsToColumnSuffix`
+    ///   should be appended to `key.stringValue` _before_ being
+    ///   mapped.
+    /// - Returns: The column name that `key` is mapped to.
     private func string(for key: Key, includeIdSuffix: Bool = false) -> String {
         let value = key.stringValue + (includeIdSuffix ? M.belongsToColumnSuffix : "")
         return M.keyMappingStrategy.map(input: value)

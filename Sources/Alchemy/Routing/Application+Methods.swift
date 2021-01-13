@@ -2,18 +2,19 @@ import NIO
 import NIOHTTP1
 
 extension Application {
-    /// A basic route handler closure. Most types you'll need conform to `ResponseConvertible` out
-    /// of the box.
+    /// A basic route handler closure. Most types you'll need conform
+    /// to `ResponseConvertible` out of the box.
     public typealias Handler = (Request) throws -> ResponseConvertible
     
     /// Adds a handler at a given method and path.
     ///
     /// - Parameters:
-    ///   - method: the method of requests this handler will handle.
-    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
-    ///           `:` (See `PathParameter`).
-    ///   - handler: the handler to respond to a matching request with.
-    /// - Returns: this router for continuing to build a handler chain.
+    ///   - method: The method of requests this handler will handle.
+    ///   - path: The path this handler expects. Dynamic path
+    ///     parameters should be prefaced with a `:`
+    ///     (See `PathParameter`).
+    ///   - handler: The handler to respond to the request with.
+    /// - Returns: This application for building a handler chain.
     @discardableResult
     public func on(
         _ method: HTTPMethod,
@@ -67,13 +68,16 @@ extension Application {
     }
 }
 
-/// These extensions are all sugar for defining handlers, since it's not possible to conform all
-/// handler return types we wish to support to `ResponseConvertible`.
+/// These extensions are all sugar for defining handlers, since it's
+/// not possible to conform all handler return types we wish to
+/// support to `ResponseConvertible`.
 ///
-/// Specifically, these extensions support having `Void`, `EventLoopFuture<Void>`, `E: Encodable`,
-/// and `EventLoopFuture<E: Encodable>` as handler return types.
+/// Specifically, these extensions support having `Void`,
+/// `EventLoopFuture<Void>`, `E: Encodable`, and
+/// `EventLoopFuture<E: Encodable>` as handler return types.
 ///
-/// This extension is pretty bulky because we need each of these four for `on` & each method.
+/// This extension is pretty bulky because we need each of these four
+/// for `on` & each method.
 extension Application {
 
     // MARK: - Void
@@ -84,11 +88,12 @@ extension Application {
     /// Adds a handler at a given method and path.
     ///
     /// - Parameters:
-    ///   - method: the method of requests this handler will handle.
-    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
-    ///           `:` (See `PathParameter`).
-    ///   - action: the handler to respond to a matching request with.
-    /// - Returns: this router for continuing to build a handler chain.
+    ///   - method: The method of requests this handler will handle.
+    ///   - path: The path this handler expects. Dynamic path
+    ///     parameters should be prefaced with a `:`
+    ///     (See `PathParameter`).
+    ///   - handler: The handler to respond to the request with.
+    /// - Returns: This application for building a handler chain.
     @discardableResult
     public func on(
         _ method: HTTPMethod,
@@ -151,11 +156,12 @@ extension Application {
     /// Adds a handler at a given method and path.
     ///
     /// - Parameters:
-    ///   - method: the method of requests this handler will handle.
-    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
-    ///           `:` (See `PathParameter`).
-    ///   - action: the handler to respond to a matching request with.
-    /// - Returns: this router for continuing to build a handler chain.
+    ///   - method: The method of requests this handler will handle.
+    ///   - path: The path this handler expects. Dynamic path
+    ///     parameters should be prefaced with a `:`
+    ///     (See `PathParameter`).
+    ///   - handler: The handler to respond to the request with.
+    /// - Returns: This application for building a handler chain.
     @discardableResult
     public func on(
         _ method: HTTPMethod,
@@ -215,11 +221,12 @@ extension Application {
     /// Adds a handler at a given method and path.
     ///
     /// - Parameters:
-    ///   - method: the method of requests this handler will handle.
-    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
-    ///           `:` (See `PathParameter`).
-    ///   - action: the handler to respond to a matching request with.
-    /// - Returns: this router for continuing to build a handler chain.
+    ///   - method: The method of requests this handler will handle.
+    ///   - path: The path this handler expects. Dynamic path
+    ///     parameters should be prefaced with a `:`
+    ///     (See `PathParameter`).
+    ///   - handler: The handler to respond to the request with.
+    /// - Returns: This application for building a handler chain.
     @discardableResult
     public func on<E: Encodable>(
         _ method: HTTPMethod, at path: String = "", handler: @escaping EncodableHandler<E>
@@ -278,11 +285,12 @@ extension Application {
     /// Adds a handler at a given method and path.
     ///
     /// - Parameters:
-    ///   - method: the method of requests this handler will handle.
-    ///   - path: the path this handler expects. Dynamic path parameters should be prefaced with a
-    ///           `:` (See `PathParameter`).
-    ///   - action: the handler to respond to a matching request with.
-    /// - Returns: this router for continuing to build a handler chain.
+    ///   - method: The method of requests this handler will handle.
+    ///   - path: The path this handler expects. Dynamic path
+    ///     parameters should be prefaced with a `:`
+    ///     (See `PathParameter`).
+    ///   - handler: The handler to respond to the request with.
+    /// - Returns: This application for building a handler chain.
     @discardableResult
     public func on<E: Encodable>(
         _ method: HTTPMethod,
@@ -335,10 +343,9 @@ extension Application {
     }
 }
 
-/// Used as the response for a handler returns `Void` or `EventLoopFuture<Void>`.
+/// Used as the response for a handler returns `Void` or
+/// `EventLoopFuture<Void>`.
 private struct VoidResponse: ResponseConvertible {
-    // MARK: ResponseConvertible
-    
     func convert() throws -> EventLoopFuture<Response> {
         .new(Response(status: .ok, body: nil))
     }

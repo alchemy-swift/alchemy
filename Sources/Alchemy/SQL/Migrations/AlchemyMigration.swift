@@ -17,13 +17,13 @@ struct AddAlchemyMigration: Migration {
     }
 }
 
-/// Represents a table for storing migration data. Alchemy will use this table for keeping track of
-/// the various batches of migrations that have been run.
+/// Represents a table for storing migration data. Alchemy will use
+/// this table for keeping track of the various batches of
+/// migrations that have been run.
 struct AlchemyMigration: Model {
     // MARK: Model
     
     static var tableName: String = kMigrationTable
-    static var keyMappingStrategy: DatabaseKeyMappingStrategy { .convertToSnakeCase }
     
     /// Serial primary key.
     var id: Int?

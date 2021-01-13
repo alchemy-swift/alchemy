@@ -3,33 +3,36 @@ import Papyrus
 import NIO
 
 public extension Application {
-    /// Registers a `Papyrus.Endpoint` to a `Router`. When an incoming request matches the path of
-    /// the `Endpoint`, the `Endpoint.Request` will automatically be decoded from the incoming
+    /// Registers a `Papyrus.Endpoint`. When an incoming request
+    /// matches the path of the `Endpoint`, the `Endpoint.Request`
+    /// will automatically be decoded from the incoming
     /// `HTTPRequest` for use in the provided handler.
     ///
     /// - Parameters:
-    ///   - endpoint: the endpoint to register on this router.
-    ///   - closure: the handler for handling incoming requests that match this endpoint's path.
-    ///              This handler expects a future containing an instance of the endpoint's response
-    ///              type.
+    ///   - endpoint: The endpoint to register on this router.
+    ///   - handler: The handler for handling incoming requests that
+    ///     match this endpoint's path. This handler expects a
+    ///     future containing an instance of the endpoint's
+    ///     response type.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
     func on<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
-        use closure: @escaping (Request, Req) throws -> EventLoopFuture<Res>
+        use handler: @escaping (Request, Req) throws -> EventLoopFuture<Res>
     ) -> Self where Res: Codable {
         self.on(endpoint.method.nio, at: endpoint.path) {
-            try closure($0, try Req(from: $0))
+            try handler($0, try Req(from: $0))
         }
     }
     
-    /// Registers a `Papyrus.Endpoint` that has an `Empty` request type, to a `Router`.
+    /// Registers a `Papyrus.Endpoint` that has an `Empty` request
+    /// type.
     ///
     /// - Parameters:
-    ///   - endpoint: the endpoint to register on this router.
-    ///   - closure: the handler for handling incoming requests that match this endpoint's path.
-    ///              This handler expects a future containing an instance of the endpoint's response
-    ///              type.
+    ///   - endpoint: The endpoint to register on this application.
+    ///   - handler: The handler for handling incoming requests that
+    ///     match this endpoint's path. This handler expects a future
+    ///     containing an instance of the endpoint's response type.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
     func on<Res>(
@@ -50,7 +53,8 @@ extension EventLoopFuture {
     }
 }
 
-// Provide a custom response for when `PapyrusValidationError`s are thrown.
+// Provide a custom response for when `PapyrusValidationError`s are
+// thrown.
 extension PapyrusValidationError: ResponseConvertible {
     // MARK: ResponseConvertible
     
@@ -102,8 +106,10 @@ extension EndpointMethod {
 }
 
 extension EndpointGroup {
-    /// Initializes an EndpointGroup with an empty `baseURL`. Should only be used when _providing_
-    /// (i.e. `router.register(group.someEndpoint)`) not _consuming_ endpoints.
+    /// Initializes an EndpointGroup with an empty `baseURL`. Should
+    /// only be used when _providing_ (i.e.
+    /// `router.register(group.someEndpoint)`) not _consuming_
+    /// endpoints.
     public convenience init() {
         self.init(baseURL: "")
     }

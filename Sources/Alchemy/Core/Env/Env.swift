@@ -4,9 +4,9 @@ private let kDefaultEnv = "env"
 /// The env variable for an env path override.
 private let kEnvVariable = "APP_ENV"
 
-/// Handles any environment info of your application. Loads any environment
-/// variables from the file a `.env` or `.{APP_ENV}` if `APP_ENV` is set in the
-/// current environment.
+/// Handles any environment info of your application. Loads any
+/// environment variables from the file a `.env` or `.{APP_ENV}`
+/// if `APP_ENV` is set in the current environment.
 ///
 /// Variables are accessed via `.get`. Supports dynamic member lookup.
 /// ```
@@ -22,17 +22,18 @@ private let kEnvVariable = "APP_ENV"
 /// ```
 @dynamicMemberLookup
 public struct Env: Equatable {
-    /// The environment file location of this application. Additional env
-    /// variables are pulled from the file at '.{name}'. This defaults to `env`
-    /// or `APP_ENV` if that is set.
+    /// The environment file location of this application. Additional
+    /// env variables are pulled from the file at '.{name}'. This
+    /// defaults to `env` or `APP_ENV` if that is set.
     public let name: String
     
-    /// Returns any environment variables loaded from the environment file as
-    /// type `T: EnvAllowed`. Supports `String`, `Int`, `Double`, and `Bool`.
+    /// Returns any environment variables loaded from the environment
+    /// file as type `T: EnvAllowed`. Supports `String`, `Int`,
+    /// `Double`, and `Bool`.
     ///
-    /// - Parameter key: the name of the environment variable.
-    /// - Returns: the variable converted to type `S`. `nil` if the variable
-    ///            doesn't exist or it cannot be converted as `S`.
+    /// - Parameter key: The name of the environment variable.
+    /// - Returns: The variable converted to type `S`. `nil` if the
+    ///   variable doesn't exist or it cannot be converted as `S`.
     public func get<S: StringInitializable>(_ key: String) -> S? {
         if let val = getenv(key) {
             let stringValue = String(validatingUTF8: val)
@@ -51,8 +52,8 @@ public struct Env: Equatable {
         return ProcessInfo.processInfo.environment
     }
     
-    /// The current environment containing all variables loaded from the
-    /// environment file.
+    /// The current environment containing all variables loaded from
+    /// the environment file.
     public static var current: Env = {
         let appEnvPath = ProcessInfo.processInfo
             .environment[kEnvVariable] ?? kDefaultEnv
@@ -62,10 +63,11 @@ public struct Env: Equatable {
 }
 
 extension Env {
-    /// Load the environment file and put all the variables into the process
-    /// environment.
+    /// Load the environment file and put all the variables into the
+    /// process environment.
     ///
-    /// - Parameter path: the path of the file from which to load the variables.
+    /// - Parameter path: The path of the file from which to load the
+    ///   variables.
     private static func loadDotEnvFile(path: String) {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
         
@@ -112,11 +114,13 @@ extension Env {
         }
     }
 
-    /// Determines the absolute path of the given argument relative to the
-    /// current directory. Return nil if there is no file at that path.
+    /// Determines the absolute path of the given argument relative to
+    /// the current directory. Return nil if there is no file at that
+    /// path.
     ///
-    /// - Parameter relativePath: the path to find.
-    /// - Returns: the absolute path of the `relativePath`, if it exists.
+    /// - Parameter relativePath: The path to find.
+    /// - Returns: The absolute path of the `relativePath`, if it
+    ///   exists.
     private static func getAbsolutePath(relativePath: String) -> String? {
         let fileManager = FileManager.default
         let currentPath = fileManager.currentDirectoryPath

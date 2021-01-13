@@ -1,13 +1,15 @@
 import Foundation
 
 extension String {
-    /// Replace all instances of a regex pattern with a string, determined by a closure.
+    /// Replace all instances of a regex pattern with a string,
+    /// determined by a closure.
     ///
     /// - Parameters:
-    ///   - pattern: the pattern to replace.
-    ///   - callback: the closure used to define replacements for the pattern. Takes an index and a
-    ///               string that is the token to replace.
-    /// - Returns: the string with replaced patterns.
+    ///   - pattern: The pattern to replace.
+    ///   - callback: The closure used to define replacements for the
+    ///     pattern. Takes an index and a string that is the token to
+    ///     replace.
+    /// - Returns: The string with replaced patterns.
     func replaceAll(matching pattern: String, callback: (Int, String) -> String?) -> String {
         let expression = try! NSRegularExpression(pattern: pattern, options: [])
         let matches = expression

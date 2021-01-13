@@ -2,7 +2,8 @@ import MySQLKit
 import NIO
 
 public final class MySQLDatabase: Database {
-    /// The connection pool from which to make connections to the database with.
+    /// The connection pool from which to make connections to the
+    /// database with.
     private let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
     
     // MARK: Database
@@ -10,10 +11,11 @@ public final class MySQLDatabase: Database {
     public var grammar: Grammar = MySQLGrammar()
     public var migrations: [Migration] = []
 
-    /// Initialize with the given configuration. The configuration will be
-    /// connected to when a query is run.
+    /// Initialize with the given configuration. The configuration
+    /// will be connected to when a query is run.
     ///
-    /// - Parameter config: the info needed to connect to the database.
+    /// - Parameter config: The info needed to connect to the
+    ///   database.
     public init(config: DatabaseConfig) {
         self.pool = EventLoopGroupConnectionPool(
             source: MySQLConnectionSource(configuration: {

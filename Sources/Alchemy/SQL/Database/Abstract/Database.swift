@@ -1,21 +1,21 @@
 import Foundation
 import PostgresKit
 
-/// A generic type to represent any database you might be interacting with.
-/// Currently, the only two implementations are `PostgresDatabase` and
-/// `MySQLDatabase`. The QueryBuilder and Rune ORM are built on top of this
-/// abstraction.
+/// A generic type to represent any database you might be interacting
+/// with. Currently, the only two implementations are
+/// `PostgresDatabase` and `MySQLDatabase`. The QueryBuilder and Rune
+/// ORM are built on top of this abstraction.
 public protocol Database {
-    /// Any migrations associated with this database, whether applied yet or
-    /// not.
+    /// Any migrations associated with this database, whether applied
+    /// yet or not.
     var migrations: [Migration] { get set }
     
-    /// Functions around compiling SQL statments for this database's SQL dialect
-    /// when using the QueryBuilder or Rune.
+    /// Functions around compiling SQL statments for this database's
+    /// SQL dialect when using the QueryBuilder or Rune.
     var grammar: Grammar { get }
     
-    /// Start a QueryBuilder query on this database. See `Query` or QueryBuilder
-    /// guides.
+    /// Start a QueryBuilder query on this database. See `Query` or
+    /// QueryBuilder guides.
     ///
     /// Usage:
     /// ```
@@ -32,11 +32,11 @@ public protocol Database {
     ///     }
     /// ```
     ///
-    /// - returns: the start of a QueryBuilder `Query`.
+    /// - Returns: The start of a QueryBuilder `Query`.
     func query() -> Query
     
-    /// Run a parameterized query on the database. Parameterization helps
-    /// protect against SQL injection.
+    /// Run a parameterized query on the database. Parameterization
+    /// helps protect against SQL injection.
     ///
     /// Usage:
     /// ```
@@ -58,16 +58,14 @@ public protocol Database {
     /// ```
     ///
     /// - Parameters:
-    ///   - sql: the SQL string with '?'s denoting variables that should be
-    ///          parameterized.
-    ///   - values: an array, `[DatabaseValue]`, that will replace the '?'s in
-    ///             `sql`. Ensure there are the same amnount of values as there
-    ///             are '?'s in `sql`.
-    /// - Returns: an `EventLoopFuture` of the rows returned by the query.
-    func runRawQuery(
-        _ sql: String,
-        values: [DatabaseValue]
-    ) -> EventLoopFuture<[DatabaseRow]>
+    ///   - sql: The SQL string with '?'s denoting variables that
+    ///     should be parameterized.
+    ///   - values: An array, `[DatabaseValue]`, that will replace the
+    ///     '?'s in `sql`. Ensure there are the same amnount of values
+    ///     as there are '?'s in `sql`.
+    /// - Returns: An `EventLoopFuture` of the rows returned by the
+    ///   query.
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]>
     
     /// Called when the database connection will shut down.
     ///
@@ -81,10 +79,7 @@ extension Database {
         Query(database: self)
     }
     
-    public func runRawQuery(
-        _ sql: String,
-        values: [DatabaseValue] = []
-    ) -> EventLoopFuture<[DatabaseRow]> {
+    public func runRawQuery(_ sql: String, values: [DatabaseValue] = []) -> EventLoopFuture<[DatabaseRow]> {
         self.runRawQuery(sql, values: values)
     }
 }

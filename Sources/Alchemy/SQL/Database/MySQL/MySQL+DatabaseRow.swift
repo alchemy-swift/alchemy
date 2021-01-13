@@ -2,8 +2,6 @@ import MySQLNIO
 import NIO
 
 extension MySQLRow: DatabaseRow {
-    // MARK: DatabaseRow
-    
     public var allColumns: [String] {
         self.columnDefinitions.map(\.orgName)
     }
@@ -18,9 +16,9 @@ extension MySQLRow: DatabaseRow {
 extension MySQLData {
     /// Initialize from an Alchemy `DatabaseValue`.
     ///
-    /// - Parameter value: the value with which to initialize. Given the type of
-    ///                    the value, the `MySQLData` will be initialized with
-    ///                    the best corresponding type.
+    /// - Parameter value: The value with which to initialize. Given
+    ///   the type of the value, the `MySQLData` will be initialized
+    ///   with the best corresponding type.
     init(_ value: DatabaseValue) {
         switch value {
         case .bool(let value):
@@ -37,15 +35,11 @@ extension MySQLData {
                 return
             }
             
-            // `MySQLData` doesn't support initializing from `Foundation.Data`.
+            // `MySQLData` doesn't support initializing from
+            // `Foundation.Data`.
             var buffer = ByteBufferAllocator().buffer(capacity: data.count)
             buffer.writeBytes(data)
-            self = MySQLData(
-                type: .string,
-                format: .text,
-                buffer: buffer,
-                isUnsigned: true
-            )
+            self = MySQLData(type: .string, format: .text, buffer: buffer, isUnsigned: true)
         case .string(let value):
             self = value.map(MySQLData.init(string:)) ?? .null
         case .uuid(let value):
@@ -55,11 +49,11 @@ extension MySQLData {
     
     /// Converts a `MySQLData` to the Alchemy `DatabaseField` type.
     ///
-    /// - Parameter column: the name of the column this data is at.
-    /// - Throws: a `DatabaseError` if there is an issue converting the
-    ///           `MySQLData` to its expected type.
-    /// - Returns: a `DatabaseField` with the column, type and value, best
-    ///            representing this `M`ySQLData`.
+    /// - Parameter column: The name of the column this data is at.
+    /// - Throws: A `DatabaseError` if there is an issue converting
+    ///   the `MySQLData` to its expected type.
+    /// - Returns: A `DatabaseField` with the column, type and value,
+    ///   best representing this `MySQLData`.
     func toDatabaseField(from column: String) throws -> DatabaseField {
         func validateNil<T>(_ value: T?) throws -> T? {
             if self.buffer == nil {

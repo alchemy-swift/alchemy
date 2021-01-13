@@ -1,8 +1,6 @@
 import PostgresNIO
 
 extension PostgresRow: DatabaseRow {
-    // MARK: DatabaseRow
-    
     public var allColumns: [String] {
         self.rowDescription.fields.map(\.name)
     }
@@ -17,9 +15,9 @@ extension PostgresRow: DatabaseRow {
 extension PostgresData {
     /// Initialize from an Alchemy `DatabaseValue`.
     ///
-    /// - Parameter value: the value with which to initialize. Given the type of
-    ///                    the value, the `PostgresData` will be initialized
-    ///                    with the best corresponding type.
+    /// - Parameter value: the value with which to initialize. Given
+    ///   the type of the value, the `PostgresData` will be
+    ///   initialized with the best corresponding type.
     init(_ value: DatabaseValue) {
         switch value {
         case .bool(let value):
@@ -41,17 +39,15 @@ extension PostgresData {
     
     /// Converts a `PostgresData` to the Alchemy `DatabaseField` type.
     ///
-    /// - Parameter column: the name of the column this data is at.
-    /// - Throws: a `DatabaseError` if there is an issue converting the
-    ///           `PostgresData` to its expected type.
-    /// - Returns: a `DatabaseField` with the column, type and value, best
-    ///            representing this PostgresData.
-    fileprivate func toDatabaseField(
-        from column: String
-    ) throws -> DatabaseField {
-        // Ensures that if value is nil, it's because the database column is
-        // actually nil and not because we are attempting to pull out the wrong
-        // type.
+    /// - Parameter column: The name of the column this data is at.
+    /// - Throws: A `DatabaseError` if there is an issue converting
+    ///   the `PostgresData` to its expected type.
+    /// - Returns: A `DatabaseField` with the column, type and value,
+    ///   best representing this `PostgresData`.
+    fileprivate func toDatabaseField(from column: String) throws -> DatabaseField {
+        // Ensures that if value is nil, it's because the database
+        // column is actually nil and not because we are attempting
+        // to pull out the wrong type.
         func validateNil<T>(_ value: T?) throws -> T? {
             if self.value == nil {
                 return nil
@@ -84,8 +80,8 @@ extension PostgresData {
             let value = DatabaseValue.double(try validateNil(self.double))
             return DatabaseField(column: column, value: value)
         case .uuid:
-            // The `PostgresNIO` `UUID` parser doesn't seem to work properly
-            // `self.uuid` returns nil.
+            // The `PostgresNIO` `UUID` parser doesn't seem to work
+            // properly `self.uuid` returns nil.
             let string = try validateNil(self.string)
             let uuid = try string.map { string -> UUID in
                 guard let uuid = UUID(uuidString: string) else {

@@ -21,7 +21,8 @@ public class Query: Sequelizable {
 
     /// Get the raw `SQL` for a given query.
     ///
-    /// - Returns: A `SQL` value wrapper containing the executable query and bindings.
+    /// - Returns: A `SQL` value wrapper containing the executable
+    ///   query and bindings.
     public func toSQL() -> SQL {
         return (try? self.database.grammar.compileSelect(query: self))
             ?? SQL()
@@ -90,7 +91,7 @@ public class Query: Sequelizable {
         second: String,
         type: JoinType = .inner
     ) -> Self {
-        let join = JoinClause(query: self, type: type, table: table)
+        let join = JoinClause(database: self.database, type: type, table: table)
             .on(first: first, op: op, second: second)
         if joins == nil {
             joins = [join]
