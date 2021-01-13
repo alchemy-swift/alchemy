@@ -15,7 +15,7 @@ public enum JoinType: String {
 }
 
 /// A JOIN query builder.
-final class JoinClause: Query {
+public final class JoinClause: Query {
     /// The type of the join to perform.
     public let type: JoinType
     /// The table to join to.

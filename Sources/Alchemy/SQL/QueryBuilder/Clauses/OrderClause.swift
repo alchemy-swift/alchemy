@@ -1,7 +1,7 @@
 import Foundation
 
 /// A clause for ordering rows by a certain column.
-public struct OrderClause {
+public struct OrderClause: Sequelizable {
     /// A sorting direction.
     public enum Sort: String {
         /// Sort elements in ascending order.
@@ -14,11 +14,11 @@ public struct OrderClause {
     let column: Column
     /// The direction to order by.
     let direction: Sort
-}
-
-extension OrderClause: Sequelizable {
+    
+    // MARK: - Sequelizable
+    
     public func toSQL() -> SQL {
-        if let raw = column as? Raw {
+        if let raw = column as? SQL {
             return raw
         }
         return SQL("\(column) \(direction)")

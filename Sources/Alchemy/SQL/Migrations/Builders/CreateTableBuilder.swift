@@ -125,7 +125,7 @@ public class CreateTableBuilder {
 
 /// A type for keeping track of data associated with creating an
 /// index.
-struct CreateIndex {
+public struct CreateIndex {
     /// The columns that make up this index.
     let columns: [String]
     
@@ -164,7 +164,7 @@ struct CreateIndex {
 
 /// A type for keeping track of data associated with creating an
 /// column.
-struct CreateColumn {
+public struct CreateColumn {
     /// The name.
     let column: String
     

@@ -7,14 +7,14 @@ public enum WhereBoolean: String {
     case or
 }
 
-public struct WhereValue {
+public struct WhereValue: WhereClause {
     let key: String
     let op: Operator
     let value: DatabaseValue
     var boolean: WhereBoolean = .and
-}
-
-extension WhereValue: WhereClause {
+    
+    // MARK: - Sequelizable
+    
     public func toSQL() -> SQL {
         if self.value.isNil {
             if self.op == .notEqualTo {
@@ -30,28 +30,27 @@ extension WhereValue: WhereClause {
     }
 }
 
-
-public struct WhereColumn {
+public struct WhereColumn: WhereClause {
     let first: String
     let op: Operator
     let second: Expression
     var boolean: WhereBoolean = .and
-}
-
-extension WhereColumn: WhereClause {
+    
+    // MARK: - Sequelizable
+    
     public func toSQL() -> SQL {
         return SQL("\(boolean) \(first) \(op) \(second.description)")
     }
 }
 
 public typealias WhereNestedClosure = (Query) -> Query
-public struct WhereNested {
+public struct WhereNested: WhereClause {
     let database: Database
     let closure: WhereNestedClosure
     var boolean: WhereBoolean = .and
-}
-
-extension WhereNested: WhereClause {
+    
+    // MARK: - Sequelizable
+    
     public func toSQL() -> SQL {
         let query = self.closure(Query(database: self.database))
         let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
@@ -62,8 +61,7 @@ extension WhereNested: WhereClause {
     }
 }
 
-
-public struct WhereIn {
+public struct WhereIn: WhereClause {
     public enum InType: String {
         case `in`
         case notIn
@@ -73,23 +71,22 @@ public struct WhereIn {
     let values: [DatabaseValue]
     let type: InType
     var boolean: WhereBoolean = .and
-}
-
-extension WhereIn: WhereClause {
+    
+    // MARK: - Sequelizable
+    
     public func toSQL() -> SQL {
         let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
         return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
     }
 }
 
-
-public struct WhereRaw {
+public struct WhereRaw: WhereClause {
     let query: String
     var values: [DatabaseValue] = []
     var boolean: WhereBoolean = .and
-}
-
-extension WhereRaw: WhereClause {
+    
+    // MARK: - Sequelizable
+    
     public func toSQL() -> SQL {
         return SQL("\(boolean) \(self.query)", bindings: values)
     }

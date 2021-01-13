@@ -1,6 +1,6 @@
 import Foundation
 
-class QueryHelpers {
+enum QueryHelpers {
     static func removeLeadingBoolean(_ value: String) -> String {
         if value.hasPrefix("and ") {
             return String(value.dropFirst(4))
