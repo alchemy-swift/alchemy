@@ -1,7 +1,5 @@
-# Guides
-Alchemy is a Swift web framework. These guides cover most of its features as well as those of it's two related libraries, Fusion (dependency injection) & Papyrus (API abstraction layer).
-
-Note that `import Alchemy` will also import the Fusion and Papyrus libraries, but if you'd like to use Fusion or Papyrus in non-server targets, you may add them as specific dependencies.
+# Docs
+Alchemy is an elegant, batteries included web framework for Swift. These guides cover most of its features as well as those of it's two related libraries, Fusion (dependency injection) & Papyrus (API abstraction layer).
 
 ## Table of Contents
 
