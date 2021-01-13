@@ -117,9 +117,7 @@ public class CreateTableBuilder {
     /// - Parameter builder: The column builder to add to this table
     ///   builder.
     /// - Returns: The passed in `builder`.
-    private func appendAndReturn<T: Sequelizable>(
-        builder: CreateColumnBuilder<T>
-    ) -> CreateColumnBuilder<T> {
+    private func appendAndReturn<T: Sequelizable>( builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
         self.columnBuilders.append(builder)
         return builder
     }
