@@ -1,8 +1,8 @@
-<p align="center"><img src="https://user-images.githubusercontent.com/6025554/104149559-7a290400-538b-11eb-9d9e-c6c8bc3f69d7.png" width="400"></a></p>
+<p><img src="https://user-images.githubusercontent.com/6025554/104392567-3226f000-54f7-11eb-9ad6-b8795764aace.png" width="400"></a></p>
 
-<p align="center">Elegant, batteries included web framework for Swift</p>
+<p>Elegant, batteries included web framework for Swift.</p>
 
-<p align="center">
+<p>
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/joshuawright11/alchemy/releases"><img src="https://img.shields.io/github/release/joshuawright11/alchemy.svg" alt="Latest Release"></a>
 <a href="https://github.com/joshuawright11/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joshuawright11/alchemy.svg" alt="License"></a>
