@@ -1,5 +1,6 @@
-/// The strategy for mapping the property names in the `DecodableRequest` type to their correlating
-/// fields (header, query, path parameter, etc) on a request.
+/// The strategy for mapping the property names in the
+/// `DecodableRequest` type to their correlating fields (header,
+/// query, path parameter, etc) on a request.
 typealias KeyMapping = (String) -> String
 
 /// A component of an HTTP request.
@@ -14,11 +15,13 @@ private enum RequestComponent {
     case path
 }
 
-/// Decodes a `EndpointRequest` from a `DecodableRequest`. Technically, this can decode any
-/// `Decodable` type, but it will error out on any field that isn't `@Body`, `@Header`, `@Path` or
+/// Decodes a `EndpointRequest` from a `DecodableRequest`.
+/// Technically, this can decode any `Decodable` type, but it will
+/// error out on any field that isn't `@Body`, `@Header`, `@Path` or
 /// `@Query`.
 struct RequestDecoder: Decoder {
-    /// The `DecodableRequest` from which fields on the `EndpointRequest` will be decoded.
+    /// The `DecodableRequest` from which fields on the
+    /// `EndpointRequest` will be decoded.
     let request: DecodableRequest
     
     // MARK: Decoder
@@ -61,7 +64,8 @@ private struct RequestComponentDecoder: Decoder {
     }
 }
 
-/// A keyed container for routing which request component a value should decode from.
+/// A keyed container for routing which request component a value
+/// should decode from.
 private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     /// The request from which we are decoding.
     let request: DecodableRequest
@@ -132,7 +136,8 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     func superDecoder(forKey key: Key) throws -> Decoder { try error() }
 }
 
-/// A single value container for decoding a value from a specific request component.
+/// A single value container for decoding a value from a specific
+/// request component.
 private struct RequestComponentContainer: SingleValueDecodingContainer {
     let request: DecodableRequest
     let parameter: RequestComponent
@@ -180,7 +185,8 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
         case .path:
             return try self.unsupported(type)
         case .query:
-            // Messy. Not sure of another way than manually support each type.
+            // Messy. Not sure of another way than manually support
+            // each type.
             let queryString = self.request.query(for: self.key)
             if type is String.Type {
                 return try queryString.unwrap(or: self.nilError()) as! T
@@ -212,27 +218,29 @@ private struct RequestComponentContainer: SingleValueDecodingContainer {
         }
     }
     
-    /// Throws an error letting the user know this component / type combo isn't supported _yet_.
+    /// Throws an error letting the user know this component / type
+    /// combo isn't supported _yet_.
     ///
-    /// - Throws: guaranteed to throw a `PapyrusError`.
-    /// - Returns: a generic type, though this never returns.
+    /// - Throws: Guaranteed to throw a `PapyrusError`.
+    /// - Returns: A generic type, though this never returns.
     private func unsupported<T>(_ type: T.Type) throws -> T {
         throw PapyrusError("decoding a `\(type)` from the \(self.parameter) isn't supported yet.")
     }
     
-    /// Generates a `PapyrusError` with a message describing a nil value for a key that was
-    /// expected.
+    /// Generates a `PapyrusError` with a message describing a nil
+    /// value for a key that was expected.
     ///
-    /// - Returns: the error to throw when a value is missing.
+    /// - Returns: The error to throw when a value is missing.
     private func nilError() -> PapyrusValidationError {
         PapyrusValidationError("Need a value for key `\(self.key)` in the `\(self.parameter)`.")
     }
 }
 
-/// Throws an error letting the user know of the acceptable properties on an `EndpointRequest`.
+/// Throws an error letting the user know of the acceptable properties
+/// on an `EndpointRequest`.
 ///
-/// - Throws: guaranteed to throw a `PapyrusError`.
-/// - Returns: a generic type, though this never returns.
+/// - Throws: Guaranteed to throw a `PapyrusError`.
+/// - Returns: A generic type, though this never returns.
 private func error<T>() throws -> T {
     throw PapyrusError("Only properties wrapped by @Body, @Path, @Header, or @Query are " +
                         "supported on an `EndpointRequest`")

@@ -1,5 +1,7 @@
-/// Represents the HTTP method, or verb, of a request. There are static accessors for `GET`, `POST`,
-/// `PUT`, `PATCH`, and `DELETE`, but any custom one can be made with the public initializer.
+/// Represents the HTTP method, or verb, of a request. There are
+/// static accessors for `GET`, `POST`, `PUT`, `PATCH`, and
+/// `DELETE`, but any custom one can be made with the
+/// public initializer.
 public struct EndpointMethod: Equatable {
     /// `DELETE` method.
     public static let delete = EndpointMethod("DELETE")
@@ -21,7 +23,7 @@ public struct EndpointMethod: Equatable {
     
     /// Creates an `EndpointMethod` with the specified `String`.
     ///
-    /// - Parameter rawValue: the `String` of the method name.
+    /// - Parameter rawValue: The `String` of the method name.
     public init(_ rawValue: String) {
         self.rawValue = rawValue
     }

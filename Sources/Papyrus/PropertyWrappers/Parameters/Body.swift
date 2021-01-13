@@ -2,12 +2,13 @@ import Foundation
 
 /// An erased `Encodable`.
 public struct AnyEncodable: Encodable {
-    /// Closure for encoding, erasing the type of the instance this class was instantiated with.
+    /// Closure for encoding, erasing the type of the instance this
+    /// class was instantiated with.
     private let _encode: (Encoder) throws -> Void
     
     /// Initialize with a generic `Encodable` instance.
     ///
-    /// - Parameter wrapped: an instance of `Encodable`.
+    /// - Parameter wrapped: An instance of `Encodable`.
     public init<T: Encodable>(_ wrapped: T) {
         _encode = wrapped.encode
     }
@@ -40,9 +41,9 @@ public struct Body<Value: Codable>: Codable, AnyBody {
     // MARK: AnyBody
     public var content: AnyEncodable { .init(self.wrappedValue) }
     
-    /// Initialize with a content value. The content type is assumed to be `.json`.
+    /// Initialize with a content value.
     ///
-    /// - Parameter wrappedValue: the content of this request.
+    /// - Parameter wrappedValue: The content of this request.
     public init(wrappedValue: Value) {
         self.wrappedValue = wrappedValue
     }
