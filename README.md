@@ -1,202 +1,60 @@
 <p align="center"><img src="https://user-images.githubusercontent.com/6025554/104149559-7a290400-538b-11eb-9d9e-c6c8bc3f69d7.png" width="400"></a></p>
 
+<p align="center">Elegant, batteries included web framework for Swift</p>
+
 <p align="center">
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/joshuawright11/alchemy/releases"><img src="https://img.shields.io/github/release/joshuawright11/alchemy.svg" alt="Latest Release"></a>
 <a href="https://github.com/joshuawright11/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joshuawright11/alchemy.svg" alt="License"></a>
 </p>
 
-## About Alchemy
+```swift
+struct App: Application {
+    func setup() {
+        self.get {
+            "Hello World!"
+        }
+    }
+}
 
-Alchemy is a batteries included Swift web framework. It's designed to make your development experience...
+App.launch()
+```
 
-- **Smooth**. Elegant syntax, 100% documentation, and extensive guides touching on every feature. Alchemy is designed to help you build backends faster, not get in the way.
-- **Simple**. Context-switch less by writing full stack Swift. Keep the codebase simple with all your iOS, server, and shared code in a single Xcode workspace.
-- **Rapid**. Quickly develop full stack features, end to end. Write less code by using supporting libraries ([Papyrus](Docs/4_Papyrus.md), [Fusion](Docs/2_Fusion.md)) to shared code & providing type safety between your server & iOS/macOS clients.
-- **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
-- **Swifty**. Concise, expressive APIs built with the best parts of Swift.
+## Features
 
-## What can it do?
-
-Out of the box, Alchemy includes...
-
-- Simple, fast routing.
+- Fast, trie based routing.
+- Customizable middleware.
 - Expressive ORM and query builder.
-- Powerful dependency injection & service containers.
 - Database agnostic schema migrations.
 - Cron-like job scheduling.
-- Sending APNS (push notifications).
-- Supporting libraries for defining type safe network APIs between Swift clients & server. 
-- 100% code docs, extensive guides, full featured quickstart projects.
-- Env file support, customizable middleware, non-blocking APIs for heavy work loads, automatic ORM based authentication, and more.
-- Elegant APIs built on top of rock solid official Swift Server frameworks and libraries such as SwiftLog, SwiftNIO, PostgresNIO & AsyncHTTPClient.
+- Powerful dependency injection.
+- Typesafe API definitions, sharable between swift clients & server.
+- Concise, elegant APIs built with the best parts of Swift.
+- Extensive [docs](Docs/) and fully featured [quickstart projects](Quickstarts/).
 
-## Code Samples
-There is tons of sample code in the [**guides**](Documentation/) and [**quickstart projects**](Quickstart/) but here are a few examples.
+## Installation
 
-### Hello, World!
+### Quickstart
 
-```swift
-import Alchemy
+The Alchemy CLI can help you get started with one of the [Quickstart](Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
 
-struct MyServer: Application {
-    // Inject the global app router
-    @Inject router: Router
-
-    func setup() {
-        self.router.on(.get, at: "/hello") { request in
-            "Hello, World!"
-        }
-    }
-}
-
-// main.swift
-MyServer.launch()
-```
-
-### Databases & Rune ORM
-
-Rune, the ORM, is built on top of Swift's Codable, making database querying a cinch.
-
-```swift
-import Alchemy
-
-// Setup the default database.
-Services.db = PostgresDatabase(
-    DatabaseConfig(
-        socket: .ip(host: "localhost", port: 5432),
-        database: "alchemy",
-        username: "admin",
-        password: "password"
-    )
-)
-
-// Create a model matching a table
-struct Todo: Model {
-    static let tableName = "todos"
-
-    var id: Int?
-    let name: String
-    let isDone: Bool
-    
-    @BelongsTo
-    let user: User
-}
-
-// Query the model
-Todo.query()
-    .where("isDone" == false)
-    .with(\.$user)
-    .getAll()
-    .whenSuccess { todos in
-        for todo in todos {
-            print("\(todo.user.name) hasn't finished \(todo.name)!")
-        }
-    }
-```
-
-### Type safe networking interfaces between client and server.
-
-**Papyrus**, and IDL-like network layer, helps you keep network interfaces type-safe across your Alchemy server & Swift clients. **Alchemy** provides first class support for providing _and_ consuming Papyrus APIs. **iOS/macOS** clients can use **PapyrusAlamofire** for consuming Papyrus APIs.
-
----
-
-First, define a shared interface for your API. Note the `@URLQuery` property wrapper tells API consumers and producers that `count` & `unfinishedOnly` belong in the query of the request. This info allows for automatic request "encoding" & "decoding" from clients and servers.
-```swift
-// MyProject/Shared/TodosAPI.swift
-import Papyrus
-
-public struct TodoDTO {
-    public let id: Int
-    public let name: String
-    public let isDone: Bool 
-    
-    public init(...)
-}
-
-public struct TodosAPI: EndpointGroup {
-    @GET("/todos")
-    public var getAll: Endpoint<GetAllRequest, [TodoDTO]>
-
-    public struct GetAllRequest: EndpointRequest {
-        @URLQuery
-        public let count: Int
-
-        @URLQuery
-        public let unfinishedOnly: Bool
-
-        public init(...)
-    }
-}
-```
-
-Then, register this endpoint in your Alchemy server's router. Alchemy will automatically decode `GetAllRequest` from the right spots in the incoming request & will enforce that the return type of the handler matches the expected return type of the endpoint, `[TodoDTO]`.
-```swift
-import Alchemy
-import Shared
-
-// MyProject/Server/MyApplication.swift
-struct MyApplication: Application {
-    @Inject router: Router
-
-    func setup() {
-        let todosAPI = TodosAPI()
-        self.router.register(todosAPI.getAll) { request, endpointRequest in
-            let isDone = endpointRequest.unfinishedOnly ? [false] : [true, false]
-            return Todo.query()
-                .where("isDone", in: isDone)
-                .limit(endpointRequest.count)
-                .getAll()
-                .mapEach { TodoDTO(id: $0.id!, name: $0.name, isDone: $0.isDone) }
-        }
-    }
-}
-```
-
-Finally, request the endpoint from your client. The request properties are automatically put in the query because of the `@URLQuery` wrappers and the `[TodoDTO]` response type is automatically parsed from the server's response.
-```swift
-// MyProject/iOS/TodosView.swift
-import PapyrusAlamofire
-import Shared
-
-let todosAPI = TodosAPI(baseURL: "http://localhost")
-let requestData = TodosAPI.GetAllRequest(count: 50, unfinishedOnly: true)
-todosAPI.getAll
-    .request(requestData) { response, todos in
-        for todo in todos {
-            print("Got todo: \(todo.name)")
-        }
-    }
-```
-Note that you can also use Papyrus to consume 3rd party APIs on both client _and_ server. Just create an interface for the APIs and request them.
-
-### More Examples
-
-Browse the [guides](Documentation/0_GettingStarted.md) for examples of advanced routing, `.env` files, complex queries, security & authentication, making http requests, database migrations & much more.
-
-## Getting Started
-
-### CLI
-
-The Alchemy CLI is created to kickstart and accelerate development. We recommend using this to get your project going.
-
-Download it with [Homebrew](https://brew.sh).
 ```shell
-brew install alchemy
+mint install joshuawright11/alchemy-cli@main
 ```
-And create a new project. This will walk you through choosing a starter project.
+
+You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
+
 ```shell
-alchemy new
+alchemy new <ProjectName>
 ```
 
-### Manually
+### Swift Package Manager
 
-If you prefer not to use the CLI, you can clone a sample project full of example code from the [Quickstart directory](Quickstart/).
+Alchemy is also installable through the [Swift Package Manager](https://github.com/apple/swift-package-manager).
 
-If you'd rather start with an empty slate, you can create a new Xcode project (likely a package) and add alchemy to the `Package.swift` file.
 ```swift
 dependencies: [
-    .package(url: "https://github.com/joshuawright11/alchemy", .branch("master"))
+    .package(url: "https://github.com/joshuawright11/alchemy", .branch("main"))
     ...
 ],
 targets: [
@@ -206,23 +64,31 @@ targets: [
 ]
 ```
 
-### Adding `Papyrus` or `Fusion` to non-server targets
-Papyrus (network interfaces) and Fusion (dependency injection) are built to work on both server and client (iOS, macOS, etc).
-
-For server targets, they're included when you `import Alchemy`. For installation on client & shared targets, check out the [Fusion](Documentation/1b_ArchitectureServices.md) and [Papyrus](Documentation/3_Papyrus.md) guides.
-
 ## Documentation
 
-### [Guides](Documentation/0_GettingStarted.md)
-Reading the guides is the recommended way of getting up to speed. They provide a step by step walkthrough of just about everything Alchemy has to offer as well as essential core backend concepts for developers new to server side development.
+### [Docs](Docs/)
+
+The Docs provide a step by step walkthrough of everything Alchemy has to offer as well as essential core backend concepts for developers new to server side development.
 
 **Note**: If something is confusing or difficult to understand please let us know on [Discord](https://discord.gg/Dnhh4yJe)!
 
+### [Quickstarts](/Quickstarts)
+
+If you'd rather just jump into reading some code, the projects in `Quickstarts/` are contrived apps for the purpose of showing working, documented examples of everything Alchemy can do. You can clone them with `alchemy new` or browse through their code on github.
+
 ### [API Reference](https://github.com/joshuawright11/alchemy/wiki)
+
 The inline comments are extensive and full of examples. You can check it out in the codebase or a generated version on the [Github wiki](https://github.com/joshuawright11/alchemy/wiki).
 
-### [Quickstart Code](https://github.com/joshuawright11/alchemy/tree/main/Quickstart)
-If you'd rather just jump into reading some code, the projects in `Quickstart/` are contrived apps for the purpose of showing working, documented examples of everything Alchemy can do. You can clone them with `$ alchemy new` or browse through their code.
+## Why Alchemy?
+
+Alchemy is designed to make your development experience...
+
+- **Smooth**. Elegant syntax, 100% documentation, and extensive guides touching on every feature. Alchemy is designed to help you build backends faster, not get in the way.
+- **Simple**. Context-switch less by writing full stack Swift. Keep the codebase simple with all your iOS, server, and shared code in a single Xcode workspace.
+- **Rapid**. Quickly develop full stack features, end to end. Write less code by using supporting libraries ([Papyrus](Docs/4_Papyrus.md), [Fusion](Docs/2_Fusion.md)) to shared code & providing type safety between your server & Swift clients.
+- **Safe**. Swift is built for safety. Its typing, optionals, value semantics and error handling are leveraged throughout Alchemy to help protect you against thread safety issues, nil values and unexpected program state.
+- **Swifty**. Concise, expressive APIs built with the best parts of Swift.
 
 ## Roadmap
 
@@ -232,11 +98,8 @@ Our top priorities right now are:
 1. Filling in missing core server pieces. Particularly,
     - `HTTP/2` support
     - `SSL`/`TLS` support
-    - Sending static files (html, css, js, images)
     - Built in support for `multipart/form-data` & `application/x-www-form-urlencoded`
-2. A guide around deployment to various services.
-3. Interfaces around Redis / Memcached.
-4. A Swifty templating solution for sending back dynamic HTML pages.
+2. Persistent, queued jobs backed by Redis / Memcached.
 
 ## Contributing
 
@@ -244,4 +107,4 @@ Our top priorities right now are:
 - Report **bugs** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) (ideally with a failing test case) or [Discord](https://discord.gg/CDZWAda3).
 - Submit **feature requests** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) or bring them up on [Discord](https://discord.gg/9CZ4ksvn).
 
-Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups.
+Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to readable code and documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups!
