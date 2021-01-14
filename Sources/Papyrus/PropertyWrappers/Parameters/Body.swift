@@ -26,8 +26,8 @@ public protocol AnyBody {
     var content: AnyEncodable { get }
 }
 
-@propertyWrapper
 /// Represents the body of a request.
+@propertyWrapper
 public struct Body<Value: Codable>: Codable, AnyBody {
     /// The value of the this body.
     public var wrappedValue: Value {

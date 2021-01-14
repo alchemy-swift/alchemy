@@ -4,8 +4,8 @@ protocol AnyQuery {
     var value: Codable { get }
 }
 
-@propertyWrapper
 /// Represents a value in the query of an endpoint's URL.
+@propertyWrapper
 public struct URLQuery<Value: Codable>: Codable, AnyQuery {
     // MARK: AnyQuery
     

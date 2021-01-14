@@ -1,5 +1,5 @@
-@propertyWrapper
 /// Represents an item in a request's headers.
+@propertyWrapper
 public struct Header: Codable {
     /// The value of the this header.
     public var wrappedValue: String

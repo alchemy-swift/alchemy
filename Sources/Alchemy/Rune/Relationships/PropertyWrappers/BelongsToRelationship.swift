@@ -4,7 +4,6 @@ import NIO
 /// decoding behavior for `BelongsTo`s.
 protocol AnyBelongsTo {}
 
-@propertyWrapper
 /// The child of a 1 - M or a 1 - 1 relationship. Backed by an
 /// identifier of the parent, when encoded to a database, this
 /// type attempt to write that identifier to a column named 
@@ -22,6 +21,7 @@ protocol AnyBelongsTo {}
 ///                     // `pets` table.
 /// }
 /// ```
+@propertyWrapper
 public final class BelongsToRelationship<
     Child: Model,
     Parent: ModelMaybeOptional

@@ -1,7 +1,7 @@
-@propertyWrapper
 /// Represents a path component value on an endpoint. This value will
 /// replace a path component with the name of the property this
 /// wraps.
+@propertyWrapper
 public struct Path: Codable {
     /// The value of this path component.
     public var wrappedValue: String

@@ -1,9 +1,9 @@
 import NIO
 
-@propertyWrapper
 /// Either side of a 1 - 1 relationship. The details of this
 /// relationship are defined in the initializers inherited from
 /// `HasRelationship`.
+@propertyWrapper
 public final class HasOneRelationship<
     From: Model,
     To: ModelMaybeOptional

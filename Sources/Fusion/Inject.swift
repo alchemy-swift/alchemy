@@ -22,12 +22,12 @@ public protocol Containerized: class {
     var container: Container { get }
 }
 
-@propertyWrapper
 /// Provides a convenient `@propertyWrapper` for injecting services to
 /// a type. By default, resolves services from the global container
 /// (`Container.global`) but if the enclosing type conforms to
 /// `Containerized` services are resolved from
 /// `EnclosingType.container`.
+@propertyWrapper
 public class Inject<Service> {
     /// An optional identifier that may be associated with the service
     /// this property wrapper is injecting. Used for storing any
