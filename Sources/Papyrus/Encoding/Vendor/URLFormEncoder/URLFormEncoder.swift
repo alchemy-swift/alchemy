@@ -37,11 +37,11 @@ import Foundation
 /// See [Mozilla's](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST) docs for more information about
 /// url-encoded forms.
 /// NOTE: This implementation of the encoder does not support encoding booleans to "flags".
-public struct URLFormEncoder {
+struct URLFormEncoder {
     /// Used to capture URLForm Coding Configuration used for encoding.
-    public struct Configuration {
+    struct Configuration {
         /// Supported array encodings.
-        public enum ArrayEncoding {
+        enum ArrayEncoding {
             /// Arrays are serialized as separate values with bracket suffixed keys.
             /// For example, `foo = [1,2,3]` would be serialized as `foo[]=1&foo[]=2&foo[]=3`.
             case bracket
@@ -54,7 +54,7 @@ public struct URLFormEncoder {
         }
 
         /// Supported date formats
-        public enum DateEncodingStrategy {
+        enum DateEncodingStrategy {
             /// Seconds since 1 January 1970 00:00:00 UTC (Unix Timestamp)
             case secondsSince1970
             /// ISO 8601 formatted date
@@ -63,15 +63,15 @@ public struct URLFormEncoder {
             case custom((Date, Encoder) throws -> Void)
         }
         /// Specified array encoding.
-        public var arrayEncoding: ArrayEncoding
-        public var dateEncodingStrategy: DateEncodingStrategy
+        var arrayEncoding: ArrayEncoding
+        var dateEncodingStrategy: DateEncodingStrategy
 
         /// Creates a new `Configuration`.
         ///
         ///  - parameters:
         ///     - arrayEncoding: Specified array encoding. Defaults to `.bracket`.
         ///     - dateFormat: Format to encode date format too. Defaults to `secondsSince1970`
-        public init(
+        init(
             arrayEncoding: ArrayEncoding = .bracket,
             dateEncodingStrategy: DateEncodingStrategy = .secondsSince1970
         ) {
@@ -88,7 +88,7 @@ public struct URLFormEncoder {
     ///
     /// - parameters:
     ///    - configuration: Defines how encoding is done see `URLEncodedFormCodingConfig` for more information
-    public init(
+    init(
         configuration: Configuration = .init()
     ) {
         self.configuration = configuration
@@ -105,7 +105,7 @@ public struct URLFormEncoder {
     ///     - configuration: Overwrides the  coding config for this encoding call.
     /// - returns: Encoded `Data`
     /// - throws: Any error that may occur while attempting to encode the specified type.
-    public func encode<E>(_ encodable: E) throws -> String
+    func encode<E>(_ encodable: E) throws -> String
         where E: Encodable
     {
         let encoder = _Encoder(codingPath: [], configuration: self.configuration)
