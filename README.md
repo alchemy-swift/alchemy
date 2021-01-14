@@ -42,11 +42,11 @@ The Alchemy CLI can help you get started with one of the [Quickstart](Quickstart
 mint install joshuawright11/alchemy-cli@main
 ```
 
-You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
-
 ```shell
-alchemy new <ProjectName>
+alchemy new MyAmazingProject
 ```
+
+You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
 
 ### Swift Package Manager
 
