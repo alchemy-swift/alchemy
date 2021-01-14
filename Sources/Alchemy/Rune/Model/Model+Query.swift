@@ -91,7 +91,7 @@ public class ModelQuery<M: Model>: Query {
     ///   `EventLoopFuture<[DatabaseRow]>`).
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// // Consider three types, `Pet`, `Person`, and `Plant`. They
     /// // have the following relationships:
     /// struct Pet: Model {

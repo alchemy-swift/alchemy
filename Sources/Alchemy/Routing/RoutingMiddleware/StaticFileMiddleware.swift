@@ -5,7 +5,7 @@ import NIOHTTP1
 /// Middleware for serving static files from a given directory.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// self.router.globalMiddlewares = [
 ///     // Will server static files from the 'Public' directory of
 ///     // your project.

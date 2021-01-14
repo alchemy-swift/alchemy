@@ -8,7 +8,7 @@ import Foundation
 /// matching token value. If the exists, the correlating `User` type
 /// will be queried and `set` on the request.
 ///
-/// ```
+/// ```swift
 /// // Start with a Rune `Model`.
 /// struct MyToken: TokenAuthable {
 ///     // `KeyPath` to the relation of the `User`.

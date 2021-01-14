@@ -4,7 +4,7 @@ import NIO
 /// Schedules `Job`s at recurring intervals, like a cron.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// self.scheduler
 ///     .every(1.days.at(hr: 12), run: UpdateQueries())
 ///     .every(1.days.at(hr: 9, min: 27, sec: 43), run: SyncSubscriptions())

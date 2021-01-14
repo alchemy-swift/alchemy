@@ -5,7 +5,7 @@
 /// matching username & validate the password. If the row exists
 /// & the password matches, the type `T` will be `set` on the request.
 ///
-/// ```
+/// ```swift
 /// // Start with a Rune `Model`.
 /// struct MyUser: BasicAuthable {
 ///     // Note that this defaults to "username" but you can override

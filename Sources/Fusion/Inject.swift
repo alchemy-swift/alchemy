@@ -7,7 +7,7 @@
 /// from `Container.global`.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// final class UsersController: Containerized {
 ///     let container = Container()
 ///

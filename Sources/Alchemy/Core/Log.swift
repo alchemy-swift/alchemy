@@ -3,12 +3,12 @@ import Logging
 /// Convenience struct for logging logs of various levels to a default
 /// `Logger`. By default, this logger has label `Alchemy`.
 ///
-/// ```
+/// ```swift
 /// Log.debug("Hello, world!")
 /// ```
 ///
 /// You can set a custom default logger like so:
-/// ```
+/// ```swift
 /// // In Application.setup...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```

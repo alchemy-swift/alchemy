@@ -18,7 +18,7 @@ public protocol Database {
     /// QueryBuilder guides.
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// database.query()
     ///     .from(table: "users")
     ///     .where("id" == 1)
@@ -39,7 +39,7 @@ public protocol Database {
     /// helps protect against SQL injection.
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// // No bindings
     /// db.runRawQuery("SELECT * FROM users where id = 1")
     ///     .whenSuccess { rows

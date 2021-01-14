@@ -11,7 +11,7 @@ protocol AnyBelongsTo {}
 /// `<property-name>_id`.
 ///
 /// Example:
-/// ```
+/// ```swift
 /// struct Pet: Model {
 ///     static let table = "pets"
 ///     ...

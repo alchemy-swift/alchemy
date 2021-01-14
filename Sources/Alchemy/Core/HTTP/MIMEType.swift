@@ -58,7 +58,7 @@ extension MIMEType {
     /// The `.` in front of the file extension is optional.
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// let mt = MediaType(fileExtension: "html")!
     /// print(mt.value) // "text/html"
     /// ```

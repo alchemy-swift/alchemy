@@ -8,7 +8,7 @@ import NIOHTTP1
 /// `setup` function, then call `MyApplication.launch()` in your
 /// `main.swift`.
 ///
-/// ```
+/// ```swift
 /// // MyApplication.swift
 /// struct App: Application {
 ///     func setup() {

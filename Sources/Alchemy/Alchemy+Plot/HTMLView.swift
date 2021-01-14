@@ -3,7 +3,7 @@ import Foundation
 /// A protocol for defining HTML views to return to a client.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// struct HomeView: HTMLView {
 ///     let title: String
 ///     let favoriteAnimals: [String]

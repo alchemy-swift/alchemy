@@ -64,7 +64,7 @@ extension Request {
     /// is one.
     ///
     /// Use this to fetch any parameters from the path.
-    /// ```
+    /// ```swift
     /// app.post("/users/:user_id") { request in
     ///     let theUserID = request.pathParameter(named: "user_id")?.stringValue
     ///     ...
@@ -88,7 +88,7 @@ extension Request {
     /// objects with middleware.
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// struct ExampleMiddleware: Middleware {
     ///     func intercept(_ request: Request) -> EventLoopFuture<Request> {
     ///         let someData: SomeData = ...

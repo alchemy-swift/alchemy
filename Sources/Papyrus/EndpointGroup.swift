@@ -6,7 +6,7 @@
 /// `EndpointGroup` in order to properly inherit its `baseURL`.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// final class UsersService: EndpointGroup {
 ///     @POST("/users")
 ///     var createUser: Endpoint<CreateUserRequest, UserDTO>

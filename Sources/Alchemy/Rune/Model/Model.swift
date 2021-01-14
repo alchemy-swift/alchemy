@@ -21,7 +21,7 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// `String(describing: Self.self)` aka the name of the type. Can
     /// be overridden for custom table names.
     ///
-    /// ```
+    /// ```swift
     /// struct User: Model {
     ///     static var tableName: String = "my_user_table"
     ///
@@ -45,7 +45,7 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// effectively be `_id`.
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// struct User: Model {
     ///     ...
     ///     @BelongsTo

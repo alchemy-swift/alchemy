@@ -9,7 +9,7 @@ import Foundation
 ///
 /// Since Swift's naming convention is camelCase, your corresponding
 /// database model will probably look like this:
-/// ```
+/// ```swift
 /// struct User: Model {
 ///     var id: Int?
 ///     let email: String

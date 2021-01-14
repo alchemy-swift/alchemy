@@ -5,7 +5,7 @@ import NIO
 /// with those, either synchronously or asynchronously.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// // Example synchronous middleware
 /// struct SyncMiddleware: Middleware {
 ///     func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response>

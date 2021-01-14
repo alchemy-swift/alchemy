@@ -64,7 +64,7 @@ public final class Response {
     /// `ResponseWriter`.
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// app.get("/stream") {
     ///     Response { writer in
     ///         writer.writeHead(...)

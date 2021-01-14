@@ -2,7 +2,7 @@
 /// will be modeled in the backing table by it's raw value.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// enum TaskPriority: Int, ModelEnum {
 ///     case low, medium, high
 /// }

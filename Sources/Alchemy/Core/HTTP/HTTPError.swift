@@ -9,7 +9,7 @@ import NIOHTTP1
 /// they are thrown during the `Router` chain.
 ///
 /// Usage:
-/// ```
+/// ```swift
 /// app.post("/error") {
 ///     // Client will see a 501 response status with body
 ///     // { "message": "This endpoint isn't implemented yet" }

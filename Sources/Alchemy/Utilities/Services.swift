@@ -7,7 +7,7 @@ import NIO
 /// These services are Injected from the global `Container`. You
 /// can add your own services in extensions if you'd like.
 ///
-/// ```
+/// ```swift
 /// Services.db
 /// // equivalant to
 /// Container.global.resolve(Database.self)
@@ -24,7 +24,7 @@ extension Services {
     /// registered, so don't forget to do so in your
     /// `Application.setup`!
     ///
-    /// ```
+    /// ```swift
     /// struct MyServer: Application {
     ///     func setup() {
     ///         Services.db = PostgresDatabase(
@@ -67,7 +67,7 @@ extension Services {
     /// [async-http-client](https://github.com/swift-server/async-http-client)
     ///
     /// Usage:
-    /// ```
+    /// ```swift
     /// Services.client
     ///     .get(url: "https://swift.org")
     ///     .whenComplete { result in

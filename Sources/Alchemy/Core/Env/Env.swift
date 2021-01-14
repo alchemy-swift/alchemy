@@ -9,7 +9,7 @@ private let kEnvVariable = "APP_ENV"
 /// if `APP_ENV` is set in the current environment.
 ///
 /// Variables are accessed via `.get`. Supports dynamic member lookup.
-/// ```
+/// ```swift
 /// // .env file:
 /// SOME_KEY=secret_value
 /// OTHER_KEY=123456
