@@ -35,7 +35,7 @@ tar xzf swift-5.3.2-RELEASE-ubuntu20.04.tar.gz
 
 Move `swift` to `/usr/bin`...
 ```shell
-sudo mv /swift/5.3.2/usr/bin/swift /usr/bin/swift
+sudo mv swift-5.3.2-RELEASE-ubuntu20.04/usr/bin/swift /usr/bin/swift
 ```
 
 And verify that it was installed correctly.
