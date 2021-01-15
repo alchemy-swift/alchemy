@@ -13,9 +13,14 @@ struct MigrateRunner: Runner {
         Services.eventLoopGroup
             .next()
             .flatSubmit(self.rollback ? Services.db.rollbackMigrations : Services.db.migrate)
+            // Shut down everything when migrations are finished.
+            .map {
+                Log.info("[Migration] migrations finished, shutting down.")
+                Services.lifecycle.shutdown()
+            }
     }
     
     func shutdown() -> EventLoopFuture<Void> {
-        .new()
+        Services.eventLoopGroup.future()
     }
 }

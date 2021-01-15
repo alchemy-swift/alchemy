@@ -9,7 +9,7 @@ extension Database {
     ///   been applied.
     public func migrate() -> EventLoopFuture<Void> {
         // 1. Get all already migrated migrations
-        return self.getMigrations()
+        self.getMigrations()
             // 2. Figure out which database migrations should be
             // migrated
             .map { alreadyMigrated in
@@ -18,6 +18,7 @@ extension Database {
                     !alreadyMigrated.contains(where: { $0.name == pendingMigration.name })
                 }
                 
+                Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
                 return (migrationsToRun, currentBatch + 1)
             }
             // 3. Run migrations & record in migration table
@@ -29,7 +30,8 @@ extension Database {
     /// - Returns: A future that completes when the rollback is
     ///   complete.
     public func rollbackMigrations() -> EventLoopFuture<Void> {
-        self.getMigrations()
+        Log.info("[Migration] rolling back last batch of migrations.")
+        return self.getMigrations()
             .map { alreadyMigrated -> [Migration] in
                 guard let latestBatch = alreadyMigrated.map({ $0.batch }).max() else {
                     return []

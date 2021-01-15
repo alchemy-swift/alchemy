@@ -88,7 +88,7 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
                         if let error = error as? ResponseConvertible {
                             return try error.convert()
                         } else {
-                            Log.error("Encountered server error: \(error).")
+                            Log.error("[Server] encountered server error: \(error).")
                             return .new(Response.defaultErrorResponse)
                         }
                     }

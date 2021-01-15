@@ -72,11 +72,11 @@ extension Env {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
         
         guard let pathString = absolutePath else {
-            return Log.info("No file found at '\(path)'")
+            return Log.info("[Environment] no file found at '\(path)'")
         }
         
         guard let contents = try? NSString(contentsOfFile: pathString, encoding: String.Encoding.utf8.rawValue) else {
-            return Log.info("Unable to load contents of file at '\(pathString)'")
+            return Log.info("[Environment] unable to load contents of file at '\(pathString)'")
         }
         
         let lines = String(describing: contents).split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
