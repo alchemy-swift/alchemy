@@ -53,7 +53,6 @@ let package = Package(
                 "CBcrypt",
             ]
         ),
-        .target(name: "Example", dependencies: ["Alchemy"], resources: [.copy("Public")]),
         .target(name: "CBcrypt", dependencies: []),
         .target(name: "Papyrus", dependencies: []),
         .target(name: "Fusion", dependencies: []),
