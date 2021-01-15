@@ -10,7 +10,7 @@
 
 ### Quickstart
 
-The Alchemy CLI can help you get started with one of the [Quickstart](Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
+The Alchemy CLI can help you get started with one of the [Quickstart](../Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
 brew install mint
