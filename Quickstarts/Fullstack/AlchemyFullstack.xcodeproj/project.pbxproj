@@ -403,7 +403,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "git@github.com:joshuawright11/alchemy.git";
 			requirement = {
-				branch = "fullstack-quickstart";
+				branch = main;
 				kind = branch;
 			};
 		};
