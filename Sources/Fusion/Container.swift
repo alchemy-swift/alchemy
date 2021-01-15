@@ -1,3 +1,5 @@
+import Foundation
+
 /// The caching behavior, per container, for a factory.
 private enum ResolveBehavior {
     /// A new instance should be created once per container.
@@ -20,9 +22,26 @@ public final class Container {
     /// parent container.
     private var parent: Container?
     
+    /// Lock for keeping access of the storage dict threadsafe.
+    private let lock = NSRecursiveLock()
+    
     /// Any cached instances of services held in this container (used
-    /// for singletons and multitons).
-    private var instances: [String: Any] = [:]
+    /// for singletons and multitons). Access to this is threadsafe.
+    private var instances: [String: Any] {
+        get {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            return self._instances
+        }
+        set {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            self._instances = newValue
+        }
+    }
+    
+    /// Backing property for `instances` to keep access threadsafe.
+    private var _instances: [String: Any] = [:]
     
     /// The resolvers registered to this container. Each resolver has
     /// a factory closure and behavior by which the values are

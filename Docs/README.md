@@ -24,5 +24,6 @@ Alchemy is an elegant, batteries included web framework for Swift. These guides 
 ### Advanced
 12. [Security](7_Security.md)
 13. [Digging Deeper](8_DiggingDeeper.md)
+14. [Deploying](9_Deploying.md)
 
 
