@@ -1,5 +1,21 @@
 # Database: Migrations
 
+- [Creating a migration](#creating-a-migration)
+- [Implementing Migrations](#implementing-migrations)
+- [Schema functions](#schema-functions)
+- [Creating a table](#creating-a-table)
+  * [Adding Columns](#adding-columns)
+  * [Adding Indexes](#adding-indexes)
+- [Altering a Table](#altering-a-table)
+- [Other schema functions](#other-schema-functions)
+- [Running a Migration](#running-a-migration)
+  * [Via Command](#via-command)
+    + [Applying](#applying)
+    + [Rolling Back](#rolling-back)
+  * [Via Code](#via-code)
+    + [Applying](#applying-1)
+    + [Rolling Back](#rolling-back-1)
+
 Migrations are a key part of working with an SQL database. Each migration defines changes to the schema of your database that can be either applied or rolled back. You'll typically create new migrations each time you want to make a change to your database, so that you can keep track of all the changes you've made over time.
 
 ## Creating a migration
@@ -58,7 +74,7 @@ schema.create(table: "users") { table in
 
 You may add a column onto a table builder with functions like `.string()` or `.int()`. These define a named column of the given type and return a column builder for adding modifiers to the column.
 
-Supported builder functions for adding columns are are
+Supported builder functions for adding columns are
 
 | Table Builder Functions | Column Builder Functions |
 |-|-|
@@ -111,12 +127,11 @@ schema.raw(table: "drop schema public cascade")
 
 ## Running a Migration
 
-To begin, you need to ensure that your migrations are registered on `Global.database`. You can should do this in your `Application.setup` function.
+To begin, you need to ensure that your migrations are registered on `Services.db`. You can should do this in your `Application.setup` function.
 
 ```swift
-// Make sure to register a database with 
-// Container.register(Database.self) { ... } first!
-Global.database.migrations = [
+// Make sure to register a database with `Services.db = ...` first!
+Services.db.migrations = [
     _20201220142243CreateUsers(),
     _20201222181209CreateTodos(),
     _20201225094501RenameTodos(),
@@ -127,7 +142,7 @@ Global.database.migrations = [
 
 #### Applying
 
-You can then apply all outstanding migrations in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Global.database` instead of serving.
+You can then apply all outstanding migrations in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Services.db` instead of serving.
 
 ```bash
 # Applies all outstanding migrations

@@ -1,5 +1,15 @@
 # Rune: Relationships
 
+- [BelongsTo](#belongsto)
+  * [Custom Column Suffix](#custom-column-suffix)
+- [Eager Loading Relationships](#eager-loading-relationships)
+  * [Nested Eager Loading](#nested-eager-loading)
+- [HasMany](#hasmany)
+  * [One to Many](#one-to-many)
+  * [Has Many Through](#has-many-through)
+- [HasOne](#hasone)
+- [HasRelationship Caveat](#hasrelationship-caveat)
+
 Relationships are an important part of an SQL database. Rune provides first class support for defining, keeping track of, and loading realationships between records.
 
 Out of the box, Rune supports three kinds of relationships, represented by property wrappers `@BelongsTo`, `@HasMany`, and `@HasOne`.

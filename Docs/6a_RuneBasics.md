@@ -1,5 +1,27 @@
 # Rune: Basics
 
+- [Creating a Model](#creating-a-model)
+- [Custom Table Names](#custom-table-names)
+  * [Custom Key Mappings](#custom-key-mappings)
+- [Model Field Types](#model-field-types)
+  * [Basic Types](#basic-types)
+  * [Advanced Types](#advanced-types)
+    + [Enums](#enums)
+    + [JSON](#json)
+    + [Custom JSON Encoders](#custom-json-encoders)
+    + [Custom JSON Decoders](#custom-json-decoders)
+- [Decoding from `DatabaseRow`](#decoding-from--databaserow-)
+- [Model Querying](#model-querying)
+  * [All Models](#all-models)
+  * [First Model](#first-model)
+  * [Quick Lookups](#quick-lookups)
+- [Model CRUD](#model-crud)
+  * [Get All](#get-all-1)
+  * [Save](#save)
+  * [Delete](#delete)
+  * [Sync](#sync)
+  * [Bulk Operations](#bulk-operations)
+
 Alchemy includes Rune, an object-relational mapper (ORM) to make it simple to interact with your database. With Rune, each database table has a corresponding `Model` type that is used to interact with that table. Use this Model type for querying, inserting, updating or deleting from the table.
 
 ## Creating a Model
@@ -160,24 +182,24 @@ let modelQuery: ModelQuery<User> = User.query()
 
 `ModelQuery<M: Model>` is a subclass of the generic `Query`, with a few functions for running and automatically decoding `M` from a query.
 
-### Get All
+### All Models
 
-`.getAll()` returns an EventLoopFuture<[M]> containing all `Model`s that matched the query.
+`.allModels()` returns an EventLoopFuture<[M]> containing all `Model`s that matched the query.
 
 ```swift
 User.query()
     .where("name", in: ["Josh", "Chris", "Rachel"])
-    .getAll() // EventLoopFuture<[User]> of all users named Josh, Chris, or Rachel
+    .allModels() // EventLoopFuture<[User]> of all users named Josh, Chris, or Rachel
 ```
 
-### Get First
+### First Model
 
-`.getFirst()` returns an `EventLoopFuture<M?>` containing the first `Model` that matched the query, if it exists.
+`.firstModel()` returns an `EventLoopFuture<M?>` containing the first `Model` that matched the query, if it exists.
 
 ```swift
 User.query()
     .where("age" > 30)
-    .getFirst() // EventLoopFuture<User?> with the first User over age 30.
+    .firstModel() // EventLoopFuture<User?> with the first User over age 30.
 ```
 
 If you want to throw an error if no item is found, you would `.unwrapFirst(or error: Error)`.
@@ -276,7 +298,7 @@ You can also do bulk inserts or deletes on `[Model]`.
 
 ```swift
 let newUsers: [User] = ...
-newUsers.insert()
+newUsers.insertAll()
     .whenSuccess { users in
         print("Added \(users.count) new users!")
     }
@@ -284,7 +306,7 @@ newUsers.insert()
 
 ```swift
 let usersToDelete: [User] = ...
-usersToDelete.delete()
+usersToDelete.deleteAll()
     .whenSuccess {
         print("Added deleted \(usersToDelete.count) users.")
     }
