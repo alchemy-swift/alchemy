@@ -50,6 +50,12 @@ If you cloned one of the quickstart projects, run the `Backend` scheme in Xcode 
 [Server] started and listening on [IPv6]::1/::1:8888.
 ```
 
+You can also run it via command line.
+
+```bash
+swift run
+```
+
 If you created a project from scratch via SPM, add a file called `MyApplication.swift` with the following:
 
 ```swift
