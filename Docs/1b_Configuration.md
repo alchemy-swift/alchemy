@@ -1,9 +1,19 @@
 # Configuration
 
+- [Custom Run Arguments](#custom-run-arguments)
+- [Environment](#environment)
+  * [.env File](#env-file)
+  * [Custom env File Name](#custom-env-file-name)
+  * [Dynamic Member Lookup](#dynamic-member-lookup)
+- [Xcode Caveats](#xcode-caveats)
+  * [Setting a Custom Working Directory](#setting-a-custom-working-directory)
+  * [Debugger Issues](#debugger-issues)
+
 ## Custom Run Arguments
+
 When Alchemy is run, it takes arguments that modify how it runs. By default, it listens for requests on `::1` aka `localhost` at port `8888`. You can pass it `--port {some_port}` and `--host {some_host}` flags to alter that. You can also pass it a `--unixSocket {some_socket}` flag if you want it to listen on a unix socket.
 
-There are other commands that can be passed such as `migrate`, but these are discussed in other parts of the guides.
+There are other commands that can be passed such as `migrate`, these are discussed in other parts of the guides.
 
 If you're running it from Xcode, you can configure flags passed on launch by editing the current scheme and navigating to `Run` -> `Arguments`.
 
@@ -13,7 +23,7 @@ Often you'll need to access environment variables of the running program. To do 
 
 ```swift
 // The type is inferred
-let envBool: Bool = Env.current("some_bool")
+let envBool: Bool = Env.current.get("some_bool")
 let envInt: Int = Env.current.get("some_int")
 let envString: String = Env.current.get("some_string")
 ```
@@ -25,15 +35,13 @@ By default, environment variables are loaded from the process (`ProcessInfo.proc
 Inside your `.env` file, keys & values are separated with an `=`.
 
 ```bash
-# A sample .env file (a file literally titled ".env" in the current directory)
+# A sample .env file (a file literally titled ".env" in the working directory)
 
 APP_NAME=Alchemy
 APP_ENV=local
 APP_KEY=
 APP_DEBUG=true
 APP_URL=http://localhost
-
-LOG_CHANNEL=stack
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -53,6 +61,7 @@ AWS_BUCKET=
 ```
 
 ### Custom env file name
+
 If you'd like to load a custom env file name, you may pass your program an `APP_ENV` variable. If you do so, instead of loading the env file from `.env` it will attempt to load the environment from a file entitled `.{APP_ENV}`.
 
 If you have separate environment variables for different server configurations (i.e. local dev, staging, production), you can pass your program a separate `APP_ENV` for each configuration so the right environment is loaded.
@@ -75,7 +84,7 @@ When working with Xcode there are a few finicky spots to be aware of.
 
 ### Setting a Custom Working Directory
 
-By default, Xcode builds and runs your project in a **DerivedData** folder, separate from the root directory of your project. Unfortunately this means that files your running server may need to access, such as a `.env` file or a `public` directory, will not be available.
+By default, Xcode builds and runs your project in a **DerivedData** folder, separate from the root directory of your project. Unfortunately this means that files your running server may need to access, such as a `.env` file or a `Public` directory, will not be available.
 
 To solve this, edit your server target's scheme & change the working directory to the projects root folder. `Edit Scheme` -> `Run` -> `Options` -> `WorkingDirectory`.
 
@@ -95,22 +104,10 @@ Error: bind(descriptor:ptr:bytes:): Address already in use (errno: 48)
 Program ended with exit code: 1
 ```
 
-While this seems to be an Xcode bug out of our control, the solution is simple. Find the PID of your running program based on the port it's running on.
+While this seems to be an Xcode bug out of our control, the solution is simple. Open `Activity Monitor`, type the name of your server in the top right, and force quit it.
 
-```bash
-$ lsof -i :8888
-
-COMMAND    PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
-MyServer  2362 josh   16u  IPv6 0xc9129434cded84ef      0t0  TCP localhost:ddi-tcp-1 (LISTEN)
-Insomnia  7767 josh   33u  IPv6 0xc9129434d6687b6f      0t0  TCP localhost:58816->localhost:ddi-tcp-1 (CLOSE_WAIT)
-```
-Then kill the PID off the running program, in this case 2362.
-```bash
-kill 2362
-```
-
-You can also completely elimate this from happening by unchecking "Debug executable" under `Edit Scheme` -> `Run` -> `Info`.
+You can also completely elimate this from happening when running in Xcode by unchecking `Debug executable` under `Edit Scheme` -> `Run` -> `Info`.
 
 _Up next: [Services & Fusion](2_Fusion.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

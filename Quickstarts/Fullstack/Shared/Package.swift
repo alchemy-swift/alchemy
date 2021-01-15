@@ -13,7 +13,7 @@ let package = Package(
         .library(name: "Shared", targets: ["Shared"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/joshuawright11/alchemy", .branch("fullstack-quickstart"))
+        .package(url: "https://github.com/joshuawright11/alchemy", .branch("main"))
     ],
     targets: [
         .target(

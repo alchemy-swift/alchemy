@@ -52,16 +52,16 @@ struct App: Application {
             config: DatabaseConfig(
                 socket: .ip(
                     // DB_HOST in `.env`
-                    host: Env.DB_HOST!,
+                    host: Env.DB_HOST ?? "localhost",
                     // DB_PORT in `.env`
-                    port: Env.DB_PORT!
+                    port: Env.DB_PORT ?? 8888
                 ),
                 // DB in `.env`
-                database: Env.DB!,
+                database: Env.DB ?? "db",
                 // DB_USER in `.env`
-                username: Env.DB_USER!,
+                username: Env.DB_USER ?? "username",
                 // DB_PASSWORD in `.env`
-                password: Env.DB_PASSWORD!
+                password: Env.DB_PASSWORD ?? "password"
             )
         )
         

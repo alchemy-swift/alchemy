@@ -1,5 +1,10 @@
 # Database: Basics
 
+- [Introduction](#introduction)
+- [Connecting to a Database](#connecting-to-a-database)
+- [Querying data](#querying-data)
+  * [Handling Query Responses](#handling-query-responses)
+
 ## Introduction
 
 Alchemy makes interacting with SQL databases a breeze using either raw SQL or the fully featured [query builder](5b_DatabaseQueryBuilder.md) and ORM, [Rune](6a_RuneBasics.md).
@@ -70,8 +75,8 @@ let double: Double = try field.double()
 let json: Data = try field.json()
 ```
 
-These functions will throw if the value at the given colum isn't convertible to that type.
+These functions will throw if the value at the given column isn't convertible to that type.
 
 _Next page: [Database: Query Builder](5b_DatabaseQueryBuilder.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

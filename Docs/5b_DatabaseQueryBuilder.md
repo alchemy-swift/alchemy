@@ -1,8 +1,29 @@
 # Database: Query Builder
 
-Alchemy offers first class support for building and running database queries through a chaining query builder. It can be used for the majority of database operations, otherwise you can always run pure SQL as well. The syntax is heavily inspired by Knex and Laravel.
+- [Running Database Queries](#running-database-queries)
+  * [Starting a query chain](#starting-a-query-chain)
+  * [Get all rows](#get-all-rows)
+  * [Get a single row](#get-a-single-row)
+- [Select](#select)
+  * [Picking columns to return](#picking-columns-to-return)
+- [Joins](#joins)
+- [Where Clauses](#where-clauses)
+  * [Basic Where Clauses](#basic-where-clauses)
+  * [Or Where Clauses](#or-where-clauses)
+  * [Grouping Where Clauses](#grouping-where-clauses)
+  * [Additional Where Clauses](#additional-where-clauses)
+    + [Where Null](#where-null)
+    + [Where In](#where-in)
+- [Ordering, Grouping, Paging](#ordering--grouping--paging)
+  * [Grouping](#grouping)
+  * [Ordering](#ordering)
+  * [Paging, Limits & Offsets](#paging--limits---offsets)
+- [Inserting](#inserting)
+- [Updating](#updating)
+- [Deleting](#deleting)
+- [Counting](#counting)
 
-<br>
+Alchemy offers first class support for building and running database queries through a chaining query builder. It can be used for the majority of database operations, otherwise you can always run pure SQL as well. The syntax is heavily inspired by Knex and Laravel.
 
 ## Running Database Queries
 
@@ -40,8 +61,6 @@ Query.from("users")
   .find()
 ```
 
-<br>
-
 ## Select
 
 ### Picking columns to return
@@ -53,8 +72,6 @@ Query.from("users")
   .select(["first_name", "last_name"])
   .get()
 ```
-
-<br>
 
 ## Joins
 
@@ -68,8 +85,6 @@ Query.from("users")
 
 There are helper methods available for `leftJoin`, `rightJoin` and `crossJoin` that you can use that take the same basic parameters.
 
-<br>
-
 ## Where Clauses
 
 ### Basic Where Clauses
@@ -81,8 +96,6 @@ Query.from("users")
   .where("age" > 20)
   .get()
 ```
-
-
 
 The following operators are valid when constructing a `WhereValue` in this way: `==`, `!=`, `<`, `>`, `<=`, `>=`, `~=`.
 
@@ -96,7 +109,7 @@ Query.from("users")
 
 ### Or Where Clauses
 
-By default chaining where clauses will be joined together using the `and` operator. If you ever need to swift the operator to `or` you can do so by using the `orWhere` method.
+By default chaining where clauses will be joined together using the `and` operator. If you ever need to switch the operator to `or` you can do so by using the `orWhere` method.
 
 ```swift
 Query.from("users")
@@ -151,8 +164,6 @@ Query.from("users")
   .where(key: "age", in: [10,20,30])
   .get()
 ```
-
-<br>
 
 ## Ordering, Grouping, Paging
 
@@ -212,8 +223,6 @@ Query.from("users")
   .get()
 ```
 
-<br>
-
 ## Inserting
 
 You can insert records using the query builder as well. To do so, start a chain with only a table name, and then pass the record you wish to insert. You can additionally pass in an array of records to do a bulk insert.
@@ -225,8 +234,6 @@ Query.table("users")
     "last_name": "Jobs"
   ])
 ```
-
-<br>
 
 ## Updating
 
@@ -240,8 +247,6 @@ Query.table("users")
   ])
 ```
 
-<br>
-
 ## Deleting
 
 The `delete` method works similar to how `update` did. It uses the query builder chain to determine what records match, but then instead of updating them, it deletes them. If you wanted to delete all users whose name is Peter, you could do that as so:
@@ -251,8 +256,6 @@ Query.table("users")
   .where("name" == "Peter")
   .delete()
 ```
-
-<br>
 
 ## Counting
 
@@ -266,4 +269,4 @@ Query.from("rentals")
 
 _Next page: [Database: Migrations](5c_DatabaseMigrations.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

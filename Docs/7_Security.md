@@ -1,5 +1,14 @@
 # Security
 
+- [Bcrypt](#bcrypt)
+- [Request Auth](#request-auth)
+  * [Authorization: Basic](#authorization--basic)
+  * [Authorization: Bearer](#authorization--bearer)
+  * [Authorization: Either](#authorization--either)
+- [Auth Middleware](#auth-middleware)
+  * [Basic Auth Middleware](#basic-auth-middleware)
+  * [Token Auth Middleware](#token-auth-middleware)
+
 Alchemy provides built in support for Bcrypt hashing and automatic authentication via Rune & `Middleware`.
 
 ## Bcrypt
@@ -123,12 +132,13 @@ struct UserToken: Model, BasicAuthable {
 }
 ```
 
-Like with `Basic` auth, put the `UserToken.tokenAuthMiddleware()` in front of endpoints that are protected by bearer authorization. The `Middleware` will automatically parse out tokens from incoming `Request`s and validate them via the `UserToken` type. If the token matches a `UserToken` row, the related `User` will be `.set()` on the `Request` for access in a handler.
+Like with `Basic` auth, put the `UserToken.tokenAuthMiddleware()` in front of endpoints that are protected by bearer authorization. The `Middleware` will automatically parse out tokens from incoming `Request`s and validate them via the `UserToken` type. If the token matches a `UserToken` row, the related `User` and `UserToken` will be `.set()` on the `Request` for access in a handler.
 
 ```swift
 router.middleWare(UserToken.tokenAuthMiddleware())
     .on(.GET, at: "/todos") { req in
         let authedUser = try req.get(User.self)
+        let theToken = try req.get(UserToken.self)
     }
 ```
 
@@ -148,4 +158,4 @@ struct UserToken: Model, BasicAuthable {
 
 _Next page: [Digging Deeper](8_DiggingDeeper.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

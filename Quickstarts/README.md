@@ -4,19 +4,22 @@ You can get up and running on Alchemy quickly by installing one of the quickstar
 
 ## Installation
 
-Install the CLI
+The Alchemy CLI can help you get started with one of the [Quickstart](Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
+
 ```shell
-$ mint install joshuawright11/alchemy-cli@main
+mint install joshuawright11/alchemy-cli@main
 ```
 
-Create a new project, you'll be able to select either the `Backend` or `Fullstack` template.
 ```shell
-$ alchemy new <project-name>
+alchemy new MyNewProject
+```
+
+You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
 ```
 
 ## Templates
 
-Two template projects for getting up and running on Alchemy quckly.
+There are two template projects for quickly getting up and running on Alchemy.
 
 ### Backend
 
@@ -71,6 +74,12 @@ click current scheme -> `Edit Scheme` -> `Run` on left bar -> `Options` on top b
 This project is a single Xcode project that contains three targets; an iOS app, the `Backend` package from above, and a `Shared` library providing shared code for them.
 
 The `Shared` library contains type safe API definitions of the endpoints mentioned above using `Papyrus`. The `Backend` serves them and the iOS app is simple todo app built with these endpoints.
+
+It demonstrates:
+- Everything in `Backend`
+- Providing Papyrus endpoints on the backend
+- Requesting Papyrus endpoints on iOS
+- Enforcing type safety by sharing Papyrus endpoints between client and server
 
 #### Running It
 

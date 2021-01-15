@@ -1,5 +1,18 @@
 # Digging Deeper
 
+- [Scheduled Jobs](#scheduled-jobs)
+  * [Creating a job](#creating-a-job)
+  * [Scheduling](#scheduling)
+  * [Schedule frequencies](#schedule-frequencies)
+- [Logging](#logging)
+- [Thread](#thread)
+- [Making HTTP Requests](#making-http-requests)
+- [Plot: HTML DSL](#plot-html-dsl)
+  * [Control Flow](#control-flow)
+  * [HTMLView](#htmlview)
+  * [Plot Docs](#plot-docs)
+- [Serving Static Files](#serving-static-files)
+
 ## Scheduled Jobs
 
 `Scheduler` provides an API for cron-like scheduling.
@@ -32,7 +45,7 @@ struct ExampleApp: Application {
         self.scheduler
             // The scheduler will fire the `run` function on the BackupDatabase
             // job every day @ 12am.
-            .schedule(BackupDatabase(), every: 1.days)
+            .every(1.days.at(hr: 0, min: 0), run: BackupDatabase())
     }
 }
 ```
@@ -41,18 +54,18 @@ struct ExampleApp: Application {
 
 To aid in fine tuning when your scheduled `Job`s run, Alchemy provides some extensions on `Int` to pass to the `every` parameter.
 
-Note that calls to `scheduele` can be chained for readability.
+Note that calls to `every(_:run:)` can be chained for readability.
 
 ```swift
 scheduler
-    // Runs every day @ midnight.
-    .schedule(BackupDatabase(), every: 1.days)
+    // Runs every day starting when the server is launched.
+    .every(1.days, run: BackupDatabase())
     // Runs every day @ 9:30am.
-    .schedule(EmailNewUsers(), every: 1.days.at(hr: 9, min: 30))
+    .every(1.days.at(hr: 9, min: 30), run: EmailNewUsers())
     // Runs every hour @ X:00:00.
-    .schedule(SlackAPIStatus(), every: 1.hour)
+    .every(1.hour.at(min: 00, sec: 00), run: SlackAPIStatus())
     // Runs every minute @ X:XX:30.
-    .schedule(CheckAPIStatus(), every: 1.minutes.at(sec: 30))
+    .every(1.minutes.at(sec: 30), run: CheckAPIStatus())
 ```
 
 ## Logging
@@ -75,7 +88,7 @@ These log to `Log.logger`, an instance of `SwiftLog.Logger`, which defaults to a
 
 ## Thread
 
-As mentioned in [Architecture](Docs/1a_Architecture.md), you want to avoid blocking the current `EventLoop` as much as possible to help your server have maximum request throughput.
+As mentioned in [Architecture](1a_Architecture.md), you want to avoid blocking the current `EventLoop` as much as possible to help your server have maximum request throughput.
 
 Should you need to do some blocking work, such as file IO or CPU intensive work, `Thread` provides a dead simple interface for running work on a separate (non-`EventLoop`) thread. 
 
@@ -95,10 +108,10 @@ Thread
 
 ## Making HTTP Requests
 
-HTTP requests should be made with [AsyncHTTPClient](https://github.com/swift-server/async-http-client). For convenience, an `HTTPClient` configured with the applications `EventLoopGroup` is available for usage via `Global.httpClient`.
+HTTP requests should be made with [AsyncHTTPClient](https://github.com/swift-server/async-http-client). For convenience, an `HTTPClient` configured with the applications `EventLoopGroup` is available for usage via `Services.client`.
 
 ```swift
-Global.httpClient
+Services.client
     .get(url: "https://swift.org")
     .whenComplete { result in
         switch result {
@@ -110,7 +123,7 @@ Global.httpClient
     }
 ```
 
-## Returning HTML
+## Plot: HTML DSL
 
 Out of the box, Alchemy supports [Plot](https://github.com/JohnSundell/Plot), a Swift DSL for writing type safe HTML. With Plot, returning HTML is dead simple and elegant. You can do so straight from a `Router` handler.
 
@@ -245,4 +258,4 @@ http://localhost:8888/ (by default, will return any `index.html` file)
 
 **Note**: The given directory is relative to your server's working directory. If you are using Xcode, be sure to set a custom working directory to your project where the static file directory is.
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_
