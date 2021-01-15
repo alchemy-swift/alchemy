@@ -13,7 +13,7 @@ Alchemy provides built in support for Bcrypt hashing and automatic authenticatio
 
 ## Bcrypt
 
-A standard practice is to never store plain text passwords in your database. Bcrypt is a password hashing function that creates a one way hash of a plaintext password. It's an expensive process CPU-wise, so it will help protect your passwords from being easily cracked through brute forcing.
+Standard practice is to never store plain text passwords in your database. Bcrypt is a password hashing function that creates a one way hash of a plaintext password. It's an expensive process CPU-wise, so it will help protect your passwords from being easily cracked through brute forcing.
 
 It's simple to use.
 
