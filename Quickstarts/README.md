@@ -15,7 +15,6 @@ alchemy new MyNewProject
 ```
 
 You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
-```
 
 ## Templates
 
