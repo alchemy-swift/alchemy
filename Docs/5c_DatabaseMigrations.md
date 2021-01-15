@@ -22,7 +22,7 @@ Migrations are a key part of working with an SQL database. Each migration define
 You can create a new migration using the CLI.
 
 ```bash
-alchemy new migration MyMigration
+alchemy migrate new MyMigration
 ```
 
 This will create a new migration file in the `Sources/Migrations/` with the current timestamp (`yyyyMMddHHmmss`) and provided name.

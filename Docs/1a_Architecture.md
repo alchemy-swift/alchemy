@@ -10,7 +10,7 @@ Alchemy is built on top of [Swift NIO](https://github.com/apple/swift-nio) which
 
 ## Event Loops and You
 
-There are as many unique `EventLoop`s as there are logical cores on your machine, and as requests come in, they are distrubuted between them. For the most part, logic around `EventLoop`s is abstracted away for you, but there are a few caveats to be aware of when building with Alchemy.
+There are as many unique `EventLoop`s as there are logical cores on your machine, and as requests come in, they are distributed between them. For the most part, logic around `EventLoop`s is abstracted away for you, but there are a few caveats to be aware of when building with Alchemy.
 
 ### Caveat 1: **Don't block `EventLoop`s!**
 
