@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "Backend", targets: ["Backend"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/joshuawright11/alchemy", .branch("main")),
+        .package(url: "https://github.com/joshuawright11/alchemy", .upToNextMinor(from: "0.1.0")),
     ],
     targets: [
         .target(
