@@ -1,8 +1,8 @@
 .DS_Store
-/.build
-/Packages
-/*.xcodeproj
+.build
+Packages
+*.xcodeproj
 xcuserdata/
 .swiftpm
 DerivedData/
-default.profraw
+Package.resolved
