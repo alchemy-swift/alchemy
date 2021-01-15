@@ -65,7 +65,7 @@ struct ExperimentMiddleware: Middleware {
 }
 ```
 
-You would then intercept requests with that `Middleware` and utilize the set `ExperimnetConfig` in your handlers.
+You would then intercept requests with that `Middleware` and utilize the set `ExperimentConfig` in your handlers.
 
 ```swift
 app
