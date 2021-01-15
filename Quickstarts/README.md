@@ -7,7 +7,7 @@ You can get up and running on Alchemy quickly by installing one of the quickstar
 The Alchemy CLI can help you get started with one of the [Quickstart](Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
-mint install joshuawright11/alchemy-cli@main
+mint install alchemy-swift/cli@main
 ```
 
 ```shell

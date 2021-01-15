@@ -401,7 +401,7 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		03ABEF5F25AD32DD009D00B2 /* XCRemoteSwiftPackageReference "alchemy" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:joshuawright11/alchemy.git";
+			repositoryURL = "git@github.com:alchemy-swift/alchemy.git";
 			requirement = {
 				branch = main;
 				kind = branch;

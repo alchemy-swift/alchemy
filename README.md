@@ -4,8 +4,8 @@
 
 <p>
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
-<a href="https://github.com/joshuawright11/alchemy/releases"><img src="https://img.shields.io/github/release/joshuawright11/alchemy.svg" alt="Latest Release"></a>
-<a href="https://github.com/joshuawright11/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joshuawright11/alchemy.svg" alt="License"></a>
+<a href="https://github.com/alchemy-swift/alchemy/releases"><img src="https://img.shields.io/github/release/alchemy-swift/alchemy.svg" alt="Latest Release"></a>
+<a href="https://github.com/alchemy-swift/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/alchemy-swift/alchemy.svg" alt="License"></a>
 </p>
 
 ```swift
@@ -40,7 +40,7 @@ App.launch()
 The Alchemy CLI can help you get started with one of the [Quickstart](Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
-mint install joshuawright11/alchemy-cli@main
+mint install alchemy-swift/cli@main
 ```
 
 ```shell
@@ -55,7 +55,7 @@ Alchemy is also installable through the [Swift Package Manager](https://github.c
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/joshuawright11/alchemy", .upToNextMinor(from: "0.1.0"))
+    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.1.0"))
     ...
 ],
 targets: [
@@ -87,9 +87,9 @@ The Docs provide a step by step walkthrough of everything Alchemy has to offer. 
 
 If you'd rather just jump into reading some code, the projects in `Quickstarts/` are contrived apps for the purpose of showing working, documented examples of everything Alchemy can do. You can clone them with `alchemy new` or browse through their code on Github.
 
-### [API Reference](https://github.com/joshuawright11/alchemy/wiki)
+### [API Reference](https://github.com/alchemy-swift/alchemy/wiki)
 
-The inline comments are extensive and full of examples. You can check them out in the codebase or on the [Github wiki](https://github.com/joshuawright11/alchemy/wiki).
+The inline comments are extensive and full of examples. You can check them out in the codebase or on the [Github wiki](https://github.com/alchemy-swift/alchemy/wiki).
 
 ## Why Alchemy?
 
@@ -115,7 +115,7 @@ Our top priorities right now are:
 ## Contributing
 
 - Ask **questions** on Stack Overflow with the tag [`alchemy-swift`](https://stackoverflow.com/questions/tagged/alchemy-swift). You can also ask us in [Discord](https://discord.gg/Rz6kWQTFn9).
-- Report **bugs** as an [issue on Github](https://github.com/joshuawright11/alchemy/issues/new) (bonus points if it's with a failing test case) or [Discord](https://discord.gg/mWzHgHqYFA).
-- Submit **feature requests** on [Github discussions](https://github.com/joshuawright11/alchemy/discussions) or bring them up on [Discord](https://discord.gg/74Bq29q22u).
+- Report **bugs** as an [issue on Github](https://github.com/alchemy-swift/alchemy/issues/new) (bonus points if it's with a failing test case) or [Discord](https://discord.gg/mWzHgHqYFA).
+- Submit **feature requests** on [Github discussions](https://github.com/alchemy-swift/alchemy/discussions) or bring them up on [Discord](https://discord.gg/74Bq29q22u).
 
 Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to readable code and documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups!

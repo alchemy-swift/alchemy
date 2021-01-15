@@ -17,7 +17,7 @@ brew install mint
 ```
 
 ```shell
-mint install joshuawright11/alchemy-cli@main
+mint install alchemy-swift/cli@main
 ```
 
 ```shell
@@ -32,7 +32,7 @@ Alchemy is also installable through the [Swift Package Manager](https://github.c
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/joshuawright11/alchemy", .upToNextMinor(from: "0.1.0"))
+    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.1.0"))
     ...
 ],
 targets: [

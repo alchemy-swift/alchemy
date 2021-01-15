@@ -38,7 +38,7 @@ If you're sharing code between clients and servers with a Swift library, you can
 // in your Package.swift
 
 dependencies: [
-    .package(url: "https://github.com/joshuawright11/alchemy", .upToNextMinor(from: "0.1.0"))
+    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.1.0"))
     ...
 ],
 targets: [
