@@ -176,7 +176,7 @@ HTML {
 
 ### HTMLView
 
-You can use the `HTMLView` type to help organizing your projects view and pages. It is a simple protocol with a single requirement, `var content: HTML`. Like `HTML`, `HTMLView`s can be returned directly from a `Router` handler.
+You can use the `HTMLView` type to help organize your projects view and pages. It is a simple protocol with a single requirement, `var content: HTML`. Like `HTML`, `HTMLView`s can be returned directly from a `Router` handler.
 
 ```swift
 struct HomeView: HTMLView {

@@ -10,7 +10,7 @@
 - [HasOne](#hasone)
 - [HasRelationship Caveat](#hasrelationship-caveat)
 
-Relationships are an important part of an SQL database. Rune provides first class support for defining, keeping track of, and loading realationships between records.
+Relationships are an important part of an SQL database. Rune provides first class support for defining, keeping track of, and loading relationships between records.
 
 Out of the box, Rune supports three kinds of relationships, represented by property wrappers `@BelongsTo`, `@HasMany`, and `@HasOne`.
 

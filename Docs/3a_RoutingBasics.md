@@ -136,7 +136,7 @@ struct App: Application {
 
 Routing in Alchemy is heavily integrated with Swift's built in error handling. [Middleware](3b_RoutingMiddleware.md) & handlers allow for synchronous code to `throw`.
 
-If an error is thrown or an `EventLoopFuture` results in an error, it will be caught & mapped to an `Response`.
+If an error is thrown or an `EventLoopFuture` results in an error, it will be caught & mapped to a `Response`.
 
 Generic errors will result in an `Response` with a status code of 500, but if any error that conforms to `ResponseConvertible` is thrown, it will be converted into the `Response` returned by the error's `convert()` function. 
 
