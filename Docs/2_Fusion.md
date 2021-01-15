@@ -1,6 +1,22 @@
 # Fusion: Services & Dependency Injection
 
-Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties.
+Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties. Fusion can also be added to non-Alchemy targets, such as iOS or macOS apps.
+
+- [Why Use Dependency Injection?](#why-use-dependency-injection-)
+- [Registering & Resolving Services](#registering---resolving-services)
+  * [Resolving with `@Inject`](#resolving-with---inject-)
+  * [Cross service dependencies](#cross-service-dependencies)
+  * [Optional Resolving](#optional-resolving)
+- [Service Types](#service-types)
+  * [Singleton Services](#singleton-services)
+  * [Identified Singletons / Multitons](#identified-singletons---multitons)
+- [Advanced Container Usage](#advanced-container-usage)
+  * [Creating a Custom Container](#creating-a-custom-container)
+  * [Creating a Child Container](#creating-a-child-container)
+  * [Accessing Custom Containers from `@Inject`](#accessing-custom-containers-from---inject-)
+  * [Service Automatically Registered to `Container.global`](#service-automatically-registered-to--containerglobal-)
+  * [`Services`](#-services-)
+- [Using Fusion in non-server targets](#using-fusion-in-non-server-targets)
 
 ## Why Use Dependency Injection?
 
@@ -11,6 +27,7 @@ DI helps keep your code modular, testable and maintainable. It lets you define s
 "Services" (a fancy word for an abstract interface, often a protocol) are registered and resolved from `Container`s. By default there is a global container, `Container.global`, that you can use to register & resolve services from.
 
 For example, consider an abstract type, `protocol Database`, that is implemented by a concrete type, `class PostgresDatabase: Database`. You could register the `PostgresDatabase` type to `Database` via
+
 ```swift
 Container.global.register(Database.self) { _ in
     PostgresDatabase(...)
@@ -18,6 +35,7 @@ Container.global.register(Database.self) { _ in
 ```
 
 Whenever you wanted to access the database; you could access it with through `Container.resolve`.
+
 ```swift
 let database = Container.global.resolve(Database.self)
 ```
@@ -36,15 +54,6 @@ You may also resolve a service with the `@Inject` property wrapper. The instance
 
 ```swift
 @Inject var database: Database
-```
-
-### `Services`
-
-`Alchemy` contains a `Services` type providing convenient static variables for injecting commonly used services from the global container.
-
-```swift
-// Injects a `Router` from `Container.global`.
-let router: Router = Services.router
 ```
 
 ### Cross service dependencies
@@ -75,6 +84,7 @@ let optionalDatabase: Database? = Container.resolveOptional(Database.self)
 ## Service Types
 
 ### Singleton Services
+
 By default, services registered are "transient" meaning that their register closure is called each time it's resolved. 
 
 Sometimes, you'll want only a single instance of this service being passed around (a singleton). In this case, you can use `.register(singleton:)` to register your service.
@@ -84,6 +94,8 @@ Container.global.register(singleton: Database.self) { _ in
     PostgresDatabase(...)
 }
 ```
+
+A singleton instance is resolved once, then cached in it's `Container` to be injected on future calls to `resolve`.
 
 ### Identified Singletons / Multitons
 
@@ -157,7 +169,7 @@ let string = childContainer.resolve(String.self)
 // 0; inherited from parent
 let int = childContainer.resolve(Int.self)
 
-// fatalError; parents don't have access to child's services
+// fatalError; parents do not have access to their children's services
 let int = Container.global.resolve(String.self)
 ```
 
@@ -186,32 +198,34 @@ print(myType.string) // "Howdy"
 print(myType.int) // 42
 ```
 
-### Service Automatically Registered to `Container.global`
+### Services Automatically Registered to `Container.global`
 
 There are a few types to be aware of that Alchemy automatically injects into the global container during setup. These can be accessed via `@Inject` or `Container.resove` anywhere in your app.
 
 - `Router`: the router that will handle all incoming requests.
 - `EventLoopGroup`: the group of `EventLoop`s to which your application runs requests on.
 
-### `Global`
+### `Services`
 
-To make accessing global services more convient, there is a `Global` type with properties that wrap some services registered to `Container.global`.
-
-You may access these properties via:
+`Alchemy` contains a `Services` type providing convenient static variables for injecting commonly used services from the global container.
 
 ```swift
-let globalRouter = Global.router
-let globalEventLoopGroup = Global.eventLoopGroup
+let scheduler = Services.scheduler
+let eventLoopGroup = Services.eventLoopGroup
 ```
 
-You may also add your own static properties to it at your own convenience:
+You may also add custom static properties to it at your own convenience:
 ```swift
-extension Global {
-
+extension Services {
+    var someType: SomeType {
+        Container.global.resolve(SomeType.self)
+    }
 }
 ```
 
-**Note**: Many `QueryBuilder` & `Rune ORM` APIs default to running queries on `Global.database`. Be sure to register a singleton global database in your `Application.setup` to use them.
+**Note**: Many `QueryBuilder` & `Rune ORM` APIs default to running queries on `Services.db`. Be sure to register a singleton global database in your `Application.setup` to use them.
+
+**Other Note**: You can mock many of these common services in tests by calling `Services.mock()` in your test case `setUp()`.
 
 ```swift
 // In Application.setup
@@ -227,4 +241,4 @@ When you `import Alchemy`, you automatically import Fusion. If you'd like to use
 
 _Next page: [Routing: Basics](3a_RoutingBasics.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

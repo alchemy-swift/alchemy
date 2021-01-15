@@ -74,4 +74,4 @@ These functions will throw if the value at the given colum isn't convertible to 
 
 _Next page: [Database: Query Builder](5b_DatabaseQueryBuilder.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

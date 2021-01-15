@@ -1,22 +1,32 @@
 # Routing: Basics
 
+- [Handling Requests](#handling-requests)
+- [ResponseEncodable](#responseencodable)
+  * [Anything `Codable`](#anything--codable-)
+  * [a `Response`](#a--response-)
+  * [`Void`](#-void-)
+  * [an `EventLoopFuture<Void>` or `EventLoopFuture<T: Codable>`.](#an--eventloopfuture-void---or--eventloopfuture-t--codable--)
+  * [Chaining Requests](#chaining-requests)
+- [Controller](#controller)
+- [Errors](#errors)
+- [Path parameters](#path-parameters)
+- [Accessing request data](#accessing-request-data)
+
 ## Handling Requests
 
-When a request comes through the host & port on which your server is listening, it immediately gets routed into the `Router` registered to `Container.global`.
+When a request comes through the host & port on which your server is listening, it immediately gets routed to your Application.
 
-Access it via injection & register handlers to it, likely in the `setup()` of your `Application` type.
+You can set up handlers in the `setup()` function of your app.
 
-Handlers are defined with the `.on(method:at:do:)` function, which takes an `HTTPMethod`, a path, and a handler. The handler is a closure that accepts a `Request` and returns a `ResponseConvertable`.
+Handlers are defined with the `.on(method:at:do:)` function, which takes an `HTTPMethod`, a path, and a handler. The handler is a closure that accepts a `Request` and returns a `ResponseConvertable`. There's sugar for registering handlers for specific methods via `get()`, `post()`, `put()`, `patch()`, etc.
 
 ```swift
 struct ExampleApp: Application {
-    @Inject var router: Router
-
     func setup() {
-        self.router
-            .on(.GET, at: "/hello") { request in 
-                "Hello, World!" 
-            }
+        // GET {host}:{port}/hello
+        self.get("/hello") { request in
+            "Hello, World!"
+        }
     }
 }
 ```
@@ -29,10 +39,10 @@ Out of the box, Alchemy conforms most types you'd need to return from a handler 
 
 ```swift
 /// String
-router.on(.GET, at: "/string", do: { _ in "Howdy!" })
+app.get("/string", do: { _ in "Howdy!" })
 
 /// Int
-router.on(.GET, at: "/int", do: { _ in 42 })
+app.on(.GET, at: "/int", do: { _ in 42 })
 
 /// Custom type
 
@@ -41,7 +51,7 @@ struct Todo: Codable {
     var isDone: Bool
 }
 
-router.on(.GET, at: "/todo", do: { _ in 
+app.get("/todo", handler: { _ in 
     Todo(name: "Write backend in Swift", isDone: true)
 })
 ```
@@ -49,7 +59,7 @@ router.on(.GET, at: "/todo", do: { _ in
 ### a `Response`
 
 ```swift
-router.on(.GET, at: "/response") { _ in 
+app.get("/response") { _ in 
     Response(status: .ok, body: HTTPBody(text: "Hello from /response"))
 }
 ```
@@ -57,7 +67,7 @@ router.on(.GET, at: "/response") { _ in
 ### `Void`
 
 ```swift 
-router.on(.GET, at: "/testing_query") { request in
+app.get("/testing_query") { request in
     print("Got params \(request.queryItems)")
 }
 ```
@@ -65,7 +75,7 @@ router.on(.GET, at: "/testing_query") { request in
 ### an `EventLoopFuture<Void>` or `EventLoopFuture<T: Codable>`.
 
 ```swift
-router.on(.GET, at: "/todos") { _ in
+app.get("/todos") { _ in
     self.loadTodosFromDatabase()
 }
 
@@ -78,23 +88,29 @@ func loadTodosFromDatabase() -> EventLoopFuture<[Todo]> {
 
 ### Chaining Requests
 
-To keep code clean, `.on` returns the router so requests can be chained.
+To keep code clean, handlers are chainable.
 
 ```swift
 let controller = UserController()
-router
-    .on(.POST, at: "/user", do: controller.create)
-    .on(.GET, at: "/user", do: controller.get)
-    .on(.PUT, at: "/user", do: controller.update)
-    .on(.DELETE, at: "/user", do: controller.delete)
+app
+    .post("/user", handler: controller.create)
+    .get("/user", handler: controller.get)
+    .put("/user", handler: controller.update)
+    .delete("/user", handler: controller.delete)
 ```
 
-## Grouping requests
+## Controller
 
-For convenience, requests can be grouped using the `.group(path: String, handler: ...)` function.
+For convenience, a protocol `Controller` is provided to help break up your route handlers. Implement the `route(_ app: Application)` function and register it in your `Application.setup`.
 
 ```swift
-struct UserController {
+struct UserController: Controller {
+    func route(_ app: Application) {
+        app.post("/create", handler: self.create)
+            .post("/reset", handler: controller.reset)
+            .post("/login", handler: controller.login)
+    }
+
     func create(req: HTTPRequest) -> String {
         "Greetings from user create!"
     }
@@ -108,13 +124,11 @@ struct UserController {
     }
 }
 
-// Group all requests to /users
-router.group(path: "/users") {
-    let controller = UserController()
-
-    $0.on(.POST, do: controller.create) // `POST /users`
-    $0.on(.POST, at: "/reset", do: controller.reset) // `POST /users/reset`
-    $0.on(.POST, at: "/login", do: controller.login) // `POST /users/login`
+struct App: Application {
+    func setup() {
+        ...
+        self.controller(UserController())
+    }
 }
 ```
 
@@ -124,17 +138,19 @@ Routing in Alchemy is heavily integrated with Swift's built in error handling. [
 
 If an error is thrown or an `EventLoopFuture` results in an error, it will be caught & mapped to an `Response`.
 
-Generic errors will result in an `Response` with a status code of 500, but if an `HTTPError` is thrown, the response will contain the status code & message of the error.
+Generic errors will result in an `Response` with a status code of 500, but if any error that conforms to `ResponseConvertible` is thrown, it will be converted into the `Response` returned by the error's `convert()` function. 
+
+Out of the box `HTTPError` conforms to `ResponseConvertible`. If it is thrown, the response will contain the status code & message of the `HTTPError`.
 
 ```swift
 struct SomeError: Error {}
 
-router
-    .on(.GET, at: "/foo") { _ in
+app
+    .get("/foo") { _ in
         // Will result in a 500 response with a generic error message.
         throw SomeError()
     }
-    .on(.GET, at: "/bar") { _ in
+    .get("/bar") { _ in
         // Will result in a 404 response with the custom message.
         throw HTTPError(status: .notFound, message: "This endpoint doesn't exist!")
     }
@@ -145,7 +161,7 @@ router
 Dynamic path parameters can be added with a variable name prefaced by a colon (`:`). The value will be parsed and accessible in the handler.
 
 ```swift
-router.on(.GET, at: "/users/:userID") { req in
+app.on(.GET, at: "/users/:userID") { req in
     let userID: String? = req.pathParameter(named: "userID")
     ...
 }
@@ -158,7 +174,7 @@ As long as they have different names, you can have as many path parameters as yo
 Data you might need to get off of an incoming request is in the `Request` type.
 
 ```swift
-router.on(.POST, "/users/:userID") { req in
+app.post("/users/:userID") { req in
     // Headers
     let authHeader: String? = req.headers.first(name: "Authorization")
     
@@ -188,4 +204,4 @@ router.on(.POST, "/users/:userID") { req in
 
 _Next page: [Routing: Middleware](3b_RoutingMiddleware.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

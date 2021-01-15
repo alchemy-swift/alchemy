@@ -245,4 +245,4 @@ http://localhost:8888/ (by default, will return any `index.html` file)
 
 **Note**: The given directory is relative to your server's working directory. If you are using Xcode, be sure to set a custom working directory to your project where the static file directory is.
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

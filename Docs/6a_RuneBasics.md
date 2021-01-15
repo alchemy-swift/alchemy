@@ -292,4 +292,4 @@ usersToDelete.delete()
 
 _Next page: [Rune: Relationships](6b_RuneRelationships.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

@@ -1,5 +1,13 @@
 # Routing: Middleware
 
+- [Creating Middleware](#creating-middleware)
+  * [Accessing the `Request`](#accessing-the--request-)
+  * [Setting Data on a Request](#setting-data-on-a-request)
+  * [Accessing the `Response`](#accessing-the--response-)
+- [Adding Middleware to Your Application](#adding-middleware-to-your-application)
+  * [Global Intercepting](#global-intercepting)
+  * [Specific Intercepting](#specific-intercepting)
+
 ## Creating Middleware
 
 A middleware is a piece of code that is run before or after a request is handled. It might modify the `Request` or `Response`.
@@ -46,7 +54,7 @@ Sometimes you may want a `Middleware` to add some data to a `Request`. For examp
 
 You can set generic data on a `Request` using `Request.set` and then access it in subsequent `Middleware` or handlers via `Request.get`.
 
-For example, you might be doing some experiments with a homegrown `ExperimentConfig` type. You'd like to assing random configurations of that type on a per-request basis. You might do so with a `Middleware`:
+For example, you might be doing some experiments with a homegrown `ExperimentConfig` type. You'd like to assign random configurations of that type on a per-request basis. You might do so with a `Middleware`:
 
 ```swift
 struct ExperimentMiddleware: Middleware {
@@ -60,9 +68,9 @@ struct ExperimentMiddleware: Middleware {
 You would then intercept requests with that `Middleware` and utilize the set `ExperimnetConfig` in your handlers.
 
 ```swift
-router
-    .middleware(ExperimentalMiddleware())
-    .on(.GET, "/experimental_endpoint") { request in
+app
+    .use(ExperimentalMiddleware())
+    .get("/experimental_endpoint") { request in
         // .get() will throw an error if a value with that type hasn't been `set()` on the `Request`.
         let config: ExperimentConfig = try request.get()
         if config.shouldUseLoudCopy {
@@ -91,64 +99,58 @@ struct LogResponseMiddleware: Middleware {
 }
 ```
 
-## Setting Middleware on a Router
+## Adding Middleware to Your Application
 
 There are a few ways to have a `Middleware` intercept requests.
 
 ### Global Intercepting
 
-If you'd like a middleware to intercept _all_ requests on a `Router`, you can add it to `Router.globalMiddlewares`.
+If you'd like a middleware to intercept _all_ requests on an `Application`, you can add it via `Application.useAll`.
 
 ```swift
 struct ExampleApp: Application {
-    @Inject var router: HTTPRouter
-
     func setup() {
-        self.router.globalMiddlewares = [
-            // Will intercept all `Request`s on this `Router`.
-            LoggingMiddleware()
-        ]
-        
-        self.router
+        self
+            .useAll(LoggingMiddleware())
             // LoggingMiddleware will intercept all of these, as well as any unhandled requests.
-            .on(.GET, at: "/foo", do: { request in "Howdy foo!" })
-            .on(.POST, at: "/bar", do: { request in "Howdy bar!" })
-            .on(.PUT, at: "/baz", do: { request in "Howdy baz!" })
+            .get("/foo") { request in "Howdy foo!" }
+            .post("/bar") { request in "Howdy bar!" }
+            .put("/baz") { request in "Howdy baz!" }
     }
 }
 ```
 
 ### Specific Intercepting
 
-A `Middleware` can be setup to only intercept requests to specific handlers via the `.middleware(_ middleware: Middleware)` function on a `Router`. This function will return a new child router & the `Middleware` will be applied to all handlers added on that child `Router`.
+A `Middleware` can be setup to only intercept requests to specific handlers via the `.use(_ middleware: Middleware)` function on an `Application`. The `Middleware` will intercept all requests to the subsequently defined handlers.
 
 ```swift
-router
-    .on(.POST, at: "/password_reset", do: ...)
+app
+    .post("/password_reset", handler: ...)
     // Because this middleware is provided after the /password_reset endpoint,
     // it will only affect subsequent routes. In this case, only requests to 
     // `/user` and `/todos` would be intercepted by the LoggingMiddleware.
-    .middleware(LoggingMiddleware())
-    .on(.GET, at: "/user", do: ...)
-    .on(.GET, at: "/todos", do: ...)
+    .use(LoggingMiddleware())
+    .get("/user", handler: ...)
+    .get("/todos", handler: ...)
 ```
 
-There's also a `.group` function that takes a Middleware.
+There is also a `.group` function that takes a `Middleware`. The `Middleware` will _only_ intercept requests handled by handlers defined in the closure.
 
 ```swift
-router
-    .on(.POST, at: "/user", do: ...)
+app
+    .post("/user", handle: ...)
     .group(middleware: CustomAuthMiddleware()) {
         // Each of these endpoints will be protected by the
         // `CustomAuthMiddleWare`...
-        $0.on(.GET, at: "/todo", do: ...)
-            .on(.PUT, at: "/todo", do: ...)
-            .on(.DELETE, at: "/todo", do: ...)
+        $0.get("/todo", handler: ...)
+            .put("/todo", handler: ...)
+            .delete("/todo", handler: ...)
     }
     // ...but this one will not. 
-    .on(.POST, at: "/reset", do: ...)
+    .post("/reset", handler: ...)
 ```
 
 _Next page: [Papyrus](4_Papyrus.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_

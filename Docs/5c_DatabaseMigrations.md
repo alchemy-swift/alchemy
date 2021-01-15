@@ -165,4 +165,4 @@ let future = database.rollbackMigrations()
 
 _Next page: [Rune: Basics](6a_RuneBasics.md)_
 
-_[Table of Contents](/Docs)_
+_[Table of Contents](/Docs#docs)_
