@@ -34,7 +34,7 @@ Container.global.register(Database.self) { _ in
 }
 ```
 
-Whenever you wanted to access the database; you could access it with through `Container.resolve`.
+Whenever you want to access the database; you can access it through `Container.resolve`.
 
 ```swift
 let database = Container.global.resolve(Database.self)
@@ -99,7 +99,7 @@ A singleton instance is resolved once, then cached in it's `Container` to be inj
 
 ### Identified Singletons / Multitons
 
-Sometimes you might wany multiple instances of a singleton, each tied to a specific identifier (multiton / identified singleton). You can do this by passing an identifier when registering the singleton.
+Sometimes you might want multiple instances of a singleton, each tied to a specific identifier (multiton / identified singleton). You can do this by passing an identifier when registering the singleton.
 
 Perhaps you are working with two databases, one main one and one for writing logs to. You might register them like so,
 
@@ -151,7 +151,7 @@ print(string) // "Hello from my container!"
 
 ### Creating a Child Container
 
-You can give container a parent container. This means that if the child container doesn't have a service registered to it, `resolving` it will attempt to register the service from the parent container.
+You can give a container a parent container. This means that if the child container doesn't have a service registered to it, `resolving` it will attempt to register the service from the parent container.
 
 ```swift
 Container.register(Int.self) {
@@ -200,7 +200,7 @@ print(myType.int) // 42
 
 ### Services Automatically Registered to `Container.global`
 
-There are a few types to be aware of that Alchemy automatically injects into the global container during setup. These can be accessed via `@Inject` or `Container.resove` anywhere in your app.
+There are a few types to be aware of that Alchemy automatically injects into the global container during setup. These can be accessed via `@Inject` or `Container.resolve` anywhere in your app.
 
 - `Router`: the router that will handle all incoming requests.
 - `EventLoopGroup`: the group of `EventLoop`s to which your application runs requests on.

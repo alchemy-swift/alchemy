@@ -30,7 +30,7 @@ let envString: String = Env.current.get("some_string")
 
 ### .env file
 
-By default, environment variables are loaded from the process (`ProcessInfo.processInfo.environment`) as well as the file `.env` if it exists in the working directory of your project.
+By default, environment variables are loaded from the process as well as the file `.env` if it exists in the working directory of your project.
 
 Inside your `.env` file, keys & values are separated with an `=`.
 
