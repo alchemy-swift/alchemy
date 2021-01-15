@@ -33,12 +33,18 @@ wget https://swift.org/builds/swift-5.3.2-release/ubuntu2004/swift-5.3.2-RELEASE
 tar xzf swift-5.3.2-RELEASE-ubuntu20.04.tar.gz
 ```
 
-Move `swift` to `/usr/bin`...
-```shell
-sudo mv swift-5.3.2-RELEASE-ubuntu20.04/usr/bin/swift /usr/bin/swift
+Put Swift somewhere easy to link to, such as a folder `/swift/{version}`.
+```swift
+sudo mkdir /swift
+sudo mv swift-5.3.2-RELEASE-ubuntu20.04 /swift/5.3.2
 ```
 
-And verify that it was installed correctly.
+Then create a link in `/usr/bin`.
+```shell
+sudo ln -s /swift/5.3.2/usr/bin/swift /usr/bin/swift
+```
+
+Verify that it was installed correctly.
 
 ```shell
 swift --version
