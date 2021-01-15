@@ -119,8 +119,7 @@ extension Services {
         
         // `Scheduler`
         Container.global.register(singleton: Scheduler.self) { container in
-            print("SUPRISE")
-            return Scheduler(scheduleLoop: container.resolve(EventLoop.self))
+            Scheduler(scheduleLoop: container.resolve(EventLoop.self))
         }
         
         // `EventLoop`
