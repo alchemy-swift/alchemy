@@ -118,8 +118,8 @@ extension Services {
         }
         
         // `Scheduler`
-        Container.global.register(singleton: Scheduler.self) { _ in
-            Scheduler(scheduleLoop: Services.eventLoop)
+        Container.global.register(singleton: Scheduler.self) { container in
+            Scheduler(scheduleLoop: container.resolve(EventLoop.self))
         }
         
         // `EventLoop`

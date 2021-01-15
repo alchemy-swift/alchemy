@@ -21,6 +21,7 @@ struct AuthController: Controller {
     
     func route(_ app: Application) {
         app
+            // Create a new user account
             .post("/signup") { req -> EventLoopFuture<TokenDTO> in
                 let dto: SignupDTO = try req.decodeBody()
                 // First, ensure a user doesn't exist with the same
@@ -40,6 +41,7 @@ struct AuthController: Controller {
                     // Map the token to a DTO and return.
                     .map { TokenDTO(value: $0.value) }
             }
+            // Login with an existing account
             .post("/login") { req -> EventLoopFuture<TokenDTO> in
                 let dto: LoginDTO = try req.decodeBody()
                 // First, ensure a user with the provided email

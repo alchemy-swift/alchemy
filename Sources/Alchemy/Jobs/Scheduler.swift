@@ -33,11 +33,11 @@ public struct Scheduler {
                 initialDelay: frequency.timeUntilNext(),
                 delay: frequency.rate
             ) { repeatedTask in
-                Log.info("Starting Job `\(name(of: J.self))`.")
+                Log.info("[Scheduler] starting Job `\(name(of: J.self))`.")
                 // For now, never cancel the task.
                 _ = Services.eventLoopGroup.next()
                     .flatSubmit(job.run)
-                    .map { Log.info("Finished Job `\(name(of: J.self))`.") }
+                    .map { Log.info("[Scheduler] finished Job `\(name(of: J.self))`.") }
             }
         
         return self

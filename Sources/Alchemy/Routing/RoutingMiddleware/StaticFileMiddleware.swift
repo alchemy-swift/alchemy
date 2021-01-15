@@ -53,7 +53,7 @@ public struct StaticFileMiddleware: Middleware {
         if exists && !isDirectory.boolValue {
             let fileInfo = try FileManager.default.attributesOfItem(atPath: filePath)
             guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
-                Log.error("Attempted to access file at `\(filePath)` but it didn't have a size.")
+                Log.error("[StaticFileMiddleware] attempted to access file at `\(filePath)` but it didn't have a size.")
                 throw HTTPError(.internalServerError)
             }
             
@@ -89,7 +89,7 @@ public struct StaticFileMiddleware: Middleware {
                         // Not a ton that can be done in the case of
                         // an error, not sure what else can be done
                         // besides logging and ending the request.
-                        Log.error("Encountered an error loading a static file: \(error)")
+                        Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
                         responseWriter.writeEnd()
                     case .success:
                         responseWriter.writeEnd()

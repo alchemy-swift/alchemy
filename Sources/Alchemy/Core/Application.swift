@@ -33,23 +33,10 @@ public protocol Application {
     init()
 }
 
-/// The parameters for what the application should do on startup.
-/// Currently can either `serve` or `migrate`.
-enum StartupArgs {
-    /// Serve to a specific socket. Routes using the singleton
-    /// `HTTPRouter`.
-    case serve(socket: Socket)
-    
-    /// Migrate using any migrations added to Services.db. `rollback`
-    /// indicates whether all new migrations should be run in a new
-    /// batch (`false`) or if the latest batch should be rolled
-    /// back (`true`).
-    case migrate(rollback: Bool = false)
-}
-
 extension Application {
-    /// Launch the application with the provided startup arguments. It
-    /// will either serve or migrate.
+    /// Launch the application with the provided runner. It will setup
+    /// core services, call `self.setup()`, and then it's behavior
+    /// will be defined by the runner.
     ///
     /// - Parameter runner: The runner that defines what the
     ///   application does when it's launched.
@@ -64,20 +51,20 @@ extension Application {
         )
         
         lifecycle.register(
-            label: "AlchemyCoreServices",
+            label: "AlchemyCore",
             start: .sync { Services.bootstrap(lifecycle: lifecycle) },
             shutdown: .sync(Services.shutdown)
         )
         
         lifecycle.register(
-            label: "AlchemySetup",
-            start: .sync { try Services.eventLoopGroup.next().submit(self.setup).wait() },
-            shutdown: .sync {}
-        )
-        
-        lifecycle.register(
             label: "\(Self.self)",
-            start: .eventLoopFuture(runner.start),
+            start: .eventLoopFuture {
+                Services.eventLoopGroup.next()
+                    // Run setup
+                    .submit(self.setup)
+                    // Start the runner
+                    .flatMap(runner.start)
+            },
             shutdown: .eventLoopFuture(runner.shutdown)
         )
         
