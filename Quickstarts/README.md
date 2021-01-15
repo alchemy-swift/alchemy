@@ -61,8 +61,8 @@ It provides the following endpoints
 Getting up and running is simple.
 
 1. Change the variables in `.env` to your database info.
-2. Run migrations to add tables to your database via either `alchemy migrate` or running the server with the `migrate` argument.
-3. Run the `Backend` executable, either in xcode or via command line. By default, it servers on `localhost:8888`.
+2. Run migrations to add tables to your database via either `swift run Backend migrate` or running in Xcode with the `migrate` argument.
+3. Run the `Backend` executable, either in Xcode or with `swift run`. By default, it serves on `localhost:8888`.
 
 **Important Note** if you are running from Xcode, you need to change your scheme's working directory so that the server can see the `.env` and static files in `Public`:
 
