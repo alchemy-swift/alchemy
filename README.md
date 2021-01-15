@@ -73,6 +73,8 @@ You can run your server from Xcode or with
 swift run
 ```
 
+Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
+
 ## Documentation
 
 ### [Docs](Docs#docs)
