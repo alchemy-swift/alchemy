@@ -8,12 +8,11 @@
 import Foundation
 import NIO
 
-public typealias Future = EventLoopFuture
-
 public protocol Queue {
-    var eventLoop: EventLoop { get }
-    func enqueue(_ job: Job) -> Future<Void>
-    func dequeue() -> Future<Job?>
-    func complete(_ job: JobID) -> Future<Void>
-    func requeue(_ job: PersistedJob)
+    var eventLoop: EventLoop { get set }
+    @discardableResult
+    func enqueue<T: Job>(_ job: T) -> EventLoopFuture<Void>
+    func dequeue() -> EventLoopFuture<PersistedJob?>
+    func complete(_ item: PersistedJob, success: Bool) -> EventLoopFuture<Void>
+    func requeue(_ item: PersistedJob) -> EventLoopFuture<Void>
 }

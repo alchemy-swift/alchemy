@@ -8,58 +8,71 @@
 import Foundation
 import NIO
 
-class MemoryQueue: Queue {
+public class MemoryQueue: Queue {
+
+    @Inject public var eventLoop: EventLoop
 
     var isEmpty: Bool {
         return self.pending.isEmpty
     }
 
-    private var jobs: [JobID: Job] = [:]
+    private var jobs: [JobID: PersistedJob] = [:]
 
     private var delayed: [JobID] = []
 
     private var pending: [JobID] = []
 
-    let eventLoop: EventLoop
+    private var failed: [Job] = []
 
-    init(eventLoop: EventLoop) {
+    public init(eventLoop: EventLoop) {
         self.eventLoop = eventLoop
     }
 
-    func enqueue(_ job: Job) -> Future<Void> {
+    @discardableResult
+    public func enqueue<T: Job>(_ job: T) -> EventLoopFuture<Void> {
         let identifier = UUID().uuidString
-        return self.requeue((id: identifier, job: job))
+        let runner = try! PersistedJob(id: identifier, payload: job)
+        return self.requeue(runner)
     }
 
-    public func dequeue() -> Future<PersistedJob?> {
+    public func dequeue() -> EventLoopFuture<PersistedJob?> {
         guard let jobId = self.nextId(),
             let job = self.jobs[jobId] else {
             return eventLoop.makeSucceededFuture(nil)
         }
-        return eventLoop.makeSucceededFuture((id: jobId, job: job))
+        return eventLoop.makeSucceededFuture(job)
     }
 
-    public func complete(_ job: JobID) -> Future<Void> {
-        self.jobs[job] = nil
+    public func complete(_ item: PersistedJob, success: Bool) -> EventLoopFuture<Void> {
+        self.jobs[item.id] = nil
         return eventLoop.makeSucceededFuture(())
     }
 
-    public func requeue(_ job: PersistedJob) -> Future<Void> {
-        self.jobs[job.id] = job.job
-        if job is PeriodicJob || job is ScheduledJob {
-            self.delayed.append(job.id)
+    public func requeue(_ item: PersistedJob) -> EventLoopFuture<Void> {
+        self.jobs[item.id] = item
+        if item.job is PeriodicJob || item.job is ScheduledJob {
+            self.delayed.append(item.id)
         }
         else {
-            self.pending.append(job.id)
+            self.pending.append(item.id)
         }
         return eventLoop.makeSucceededFuture(())
     }
 
     private func nextId() -> JobID? {
-        var nextJobId: JobID = self.delayed.filter { self.jobs[$0]?.nextTime > Date().timeIntervalSince1970 }
-        if nextJobId == nil {
-            nextJobId = self.pending.first
+        let nextPeriodicJobId = self.delayed.first {
+            if let nextPeriodicJob = self.jobs[$0]?.job as? PeriodicJob {
+                return nextPeriodicJob.shouldProcess
+            }
+            return false
         }
-        return nextJobId
+        if let nextJobId = nextPeriodicJobId {
+            return nextJobId
+        }
+        return self.pending.first
+    }
+
+    public static var factory: (Container) throws -> MemoryQueue = { _ in
+        MemoryQueue(eventLoop: Services.eventLoop)
     }
 }

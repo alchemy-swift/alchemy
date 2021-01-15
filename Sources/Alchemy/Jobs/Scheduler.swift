@@ -44,6 +44,6 @@ public struct Scheduler {
     }
     
     public static var factory: (Container) throws -> Scheduler = { _ in
-        Scheduler(scheduleLoop: Loop.current)
+        Scheduler(scheduleLoop: Services.eventLoop)
     }
 }

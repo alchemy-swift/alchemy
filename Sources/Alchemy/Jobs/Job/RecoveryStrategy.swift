@@ -4,7 +4,7 @@ public enum RecoveryStrategy {
 
     /// Removes task from the queue
     case none
-    /// retries the task a specified amount of times
+    /// Retries the task a specified amount of times
     case retry(Int)
 }
 
