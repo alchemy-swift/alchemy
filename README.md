@@ -65,6 +65,14 @@ targets: [
 ]
 ```
 
+### Running It
+
+You can run your project from Xcode or with
+
+```shell
+swift run
+```
+
 ## Documentation
 
 ### [Docs](Docs#docs)
