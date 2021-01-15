@@ -24,7 +24,7 @@ mint install joshuawright11/alchemy-cli@main
 alchemy new MyAwesomeProject
 ```
 
-You'll be guided through picking a new project template, either `Backend` or `Fullstack`. You can check out the details of each one in the [Quickstarts README](Quickstarts/)
+You'll be guided through picking a new project template, either `Backend` or `Fullstack`. You can check out the details of each one in the [Quickstarts README](../Quickstarts/)
 
 ### Swift Package Manager
 
@@ -32,7 +32,7 @@ Alchemy is also installable through the [Swift Package Manager](https://github.c
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/joshuawright11/alchemy", .branch("main"))
+    .package(url: "https://github.com/joshuawright11/alchemy", .upToNextMinor(from: "0.1.0"))
     ...
 ],
 targets: [

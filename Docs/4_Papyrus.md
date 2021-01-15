@@ -1,9 +1,5 @@
 # Papyrus
 
-Papyrus is a helper library for defining network APIs in Swift.
-
-It leverages `Codable` and Property Wrappers for creating network APIs that are easy to read, easy to consume (on Server or Client) and easy to provide (on Server). When shared between a Swift client and server, it enforces type safety when requesting and handling HTTP requests.
-
 - [Installation](#installation)
   * [Server](#server)
   * [Shared Library](#shared-library)
@@ -24,6 +20,10 @@ It leverages `Codable` and Property Wrappers for creating network APIs that are 
     + [Server, via AsyncHTTPClient](#server--via-asynchttpclient)
   * [Providing APIs](#providing-apis)
 
+Papyrus is a helper library for defining network APIs in Swift.
+
+It leverages `Codable` and Property Wrappers for creating network APIs that are easy to read, easy to consume (on Server or Client) and easy to provide (on Server). When shared between a Swift client and server, it enforces type safety when requesting and handling HTTP requests.
+
 ## Installation
 
 ### Server
@@ -38,7 +38,7 @@ If you're sharing code between clients and servers with a Swift library, you can
 // in your Package.swift
 
 dependencies: [
-    .package(url: "https://github.com/joshuawright11/alchemy", .branch("master"))
+    .package(url: "https://github.com/joshuawright11/alchemy", .upToNextMinor(from: "0.1.0"))
     ...
 ],
 targets: [
@@ -90,8 +90,8 @@ class TodosAPI: EndpointGroup {
 
 Notice a few things about the `getAll` endpoint. 
 
-1. The `@POST("/todos")` indicates that the endpoint is at `POST {some_base_url}/todos`. 
-2. The endpoint expects a request object of `GetUsersRequest` which conforms to `EndpointRequest` and contains two properties, wrapped by `@URLQuery`. The `URLQuery` wrappers indicate data that's expected in the query url of the request. This lets requesters of this endpoint know that the endpoint needs two query values, `limit` and `incompleteOnly`. It also lets the providers of this endpoint know that incoming requests to `POST /todo` will contain two items in their query URLs; `limit` and `incompleteOnly`.
+1. The `@GET("/todos")` indicates that the endpoint is at `POST {some_base_url}/todos`. 
+2. The endpoint expects a request object of `GetUsersRequest` which conforms to `EndpointRequest` and contains two properties, wrapped by `@URLQuery`. The `URLQuery` wrappers indicate data that's expected in the query url of the request. This lets requesters of this endpoint know that the endpoint needs two query values, `limit` and `incompleteOnly`. It also lets the providers of this endpoint know that incoming requests to `GET /todo` will contain two items in their query URLs; `limit` and `incompleteOnly`.
 3. The endpoint has a response type of `[TodoDTO]`, defined below it. This lets clients know what response type to expect and lets providers know what response type to return.
 
 This gives anyone reading or using the API all the information they would need to interact with it.
@@ -118,7 +118,7 @@ While a response would look like
 ]
 ```
 
-**Note**: The DTO suffix of `TodoDTO` stands for `Data Transfer Object`, indicating that this type represents some data moving across the wire. It is not necesssary, but helps differentiate from local `Todo` model types that may exist on both client or server.
+**Note**: The DTO suffix of `TodoDTO` stands for `Data Transfer Object`, indicating that this type represents some data moving across the wire. It is not necesssary, but helps differentiate from local `Todo` model types that may exist on either client or server.
 
 #### Supported Methods
 
@@ -154,7 +154,7 @@ Optional properties with nil values will be omitted.
 
 ```swift
 class SomeAPI: EndpointGroup {
-    // Defines query1, query3 and optional query2 in the request URL.
+    // There will be a query1, query3 and optional query2 in the request URL.
     @GET("/foo")
     var queryRequest: Endpoint<QueryRequest, Empty>
 }
@@ -184,7 +184,7 @@ struct HeaderRequest: EndpointRequest {
 
 ##### Path Parameters
 
-`@Path` can wrap a `String`. It indicates a dynamic path parameter at `:{propertyName}` on the request.
+`@Path` can wrap a `String`. It indicates a dynamic path parameter at `:{propertyName}` in the request path.
 
 ```swift
 class SomeAPI: EndpointGroup {
@@ -257,7 +257,7 @@ Papyrus can be used to request endpoints on client or server targets.
 
 To request an endpoint, create the `EndpointGroup` with a `baseURL` and call `request` on a specific endpoint, providing the needed `Request` type.
 
-Requesting the the `TodosAPI.getAll` endpoint from above looks the same on both client and server.
+Requesting the the `TodosAPI.getAll` endpoint from above looks similar on both client and server.
 
 ```swift
 // `import PapyrusAlamofire` on client
@@ -265,9 +265,14 @@ import Alchemy
 
 let todosAPI = TodosAPI(baseURL: "http://localhost:8888")
 todosAPI.getAll
-    .request(.init(limit: 50, incompleteOnly: true)) { response, todos in
-        for todo in todos {
-            print("Got todo: \(todo.name)")
+    .request(.init(limit: 50, incompleteOnly: true)) { response, todoResult in
+        switch todoResult {
+        case .success(let todos):
+            for todo in todos {
+                print("Got todo: \(todo.name)")
+            }
+        case .failure(let error):
+            print("Got error: \(error).")
         }
     }
 ```
@@ -285,15 +290,15 @@ Requesting an `Endpoint` client side is built on top of [Alamofire](https://gith
 
 #### Server, via AsyncHTTPClient
 
-Request an `Endpoint` in an `Alchemy` server is built on top of [AsyncHTTPClient](https://github.com/swift-server/async-http-client). By default, requests are run on `Global.httpClient`, but you may provide a custom `HTTPClient`.
+Request an `Endpoint` in an `Alchemy` server is built on top of [AsyncHTTPClient](https://github.com/swift-server/async-http-client). By default, requests are run on `Services.client`, but you may provide a custom `HTTPClient`.
 
 ### Providing APIs
 
-Alchemy contains convenient extensions for registering your `Endpoint`s on a `Router`. Use `.register` to register an `Endpoint` to a router.
+Alchemy contains convenient extensions for registering your `Endpoint`s on a `Router`. Use `.on` to register an `Endpoint` to a router.
 
 ```swift
 let todos = TodosAPI()
-router.register(todos.getAll) { (request: Request, data: GetTodosRequest) in
+router.on(todos.getAll) { (request: Request, data: GetTodosRequest) in
     // when a request to `GET /todos` is handled, the `GetTodosRequest` properties will be loaded from the `Alchemy.Request`.
 }
 ```

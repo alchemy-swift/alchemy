@@ -1,12 +1,12 @@
 # Architecture
 
-Alchemy is built on top of [Swift NIO](https://github.com/apple/swift-nio) which provides an "event driven architecture". This means that each request your server handles is assigned/run on an "event loop", a thread designated for handling incoming requests (represented by the `NIO.EventLoop` type).
-
 - [Event Loops and You](#event-loops-and-you)
   * [Caveat 1: Don't block EventLoops!](#caveat-1-dont-block-eventloops)
   * [Caveat 2: Use non-blocking APIs (EventLoopFuture)](#caveat-2-use-non-blocking-apis-eventloopfuture-when-doing-async-tasks)
     + [Creating a new EventLoopFuture](#creating-a-new-eventloopfuture)
   * [Accessing EventLoops or EventLoopGroups](#accessing-eventloops-or-eventloopgroups)
+
+Alchemy is built on top of [Swift NIO](https://github.com/apple/swift-nio) which provides an "event driven architecture". This means that each request your server handles is assigned/run on an "event loop", a thread designated for handling incoming requests (represented by the `NIO.EventLoop` type).
 
 ## Event Loops and You
 

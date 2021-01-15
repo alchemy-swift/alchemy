@@ -1,7 +1,5 @@
 # Fusion: Services & Dependency Injection
 
-Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties. Fusion can also be added to non-Alchemy targets, such as iOS or macOS apps.
-
 - [Why Use Dependency Injection?](#why-use-dependency-injection-)
 - [Registering & Resolving Services](#registering---resolving-services)
   * [Resolving with `@Inject`](#resolving-with---inject-)
@@ -17,6 +15,8 @@ Alchemy uses a helper library called `Fusion` for managing dependencies and inje
   * [Service Automatically Registered to `Container.global`](#service-automatically-registered-to--containerglobal-)
   * [`Services`](#-services-)
 - [Using Fusion in non-server targets](#using-fusion-in-non-server-targets)
+
+Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties. Fusion can also be added to non-Alchemy targets, such as iOS or macOS apps.
 
 ## Why Use Dependency Injection?
 
