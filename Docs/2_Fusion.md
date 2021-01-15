@@ -34,7 +34,7 @@ Container.global.register(Database.self) { _ in
 }
 ```
 
-Whenever you wanted to access the database; you could access it with through `Container.resolve`.
+Whenever you want to access the database; you can access it through `Container.resolve`.
 
 ```swift
 let database = Container.global.resolve(Database.self)
