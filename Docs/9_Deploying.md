@@ -21,7 +21,7 @@ Once your droplet is created, ssh into it and install Swift. Start by installing
 
 ```shell
 sudo apt-get update
-sudo apt-get install clang libicu-dev libatomic1 build-essential pkg-config
+sudo apt-get install clang libicu-dev libatomic1 build-essential pkg-config zlib1g-dev
 ```
 
 Next, install Swift. You can do this by right clicking the name of your droplet image on the [Swift Releases](https://swift.org/download/#releases) page and copying the link.
