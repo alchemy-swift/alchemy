@@ -67,7 +67,7 @@ targets: [
 
 ### Running It
 
-You can run your project from Xcode or with
+You can run your server from Xcode or with
 
 ```shell
 swift run
