@@ -33,7 +33,20 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "belongs_to_id", value: .int(5)),
         ]
         
-        XCTAssertEqual(expectedFields, try model.fields())
+        let fields = try model.fields()
+        
+        XCTAssertEqual(fields.count, expectedFields.count)
+        
+        XCTAssertEqual(expectedFields[0], fields[0])
+        XCTAssertEqual(expectedFields[1], fields[1])
+        XCTAssertEqual(expectedFields[2], fields[2])
+        XCTAssertEqual(expectedFields[3], fields[3])
+        XCTAssertEqual(expectedFields[4], fields[4])
+        XCTAssertEqual(expectedFields[5], fields[5])
+        XCTAssertEqual(expectedFields[6], fields[6])
+        XCTAssertEqual(expectedFields[7], fields[7])
+        XCTAssertEqual(expectedFields[8], fields[8])
+        XCTAssertEqual(expectedFields[9], fields[9])
     }
     
     func testKeyMapping() throws {
