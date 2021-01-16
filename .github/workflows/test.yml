@@ -16,10 +16,14 @@ jobs:
     - name: Run tests
       run: swift test -v
   test-linux:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        swift: [5.3]
+    container: swift:${{ matrix.swift }}
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: swift build -v
+      run: swift build -v --enable-test-discovery
     - name: Run tests
       run: swift test -v --enable-test-discovery
