@@ -25,7 +25,7 @@ App.launch()
 - Fast, trie based routing.
 - Customizable middleware.
 - First class support for [Plot](https://github.com/JohnSundell/Plot), a typesafe HTML DSL.
-- Expressive ORM and query builder.
+- Expressive ORM and query builder with out of the box support for Postgres and MySQL.
 - Database agnostic schema migrations.
 - Cron-like job scheduling.
 - Powerful dependency injection.
