@@ -15,6 +15,12 @@ protocol TestMigration: Migration {
 }
 
 struct Migration1: TestMigration {
+    private static let orderedEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
+    
     func up(schema: Schema) {
         schema.create(table: "users", ifNotExists: true) {
             $0.uuid("id").primary().default(expression: "uuid_generate_v4()")
@@ -26,7 +32,7 @@ struct Migration1: TestMigration {
             $0.date("created_at")
             $0.date("date_default").default(val: kFixedDate)
             $0.uuid("uuid_default").default(val: kFixedUUID)
-            $0.json("some_json").default(json: DatabaseJSON())
+            $0.json("some_json").default(json: DatabaseJSON(), encoder: Migration1.orderedEncoder)
             $0.uuid("parent_id").references("id", on: "users")
         }
         schema.rename(table: "foo", to: "bar")
@@ -48,7 +54,7 @@ struct Migration1: TestMigration {
                     created_at timestamptz,
                     date_default timestamptz DEFAULT '1970-01-01T00:00:00',
                     uuid_default uuid DEFAULT '\(kFixedUUID.uuidString)',
-                    some_json json DEFAULT '{"name":"Josh","age":27}'::jsonb,
+                    some_json json DEFAULT '{"age":27,"name":"Josh"}'::jsonb,
                     parent_id uuid REFERENCES users(id)
                 )
                 """),
@@ -70,7 +76,7 @@ struct Migration1: TestMigration {
                     created_at datetime,
                     date_default datetime DEFAULT '1970-01-01T00:00:00',
                     uuid_default varchar(36) DEFAULT '\(kFixedUUID.uuidString)',
-                    some_json json DEFAULT ('{"name":"Josh","age":27}'),
+                    some_json json DEFAULT ('{"age":27,"name":"Josh"}'),
                     parent_id varchar(36) REFERENCES users(id)
                 )
                 """),

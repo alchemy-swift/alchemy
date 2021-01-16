@@ -19,7 +19,7 @@ final class DatabaseEncodingTests: XCTestCase {
             belongsTo: .init(5)
         )
         
-        let jsonData = try JSONEncoder().encode(json)
+        let jsonData = try TestModel.jsonEncoder.encode(json)
         let expectedFields: [DatabaseField] = [
             DatabaseField(column: "string", value: .string("one")),
             DatabaseField(column: "int", value: .int(2)),
@@ -92,6 +92,12 @@ private struct TestModel: Model {
     
     @HasMany(to: \.$belongsTo)
     var hasMany: [TestModel]
+    
+    static var jsonEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
 }
 
 private struct CustomKeyedModel: Model {
