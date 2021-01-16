@@ -16,8 +16,8 @@
       - [Body](#body)
       - [Combinations](#combinations)
   * [Requesting APIs](#requesting-apis)
-    + [Client, via Alamofire](#client--via-alamofire)
-    + [Server, via AsyncHTTPClient](#server--via-asynchttpclient)
+    + [Client, via Alamofire](#client-via-alamofire)
+    + [Server, via AsyncHTTPClient](#server-via-asynchttpclient)
   * [Providing APIs](#providing-apis)
 
 Papyrus is a helper library for defining network APIs in Swift.
