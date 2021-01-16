@@ -13,7 +13,6 @@ let package = Package(
         .library(name: "Alchemy", targets: ["Alchemy"]),
         .library(name: "Fusion", targets: ["Fusion"]),
         .library(name: "Papyrus", targets: ["Papyrus"]),
-        .library(name: "PapyrusAlamofire", targets: ["PapyrusAlamofire"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -24,7 +23,6 @@ let package = Package(
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
         .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.0"),
         .package(url: "https://github.com/vapor/mysql-kit", from: "4.0.0-rc.1.6"),
-        .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
         .package(name: "Plot", url: "https://github.com/johnsundell/plot.git", from: "0.8.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha"),
@@ -56,7 +54,6 @@ let package = Package(
         .target(name: "CBcrypt", dependencies: []),
         .target(name: "Papyrus", dependencies: []),
         .target(name: "Fusion", dependencies: []),
-        .target(name: "PapyrusAlamofire", dependencies: ["Papyrus", "Alamofire"]),
         .testTarget(name: "AlchemyTests", dependencies: ["Alchemy"]),
         .testTarget(name: "PapyrusTests", dependencies: ["Papyrus"]),
         .testTarget(name: "FusionTests", dependencies: ["Fusion"]),
