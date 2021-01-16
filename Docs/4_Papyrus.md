@@ -50,9 +50,9 @@ targets: [
 
 ### Client
 
-If you want to define or request `Papyrus` APIs on a Swift client (iOS, macOS, etc) you'll add `PapyrusAlamofire` as a dependency via SPM. This is a light wrapper around `Papyrus` with support for requesting endpoints with [Alamofire](https://github.com/Alamofire/Alamofire).
+If you want to define or request `Papyrus` APIs on a Swift client (iOS, macOS, etc) you'll add [`PapyrusAlamofire`](https://github.com/alchemy-swift/papyrus-alamofire) as a dependency via SPM. This is a light wrapper around `Papyrus` with support for requesting endpoints with [Alamofire](https://github.com/Alamofire/Alamofire).
 
-Since Xcode manages the `Package.swift` for iOS and macOS targets, you can add `PapyrusAlamofire` as a dependency through `File` -> `Swift Packages` -> `Add Package Dependency` -> paste alchemy github link -> check `PapyrusAlamofire` to import.
+Since Xcode manages the `Package.swift` for iOS and macOS targets, you can add `PapyrusAlamofire` as a dependency through `File` -> `Swift Packages` -> `Add Package Dependency` -> paste `https://github.com/alchemy-swift/papyrus-alamofire` -> check `PapyrusAlamofire` to import.
 
 ## Usage
 
