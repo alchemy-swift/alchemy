@@ -7,16 +7,15 @@
 
 import Alchemy
 
-struct PrintMessageJob: Job {
-
+struct PrintJobData: Codable {
     let title: String
+}
 
-    init(title: String) {
-        self.title = title
-    }
+struct PrintMessageJob: Job {
+    typealias Payload = PrintJobData
 
-    func run() -> EventLoopFuture<Void> {
-        print("The message from this job is: ", title)
+    func run(payload: PrintJobData) -> EventLoopFuture<Void> {
+        print("The message from this job is: ", payload.title)
         return EventLoopFuture.new()
     }
 

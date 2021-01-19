@@ -2,40 +2,30 @@ import Foundation
 import Dispatch
 import NIO
 
-struct TestJob: Job {
-
-    func run() -> EventLoopFuture<Void> {
-        print("The message from this job is")
-        return EventLoopFuture.new()
-    }
-
-}
-
-public struct JobType<T: Job> {
-    let type: T.Type
-}
-
-public final class Worker {
+public final class Worker<T: Queue> {
 
     private let eventLoop: EventLoop
 
-    private let queue: Queue
+    private let queue: T
 
     private let refreshInterval: TimeAmount = .seconds(1)
 
-    private var types: [String: JobType<Any: Job>] = [:]
+    private var types: [String: Task] = [:]
 
-    public init(eventLoop: EventLoop, queue: Queue, types: [JobType<Job>]) throws {
+    public init(
+        eventLoop: EventLoop = Services.eventLoop,
+        queue: T,
+        types: [Task]
+    ) {
         self.eventLoop = eventLoop
         self.queue = queue
 
         for job in types {
-
-            self.types[job.type.name] = job
+            self.types[job.name] = job
         }
     }
 
-    public func add(type: JobType<Job>) {
+    public func add(type: Task) {
         self.types[type.name] = type
     }
 
@@ -71,15 +61,13 @@ public final class Worker {
         }
     }
 
-    private func execute(_ item: PersistedJob) -> EventLoopFuture<Void> {
-        if item.job == nil {
-            if let type = types[item.name] {
-                let ttt: Job.Type = type
-                try? item.loadPayload(type: ttt)
-            }
+    private func execute(_ item: T.QueueItem) -> EventLoopFuture<Void> {
+        guard let task = types[item.name] else { return EventLoopFuture.new() }
+        return item.run(job: task).flatMap {
+            self.complete(item: item)
         }
-        item.run().flatMap {
-            return self.complete(item: item)
+        .flatMap {
+            self.runNext()
         }
         .flatMapError { error in
             return self.failure(item, error: error)
@@ -88,28 +76,27 @@ public final class Worker {
 
     /// Called when a task is successfully completed. If the task is
     /// periodic it is re-queued into the zset.
-    private func complete(item: PersistedJob) -> EventLoopFuture<Void> {
-        if item.job is PeriodicJob {
-            return queue.requeue(item)
-        } else {
+    private func complete(item: T.QueueItem) -> EventLoopFuture<Void> {
+//        if item.job is PeriodicJob {
+//            return queue.requeue(item)
+//        } else {
             return queue.complete(item, success: true)
-        }
+//        }
     }
 
     /// Called when the tasks fails. Note: If the tasks recovery
     /// stategy is none it will never be ran again.
-    private func failure(_ item: PersistedJob, error: Error) -> EventLoopFuture<Void> {
-        guard let job = item.job else { return EventLoopFuture.new() }
+    private func failure(_ item: T.QueueItem, error: Error) -> EventLoopFuture<Void> {
+        guard let task = types[item.name] else { return EventLoopFuture.new() }
 
-        job.failed(error: error)
-
-        switch job.recoveryStrategy {
+        switch task.recoveryStrategy {
         case .none:
             return queue.complete(item, success: false)
         case .retry(let retries):
             if item.shouldRetry(retries: retries) {
-                item.retry()
-                return queue.requeue(item)
+                var tempItem = item
+                tempItem.retry()
+                return queue.requeue(tempItem)
             }
             else {
                 return queue.complete(item, success: false)

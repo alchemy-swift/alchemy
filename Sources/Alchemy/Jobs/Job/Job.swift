@@ -3,61 +3,58 @@ import NIO
 public typealias JobID = String
 
 public protocol Job: Task {
-    var recoveryStrategy: RecoveryStrategy { get }
+    associatedtype Payload
+
+    func run(payload: Payload) -> EventLoopFuture<Void>
     func failed(error: Error)
+
+    static func serializePayload(_ payload: Payload) throws -> Data
+    static func parsePayload(bytes: Data) throws -> Payload
+}
+
+extension Job where Payload: Codable {
+    public static func serializePayload(_ payload: Payload) throws -> Data {
+        try JSONEncoder().encode(payload)
+    }
+
+    public static func parsePayload(bytes: Data) throws -> Payload {
+        try JSONDecoder().decode(Payload.self, from: .init(bytes))
+    }
 }
 
 extension Job {
-    var name: String { Self.name }
-    public static var name: String {
-        return String(describing: Self.self)
+    public func run(payload: Data) -> EventLoopFuture<Void> {
+        do {
+            return try self.run(payload: Self.parsePayload(bytes: payload))
+        }
+        catch let error {
+            self.failed(error: error)
+            return Services.eventLoop.makeFailedFuture(error)
+        }
     }
-
-    public var recoveryStrategy: RecoveryStrategy { .none }
 }
 
-public class PersistedJob: Codable {
+public protocol PersistedJob: Codable {
 
-    let id: JobID
-    let name: String
+    var name: String { get }
+    var attempts: Int { get set }
+    var payload: Data { get set }
 
-    var job: Job? // figure this shit out
+    func run(job: Task) -> EventLoopFuture<Void>
+    func shouldRetry(retries: Int) -> Bool
+    mutating func retry()
+}
 
-    var retries: Int = 0
-    private var payload: [UInt8] = []
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case retries
-        case payload
+extension PersistedJob {
+    public func run(job: Task) -> EventLoopFuture<Void> {
+        job.run(payload: self.payload)
     }
 
-    init<T: Job>(id: JobID, payload: T) throws {
-        self.id = id
-        self.name = payload.name
-        self.job = payload
-        self.payload = try .init(JSONEncoder().encode(payload))
+    public func shouldRetry(retries: Int) -> Bool {
+        self.attempts < retries
     }
 
-    public func loadPayload<T: Job>(type: T.Type) throws {
-        let decoded: T = try JSONDecoder().decode(type.self, from: .init(payload))
-        self.job = decoded
-    }
-
-    func run() -> EventLoopFuture<Void> {
-        self.job?.run() ?? EventLoopFuture.new()
-    }
-
-    func failed(error: Error) {
-        self.job?.failed(error: error)
-    }
-
-    func shouldRetry(retries: Int) -> Bool {
-        self.retries < retries
-    }
-
-    func retry() {
-        self.retries += 1
+    public mutating func retry() {
+        self.attempts += 1
     }
 }
