@@ -5,7 +5,7 @@ import NIO
 final class MySQLGrammar: Grammar {
     override func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
         var initial = try super.compileInsert(query, values: values)
-        initial.query.append("; select * from \(query.from!) where id=LAST_INSERT_ID();")
+        initial.query.append(";")
         return initial
     }
     
