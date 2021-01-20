@@ -4,6 +4,39 @@ protocol ColumnBuilderErased {
     func toCreate() -> CreateColumn
 }
 
+/// Options for an `onDelete` or `onUpdate` reference constraint.
+public enum ReferenceOption: String {
+    /// RESTRICT
+    case restrict = "RESTRICT"
+    /// CASCADE
+    case cascade = "CASCADE"
+    /// SET NULL
+    case setNull = "SET NULL"
+    /// NO ACTION
+    case noAction = "NO ACTION"
+    /// SET DEFAULT
+    case setDefault = "SET DEFAULT"
+}
+
+/// Various constraints for columns.
+enum ColumnConstraint {
+    /// This column shouldn't be null.
+    case notNull
+    /// The default value for this column.
+    case `default`(String)
+    /// This column is the primary key of it's table.
+    case primaryKey
+    /// This column is unique on this table.
+    case unique
+    /// This column references a `column` on another `table`.
+    case foreignKey(
+            column: String,
+            table: String,
+            onDelete: ReferenceOption? = nil,
+            onUpdate: ReferenceOption? = nil
+         )
+}
+
 /// A builder for creating columns on a table in a relational database.
 ///
 /// `Default` is a Swift type that can be used to add a default value
@@ -19,7 +52,7 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     private let type: ColumnType
     
     /// Any modifiers of the column.
-    private var modifiers: [String]
+    private var constraints: [ColumnConstraint]
     
     /// Create with a name, a type, and a modifier array.
     ///
@@ -29,11 +62,11 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     ///   - name: The name of the column to create.
     ///   - type: The type of the column to create.
     ///   - modifiers: Any modifiers of the column.
-    init(grammar: Grammar, name: String, type: ColumnType, modifiers: [String] = []) {
+    init(grammar: Grammar, name: String, type: ColumnType, constraints: [ColumnConstraint] = []) {
         self.grammar = grammar
         self.name = name
         self.type = type
-        self.modifiers = modifiers
+        self.constraints = constraints
     }
     
     /// Adds an expression as the default value of this column.
@@ -42,7 +75,7 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     ///   default value of this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(expression: String) -> Self {
-        self.appending(modifier: "DEFAULT \(expression)")
+        self.adding(constraint: .default(expression))
     }
     
     /// Adds a value as the default for this column.
@@ -50,20 +83,20 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     /// - Parameter expression: A default value for this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(val: Default) -> Self {
-        // Janky, but MySQL requires parenthases around text (but not
+        // Janky, but MySQL requires parentheses around text (but not
         // varchar...) literals.
         if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
-            return self.appending(modifier: "DEFAULT (\(val.toSQL().query))")
+            return self.adding(constraint: .default("(\(val.toSQL().query))"))
         }
         
-        return self.appending(modifier: "DEFAULT \(val.toSQL().query)")
+        return self.adding(constraint: .default(val.toSQL().query))
     }
     
     /// Define this column as not nullable.
     ///
     /// - Returns: This column builder.
     @discardableResult public func notNull() -> Self {
-        self.appending(modifier: "NOT NULL")
+        self.adding(constraint: .notNull)
     }
     
     /// Defines this column as a reference to another column on a
@@ -72,38 +105,47 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     /// - Parameters:
     ///   - column: The column name this column references.
     ///   - table: The table of the column this column references.
+    ///   - onDelete: The `ON DELETE` reference option for this
+    ///     column. Defaults to nil.
+    ///   - onUpdate: The `ON UPDATE` reference option for this
+    ///     column. Defaults to nil.
     /// - Returns: This column builder.
-    @discardableResult public func references(_ column: String, on table: String) -> Self {
-        self.appending(modifier: "REFERENCES \(table)(\(column))")
+    @discardableResult public func references(
+        _ column: String,
+        on table: String,
+        onDelete: ReferenceOption? = nil,
+        onUpdate: ReferenceOption? = nil
+    ) -> Self {
+        self.adding(constraint: .foreignKey(column: column, table: table, onDelete: onDelete, onUpdate: onUpdate))
     }
     
     /// Defines this column as a primary key.
     ///
     /// - Returns: This column builder.
     @discardableResult public func primary() -> Self {
-        self.appending(modifier: "PRIMARY KEY")
+        self.adding(constraint: .primaryKey)
     }
     
     /// Defines this column as unique.
     ///
     /// - Returns: This column builder.
     @discardableResult public func unique() -> Self {
-        self.appending(modifier: "UNIQUE")
+        self.adding(constraint: .unique)
     }
     
     /// Adds a modifier to `self.modifiers` and then returns `self`.
     ///
     /// - Parameter modifier: The modifier to add.
     /// - Returns: This column builder.
-    private func appending(modifier: String) -> Self {
-        self.modifiers.append(modifier)
+    private func adding(constraint: ColumnConstraint) -> Self {
+        self.constraints.append(constraint)
         return self
     }
 
     // MARK: ColumnBuilderErased
     
     func toCreate() -> CreateColumn {
-        CreateColumn(column: self.name, type: self.type, constraints: self.modifiers)
+        CreateColumn(column: self.name, type: self.type, constraints: self.constraints)
     }
 }
 
@@ -115,7 +157,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
     ///   for this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(jsonString: String) -> Self {
-        self.appending(modifier: "DEFAULT \(self.grammar.jsonLiteral(from: jsonString))")
+        self.adding(constraint: .default(self.grammar.jsonLiteral(from: jsonString)))
     }
     
     /// Adds an `Encodable` as the default for this column.
@@ -135,7 +177,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
         }
         
         let jsonString = String(decoding: jsonData, as: UTF8.self)
-        return self.appending(modifier: "DEFAULT \(self.grammar.jsonLiteral(from: jsonString))")
+        return self.adding(constraint: .default(self.grammar.jsonLiteral(from: jsonString)))
     }
 }
 

@@ -93,6 +93,9 @@ extension Database {
         var elf = Services.eventLoop.future()
         for m in migrations {
             let statements = m.upStatements(for: self.grammar)
+            for statement in statements {
+                print(statement.query)
+            }
             elf = elf.flatMap { self.runStatements(statements: statements) }
                 .flatMap {
                     AlchemyMigration(name: m.name, batch: batch, runAt: Date())

@@ -172,17 +172,5 @@ public struct CreateColumn {
     let type: ColumnType
     
     /// Any constraints.
-    let constraints: [String]
-    
-    /// Convert this `CreateColumn` to a `String` for inserting into
-    /// an SQL statement.
-    ///
-    /// - Returns: The SQL `String` describing this column.
-    func toSQL(with grammar: Grammar) -> String {
-        var baseSQL = "\(self.column) \(grammar.typeString(for: self.type))"
-        if !self.constraints.isEmpty {
-            baseSQL.append(" \(self.constraints.joined(separator: " "))")
-        }
-        return baseSQL
-    }
+    let constraints: [ColumnConstraint]
 }

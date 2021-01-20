@@ -97,7 +97,17 @@ open class Grammar {
             bindings: parameters
         )
     }
-
+    
+    /// A hack around the issue that MySQL doesn't seem to have a way
+    /// of returning inserted items from an insert query.
+    ///
+    /// - Parameter table: The table that was inserted on.
+    /// - Returns: Any additional query to run after inserting an
+    ///   item, that returns the fields of the item inserted.
+    open func additionalInsertQuery(table: String) -> SQL? {
+        nil
+    }
+    
     open func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
         var bindings: [DatabaseValue] = []
@@ -149,11 +159,19 @@ open class Grammar {
     // MARK: - Compiling Migrations
     
     open func compileCreate(table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
-        SQL("""
+        var columnStrings: [String] = []
+        var constraintStrings: [String] = []
+        for (column, constraints) in columns.map({ $0.sqlString(with: self) }) {
+            columnStrings.append(column)
+            constraintStrings.append(contentsOf: constraints)
+        }
+        return SQL(
+            """
             CREATE TABLE\(ifNotExists ? " IF NOT EXISTS" : "") \(table) (
-                \(columns.map { $0.toSQL(with: self) }.joined(separator: ",\n    "))
+                \((columnStrings + constraintStrings).joined(separator: ",\n    "))
             )
-            """)
+            """
+        )
     }
     
     open func compileRename(table: String, to: String) -> SQL {
@@ -169,12 +187,19 @@ open class Grammar {
             return []
         }
         
-        let adds = addColumns.map { "ADD COLUMN \($0.toSQL(with: self))" }
+        var adds: [String] = []
+        var constraints: [String] = []
+        for (sql, tableConstraints) in addColumns.map({ $0.sqlString(with: self) }) {
+            adds.append("ADD COLUMN \(sql)")
+            constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
+        }
+        
         let drops = dropColumns.map { "DROP COLUMN \($0)" }
-        return [SQL("""
-                    ALTER TABLE \(table)
-                    \((adds + drops).joined(separator: ",\n"))
-                    """)]
+        return [
+            SQL("""
+                ALTER TABLE \(table)
+                \((adds + drops + constraints).joined(separator: ",\n"))
+                """)]
     }
     
     open func compileRenameColumn(table: String, column: String, to: String) -> SQL {
@@ -294,4 +319,35 @@ public enum StringLength {
     /// This value of this column must be at most the provided number
     /// of characters.
     case limit(Int)
+}
+
+extension CreateColumn {
+    /// Convert this `CreateColumn` to a `String` for inserting into
+    /// an SQL statement.
+    ///
+    /// - Returns: The SQL `String` describing this column and any
+    ///   table level constraints to add.
+    func sqlString(with grammar: Grammar) -> (String, [String]) {
+        var baseSQL = "\(self.column) \(grammar.typeString(for: self.type))"
+        var tableConstraints: [String] = []
+        for constraint in self.constraints {
+            switch constraint {
+            case .notNull:
+                baseSQL.append(" NOT NULL")
+            case .primaryKey:
+                tableConstraints.append("PRIMARY KEY (\(self.column))")
+            case .unique:
+                tableConstraints.append("UNIQUE (\(self.column))")
+            case let .default(val):
+                baseSQL.append(" DEFAULT \(val)")
+            case let .foreignKey(column, table, onDelete, onUpdate):
+                var fkBase = "FOREIGN KEY (\(self.column)) REFERENCES \(table)(\(column))"
+                if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
+                if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
+                tableConstraints.append(fkBase)
+            }
+        }
+        
+        return (baseSQL, tableConstraints)
+    }
 }

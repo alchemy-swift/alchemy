@@ -45,9 +45,9 @@ struct Migration1: TestMigration {
         [
             SQL("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    id uuid DEFAULT uuid_generate_v4(),
                     bmi float8 DEFAULT 15.0,
-                    email varchar(255) NOT NULL UNIQUE,
+                    email varchar(255) NOT NULL,
                     age int DEFAULT 21,
                     counter SERIAL,
                     is_pro bool DEFAULT false,
@@ -55,7 +55,10 @@ struct Migration1: TestMigration {
                     date_default timestamptz DEFAULT '1970-01-01T00:00:00',
                     uuid_default uuid DEFAULT '\(kFixedUUID.uuidString)',
                     some_json json DEFAULT '{"age":27,"name":"Josh"}'::jsonb,
-                    parent_id uuid REFERENCES users(id)
+                    parent_id uuid,
+                    PRIMARY KEY (id),
+                    UNIQUE (email),
+                    FOREIGN KEY (parent_id) REFERENCES users(id)
                 )
                 """),
             SQL("ALTER TABLE foo RENAME TO bar"),
@@ -67,9 +70,9 @@ struct Migration1: TestMigration {
         [
             SQL("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id varchar(36) PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    id varchar(36) DEFAULT uuid_generate_v4(),
                     bmi double DEFAULT 15.0,
-                    email varchar(255) NOT NULL UNIQUE,
+                    email varchar(255) NOT NULL,
                     age int DEFAULT 21,
                     counter SERIAL,
                     is_pro boolean DEFAULT false,
@@ -77,7 +80,10 @@ struct Migration1: TestMigration {
                     date_default datetime DEFAULT '1970-01-01T00:00:00',
                     uuid_default varchar(36) DEFAULT '\(kFixedUUID.uuidString)',
                     some_json json DEFAULT ('{"age":27,"name":"Josh"}'),
-                    parent_id varchar(36) REFERENCES users(id)
+                    parent_id varchar(36),
+                    PRIMARY KEY (id),
+                    UNIQUE (email),
+                    FOREIGN KEY (parent_id) REFERENCES users(id)
                 )
                 """),
             SQL("ALTER TABLE foo RENAME TO bar"),
@@ -136,6 +142,7 @@ struct Migration3: TestMigration {
             $0.drop(column: "email")
             $0.rename(column: "Name", to: "name")
             $0.string("some_string", length: .unlimited).default(val: "hello")
+            $0.int("some_int").unique().notNull()
             $0.drop(column: "other")
         }
         schema.raw(sql: "some raw sql")
@@ -148,8 +155,10 @@ struct Migration3: TestMigration {
             SQL("""
                 ALTER TABLE users
                 ADD COLUMN some_string text DEFAULT 'hello',
+                ADD COLUMN some_int int NOT NULL,
                 DROP COLUMN email,
-                DROP COLUMN other
+                DROP COLUMN other,
+                ADD UNIQUE (some_int)
                 """),
             SQL("ALTER TABLE users RENAME COLUMN Name TO name"),
             SQL("some raw sql"),
@@ -161,8 +170,10 @@ struct Migration3: TestMigration {
             SQL("""
                 ALTER TABLE users
                 ADD COLUMN some_string text DEFAULT ('hello'),
+                ADD COLUMN some_int int NOT NULL,
                 DROP COLUMN email,
-                DROP COLUMN other
+                DROP COLUMN other,
+                ADD UNIQUE (some_int)
                 """),
             SQL("ALTER TABLE users RENAME COLUMN Name TO name"),
             SQL("some raw sql"),
