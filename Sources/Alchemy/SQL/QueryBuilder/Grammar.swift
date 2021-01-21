@@ -98,7 +98,7 @@ open class Grammar {
         )
     }
     
-    open func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query)
+    open func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query, returnItems: Bool)
         -> EventLoopFuture<[DatabaseRow]>
     {
         catchError {

@@ -635,20 +635,34 @@ public class Query: Sequelizable {
     ///
     /// - Parameter value: A dictionary containing the values to be
     ///   inserted.
+    /// - Parameter returnItems: Indicates whether the inserted items
+    ///   should be returned with any fields updated/set by the
+    ///   insert. Defaults to `true`. This flag doesn't affect
+    ///   Postgres which always returns inserted items, but on MySQL
+    ///   it means this will run two queries; one to insert and one to
+    ///   fetch.
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   inserted rows.
-    public func insert(_ value: OrderedDictionary<String, Parameter>) -> EventLoopFuture<[DatabaseRow]> {
-        return insert([value])
+    public func insert(_ value: OrderedDictionary<String, Parameter>, returnItems: Bool = true) -> EventLoopFuture<[DatabaseRow]> {
+        return insert([value], returnItems: returnItems)
     }
 
-    /// Perform an insert and create database rows from the provided data.
+    /// Perform an insert and create database rows from the provided
+    /// data.
     ///
-    /// - Parameter value: An array of dictionaries containing the
+    /// - Parameter values: An array of dictionaries containing the
     ///   values to be inserted.
+    /// - Parameter returnItems: Indicates whether the inserted items
+    ///   should be returned with any fields updated/set by the
+    ///   insert. Defaults to `true`. This flag doesn't affect
+    ///   Postgres which always runs a single query and returns
+    ///   inserted items. On MySQL it means this will run two queries
+    ///   _per value_; one to insert and one to fetch. If this is
+    ///   `false`, MySQL will run a single query inserting all values.
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   inserted rows.
-    public func insert(_ values: [OrderedDictionary<String, Parameter>]) -> EventLoopFuture<[DatabaseRow]> {
-        self.database.grammar.insert(values, query: self)
+    public func insert(_ values: [OrderedDictionary<String, Parameter>], returnItems: Bool = true) -> EventLoopFuture<[DatabaseRow]> {
+        self.database.grammar.insert(values, query: self, returnItems: returnItems)
     }
 
     /// Perform an update on all data matching the query in the

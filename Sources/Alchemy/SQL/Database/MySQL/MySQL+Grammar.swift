@@ -47,10 +47,14 @@ final class MySQLGrammar: Grammar {
     
     // MySQL needs custom insert behavior, since bulk inserting and
     // returning is not supported.
-    override func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query) -> EventLoopFuture<[DatabaseRow]> {
+    override func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query, returnItems: Bool) -> EventLoopFuture<[DatabaseRow]> {
         catchError {
-            guard let table = query.from, let database = query.database as? MySQLDatabase else {
-                return super.insert(values, query: query)
+            guard
+                returnItems,
+                let table = query.from,
+                let database = query.database as? MySQLDatabase
+            else {
+                return super.insert(values, query: query, returnItems: returnItems)
             }
             
             return try values
