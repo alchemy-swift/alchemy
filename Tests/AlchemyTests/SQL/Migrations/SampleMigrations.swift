@@ -33,10 +33,15 @@ struct Migration1: TestMigration {
             $0.date("date_default").default(val: kFixedDate)
             $0.uuid("uuid_default").default(val: kFixedUUID)
             $0.json("some_json").default(json: DatabaseJSON(), encoder: Migration1.orderedEncoder)
-            $0.uuid("parent_id").references("id", on: "users")
+            $0.json("other_json").default(jsonString: "{}")
+            $0.uuid("parent_id").references("id", on: "users", onDelete: .cascade, onUpdate: .cascade)
+            $0.addIndex(columns: ["counter"], isUnique: false)
+        }
+        schema.create(table: "foo") {
+            $0.increments("id").primary()
         }
         schema.rename(table: "foo", to: "bar")
-        schema.drop(table: "baz")
+        schema.drop(table: "bar")
     }
     
     func down(schema: Schema) {}
@@ -45,21 +50,32 @@ struct Migration1: TestMigration {
         [
             SQL("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    id uuid DEFAULT uuid_generate_v4(),
                     bmi float8 DEFAULT 15.0,
-                    email varchar(255) NOT NULL UNIQUE,
+                    email varchar(255) NOT NULL,
                     age int DEFAULT 21,
-                    counter SERIAL,
+                    counter serial,
                     is_pro bool DEFAULT false,
                     created_at timestamptz,
                     date_default timestamptz DEFAULT '1970-01-01T00:00:00',
                     uuid_default uuid DEFAULT '\(kFixedUUID.uuidString)',
                     some_json json DEFAULT '{"age":27,"name":"Josh"}'::jsonb,
-                    parent_id uuid REFERENCES users(id)
+                    other_json json DEFAULT '{}'::jsonb,
+                    parent_id uuid,
+                    PRIMARY KEY (id),
+                    UNIQUE (email),
+                    FOREIGN KEY (parent_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
+                )
+                """),
+            SQL("CREATE INDEX users_counter_idx ON users (counter)"),
+            SQL("""
+                CREATE TABLE foo (
+                    id serial,
+                    PRIMARY KEY (id)
                 )
                 """),
             SQL("ALTER TABLE foo RENAME TO bar"),
-            SQL("DROP TABLE baz"),
+            SQL("DROP TABLE bar"),
         ]
     }
     
@@ -67,21 +83,32 @@ struct Migration1: TestMigration {
         [
             SQL("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id varchar(36) PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    id varchar(36) DEFAULT uuid_generate_v4(),
                     bmi double DEFAULT 15.0,
-                    email varchar(255) NOT NULL UNIQUE,
+                    email varchar(255) NOT NULL,
                     age int DEFAULT 21,
-                    counter SERIAL,
+                    counter serial,
                     is_pro boolean DEFAULT false,
                     created_at datetime,
                     date_default datetime DEFAULT '1970-01-01T00:00:00',
                     uuid_default varchar(36) DEFAULT '\(kFixedUUID.uuidString)',
                     some_json json DEFAULT ('{"age":27,"name":"Josh"}'),
-                    parent_id varchar(36) REFERENCES users(id)
+                    other_json json DEFAULT ('{}'),
+                    parent_id varchar(36),
+                    PRIMARY KEY (id),
+                    UNIQUE (email),
+                    FOREIGN KEY (parent_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
+                )
+                """),
+            SQL("CREATE INDEX users_counter_idx ON users (counter)"),
+            SQL("""
+                CREATE TABLE foo (
+                    id serial,
+                    PRIMARY KEY (id)
                 )
                 """),
             SQL("ALTER TABLE foo RENAME TO bar"),
-            SQL("DROP TABLE baz"),
+            SQL("DROP TABLE bar"),
         ]
     }
 }
@@ -90,12 +117,12 @@ struct Migration2: TestMigration {
     func up(schema: Schema) {
         schema.create(table: "some_table") {
             $0.string("email")
-            $0.addIndex(columns: ["email"], isUnique: true)
+            $0.addIndex(columns: ["email"], isUnique: false)
+            $0.uuid("user_id").references("id", on: "users").notNull()
         }
         schema.alter(table: "users") {
-            $0.drop(index: "users_email_key")
+            $0.drop(index: "users_counter_idx")
             $0.addIndex(columns: ["age", "bmi"], isUnique: false)
-            $0.addIndex(columns: ["email"], isUnique: true)
         }
     }
     
@@ -105,13 +132,14 @@ struct Migration2: TestMigration {
         [
             SQL("""
                 CREATE TABLE some_table (
-                    email varchar(255)
+                    email varchar(255),
+                    user_id uuid NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
                 )
                 """),
-            SQL("CREATE UNIQUE INDEX some_table_email_key ON some_table (email)"),
-            SQL("DROP INDEX users_email_key"),
+            SQL("CREATE INDEX some_table_email_idx ON some_table (email)"),
+            SQL("DROP INDEX users_counter_idx"),
             SQL("CREATE INDEX users_age_bmi_idx ON users (age, bmi)"),
-            SQL("CREATE UNIQUE INDEX users_email_key ON users (email)"),
         ]
     }
     
@@ -119,13 +147,14 @@ struct Migration2: TestMigration {
         [
             SQL("""
                 CREATE TABLE some_table (
-                    email varchar(255)
+                    email varchar(255),
+                    user_id varchar(36) NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
                 )
                 """),
-            SQL("CREATE UNIQUE INDEX some_table_email_key ON some_table (email)"),
-            SQL("DROP INDEX users_email_key ON users"),
+            SQL("CREATE INDEX some_table_email_idx ON some_table (email)"),
+            SQL("DROP INDEX users_counter_idx ON users"),
             SQL("CREATE INDEX users_age_bmi_idx ON users (age, bmi)"),
-            SQL("CREATE UNIQUE INDEX users_email_key ON users (email)"),
         ]
     }
 }
@@ -134,9 +163,9 @@ struct Migration3: TestMigration {
     func up(schema: Schema) {
         schema.alter(table: "users") {
             $0.drop(column: "email")
-            $0.rename(column: "Name", to: "name")
+            $0.rename(column: "bmi", to: "bmi2")
             $0.string("some_string", length: .unlimited).default(val: "hello")
-            $0.drop(column: "other")
+            $0.int("some_int").unique().notNull()
         }
         schema.raw(sql: "some raw sql")
     }
@@ -147,11 +176,12 @@ struct Migration3: TestMigration {
         [
             SQL("""
                 ALTER TABLE users
-                ADD COLUMN some_string text DEFAULT 'hello',
-                DROP COLUMN email,
-                DROP COLUMN other
+                    ADD COLUMN some_string text DEFAULT 'hello',
+                    ADD COLUMN some_int int NOT NULL,
+                    DROP COLUMN email,
+                    ADD UNIQUE (some_int)
                 """),
-            SQL("ALTER TABLE users RENAME COLUMN Name TO name"),
+            SQL("ALTER TABLE users RENAME COLUMN bmi TO bmi2"),
             SQL("some raw sql"),
         ]
     }
@@ -160,11 +190,12 @@ struct Migration3: TestMigration {
         [
             SQL("""
                 ALTER TABLE users
-                ADD COLUMN some_string text DEFAULT ('hello'),
-                DROP COLUMN email,
-                DROP COLUMN other
+                    ADD COLUMN some_string text DEFAULT ('hello'),
+                    ADD COLUMN some_int int NOT NULL,
+                    DROP COLUMN email,
+                    ADD UNIQUE (some_int)
                 """),
-            SQL("ALTER TABLE users RENAME COLUMN Name TO name"),
+            SQL("ALTER TABLE users RENAME COLUMN bmi TO bmi2"),
             SQL("some raw sql"),
         ]
     }

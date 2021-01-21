@@ -4,7 +4,7 @@ import NIO
 public class Query: Sequelizable {
     let database: Database
     
-    private(set) var columns: [SQL] = []
+    private(set) var columns: [SQL] = [SQL("*")]
     private(set) var from: String?
     private(set) var joins: [JoinClause]? = nil
     private(set) var wheres: [WhereClause] = []
@@ -37,19 +37,7 @@ public class Query: Sequelizable {
     ///   queries to.
     @discardableResult
     public func select(_ columns: [Column] = ["*"]) -> Self {
-
-        self.columns = []
-        for column in columns {
-            if let column = column as? String {
-                self.columns.append(SQL(column))
-            }
-            else if let column = column as? SQL {
-                self.columns.append(column)
-            }
-            else {
-                // Need to check if queryable & closures
-            }
-        }
+        self.columns = columns.map(\.columnSQL)
         return self
     }
 
@@ -647,26 +635,34 @@ public class Query: Sequelizable {
     ///
     /// - Parameter value: A dictionary containing the values to be
     ///   inserted.
+    /// - Parameter returnItems: Indicates whether the inserted items
+    ///   should be returned with any fields updated/set by the
+    ///   insert. Defaults to `true`. This flag doesn't affect
+    ///   Postgres which always returns inserted items, but on MySQL
+    ///   it means this will run two queries; one to insert and one to
+    ///   fetch.
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   inserted rows.
-    public func insert(_ value: OrderedDictionary<String, Parameter>) -> EventLoopFuture<[DatabaseRow]> {
-        return insert([value])
+    public func insert(_ value: OrderedDictionary<String, Parameter>, returnItems: Bool = true) -> EventLoopFuture<[DatabaseRow]> {
+        return insert([value], returnItems: returnItems)
     }
 
-    /// Perform an insert and create database rows from the provided data.
+    /// Perform an insert and create database rows from the provided
+    /// data.
     ///
-    /// - Parameter value: An array of dictionaries containing the
+    /// - Parameter values: An array of dictionaries containing the
     ///   values to be inserted.
+    /// - Parameter returnItems: Indicates whether the inserted items
+    ///   should be returned with any fields updated/set by the
+    ///   insert. Defaults to `true`. This flag doesn't affect
+    ///   Postgres which always runs a single query and returns
+    ///   inserted items. On MySQL it means this will run two queries
+    ///   _per value_; one to insert and one to fetch. If this is
+    ///   `false`, MySQL will run a single query inserting all values.
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   inserted rows.
-    public func insert(_ values: [OrderedDictionary<String, Parameter>]) -> EventLoopFuture<[DatabaseRow]> {
-        do {
-            let sql = try self.database.grammar.compileInsert(self, values: values)
-            return self.database.runRawQuery(sql.query, values: sql.bindings)
-        }
-        catch let error {
-            return .new(error: error)
-        }
+    public func insert(_ values: [OrderedDictionary<String, Parameter>], returnItems: Bool = true) -> EventLoopFuture<[DatabaseRow]> {
+        self.database.grammar.insert(values, query: self, returnItems: returnItems)
     }
 
     /// Perform an update on all data matching the query in the

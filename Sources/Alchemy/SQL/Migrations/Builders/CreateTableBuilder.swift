@@ -55,6 +55,14 @@ public class CreateTableBuilder {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .int))
     }
     
+    /// Adds a big int column.
+    ///
+    /// - Parameter column: The name of the column to add.
+    /// - Returns: A builder for adding modifiers to the column.
+    @discardableResult public func bigInt(_ column: String) -> CreateColumnBuilder<Int> {
+        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .bigInt))
+    }
+    
     /// Adds a `Double` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -172,17 +180,5 @@ public struct CreateColumn {
     let type: ColumnType
     
     /// Any constraints.
-    let constraints: [String]
-    
-    /// Convert this `CreateColumn` to a `String` for inserting into
-    /// an SQL statement.
-    ///
-    /// - Returns: The SQL `String` describing this column.
-    func toSQL(with grammar: Grammar) -> String {
-        var baseSQL = "\(self.column) \(grammar.typeString(for: self.type))"
-        if !self.constraints.isEmpty {
-            baseSQL.append(" \(self.constraints.joined(separator: " "))")
-        }
-        return baseSQL
-    }
+    let constraints: [ColumnConstraint]
 }

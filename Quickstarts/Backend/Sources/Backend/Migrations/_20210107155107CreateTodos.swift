@@ -8,7 +8,7 @@ struct _20210107155107CreateTodos: Migration {
             $0.increments("id").primary()
             $0.string("name").notNull()
             $0.bool("is_complete").notNull().default(val: false)
-            $0.int("user_id").references("id", on: "users").notNull()
+            $0.bigInt("user_id").unsigned().references("id", on: "users").notNull()
         }
         
         // Create a table backing `Tag`.
@@ -16,14 +16,14 @@ struct _20210107155107CreateTodos: Migration {
             $0.increments("id").primary()
             $0.string("name").notNull()
             $0.int("color").notNull()
-            $0.int("user_id").references("id", on: "users").notNull()
+            $0.bigInt("user_id").unsigned().references("id", on: "users").notNull()
         }
         
         // Create a table backing `TodoTag`.
         schema.create(table: "todo_tags") {
             $0.increments("id").primary()
-            $0.int("todo_id").references("id", on: "todos").notNull()
-            $0.int("tag_id").references("id", on: "tags").notNull()
+            $0.bigInt("todo_id").unsigned().references("id", on: "todos").notNull()
+            $0.bigInt("tag_id").unsigned().references("id", on: "tags").notNull()
         }
     }
     

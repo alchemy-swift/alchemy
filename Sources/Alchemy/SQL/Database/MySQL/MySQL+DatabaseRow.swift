@@ -75,7 +75,7 @@ extension MySQLData {
         case .varchar, .string, .varString:
             let value = DatabaseValue.string(try validateNil(self.string))
             return DatabaseField(column: column, value: value)
-        case .date, .timestamp, .timestamp2:
+        case .date, .timestamp, .timestamp2, .datetime, .datetime2:
             let value = DatabaseValue.date(try validateNil(self.time?.date))
             return DatabaseField(column: column, value: value)
         case .time:
