@@ -4,7 +4,7 @@ import NIO
 public class Query: Sequelizable {
     let database: Database
     
-    private(set) var columns: [SQL] = ["*"]
+    private(set) var columns: [SQL] = [SQL("*")]
     private(set) var from: String?
     private(set) var joins: [JoinClause]? = nil
     private(set) var wheres: [WhereClause] = []

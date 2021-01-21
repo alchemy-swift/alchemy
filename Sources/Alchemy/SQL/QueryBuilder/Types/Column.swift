@@ -6,13 +6,13 @@ public protocol Column {
 }
 
 extension String: Column {
-    var columnSQL: SQL {
+    public var columnSQL: SQL {
         SQL(self)
     }
 }
 
 extension SQL: Column {
-    var columnSQL: SQL {
+    public var columnSQL: SQL {
         self
     }
 }
