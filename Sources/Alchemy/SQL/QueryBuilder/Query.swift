@@ -648,10 +648,7 @@ public class Query: Sequelizable {
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   inserted rows.
     public func insert(_ values: [OrderedDictionary<String, Parameter>]) -> EventLoopFuture<[DatabaseRow]> {
-        catchError {
-            let sql = try self.database.grammar.compileInsert(self, values: values)
-            return self.database.runRawQuery(sql.query, values: sql.bindings)
-        }
+        self.database.grammar.insert(values, query: self)
     }
 
     /// Perform an update on all data matching the query in the

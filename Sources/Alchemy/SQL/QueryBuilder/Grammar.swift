@@ -98,14 +98,13 @@ open class Grammar {
         )
     }
     
-    /// A hack around the issue that MySQL doesn't seem to have a way
-    /// of returning inserted items from an insert query.
-    ///
-    /// - Parameter table: The table that was inserted on.
-    /// - Returns: Any additional query to run after inserting an
-    ///   item, that returns the fields of the item inserted.
-    open func additionalInsertQuery(table: String) -> SQL? {
-        nil
+    open func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query)
+        -> EventLoopFuture<[DatabaseRow]>
+    {
+        catchError {
+            let sql = try self.compileInsert(query, values: values)
+            return query.database.runRawQuery(sql.query, values: sql.bindings)
+        }
     }
     
     open func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {

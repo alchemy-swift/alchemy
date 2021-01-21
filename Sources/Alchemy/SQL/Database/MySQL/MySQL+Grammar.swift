@@ -3,12 +3,6 @@ import NIO
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
 final class MySQLGrammar: Grammar {
-    override func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
-        var initial = try super.compileInsert(query, values: values)
-        initial.query.append(";")
-        return initial
-    }
-    
     override func compileDropIndex(table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName) ON \(table)")
     }
@@ -50,18 +44,20 @@ final class MySQLGrammar: Grammar {
     override func allowsUnsigned() -> Bool {
         true
     }
-}
-
-extension MySQLGrammar {
-    func insertAndReturn(_ query: Query, _ values: [OrderedDictionary<String, Parameter>])
-        -> EventLoopFuture<[DatabaseRow]>
-    {
+    
+    // MySQL needs custom insert behavior, since bulk inserting and
+    // returning is not supported.
+    override func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query) -> EventLoopFuture<[DatabaseRow]> {
         catchError {
-            for value in values {
-                let sql = try self.compileInsert(query, values: [value])
-                return query.database.runRawQuery(sql.query, values: sql.bindings)
+            guard let table = query.from, let database = query.database as? MySQLDatabase else {
+                return super.insert(values, query: query)
             }
-            return .new([])
+            
+            return try values
+                .map { try self.compileInsert(query, values: [$0]) }
+                .map { database.runAndReturnLastInsertedItem($0.query, table: table, values: $0.bindings) }
+                .flatten(on: Services.eventLoop)
+                .map { $0.flatMap { $0 } }
         }
     }
 }
