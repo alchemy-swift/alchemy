@@ -1,3 +1,5 @@
+import NIO
+
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
 final class MySQLGrammar: Grammar {
@@ -35,7 +37,8 @@ final class MySQLGrammar: Grammar {
                 return "varchar(\(characters))"
             }
         case .uuid:
-            // There isn't a MySQL UUID type; store UUIDs as a 36 length varchar.
+            // There isn't a MySQL UUID type; store UUIDs as a 36
+            // length varchar.
             return "varchar(36)"
         }
     }
@@ -46,5 +49,19 @@ final class MySQLGrammar: Grammar {
     
     override func allowsUnsigned() -> Bool {
         true
+    }
+}
+
+extension MySQLGrammar {
+    func insertAndReturn(_ query: Query, _ values: [OrderedDictionary<String, Parameter>])
+        -> EventLoopFuture<[DatabaseRow]>
+    {
+        catchError {
+            for value in values {
+                let sql = try self.compileInsert(query, values: [value])
+                return query.database.runRawQuery(sql.query, values: sql.bindings)
+            }
+            return .new([])
+        }
     }
 }

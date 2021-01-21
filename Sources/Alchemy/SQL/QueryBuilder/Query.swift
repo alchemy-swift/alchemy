@@ -4,7 +4,7 @@ import NIO
 public class Query: Sequelizable {
     let database: Database
     
-    private(set) var columns: [SQL] = []
+    private(set) var columns: [SQL] = ["*"]
     private(set) var from: String?
     private(set) var joins: [JoinClause]? = nil
     private(set) var wheres: [WhereClause] = []
@@ -37,19 +37,7 @@ public class Query: Sequelizable {
     ///   queries to.
     @discardableResult
     public func select(_ columns: [Column] = ["*"]) -> Self {
-
-        self.columns = []
-        for column in columns {
-            if let column = column as? String {
-                self.columns.append(SQL(column))
-            }
-            else if let column = column as? SQL {
-                self.columns.append(column)
-            }
-            else {
-                // Need to check if queryable & closures
-            }
-        }
+        self.columns = columns.map(\.columnSQL)
         return self
     }
 
