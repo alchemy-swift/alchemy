@@ -16,7 +16,7 @@ struct _20210107155059CreateUsers: Migration {
             $0.increments("id").primary()
             $0.string("value").notNull()
             $0.date("created_at").notNull()
-            $0.int("user_id").references("id", on: "users").notNull()
+            $0.bigInt("user_id").unsigned().references("id", on: "users").notNull()
         }
     }
     
