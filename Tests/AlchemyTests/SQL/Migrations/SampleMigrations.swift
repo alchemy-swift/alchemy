@@ -54,7 +54,7 @@ struct Migration1: TestMigration {
                     bmi float8 DEFAULT 15.0,
                     email varchar(255) NOT NULL,
                     age int DEFAULT 21,
-                    counter SERIAL,
+                    counter serial,
                     is_pro bool DEFAULT false,
                     created_at timestamptz,
                     date_default timestamptz DEFAULT '1970-01-01T00:00:00',
@@ -70,7 +70,7 @@ struct Migration1: TestMigration {
             SQL("CREATE INDEX users_counter_idx ON users (counter)"),
             SQL("""
                 CREATE TABLE foo (
-                    id SERIAL,
+                    id serial,
                     PRIMARY KEY (id)
                 )
                 """),
@@ -87,7 +87,7 @@ struct Migration1: TestMigration {
                     bmi double DEFAULT 15.0,
                     email varchar(255) NOT NULL,
                     age int DEFAULT 21,
-                    counter SERIAL,
+                    counter serial,
                     is_pro boolean DEFAULT false,
                     created_at datetime,
                     date_default datetime DEFAULT '1970-01-01T00:00:00',
@@ -103,7 +103,7 @@ struct Migration1: TestMigration {
             SQL("CREATE INDEX users_counter_idx ON users (counter)"),
             SQL("""
                 CREATE TABLE foo (
-                    id SERIAL,
+                    id serial,
                     PRIMARY KEY (id)
                 )
                 """),
