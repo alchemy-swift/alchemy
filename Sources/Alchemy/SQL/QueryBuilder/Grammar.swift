@@ -198,7 +198,7 @@ open class Grammar {
         return [
             SQL("""
                 ALTER TABLE \(table)
-                \((adds + drops + constraints).joined(separator: ",\n"))
+                    \((adds + drops + constraints).joined(separator: ",\n    "))
                 """)]
     }
     
@@ -341,7 +341,7 @@ extension CreateColumn {
             case let .default(val):
                 baseSQL.append(" DEFAULT \(val)")
             case let .foreignKey(column, table, onDelete, onUpdate):
-                var fkBase = "FOREIGN KEY (\(self.column)) REFERENCES \(table)(\(column))"
+                var fkBase = "FOREIGN KEY (\(self.column)) REFERENCES \(table) (\(column))"
                 if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
                 if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
                 tableConstraints.append(fkBase)
