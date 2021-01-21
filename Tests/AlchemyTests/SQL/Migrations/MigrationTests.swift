@@ -31,14 +31,6 @@ final class MigrationTests: XCTestCase {
         XCTAssert(self.m2.downStatements(for: mysql).isEmpty)
         XCTAssert(self.m3.downStatements(for: mysql).isEmpty)
         
-        for sql in self.m1.upStatements(for: mysql) {
-            print(sql.query)
-        }
-        
-        for sql in self.m3.upStatements(for: mysql) {
-            print(sql.query)
-        }
-        
         XCTAssertEqual(self.m1.upStatements(for: mysql), self.m1.expectedUpStatementsMySQL)
         XCTAssertEqual(self.m2.upStatements(for: mysql), self.m2.expectedUpStatementsMySQL)
         XCTAssertEqual(self.m3.upStatements(for: mysql), self.m3.expectedUpStatementsMySQL)
