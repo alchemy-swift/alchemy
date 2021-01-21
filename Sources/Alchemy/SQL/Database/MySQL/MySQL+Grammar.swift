@@ -20,9 +20,11 @@ final class MySQLGrammar: Grammar {
         case .double:
             return "double"
         case .increments:
-            return "SERIAL"
+            return "serial"
         case .int:
             return "int"
+        case .bigInt:
+            return "bigint"
         case .json:
             return "json"
         case .string(let length):
@@ -40,5 +42,9 @@ final class MySQLGrammar: Grammar {
     
     override func jsonLiteral(from jsonString: String) -> String {
         "('\(jsonString)')"
+    }
+    
+    override func allowsUnsigned() -> Bool {
+        true
     }
 }

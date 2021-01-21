@@ -223,9 +223,11 @@ open class Grammar {
         case .double:
             return "float8"
         case .increments:
-            return "SERIAL"
+            return "serial"
         case .int:
             return "int"
+        case .bigInt:
+            return "bigint"
         case .json:
             return "json"
         case .string(let length):
@@ -242,6 +244,10 @@ open class Grammar {
     
     open func jsonLiteral(from jsonString: String) -> String {
         "'\(jsonString)'::jsonb"
+    }
+    
+    open func allowsUnsigned() -> Bool {
+        false
     }
 
     private func parameterize(_ values: [Parameter]) -> String {
@@ -298,6 +304,8 @@ public enum ColumnType {
     case increments
     /// Integer.
     case int
+    /// Big integer.
+    case bigInt
     /// Double.
     case double
     /// String, with a given max length.
@@ -345,6 +353,10 @@ extension CreateColumn {
                 if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
                 if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
                 tableConstraints.append(fkBase)
+            case .unsigned:
+                if grammar.allowsUnsigned() {
+                    baseSQL.append(" UNSIGNED")
+                }
             }
         }
         

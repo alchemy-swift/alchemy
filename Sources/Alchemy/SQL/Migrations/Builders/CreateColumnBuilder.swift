@@ -35,6 +35,8 @@ enum ColumnConstraint {
             onDelete: ReferenceOption? = nil,
             onUpdate: ReferenceOption? = nil
          )
+    /// This int column is unsigned.
+    case unsigned
 }
 
 /// A builder for creating columns on a table in a relational database.
@@ -146,6 +148,17 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     
     func toCreate() -> CreateColumn {
         CreateColumn(column: self.name, type: self.type, constraints: self.constraints)
+    }
+}
+
+extension CreateColumnBuilder where Default == Int {
+    /// Defines this integer column as unsigned.
+    ///
+    /// - Note: Ignored if the backing Database is `PostgresDatabase`.
+    ///
+    /// - Returns: This column builder.
+    @discardableResult public func unsigned() -> Self {
+        self.adding(constraint: .unsigned)
     }
 }
 

@@ -55,6 +55,14 @@ public class CreateTableBuilder {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .int))
     }
     
+    /// Adds a big int column.
+    ///
+    /// - Parameter column: The name of the column to add.
+    /// - Returns: A builder for adding modifiers to the column.
+    @discardableResult public func bigInt(_ column: String) -> CreateColumnBuilder<Int> {
+        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .bigInt))
+    }
+    
     /// Adds a `Double` column.
     ///
     /// - Parameter column: The name of the column to add.
