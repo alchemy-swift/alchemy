@@ -111,15 +111,15 @@ struct UserController: Controller {
             .post("/login", handler: controller.login)
     }
 
-    func create(req: HTTPRequest) -> String {
+    func create(req: Request) -> String {
         "Greetings from user create!"
     }
 
-    func reset(req: HTTPRequest) -> String {
+    func reset(req: Request) -> String {
         "Howdy from user reset!"
     }
 
-    func login(req: HTTPRequest) -> String {
+    func login(req: Request) -> String {
         "Yo from user login!"
     }
 }
