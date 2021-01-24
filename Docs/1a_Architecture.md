@@ -32,7 +32,7 @@ func someHandler() -> EventLoopFuture<String> {
 }
 
 func unimplementedHandler() -> EventLoopFuture<String> {
-    .new(error: HTTPError(.notImplemented, "This endpoint isn't implemented yet"))
+    .new(error: HTTPError(.notImplemented, message: "This endpoint isn't implemented yet"))
 }
 ```
 
