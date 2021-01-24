@@ -217,7 +217,7 @@ let eventLoopGroup = Services.eventLoopGroup
 You may also add custom static properties to it at your own convenience:
 ```swift
 extension Services {
-    var someType: SomeType {
+    static var someType: SomeType {
         Container.global.resolve(SomeType.self)
     }
 }
