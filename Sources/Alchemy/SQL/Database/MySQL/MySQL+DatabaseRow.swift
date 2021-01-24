@@ -83,6 +83,13 @@ extension MySQLData {
         case .float, .decimal, .double:
             let value = DatabaseValue.double(try validateNil(self.double))
             return DatabaseField(column: column, value: value)
+        case .json:
+            guard var buffer = self.buffer else {
+                return DatabaseField(column: column, value: .json(nil))
+            }
+            
+            let data = buffer.readData(length: buffer.writerIndex)
+            return DatabaseField(column: column, value: .json(data))
         default:
             let errorMessage = "Couldn't parse a `\(self.type)` from column "
                 + "'\(column)'. That MySQL datatype isn't supported, yet."
