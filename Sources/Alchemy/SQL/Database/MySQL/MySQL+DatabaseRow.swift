@@ -1,4 +1,5 @@
 import MySQLNIO
+import MySQLKit
 import NIO
 
 extension MySQLRow: DatabaseRow {

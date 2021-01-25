@@ -2,7 +2,22 @@ import NIO
 
 public typealias JobID = String
 
-public protocol Job: Task {
+public protocol AnyJob {
+    func run(payload: Data) -> EventLoopFuture<Void>
+    var recoveryStrategy: RecoveryStrategy { get }
+}
+
+extension AnyJob {
+    var name: String { Self.name }
+    public static var name: String {
+        return String(describing: Self.self)
+    }
+
+    public var recoveryStrategy: RecoveryStrategy { .none }
+}
+
+
+public protocol Job: AnyJob {
     associatedtype Payload
 
     func run(payload: Payload) -> EventLoopFuture<Void>
@@ -31,30 +46,5 @@ extension Job {
             self.failed(error: error)
             return Services.eventLoop.makeFailedFuture(error)
         }
-    }
-}
-
-public protocol PersistedJob: Codable {
-
-    var name: String { get }
-    var attempts: Int { get set }
-    var payload: Data { get set }
-
-    func run(job: Task) -> EventLoopFuture<Void>
-    func shouldRetry(retries: Int) -> Bool
-    mutating func retry()
-}
-
-extension PersistedJob {
-    public func run(job: Task) -> EventLoopFuture<Void> {
-        job.run(payload: self.payload)
-    }
-
-    public func shouldRetry(retries: Int) -> Bool {
-        self.attempts < retries
-    }
-
-    public mutating func retry() {
-        self.attempts += 1
     }
 }

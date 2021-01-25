@@ -1,19 +1,11 @@
-//
-//  File.swift
-//  
-//
-//  Created by Chris Anderson on 6/7/20.
-//
-
 import Foundation
 import NIO
-
 
 public struct MemoryJob: PersistedJob {
 
     public let id: JobID
     public let name: String
-    public var payload: Data
+    public var payload: JSONData
     public var attempts: Int = 0
 
     private enum CodingKeys: String, CodingKey {
@@ -26,7 +18,7 @@ public struct MemoryJob: PersistedJob {
     init(id: JobID, name: String, payload: Data) {
         self.id = id
         self.name = name
-        self.payload = payload
+        self.payload = JSONData(data: payload)
     }
 }
 

@@ -110,10 +110,14 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     }
     
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
+
         if type == UUID.self {
             return try self.row.getField(column: self.string(for: key)).uuid() as! T
         } else if type == Date.self {
             return try self.row.getField(column: self.string(for: key)).date() as! T
+        } else if type == JSONData.self {
+            let field = try self.row.getField(column: self.string(for: key))
+            return try JSONData(data: field.json()) as! T
         } else if type is AnyBelongsTo.Type {
             let field = try self.row.getField(column: self.string(for: key, includeIdSuffix: true))
             return try T(from: DatabaseFieldDecoder(field: field))

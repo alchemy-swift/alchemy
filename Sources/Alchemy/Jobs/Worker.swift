@@ -10,12 +10,12 @@ public final class Worker<T: Queue> {
 
     private let refreshInterval: TimeAmount = .seconds(1)
 
-    private var types: [String: Task] = [:]
+    private var types: [String: AnyJob] = [:]
 
     public init(
         eventLoop: EventLoop = Services.eventLoop,
         queue: T,
-        types: [Task]
+        types: [AnyJob]
     ) {
         self.eventLoop = eventLoop
         self.queue = queue
@@ -25,13 +25,14 @@ public final class Worker<T: Queue> {
         }
     }
 
-    public func add(type: Task) {
+    public func add(type: AnyJob) {
         self.types[type.name] = type
     }
 
     /// Atomically transfers a task from the work queue into the
     /// processing queue then enqueues it to the worker.
 
+    @discardableResult
     public func run() -> Worker {
         self.eventLoop.scheduleRepeatedAsyncTask(
             initialDelay: .seconds(0),
@@ -93,7 +94,7 @@ public final class Worker<T: Queue> {
         case .none:
             return queue.complete(item, success: false)
         case .retry(let retries):
-            if item.shouldRetry(retries: retries) {
+            if item.shouldRetry(maxRetries: retries) {
                 var tempItem = item
                 tempItem.retry()
                 return queue.requeue(tempItem)
