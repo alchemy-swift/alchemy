@@ -167,6 +167,53 @@ final class RouterTests: XCTestCase {
         // Could update the router to automatically add "/" if URI strings are missing them,
         // automatically add/remove trailing "/", etc.
     }
+
+    func testGroupedPathPrefix() throws {
+        self.app
+            .grouped("group") { app in
+                app
+                    .register(.get1)
+                    .register(.get2)
+                    .grouped("nested") { app in
+                        app.register(.post1)
+                    }
+                    .register(.post2)
+            }
+            .register(.get3)
+
+        XCTAssertEqual(try self.app.request(TestRequest(
+            method: .GET,
+            path: "/group\(TestRequest.get1.path)",
+            response: TestRequest.get1.path
+        )), TestRequest.get1.response)
+
+        XCTAssertEqual(try self.app.request(TestRequest(
+            method: .GET,
+            path: "/group\(TestRequest.get2.path)",
+            response: TestRequest.get2.path
+        )), TestRequest.get2.response)
+
+        XCTAssertEqual(try self.app.request(TestRequest(
+            method: .POST,
+            path: "/group/nested\(TestRequest.post1.path)",
+            response: TestRequest.post1.path
+        )), TestRequest.post1.response)
+
+        XCTAssertEqual(try self.app.request(TestRequest(
+            method: .POST,
+            path: "/group\(TestRequest.post2.path)",
+            response: TestRequest.post2.path
+        )), TestRequest.post2.response)
+
+        // only available under group prefix
+        XCTAssertNil(try self.app.request(TestRequest.get1))
+        XCTAssertNil(try self.app.request(TestRequest.get2))
+        XCTAssertNil(try self.app.request(TestRequest.post1))
+        XCTAssertNil(try self.app.request(TestRequest.post2))
+
+        // defined outside group --> still available without group prefix
+        XCTAssertEqual(try self.app.request(TestRequest.get3), TestRequest.get3.response)
+    }
 }
 
 /// Runs the specified callback on a request / response.
