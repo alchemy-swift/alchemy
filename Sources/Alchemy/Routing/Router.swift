@@ -22,6 +22,8 @@ public final class Router {
     
     /// Current middleware of this router.
     var middlewares: [Middleware] = []
+
+    var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
     private let trie = RouterTrieNode<HTTPMethod, RouterHandler>()
@@ -42,7 +44,8 @@ public final class Router {
         for method: HTTPMethod,
         path: String
     ) {
-        let splitPath = path.split(separator: "/").map(String.init)
+        let pathPrefixes = self.pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
+        let splitPath = pathPrefixes + path.split(separator: "/").map(String.init)
         let middlewareClosures = self.middlewares.reversed().map(Middleware.intercept)
         self.trie.insert(path: splitPath, storageKey: method) {
             var next = { request in
