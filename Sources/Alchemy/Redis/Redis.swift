@@ -1,7 +1,7 @@
 import NIO
 import RediStack
 
-/// Used for interfacing with Redis.
+/// A client for interfacing with a Redis instance.
 public final class Redis {
     /// Map of `EventLoop` identifiers to respective connection pools.
     @Locked
@@ -24,7 +24,8 @@ public final class Redis {
     /// given information.
     ///
     /// - Parameters:
-    ///   - socket: The `Socket` to connect to.
+    ///   - socket: The `Socket` to connect to. Can provide multiple
+    ///     sockets if using a Redis cluster.
     ///   - password: The password for authenticating connections.
     ///   - database: The database index to connect to. Defaults to
     ///     nil, which uses the default index, 0.
@@ -33,14 +34,14 @@ public final class Redis {
     ///     per `EventLoop` of your application (meaning 1 per logical
     ///     core on your machine).
     public convenience init(
-        socket: Socket,
+        _ instances: Socket...,
         password: String? = nil,
         database: Int? = nil,
         poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
     ) {
         self.init(
             config: RedisConnectionPool.Configuration(
-                initialServerConnectionAddresses: [socket.nio],
+                initialServerConnectionAddresses: instances.map(\.nio),
                 maximumConnectionCount: poolSize,
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
@@ -71,6 +72,57 @@ public final class Redis {
             self.poolStorage[key] = newPool
             return newPool
         }
+    }
+}
+
+/// Alchemy specific.
+extension Redis {
+    /// Run the commands in a single atomic operation. A wrapper
+    /// around MULTI & EXEC.
+    ///
+    /// - Note: You can't receive any return value from this
+    ///   transaction.
+    /// - Returns: A future that completes when the entire transaction
+    ///   is finished.
+    func transaction() -> EventLoopFuture<Void> {
+        self.getPool()
+        fatalError()
+    }
+    
+    /// Wrapper around sending commands to Redis.
+    ///
+    /// - Parameters:
+    ///   - name: The name of the command.
+    ///   - args: Any arguments for the command.
+    /// - Returns: A future containing the return value of the
+    ///   command.
+    func command(_ name: String, args: RESPValueConvertible...) -> EventLoopFuture<RESPValue> {
+        self.send(command: name, with: args.map { $0.convertedToRESPValue() })
+    }
+    
+    /// Evaluate the given Lua script.
+    ///
+    /// - Parameters:
+    ///   - script: The script to run.
+    ///   - keys: The arguments that represent Redis keys. See
+    ///     [EVAL](https://redis.io/commands/eval) docs for details.
+    ///   - args: All other arguments.
+    /// - Returns: A future that completes with the result of the
+    ///   script.
+    func eval(_ script: String, keys: [String] = [], args: [RESPValueConvertible] = []) -> EventLoopFuture<RESPValue> {
+        fatalError()
+    }
+    
+    /// Subscribe to a single channel.
+    ///
+    /// - Parameters:
+    ///   - channel: The name of the channel to subscribe to.
+    ///   - messageReciver: The closure to execute when a message
+    ///     comes through the given channel.
+    /// - Returns: A future that completes when the subscription is
+    ///   established.
+    func subscribe(to channel: RedisChannelName, messageReciver: @escaping (RESPValue) -> Void) -> EventLoopFuture<Void> {
+        self.subscribe(to: [channel]) { _, value in messageReciver(value) }
     }
 }
 
