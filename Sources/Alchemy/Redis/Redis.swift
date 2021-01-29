@@ -1,40 +1,128 @@
 import NIO
 import RediStack
 
-struct Redis {
-    /// MARK: - Command
+/// Used for interfacing with Redis.
+public final class Redis {
+    /// Map of `EventLoop` identifiers to respective connection pools.
+    @Locked
+    private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
     
-    func send(_ command: String, args: [RESPValueConvertible]) -> EventLoopFuture<RESPValue> {
-        fatalError()
+    /// The configuration to create pools with.
+    private var config: RedisConnectionPool.Configuration
+    
+    /// Creates a Redis client that will connect with the given
+    /// configuration.
+    ///
+    /// - Parameters:
+    ///   - config: The configuration of the pool backing this `Redis`
+    ///     client.
+    public init(config: RedisConnectionPool.Configuration) {
+        self.config = config
     }
     
-    /// MARK: - Pub/Sub
-    
-    func publish(to channel: RedisChannelName) -> EventLoopFuture<Void> {
-        fatalError()
+    /// Convenience initializer for creating a redis client with the
+    /// given information.
+    ///
+    /// - Parameters:
+    ///   - socket: The `Socket` to connect to.
+    ///   - password: The password for authenticating connections.
+    ///   - database: The database index to connect to. Defaults to
+    ///     nil, which uses the default index, 0.
+    ///   - poolSize: The connection pool size to use for each
+    ///     connection pool. **Note:** There is one connection pool
+    ///     per `EventLoop` of your application (meaning 1 per logical
+    ///     core on your machine).
+    public convenience init(
+        socket: Socket,
+        password: String? = nil,
+        database: Int? = nil,
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
+    ) {
+        self.init(
+            config: RedisConnectionPool.Configuration(
+                initialServerConnectionAddresses: [socket.nio],
+                maximumConnectionCount: poolSize,
+                connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
+                    connectionInitialDatabase: database,
+                    connectionPassword: password,
+                    connectionDefaultLogger: Log.logger
+                )
+            )
+        )
     }
     
-    func subscribe(
-        _ channels: [RedisChannelName],
-        _ callback: (RedisChannelName, RESPValue) -> Void
+    /// Shuts down this `Redis` client, closing it's associated
+    /// connection pools.
+    public func shutdown() {
+        self.poolStorage.values.forEach { $0.close() }
+    }
+    
+    /// Gets or creates a pool for the current `EventLoop`.
+    ///
+    /// - Returns: A `RedisConnectionPool` associated with the current
+    ///   `EventLoop` for sending commands to.
+    fileprivate func getPool() -> RedisConnectionPool {
+        let loop = Services.eventLoop
+        let key = ObjectIdentifier(loop)
+        if let pool = self.poolStorage[key] {
+            return pool
+        } else {
+            let newPool = RedisConnectionPool(configuration: self.config, boundEventLoop: loop)
+            self.poolStorage[key] = newPool
+            return newPool
+        }
+    }
+}
+
+/// RedisClient conformance. See `RedisClient` for docs.
+extension Redis: RedisClient {
+    public var eventLoop: EventLoop {
+        Services.eventLoop
+    }
+    
+    public func logging(to logger: Logger) -> RedisClient {
+        self.getPool().logging(to: logger)
+    }
+    
+    public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
+        self.getPool().send(command: command, with: arguments).hop(to: Services.eventLoop)
+    }
+    
+    public func subscribe(
+        to channels: [RedisChannelName],
+        messageReceiver receiver: @escaping RedisSubscriptionMessageReceiver,
+        onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
+        onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
     ) -> EventLoopFuture<Void> {
-        fatalError()
+        self.getPool()
+            .subscribe(
+                to: channels,
+                messageReceiver: receiver,
+                onSubscribe: subscribeHandler,
+                onUnsubscribe: unsubscribeHandler
+            )
     }
-    
-    func unsubscribe(from channels: [RedisChannelName]) -> EventLoopFuture<Void> {
-        fatalError()
-    }
-    
-    /// Pub/Sub - Pattern Matching
-    
-    func psubscribe(
-        _ patterns: [RedisChannelName],
-        _ callback: (RedisChannelName, RESPValue) -> Void
+
+    public func psubscribe(
+        to patterns: [String],
+        messageReceiver receiver: @escaping RedisSubscriptionMessageReceiver,
+        onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
+        onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
     ) -> EventLoopFuture<Void> {
-        fatalError()
+        self.getPool()
+            .psubscribe(
+                to: patterns,
+                messageReceiver: receiver,
+                onSubscribe: subscribeHandler,
+                onUnsubscribe: unsubscribeHandler
+            )
     }
     
-    func punsubscribe(from patterns: [RedisChannelName]) -> EventLoopFuture<Void> {
-        fatalError()
+    public func unsubscribe(from channels: [RedisChannelName]) -> EventLoopFuture<Void> {
+        self.getPool().unsubscribe(from: channels)
+    }
+    
+    public func punsubscribe(from patterns: [String]) -> EventLoopFuture<Void> {
+        self.getPool().punsubscribe(from: patterns)
     }
 }
