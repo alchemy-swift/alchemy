@@ -31,28 +31,11 @@ import Foundation
 /// init is called before the decoder init is called, giving us a
 /// chance to cache the eager load closure if it hasn't been already.
 final class EagerLoadStorage {
-    /// Lock for keeping static access of this property threadsafe.
-    private static let lock = NSRecursiveLock()
+    /// Threadsafe dict for mapping relationship names to their erased
+    /// eager loading closure.
+    @Locked
+    private static var dict: [String: Any] = [:]
     
-    /// A dict for mapping relationship names to their erased eager
-    /// loading closure. Accessing this is threadsafe.
-    private static var dict: [String: Any] {
-        get {
-            self.lock.lock()
-            defer { self.lock.unlock() }
-            return self._dict
-        }
-        set {
-            self.lock.lock()
-            defer { self.lock.unlock() }
-            self._dict = newValue
-        }
-    }
-    
-    /// Underlying dict for which `dict` provides a thread safe setter
-    /// & getter.
-    private static var _dict: [String: Any] = [:]
-
     /// Store an erased eager loading closure in a lookup dictionary.
     static func store<From: Model, To: ModelMaybeOptional>(
         relationship: HasRelationship<From, To>.Type,
