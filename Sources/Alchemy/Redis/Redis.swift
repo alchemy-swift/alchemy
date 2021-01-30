@@ -84,7 +84,8 @@ extension Redis {
     ///   transaction.
     /// - Returns: A future that completes when the entire transaction
     ///   is finished.
-    func transaction() -> EventLoopFuture<Void> {
+    public func transaction() -> EventLoopFuture<Void> {
+        /// TODODODODODO
         self.getPool()
         fatalError()
     }
@@ -96,7 +97,18 @@ extension Redis {
     ///   - args: Any arguments for the command.
     /// - Returns: A future containing the return value of the
     ///   command.
-    func command(_ name: String, args: RESPValueConvertible...) -> EventLoopFuture<RESPValue> {
+    public func command(_ name: String, args: RESPValueConvertible...) -> EventLoopFuture<RESPValue> {
+        self.command(name, args: args)
+    }
+    
+    /// Wrapper around sending commands to Redis.
+    ///
+    /// - Parameters:
+    ///   - name: The name of the command.
+    ///   - args: An array of arguments for the command.
+    /// - Returns: A future containing the return value of the
+    ///   command.
+    public func command(_ name: String, args: [RESPValueConvertible]) -> EventLoopFuture<RESPValue> {
         self.send(command: name, with: args.map { $0.convertedToRESPValue() })
     }
     
@@ -109,8 +121,8 @@ extension Redis {
     ///   - args: All other arguments.
     /// - Returns: A future that completes with the result of the
     ///   script.
-    func eval(_ script: String, keys: [String] = [], args: [RESPValueConvertible] = []) -> EventLoopFuture<RESPValue> {
-        fatalError()
+    public func eval(_ script: String, keys: [String] = [], args: [RESPValueConvertible] = []) -> EventLoopFuture<RESPValue> {
+        self.command("EVAL", args: [script] + [keys.count] + keys + args)
     }
     
     /// Subscribe to a single channel.
@@ -121,7 +133,7 @@ extension Redis {
     ///     comes through the given channel.
     /// - Returns: A future that completes when the subscription is
     ///   established.
-    func subscribe(to channel: RedisChannelName, messageReciver: @escaping (RESPValue) -> Void) -> EventLoopFuture<Void> {
+    public func subscribe(to channel: RedisChannelName, messageReciver: @escaping (RESPValue) -> Void) -> EventLoopFuture<Void> {
         self.subscribe(to: [channel]) { _, value in messageReciver(value) }
     }
 }

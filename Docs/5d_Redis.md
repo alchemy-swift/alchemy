@@ -69,21 +69,77 @@ Services.redis.command("lrange", "some_list", 0, 3)
 If you'd like to run multiple transactions in a single, atomic operation, you may use the `.transaction(...)` function.
 
 ```swift
+TODO
 ```
 
-Alternatively, you can run a Lua script string via `.eval(...)`.
+Alternatively, you can run a script via `.eval(...)`. 
+
+Scripts are written in Lua and have access to 1-based arrays `KEYS` and `ARGV` for accessing keys and arguments respectively. They also have access to a `redis` variable for calling Redis inside the script. Consult the [EVAL documentation](https://redis.io/commands/eval) for more information on scripting. 
 
 ```swift
 Services.redis.eval(
     """
-    KEYS[1],KEYS[2],ARGV[1]TODODOODOD
-    """, 
-    keys: ["my_key", "my_counter"], 
-    args: ["someValue"]
+    local counter = redis.call("incr", KEYS[1])
+
+    if counter > 5 then
+        redis.call("incr", KEYS[2])
+    end
+
+    return counter
+    """,
+    keys: ["key1", "key2"]
 )
 ```
 
 ## Pub / Sub
 
+Redis provides `publish` and `subscribe` commands to publish and listen to various channels. 
+
+You can easily subscribe to a single channel or multiple channels.
+
+```swift
+Services.redis
+    .subscribe(to: "my-channel") { value in
+        print("my-channel got: \(value)")
+    }
+    
+Services.redis
+    .subscribe(to: ["my-channel", "other-channel"]) { channelName, value in
+        print("\(channelName) got: \(value)")
+    }
+```
+
+Publishing to them is just as simple.
+
+```swift
+Services.redis
+    .publish("hello", to: "my-channel")
+```
+
+If you want to stop listening to a channel, use `unsubscribe`.
+
+```swift
+Services.redis.unsubscribe(from: "my-channel")
+```
+
 ### Wildcard Subscriptions
 
+You may subscribe to wildcard channels using `psubscribe`. 
+
+```swift
+Services.redis
+    .psubscribe(to: ["*"]) { channelName, value in
+        print("\(channelName) got: \(value)")
+    }
+    
+Services.redis
+    .psubscribe(to: ["subscriptions.*"]) { channelName, value in
+        print("\(channelName) got: \(value)")
+    }
+```
+
+Unsubscribe with `punsubscribe`.
+
+```swift
+Services.redis.punsubscribe(from: "*")
+```
