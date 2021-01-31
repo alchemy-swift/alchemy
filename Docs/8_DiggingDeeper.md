@@ -242,9 +242,7 @@ Consider a `Public` directory in your project with a few files.
 You could use the following code to serve files from that directory.
 
 ```swift
-router.globalMiddlewares = [
-    StaticFileMiddleware()
-]
+app.useAll(StaticFileMiddleware())
 ```
 
 Now, assets in the `Public/` directory can be requested.
