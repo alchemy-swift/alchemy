@@ -77,19 +77,6 @@ public final class Redis {
 
 /// Alchemy specific.
 extension Redis {
-    /// Run the commands in a single atomic operation. A wrapper
-    /// around MULTI & EXEC.
-    ///
-    /// - Note: You can't receive any return value from this
-    ///   transaction.
-    /// - Returns: A future that completes when the entire transaction
-    ///   is finished.
-    public func transaction() -> EventLoopFuture<Void> {
-        /// TODODODODODO
-        self.getPool()
-        fatalError()
-    }
-    
     /// Wrapper around sending commands to Redis.
     ///
     /// - Parameters:

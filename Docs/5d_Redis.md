@@ -64,15 +64,9 @@ Alternatively, you can always run a custom command via `command`. The first argu
 Services.redis.command("lrange", "some_list", 0, 3)
 ```
 
-## Transactions
+## Scripting
 
-If you'd like to run multiple transactions in a single, atomic operation, you may use the `.transaction(...)` function.
-
-```swift
-TODO
-```
-
-Alternatively, you can run a script via `.eval(...)`. 
+You can run a script via `.eval(...)`. 
 
 Scripts are written in Lua and have access to 1-based arrays `KEYS` and `ARGV` for accessing keys and arguments respectively. They also have access to a `redis` variable for calling Redis inside the script. Consult the [EVAL documentation](https://redis.io/commands/eval) for more information on scripting. 
 
