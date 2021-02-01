@@ -83,6 +83,14 @@ extension Services {
         Container.global.resolve(HTTPClient.self)
     }
     
+    /// The main `Redis` client of your app. If using Redis, don't
+    /// forget to set this in your `Application.setup` before
+    /// accessing!
+    public static var redis: Redis {
+        get { Container.global.resolve(Redis.self) }
+        set { Container.global.register(singleton: Redis.self, factory: { _ in newValue }) }
+    }
+    
     // MARK: NIO Services
     
     /// The current `EventLoop`.
@@ -165,6 +173,7 @@ extension Services {
         try Container.global.resolveOptional(Database.self)?.shutdown()
         try Services.threadPool.syncShutdownGracefully()
         try Services.eventLoopGroup.syncShutdownGracefully()
+        Container.global.resolveOptional(Redis.self)?.shutdown()
     }
     
     /// Mocks many common services. Can be called in the `setUp()`
