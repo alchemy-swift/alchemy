@@ -22,20 +22,20 @@ extension Endpoint {
     ///     `Client.default`.
     ///   - decoder: The decoder with which to decode response data to
     ///     `Endpoint.Response`. Defaults to `JSONDecoder()`.
-    /// - Throws: An error if there is an issue encoding the request
-    ///   or decoding the response.
     /// - Returns: A future containing the decoded `Endpoint.Response`
     ///   as well as the raw response of the `HTTPClient`.
     public func request(
         _ dto: Request,
         with client: HTTPClient = Services.client,
         decoder: JSONDecoder = JSONDecoder()
-    ) throws -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
-        client.performRequest(
-            baseURL: self.baseURL,
-            parameters: try self.parameters(dto: dto),
-            decoder: decoder
-        )
+    ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
+        catchError {
+            client.performRequest(
+                baseURL: self.baseURL,
+                parameters: try self.parameters(dto: dto),
+                decoder: decoder
+            )
+        }
     }
 }
 
