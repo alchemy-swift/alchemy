@@ -1,7 +1,7 @@
 import Foundation
 
 public final class MockCache: Cache {
-    private struct Item {
+    public struct Item {
         var text: String
         var expiration: Int?
         
@@ -13,15 +13,41 @@ public final class MockCache: Cache {
             return expiration > Int(Date().timeIntervalSince1970)
         }
         
-        func cast<C: CacheAllowed>() -> C? {
-            self.isValid ? C(self.text) : nil
+        public init(text: String, expiration: Int? = nil) {
+            self.text = text
+            self.expiration = expiration
+        }
+        
+        func cast<C: CacheAllowed>() throws -> C {
+            try C(self.text).unwrap(or: CacheError("Unable to cast '\(self.text)' to \(C.self)"))
         }
     }
     
     private var data: [String: Item] = [:]
     
+    public init(_ defaultData: [String: Item] = [:]) {
+        self.data = defaultData
+    }
+    
+    /// Gets an item and validates that it isn't expired, deleting it
+    /// if it is.
+    private func getItem(_ key: String) -> Item? {
+        guard let item = self.data[key] else {
+            return nil
+        }
+        
+        if !item.isValid {
+            self.data[key] = nil
+            return nil
+        } else {
+            return item
+        }
+    }
+    
     public func get<C>(_ key: String) -> EventLoopFuture<C?> where C : CacheAllowed {
-        .new(self.data[key]?.cast())
+        catchError {
+            try .new(self.getItem(key)?.cast())
+        }
     }
     
     public func set<C>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> where C : CacheAllowed {
@@ -32,11 +58,15 @@ public final class MockCache: Cache {
     }
     
     public func has(_ key: String) -> EventLoopFuture<Bool> {
-        .new(self.data[key]?.isValid ?? false)
+        .new(self.getItem(key) != nil)
     }
     
     public func remove<C>(_ key: String) -> EventLoopFuture<C?> where C : CacheAllowed {
-        .new(self.data[key]?.cast())
+        catchError {
+            let val: C? = try self.getItem(key)?.cast()
+            self.data.removeValue(forKey: key)
+            return .new(val)
+        }
     }
     
     public func delete(_ key: String) -> EventLoopFuture<Void> {
@@ -46,10 +76,10 @@ public final class MockCache: Cache {
     
     public func increment(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
         catchError {
-            if let existing = self.data[key] {
-                let currentVal: Int = try existing.cast().unwrap(or: CacheError("Couldn't convert cache item to Int."))
+            if let existing = self.getItem(key) {
+                let currentVal: Int = try existing.cast()
                 let newVal = currentVal + amount
-                self.data[key] = .init(text: "\(newVal)", expiration: existing.expiration)
+                self.data[key]?.text = "\(newVal)"
                 return .new(newVal)
             } else {
                 self.data[key] = .init(text: "\(amount)")
@@ -59,7 +89,7 @@ public final class MockCache: Cache {
     }
     
     public func decrement(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        self.increment(key, by: amount)
+        self.increment(key, by: -amount)
     }
     
     public func wipe() -> EventLoopFuture<Void> {

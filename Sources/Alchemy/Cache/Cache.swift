@@ -12,15 +12,15 @@ public protocol Cache {
 }
 
 extension Cache {
-    func increment(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
+    public func increment(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
         self.increment(key, by: amount)
     }
     
-    func decrement(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
+    public func decrement(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
         self.decrement(key, by: amount)
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount? = nil) -> EventLoopFuture<Void> {
+    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount? = nil) -> EventLoopFuture<Void> {
         self.set(key, value: value, for: time)
     }
 }
