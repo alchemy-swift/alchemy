@@ -37,7 +37,7 @@ public extension Application {
     @discardableResult
     func on<Res>(
         _ endpoint: Endpoint<Empty, Res>,
-        handler: @escaping (Request) throws -> EventLoopFuture<Res>
+        use handler: @escaping (Request) throws -> EventLoopFuture<Res>
     ) -> Self {
         self.on(endpoint.method.nio, at: endpoint.path, handler: handler)
     }
@@ -102,15 +102,5 @@ extension EndpointMethod {
     /// Converts the Papyrus HTTP verb type to it's NIO equivalent.
     fileprivate var nio: HTTPMethod {
         HTTPMethod(rawValue: self.rawValue)
-    }
-}
-
-extension EndpointGroup {
-    /// Initializes an EndpointGroup with an empty `baseURL`. Should
-    /// only be used when _providing_ (i.e.
-    /// `router.register(group.someEndpoint)`) not _consuming_
-    /// endpoints.
-    public convenience init() {
-        self.init(baseURL: "")
     }
 }

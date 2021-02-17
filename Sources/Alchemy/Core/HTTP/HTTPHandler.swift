@@ -83,6 +83,8 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
       
             // Responds to the request
             let response = responder.respond(to: request)
+                // Ensure we're on the right ELF or NIO will assert.
+                .hop(to: context.eventLoop)
                 .flatMapError { error in
                     catchError {
                         if let error = error as? ResponseConvertible {
