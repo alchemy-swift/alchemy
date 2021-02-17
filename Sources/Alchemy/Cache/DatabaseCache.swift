@@ -1,19 +1,21 @@
 import Foundation
 import NIO
 
-struct DatabaseCacheMigration: Migration {
+public struct DatabaseCacheMigration: Migration {
     fileprivate(set) static var table: String = "cache"
     
-    func up(schema: Schema) {
+    public init() {}
+    
+    public func up(schema: Schema) {
         schema.create(table: DatabaseCacheMigration.table) {
             $0.increments("id").primary()
             $0.string("key").notNull().unique()
             $0.string("text", length: .unlimited).notNull()
-            $0.int("expiration")
+            $0.int("expiration").notNull()
         }
     }
     
-    func down(schema: Schema) {
+    public func down(schema: Schema) {
         schema.drop(table: DatabaseCacheMigration.table)
     }
 }
@@ -24,10 +26,10 @@ struct CacheItem: Model {
     var id: Int?
     let key: String
     var text: String
-    var expiration: Int?
+    var expiration: Int = -1
     
     var isValid: Bool {
-        guard let expiration = expiration else {
+        guard expiration >= 0 else {
             return true
         }
         
@@ -39,7 +41,7 @@ struct CacheItem: Model {
     }
     
     func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
-        try C(self.text).unwrap(or: CacheError("Unable to convert cache item \(self.key) to \(C.self)."))
+        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self.key)` to \(C.self)."))
     }
 }
 
@@ -54,10 +56,25 @@ public final class DatabaseCache: Cache {
         DatabaseCacheMigration.table = tableName
     }
     
+    /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) -> EventLoopFuture<CacheItem?> {
         CacheItem.query(database: self.db)
             .where("key" == key)
             .firstModel()
+            .flatMap { item in
+                guard let item = item else {
+                    return .new(nil)
+                }
+                
+                if item.isValid {
+                    return .new(item)
+                } else {
+                    return CacheItem.query()
+                        .where("key" == key)
+                        .delete()
+                        .map { _ in nil }
+                }
+            }
     }
     
     public func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
@@ -71,11 +88,11 @@ public final class DatabaseCache: Cache {
                 let expiration = time.map { Date().adding(time: $0) }
                 if var item = item {
                     item.text = value.stringValue
-                    item.expiration = expiration
+                    item.expiration = expiration ?? -1
                     return item.save(db: self.db)
                         .voided()
                 } else {
-                    return CacheItem(key: key, text: value.stringValue, expiration: expiration)
+                    return CacheItem(key: key, text: value.stringValue, expiration: expiration ?? -1)
                         .save(db: self.db)
                         .voided()
                 }
@@ -114,20 +131,11 @@ public final class DatabaseCache: Cache {
         self.getItem(key: key)
             .flatMap { item in
                 if var item = item {
-                    if item.isValid {
-                        return catchError {
-                            let value: Int = try item.cast()
-                            let newVal = value + amount
-                            item.text = "\(value + amount)"
-                            return item.save().transform(to: newVal)
-                        }
-                    } else {
-                        return item.delete()
-                            .flatMap {
-                                return CacheItem(key: key, text: "\(amount)")
-                                    .save(db: self.db)
-                                    .transform(to: amount)
-                            }
+                    return catchError {
+                        let value: Int = try item.cast()
+                        let newVal = value + amount
+                        item.text = "\(value + amount)"
+                        return item.save().transform(to: newVal)
                     }
                 } else {
                     return CacheItem(key: key, text: "\(amount)")
