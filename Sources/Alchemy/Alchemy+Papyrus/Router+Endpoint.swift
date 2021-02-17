@@ -56,8 +56,6 @@ extension EventLoopFuture {
 // Provide a custom response for when `PapyrusValidationError`s are
 // thrown.
 extension PapyrusValidationError: ResponseConvertible {
-    // MARK: ResponseConvertible
-    
     public func convert() throws -> EventLoopFuture<Response> {
         let body = try HTTPBody(json: ["validation_error": self.message])
         return .new(Response(status: .badRequest, body: body))
@@ -65,8 +63,6 @@ extension PapyrusValidationError: ResponseConvertible {
 }
 
 extension Request: DecodableRequest {
-    // MARK: DecodableRequest
-    
     public func header(for key: String) -> String? {
         self.headers.first(name: key)
     }

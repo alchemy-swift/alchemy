@@ -1,50 +1,7 @@
 import Foundation
 import NIO
 
-public struct DatabaseCacheMigration: Migration {
-    fileprivate(set) static var table: String = "cache"
-    
-    public init() {}
-    
-    public func up(schema: Schema) {
-        schema.create(table: DatabaseCacheMigration.table) {
-            $0.increments("id").primary()
-            $0.string("key").notNull().unique()
-            $0.string("text", length: .unlimited).notNull()
-            $0.int("expiration").notNull()
-        }
-    }
-    
-    public func down(schema: Schema) {
-        schema.drop(table: DatabaseCacheMigration.table)
-    }
-}
-
-struct CacheItem: Model {
-    static var tableName: String { DatabaseCacheMigration.table }
-    
-    var id: Int?
-    let key: String
-    var text: String
-    var expiration: Int = -1
-    
-    var isValid: Bool {
-        guard expiration >= 0 else {
-            return true
-        }
-        
-        return expiration > Int(Date().timeIntervalSince1970)
-    }
-    
-    func validate() -> Self? {
-        self.isValid ? self : nil
-    }
-    
-    func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
-        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self.key)` to \(C.self)."))
-    }
-}
-
+/// A SQL based driver for `Cache`.
 public final class DatabaseCache: Cache {
     private let db: Database
     
@@ -76,6 +33,8 @@ public final class DatabaseCache: Cache {
                 }
             }
     }
+    
+    // MARK: Cache
     
     public func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
         self.getItem(key: key)
@@ -151,5 +110,50 @@ public final class DatabaseCache: Cache {
     
     public func wipe() -> EventLoopFuture<Void> {
         CacheItem.deleteAll(db: self.db)
+    }
+}
+
+/// A migration to run when using SQL based caching.
+public struct DatabaseCacheMigration: Migration {
+    fileprivate(set) static var table: String = "cache"
+    
+    public init() {}
+    
+    public func up(schema: Schema) {
+        schema.create(table: DatabaseCacheMigration.table) {
+            $0.increments("id").primary()
+            $0.string("key").notNull().unique()
+            $0.string("text", length: .unlimited).notNull()
+            $0.int("expiration").notNull()
+        }
+    }
+    
+    public func down(schema: Schema) {
+        schema.drop(table: DatabaseCacheMigration.table)
+    }
+}
+
+private struct CacheItem: Model {
+    static var tableName: String { DatabaseCacheMigration.table }
+    
+    var id: Int?
+    let key: String
+    var text: String
+    var expiration: Int = -1
+    
+    var isValid: Bool {
+        guard expiration >= 0 else {
+            return true
+        }
+        
+        return expiration > Int(Date().timeIntervalSince1970)
+    }
+    
+    func validate() -> Self? {
+        self.isValid ? self : nil
+    }
+    
+    func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
+        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self.key)` to \(C.self)."))
     }
 }

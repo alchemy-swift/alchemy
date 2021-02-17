@@ -1,6 +1,8 @@
 import Foundation
 
+/// An in memory driver for `Cache` for testing.
 public final class MockCache: Cache {
+    /// An in memory cache item.
     public struct Item {
         var text: String
         var expiration: Int?
@@ -25,6 +27,9 @@ public final class MockCache: Cache {
     
     private var data: [String: Item] = [:]
     
+    /// Create this cache populated with the given data.
+    ///
+    /// - Parameter defaultData: The initial items in the Cache.
     public init(_ defaultData: [String: Item] = [:]) {
         self.data = defaultData
     }
@@ -43,6 +48,8 @@ public final class MockCache: Cache {
             return item
         }
     }
+    
+    // MARK: Cache
     
     public func get<C>(_ key: String) -> EventLoopFuture<C?> where C : CacheAllowed {
         catchError {

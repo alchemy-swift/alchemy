@@ -1,6 +1,7 @@
 import Foundation
 import RediStack
 
+/// A Redis based driver for `Cache`.
 public final class RedisCache: Cache {
     private let redis: Redis
     
@@ -10,6 +11,8 @@ public final class RedisCache: Cache {
     public init(_ redis: Redis = Services.redis) {
         self.redis = redis
     }
+    
+    // MARK: Cache
     
     public func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
         self.redis.get(RedisKey(key), as: String.self).map { $0.map(C.init) ?? nil }
