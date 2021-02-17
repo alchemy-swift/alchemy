@@ -43,8 +43,12 @@ public struct Env: Equatable {
     }
     
     /// Required for dynamic member lookup.
-    public static subscript<T: StringInitializable>(dynamicMember member: String) -> T? {
-        Env.current.get(member)
+    public static subscript<T: StringInitializable>(dynamicMember member: String) -> T {
+        if let val: T = Env.current.get(member) {
+            return val
+        } else {
+            fatalError("Unable to find an environment value for \(member)")
+        }
     }
     
     /// All environment variables available to the program.
@@ -69,10 +73,10 @@ extension Env {
     /// - Parameter path: The path of the file from which to load the
     ///   variables.
     private static func loadDotEnvFile(path: String) {
-        let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
+        let absolutePath = path.starts(with: "/") ? path : self.getAbsolutePath(relativePath: "/\(path)")
         
         guard let pathString = absolutePath else {
-            return Log.info("[Environment] no file found at '\(path)'")
+            return Log.info("[Environment] no environment file found at '\(path)'")
         }
         
         guard let contents = try? NSString(contentsOfFile: pathString, encoding: String.Encoding.utf8.rawValue) else {
@@ -124,6 +128,15 @@ extension Env {
     private static func getAbsolutePath(relativePath: String) -> String? {
         let fileManager = FileManager.default
         let currentPath = fileManager.currentDirectoryPath
+        if currentPath.contains("/Library/Developer/Xcode/DerivedData") {
+            Log.warning("""
+                **WARNING**
+
+                Your project is running in Xcode's `DerivedData` data directory. We _highly_ recommend setting a custom working directory, otherwise `.env` and `Public/` files won't be accessible.
+
+                This takes ~9 seconds to fix. Here's how: https://github.com/alchemy-swift/alchemy/blob/main/Docs/1b_Configuration.md#setting-a-custom-working-directory.
+                """)
+        }
         let filePath = currentPath + relativePath
         if fileManager.fileExists(atPath: filePath) {
             return filePath

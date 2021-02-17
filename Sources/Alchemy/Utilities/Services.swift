@@ -91,6 +91,12 @@ extension Services {
         set { Container.global.register(singleton: Redis.self, factory: { _ in newValue }) }
     }
     
+    /// The default `Cache` of your app. This needs to be set.
+    public static var cache: Cache {
+        get { Container.global.resolve(Cache.self) }
+        set { Container.global.register(singleton: Cache.self, factory: { _ in newValue }) }
+    }
+    
     // MARK: NIO Services
     
     /// The current `EventLoop`.

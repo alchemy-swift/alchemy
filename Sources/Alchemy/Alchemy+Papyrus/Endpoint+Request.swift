@@ -10,6 +10,18 @@ public struct PapyrusClientError: Error {
     public let message: String
     /// The `HTTPClient.Response` of the failed response.
     public let response: HTTPClient.Response
+    /// The response body, converted to a String, if there is one.
+    public var bodyString: String? = nil
+}
+
+extension PapyrusClientError: CustomStringConvertible {
+    public var description: String {
+        """
+        \(self.message)
+        Response: \(self.response)
+        Body: \(self.bodyString ?? "N/A")
+        """
+    }
 }
 
 extension Endpoint {
@@ -20,22 +32,24 @@ extension Endpoint {
     ///   - dto: An instance of the request DTO; `Endpoint.Request`.
     ///   - client: The HTTPClient to request this with. Defaults to
     ///     `Client.default`.
-    ///   - decoder: The decoder with which to decode response data to
-    ///     `Endpoint.Response`. Defaults to `JSONDecoder()`.
-    /// - Throws: An error if there is an issue encoding the request
-    ///   or decoding the response.
     /// - Returns: A future containing the decoded `Endpoint.Response`
     ///   as well as the raw response of the `HTTPClient`.
     public func request(
         _ dto: Request,
-        with client: HTTPClient = Services.client,
-        decoder: JSONDecoder = JSONDecoder()
-    ) throws -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
-        client.performRequest(
-            baseURL: self.baseURL,
-            parameters: try self.parameters(dto: dto),
-            decoder: decoder
-        )
+        with client: HTTPClient = Services.client
+    ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
+        let encoder = self.jsonEncoder
+        let decoder = self.jsonDecoder
+        encoder.keyEncodingStrategy = self.keyMapping.jsonEncodingStrategy
+        decoder.keyDecodingStrategy = self.keyMapping.jsonDecodingStrategy
+        return catchError {
+            client.performRequest(
+                baseURL: self.baseURL,
+                parameters: try self.parameters(dto: dto),
+                encoder: jsonEncoder,
+                decoder: jsonDecoder
+            )
+        }
     }
 }
 
@@ -52,12 +66,16 @@ extension Endpoint where Request == Empty {
     /// - Returns: A future containing the decoded `Endpoint.Response`
     ///   as well as the raw response of the `HTTPClient`.
     public func request(
-        with client: HTTPClient = Services.client,
-        decoder: JSONDecoder = JSONDecoder()
+        with client: HTTPClient = Services.client
     ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
-        client.performRequest(
+        let encoder = self.jsonEncoder
+        let decoder = self.jsonDecoder
+        encoder.keyEncodingStrategy = self.keyMapping.jsonEncodingStrategy
+        decoder.keyDecodingStrategy = self.keyMapping.jsonDecodingStrategy
+        return client.performRequest(
             baseURL: self.baseURL,
             parameters: .just(url: self.path, method: self.method),
+            encoder: encoder,
             decoder: decoder
         )
     }
@@ -70,13 +88,17 @@ extension HTTPClient {
     ///   - baseURL: The base URL of the endpoint to request.
     ///   - parameters: Information needed to make a request such as
     ///     method, body, headers, etc.
+    ///   - encoder: The encoder with which to encode
+    ///     `Endpoint.Request` to request data to Defaults to
+    ///     `JSONEncoder()`.
     ///   - decoder: A decoder with which to decode the response type,
     ///     `Response`, from the `HTTPClient.Response`.
     /// - Returns: A future containing the decoded response and the
     ///   raw `HTTPClient.Response`.
     fileprivate func performRequest<Response: Codable>(
         baseURL: String,
-        parameters: RequestComponents,
+        parameters: RawRequestComponents,
+        encoder: JSONEncoder,
         decoder: JSONDecoder
     ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
         catchError {
@@ -86,7 +108,7 @@ extension HTTPClient {
             
             if parameters.bodyEncoding == .json {
                 headers.add(name: "Content-Type", value: "application/json")
-                bodyData = try parameters.body.map { try JSONEncoder().encode($0) }
+                bodyData = try parameters.body.map { try encoder.encode($0) }
             } else if parameters.bodyEncoding == .urlEncoded,
                       let urlParams = try parameters.urlParams() {
                 headers.add(name: "Content-Type", value: "application/x-www-form-urlencoded")
@@ -106,7 +128,8 @@ extension HTTPClient {
                     guard (200...299).contains(response.status.code) else {
                         throw PapyrusClientError(
                             message: "The response code was not successful",
-                            response: response
+                            response: response,
+                            bodyString: response.body?.string ?? "N/A"
                         )
                     }
                     
