@@ -16,13 +16,10 @@ public final class RedisCache: Cache {
     }
     
     public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> {
-        let future = self.redis.set(RedisKey(key), to: value.stringValue)
         if let time = time {
-            return future
-                .flatMap { self.redis.send(command: "EXPIRE", with: [RESPValue(from: time.seconds)]) }
-                .voided()
+            return self.redis.setex(RedisKey(key), to: value.stringValue, expirationInSeconds: time.seconds)
         } else {
-            return future
+            return self.redis.set(RedisKey(key), to: value.stringValue)
         }
     }
     
