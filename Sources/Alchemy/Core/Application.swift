@@ -1,6 +1,7 @@
 import Fusion
 import Lifecycle
 import LifecycleNIOCompat
+import Logging
 import NIO
 import NIOHTTP1
 
@@ -34,6 +35,13 @@ public protocol Application {
 }
 
 extension Application {
+    /// Lifecycle logs quite a bit by default, this quiets it's `info`
+    /// level logs by default. To output messages lower than `notice`,
+    /// you can override this property to `.info` or lower.
+    public var lifecycleLogLevel: Logger.Level { .notice }
+}
+
+extension Application {
     /// Launch the application with the provided runner. It will setup
     /// core services, call `self.setup()`, and then it's behavior
     /// will be defined by the runner.
@@ -43,9 +51,11 @@ extension Application {
     /// - Throws: Any error that may be encountered in booting the
     ///   application.
     func launch(_ runner: Runner) throws {
+        var lifecycleLogger = Log.logger
+        lifecycleLogger.logLevel = self.lifecycleLogLevel
         let lifecycle = ServiceLifecycle(
             configuration: ServiceLifecycle.Configuration(
-                logger: Log.logger,
+                logger: lifecycleLogger,
                 installBacktrace: true
             )
         )

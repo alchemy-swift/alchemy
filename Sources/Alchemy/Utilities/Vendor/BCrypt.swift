@@ -23,7 +23,7 @@
 /// Courtesy of https://github.com/vapor/vapor
 ///
 /// This depends on the supplied `CBCrypt` C library.
-import CBcrypt
+import CAlchemy
 
 /// Creates and verifies BCrypt hashes.
 ///

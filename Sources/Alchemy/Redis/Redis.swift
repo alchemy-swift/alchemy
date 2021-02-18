@@ -76,7 +76,7 @@ public final class Redis {
 }
 
 /// Alchemy specific.
-extension Redis {
+extension RedisClient {
     /// Wrapper around sending commands to Redis.
     ///
     /// - Parameters:
