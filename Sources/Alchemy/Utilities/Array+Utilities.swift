@@ -24,4 +24,12 @@ extension Array {
 
         return self[index]
     }
+    
+    mutating func popFirst() -> Element? {
+        if self.count > 0 {
+            return self.removeFirst()
+        } else {
+            return nil
+        }
+    }
 }

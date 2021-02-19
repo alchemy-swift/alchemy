@@ -8,9 +8,8 @@ public final class DatabaseCache: Cache {
     /// Initialize this cache with a Database.
     ///
     /// - Parameter db: The database to cache with.
-    public init(_ db: Database = Services.db, tableName: String = "cache") {
+    public init(_ db: Database = Services.db) {
         self.db = db
-        DatabaseCacheMigration.table = tableName
     }
     
     /// Get's the item, deleting it and returning nil if it's expired.
@@ -113,28 +112,8 @@ public final class DatabaseCache: Cache {
     }
 }
 
-/// A migration to run when using SQL based caching.
-public struct DatabaseCacheMigration: Migration {
-    fileprivate(set) static var table: String = "cache"
-    
-    public init() {}
-    
-    public func up(schema: Schema) {
-        schema.create(table: DatabaseCacheMigration.table) {
-            $0.increments("id").primary()
-            $0.string("key").notNull().unique()
-            $0.string("text", length: .unlimited).notNull()
-            $0.int("expiration").notNull()
-        }
-    }
-    
-    public func down(schema: Schema) {
-        schema.drop(table: DatabaseCacheMigration.table)
-    }
-}
-
 private struct CacheItem: Model {
-    static var tableName: String { DatabaseCacheMigration.table }
+    static var tableName: String { "cache" }
     
     var id: Int?
     let key: String
@@ -155,5 +134,24 @@ private struct CacheItem: Model {
     
     func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
         try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self.key)` to \(C.self)."))
+    }
+}
+
+extension DatabaseCache {
+    public struct Migration: Alchemy.Migration {
+        public init() {}
+        
+        public func up(schema: Schema) {
+            schema.create(table: "cache") {
+                $0.increments("id").primary()
+                $0.string("key").notNull().unique()
+                $0.string("text", length: .unlimited).notNull()
+                $0.int("expiration").notNull()
+            }
+        }
+        
+        public func down(schema: Schema) {
+            schema.drop(table: "cache")
+        }
     }
 }

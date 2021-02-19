@@ -12,6 +12,15 @@ public protocol Frequency {
     /// - Returns: A `TimeAmount` representing the interval between
     ///   now and when this frequency's start time will next occur.
     func timeUntilNext() -> TimeAmount
+    
+    /// A cron expression representing this frequency.
+    var cronExpression: String { get }
+}
+
+extension Frequency {
+    public var cronExpression: String {
+        "* * * * * * *"
+    }
 }
 
 // MARK: - TimeUnits
