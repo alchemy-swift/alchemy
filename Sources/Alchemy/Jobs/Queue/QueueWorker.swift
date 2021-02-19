@@ -3,41 +3,39 @@ import Dispatch
 import NIO
 
 /// Monitors a Queue for jobs to dequeue and run.
-public final class QueueWorker {
-    private let queue: Queue
-    private let pollRate: TimeAmount
-    private let eventLoop: EventLoop
-    
-    /// Initialize with a given queue.
-    /// - Parameters:
-    ///   - queue: The queue to monitor. Defaults to `Services.queue`.
-    ///   - pollRate: The time to wait before checking the queue for
-    ///     jobs after dequeuing the last job. Defaults to 1 second.
-    ///   - eventLoop: The `EventLoop` to dequeue and run jobs on.
-    public init(queue: Queue = Services.queue, pollRate: TimeAmount = .seconds(1), eventLoop: EventLoop = Services.eventLoop) {
-        self.queue = queue
-        self.pollRate = pollRate
-        self.eventLoop = eventLoop
-    }
-    
-    /// Start monitoring the queue for jobs to run.
-    public func start() {
-        self.eventLoop.execute {
-            self.runNext()
+public protocol QueueWorker {}
+
+extension QueueWorker {
+    /// Start monitoring a queue for jobs to run.
+    public func startQueueWorker(
+        for queue: Queue = Services.queue,
+        named queueName: String = kDefaultQueueName,
+        pollRate: TimeAmount = .seconds(1),
+        on eventLoop: EventLoop = Services.eventLoop
+    ) {
+        eventLoop.execute {
+            self.runNext(on: queue, named: queueName)
                 .whenComplete { _ in
                     // Run check again in the `pollRate`.
-                    self.eventLoop.scheduleTask(in: self.pollRate, self.start)
+                    eventLoop.scheduleTask(in: pollRate) {
+                        self.startQueueWorker(for: queue, named: queueName, pollRate: pollRate, on: eventLoop)
+                    }
                 }
         }
     }
 
-    private func runNext() -> EventLoopFuture<Void> {
-        self.queue
-            .dequeue()
-            .flatMap { $0.map(self.execute) ?? .new() }
+    private func runNext(on queue: Queue, named queueName: String) -> EventLoopFuture<Void> {
+        queue.dequeue(from: queueName)
+            .flatMap { jobData in
+                guard let jobData = jobData else {
+                    return .new()
+                }
+                
+                return self.execute(jobData, queue: queue)
+            }
     }
 
-    private func execute(_ jobData: JobData) -> EventLoopFuture<Void> {
+    private func execute(_ jobData: JobData, queue: Queue) -> EventLoopFuture<Void> {
         do {
             let job = try JobDecoding.decode(jobData)
             return job.run()
@@ -46,16 +44,16 @@ public final class QueueWorker {
                     jobData.attempts += 1
                     switch result {
                     case .success:
-                        return self.queue.complete(jobData, outcome: .success)
+                        return queue.complete(jobData, outcome: .success)
                             .map { job.finished(result: result) }
                     case .failure where jobData.canRetry:
-                        return self.queue.complete(jobData, outcome: .retry)
+                        return queue.complete(jobData, outcome: .retry)
                     case .failure:
-                        return self.queue.complete(jobData, outcome: .failed)
+                        return queue.complete(jobData, outcome: .failed)
                             .map { job.finished(result: result) }
                     }
                 }
-                .flatMap { self.runNext() }
+                .flatMap { self.runNext(on: queue, named: jobData.queueName) }
         } catch {
             return .new(error: error)
         }

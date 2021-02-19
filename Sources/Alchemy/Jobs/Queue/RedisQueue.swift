@@ -10,7 +10,7 @@ public class RedisQueue: Queue {
     /// Initialize with a Redis instance to persist jobs to.
     ///
     /// - Parameter redis: The Redis instance.
-    public init(redis: Redis) {
+    public init(redis: Redis = Services.redis) {
         self.redis = redis
     }
     

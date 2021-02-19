@@ -8,6 +8,8 @@ public final class MemoryQueue: Queue {
     @Locked private var pending: [String: [JobID]] = [:]
     @Locked private var reserved: [String: [JobID]] = [:]
     
+    public init() {}
+    
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
