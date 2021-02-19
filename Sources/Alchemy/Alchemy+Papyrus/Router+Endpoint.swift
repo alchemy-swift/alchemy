@@ -37,7 +37,7 @@ public extension Application {
     @discardableResult
     func on<Res>(
         _ endpoint: Endpoint<Empty, Res>,
-        handler: @escaping (Request) throws -> EventLoopFuture<Res>
+        use handler: @escaping (Request) throws -> EventLoopFuture<Res>
     ) -> Self {
         self.on(endpoint.method.nio, at: endpoint.path, handler: handler)
     }
@@ -56,8 +56,6 @@ extension EventLoopFuture {
 // Provide a custom response for when `PapyrusValidationError`s are
 // thrown.
 extension PapyrusValidationError: ResponseConvertible {
-    // MARK: ResponseConvertible
-    
     public func convert() throws -> EventLoopFuture<Response> {
         let body = try HTTPBody(json: ["validation_error": self.message])
         return .new(Response(status: .badRequest, body: body))
@@ -65,8 +63,6 @@ extension PapyrusValidationError: ResponseConvertible {
 }
 
 extension Request: DecodableRequest {
-    // MARK: DecodableRequest
-    
     public func header(for key: String) -> String? {
         self.headers.first(name: key)
     }
@@ -102,15 +98,5 @@ extension EndpointMethod {
     /// Converts the Papyrus HTTP verb type to it's NIO equivalent.
     fileprivate var nio: HTTPMethod {
         HTTPMethod(rawValue: self.rawValue)
-    }
-}
-
-extension EndpointGroup {
-    /// Initializes an EndpointGroup with an empty `baseURL`. Should
-    /// only be used when _providing_ (i.e.
-    /// `router.register(group.someEndpoint)`) not _consuming_
-    /// endpoints.
-    public convenience init() {
-        self.init(baseURL: "")
     }
 }

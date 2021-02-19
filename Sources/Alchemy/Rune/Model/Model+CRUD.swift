@@ -13,6 +13,18 @@ extension Model {
             .allModels()
     }
     
+    /// Delete all models of this type from a database.
+    ///
+    /// - Parameter db: The database to delete models from. Defaults
+    ///   to `Services.db`.
+    /// - Returns: A future that completes when the models are
+    ///   deleted.
+    public static func deleteAll(db: Database = Services.db) -> EventLoopFuture<Void> {
+        Self.query(database: db)
+            .delete()
+            .voided()
+    }
+    
     /// Throws an error if a query with the specified where clause
     /// returns a value. The opposite of `unwrapFirstWhere(...)`.
     ///
@@ -35,6 +47,23 @@ extension Model {
             .where(`where`)
             .first()
             .flatMapThrowing { try $0.map { _ in throw error } }
+    }
+    
+    /// Gets the first element that meets the given where value.
+    ///
+    /// - Parameters:
+    ///   - where: The table will be queried for a row matching this
+    ///     clause.
+    ///   - db: The database to query. Defaults to `Services.db`.
+    /// - Returns: A future containing the first result matching the
+    ///   `where` clause, if one exists.
+    public static func firstWhere(
+        _ where: WhereValue,
+        db: Database = Services.db
+    ) -> EventLoopFuture<Self?> {
+        Self.query(database: db)
+            .where(`where`)
+            .firstModel()
     }
     
     /// Gets the first element that meets the given where value.
