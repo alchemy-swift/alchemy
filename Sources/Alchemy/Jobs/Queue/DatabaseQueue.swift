@@ -119,6 +119,8 @@ private struct FailedJobModel: Model {
 extension DatabaseQueue {
     /// A Migration for the table used by DatabaseQueue to store jobs.
     public struct Migration: Alchemy.Migration {
+        public var name: String { "CreateQueue" }
+        
         public init() {}
         
         public func up(schema: Schema) {

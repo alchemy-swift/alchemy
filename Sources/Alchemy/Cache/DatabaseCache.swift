@@ -139,6 +139,8 @@ private struct CacheItem: Model {
 
 extension DatabaseCache {
     public struct Migration: Alchemy.Migration {
+        public var name: String { "CreateCache" }
+        
         public init() {}
         
         public func up(schema: Schema) {
