@@ -31,31 +31,34 @@ extension QueueWorker {
                     return .new()
                 }
                 
+                Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.queueName)")
                 return self.execute(jobData, queue: queue)
             }
     }
 
     private func execute(_ jobData: JobData, queue: Queue) -> EventLoopFuture<Void> {
-        do {
-            let job = try JobDecoding.decode(jobData)
-            return job.run()
-                .flatMapAlways { result in
-                    var jobData = jobData
-                    jobData.attempts += 1
-                    switch result {
-                    case .success:
-                        return queue.complete(jobData, outcome: .success)
-                            .map { job.finished(result: result) }
-                    case .failure where jobData.canRetry:
-                        return queue.complete(jobData, outcome: .retry)
-                    case .failure:
-                        return queue.complete(jobData, outcome: .failed)
-                            .map { job.finished(result: result) }
-                    }
-                }
-                .flatMap { self.runNext(on: queue, named: jobData.queueName) }
-        } catch {
-            return .new(error: error)
+        return catchError {
+            do {
+                let job = try JobDecoding.decode(jobData)
+                return job.run()
+                    .always { job.finished(result: $0) }
+            } catch {
+                Log.error("error decoding job named \(jobData.jobName). Error was: \(error).")
+                throw error
+            }
         }
+        .flatMapAlways { (result: Result<Void, Error>) -> EventLoopFuture<Void> in
+            var jobData = jobData
+            jobData.attempts += 1
+            switch result {
+            case .success:
+                return queue.complete(jobData, outcome: .success)
+            case .failure where jobData.canRetry:
+                return queue.complete(jobData, outcome: .retry)
+            case .failure:
+                return queue.complete(jobData, outcome: .failed)
+            }
+        }
+        .flatMap { self.runNext(on: queue, named: jobData.queueName) }
     }
 }
