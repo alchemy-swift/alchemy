@@ -27,6 +27,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha"),
         .package(url: "https://github.com/Mordil/RediStack.git", from: "1.0.0"),
         .package(url: "https://github.com/alchemy-swift/papyrus", .branch("main")),
+        .package(name: "Cron", url: "https://github.com/Ponyboy47/Cron-Swift.git", from: "2.3.0"),
     ],
     targets: [
         .target(
@@ -47,6 +48,7 @@ let package = Package(
                 .product(name: "LifecycleNIOCompat", package: "swift-service-lifecycle"),
                 .product(name: "RediStack", package: "RediStack"),
                 .product(name: "Papyrus", package: "papyrus"),
+                .product(name: "Cron", package: "Cron"),
                 
                 /// Internal dependencies
                 "Fusion",

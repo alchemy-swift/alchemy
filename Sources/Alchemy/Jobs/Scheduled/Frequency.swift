@@ -4,122 +4,39 @@ import Foundation
 /// specific requirements for when it should start running,
 /// such as "every day at 9:30 am".
 public protocol Frequency {
-    /// The interval at which this `Frequency` is repeated.
-    var rate: TimeAmount { get }
-
-    /// An interval until the next time this frequency can begin.
-    ///
-    /// - Returns: A `TimeAmount` representing the interval between
-    ///   now and when this frequency's start time will next occur.
-    func timeUntilNext() -> TimeAmount
-    
     /// A cron expression representing this frequency.
     var cronExpression: String { get }
 }
 
-extension Frequency {
-    public var cronExpression: String {
-        "* * * * * * *"
-    }
-}
-
 // MARK: - TimeUnits
 
-/// A unit of time.
-public protocol TimeUnit {
-    /// Returns a `TimeAmount` for a measure of time with this unit.
-    ///
-    /// - Parameter value: The measurement of time.
-    /// - Returns An interval representing `value` units of this
-    ///   `TimeUnit`.
-    static func time(_ value: Int64) -> TimeAmount
-}
-
 /// A week of time.
-public struct WeekUnit: TimeUnit {
-    public static func time(_ value: Int64) -> TimeAmount { .hours(value * 24 * 7) }
-}
+public struct WeekUnit {}
 
 /// A day of time.
-public struct DayUnit: TimeUnit {
-    public static func time(_ value: Int64) -> TimeAmount { .hours(value * 24) }
-}
+public struct DayUnit {}
 
 /// An hour of time.
-public struct HourUnit: TimeUnit {
-    public static func time(_ value: Int64) -> TimeAmount { .hours(value) }
-}
+public struct HourUnit {}
 
 /// A minute of time.
-public struct MinuteUnit: TimeUnit {
-    public static func time(_ value: Int64) -> TimeAmount { .minutes(value) }
-}
+public struct MinuteUnit {}
 
 /// A second of time.
-public struct SecondUnit: TimeUnit {
-    public static func time(_ value: Int64) -> TimeAmount { .seconds(value) }
-}
+public struct SecondUnit {}
 
 // MARK: - Frequencies
 
 /// A generic frequency for handling amounts of time.
-public struct FrequencyTyped<T: TimeUnit>: Frequency {
+public struct FrequencyTyped<T>: Frequency {
     /// The frequency at which this work should be repeated.
     let value: Int
+    
+    public var cronExpression: String
 
-    /// The day this frequency should start on.
-    fileprivate let startDay: Weekday?
-
-    /// The hour this frequency should start on.
-    fileprivate let startHr: Int?
-
-    /// The minute this frequency should start on.
-    fileprivate let startMin: Int?
-
-    /// The second this frequency should start on.
-    fileprivate let startSec: Int?
-
-    /// Create a frequency with the given components.
-    ///
-    /// - Parameters:
-    ///   - value: The value of the unit of time between frequencies.
-    ///   - day: The start day of this frequency.
-    ///   - hr: The start hour of this frequency.
-    ///   - min: The start minute of this frequency.
-    ///   - sec: The start second of this frequency.
-    fileprivate init(
-        value: Int,
-        day: Weekday? = nil,
-        hr: Int? = nil,
-        min: Int? = nil,
-        sec: Int? = nil
-    ) {
+    fileprivate init(value: Int, cronExpression: String) {
         self.value = value
-        self.startDay = day
-        self.startHr = hr
-        self.startMin = min
-        self.startSec = sec
-    }
-
-    // MARK: Frequency
-
-    public var rate: TimeAmount {
-        T.time(Int64(self.value))
-    }
-
-    public func timeUntilNext() -> TimeAmount {
-        let now = Date()
-        let components = DateComponents(
-            hour: self.startHr,
-            minute: self.startMin,
-            second: self.startSec,
-            weekday: self.startDay?.rawValue
-        )
-
-        let nextTime = Calendar.current
-            .nextDate(after: now, matching: components, matchingPolicy: .nextTime) ?? Date()
-        let interval = Int64(nextTime.timeIntervalSince(now) * 1000)
-        return .milliseconds(interval)
+        self.cronExpression = cronExpression
     }
 }
 
@@ -134,8 +51,8 @@ extension Minutes {
     /// - Parameter sec: A second of a minute (0-59).
     /// - Returns: A minutely frequency that first takes place at the
     ///   given component.
-    public func at(sec: Int? = nil) -> Minutes {
-        Minutes(value: self.value, sec: sec)
+    public func at(sec: Int = 0) -> Minutes {
+        Minutes(value: self.value, cronExpression: "\(sec) */\(self.value) * * * *")
     }
 }
 
@@ -149,8 +66,8 @@ extension Hours {
     ///   - sec: A second of a minute (0-59).
     /// - Returns: An hourly frequency that first takes place at the
     ///   given components.
-    public func at(min: Int? = nil, sec: Int? = nil) -> Hours {
-        Hours(value: self.value, min: min, sec: sec)
+    public func at(min: Int = 0, sec: Int = 0) -> Hours {
+        Hours(value: self.value, cronExpression: "\(sec) \(min) */\(self.value) * * * *")
     }
 }
 
@@ -165,8 +82,8 @@ extension Days {
     ///   - sec: A second of a minute (0-59).
     /// - Returns: A daily frequency that first takes place at the
     ///   given components.
-    public func at(hr: Int? = nil, min: Int? = nil, sec: Int? = nil) -> Days {
-        Days(value: self.value, min: min, sec: sec)
+    public func at(hr: Int = 0, min: Int = 0, sec: Int = 0) -> Days {
+        Days(value: self.value, cronExpression: "\(sec) \(min) \(hr) */\(self.value) * * *")
     }
 }
 
@@ -176,37 +93,31 @@ extension Weeks {
     /// When this frequency should first take place.
     ///
     /// - Parameters:
-    ///   - day: A day of the week.
     ///   - hr: An hour of the day (0-23).
     ///   - min: A minute of an hour (0-59).
     ///   - sec: A second of a minute (0-59).
     /// - Returns: A weekly frequency that first takes place at the
     ///   given components.
-    public func at(_ day: Weekday? = nil, hr: Int? = nil, min: Int? = nil, sec: Int? = nil) -> Weeks {
-        Weeks(value: self.value, day: day, hr: hr, min: min, sec: sec)
+    public func at(hr: Int = 0, min: Int = 0, sec: Int = 0) -> Weeks {
+        Weeks(value: self.value, cronExpression: "\(sec) \(min) \(hr) */\(self.value * 7) * * *")
     }
 }
 
 // MARK: - Misc
 
-/// A day of the week.
-public enum Weekday: Int {
-    case sunday, monday, tuesday, wednesday, thursday, friday, saturday
-}
-
 extension Int {
     /// A frequence of weeks.
-    public var weeks: Weeks { Weeks(value: self, hr: 0, min: 0, sec: 0) }
+    public var weeks: Weeks { Weeks(value: self, cronExpression: "0 0 0 */\(self * 7) * * *") }
 
     /// A frequence of days.
-    public var days: Days { Days(value: self, hr: 0, min: 0, sec: 0) }
+    public var days: Days { Days(value: self, cronExpression: "0 0 0 */\(self) * * *") }
 
     /// A frequence of hours.
-    public var hours: Hours { Hours(value: self, min: 0, sec: 0) }
+    public var hours: Hours { Hours(value: self, cronExpression: "0 0 */\(self) * * * *") }
 
     /// A frequence of minutes.
-    public var minutes: Minutes { Minutes(value: self, sec: 0) }
+    public var minutes: Minutes { Minutes(value: self, cronExpression: "0 */\(self) * * * * *") }
 
     /// A frequence of seconds.
-    public var seconds: Seconds { Seconds(value: self) }
+    public var seconds: Seconds { Seconds(value: self, cronExpression: "*/\(self) * * * * * *") }
 }

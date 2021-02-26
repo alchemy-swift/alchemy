@@ -1,49 +1,50 @@
 import Fusion
 import NIO
+import Cron
 
-/// Schedules `Job`s at recurring intervals, like a cron.
-///
-/// Usage:
-/// ```swift
-/// self.scheduler
-///     .every(1.days.at(hr: 12), run: UpdateQueries())
-///     .every(1.days.at(hr: 9, min: 27, sec: 43), run: SyncSubscriptions())
-///     .every(1.minutes.at(sec: 30), run: RunQueries())
-///     .every(1.minutes, run: CheckAlerts())
-/// ```
 public struct Scheduler {
-    /// The loop on which Job scheduling will be done. Note that the
-    /// actual Jobs will be run on `EventLoop`s dequeued from the
-    /// application's `MultiThreadedEventLoopGroup`.
     let scheduleLoop: EventLoop
     
-    /// Schedules a `Job` at a recurring interval.
-    ///
-    /// - Parameters:
-    ///   - frequency: The frequency at which this `Job` should be
-    ///     run. See `Frequency`.
-    ///   - job: The `Job` to schedule.
-    /// - Returns: This `Scheduler` with which more `Job`s can be
-    ///   scheduled.
-    @discardableResult
-    public func every<J: Job>(_ frequency: Frequency, run job: J) -> Scheduler {
-        /// A single loop will do all the scheduling for now.
-        self.scheduleLoop
-            .scheduleRepeatedTask(
-                initialDelay: frequency.timeUntilNext(),
-                delay: frequency.rate
-            ) { repeatedTask in
-                Log.info("[Scheduler] starting Job `\(name(of: J.self))`.")
-                // For now, never cancel the task.
-//                _ = Services.eventLoopGroup.next()
-//                    .flatSubmit(job.run)
-//                    .map { Log.info("[Scheduler] finished Job `\(name(of: J.self))`.") }
+    func schedule(schedule: Schedule, task: @escaping () throws -> Void) {
+        guard let next = schedule.next()?.date else {
+            return Log.error("schedule doesn't have a future date to run.")
+        }
+
+        func scheduleNextAndRun() throws -> Void {
+            self.schedule(schedule: schedule, task: task)
+            try task()
+        }
+
+        let delay = Int64(next.timeIntervalSinceNow * 1000)
+        Services.eventLoop.scheduleTask(in: .milliseconds(delay), scheduleNextAndRun)
+    }
+}
+
+extension Application {
+    public func schedule(
+        job: Job,
+        queue: Queue = Services.queue,
+        queueName: String = kDefaultQueueName
+    ) -> ScheduleBuilder {
+        ScheduleBuilder { schedule in
+            Services.scheduler.schedule(schedule: schedule) {
+                _ = Services.eventLoop
+                    .flatSubmit { job.dispatch(on: queue, queueName: queueName) }
             }
-        
-        return self
+        }
     }
     
-    public static var factory: (Container) throws -> Scheduler = { _ in
-        Scheduler(scheduleLoop: Services.eventLoop)
+    public func schedule(future: @escaping () -> EventLoopFuture<Void>) -> ScheduleBuilder {
+        ScheduleBuilder { schedule in
+            Services.scheduler.schedule(schedule: schedule) {
+                _ = Services.eventLoop.flatSubmit(future)
+            }
+        }
+    }
+    
+    public func schedule(task: @escaping () throws -> Void) -> ScheduleBuilder {
+        ScheduleBuilder { schedule in
+            Services.scheduler.schedule(schedule: schedule, task: task)
+        }
     }
 }
