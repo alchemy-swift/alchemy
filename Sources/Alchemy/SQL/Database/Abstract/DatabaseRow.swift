@@ -3,7 +3,7 @@
 public protocol DatabaseRow {
     /// The `String` names of all columns that have values in this
     /// `DatabaseRow`.
-    var allColumns: [String] { get }
+    var allColumns: Set<String> { get }
     
     /// Get the `DatabaseField` of a column from this row.
     ///

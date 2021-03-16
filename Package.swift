@@ -11,7 +11,6 @@ let package = Package(
     ],
     products: [
         .library(name: "Alchemy", targets: ["Alchemy"]),
-        .library(name: "Fusion", targets: ["Fusion"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -27,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha"),
         .package(url: "https://github.com/Mordil/RediStack.git", from: "1.0.0"),
         .package(url: "https://github.com/alchemy-swift/papyrus", .branch("main")),
+        .package(url: "https://github.com/alchemy-swift/fusion", .branch("main")),
         .package(name: "Cron", url: "https://github.com/Ponyboy47/Cron-Swift.git", from: "2.3.0"),
     ],
     targets: [
@@ -48,16 +48,14 @@ let package = Package(
                 .product(name: "LifecycleNIOCompat", package: "swift-service-lifecycle"),
                 .product(name: "RediStack", package: "RediStack"),
                 .product(name: "Papyrus", package: "papyrus"),
+                .product(name: "Fusion", package: "fusion"),
                 .product(name: "Cron", package: "Cron"),
                 
                 /// Internal dependencies
-                "Fusion",
                 "CAlchemy",
             ]
         ),
         .target(name: "CAlchemy", dependencies: []),
-        .target(name: "Fusion", dependencies: []),
         .testTarget(name: "AlchemyTests", dependencies: ["Alchemy"]),
-        .testTarget(name: "FusionTests", dependencies: ["Fusion"]),
     ]
 )
