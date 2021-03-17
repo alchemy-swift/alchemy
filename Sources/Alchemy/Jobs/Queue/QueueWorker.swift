@@ -37,18 +37,25 @@ extension QueueWorker {
     }
 
     private func execute(_ jobData: JobData, queue: Queue) -> EventLoopFuture<Void> {
+        var jobData = jobData
         return catchError {
             do {
                 let job = try JobDecoding.decode(jobData)
                 return job.run()
-                    .always { job.finished(result: $0) }
+                    .always {
+                        job.finished(result: $0)
+                        do {
+                            jobData.json = try job.jsonString()
+                        } catch {
+                            Log.error("[QueueWorker] tried updating Job persistance object after completion, but encountered error \(error)")
+                        }
+                    }
             } catch {
                 Log.error("error decoding job named \(jobData.jobName). Error was: \(error).")
                 throw error
             }
         }
         .flatMapAlways { (result: Result<Void, Error>) -> EventLoopFuture<Void> in
-            var jobData = jobData
             jobData.attempts += 1
             switch result {
             case .success:

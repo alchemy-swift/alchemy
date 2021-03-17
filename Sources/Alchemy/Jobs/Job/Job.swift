@@ -4,8 +4,11 @@ import NIO
 public protocol Job: Codable {
     /// The name of this Job. Defaults to the type name.
     static var name: String { get }
-    /// The recovery strategy for this job. Defaults to none.
+    /// The recovery strategy for this job. Defaults to `.none`.
     var recoveryStrategy: RecoveryStrategy { get }
+    /// The time that should be waited before retrying this job if it
+    /// fails. Defaults to 0.
+    var retryBackoff: TimeAmount { get }
     /// Called when a job finishes, either successfully or with too
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
@@ -17,6 +20,7 @@ public protocol Job: Codable {
 extension Job {
     public static var name: String { Alchemy.name(of: Self.self) }
     public var recoveryStrategy: RecoveryStrategy { .none }
+    public var retryBackoff: TimeAmount { .zero }
     
     public func finished(result: Result<Void, Error>) {
         switch result {

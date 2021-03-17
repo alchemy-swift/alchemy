@@ -9,7 +9,7 @@ public struct JobData: Codable {
     /// The unique id of this job, by default this is a UUID string.
     public let id: JobID
     /// The serialized Job this persists.
-    public let json: JSONString
+    public var json: JSONString
     /// The Job name.
     public let jobName: String
     /// The queue this is associated with.
@@ -18,6 +18,11 @@ public struct JobData: Codable {
     public let recoveryStrategy: RecoveryStrategy
     /// The number of attempts this Job has been attempted.
     public var attempts: Int
+    
+    /// Can this job be retried.
+    public var canRetry: Bool {
+        self.attempts <= self.recoveryStrategy.maximumRetries
+    }
     
     /// Create with a Job, id, and queueName.
     ///
@@ -49,8 +54,11 @@ public struct JobData: Codable {
         self.attempts = attempts
     }
     
-    /// Can this job be retried.
-    public var canRetry: Bool {
-        self.attempts <= self.recoveryStrategy.maximumRetries
+    mutating func updatePayload<J: Job>(_ job: J) throws {
+        do {
+            self.json = try job.jsonString()
+        } catch {
+            throw JobError("Error updating JobData payload to Job type `\(J.name)`: \(error)")
+        }
     }
 }
