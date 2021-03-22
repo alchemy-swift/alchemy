@@ -45,11 +45,11 @@ public final class BelongsToRelationship<
     /// or set manually.
     public var wrappedValue: Parent {
         get {
-            guard let value = self.value else {
+            do {
+                return try Parent.from(self.value)
+            } catch {
                 fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!")
             }
-            
-            return value
         }
         set { self.value = newValue }
     }
@@ -105,7 +105,7 @@ public final class BelongsToRelationship<
     {
         let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
         guard !parentIDs.isEmpty else {
-            return .new([])
+            return .new(from)
         }
         
         let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
@@ -115,7 +115,11 @@ public final class BelongsToRelationship<
                 var updatedResults = [Child]()
                 let dict = Dictionary(grouping: parents, by: { $0.id! })
                 for child in from {
-                    let parentID = child[keyPath: eagerLoadKeyPath].id!
+                    guard let parentID = child[keyPath: eagerLoadKeyPath].id else {
+                        updatedResults.append(child)
+                        continue
+                    }
+                    
                     let parent = dict[parentID]
                     child[keyPath: eagerLoadKeyPath].wrappedValue = try Parent.from(parent?.first)
                     updatedResults.append(child)

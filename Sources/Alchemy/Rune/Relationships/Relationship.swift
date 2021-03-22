@@ -53,6 +53,8 @@ public protocol ModelMaybeOptional: Codable {
     ///   converted to `Self`.
     /// - Returns: The `value` converted to type `Self`.
     static func from(_ value: Value?) throws -> Self
+    
+    static func from(_ value: Self?) throws -> Self
 }
 
 // MARK: ModelMaybeOptional
@@ -64,6 +66,10 @@ extension Model {
 }
 
 extension Optional: ModelMaybeOptional where Wrapped: Model {
+    public static func from(_ value: Optional<Wrapped>?) throws -> Optional<Wrapped> {
+        value ?? nil
+    }
+    
     public static func from(_ value: Wrapped?) throws -> Self {
         value
     }
