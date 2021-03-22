@@ -104,6 +104,10 @@ public final class BelongsToRelationship<
         into eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
     {
         let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
+        guard !parentIDs.isEmpty else {
+            return .new([])
+        }
+        
         let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
         return nestedQuery(initialQuery)
             .allModels()
