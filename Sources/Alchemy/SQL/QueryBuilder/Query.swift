@@ -683,13 +683,10 @@ public class Query: Sequelizable {
     ///   updated.
     /// - Returns: An `EventLoopFuture` to be run that will update all
     ///   matched rows.
-    public func update(values: [String: Parameter]) throws -> EventLoopFuture<[DatabaseRow]> {
-        do {
+    public func update(values: [String: Parameter]) -> EventLoopFuture<[DatabaseRow]> {
+        catchError {
             let sql = try self.database.grammar.compileUpdate(self, values: values)
             return self.database.runRawQuery(sql.query, values: sql.bindings)
-        }
-        catch let error {
-            return .new(error: error)
         }
     }
 

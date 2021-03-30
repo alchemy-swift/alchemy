@@ -97,6 +97,12 @@ extension Services {
         set { Container.global.register(singleton: Cache.self, factory: { _ in newValue }) }
     }
     
+    /// The default `Queue` of your app. This needs to be set.
+    public static var queue: Queue {
+        get { Container.global.resolve(Queue.self) }
+        set { Container.global.register(singleton: Queue.self, factory: { _ in newValue }) }
+    }
+    
     // MARK: NIO Services
     
     /// The current `EventLoop`.

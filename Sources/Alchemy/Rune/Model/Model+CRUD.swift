@@ -98,20 +98,44 @@ extension Model {
     ///   that may have occurred saving this object to the database
     ///   (an `id` being populated, for example).
     public func save(db: Database = Services.db) -> EventLoopFuture<Self> {
+        if self.id != nil {
+            return self.update()
+        } else {
+            return self.insert()
+        }
+    }
+    
+    /// Update this model in a database.
+    ///
+    /// - Parameter db: The database to update this model to. Defaults
+    ///   to `Services.db`.
+    /// - Returns: A future that contains an updated version of self
+    ///   with an updated copy of this model, reflecting any changes
+    ///   that may have occurred saving this object to the database.
+    public func update(db: Database = Services.db) -> EventLoopFuture<Self> {
+        return catchError {
+            let id = try self.getID()
+            return Self.query(database: db)
+                .where("id" == id)
+                .update(values: try self.fieldDictionary().unorderedDictionary)
+                .map { _ in self }
+        }
+    }
+    
+    /// Inserts this model to a database.
+    ///
+    /// - Parameter db: The database to insert this model to. Defaults
+    ///   to `Services.db`.
+    /// - Returns: A future that contains an updated version of self
+    ///   with an updated copy of this model, reflecting any changes
+    ///   that may have occurred saving this object to the database.
+    ///   (an `id` being populated, for example).
+    public func insert(db: Database = Services.db) -> EventLoopFuture<Self> {
         catchError {
-            if let id = self.id {
-                return try Self.query(database: db)
-                    .where("id" == id)
-                    .update(values: try self.fieldDictionary().unorderedDictionary)
-                    .map { _ in self }
-            } else {
-                return Self.query(database: db)
-                    .insert(try self.fieldDictionary())
-                    .flatMapThrowing {
-                        try $0.first.unwrap(or: RuneError.notFound)
-                    }
-                    .flatMapThrowing { try $0.decode(Self.self) }
-            }
+            Self.query(database: db)
+                .insert(try self.fieldDictionary())
+                .flatMapThrowing { try $0.first.unwrap(or: RuneError.notFound) }
+                .flatMapThrowing { try $0.decode(Self.self) }
         }
     }
     

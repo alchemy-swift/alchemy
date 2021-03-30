@@ -21,7 +21,8 @@ public extension Application {
         use handler: @escaping (Request, Req) throws -> EventLoopFuture<Res>
     ) -> Self where Res: Codable {
         self.on(endpoint.method.nio, at: endpoint.path) {
-            try handler($0, try Req(from: $0))
+            return try handler($0, try Req(from: $0))
+                .flatMapThrowing { Response(status: .ok, body: try HTTPBody(json: $0, encoder: endpoint.jsonEncoder)) }
         }
     }
     
@@ -39,7 +40,10 @@ public extension Application {
         _ endpoint: Endpoint<Empty, Res>,
         use handler: @escaping (Request) throws -> EventLoopFuture<Res>
     ) -> Self {
-        self.on(endpoint.method.nio, at: endpoint.path, handler: handler)
+        self.on(endpoint.method.nio, at: endpoint.path) {
+            return try handler($0)
+                .flatMapThrowing { Response(status: .ok, body: try HTTPBody(json: $0, encoder: endpoint.jsonEncoder)) }
+        }
     }
 }
 

@@ -135,7 +135,7 @@ extension DatabaseField {
     /// - Returns: A `DatabaseError` with a message describing the
     ///   predicament.
     private func typeError(_ typeName: String) -> Error {
-        DatabaseError("Field at column '\(self.column)' was not a `\(typeName)`")
+        DatabaseError("Field at column '\(self.column)' expected to be `\(typeName)` but wasn't.")
     }
     
     /// Unwraps a value of type `T`, or throws an error detailing the

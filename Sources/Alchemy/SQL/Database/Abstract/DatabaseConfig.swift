@@ -8,6 +8,8 @@ public struct DatabaseConfig {
     public let username: String
     /// The password to connect to the database with.
     public let password: String
+    /// Should the connection use SSL.
+    public let enableSSL: Bool
     
     /// Initialize a database configuration with the relevant info.
     ///
@@ -16,10 +18,12 @@ public struct DatabaseConfig {
     ///   - database: The name of the database to connect to.
     ///   - username: The username to connect with.
     ///   - password: The password to connect with.
-    public init(socket: Socket, database: String, username: String, password: String) {
+    ///   - enableSSL: Should the connection use SSL.
+    public init(socket: Socket, database: String, username: String, password: String, enableSSL: Bool = false) {
         self.socket = socket
         self.database = database
         self.username = username
         self.password = password
+        self.enableSSL = enableSSL
     }
 }

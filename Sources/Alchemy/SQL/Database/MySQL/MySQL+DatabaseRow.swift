@@ -1,13 +1,18 @@
 import MySQLNIO
+import MySQLKit
 import NIO
 
-extension MySQLRow: DatabaseRow {
-    public var allColumns: [String] {
-        self.columnDefinitions.map(\.orgName)
+public final class MySQLDatabaseRow: DatabaseRow {
+    public let allColumns: Set<String>
+    private let row: MySQLRow
+    
+    init(_ row: MySQLRow) {
+        self.row = row
+        self.allColumns = Set(self.row.columnDefinitions.map(\.orgName))
     }
 
     public func getField(column: String) throws -> DatabaseField {
-        try self.column(column)
+        try self.row.column(column)
             .unwrap(or: DatabaseError("No column named '\(column)' was found."))
             .toDatabaseField(from: column)
     }

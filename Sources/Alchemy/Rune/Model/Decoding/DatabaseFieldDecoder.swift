@@ -102,8 +102,10 @@ private struct _SingleValueDecodingContainer: SingleValueDecodingContainer {
             return try self.field.int() as! T
         } else if type == UUID.self {
             return try self.field.uuid() as! T
+        } else if type == String.self {
+            return try self.field.string() as! T
         } else {
-            throw DatabaseCodingError("Decoding a \(type) from a `DatabaseField` is not supported.")
+            throw DatabaseCodingError("Decoding a \(type) from a `DatabaseField` is not supported. \(field.column)")
         }
     }
 }

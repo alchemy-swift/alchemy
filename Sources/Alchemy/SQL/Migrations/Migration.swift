@@ -12,11 +12,14 @@ public protocol Migration {
     ///
     /// - Parameter schema: The schema to build changes on.
     func down(schema: Schema)
+    
+    /// The name of this migration, defaults to the type name.
+    var name: String { get }
 }
 
 extension Migration {
     /// The name of this migration.
-    var name: String {
+    public var name: String {
         Alchemy.name(of: Self.self)
     }
     

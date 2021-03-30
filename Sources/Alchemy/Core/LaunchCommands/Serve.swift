@@ -7,13 +7,13 @@ struct Serve<A: Application>: ParsableCommand {
         CommandConfiguration(commandName: "serve")
     }
     
-    /// The host to serve at. Defaults to `::1` aka `localhost`.
+    /// The host to serve at. Defaults to `localhost`.
     @Option
-    var host = "::1"
+    var host = "localhost"
 
-    /// The port to serve at. Defaults to `8888`.
+    /// The port to serve at. Defaults to `8080`.
     @Option
-    var port = 8888
+    var port = 8080
     
     /// The unix socket to serve at. If this is provided, the host and
     /// port will be ignored.

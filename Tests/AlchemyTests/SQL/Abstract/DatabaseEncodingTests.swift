@@ -30,6 +30,8 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "json", value: .json(jsonData)),
             DatabaseField(column: "string_enum", value: .string("third")),
             DatabaseField(column: "int_enum", value: .int(1)),
+            DatabaseField(column: "test_conversion_caps_test", value: .string("")),
+            DatabaseField(column: "test_conversion123", value: .string("")),
             DatabaseField(column: "belongs_to_id", value: .int(5)),
         ]
         
@@ -83,6 +85,8 @@ private struct TestModel: Model {
     var json: DatabaseJSON
     var stringEnum: StringEnum
     var intEnum: IntEnum
+    var testConversionCAPSTest: String = ""
+    var testConversion123: String = ""
     
     @BelongsTo
     var belongsTo: TestModel

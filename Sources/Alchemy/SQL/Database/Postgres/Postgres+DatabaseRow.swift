@@ -1,12 +1,17 @@
 import PostgresNIO
 
-extension PostgresRow: DatabaseRow {
-    public var allColumns: [String] {
-        self.rowDescription.fields.map(\.name)
+public struct PostgresDatabaseRow: DatabaseRow {
+    public let allColumns: Set<String>
+    
+    private let row: PostgresRow
+    
+    init(_ row: PostgresRow) {
+        self.row = row
+        self.allColumns = Set(self.row.rowDescription.fields.map(\.name))
     }
     
     public func getField(column: String) throws -> DatabaseField {
-        try self.column(column)
+        try self.row.column(column)
             .unwrap(or: DatabaseError("No column named `\(column)` was found."))
             .toDatabaseField(from: column)
     }
