@@ -113,9 +113,10 @@ extension Model {
     ///   with an updated copy of this model, reflecting any changes
     ///   that may have occurred saving this object to the database.
     public func update(db: Database = Services.db) -> EventLoopFuture<Self> {
-        catchError {
-            try Self.query(database: db)
-                .where("id" == self.getID())
+        return catchError {
+            let id = try self.getID()
+            return Self.query(database: db)
+                .where("id" == id)
                 .update(values: try self.fieldDictionary().unorderedDictionary)
                 .map { _ in self }
         }
