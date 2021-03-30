@@ -30,7 +30,8 @@ public final class PostgresDatabase: Database {
                         port: port,
                         username: config.username,
                         password: config.password,
-                        database: config.database
+                        database: config.database,
+                        tlsConfiguration: config.enableSSL ? .forClient(certificateVerification: .none) : nil
                     )
                 case .unix(let name):
                     return PostgresConfiguration(

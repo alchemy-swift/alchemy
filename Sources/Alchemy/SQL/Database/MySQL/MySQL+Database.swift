@@ -27,7 +27,7 @@ public final class MySQLDatabase: Database {
                         username: config.username,
                         password: config.password,
                         database: config.database,
-                        tlsConfiguration: nil
+                        tlsConfiguration: config.enableSSL ? .forClient(certificateVerification: .none) : nil
                     )
                 case .unix(let name):
                     return MySQLConfiguration(
