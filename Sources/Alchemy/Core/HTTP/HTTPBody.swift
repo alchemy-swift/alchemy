@@ -58,7 +58,7 @@ public struct HTTPBody: ExpressibleByStringLiteral {
     ///     Defaults to `Response.defaultJSONEncoder`.
     /// - Throws: Any error thrown during encoding.
     public init<E: Encodable>(json: E, encoder: JSONEncoder = Response.defaultJSONEncoder) throws {
-        let data = try Response.defaultJSONEncoder.encode(json)
+        let data = try encoder.encode(json)
         self.init(data: data, mimeType: .json)
     }
 
