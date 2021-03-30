@@ -1,5 +1,5 @@
 /// The migration table to store migrations in.
-private let kMigrationTable = "_alchemy_migrations"
+private let kMigrationTable = "migrations"
 
 /// A migration for adding the `AlchemyMigration` table.
 struct AddAlchemyMigration: Migration {

@@ -37,6 +37,10 @@ struct EagerLoader<From: Model, To: ModelMaybeOptional> {
     ) -> EagerLoadClosure<From, To> {
         return { from in
             let idsToSearch = from.compactMap { $0.id }.uniques
+            guard !idsToSearch.isEmpty else {
+                return .new([:])
+            }
+            
             let initialQuery = To.Value.query()
                 .where(key: keyString, in: idsToSearch)
             return (nestedQuery?(initialQuery) ?? initialQuery)
@@ -70,6 +74,10 @@ struct EagerLoader<From: Model, To: ModelMaybeOptional> {
     ) -> EagerLoadClosure<From, To> {
         return { from in
             let idsToSearch = from.compactMap { $0.id }.uniques
+            guard !idsToSearch.isEmpty else {
+                return .new([:])
+            }
+            
             let initalQuery = To.Value.query()
                 .leftJoin(table: Through.tableName, first: toString, second: "\(To.Value.tableName).id")
                 .where(key: fromString, in: idsToSearch)

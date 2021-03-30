@@ -27,7 +27,7 @@ public struct Log {
         Log.logger.trace(.init(stringLiteral: message), metadata: metadata)
     }
     
-    /// Log a message with the `Logger.Level.trace` log level.
+    /// Log a message with the `Logger.Level.debug` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.

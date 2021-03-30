@@ -1,130 +1,66 @@
-//
-//  File.swift
-//  
-//
-//  Created by Chris Anderson on 6/7/20.
-//
-
 import Foundation
 import RediStack
 
-public struct RedisJob: PersistedJob {
-
-    public let id: JobID
-    public let name: String
-    public var payload: JSONData
-    public var attempts: Int = 0
-
-    var key: String {
-        "job:\(self.id)"
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case attempts
-        case payload
-    }
-
-    init(id: JobID, name: String, payload: Data) {
-        self.id = id
-        self.name = name
-        self.payload = JSONData(data: payload)
-    }
-}
-
+/// A queue that persists jobs to a Redis instance.
 public class RedisQueue: Queue {
-    public typealias QueueItem = RedisJob
-
-    public var redis: Redis
-
-    var isEmpty: Bool {
-        return self.pending.isEmpty
-    }
-
-    private var jobs: [JobID: MemoryJob] = [:]
-
-    private var delayed: [JobID] = []
-
-    private var pending: [JobID] = []
-
-    //    private var failed: [Job] = []
-
-    public init(redis: Redis) {
+    private let redis: Redis
+    private let dataKey = RedisKey("jobs:data")
+    private let processingKey = RedisKey("jobs:processing")
+    
+    /// Initialize with a Redis instance to persist jobs to.
+    ///
+    /// - Parameter redis: The Redis instance.
+    public init(redis: Redis = Services.redis) {
         self.redis = redis
     }
+    
+    // MARK: - Queue
 
-    @discardableResult
-    public func enqueue<T: Job>(_ type: T.Type, _ payload: T.Payload) -> EventLoopFuture<Void> {
-        let identifier = UUID().uuidString
-        let payloadData = try! T.serializePayload(payload)
-        return self.requeue(
-            MemoryJob(
-                id: identifier,
-                name: T.name,
-                payload: payloadData
-            )
-        )
-    }
-
-    public func dequeue() -> EventLoopFuture<QueueItem?> {
-
-        self.redis.rpoplpush(from: <#T##RedisKey#>, to: <#T##RedisKey#>)
-
-        RedisKey(<#T##key: String##String#>)
-        self.redis.get(<#T##key: RedisKey##RedisKey#>)
-
-
-        guard let jobId = self.nextId(),
-              let job = self.jobs[jobId] else {
-            return eventLoop.makeSucceededFuture(nil)
+    public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
+        catchError {
+            let jsonString = try job.jsonString()
+            let queueList = self.key(for: job.queueName)
+            // Add job to data
+            return self.redis.hset(job.id, to: jsonString, in: self.dataKey)
+                // Add to end of specific queue
+                .flatMap { _ in self.redis.lpush(job.id, into: queueList) }
+                .voided()
         }
-        return eventLoop.makeSucceededFuture(job)
     }
-
-    public func complete(_ item: QueueItem, success: Bool) -> EventLoopFuture<Void> {
-        self.redis.lrem(RedisKey(item.id), from: RedisKey(self.processingKey)).flatMap { _ in
-            self.redis.delete(RedisKey(item.key))
-        }.map { _ in }
-        return eventLoop.makeSucceededFuture(())
-    }
-
-    public func requeue(_ item: QueueItem) -> EventLoopFuture<Void> {
-//        self.redis.lpush(RedisKey("queue"), values: )
-        self.redis.set(RedisKey(item.key), toJSON: item)
-    }
-
-    private func nextId() -> JobID? {
-        //        let nextPeriodicJobId = self.delayed.first {
-        //            if let nextPeriodicJob = self.jobs[$0]?.job as? PeriodicJob {
-        //                return nextPeriodicJob.shouldProcess
-        //            }
-        //            return false
-        //        }
-        //        if let nextJobId = nextPeriodicJobId {
-        //            return nextJobId
-        //        }
-        if !isEmpty {
-            return self.pending.removeFirst()
-        }
-        return nil
-    }
-}
-
-fileprivate extension RedisClient {
-    func get<D>(_ key: RedisKey, asJSON type: D.Type) -> EventLoopFuture<D?> where D: Decodable {
-        return get(key, as: Data.self).flatMapThrowing { data in
-            return try data.flatMap { data in
-                return try JSONDecoder().decode(D.self, from: data)
+    
+    public func dequeue(from queueName: String) -> EventLoopFuture<JobData?> {
+        /// Move from queueList to processing
+        let queueList = self.key(for: queueName)
+        return self.redis.rpoplpush(from: queueList, to: self.processingKey, valueType: String.self)
+            .flatMap { jobID in
+                guard let jobID = jobID else {
+                    return .new(nil)
+                }
+                
+                return self.redis
+                    .hget(jobID, from: self.dataKey, as: String.self)
+                    .unwrap(orError: JobError("Missing job data for key `\(jobID)`."))
+                    .flatMapThrowing { try JobData(jsonString: $0) }
             }
+    }
+    
+    public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
+        switch outcome {
+        case .success, .failed:
+            // Remove from processing.
+            return self.redis.lrem(job.id, from: self.processingKey)
+                // Remove job data.
+                .flatMap { _ in self.redis.hdel(job.id, from: self.dataKey) }
+                .voided()
+        case .retry:
+            // Remove from processing.
+            return self.redis.lrem(job.id, from: self.processingKey)
+                // Add back to queue
+                .flatMap { _ in self.enqueue(job) }
         }
     }
-
-    func set<E>(_ key: RedisKey, toJSON entity: E) -> EventLoopFuture<Void> where E: Encodable {
-        do {
-            return try set(key, to: JSONEncoder().encode(entity))
-        } catch {
-            return eventLoop.makeFailedFuture(error)
-        }
+    
+    private func key(for queueName: String) -> RedisKey {
+        RedisKey("jobs:queue:\(queueName)")
     }
 }

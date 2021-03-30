@@ -23,7 +23,7 @@ import NIOHTTP1
 /// // main.swift
 /// App.launch()
 /// ```
-public protocol Application {
+public protocol Application: QueueWorker {
     /// Called before any launch command is run. Called AFTER any
     /// environment is loaded and the global
     /// `MultiThreadedEventLoopGroup` is set. Called on an event loop,

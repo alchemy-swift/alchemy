@@ -27,7 +27,7 @@ public final class MySQLDatabase: Database {
                         username: config.username,
                         password: config.password,
                         database: config.database,
-                        tlsConfiguration: nil
+                        tlsConfiguration: config.enableSSL ? .forClient(certificateVerification: .none) : nil
                     )
                 case .unix(let name):
                     return MySQLConfiguration(
@@ -45,7 +45,7 @@ public final class MySQLDatabase: Database {
     public func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
         self.pool.withConnection(logger: Log.logger, on: Services.eventLoop) { conn in
             conn.query(sql, values.map(MySQLData.init))
-                .map { $0 }
+                .map { $0.map(MySQLDatabaseRow.init) }
         }
     }
     
@@ -72,7 +72,7 @@ public final class MySQLDatabase: Database {
                         return .new(rows)
                     }
                 }
-                .map { $0 }
+                .map { $0.map(MySQLDatabaseRow.init) }
         }
     }
     

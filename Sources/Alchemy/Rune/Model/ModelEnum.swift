@@ -14,4 +14,4 @@
 ///     let priority: TaskPriority // Stored as `Int` in the database.
 /// }
 /// ```
-public typealias ModelEnum = Codable & Parameter
+public protocol ModelEnum: Codable, Parameter {}
