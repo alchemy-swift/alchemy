@@ -1,7 +1,7 @@
 /// Used in the internals of the `DatabaseRowDecoder`, used when
 /// the `DatabaseRowDecoder` attempts to decode a `Decodable`,
 /// not primitive, property from a single `DatabaseField`.
-struct DatabaseFieldDecoder: Decoder {
+struct DatabaseFieldDecoder: ModelDecoder {
     /// The field this `Decoder` will be decoding from.
     let field: DatabaseField
     

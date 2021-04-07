@@ -142,12 +142,23 @@ public final class BelongsToRelationship<
     }
     
     public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if container.decodeNil() {
-            self.id = nil
+        if !(decoder is ModelDecoder) {
+            let container = try decoder.singleValueContainer()
+            if container.decodeNil() {
+                self.id = nil
+            } else {
+                let parent = try Parent(from: decoder)
+                self.id = parent.id
+                self.value = parent
+            }
         } else {
-            // When decode from a database, just decode the Parent's ID.
-            self.id = try container.decode(Parent.Value.Identifier.self)
+            let container = try decoder.singleValueContainer()
+            if container.decodeNil() {
+                self.id = nil
+            } else {
+                // When decode from a database, just decode the Parent's ID.
+                self.id = try container.decode(Parent.Value.Identifier.self)
+            }
         }
     }
 }

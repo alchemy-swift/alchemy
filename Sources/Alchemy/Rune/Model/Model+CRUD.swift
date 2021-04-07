@@ -122,6 +122,18 @@ extension Model {
         }
     }
     
+    public func update(db: Database = Services.db, updateClosure: (inout Self) -> Void) -> EventLoopFuture<Self> {
+        return catchError {
+            let id = try self.getID()
+            var copy = self
+            updateClosure(&copy)
+            return Self.query(database: db)
+                .where("id" == id)
+                .update(values: try copy.fieldDictionary().unorderedDictionary)
+                .map { _ in self }
+        }
+    }
+    
     /// Inserts this model to a database.
     ///
     /// - Parameter db: The database to insert this model to. Defaults

@@ -1,11 +1,15 @@
 import Foundation
 
+/// Used so `Relationship` types can know not to encode themselves to
+/// a `ModelEncoder`.
+protocol ModelDecoder: Decoder {}
+
 /// Decoder for decoding `Model` types from a `DatabaseRow`.
 /// Properties of the `Decodable` type are matched to
 /// columns with matching names (either the same
 /// name or a specific name mapping based on
 /// the supplied `keyMappingStrategy`).
-struct DatabaseRowDecoder<M: Model>: Decoder {
+struct DatabaseRowDecoder<M: Model>: ModelDecoder {
     /// The row that will be decoded out of.
     let row: DatabaseRow
     

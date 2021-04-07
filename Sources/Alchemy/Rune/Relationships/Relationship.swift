@@ -55,6 +55,8 @@ public protocol ModelMaybeOptional: Codable {
     static func from(_ value: Value?) throws -> Self
     
     static func from(_ value: Self?) throws -> Self
+    
+    var id: Value.Identifier? { get }
 }
 
 // MARK: ModelMaybeOptional
@@ -72,5 +74,9 @@ extension Optional: ModelMaybeOptional where Wrapped: Model {
     
     public static func from(_ value: Wrapped?) throws -> Self {
         value
+    }
+    
+    public var id: Wrapped.Identifier? {
+        map(\.id) ?? nil
     }
 }
