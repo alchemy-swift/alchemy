@@ -38,6 +38,20 @@ public class HasRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Decod
         )
     }
     
+    public required init(
+        propertyName: String? = nil,
+        to key: KeyPath<To.Value, To.Value.BelongsTo<From?>>,
+        keyString: String
+    ) {
+        self.eagerLoadClosure = { EagerLoader<From, To>.via(key: key, keyString: keyString, nestedQuery: $0!) }
+        
+        EagerLoadStorage.store(
+            relationship: Self.self,
+            uniqueKey: propertyName,
+            loadClosure: self.eagerLoadClosure
+        )
+    }
+    
     /// Initializes this relationship as a M - M. This assumes that
     /// there is a pivot table with columns representing the
     /// primary keys of both `From` and `To`.

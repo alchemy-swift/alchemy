@@ -49,6 +49,30 @@ struct EagerLoader<From: Model, To: ModelMaybeOptional> {
         }
     }
     
+    static func via(
+        key: KeyPath<To.Value, To.Value.BelongsTo<From?>>,
+        keyString: String,
+        nestedQuery: ((ModelQuery<To.Value>) -> ModelQuery<To.Value>)?
+    ) -> EagerLoadClosure<From, To> {
+        return { from in
+            let idsToSearch = from.compactMap { $0.id }.uniques
+            guard !idsToSearch.isEmpty else {
+                return .new([:])
+            }
+            
+            let initialQuery = To.Value.query()
+                .where(key: keyString, in: idsToSearch)
+            return (nestedQuery?(initialQuery) ?? initialQuery)
+                .allModels()
+                .flatMapThrowing { toModels in
+                    Dictionary(grouping: toModels, by: { toModel in
+                        let id = toModel[keyPath: key].id
+                        return id as! From.Value.Identifier
+                    })
+                }
+        }
+    }
+    
     /// This eager load occurs through a pivot table, `Through`, with
     /// columns referencing the primary key of both `From` and `To`.
     ///

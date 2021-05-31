@@ -24,12 +24,12 @@ extension Application {
     public func schedule(
         job: Job,
         queue: Queue = Services.queue,
-        queueName: String = kDefaultQueueName
+        channel: String = kDefaultQueueChannel
     ) -> ScheduleBuilder {
         ScheduleBuilder { schedule in
             Services.scheduler.schedule(schedule: schedule) {
                 _ = Services.eventLoop
-                    .flatSubmit { job.dispatch(on: queue, queueName: queueName) }
+                    .flatSubmit { job.dispatch(on: queue, channel: channel) }
             }
         }
     }

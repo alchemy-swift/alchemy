@@ -1,13 +1,13 @@
 import Foundation
 import NIO
 
-public let kDefaultQueueName = "default"
+public let kDefaultQueueChannel = "default"
 
 public protocol Queue {
     /// Add a job to the end of the Queue.
     func enqueue(_ job: JobData) -> EventLoopFuture<Void>
-    /// Dequeue the next job.
-    func dequeue(from queueName: String) -> EventLoopFuture<JobData?>
+    /// Dequeue the next job from the given channel.
+    func dequeue(from channel: String) -> EventLoopFuture<JobData?>
     /// Handle an in progress job that has been completed with the
     /// given outcome.
     func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void>
@@ -26,8 +26,8 @@ public enum JobOutcome {
 
 // Default arguments
 extension Queue {
-    public func dequeue(from queueName: String = kDefaultQueueName) -> EventLoopFuture<JobData?> {
-        self.dequeue(from: queueName)
+    public func dequeue(from channel: String = kDefaultQueueChannel) -> EventLoopFuture<JobData?> {
+        self.dequeue(from: channel)
     }
 }
 
@@ -36,10 +36,10 @@ extension Job {
     ///
     /// - Parameters:
     ///   - queue: The queue to dispatch on.
-    ///   - queueName: The name of the queue to dispatch on.
+    ///   - channel: The name of the channel to dispatch on.
     /// - Returns: A future that completes when this job has been
     ///  dispatched to the queue.
-    public func dispatch(on queue: Queue = Services.queue, queueName: String = kDefaultQueueName) -> EventLoopFuture<Void> {
-        catchError { queue.enqueue(try JobData(self, queueName: queueName)) }
+    public func dispatch(on queue: Queue = Services.queue, channel: String = kDefaultQueueChannel) -> EventLoopFuture<Void> {
+        catchError { queue.enqueue(try JobData(self, channel: channel)) }
     }
 }

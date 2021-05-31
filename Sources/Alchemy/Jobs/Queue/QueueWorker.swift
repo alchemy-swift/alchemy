@@ -9,29 +9,29 @@ extension QueueWorker {
     /// Start monitoring a queue for jobs to run.
     public func startQueueWorker(
         for queue: Queue = Services.queue,
-        named queueName: String = kDefaultQueueName,
+        named channel: String = kDefaultQueueChannel,
         pollRate: TimeAmount = .seconds(1),
         on eventLoop: EventLoop = Services.eventLoop
     ) {
         eventLoop.execute {
-            self.runNext(on: queue, named: queueName)
+            self.runNext(on: queue, named: channel)
                 .whenComplete { _ in
                     // Run check again in the `pollRate`.
                     eventLoop.scheduleTask(in: pollRate) {
-                        self.startQueueWorker(for: queue, named: queueName, pollRate: pollRate, on: eventLoop)
+                        self.startQueueWorker(for: queue, named: channel, pollRate: pollRate, on: eventLoop)
                     }
                 }
         }
     }
 
-    private func runNext(on queue: Queue, named queueName: String) -> EventLoopFuture<Void> {
-        queue.dequeue(from: queueName)
+    private func runNext(on queue: Queue, named channel: String) -> EventLoopFuture<Void> {
+        queue.dequeue(from: channel)
             .flatMap { jobData in
                 guard let jobData = jobData else {
                     return .new()
                 }
                 
-                Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.queueName)")
+                Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
                 return self.execute(jobData, queue: queue)
             }
     }
@@ -66,6 +66,6 @@ extension QueueWorker {
                 return queue.complete(jobData, outcome: .failed)
             }
         }
-        .flatMap { self.runNext(on: queue, named: jobData.queueName) }
+        .flatMap { self.runNext(on: queue, named: jobData.channel) }
     }
 }

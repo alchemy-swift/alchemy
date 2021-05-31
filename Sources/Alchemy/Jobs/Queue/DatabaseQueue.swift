@@ -23,9 +23,9 @@ public class DatabaseQueue: Queue {
         JobModel(jobData: job).insert(db: self.database).voided()
     }
 
-    public func dequeue(from queueName: String) -> EventLoopFuture<JobData?> {
+    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         JobModel.query()
-            .where("queue_name" == queueName)
+            .where("channel" == channel)
             .where("reserved" == false)
             .firstModel()
             .flatMap { job in
@@ -45,7 +45,7 @@ public class DatabaseQueue: Queue {
         case .success, .failed:
             return JobModel.query()
                 .where("id" == job.id)
-                .where("queue_name" == job.queueName)
+                .where("channel" == job.channel)
                 .delete()
                 .voided()
                 .map { self.processFailedJob(job) }
@@ -72,7 +72,7 @@ private struct JobModel: Model {
 
     var id: String?
     let jobName: String
-    let queueName: String
+    let channel: String
     let json: JSONString
     let recoveryStrategy: RecoveryStrategy
     
@@ -83,7 +83,7 @@ private struct JobModel: Model {
     init(jobData: JobData) {
         self.id = jobData.id
         self.jobName = jobData.jobName
-        self.queueName = jobData.queueName
+        self.channel = jobData.channel
         self.json = jobData.json
         self.attempts = jobData.attempts
         self.recoveryStrategy = jobData.recoveryStrategy
@@ -95,7 +95,7 @@ private struct JobModel: Model {
             id: (try? self.getID()) ?? "N/A",
             json: self.json,
             jobName: self.jobName,
-            queueName: self.queueName,
+            channel: self.channel,
             recoveryStrategy: self.recoveryStrategy,
             attempts: self.attempts
         )
@@ -127,7 +127,7 @@ extension DatabaseQueue {
             schema.create(table: "jobs") {
                 $0.string("id").primary()
                 $0.string("job_name").notNull()
-                $0.string("queue_name").notNull()
+                $0.string("channel").notNull()
                 $0.string("json", length: .unlimited).notNull()
                 $0.json("recovery_strategy").notNull()
                 $0.int("attempts").notNull()

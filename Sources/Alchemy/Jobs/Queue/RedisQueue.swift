@@ -19,7 +19,7 @@ public class RedisQueue: Queue {
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
         catchError {
             let jsonString = try job.jsonString()
-            let queueList = self.key(for: job.queueName)
+            let queueList = self.key(for: job.channel)
             // Add job to data
             return self.redis.hset(job.id, to: jsonString, in: self.dataKey)
                 // Add to end of specific queue
@@ -28,9 +28,9 @@ public class RedisQueue: Queue {
         }
     }
     
-    public func dequeue(from queueName: String) -> EventLoopFuture<JobData?> {
+    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         /// Move from queueList to processing
-        let queueList = self.key(for: queueName)
+        let queueList = self.key(for: channel)
         return self.redis.rpoplpush(from: queueList, to: self.processingKey, valueType: String.self)
             .flatMap { jobID in
                 guard let jobID = jobID else {
@@ -60,7 +60,7 @@ public class RedisQueue: Queue {
         }
     }
     
-    private func key(for queueName: String) -> RedisKey {
-        RedisKey("jobs:queue:\(queueName)")
+    private func key(for channel: String) -> RedisKey {
+        RedisKey("jobs:queue:\(channel)")
     }
 }

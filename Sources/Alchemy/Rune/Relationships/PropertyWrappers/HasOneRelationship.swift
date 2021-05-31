@@ -35,6 +35,14 @@ public final class HasOneRelationship<
     
     public required init(
         propertyName: String? = nil,
+        to key: KeyPath<To.Value, To.Value.BelongsTo<From?>>,
+        keyString: String = To.Value.keyMappingStrategy.map(input: "\(From.self)Id")
+    ) {
+        super.init(propertyName: propertyName, to: key, keyString: keyString)
+    }
+    
+    public required init(
+        propertyName: String? = nil,
         to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
         keyString: String = To.Value.keyMappingStrategy.map(input: "\(From.self)Id")
     ) {
