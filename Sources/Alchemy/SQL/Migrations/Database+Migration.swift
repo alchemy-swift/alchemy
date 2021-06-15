@@ -18,10 +18,10 @@ extension Database {
                     !alreadyMigrated.contains(where: { $0.name == pendingMigration.name })
                 }
                 
-                if migrations.count > 0 {
-                    Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
-                } else {
+                if migrationsToRun.isEmpty {
                     Log.info("[Migration] no new migrations to apply.")
+                } else {
+                    Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
                 }
                 
                 return (migrationsToRun, currentBatch + 1)
@@ -58,7 +58,7 @@ extension Database {
     private func getMigrations() -> EventLoopFuture<[AlchemyMigration]> {
         query()
             .from(table: "information_schema.tables")
-            .where("table_name" == AlchemyMigration.tableName + "dd")
+            .where("table_name" == AlchemyMigration.tableName)
             .count()
             .flatMap { value in
                 guard let value = value, value != 0 else {
