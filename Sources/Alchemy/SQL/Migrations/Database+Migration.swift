@@ -51,9 +51,20 @@ extension Database {
     /// - Returns: A future containing an array of all the migrations
     ///   that have been applied to this database.
     private func getMigrations() -> EventLoopFuture<[AlchemyMigration]> {
-        let createMigrationsTable = AddAlchemyMigration().upStatements(for: self.grammar).first!
-        return self.runRawQuery(createMigrationsTable.query)
-            .flatMap { _ in
+        query()
+            .from(table: "information_schema.tables")
+            .where("table_name" == AlchemyMigration.tableName + "dd")
+            .count()
+            .flatMap { value in
+                guard let value = value, value != 0 else {
+                    Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
+                    let statements = AlchemyMigration.Migration().upStatements(for: grammar)
+                    return runRawQuery(statements.first!.query).voided()
+                }
+                
+                return .new()
+            }
+            .flatMap {
                 AlchemyMigration.query(database: self).allModels()
             }
     }
