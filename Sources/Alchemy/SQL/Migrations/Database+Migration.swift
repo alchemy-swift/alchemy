@@ -18,7 +18,12 @@ extension Database {
                     !alreadyMigrated.contains(where: { $0.name == pendingMigration.name })
                 }
                 
-                Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
+                if migrations.count > 0 {
+                    Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
+                } else {
+                    Log.info("[Migration] no new migrations to apply.")
+                }
+                
                 return (migrationsToRun, currentBatch + 1)
             }
             // 3. Run migrations & record in migration table
