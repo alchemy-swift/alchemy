@@ -133,6 +133,7 @@ extension DatabaseQueue {
                 $0.int("attempts").notNull()
                 $0.bool("reserved").notNull()
                 $0.date("reserved_at")
+                $0.timestamps()
             }
         }
         
