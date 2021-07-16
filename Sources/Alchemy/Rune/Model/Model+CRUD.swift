@@ -52,6 +52,19 @@ extension Model {
             .flatMapThrowing { try $0.map { _ in throw error } }
     }
     
+    /// Creates a query on the given model with the given where
+    /// clause.
+    ///
+    /// - Parameters:
+    ///   - where: A clause to match.
+    ///   - db: The database to query. Defaults to `Services.db`.
+    /// - Returns: A query on the `Model`'s table that matches the
+    ///   given where clause.
+    public static func `where`(_ where: WhereValue, db: Database = Services.db) -> ModelQuery<Self> {
+        Self.query(database: db)
+            .where(`where`)
+    }
+    
     /// Gets the first element that meets the given where value.
     ///
     /// - Parameters:
