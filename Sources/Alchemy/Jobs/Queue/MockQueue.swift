@@ -3,7 +3,7 @@ import NIO
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down.
-public final class MemoryQueue: Queue {
+public final class MockQueue: Queue {
     @Locked private var jobs: [JobID: JobData] = [:]
     @Locked private var pending: [String: [JobID]] = [:]
     @Locked private var reserved: [String: [JobID]] = [:]
