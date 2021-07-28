@@ -25,9 +25,9 @@ extension Job {
     public func finished(result: Result<Void, Error>) {
         switch result {
         case .success:
-            Log.info("Job '\(Self.name)' succeeded.")
+            Log.info("[Queue] Job '\(Self.name)' succeeded.")
         case .failure(let error):
-            Log.error("Job '\(Self.name)' failed with error: \(error).")
+            Log.error("[Queue] Job '\(Self.name)' failed with error: \(error).")
         }
     }
 }
