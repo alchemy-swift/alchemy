@@ -74,6 +74,14 @@ extension Request {
         self.pathParameters.first(where: { $0.parameter == "key" })
     }
     
+    /// A dictionary with the contents of this Request's body.
+    /// - Throws: Any errors from decoding the body.
+    /// - Returns: A [String: Any] with the contents of this Request's
+    ///   body.
+    func bodyDict() throws -> [String: Any]? {
+        try body?.decodeJSONDictionary()
+    }
+    
     /// The body is a wrapper used to provide simple access to any
     /// body data, such as JSON.
     public var body: HTTPBody? {
