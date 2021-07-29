@@ -31,26 +31,26 @@ extension QueueCommand: Runner {
             lifecycle.registerScheduler()
         }
         
-        lifecycle.registerWorkers(workers)
+        lifecycle.registerWorkers(workers, channels: channels.components(separatedBy: ","))
     }
 }
 
 extension ServiceLifecycle {
-    func registerWorkers(_ count: Int) {
+    func registerWorkers(_ count: Int, channels: [String] = [kDefaultQueueChannel]) {
         for worker in 0..<count {
             register(
                 label: "Worker\(worker)",
                 start: .eventLoopFuture {
                     Services.eventLoopGroup.next()
-                        .submit(startWorker)
+                        .submit { self.startWorker(channels: channels) }
                 },
                 shutdown: .none
             )
         }
     }
     
-    private func startWorker() {
-        Services.queue.startQueueWorker()
+    private func startWorker(channels: [String]) {
+        Services.queue.startQueueWorker(for: channels)
     }
     
     func registerScheduler() {
