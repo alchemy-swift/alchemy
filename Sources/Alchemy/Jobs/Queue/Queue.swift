@@ -6,7 +6,7 @@ public let kDefaultQueueChannel = "default"
 public protocol Queue {
     /// Add a job to the end of the Queue.
     func enqueue(_ job: JobData) -> EventLoopFuture<Void>
-    /// Dequeue the next job from the given channels.
+    /// Dequeue the next job from the given channel.
     func dequeue(from channel: String) -> EventLoopFuture<JobData?>
     /// Handle an in progress job that has been completed with the
     /// given outcome.
@@ -30,6 +30,12 @@ extension Queue {
         self.dequeue(from: [channel])
     }
     
+    /// Dequeue the next job from a given set of channels, ordered by
+    /// priority.
+    ///
+    /// - Parameter channels: The channels to dequeue from.
+    /// - Returns: A future containing a dequeued `Job`, if there is
+    ///   one.
     public func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
         guard let channel = channels.first else {
             return .new(nil)
