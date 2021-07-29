@@ -1,4 +1,4 @@
-import Foundation
+import NIO
 
 public typealias JobID = String
 public typealias JSONString = String
@@ -16,6 +16,11 @@ public struct JobData: Codable {
     public let channel: String
     /// The recovery strategy to enact, should this Job fail to run.
     public let recoveryStrategy: RecoveryStrategy
+    /// How long should be waited before retrying a Job after a
+    /// failure.
+    public let backoffSeconds: Int
+    /// Don't run this again until this time.
+    public var backoffUntil: Date?
     /// The number of attempts this Job has been attempted.
     public var attempts: Int
     
@@ -37,6 +42,8 @@ public struct JobData: Codable {
         self.channel = channel
         self.recoveryStrategy = job.recoveryStrategy
         self.attempts = 0
+        self.backoffSeconds = job.retryBackoff.seconds
+        self.backoffUntil = nil
         do {
             self.json = try job.jsonString()
         } catch {
@@ -45,13 +52,15 @@ public struct JobData: Codable {
     }
     
     /// Memberwise initializer.
-    public init(id: JobID, json: JSONString, jobName: String, channel: String, recoveryStrategy: RecoveryStrategy, attempts: Int) {
+    public init(id: JobID, json: JSONString, jobName: String, channel: String, recoveryStrategy: RecoveryStrategy, retryBackoff: TimeAmount, attempts: Int, backoffUntil: Date?) {
         self.id = id
         self.json = json
         self.jobName = jobName
         self.channel = channel
         self.recoveryStrategy = recoveryStrategy
+        self.backoffSeconds = retryBackoff.seconds
         self.attempts = attempts
+        self.backoffUntil = backoffUntil
     }
     
     mutating func updatePayload<J: Job>(_ job: J) throws {

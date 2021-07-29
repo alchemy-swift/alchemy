@@ -57,6 +57,7 @@ extension Queue {
             case .success:
                 return self.complete(jobData, outcome: .success)
             case .failure where jobData.canRetry:
+                jobData.backoffUntil = jobData.nextRetryDate()
                 return self.complete(jobData, outcome: .retry)
             case .failure:
                 return self.complete(jobData, outcome: .failed)

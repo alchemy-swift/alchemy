@@ -13,28 +13,31 @@ public final class MockQueue: Queue {
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
-        self.jobs[job.id] = job
-        self.append(id: job.id, on: job.channel, dict: &self.pending)
+        jobs[job.id] = job
+        append(id: job.id, on: job.channel, dict: &pending)
         return .new()
     }
     
     public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
-        guard let id = self.pending[channel]?.popFirst() else {
+        guard let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
+            return !(jobs[thing]?.inBackoff ?? false)
+        }) else {
             return .new(nil)
         }
         
-        self.append(id: id, on: channel, dict: &self.reserved)
-        return .new(self.jobs[id])
+        append(id: id, on: channel, dict: &reserved)
+        return .new(jobs[id])
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
         switch outcome {
         case .success, .failed:
-            self.reserved[job.channel]?.removeAll(where: { $0 == job.id })
-            self.jobs.removeValue(forKey: job.id)
+            reserved[job.channel]?.removeAll(where: { $0 == job.id })
+            jobs.removeValue(forKey: job.id)
         case .retry:
-            self.jobs[job.id]?.attempts += 1
+            jobs[job.id] = job
         }
+        
         return .new()
     }
     
@@ -42,5 +45,29 @@ public final class MockQueue: Queue {
         var array = dict[channel] ?? []
         array.append(id)
         dict[channel] = array
+    }
+}
+
+extension JobData {
+    var inBackoff: Bool {
+        guard let date = backoffUntil else {
+            return false
+        }
+        
+        return date > Date()
+    }
+    
+    func nextRetryDate() -> Date? {
+        return backoffSeconds > 0 ? Date().addingTimeInterval(TimeInterval(backoffSeconds)) : nil
+    }
+}
+
+extension Array {
+    mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
+        if let firstIndex = firstIndex(where: conditional) {
+            return remove(at: firstIndex)
+        } else {
+            return nil
+        }
     }
 }

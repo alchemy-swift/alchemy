@@ -15,13 +15,15 @@ public class DatabaseQueue: Queue {
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
-        JobModel(jobData: job).insert(db: self.database).voided()
+        JobModel(jobData: job).insert(db: database).voided()
     }
 
     public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         JobModel.query()
             .where("channel" == channel)
             .where("reserved" == false)
+            .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
+            .orderBy(column: "queued_at")
             .firstModel()
             .flatMap { job in
                 guard var updateJob = job else {
@@ -59,11 +61,13 @@ private struct JobModel: Model {
     let channel: String
     let json: JSONString
     let recoveryStrategy: RecoveryStrategy
+    let backoffSeconds: Int
     
     var attempts: Int
-    var reserved: Bool // If a worker is currently processing
-    var reservedAt: Date? // When the worker started the process
-    var queuedAt: Date? // When this Job was first queued
+    var reserved: Bool
+    var reservedAt: Date?
+    var queuedAt: Date?
+    var backoffUntil: Date?
 
     init(jobData: JobData) {
         id = jobData.id
@@ -72,17 +76,21 @@ private struct JobModel: Model {
         json = jobData.json
         attempts = jobData.attempts
         recoveryStrategy = jobData.recoveryStrategy
+        backoffSeconds = jobData.backoffSeconds
+        backoffUntil = jobData.backoffUntil
         reserved = false
     }
     
     func toJobData() -> JobData {
-        JobData(
+        return JobData(
             id: (try? getID()) ?? "N/A",
             json: json,
             jobName: jobName,
             channel: channel,
             recoveryStrategy: recoveryStrategy,
-            attempts: attempts
+            retryBackoff: .seconds(Int64(backoffSeconds)),
+            attempts: attempts,
+            backoffUntil: backoffUntil
         )
     }
 }
@@ -106,7 +114,8 @@ extension DatabaseQueue {
                 $0.int("attempts").notNull()
                 $0.bool("reserved").notNull()
                 $0.date("reserved_at")
-                $0.date("queued_at").notNull()
+                $0.date("queued_at").notNull().defaultNow()
+                $0.date("backoff_until")
                 $0.timestamps()
             }
         }

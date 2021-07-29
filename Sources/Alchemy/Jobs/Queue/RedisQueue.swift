@@ -1,17 +1,58 @@
-import Foundation
+import NIO
 import RediStack
 
 /// A queue that persists jobs to a Redis instance.
 public class RedisQueue: Queue {
     private let redis: Redis
+    /// All job data.
     private let dataKey = RedisKey("jobs:data")
+    /// All processing jobs.
     private let processingKey = RedisKey("jobs:processing")
+    /// All backed off jobs. "job_id" : "backoff:channel"
+    private let backoffsKey = RedisKey("jobs:backoffs")
     
     /// Initialize with a Redis instance to persist jobs to.
     ///
     /// - Parameter redis: The Redis instance.
     public init(redis: Redis = Services.redis) {
         self.redis = redis
+        self.monitorBackoffs()
+    }
+    
+    private func monitorBackoffs() {
+        Services.eventLoop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { (task: RepeatedTask) ->
+            EventLoopFuture<Void> in
+            return self.redis
+                .zrangebyscore(from: self.backoffsKey, withMinimumScoreOf: 0)
+                .map { (values: [RESPValue]) -> [String] in
+                    guard !values.isEmpty else {
+                        return []
+                    }
+
+                    let now = Int(Date().timeIntervalSince1970)
+                    var toRetry: [String] = []
+                    for index in 0..<values.count/2 {
+                        let position = index * 2
+                        guard
+                            let jobID = values[position].string,
+                            let date = values[position + 1].int
+                        else { continue }
+                        if date <= now {
+                            toRetry.append(jobID)
+                        }
+                    }
+
+                    return toRetry
+                }
+                .flatMapEach(on: Services.eventLoop) { backoffKey -> EventLoopFuture<Void> in
+                    let values = backoffKey.split(separator: ":")
+                    let jobId = String(values[0])
+                    let channel = String(values[1])
+                    let queueList = self.key(for: channel)
+                    return self.redis.lpush(jobId, into: queueList).voided()
+                }
+                .voided()
+        }
     }
     
     // MARK: - Queue
@@ -53,10 +94,18 @@ public class RedisQueue: Queue {
                 .flatMap { _ in self.redis.hdel(job.id, from: self.dataKey) }
                 .voided()
         case .retry:
-            // Remove from processing.
+            // Remove from processing
             return self.redis.lrem(job.id, from: self.processingKey)
-                // Add back to queue
-                .flatMap { _ in self.enqueue(job) }
+                .flatMap { _ in
+                    if let backoffUntil = job.backoffUntil {
+                        let backoffKey = "\(job.id):\(job.channel)"
+                        let backoffScore = backoffUntil.timeIntervalSince1970
+                        return self.redis.zadd((backoffKey, backoffScore), to: self.backoffsKey)
+                            .voided()
+                    } else {
+                        return self.enqueue(job)
+                    }
+                }
         }
     }
     
