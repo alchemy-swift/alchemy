@@ -116,6 +116,7 @@ extension DatabaseQueue {
                 $0.date("reserved_at")
                 $0.date("queued_at").notNull().defaultNow()
                 $0.date("backoff_until")
+                $0.bigInt("backoff_seconds")
                 $0.timestamps()
             }
         }
