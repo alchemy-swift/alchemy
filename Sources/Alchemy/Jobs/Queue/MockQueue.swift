@@ -5,8 +5,8 @@ import NIO
 /// app shuts down.
 public final class MockQueue: Queue {
     @Locked private var jobs: [JobID: JobData] = [:]
-    @Locked private var pending: [String: [JobID]] = [:]
-    @Locked private var reserved: [String: [JobID]] = [:]
+    @Locked private var pending: [String: Locked<[JobID]>] = [:]
+    @Locked private var reserved: [String: Locked<[JobID]>] = [:]
     
     public init() {}
     
@@ -14,13 +14,13 @@ public final class MockQueue: Queue {
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
         jobs[job.id] = job
-        pending[job.channel]?.append(job.id)
+        append(id: job.id, on: job.channel, dict: &pending)
         return .new()
     }
     
     public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         guard
-            let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
+            let id = pending[channel]?.wrappedValue.popFirst(where: { (thing: JobID) -> Bool in
                 return !(jobs[thing]?.inBackoff ?? false)
             }),
             let job = jobs[id]
@@ -28,14 +28,14 @@ public final class MockQueue: Queue {
             return .new(nil)
         }
         
-        reserved[job.channel]?.append(id)
+        append(id: id, on: job.channel, dict: &reserved)
         return .new(job)
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
         switch outcome {
         case .success, .failed:
-            reserved[job.channel]?.removeAll(where: { $0 == job.id })
+            reserved[job.channel]?.wrappedValue.removeAll(where: { $0 == job.id })
             jobs.removeValue(forKey: job.id)
         case .retry:
             jobs[job.id] = job
@@ -44,9 +44,9 @@ public final class MockQueue: Queue {
         return .new()
     }
     
-    private func append(id: JobID, on channel: String, dict: inout [String: [JobID]]) {
-        var array = dict[channel] ?? []
-        array.append(id)
+    private func append(id: JobID, on channel: String, dict: inout [String: Locked<[JobID]>]) {
+        var array = dict[channel] ?? Locked(wrappedValue: [])
+        array.wrappedValue.append(id)
         dict[channel] = array
     }
 }

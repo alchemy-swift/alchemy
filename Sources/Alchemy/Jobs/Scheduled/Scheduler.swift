@@ -46,7 +46,10 @@ extension Application {
         ScheduleBuilder { schedule in
             Services.scheduler
                 .addWork(schedule: schedule) {
-                    _ = $0.flatSubmit { job.dispatch(on: queue, channel: channel) }
+                    _ = $0.flatSubmit { () -> EventLoopFuture<Void> in
+                        print("DISPATCH JOB")
+                        return job.dispatch(on: queue, channel: channel)
+                    }
                 }
         }
     }
