@@ -16,7 +16,7 @@ public class RedisQueue: Queue {
     /// - Parameter redis: The Redis instance.
     public init(redis: Redis = Services.redis) {
         self.redis = redis
-        self.monitorBackoffs()
+        monitorBackoffs()
     }
     
     private func monitorBackoffs() {
@@ -69,7 +69,22 @@ public class RedisQueue: Queue {
         }
     }
     
-    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
+    public func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
+        guard let channel = channels.first else {
+            return .new(nil)
+        }
+        
+        return dequeue(from: channel)
+            .flatMap { result in
+                guard let result = result else {
+                    return self.dequeue(from: Array(channels.dropFirst()))
+                }
+                
+                return .new(result)
+            }
+    }
+    
+    private func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         /// Move from queueList to processing
         let queueList = self.key(for: channel)
         return self.redis.rpoplpush(from: queueList, to: self.processingKey, valueType: String.self)

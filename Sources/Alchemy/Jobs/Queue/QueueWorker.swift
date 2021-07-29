@@ -5,23 +5,23 @@ import NIO
 extension Queue {
     /// Start monitoring a queue for jobs to run.
     public func startQueueWorker(
-        named channel: String = kDefaultQueueChannel,
+        for channels: [String] = [kDefaultQueueChannel],
         pollRate: TimeAmount = .seconds(1),
         on eventLoop: EventLoop = Services.eventLoopGroup.next()
     ) {
         return eventLoop.execute {
-            self.runNext(named: channel)
+            self.runNext(from: channels)
                 .whenComplete { _ in
                     // Run check again in the `pollRate`.
                     eventLoop.scheduleTask(in: pollRate) {
-                        self.startQueueWorker(named: channel, pollRate: pollRate, on: eventLoop)
+                        self.startQueueWorker(for: channels, pollRate: pollRate, on: eventLoop)
                     }
                 }
         }
     }
 
-    private func runNext(named channel: String) -> EventLoopFuture<Void> {
-        dequeue(from: channel)
+    private func runNext(from channels: [String]) -> EventLoopFuture<Void> {
+        dequeue(from: channels)
             .flatMap { jobData in
                 guard let jobData = jobData else {
                     return .new()
@@ -29,6 +29,7 @@ extension Queue {
                 
                 Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
                 return self.execute(jobData)
+                    .flatMap { self.runNext(from: channels) }
             }
     }
 
@@ -63,6 +64,5 @@ extension Queue {
                 return self.complete(jobData, outcome: .failed)
             }
         }
-        .flatMap { self.runNext(named: jobData.channel) }
     }
 }

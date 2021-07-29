@@ -14,19 +14,26 @@ public final class MockQueue: Queue {
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
         jobs[job.id] = job
-        append(id: job.id, on: job.channel, dict: &pending)
+        pending[job.channel]?.append(job.id)
         return .new()
     }
     
-    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
-        guard let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
-            return !(jobs[thing]?.inBackoff ?? false)
-        }) else {
+    public func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
+        var toDequeue: JobID?
+        for channel in channels {
+            if let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
+                return !(jobs[thing]?.inBackoff ?? false)
+            }) {
+                toDequeue = id
+            }
+        }
+        
+        guard let id = toDequeue, let job = jobs[id] else {
             return .new(nil)
         }
         
-        append(id: id, on: channel, dict: &reserved)
-        return .new(jobs[id])
+        reserved[job.channel]?.append(id)
+        return .new(job)
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
