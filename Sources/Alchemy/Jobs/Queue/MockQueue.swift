@@ -18,17 +18,13 @@ public final class MockQueue: Queue {
         return .new()
     }
     
-    public func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
-        var toDequeue: JobID?
-        for channel in channels {
-            if let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
+    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
+        guard
+            let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
                 return !(jobs[thing]?.inBackoff ?? false)
-            }) {
-                toDequeue = id
-            }
-        }
-        
-        guard let id = toDequeue, let job = jobs[id] else {
+            }),
+            let job = jobs[id]
+        else {
             return .new(nil)
         }
         

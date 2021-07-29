@@ -18,9 +18,9 @@ public class DatabaseQueue: Queue {
         JobModel(jobData: job).insert(db: database).voided()
     }
 
-    public func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
+    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         JobModel.query()
-            .where(key: "channel", in: channels)
+            .where("channel" == channel)
             .where("reserved" == false)
             .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
             .orderBy(column: "queued_at")

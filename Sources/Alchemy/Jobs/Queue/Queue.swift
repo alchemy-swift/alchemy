@@ -7,7 +7,7 @@ public protocol Queue {
     /// Add a job to the end of the Queue.
     func enqueue(_ job: JobData) -> EventLoopFuture<Void>
     /// Dequeue the next job from the given channels.
-    func dequeue(from channels: [String]) -> EventLoopFuture<JobData?>
+    func dequeue(from channel: String) -> EventLoopFuture<JobData?>
     /// Handle an in progress job that has been completed with the
     /// given outcome.
     func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void>
@@ -28,6 +28,21 @@ public enum JobOutcome {
 extension Queue {
     public func dequeue(from channel: String = kDefaultQueueChannel) -> EventLoopFuture<JobData?> {
         self.dequeue(from: [channel])
+    }
+    
+    public func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
+        guard let channel = channels.first else {
+            return .new(nil)
+        }
+        
+        return dequeue(from: channel)
+            .flatMap { result in
+                guard let result = result else {
+                    return self.dequeue(from: Array(channels.dropFirst()))
+                }
+                
+                return .new(result)
+            }
     }
 }
 
