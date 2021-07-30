@@ -97,7 +97,7 @@ extension HTTPClient {
     ///   raw `HTTPClient.Response`.
     fileprivate func performRequest<Response: Codable>(
         baseURL: String,
-        parameters: RawRequestComponents,
+        parameters: HTTPComponents,
         encoder: JSONEncoder,
         decoder: JSONDecoder
     ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
@@ -118,7 +118,7 @@ extension HTTPClient {
             
             let request = try HTTPClient.Request(
                 url: fullURL,
-                method: HTTPMethod(rawValue: parameters.method.rawValue),
+                method: HTTPMethod(rawValue: parameters.method),
                 headers: headers,
                 body: bodyData.map { HTTPClient.Body.data($0) }
             )
