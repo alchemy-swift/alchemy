@@ -72,12 +72,14 @@ extension Endpoint where Request == Empty {
         let decoder = self.jsonDecoder
         encoder.keyEncodingStrategy = self.keyMapping.jsonEncodingStrategy
         decoder.keyDecodingStrategy = self.keyMapping.jsonDecodingStrategy
-        return client.performRequest(
-            baseURL: self.baseURL,
-            parameters: .just(url: self.path, method: self.method),
-            encoder: encoder,
-            decoder: decoder
-        )
+        return catchError {
+            client.performRequest(
+                baseURL: baseURL,
+                parameters: try parameters(dto: .value),
+                encoder: encoder,
+                decoder: decoder
+            )
+        }
     }
 }
 
