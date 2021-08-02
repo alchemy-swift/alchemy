@@ -19,7 +19,10 @@ public final class Scheduler {
     }
     
     private func schedule(schedule: Schedule, task: @escaping (EventLoop) throws -> Void, on loop: EventLoop) {
-        guard let next = schedule.next()?.date else {
+        guard 
+            let next = schedule.next(),
+            let nextDate = next.date
+        else {
             return Log.error("schedule doesn't have a future date to run.")
         }
 
@@ -28,7 +31,14 @@ public final class Scheduler {
             try task(loop)
         }
 
-        let delay = Int64(next.timeIntervalSinceNow * 1000)
+        var delay = Int64(nextDate.timeIntervalSinceNow * 1000)
+        // Occasionally Cron library returns the `next()` as fractions of a 
+        // millisecond before or after now. If the delay is 0, get the next
+        // date and use that instead.
+        if delay == 0 {
+            let newDate = schedule.next(next)?.date ?? Date().addingTimeInterval(1)
+            delay = Int64(newDate.timeIntervalSinceNow * 1000)
+        }
         loop.scheduleTask(in: .milliseconds(delay), scheduleNextAndRun)
     }
     
