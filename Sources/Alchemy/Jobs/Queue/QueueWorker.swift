@@ -22,6 +22,10 @@ extension Queue {
 
     private func runNext(from channels: [String]) -> EventLoopFuture<Void> {
         dequeue(from: channels)
+            .flatMapErrorThrowing {
+                Log.error("[Queue] error dequeueing job from `\(channels)`. \($0)")
+                throw $0
+            }
             .flatMap { jobData in
                 guard let jobData = jobData else {
                     return .new()

@@ -8,12 +8,12 @@ public final class MySQLDatabaseRow: DatabaseRow {
     
     init(_ row: MySQLRow) {
         self.row = row
-        self.allColumns = Set(self.row.columnDefinitions.map(\.orgName))
+        self.allColumns = Set(self.row.columnDefinitions.map(\.name))
     }
 
     public func getField(column: String) throws -> DatabaseField {
         try self.row.column(column)
-            .unwrap(or: DatabaseError("No column named '\(column)' was found."))
+            .unwrap(or: DatabaseError("No column named `\(column)` was found."))
             .toDatabaseField(from: column)
     }
 }
