@@ -15,7 +15,7 @@ public final class DatabaseCache: Cache {
     /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) -> EventLoopFuture<CacheItem?> {
         CacheItem.query(database: self.db)
-            .where("key" == key)
+            .where("_key" == key)
             .firstModel()
             .flatMap { item in
                 guard let item = item else {
@@ -26,7 +26,7 @@ public final class DatabaseCache: Cache {
                     return .new(item)
                 } else {
                     return CacheItem.query()
-                        .where("key" == key)
+                        .where("_key" == key)
                         .delete()
                         .map { _ in nil }
                 }
@@ -50,7 +50,7 @@ public final class DatabaseCache: Cache {
                     return item.save(db: self.db)
                         .voided()
                 } else {
-                    return CacheItem(key: key, text: value.stringValue, expiration: expiration ?? -1)
+                    return CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1)
                         .save(db: self.db)
                         .voided()
                 }
@@ -80,7 +80,7 @@ public final class DatabaseCache: Cache {
     
     public func delete(_ key: String) -> EventLoopFuture<Void> {
         CacheItem.query(database: self.db)
-            .where("key" == key)
+            .where("_key" == key)
             .delete()
             .voided()
     }
@@ -96,7 +96,7 @@ public final class DatabaseCache: Cache {
                         return item.save().transform(to: newVal)
                     }
                 } else {
-                    return CacheItem(key: key, text: "\(amount)")
+                    return CacheItem(_key: key, text: "\(amount)")
                         .save(db: self.db)
                         .transform(to: amount)
                 }
@@ -116,7 +116,7 @@ private struct CacheItem: Model {
     static var tableName: String { "cache" }
     
     var id: Int?
-    let key: String
+    let _key: String
     var text: String
     var expiration: Int = -1
     
@@ -133,7 +133,7 @@ private struct CacheItem: Model {
     }
     
     func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
-        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self.key)` to \(C.self)."))
+        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self._key)` to \(C.self)."))
     }
 }
 
@@ -146,7 +146,7 @@ extension DatabaseCache {
         public func up(schema: Schema) {
             schema.create(table: "cache") {
                 $0.increments("id").primary()
-                $0.string("key").notNull().unique()
+                $0.string("_key").notNull().unique()
                 $0.string("text", length: .unlimited).notNull()
                 $0.int("expiration").notNull()
             }
