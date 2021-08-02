@@ -19,22 +19,27 @@ public class DatabaseQueue: Queue {
     }
 
     public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
-        JobModel.query()
-            .where("channel" == channel)
-            .where("reserved" == false)
-            .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
-            .orderBy(column: "queued_at")
-            .firstModel()
-            .flatMap { job in
-                guard var updateJob = job else {
-                    return .new(nil)
-                }
-                
-                updateJob.reserved = true
-                updateJob.reservedAt = Date()
-                return updateJob.save()
-                    .map { $0.toJobData() }
-            }
+        return database.runRawQuery(
+            """
+            UPDATE jobs
+            SET reserved = true, reserved_at = NOW()
+            WHERE id = (
+                SELECT id
+                FROM jobs
+                WHERE NOT reserved
+                AND channel = ?
+                AND (backoff_until IS NULL OR backoff_until < NOW())
+                ORDER BY queued_at
+                FOR UPDATE SKIP LOCKED
+                LIMIT 1
+            )
+            RETURNING jobs.*
+            """,
+            values: [.string(channel)]
+        )
+        .flatMapEachThrowing { try $0.decode(JobModel.self) }
+        .mapEach { $0.toJobData() }
+        .map { $0.first }
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {

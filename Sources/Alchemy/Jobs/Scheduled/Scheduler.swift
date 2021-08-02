@@ -58,6 +58,10 @@ extension Application {
                 .addWork(schedule: schedule) {
                     _ = $0.flatSubmit { () -> EventLoopFuture<Void> in
                         return job.dispatch(on: queue, channel: channel)
+                            .flatMapErrorThrowing {
+                                Log.error("[Scheduler] error scheduling Job: \($0)")
+                                throw $0
+                            }
                     }
                 }
         }
