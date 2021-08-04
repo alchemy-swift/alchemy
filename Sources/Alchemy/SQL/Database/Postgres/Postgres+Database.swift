@@ -49,16 +49,49 @@ public final class PostgresDatabase: Database {
     }
     
     public func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: Log.logger, on: Services.eventLoop) { conn in
-            conn.query(self.positionBindings(sql), values.map(PostgresData.init) )
-                .map { $0.rows.map(PostgresDatabaseRow.init) }
+        withConnection { $0.runRawQuery(sql, values: values) }
+    }
+    
+    public func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        withConnection { conn in
+            conn.runRawQuery("START TRANSACTION;")
+                .flatMap { _ in action(conn) }
+                .flatMap { conn.runRawQuery("COMMIT;").transform(to: $0) }
         }
     }
     
     public func shutdown() throws {
-        try self.pool.syncShutdownGracefully()
+        try pool.syncShutdownGracefully()
     }
+    
+    private func withConnection<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        return pool.withConnection(logger: Log.logger, on: Services.eventLoop) {
+            action(PostgresConnectionDatabase(conn: $0, grammar: self.grammar, migrations: self.migrations))
+        }
+    }
+}
 
+/// A database to send through on transactions.
+private struct PostgresConnectionDatabase: Database {
+    let conn: PostgresConnection
+    let grammar: Grammar
+    var migrations: [Migration]
+    
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
+        conn.query(sql.positionPostgresBindings(), values.map(PostgresData.init))
+            .map { $0.rows.map(PostgresDatabaseRow.init) }
+    }
+    
+    func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        action(self)
+    }
+    
+    func shutdown() throws {
+        _ = conn.close()
+    }
+}
+
+private extension String {
     /// The Alchemy query builder constructs bindings with question
     /// marks ('?') in the SQL string. PostgreSQL requires bindings
     /// to be denoted by $1, $2, etc. This function converts all
@@ -66,10 +99,8 @@ public final class PostgresDatabase: Database {
     ///
     /// - Parameter sql: The SQL string to replace bindings with.
     /// - Returns: An SQL string appropriate for running in Postgres.
-    private func positionBindings(_ sql: String) -> String {
+    func positionPostgresBindings() -> String {
         // TODO: Ensure a user can enter ? into their content?
-        sql.replaceAll(matching: "(\\?)") { (index, _) in
-            "$\(index + 1)"
-        }
+        replaceAll(matching: "(\\?)") { (index, _) in "$\(index + 1)" }
     }
 }

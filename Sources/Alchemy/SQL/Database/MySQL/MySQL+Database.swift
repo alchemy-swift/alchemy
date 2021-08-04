@@ -45,10 +45,7 @@ public final class MySQLDatabase: Database {
     }
     
     public func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: Log.logger, on: Services.eventLoop) { conn in
-            conn.query(sql, values.map(MySQLData.init))
-                .map { $0.map(MySQLDatabaseRow.init) }
-        }
+        withConnection { $0.runRawQuery(sql, values: values) }
     }
     
     /// MySQL doesn't have a way to return a row after inserting. This
@@ -63,7 +60,7 @@ public final class MySQLDatabase: Database {
     /// - Returns: A future containing the result of fetching the last
     ///   inserted id, or the result of the original query.
     func runAndReturnLastInsertedItem(_ sql: String, table: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        self.pool.withConnection(logger: Log.logger, on: Services.eventLoop) { conn in
+        pool.withConnection(logger: Log.logger, on: Services.eventLoop) { conn in
             var lastInsertId: Int?
             return conn
                 .query(sql, values.map(MySQLData.init), onMetadata: { lastInsertId = $0.lastInsertID.map(Int.init) })
@@ -78,7 +75,41 @@ public final class MySQLDatabase: Database {
         }
     }
     
+    public func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        withConnection { conn in
+            conn.runRawQuery("START TRANSACTION;")
+                .flatMap { _ in action(conn) }
+                .flatMap { conn.runRawQuery("COMMIT;").transform(to: $0) }
+        }
+    }
+
+    private func withConnection<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        return pool.withConnection(logger: Log.logger, on: Services.eventLoop) {
+            action(MySQLConnectionDatabase(conn: $0, grammar: self.grammar, migrations: self.migrations))
+        }
+    }
+    
     public func shutdown() throws {
         try self.pool.syncShutdownGracefully()
+    }
+}
+
+/// A database to send through on transactions.
+private struct MySQLConnectionDatabase: Database {
+    let conn: MySQLConnection
+    let grammar: Grammar
+    var migrations: [Migration]
+    
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
+        conn.query(sql, values.map(MySQLData.init))
+            .map { $0.map(MySQLDatabaseRow.init) }
+    }
+    
+    func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        action(self)
+    }
+    
+    func shutdown() throws {
+        _ = conn.close()
     }
 }

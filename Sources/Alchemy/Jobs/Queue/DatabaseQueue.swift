@@ -19,27 +19,57 @@ public class DatabaseQueue: Queue {
     }
 
     public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
-        return database.runRawQuery(
-            """
-            UPDATE jobs
-            SET reserved = true, reserved_at = NOW()
-            WHERE id = (
-                SELECT id
-                FROM jobs
-                WHERE NOT reserved
-                AND channel = ?
-                AND (backoff_until IS NULL OR backoff_until < NOW())
-                ORDER BY queued_at
-                FOR UPDATE SKIP LOCKED
-                LIMIT 1
-            )
-            RETURNING jobs.*
-            """,
-            values: [.string(channel)]
-        )
-        .flatMapEachThrowing { try $0.decode(JobModel.self) }
-        .mapEach { $0.toJobData() }
-        .map { $0.first }
+        return database.transaction { (database: Database) -> EventLoopFuture<JobData?> in
+            return database
+                .runRawQuery(
+                    """
+                    SELECT *
+                    FROM jobs
+                    WHERE NOT reserved
+                    AND channel = ?
+                    AND (backoff_until IS NULL OR backoff_until < NOW())
+                    ORDER BY queued_at
+                    FOR UPDATE SKIP LOCKED
+                    LIMIT 1
+                    """, values: [.string(channel)]
+                )
+                .flatMapThrowing { try $0.first?.decode(JobModel.self) }
+                .optionalFlatMap { job -> EventLoopFuture<JobModel> in
+                    return database.runRawQuery(
+                        """
+                        UPDATE jobs
+                        SET reserved = true, reserved_at = NOW()
+                        WHERE id = '\(job.id!)'
+                        """)
+                        .map { _ in job }
+                    // var job = job
+                    // job.reserved = true
+                    // job.reservedAt = Date()
+                    // return job.save(db: database)
+                }
+                .map { $0?.toJobData() }
+        }
+//        return database.runRawQuery(
+//            """
+//            UPDATE jobs
+//            SET reserved = true, reserved_at = NOW()
+//            WHERE id = (
+//                SELECT id
+//                FROM jobs
+//                WHERE NOT reserved
+//                AND channel = ?
+//                AND (backoff_until IS NULL OR backoff_until < NOW())
+//                ORDER BY queued_at
+//                FOR UPDATE SKIP LOCKED
+//                LIMIT 1
+//            )
+//            RETURNING jobs.*
+//            """,
+//            values: [.string(channel)]
+//        )
+//        .flatMapEachThrowing { try $0.decode(JobModel.self) }
+//        .mapEach { $0.toJobData() }
+//        .map { $0.first }
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
