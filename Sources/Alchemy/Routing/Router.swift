@@ -14,6 +14,20 @@ public final class Router: HTTPRouter {
     /// A router handler. Takes a request and returns a future with a
     /// response.
     private typealias RouterHandler = (Request) -> EventLoopFuture<Response>
+
+    /// The default response for when there is an error along the
+    /// routing chain that does not conform to
+    /// `ResponseConvertible`.
+    public static var internalErrorResponse = Response(
+        status: .internalServerError,
+        body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
+    )
+
+    /// The response for when no handler is found for a Request.
+    public static var notFoundResponse = Response(
+        status: .notFound,
+        body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
+    )
     
     /// `Middleware` that will intercept all requests through this
     /// router, before all other `Middleware` regardless of
@@ -84,7 +98,7 @@ public final class Router: HTTPRouter {
     }
 
     private func notFoundHandler(_ request: Request) -> EventLoopFuture<Response> {
-        return .new(error: HTTPError(.notFound)).convertErrorToResponse()
+        return .new(Router.notFoundResponse)
     }
 }
 
@@ -100,8 +114,8 @@ private extension EventLoopFuture where Value == Response {
     func convertErrorToResponse() -> EventLoopFuture<Response> {
         return flatMapError { error in
             func serverError() -> EventLoopFuture<Response> {
-                Log.error("[Server] encountered server error: \(error).")
-                return .new(Response.defaultErrorResponse)
+                Log.error("[Server] encountered internal error: \(error).")
+                return .new(Router.internalErrorResponse)
             }
 
             do {

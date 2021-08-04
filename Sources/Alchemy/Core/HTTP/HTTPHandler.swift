@@ -5,7 +5,7 @@ import NIOHTTP1
 
 /// A type that can respond to HTTP requests.
 protocol HTTPRouter {
-    /// Handle a `Request` with a future containing a `Response`.
+    /// Handle a `Request` with a future containing a `Response`. Should never result in an error.
     ///
     /// - Parameter request: The request to respond to.
     /// - Returns: A future containing the response to send to the
@@ -85,17 +85,6 @@ final class HTTPHandler: ChannelInboundHandler {
             let response = router.handle(request: request)
                 // Ensure we're on the right ELF or NIO will assert.
                 .hop(to: context.eventLoop)
-                .flatMapError { error in
-                    catchError {
-                        if let error = error as? ResponseConvertible {
-                            return try error.convert()
-                        } else {
-                            // Router should convert any errors to a 
-                            Log.error("[Server] encountered server error: \(error).")
-                            return .new(Response.defaultErrorResponse)
-                        }
-                    }
-                }
             self.request = nil
       
             // Writes the response when done
