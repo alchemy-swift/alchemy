@@ -21,13 +21,15 @@ public final class MySQLDatabase: Database {
             source: MySQLConnectionSource(configuration: {
                 switch config.socket {
                 case .ip(let host, let port):
+                    var tlsConfig = config.enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
+                    tlsConfig?.certificateVerification = .none
                     return MySQLConfiguration(
                         hostname: host,
                         port: port,
                         username: config.username,
                         password: config.password,
                         database: config.database,
-                        tlsConfiguration: config.enableSSL ? .forClient(certificateVerification: .none) : nil
+                        tlsConfiguration: tlsConfig
                     )
                 case .unix(let name):
                     return MySQLConfiguration(

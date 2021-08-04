@@ -64,9 +64,7 @@ extension ServeCommand: Runner {
         ) -> EventLoopFuture<Void> {
             channel.pipeline
                 .configureHTTPServerPipeline(withErrorHandling: true)
-                .flatMap { channel.pipeline
-                    .addHandler(HTTPHandler(responder: HTTPRouterResponder()))
-                }
+                .flatMap { channel.pipeline.addHandler(HTTPHandler(router: Services.router)) }
         }
 
         let serverBootstrap = ServerBootstrap(group: Services.eventLoopGroup)

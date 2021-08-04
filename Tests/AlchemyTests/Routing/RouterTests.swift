@@ -54,6 +54,30 @@ final class RouterTests: XCTestCase {
 
         wait(for: [shouldFulfull], timeout: kMinTimeout)
     }
+    
+    func testMiddlewareCalledWhenError() throws {
+        let globalFulfill = expectation(description: "")
+        let global = TestMiddleware(res: { _ in globalFulfill.fulfill() })
+        
+        let mw1Fulfill = expectation(description: "")
+        let mw1 = TestMiddleware(res: { _ in mw1Fulfill.fulfill() })
+        
+        let mw2Fulfill = expectation(description: "")
+        let mw2 = TestMiddleware(req: { _ in
+            struct SomeError: Error {}
+            mw2Fulfill.fulfill()
+            throw SomeError()
+        })
+        
+        app.useAll(global)
+            .use(mw1)
+            .use(mw2)
+            .register(.get1)
+        
+        _ = try app.request(.get1)
+        
+        wait(for: [globalFulfill, mw1Fulfill, mw2Fulfill], timeout: kMinTimeout)
+    }
 
     func testGroupMiddleware() {
         let expect = expectation(description: "The middleware should be called once.")
@@ -218,14 +242,14 @@ final class RouterTests: XCTestCase {
 
 /// Runs the specified callback on a request / response.
 struct TestMiddleware: Middleware {
-    var req: ((Request) -> Void)?
-    var res: ((Response) -> Void)?
+    var req: ((Request) throws -> Void)?
+    var res: ((Response) throws -> Void)?
 
     func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
-        req?(request)
+        try req?(request)
         return next(request)
-            .map { response in
-                res?(response)
+            .flatMapThrowing { response in
+                try res?(response)
                 return response
             }
     }
