@@ -27,11 +27,13 @@ struct QueueCommand<A: Application>: ParsableCommand {
 
 extension QueueCommand: Runner {
     func register(lifecycle: ServiceLifecycle) {
-        if schedule {
-            lifecycle.registerScheduler()
-        }
-        
         lifecycle.registerWorkers(workers, channels: channels.components(separatedBy: ","))
+        if schedule { 
+            lifecycle.registerScheduler() 
+        }
+
+        let schedulerText = schedule ? "scheduler and " : ""
+        Log.info("[Queue] started \(schedulerText)\(workers) workers.")
     }
 }
 
