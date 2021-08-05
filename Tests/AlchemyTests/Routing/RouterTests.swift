@@ -29,8 +29,8 @@ final class RouterTests: XCTestCase {
         self.app.register(.getEmpty)
         self.app.register(.get1)
         self.app.register(.post1)
-        XCTAssertEqual(try self.app.request(.get2), nil)
-        XCTAssertEqual(try self.app.request(.postEmpty), nil)
+        XCTAssertEqual(try self.app.request(.get2), "Not Found")
+        XCTAssertEqual(try self.app.request(.postEmpty), "Not Found")
     }
 
     func testMiddlewareCalling() throws {
@@ -230,10 +230,10 @@ final class RouterTests: XCTestCase {
         )), TestRequest.post2.response)
 
         // only available under group prefix
-        XCTAssertNil(try self.app.request(TestRequest.get1))
-        XCTAssertNil(try self.app.request(TestRequest.get2))
-        XCTAssertNil(try self.app.request(TestRequest.post1))
-        XCTAssertNil(try self.app.request(TestRequest.post2))
+        XCTAssertEqual(try self.app.request(TestRequest.get1), "Not Found")
+        XCTAssertEqual(try self.app.request(TestRequest.get2), "Not Found")
+        XCTAssertEqual(try self.app.request(TestRequest.post1), "Not Found")
+        XCTAssertEqual(try self.app.request(TestRequest.post2), "Not Found")
 
         // defined outside group --> still available without group prefix
         XCTAssertEqual(try self.app.request(TestRequest.get3), TestRequest.get3.response)
@@ -279,7 +279,7 @@ extension Application {
 }
 
 struct TestApp: Application {
-    func setup() {}
+    func boot() {}
 }
 
 struct TestRequest {
