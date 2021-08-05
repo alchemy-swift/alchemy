@@ -3,64 +3,61 @@ import Foundation
 /// A queue that persists jobs to a database.
 public class DatabaseQueue: Queue {
     private let database: Database
-    private let saveFailedJobs: Bool
     
     /// Initialize with a database, to which Jobs will be persisted.
     ///
     /// - Parameters:
     ///   - database: The database.
-    ///   - saveFailedJobs: If true, failed jobs will be written to a
-    ///     separate table. Please run
-    ///     `DatabaseQueue.FailedJobsMigration` if using this feature.
-    public init(database: Database = Services.db, saveFailedJobs: Bool = false) {
+    public init(database: Database = Services.db) {
         self.database = database
-        self.saveFailedJobs = saveFailedJobs
     }
     
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
-        JobModel(jobData: job).insert(db: self.database).voided()
+        JobModel(jobData: job).insert(db: database).voided()
     }
 
-    public func dequeue(from queueName: String) -> EventLoopFuture<JobData?> {
-        JobModel.query()
-            .where("queue_name" == queueName)
-            .where("reserved" == false)
-            .firstModel()
-            .flatMap { job in
-                guard var updateJob = job else {
-                    return .new(nil)
+    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
+        return database.transaction { (database: Database) -> EventLoopFuture<JobData?> in
+            return JobModel.query(database: database)
+                .where("reserved" != true)
+                .where("channel" == channel)
+                .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
+                .orderBy(column: "queued_at")
+                .limit(1)
+                .forLock(.update, option: .skipLocked)
+                .firstModel()
+                .optionalFlatMap { job -> EventLoopFuture<JobModel> in
+                    var job = job
+                    job.reserved = true
+                    job.reservedAt = Date()
+                    return job.save(db: database)
+                    // catchError {
+                    //     return JobModel
+                    //         .query(database: database)
+                    //         .where("id" == "\(try job.getID())")
+                    //         .update(values: [
+                    //             "reserved": true,
+                    //             "reserved_at": Date()
+                    //         ])
+                    //         .map { _ in job }
+                    // }
                 }
-                
-                updateJob.reserved = true
-                updateJob.reservedAt = Date()
-                return updateJob.save()
-                    .map { $0.toJobData() }
-            }
+                .map { $0?.toJobData() }
+        }
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
         switch outcome {
         case .success, .failed:
-            return JobModel.query()
+            return JobModel.query(database: database)
                 .where("id" == job.id)
-                .where("queue_name" == job.queueName)
+                .where("channel" == job.channel)
                 .delete()
                 .voided()
-                .map { self.processFailedJob(job) }
         case .retry:
-            return JobModel(jobData: job).update().voided()
-        }
-    }
-    
-    private func processFailedJob(_ job: JobData) {
-        if self.saveFailedJobs {
-            // Fire and forget so it doesn't cause errors in the
-            // completion chain.
-            FailedJobModel(job: job)
-                .insert()
-                .whenFailure { Log.error("Encountered error saving a failed Job: \($0).") }
+            return JobModel(jobData: job).update(db: database).voided()
         }
     }
 }
@@ -72,45 +69,40 @@ private struct JobModel: Model {
 
     var id: String?
     let jobName: String
-    let queueName: String
+    let channel: String
     let json: JSONString
     let recoveryStrategy: RecoveryStrategy
+    let backoffSeconds: Int
     
     var attempts: Int
-    var reserved: Bool // If a worker is currently processing
-    var reservedAt: Date? // When the worker started the process
+    var reserved: Bool
+    var reservedAt: Date?
+    var queuedAt: Date?
+    var backoffUntil: Date?
 
     init(jobData: JobData) {
-        self.id = jobData.id
-        self.jobName = jobData.jobName
-        self.queueName = jobData.queueName
-        self.json = jobData.json
-        self.attempts = jobData.attempts
-        self.recoveryStrategy = jobData.recoveryStrategy
-        self.reserved = false
+        id = jobData.id
+        jobName = jobData.jobName
+        channel = jobData.channel
+        json = jobData.json
+        attempts = jobData.attempts
+        recoveryStrategy = jobData.recoveryStrategy
+        backoffSeconds = jobData.backoffSeconds
+        backoffUntil = jobData.backoffUntil
+        reserved = false
     }
     
     func toJobData() -> JobData {
-        JobData(
-            id: (try? self.getID()) ?? "N/A",
-            json: self.json,
-            jobName: self.jobName,
-            queueName: self.queueName,
-            recoveryStrategy: self.recoveryStrategy,
-            attempts: self.attempts
+        return JobData(
+            id: (try? getID()) ?? "N/A",
+            json: json,
+            jobName: jobName,
+            channel: channel,
+            recoveryStrategy: recoveryStrategy,
+            retryBackoff: .seconds(Int64(backoffSeconds)),
+            attempts: attempts,
+            backoffUntil: backoffUntil
         )
-    }
-}
-
-private struct FailedJobModel: Model {
-    var id: String?
-    let name: String
-    let jobData: String
-
-    init(job: JobData) {
-        self.id = job.id
-        self.name = job.jobName
-        self.jobData = job.json
     }
 }
 
@@ -127,33 +119,21 @@ extension DatabaseQueue {
             schema.create(table: "jobs") {
                 $0.string("id").primary()
                 $0.string("job_name").notNull()
-                $0.string("queue_name").notNull()
+                $0.string("channel").notNull()
                 $0.string("json", length: .unlimited).notNull()
                 $0.json("recovery_strategy").notNull()
                 $0.int("attempts").notNull()
                 $0.bool("reserved").notNull()
                 $0.date("reserved_at")
+                $0.date("queued_at").notNull().defaultNow()
+                $0.date("backoff_until")
+                $0.bigInt("backoff_seconds")
+                $0.timestamps()
             }
         }
         
         public func down(schema: Schema) {
             schema.drop(table: "jobs")
-        }
-    }
-    
-    /// A Migration for the table used by DatabaseQueue to store
-    /// failed jobs. Only needed if `saveFailedJobs` is enabled.
-    public struct FailedJobsMigration: Alchemy.Migration {
-        public func up(schema: Schema) {
-            schema.create(table: "jobs_failed") {
-                $0.string("id").primary()
-                $0.string("name").notNull()
-                $0.string("job_data", length: .unlimited).notNull()
-            }
-        }
-        
-        public func down(schema: Schema) {
-            schema.drop(table: "jobs_failed")
         }
     }
 }

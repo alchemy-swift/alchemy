@@ -62,7 +62,7 @@ If you created a project from scratch via SPM, add a file called `MyApplication.
 import Alchemy
 
 struct MyApplication: Application {
-    func setup() {
+    func boot() {
         self.get("/hello") { request in
             "Hello, World!"
         }

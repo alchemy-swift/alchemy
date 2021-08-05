@@ -1,3 +1,0 @@
-# Backend
-
-An Alchemy server.

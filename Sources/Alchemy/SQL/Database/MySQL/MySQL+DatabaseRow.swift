@@ -8,12 +8,12 @@ public final class MySQLDatabaseRow: DatabaseRow {
     
     init(_ row: MySQLRow) {
         self.row = row
-        self.allColumns = Set(self.row.columnDefinitions.map(\.orgName))
+        self.allColumns = Set(self.row.columnDefinitions.map(\.name))
     }
 
     public func getField(column: String) throws -> DatabaseField {
         try self.row.column(column)
-            .unwrap(or: DatabaseError("No column named '\(column)' was found."))
+            .unwrap(or: DatabaseError("No column named `\(column)` was found."))
             .toDatabaseField(from: column)
     }
 }
@@ -77,7 +77,7 @@ extension MySQLData {
         case .tiny:
             let value = DatabaseValue.bool(try validateNil(self.bool))
             return DatabaseField(column: column, value: value)
-        case .varchar, .string, .varString:
+        case .varchar, .string, .varString, .blob, .tinyBlob, .mediumBlob, .longBlob:
             let value = DatabaseValue.string(try validateNil(self.string))
             return DatabaseField(column: column, value: value)
         case .date, .timestamp, .timestamp2, .datetime, .datetime2:

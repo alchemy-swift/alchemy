@@ -18,7 +18,12 @@ extension Database {
                     !alreadyMigrated.contains(where: { $0.name == pendingMigration.name })
                 }
                 
-                Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
+                if migrationsToRun.isEmpty {
+                    Log.info("[Migration] no new migrations to apply.")
+                } else {
+                    Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
+                }
+                
                 return (migrationsToRun, currentBatch + 1)
             }
             // 3. Run migrations & record in migration table
@@ -51,9 +56,20 @@ extension Database {
     /// - Returns: A future containing an array of all the migrations
     ///   that have been applied to this database.
     private func getMigrations() -> EventLoopFuture<[AlchemyMigration]> {
-        let createMigrationsTable = AddAlchemyMigration().upStatements(for: self.grammar).first!
-        return self.runRawQuery(createMigrationsTable.query)
-            .flatMap { _ in
+        query()
+            .from(table: "information_schema.tables")
+            .where("table_name" == AlchemyMigration.tableName)
+            .count()
+            .flatMap { value in
+                guard let value = value, value != 0 else {
+                    Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
+                    let statements = AlchemyMigration.Migration().upStatements(for: grammar)
+                    return runRawQuery(statements.first!.query).voided()
+                }
+                
+                return .new()
+            }
+            .flatMap {
                 AlchemyMigration.query(database: self).allModels()
             }
     }

@@ -26,7 +26,7 @@ extension Services {
     ///
     /// ```swift
     /// struct MyServer: Application {
-    ///     func setup() {
+    ///     func boot() {
     ///         Services.db = PostgresDatabase(
     ///             DatabaseConfig(
     ///                 socket: .ip(host: "localhost", port: 5432),
@@ -138,8 +138,8 @@ extension Services {
         }
         
         // `Scheduler`
-        Container.global.register(singleton: Scheduler.self) { container in
-            Scheduler(scheduleLoop: container.resolve(EventLoop.self))
+        Container.global.register(singleton: Scheduler.self) { _ in
+            Scheduler()
         }
         
         // `EventLoop`

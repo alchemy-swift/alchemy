@@ -109,7 +109,7 @@ If you'd like a middleware to intercept _all_ requests on an `Application`, you 
 
 ```swift
 struct ExampleApp: Application {
-    func setup() {
+    func boot() {
         self
             .useAll(LoggingMiddleware())
             // LoggingMiddleware will intercept all of these, as well as any unhandled requests.

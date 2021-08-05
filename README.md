@@ -3,21 +3,20 @@
 <p>Elegant, batteries included web framework for Swift.</p>
 
 <p>
-<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
+<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.4-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/alchemy-swift/alchemy/releases"><img src="https://img.shields.io/github/release/alchemy-swift/alchemy.svg" alt="Latest Release"></a>
 <a href="https://github.com/alchemy-swift/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/alchemy-swift/alchemy.svg" alt="License"></a>
 </p>
 
 ```swift
+@main
 struct App: Application {
-    func setup() {
-        self.get {
+    func boot() {
+        get("/hello") {
             "Hello World!"
         }
     }
 }
-
-App.launch()
 ```
 
 ## Features
@@ -31,13 +30,13 @@ App.launch()
 - Powerful dependency injection.
 - Typesafe API definitions, sharable between Swift clients & server.
 - Concise, elegant APIs built with the best parts of Swift.
-- Extensive [docs](Docs#docs) and fully featured [quickstart projects](Quickstarts/).
+- Extensive [docs](Docs#docs).
 
 ## Installation
 
 ### Quickstart
 
-The Alchemy CLI can help you get started with one of the [Quickstart](Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
+The Alchemy CLI can help you get started. It is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
 mint install alchemy-swift/cli@main
@@ -82,10 +81,6 @@ Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or 
 The Docs provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development.
 
 **Note**: If something is confusing or difficult to understand please let us know on [Discord](https://discord.gg/Rz6kWQTFn9)!
-
-### [Quickstarts](/Quickstarts)
-
-If you'd rather just jump into reading some code, the projects in `Quickstarts/` are contrived apps for the purpose of showing working, documented examples of everything Alchemy can do. You can clone them with `alchemy new` or browse through their code on Github.
 
 ### [API Reference](https://github.com/alchemy-swift/alchemy/wiki)
 

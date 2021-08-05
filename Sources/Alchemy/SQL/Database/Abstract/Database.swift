@@ -67,6 +67,12 @@ public protocol Database {
     ///   query.
     func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]>
     
+    /// Runs a transaction on the database, using the given closure.
+    /// All database queries in the closure are executed atomically.
+    ///
+    /// Uses START TRANSACTION; and COMMIT; under the hood.
+    func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+    
     /// Called when the database connection will shut down.
     ///
     /// - Throws: Any error that occurred when shutting down.

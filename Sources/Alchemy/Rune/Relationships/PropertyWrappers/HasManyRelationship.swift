@@ -88,4 +88,8 @@ public final class HasManyRelationship<
     public required init(from decoder: Decoder) throws {
         try super.init(from: decoder)
     }
+    
+    public required init(propertyName: String? = nil, to key: KeyPath<To.Value, To.Value.BelongsTo<From?>>, keyString: String) {
+        fatalError("init(propertyName:to:keyString:) has not been implemented")
+    }
 }

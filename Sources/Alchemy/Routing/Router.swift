@@ -10,10 +10,24 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// An `Router` responds to HTTP requests from the client.
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
-public final class Router {
+public final class Router: HTTPRouter {
     /// A router handler. Takes a request and returns a future with a
     /// response.
-    private typealias RouterHandler = (Request) throws -> EventLoopFuture<Response>
+    private typealias RouterHandler = (Request) -> EventLoopFuture<Response>
+
+    /// The default response for when there is an error along the
+    /// routing chain that does not conform to
+    /// `ResponseConvertible`.
+    public static var internalErrorResponse = Response(
+        status: .internalServerError,
+        body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
+    )
+
+    /// The response for when no handler is found for a Request.
+    public static var notFoundResponse = Response(
+        status: .notFound,
+        body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
+    )
     
     /// `Middleware` that will intercept all requests through this
     /// router, before all other `Middleware` regardless of
@@ -39,24 +53,18 @@ public final class Router {
     ///     given method and path.
     ///   - method: The method of a request this handler expects.
     ///   - path: The path of a requst this handler can handle.
-    func add(
-        handler: @escaping (Request) throws -> ResponseConvertible,
-        for method: HTTPMethod,
-        path: String
-    ) {
-        let pathPrefixes = self.pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
-        let splitPath = pathPrefixes + path.split(separator: "/").map(String.init)
-        let middlewareClosures = self.middlewares.reversed().map(Middleware.intercept)
-        self.trie.insert(path: splitPath, storageKey: method) {
+    func add(handler: @escaping (Request) throws -> ResponseConvertible, for method: HTTPMethod, path: String) {
+        let pathPrefixes = pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
+        let splitPath = pathPrefixes + path.tokenized
+        let middlewareClosures = middlewares.reversed().map(Middleware.interceptConvertError)
+        trie.insert(path: splitPath, storageKey: method) {
             var next = { request in
-                catchError { try handler(request).convert() }
+                catchError { try handler(request).convert() }.convertErrorToResponse()
             }
             
             for middleware in middlewareClosures {
                 let oldNext = next
-                next = { request in
-                    catchError { try middleware(request, oldNext) }
-                }
+                next = { middleware($0, oldNext) }
             }
             
             return next($0)
@@ -69,18 +77,63 @@ public final class Router {
     /// passing it to the handler closure.
     ///
     /// - Parameter request: The request this router will handle.
-    /// - Throws: Any error encountered while handling the request.
     /// - Returns: A future containing the response of a handler or a
     ///   `.notFound` response if there was not a matching handler.
-    func handle(request: Request) throws -> EventLoopFuture<Response> {
-        let splitPath = request.path.split(separator: "/").map(String.init)
-        guard let hit = self.trie.search(path: splitPath, storageKey: request.method) else {
-            return try HTTPError(.notFound).convert()
+    func handle(request: Request) -> EventLoopFuture<Response> {
+        var handler = notFoundHandler
+
+        // Find a matching handler
+        if let match = trie.search(path: request.path.tokenized, storageKey: request.method) {
+            request.pathParameters = match.1
+            handler = match.0
         }
-        
-        request.pathParameters = hit.1
-        
-        return try hit.0(request)
+
+        // Apply global middlewares
+        for middleware in globalMiddlewares.reversed() {
+            let lastHandler = handler
+            handler = { middleware.interceptConvertError($0, next: lastHandler) }
+        }
+
+        return handler(request)
+    }
+
+    private func notFoundHandler(_ request: Request) -> EventLoopFuture<Response> {
+        return .new(Router.notFoundResponse)
+    }
+}
+
+private extension Middleware {
+    func interceptConvertError(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
+        return catchError {
+            try intercept(request, next: next)
+        }.convertErrorToResponse()
+    }
+}
+
+private extension EventLoopFuture where Value == Response {
+    func convertErrorToResponse() -> EventLoopFuture<Response> {
+        return flatMapError { error in
+            func serverError() -> EventLoopFuture<Response> {
+                Log.error("[Server] encountered internal error: \(error).")
+                return .new(Router.internalErrorResponse)
+            }
+
+            do {
+                if let error = error as? ResponseConvertible {
+                    return try error.convert()
+                } else {
+                    return serverError()
+                }
+            } catch {
+                return serverError()
+            }
+        }
+    }
+}
+
+private extension String {
+    var tokenized: [String] {
+        return split(separator: "/").map(String.init)
     }
 }
 

@@ -20,6 +20,11 @@ extension AlterTableBuilder {
         self.dropColumns.append(column)
     }
     
+    /// Drop the `created_at` and `updated_at` columns.
+    public func dropTimestamps() {
+        self.dropColumns.append(contentsOf: ["created_at", "updated_at"])
+    }
+    
     /// Rename a column.
     ///
     /// - Parameters:

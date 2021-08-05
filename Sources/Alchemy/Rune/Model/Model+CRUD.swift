@@ -15,14 +15,17 @@ extension Model {
     
     /// Delete all models of this type from a database.
     ///
-    /// - Parameter db: The database to delete models from. Defaults
-    ///   to `Services.db`.
+    /// - Parameter
+    ///   - db: The database to delete models from. Defaults
+    ///     to `Services.db`.
+    ///   - where: An optional where clause to specify the elements
+    ///     to delete.
     /// - Returns: A future that completes when the models are
     ///   deleted.
-    public static func deleteAll(db: Database = Services.db) -> EventLoopFuture<Void> {
-        Self.query(database: db)
-            .delete()
-            .voided()
+    public static func deleteAll(db: Database = Services.db, where: WhereValue? = nil) -> EventLoopFuture<Void> {
+        var query = Self.query(database: db)
+        if let clause = `where` { query = query.where(clause) }
+        return query.delete().voided()
     }
     
     /// Throws an error if a query with the specified where clause
@@ -49,6 +52,19 @@ extension Model {
             .flatMapThrowing { try $0.map { _ in throw error } }
     }
     
+    /// Creates a query on the given model with the given where
+    /// clause.
+    ///
+    /// - Parameters:
+    ///   - where: A clause to match.
+    ///   - db: The database to query. Defaults to `Services.db`.
+    /// - Returns: A query on the `Model`'s table that matches the
+    ///   given where clause.
+    public static func `where`(_ where: WhereValue, db: Database = Services.db) -> ModelQuery<Self> {
+        Self.query(database: db)
+            .where(`where`)
+    }
+    
     /// Gets the first element that meets the given where value.
     ///
     /// - Parameters:
@@ -64,6 +80,20 @@ extension Model {
         Self.query(database: db)
             .where(`where`)
             .firstModel()
+    }
+    
+    /// Gets all elements that meets the given where value.
+    ///
+    /// - Parameters:
+    ///   - where: The table will be queried for a row matching this
+    ///     clause.
+    ///   - db: The database to query. Defaults to `Services.db`.
+    /// - Returns: A future containing all the results matching the
+    ///   `where` clause.
+    public static func allWhere(_ where: WhereValue, db: Database = Services.db) -> EventLoopFuture<[Self]> {
+        Self.query(database: db)
+            .where(`where`)
+            .allModels()
     }
     
     /// Gets the first element that meets the given where value.
@@ -99,9 +129,9 @@ extension Model {
     ///   (an `id` being populated, for example).
     public func save(db: Database = Services.db) -> EventLoopFuture<Self> {
         if self.id != nil {
-            return self.update()
+            return self.update(db: db)
         } else {
-            return self.insert()
+            return self.insert(db: db)
         }
     }
     

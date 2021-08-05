@@ -162,6 +162,15 @@ extension CreateColumnBuilder where Default == Int {
     }
 }
 
+extension CreateColumnBuilder where Default == Date {
+    /// Defaults this column to `now()` or to dialect equivalent.
+    ///
+    /// - Returns: This column builder.
+    @discardableResult public func defaultNow() -> Self {
+        self.default(expression: "NOW()")
+    }
+}
+
 /// Extensions for adding default values to a JSON column.
 extension CreateColumnBuilder where Default == SQLJSON {
     /// Adds a JSON `String` as the default for this column.

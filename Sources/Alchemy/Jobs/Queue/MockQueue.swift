@@ -3,44 +3,85 @@ import NIO
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down.
-public final class MemoryQueue: Queue {
-    @Locked private var jobs: [JobID: JobData] = [:]
-    @Locked private var pending: [String: [JobID]] = [:]
-    @Locked private var reserved: [String: [JobID]] = [:]
+public final class MockQueue: Queue {
+    private var jobs: [JobID: JobData] = [:]
+    private var pending: [String: [JobID]] = [:]
+    private var reserved: [String: [JobID]] = [:]
+    
+    private let lock = NSRecursiveLock()
     
     public init() {}
     
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
-        self.jobs[job.id] = job
-        self.append(id: job.id, on: job.queueName, dict: &self.pending)
+        lock.lock()
+        defer { lock.unlock() }
+        
+        jobs[job.id] = job
+        append(id: job.id, on: job.channel, dict: &pending)
         return .new()
     }
     
-    public func dequeue(from queueName: String) -> EventLoopFuture<JobData?> {
-        guard let id = self.pending[queueName]?.popFirst() else {
+    public func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard
+            let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
+                return !(jobs[thing]?.inBackoff ?? false)
+            }),
+            let job = jobs[id]
+        else {
             return .new(nil)
         }
         
-        self.append(id: id, on: queueName, dict: &self.reserved)
-        return .new(self.jobs[id])
+        append(id: id, on: job.channel, dict: &reserved)
+        return .new(job)
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
+        lock.lock()
+        defer { lock.unlock() }
+        
         switch outcome {
         case .success, .failed:
-            self.reserved[job.queueName]?.removeAll(where: { $0 == job.id })
-            self.jobs.removeValue(forKey: job.id)
+            reserved[job.channel]?.removeAll(where: { $0 == job.id })
+            jobs.removeValue(forKey: job.id)
         case .retry:
-            self.jobs[job.id]?.attempts += 1
+            jobs[job.id] = job
         }
+        
         return .new()
     }
     
-    private func append(id: JobID, on queueName: String, dict: inout [String: [JobID]]) {
-        var array = dict[queueName] ?? []
+    private func append(id: JobID, on channel: String, dict: inout [String: [JobID]]) {
+        var array = dict[channel] ?? []
         array.append(id)
-        dict[queueName] = array
+        dict[channel] = array
+    }
+}
+
+extension JobData {
+    var inBackoff: Bool {
+        guard let date = backoffUntil else {
+            return false
+        }
+        
+        return date > Date()
+    }
+    
+    func nextRetryDate() -> Date? {
+        return backoffSeconds > 0 ? Date().addingTimeInterval(TimeInterval(backoffSeconds)) : nil
+    }
+}
+
+extension Array {
+    mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
+        if let firstIndex = firstIndex(where: conditional) {
+            return remove(at: firstIndex)
+        } else {
+            return nil
+        }
     }
 }

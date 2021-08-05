@@ -9,7 +9,7 @@ struct JobDecoding {
     
     static func decode(_ jobData: JobData) throws -> Job {
         guard let decoder = JobDecoding.decoders[jobData.jobName] else {
-            fatalError("Unknown job of type '\(jobData.jobName)'. Please register it via `app.registerJob(MyJob.self)`.")
+            throw JobError("Unknown job of type '\(jobData.jobName)'. Please register it via `app.registerJob(MyJob.self)`.")
         }
         
         return try decoder(jobData)

@@ -4,11 +4,13 @@ import NIO
 public protocol Job: Codable {
     /// The name of this Job. Defaults to the type name.
     static var name: String { get }
+    
     /// The recovery strategy for this job. Defaults to `.none`.
     var recoveryStrategy: RecoveryStrategy { get }
     /// The time that should be waited before retrying this job if it
-    /// fails. Defaults to 0.
+    /// fails. Sub-second precision is ignored. Defaults to 0.
     var retryBackoff: TimeAmount { get }
+    
     /// Called when a job finishes, either successfully or with too
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
@@ -25,9 +27,9 @@ extension Job {
     public func finished(result: Result<Void, Error>) {
         switch result {
         case .success:
-            Log.info("Job '\(Self.name)' succeeded.")
+            Log.info("[Queue] Job '\(Self.name)' succeeded.")
         case .failure(let error):
-            Log.error("Job '\(Self.name)' failed with error: \(error).")
+            Log.error("[Queue] Job '\(Self.name)' failed with error: \(error).")
         }
     }
 }

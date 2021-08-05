@@ -19,7 +19,8 @@ open class Grammar {
             self.compileHavings(query),
             self.compileOrders(query, orders: query.orders),
             self.compileLimit(query, limit: query.limit),
-            self.compileOffset(query, offset: query.offset)
+            self.compileOffset(query, offset: query.offset),
+            query.lock.map { SQL($0) }
         ]
 
         let (sql, bindings) = QueryHelpers.groupSQL(values: parts)

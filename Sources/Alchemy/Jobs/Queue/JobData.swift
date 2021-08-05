@@ -1,4 +1,4 @@
-import Foundation
+import NIO
 
 public typealias JobID = String
 public typealias JSONString = String
@@ -12,10 +12,15 @@ public struct JobData: Codable {
     public var json: JSONString
     /// The Job name.
     public let jobName: String
-    /// The queue this is associated with.
-    public let queueName: String
+    /// The channel this is associated with.
+    public let channel: String
     /// The recovery strategy to enact, should this Job fail to run.
     public let recoveryStrategy: RecoveryStrategy
+    /// How long should be waited before retrying a Job after a
+    /// failure.
+    public let backoffSeconds: Int
+    /// Don't run this again until this time.
+    public var backoffUntil: Date?
     /// The number of attempts this Job has been attempted.
     public var attempts: Int
     
@@ -24,19 +29,21 @@ public struct JobData: Codable {
         self.attempts <= self.recoveryStrategy.maximumRetries
     }
     
-    /// Create with a Job, id, and queueName.
+    /// Create with a Job, id, and channel.
     ///
     /// - Parameters:
     ///   - job: The `Job` to persist.
     ///   - id: A unique id for the Job.
-    ///   - queueName: The name of the queue the `job` belongs on.
+    ///   - channel: The name of the queue the `job` belongs on.
     /// - Throws: If the `job` is unable to be serialized to a String.
-    public init<J: Job>(_ job: J, id: String = UUID().uuidString, queueName: String) throws {
+    public init<J: Job>(_ job: J, id: String = UUID().uuidString, channel: String) throws {
         self.id = id
         self.jobName = J.name
-        self.queueName = queueName
+        self.channel = channel
         self.recoveryStrategy = job.recoveryStrategy
         self.attempts = 0
+        self.backoffSeconds = job.retryBackoff.seconds
+        self.backoffUntil = nil
         do {
             self.json = try job.jsonString()
         } catch {
@@ -45,13 +52,15 @@ public struct JobData: Codable {
     }
     
     /// Memberwise initializer.
-    public init(id: JobID, json: JSONString, jobName: String, queueName: String, recoveryStrategy: RecoveryStrategy, attempts: Int) {
+    public init(id: JobID, json: JSONString, jobName: String, channel: String, recoveryStrategy: RecoveryStrategy, retryBackoff: TimeAmount, attempts: Int, backoffUntil: Date?) {
         self.id = id
         self.json = json
         self.jobName = jobName
-        self.queueName = queueName
+        self.channel = channel
         self.recoveryStrategy = recoveryStrategy
+        self.backoffSeconds = retryBackoff.seconds
         self.attempts = attempts
+        self.backoffUntil = backoffUntil
     }
     
     mutating func updatePayload<J: Job>(_ job: J) throws {

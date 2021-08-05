@@ -11,6 +11,7 @@ jobs:
   test-macos:
     runs-on: macos-latest
     steps:
+    - uses: fwal/setup-swift@v1
     - uses: actions/checkout@v2
     - name: Build
       run: swift build -v
@@ -20,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        swift: [5.3]
+        swift: [5.4]
     container: swift:${{ matrix.swift }}
     steps:
     - uses: actions/checkout@v2

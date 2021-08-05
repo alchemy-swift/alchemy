@@ -4,18 +4,18 @@ import NIO
 import NIOHTTP1
 
 /// A type that can respond to HTTP requests.
-protocol HTTPResponder {
-    /// Respond to an `Request` with a future containing a `Response`.
+protocol HTTPRouter {
+    /// Handle a `Request` with a future containing a `Response`. Should never result in an error.
     ///
     /// - Parameter request: The request to respond to.
     /// - Returns: A future containing the response to send to the
     ///   client.
-    func respond(to request: Request) -> EventLoopFuture<Response>
+    func handle(request: Request) -> EventLoopFuture<Response>
 }
 
 /// Responds to incoming `HTTPRequests` with an `Response` generated
 /// by the `Responder`.
-final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
+final class HTTPHandler: ChannelInboundHandler {
     typealias InboundIn = HTTPServerRequestPart
     typealias OutboundOut = HTTPServerResponsePart
   
@@ -28,14 +28,14 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
     private var request: Request?
   
     /// The responder to all requests.
-    private let responder: Responder
+    private let router: HTTPRouter
     
     /// Initialize with a responder to handle all requests.
     ///
     /// - Parameter responder: The object to respond to all incoming
     ///   `Request`s.
-    init(responder: Responder) {
-        self.responder = responder
+    init(router: HTTPRouter) {
+        self.router = router
     }
   
     /// Received incoming `InboundIn` data, writing a response based
@@ -82,19 +82,9 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
             guard let request = request else { return }
       
             // Responds to the request
-            let response = responder.respond(to: request)
+            let response = router.handle(request: request)
                 // Ensure we're on the right ELF or NIO will assert.
                 .hop(to: context.eventLoop)
-                .flatMapError { error in
-                    catchError {
-                        if let error = error as? ResponseConvertible {
-                            return try error.convert()
-                        } else {
-                            Log.error("[Server] encountered server error: \(error).")
-                            return .new(Response.defaultErrorResponse)
-                        }
-                    }
-                }
             self.request = nil
       
             // Writes the response when done
@@ -111,10 +101,7 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
     /// - Returns: An future that completes when the response is
     ///   written.
     @discardableResult
-    private func writeResponse(
-        _ responseFuture: EventLoopFuture<Response>,
-        to context: ChannelHandlerContext
-    ) -> EventLoopFuture<Void> {
+    private func writeResponse(_ responseFuture: EventLoopFuture<Response>, to context: ChannelHandlerContext) -> EventLoopFuture<Void> {
         return responseFuture.flatMap { response in
             let responseWriter = HTTPResponseWriter(handler: self, context: context)
             responseWriter.completionPromise.futureResult.whenComplete { _ in
@@ -138,7 +125,7 @@ final class HTTPHandler<Responder: HTTPResponder>: ChannelInboundHandler {
 
 /// Used for writing a response to a remote peer with an
 /// `HTTPHandler`.
-private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
+private struct HTTPResponseWriter: ResponseWriter {
     /// The HTTP version we're working with.
     static private var httpVersion: HTTPVersion { HTTPVersion(major: 1, minor: 1) }
     
@@ -146,7 +133,7 @@ private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
     let completionPromise: EventLoopPromise<Void>
     
     /// The handler in which this writer is writing.
-    private let handler: HTTPHandler<R>
+    private let handler: HTTPHandler
     
     /// The context that should be written to.
     private let context: ChannelHandlerContext
@@ -156,7 +143,7 @@ private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
     ///   - handler: The handler in which this response is writing
     ///     inside.
     ///   - context: The context to write responses to.
-    init(handler: HTTPHandler<R>, context: ChannelHandlerContext) {
+    init(handler: HTTPHandler, context: ChannelHandlerContext) {
         self.handler = handler
         self.context = context
         self.completionPromise = context.eventLoop.makePromise()
@@ -167,18 +154,18 @@ private struct HTTPResponseWriter<R: HTTPResponder>: ResponseWriter {
     func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
         let version = HTTPResponseWriter.httpVersion
         let head = HTTPResponseHead(version: version, status: status, headers: headers)
-        self.context.write(self.handler.wrapOutboundOut(.head(head)), promise: nil)
+        context.write(handler.wrapOutboundOut(.head(head)), promise: nil)
     }
     
     func writeBody(_ body: ByteBuffer) {
-        self.context.writeAndFlush(
-            self.handler.wrapOutboundOut(.body(IOData.byteBuffer(body))),
+        context.writeAndFlush(
+            handler.wrapOutboundOut(.body(IOData.byteBuffer(body))),
             promise: nil
         )
     }
     
     func writeEnd() {
-        self.context.writeAndFlush(self.handler.wrapOutboundOut(.end(nil)), promise: nil)
-        self.completionPromise.succeed(())
+        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: nil)
+        completionPromise.succeed(())
     }
 }

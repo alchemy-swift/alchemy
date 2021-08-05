@@ -1,27 +1,62 @@
+import ArgumentParser
 import NIO
 
+/// Command to serve on launched. This is a subcommand of `Launch`.
+/// The app will route with the singleton `HTTPRouter`.
+struct ServeCommand<A: Application>: ParsableCommand {
+    static var configuration: CommandConfiguration {
+        CommandConfiguration(commandName: "serve")
+    }
+    
+    /// The host to serve at. Defaults to `localhost`.
+    @Option var host = "localhost"
+    /// The port to serve at. Defaults to `8080`.
+    @Option var port = 8080
+    /// The unix socket to serve at. If this is provided, the host and
+    /// port will be ignored.
+    @Option var unixSocket: String?
+    /// The number of Queue workers that should be kicked off in
+    /// this process. Defaults to `0`.
+    @Option var workers: Int = 0
+    /// Should the scheduler run in process, scheduling any recurring
+    /// work. Defaults to `false`.
+    @Flag var schedule: Bool = false
+    
+    // MARK: ParseableCommand
+    
+    func run() throws {
+        try A().launch(self)
+    }
+}
+
 /// Runs a HTTP server, listening on a socket and routing incoming
-/// requests to `Services.router`. `ServeRunner` is the default
-/// `Runner` of an Alchemy application.
-final class ServeRunner: Runner {
-    /// The socket to bind to.
-    private let socket: Socket
+/// requests to `Services.router`.
+extension ServeCommand: Runner {
+    // The socket that the server will bind to.
+    private var socket: Socket {
+        if let unixSocket = unixSocket {
+            return .unix(path: unixSocket)
+        } else {
+            return .ip(host: host, port: port)
+        }
+    }
     
-    /// A channel representing the connection to the socket of this
-    /// server.
-    private var channel: Channel?
-    
-    /// Create a new server that will bind to the given socket.
-    ///
-    /// - Parameter socket: The socket this server will bind to and
-    ///   listen at.
-    init(socket: Socket) {
-        self.socket = socket
+    func register(lifecycle: ServiceLifecycle) {
+        var channel: Channel?
+        lifecycle.register(
+            label: "Serve",
+            start: .eventLoopFuture { self.start().map { channel = $0 } },
+            shutdown: .eventLoopFuture { channel?.close() ?? .new() }
+        )
+        
+        if schedule {
+            lifecycle.registerScheduler()
+        }
+        
+        lifecycle.registerWorkers(workers)
     }
 
-    // MARK: Runner
-    
-    func start() -> EventLoopFuture<Void> {
+    private func start() -> EventLoopFuture<Channel> {
         // Much of this is courtesy of [apple/swift-nio-examples](
         // https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
         func childChannelInitializer(
@@ -29,9 +64,7 @@ final class ServeRunner: Runner {
         ) -> EventLoopFuture<Void> {
             channel.pipeline
                 .configureHTTPServerPipeline(withErrorHandling: true)
-                .flatMap { channel.pipeline
-                    .addHandler(HTTPHandler(responder: HTTPRouterResponder()))
-                }
+                .flatMap { channel.pipeline.addHandler(HTTPHandler(router: Services.router)) }
         }
 
         let serverBootstrap = ServerBootstrap(group: Services.eventLoopGroup)
@@ -65,17 +98,13 @@ final class ServeRunner: Runner {
         
         return channel
             .map { boundChannel in
-                self.channel = boundChannel
                 guard let channelLocalAddress = boundChannel.localAddress else {
                     fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
                 }
                 
                 Log.info("[Server] started and listening on \(channelLocalAddress).")
-                return
+                return boundChannel
             }
     }
-    
-    func shutdown() -> EventLoopFuture<Void> {
-        self.channel?.close() ?? Services.eventLoopGroup.future()
-    }
 }
+
