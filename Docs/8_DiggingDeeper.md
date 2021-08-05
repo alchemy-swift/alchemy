@@ -40,7 +40,7 @@ struct ExampleApp: Application {
     @Inject var scheduler: Scheduler
     ...
 
-    func setup() {
+    func boot() {
         ...
         self.scheduler
             // The scheduler will fire the `run` function on the BackupDatabase

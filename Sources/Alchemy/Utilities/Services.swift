@@ -26,7 +26,7 @@ extension Services {
     ///
     /// ```swift
     /// struct MyServer: Application {
-    ///     func setup() {
+    ///     func boot() {
     ///         Services.db = PostgresDatabase(
     ///             DatabaseConfig(
     ///                 socket: .ip(host: "localhost", port: 5432),

@@ -12,7 +12,7 @@ import NIOHTTP1
 /// ```swift
 /// // MyApplication.swift
 /// struct App: Application {
-///     func setup() {
+///     func boot() {
 ///         self.get("/hello") { _ in
 ///             "Hello, world!"
 ///         }
@@ -28,7 +28,7 @@ public protocol Application {
     /// environment is loaded and the global
     /// `MultiThreadedEventLoopGroup` is set. Called on an event loop,
     /// so `Services.eventLoop` is available for use if needed.
-    func setup()
+    func boot()
     
     /// Required empty initializer.
     init()
@@ -88,7 +88,7 @@ extension Application {
             start: .eventLoopFuture {
                 Services.eventLoopGroup.next()
                     // Run setup
-                    .submit(self.setup)
+                    .submit(self.boot)
             },
             shutdown: .none
         )

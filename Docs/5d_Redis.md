@@ -9,7 +9,7 @@ Alchemy provides first class Redis support out of the box, building on the exten
 You can connect to Redis using the `Redis` type. You should register this type for injection in your `Application.setup()`. For your convenience, there is a `Services.redis` wrapper around doing so. 
 
 ```swift
-func setup() {
+func boot() {
     ...
     Services.redis = Redis(.ip(host: "localhost", port: 6379))
 }

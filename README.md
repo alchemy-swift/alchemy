@@ -3,21 +3,20 @@
 <p>Elegant, batteries included web framework for Swift.</p>
 
 <p>
-<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
+<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.4-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/alchemy-swift/alchemy/releases"><img src="https://img.shields.io/github/release/alchemy-swift/alchemy.svg" alt="Latest Release"></a>
 <a href="https://github.com/alchemy-swift/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/alchemy-swift/alchemy.svg" alt="License"></a>
 </p>
 
 ```swift
+@main
 struct App: Application {
-    func setup() {
-        self.get {
+    func boot() {
+        get("/hello") {
             "Hello World!"
         }
     }
 }
-
-App.launch()
 ```
 
 ## Features

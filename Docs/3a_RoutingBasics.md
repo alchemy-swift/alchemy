@@ -22,7 +22,7 @@ Handlers are defined with the `.on(method:at:do:)` function, which takes an `HTT
 
 ```swift
 struct ExampleApp: Application {
-    func setup() {
+    func boot() {
         // GET {host}:{port}/hello
         self.get("/hello") { request in
             "Hello, World!"
@@ -125,7 +125,7 @@ struct UserController: Controller {
 }
 
 struct App: Application {
-    func setup() {
+    func boot() {
         ...
         self.controller(UserController())
     }
