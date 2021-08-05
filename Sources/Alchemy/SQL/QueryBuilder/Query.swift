@@ -2,6 +2,14 @@ import Foundation
 import NIO
 
 public class Query: Sequelizable {
+    public enum LockStrength: String {
+        case update = "FOR UPDATE", share = "FOR SHARE"
+    }
+
+    public enum LockOption: String {
+        case noWait = "NO WAIT", skipLocked = "SKIP LOCKED"
+    }
+
     let database: Database
     
     private(set) var columns: [SQL] = [SQL("*")]
@@ -14,6 +22,7 @@ public class Query: Sequelizable {
     private(set) var limit: Int? = nil
     private(set) var offset: Int? = nil
     private(set) var isDistinct = false
+    private(set) var lock: String? = nil
 
     public init(database: Database) {
         self.database = database
@@ -554,6 +563,13 @@ public class Query: Sequelizable {
     ///   queries to.
     public func forPage(_ page: Int, perPage: Int = 25) -> Self {
         offset((page - 1) * perPage).limit(perPage)
+    }
+
+    /// Adds custom SQL to the end of a SELECT query.
+    public func forLock(_ lock: LockStrength, option: LockOption? = nil) -> Self {
+        let lockOptionString = option.map { " \($0.rawValue)" } ?? ""
+        self.lock = lock.rawValue + lockOptionString
+        return self
     }
 
     /// Run a select query and return the database rows.

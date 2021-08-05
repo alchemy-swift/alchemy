@@ -129,9 +129,9 @@ extension Model {
     ///   (an `id` being populated, for example).
     public func save(db: Database = Services.db) -> EventLoopFuture<Self> {
         if self.id != nil {
-            return self.update()
+            return self.update(db: db)
         } else {
-            return self.insert()
+            return self.insert(db: db)
         }
     }
     
