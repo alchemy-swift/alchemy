@@ -111,13 +111,13 @@ extension ServeCommand: Runner {
 extension SocketAddress {
     var prettyName: String {
         switch self {
-        case .unixDomainSocket(let address):
+        case .unixDomainSocket:
             return pathname ?? ""
         case .v4:
             let address = ipAddress ?? ""
             let port = port ?? 0
             return "\(address):\(port)"
-        case .v6(let address):
+        case .v6:
             let address = ipAddress ?? ""
             let port = port ?? 0
             return "\(address):\(port)"
