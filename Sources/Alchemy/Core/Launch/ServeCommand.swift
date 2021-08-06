@@ -8,8 +8,8 @@ struct ServeCommand<A: Application>: ParsableCommand {
         CommandConfiguration(commandName: "serve")
     }
     
-    /// The host to serve at. Defaults to `localhost`.
-    @Option var host = "localhost"
+    /// The host to serve at. Defaults to `127.0.0.1`.
+    @Option var host = "127.0.0.1"
     /// The port to serve at. Defaults to `8080`.
     @Option var port = 8080
     /// The unix socket to serve at. If this is provided, the host and
@@ -102,9 +102,25 @@ extension ServeCommand: Runner {
                     fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
                 }
                 
-                Log.info("[Server] started and listening on \(channelLocalAddress).")
+                Log.info("[Server] started and listening on \(channelLocalAddress.prettyName)")
                 return boundChannel
             }
     }
 }
 
+extension SocketAddress {
+    var prettyName: String {
+        switch self {
+        case .unixDomainSocket(let address):
+            return pathname ?? ""
+        case .v4:
+            let address = ipAddress ?? ""
+            let port = port ?? 0
+            return "\(address):\(port)"
+        case .v6(let address):
+            let address = ipAddress ?? ""
+            let port = port ?? 0
+            return "\(address):\(port)"
+        }
+    }
+}
