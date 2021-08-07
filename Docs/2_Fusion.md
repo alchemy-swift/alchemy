@@ -211,7 +211,7 @@ There are a few types to be aware of that Alchemy automatically injects into the
 
 ```swift
 let scheduler = Services.scheduler
-let eventLoopGroup = Services.eventLoopGroup
+let eventLoopGroup = Loop.currentGroup
 ```
 
 You may also add custom static properties to it at your own convenience:
@@ -223,7 +223,7 @@ extension Services {
 }
 ```
 
-**Note**: Many `QueryBuilder` & `Rune ORM` APIs default to running queries on `Services.db`. Be sure to register a singleton global database in your `Application.setup` to use them.
+**Note**: Many `QueryBuilder` & `Rune ORM` APIs default to running queries on `Database.default`. Be sure to register a singleton global database in your `Application.setup` to use them.
 
 **Other Note**: You can mock many of these common services in tests by calling `Services.mock()` in your test case `setUp()`.
 

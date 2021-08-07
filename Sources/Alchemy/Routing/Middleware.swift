@@ -20,7 +20,7 @@ import NIO
 /// struct AsyncMiddleware: Middleware {
 ///     func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response>
 ///         // Run some async operation
-///         Services.db
+///         Database.default
 ///             .runRawQuery(...)
 ///             .flatMap { someData in
 ///                 // Set some data on the request for access in

@@ -10,8 +10,8 @@ final class RouterTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        Services.mock()
-        self.app = TestApp()
+        app = TestApp()
+        app.mockServices()
     }
     
     func testMatch() throws {
@@ -262,7 +262,7 @@ extension Application {
     }
     
     func request(_ test: TestRequest) throws -> String? {
-        return try Services.router.handle(
+        return try Router.default.handle(
             request: Request(
                 head: .init(
                     version: .init(

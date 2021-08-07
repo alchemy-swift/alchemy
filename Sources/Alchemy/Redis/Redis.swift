@@ -129,7 +129,7 @@ private final class ConnectionPool: RedisDriver {
     /// - Returns: A `RedisConnectionPool` associated with the current
     ///   `EventLoop` for sending commands to.
     fileprivate func getPool() -> RedisConnectionPool {
-        let loop = Services.eventLoop
+        let loop = Loop.current
         let key = ObjectIdentifier(loop)
         if let pool = self.poolStorage[key] {
             return pool
@@ -194,7 +194,7 @@ extension RedisClient {
 /// RedisClient conformance. See `RedisClient` for docs.
 extension Redis: RedisClient {
     public var eventLoop: EventLoop {
-        Services.eventLoop
+        Loop.current
     }
     
     public func logging(to logger: Logger) -> RedisClient {
@@ -202,7 +202,7 @@ extension Redis: RedisClient {
     }
     
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
-        driver.getClient().send(command: command, with: arguments).hop(to: Services.eventLoop)
+        driver.getClient().send(command: command, with: arguments).hop(to: Loop.current)
     }
     
     public func subscribe(

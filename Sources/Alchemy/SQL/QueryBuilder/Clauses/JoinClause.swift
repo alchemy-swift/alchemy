@@ -27,7 +27,7 @@ public final class JoinClause: Query {
     ///   - database: The database the join table is on.
     ///   - type: The type of join this is.
     ///   - table: The name of the table to join to.
-    init(database: Database, type: JoinType, table: String) {
+    init(database: DatabaseDriver, type: JoinType, table: String) {
         self.type = type
         self.table = table
         super.init(database: database)

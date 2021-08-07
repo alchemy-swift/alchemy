@@ -15,7 +15,7 @@ extension EventLoopFuture {
     /// - Parameter error: The error to create the future with.
     /// - Returns: A created future that will resolve to an error.
     public static func new<T>(error: Error) -> EventLoopFuture<T> {
-        Services.eventLoop.future(error: error)
+        Loop.current.future(error: error)
     }
     
     /// Creates a new successed `EventLoopFuture` on the current
@@ -25,7 +25,7 @@ extension EventLoopFuture {
     /// - Returns: A created future that will resolve to the provided
     ///   value.
     public static func new<T>(_ value: T) -> EventLoopFuture<T> {
-        Services.eventLoop.future(value)
+        Loop.current.future(value)
     }
 }
 

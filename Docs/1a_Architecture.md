@@ -38,13 +38,13 @@ func unimplementedHandler() -> EventLoopFuture<String> {
 
 ### Accessing `EventLoop`s or `EventLoopGroup`s
 
-In general, you won't need to access or think about any `EventLoop`s, but if you do, you can get the current one with `Services.eventLoop`. 
+In general, you won't need to access or think about any `EventLoop`s, but if you do, you can get the current one with `Loop.current`. 
 
 ```swift
-let thisLoop: EventLoop = Services.eventLoop
+let thisLoop: EventLoop = Loop.current
 ```
 
-Should you need an `EventLoopGroup` for other `NIO` based libraries, you can access the global `EventLoopGroup` (a `MultiThreadedEventLoopGroup`) via `Services.eventLoopGroup`.
+Should you need an `EventLoopGroup` for other `NIO` based libraries, you can access the global `EventLoopGroup` (a `MultiThreadedEventLoopGroup`) via `Loop.currentGroup`.
 
 ```swift
 let globalGroup: EventLoopGroup = Container.resolve(EventLoopGroup.self)
