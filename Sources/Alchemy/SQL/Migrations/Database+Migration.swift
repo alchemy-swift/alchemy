@@ -61,7 +61,7 @@ extension Database {
             .where("table_name" == AlchemyMigration.tableName)
             .count()
             .flatMap { value in
-                guard let value = value, value != 0 else {
+                guard value != 0 else {
                     Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
                     let statements = AlchemyMigration.Migration().upStatements(for: grammar)
                     return runRawQuery(statements.first!.query).voided()

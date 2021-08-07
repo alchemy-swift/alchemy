@@ -1,4 +1,4 @@
-public final class Scheduler {
+public final class Scheduler, Service {
     private struct WorkItem {
         let schedule: Schedule
         let work: (EventLoop) throws -> Void

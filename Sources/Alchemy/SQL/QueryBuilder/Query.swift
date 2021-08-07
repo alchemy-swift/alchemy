@@ -631,18 +631,20 @@ public class Query: Sequelizable {
     ///     count.
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   returned count value.
-    public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int?> {
+    public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int> {
         var query = "COUNT(\(column))"
         if let name = name {
             query += " as \(name)"
         }
         return self.select([query])
             .first()
+            .unwrap(orError: AlchemyError("a COUNT query didn't return any rows"))
             .flatMapThrowing {
-                if let column = $0?.allColumns.first {
-                    return try $0?.getField(column: column).int()
+                guard let column = $0.allColumns.first else {
+                    throw AlchemyError("a COUNT query didn't return any columns")
                 }
-                return nil
+                
+                return try $0.getField(column: column).int()
         }
     }
 
