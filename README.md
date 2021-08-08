@@ -80,7 +80,7 @@ Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or 
 
 The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
 
-## Routing
+## Getting started with routing
 
 Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
 
@@ -90,8 +90,8 @@ Routing is done with action functions `get()`, `post()`, `delete()`, etc on the 
 @main
 struct App: Application {
     func boot() {
-        get("/hello") { _ in
-            "Hello, World!"
+        get("/hello") { req in
+            return "Hello, World!"
         }
 
         post("/say_hello") { req -> String in
@@ -102,7 +102,67 @@ struct App: Application {
 }
 ```
 
-## Contributing
+Route handlers will automatically convert returned Swift.Codable types to JSON.
+
+```swift
+struct Todo {
+    let name: String
+    let isComplete: Bool
+    let created: Date
+}
+
+post("/json") { req -> Todo in
+    return Todo(name: "Laundry", isComplete: false, created: Date())
+}
+```
+
+You can also bundle groups of routes together with controllers.
+
+```swift
+struct TodoController: Controller {
+    func route(_ app: Application) {
+        app
+            .get("/todo", getAllTodos)
+            .post("/todo", createTodo)
+            .patch("/todo/:id", updateTodo)
+    }
+    
+    func getAllTodos(req: Request) -> [Todo] {
+        ...
+    }
+    
+    func createTodo(req: Request) -> Todo {
+        ...
+    }
+    
+    func updateTodo(req: Request) -> Todo {
+        ...
+    }
+}
+
+// Register the controller
+myApp.controller(TodoController())
+```
+
+## Environment variables
+
+## Services & dependency injection
+
+## SQL queries
+
+## Rune ORM
+
+## Middleware
+
+## Authentication
+
+## Redis & caching
+
+## Queues
+
+## Scheduling tasks
+
+# Contributing
 
 Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to readable code and documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups!
 
