@@ -225,7 +225,82 @@ A variety of services are set up and accessed this way including `Database`, `Re
 
 ## SQL queries
 
+Alchemy comes with a powerful query builder to make it easy to interact with SQL databases. You can always run raw SQL strings on a `Database` instance.
+
+```swift
+// Runs on Database.default
+Query.from("users").select("id").where("age" > 30)
+
+Database.default.rawQuery("SELECT * FROM users WHERE id = 1")
+```
+
+Most SQL operations are supported, including nested `WHERE`s and atomic transactions.
+
+```swift
+// The first user named Josh with age NULL or less than 28
+Query.from("users")
+    .where("name" == "Josh")
+    .where { $0.whereNull("age").orWhere("age" < 28) }
+    .first()
+
+// Wraps all inner queries in an atomic transaction.
+Database.default.transaction { conn in
+    conn.query()
+        .where("account" == 1)
+        .update(values: ["amount": 100])
+        .flatMap { _ in
+            conn.query()
+                .where("account" == 2)
+                .update(values: ["amount": 200])
+        }
+}
+```
+
 ## Rune ORM
+
+To make interacting with SQL databases even easier, Alchemy provides a powerful, expressive ORM called Rune. Built on Swift's Codable it lets you make a 1-1 mapping between simple Swift types and your database tables. Just conform your types to Model and you're good to go.
+
+```swift
+struct User: Model {
+    static let tableName = "users"
+
+    var id: Int? 
+    let firstName: String
+    let lastName: String
+    let age: Int
+}
+
+let newUser = User(firstName: "Josh", lastName: "Wright", age: 28)
+newUser.insert()
+```
+
+You can easily query directly on your type using the same query builder syntax. Your model type is automatically decoded from the result of the query for you.
+
+```swift
+User.where("id" == 1).firstModel()
+```
+
+If your database naming convention is different than Swift's, for example `snake_case`, you can set the static `keyMapping` property on your Model to automatially convert from Swift `camelCase`.
+
+```swift
+struct User: Model {
+    static var keyMapping: DatabaseKeyMapping = .convertToSnakeCase
+    ...
+}
+```
+
+Relationships are defined via property wrappers & can be eager loaded using `.with(\.$keyPath)`.
+
+```swift
+struct Todo: Model {
+    ...
+
+    @BelongsTo var user: User
+}
+
+// Queries all `Todo`s with their related `User`s also loaded.
+Todo.all().with(\.$user)
+```
 
 ## Middleware
 

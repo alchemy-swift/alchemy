@@ -13,7 +13,7 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.
-    fileprivate let mappingStrategy: DatabaseKeyMappingStrategy
+    fileprivate let mappingStrategy: DatabaseKeyMapping
     
     // MARK: Encoder
     
@@ -25,7 +25,7 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     /// - Parameter mappingStrategy: The strategy for mapping
     /// `CodingKey` string values to the `column`s of
     /// `DatabaseField`s.
-    init(_ mappingStrategy: DatabaseKeyMappingStrategy) {
+    init(_ mappingStrategy: DatabaseKeyMapping) {
         self.mappingStrategy = mappingStrategy
     }
     
