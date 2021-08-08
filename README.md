@@ -25,11 +25,8 @@ Alchemy provides you with Swifty APIs for everything you need to build productio
 
 - Simple, fast **routing engine**.
 - Powerful **dependency injection** container.
-- Customizable **middleware**.
 - Expressive, Swifty database ORM supporting MySQL and Postgres.
-- Intuitive **query builder**.
-- Database agnostic schema **migrations**.
-- Fast, reliable **persisted caching**.
+- Database agnostic query builder and schema **migrations**.
 - Robust job queues backed by Redis or SQL.
 - Supporting libraries to import your typesafe backend APIs directly into Swift frontends.
 - First class support for [Plot](https://github.com/JohnSundell/Plot), a typesafe HTML DSL.
