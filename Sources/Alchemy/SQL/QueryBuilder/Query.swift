@@ -10,7 +10,7 @@ public class Query: Sequelizable {
         case noWait = "NO WAIT", skipLocked = "SKIP LOCKED"
     }
 
-    let database: Database
+    let database: DatabaseDriver
     
     private(set) var columns: [SQL] = [SQL("*")]
     private(set) var from: String?
@@ -24,7 +24,7 @@ public class Query: Sequelizable {
     private(set) var isDistinct = false
     private(set) var lock: String? = nil
 
-    public init(database: Database) {
+    public init(database: DatabaseDriver) {
         self.database = database
     }
 
@@ -631,18 +631,20 @@ public class Query: Sequelizable {
     ///     count.
     /// - Returns: An `EventLoopFuture` to be run that contains the
     ///   returned count value.
-    public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int?> {
+    public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int> {
         var query = "COUNT(\(column))"
         if let name = name {
             query += " as \(name)"
         }
         return self.select([query])
             .first()
+            .unwrap(orError: AlchemyError("a COUNT query didn't return any rows"))
             .flatMapThrowing {
-                if let column = $0?.allColumns.first {
-                    return try $0?.getField(column: column).int()
+                guard let column = $0.allColumns.first else {
+                    throw AlchemyError("a COUNT query didn't return any columns")
                 }
-                return nil
+                
+                return try $0.getField(column: column).int()
         }
     }
 
@@ -723,17 +725,17 @@ public class Query: Sequelizable {
 
 extension Query {
     /// Shortcut for running a query with the given table on
-    /// `Services.db`.
+    /// `Database.default`.
     ///
     /// - Parameter table: The table to run the query on.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public static func table(_ table: String) -> Query {
-        Services.db.query().table(table)
+        Database.default.query().table(table)
     }
 
     /// Shortcut for running a query with the given table on
-    /// `Services.db`.
+    /// `Database.default`.
     ///
     /// An alias for `table(_ table: String)` to be used when running
     /// a `select` query that also lets you alias the table name.

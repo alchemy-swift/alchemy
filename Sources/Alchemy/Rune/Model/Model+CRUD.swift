@@ -5,10 +5,10 @@ extension Model {
     /// Load all models of this type from a database.
     ///
     /// - Parameter db: The database to load models from. Defaults to
-    ///   `Services.db`.
+    ///   `Database.default`.
     /// - Returns: An `EventLoopFuture` with an array of this model,
     ///   loaded from the database.
-    public static func all(db: Database = Services.db) -> EventLoopFuture<[Self]> {
+    public static func all(db: Database = .default) -> EventLoopFuture<[Self]> {
         Self.query(database: db)
             .allModels()
     }
@@ -17,12 +17,12 @@ extension Model {
     ///
     /// - Parameter
     ///   - db: The database to delete models from. Defaults
-    ///     to `Services.db`.
+    ///     to `Database.default`.
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
     /// - Returns: A future that completes when the models are
     ///   deleted.
-    public static func deleteAll(db: Database = Services.db, where: WhereValue? = nil) -> EventLoopFuture<Void> {
+    public static func deleteAll(db: Database = .default, where: WhereValue? = nil) -> EventLoopFuture<Void> {
         var query = Self.query(database: db)
         if let clause = `where` { query = query.where(clause) }
         return query.delete().voided()
@@ -38,14 +38,14 @@ extension Model {
     ///   - where: The where clause to attempt to match.
     ///   - error: The error that will be thrown, should a query with
     ///     the where clause find a result.
-    ///   - db: The database to query. Defaults to `Services.db`.
+    ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A future that will result in an error out if there
     ///   is a row on the table matching the given `where` clause.
     public static func ensureNotExists(
         _ where: WhereValue,
         else error: Error,
-        db: Database = Services.db
-    ) -> EventLoopFuture<Void> {
+        db: Database = .default
+) -> EventLoopFuture<Void> {
         Self.query(database: db)
             .where(`where`)
             .first()
@@ -57,10 +57,10 @@ extension Model {
     ///
     /// - Parameters:
     ///   - where: A clause to match.
-    ///   - db: The database to query. Defaults to `Services.db`.
+    ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A query on the `Model`'s table that matches the
     ///   given where clause.
-    public static func `where`(_ where: WhereValue, db: Database = Services.db) -> ModelQuery<Self> {
+    public static func `where`(_ where: WhereValue, db: Database = .default) -> ModelQuery<Self> {
         Self.query(database: db)
             .where(`where`)
     }
@@ -70,13 +70,10 @@ extension Model {
     /// - Parameters:
     ///   - where: The table will be queried for a row matching this
     ///     clause.
-    ///   - db: The database to query. Defaults to `Services.db`.
+    ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A future containing the first result matching the
     ///   `where` clause, if one exists.
-    public static func firstWhere(
-        _ where: WhereValue,
-        db: Database = Services.db
-    ) -> EventLoopFuture<Self?> {
+    public static func firstWhere(_ where: WhereValue, db: Database = .default) -> EventLoopFuture<Self?> {
         Self.query(database: db)
             .where(`where`)
             .firstModel()
@@ -87,10 +84,10 @@ extension Model {
     /// - Parameters:
     ///   - where: The table will be queried for a row matching this
     ///     clause.
-    ///   - db: The database to query. Defaults to `Services.db`.
+    ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A future containing all the results matching the
     ///   `where` clause.
-    public static func allWhere(_ where: WhereValue, db: Database = Services.db) -> EventLoopFuture<[Self]> {
+    public static func allWhere(_ where: WhereValue, db: Database = .default) -> EventLoopFuture<[Self]> {
         Self.query(database: db)
             .where(`where`)
             .allModels()
@@ -104,14 +101,14 @@ extension Model {
     ///   - where: The table will be queried for a row matching this
     ///     clause.
     ///   - error: The error to throw if there are no results.
-    ///   - db: The database to query. Defaults to `Services.db`.
+    ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A future containing the first result matching the
     ///   `where` clause. Will result in `error` if no result is
     ///   found.
     public static func unwrapFirstWhere(
         _ where: WhereValue,
         or error: Error,
-        db: Database = Services.db
+        db: Database = .default
     ) -> EventLoopFuture<Self> {
         Self.query(database: db)
             .where(`where`)
@@ -122,12 +119,12 @@ extension Model {
     /// it inserts it. If the `id` is not nil, it updates.
     ///
     /// - Parameter db: The database to save this model to. Defaults
-    ///   to `Services.db`.
+    ///   to `Database.default`.
     /// - Returns: A future that contains an updated version of self
     ///   with an updated copy of this model, reflecting any changes
     ///   that may have occurred saving this object to the database
     ///   (an `id` being populated, for example).
-    public func save(db: Database = Services.db) -> EventLoopFuture<Self> {
+    public func save(db: Database = .default) -> EventLoopFuture<Self> {
         if self.id != nil {
             return self.update(db: db)
         } else {
@@ -138,11 +135,11 @@ extension Model {
     /// Update this model in a database.
     ///
     /// - Parameter db: The database to update this model to. Defaults
-    ///   to `Services.db`.
+    ///   to `Database.default`.
     /// - Returns: A future that contains an updated version of self
     ///   with an updated copy of this model, reflecting any changes
     ///   that may have occurred saving this object to the database.
-    public func update(db: Database = Services.db) -> EventLoopFuture<Self> {
+    public func update(db: Database = .default) -> EventLoopFuture<Self> {
         return catchError {
             let id = try self.getID()
             return Self.query(database: db)
@@ -152,7 +149,7 @@ extension Model {
         }
     }
     
-    public func update(db: Database = Services.db, updateClosure: (inout Self) -> Void) -> EventLoopFuture<Self> {
+    public func update(db: Database = .default, updateClosure: (inout Self) -> Void) -> EventLoopFuture<Self> {
         return catchError {
             let id = try self.getID()
             var copy = self
@@ -167,12 +164,12 @@ extension Model {
     /// Inserts this model to a database.
     ///
     /// - Parameter db: The database to insert this model to. Defaults
-    ///   to `Services.db`.
+    ///   to `Database.default`.
     /// - Returns: A future that contains an updated version of self
     ///   with an updated copy of this model, reflecting any changes
     ///   that may have occurred saving this object to the database.
     ///   (an `id` being populated, for example).
-    public func insert(db: Database = Services.db) -> EventLoopFuture<Self> {
+    public func insert(db: Database = .default) -> EventLoopFuture<Self> {
         catchError {
             Self.query(database: db)
                 .insert(try self.fieldDictionary())
@@ -185,10 +182,10 @@ extension Model {
     /// model has a nil `id` field.
     ///
     /// - Parameter db: The database to remove this model from.
-    ///   Defaults to `Services.db`.
+    ///   Defaults to `Database.default`.
     /// - Returns: A future that completes when the model has been
     ///   deleted.
-    public func delete(db: Database = Services.db) -> EventLoopFuture<Void> {
+    public func delete(db: Database = .default) -> EventLoopFuture<Void> {
         catchError {
             let idField = try self.getID()
             return Self.query(database: db)
@@ -203,10 +200,10 @@ extension Model {
     /// fetched.
     ///
     /// - Parameter db: The database to load from. Defaults to
-    ///   `Services.db`.
+    ///   `Database.default`.
     /// - Returns: A future containing a freshly synced copy of this
     ///   model.
-    public func sync(db: Database = Services.db) -> EventLoopFuture<Self> {
+    public func sync(db: Database = .default) -> EventLoopFuture<Self> {
         catchError {
             guard let id = self.id else {
                 throw RuneError.syncErrorNoId
@@ -228,10 +225,10 @@ extension Array where Element: Model {
     /// Inserts each element in this array to a database.
     ///
     /// - Parameter db: The database to insert the models into.
-    ///   Defaults to `Services.db`.
+    ///   Defaults to `Database.default`.
     /// - Returns: A future that contains copies of all models in this
     ///   array, updated to reflect any changes in the model caused by inserting.
-    public func insertAll(db: Database = Services.db) -> EventLoopFuture<Self> {
+    public func insertAll(db: Database = .default) -> EventLoopFuture<Self> {
         catchError {
             Element.query(database: db)
                 .insert(try self.map { try $0.fieldDictionary() })
@@ -244,10 +241,10 @@ extension Array where Element: Model {
     /// will be ignored.
     ///
     /// - Parameter db: The database to delete from. Defaults to
-    ///   `Services.db`.
+    ///   `Database.default`.
     /// - Returns: A future that completes when all models in this
     ///   array are deleted from the database.
-    public func deleteAll(db: Database = Services.db) -> EventLoopFuture<Void> {
+    public func deleteAll(db: Database = .default) -> EventLoopFuture<Void> {
         Element.query(database: db)
             .where(key: "id", in: self.compactMap { $0.id })
             .delete()

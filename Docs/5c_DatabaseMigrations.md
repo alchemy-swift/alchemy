@@ -127,11 +127,11 @@ schema.raw(table: "drop schema public cascade")
 
 ## Running a Migration
 
-To begin, you need to ensure that your migrations are registered on `Services.db`. You can should do this in your `Application.setup` function.
+To begin, you need to ensure that your migrations are registered on `Database.default`. You can should do this in your `Application.setup` function.
 
 ```swift
-// Make sure to register a database with `Services.db = ...` first!
-Services.db.migrations = [
+// Make sure to register a database with `Database.default = ...` first!
+Database.default.migrations = [
     _20201220142243CreateUsers(),
     _20201222181209CreateTodos(),
     _20201225094501RenameTodos(),
@@ -142,7 +142,7 @@ Services.db.migrations = [
 
 #### Applying
 
-You can then apply all outstanding migrations in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Services.db` instead of serving.
+You can then apply all outstanding migrations in a single batch by passing the `migrate` argument to your app. This will cause the app to migrate `Database.default` instead of serving.
 
 ```bash
 # Applies all outstanding migrations

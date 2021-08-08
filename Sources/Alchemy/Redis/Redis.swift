@@ -1,23 +1,16 @@
 import NIO
 import RediStack
 
-/// A client for interfacing with a Redis instance.
-public final class Redis { 
-    fileprivate let driver: RedisDriver
-
-    /// Creates a Redis client that will connect with the given
-    /// configuration.
-    ///
-    /// - Parameters:
-    ///   - config: The configuration of the pool backing this `Redis`
-    ///     client.
-    public init(config: RedisConnectionPool.Configuration) {
-        self.driver = ConnectionPool(config: config)
-    }
-
-    /// Used for `Redis.transaction(...)`
-    fileprivate init(connection: RedisConnection) {
-        self.driver = Connection(connection: connection)
+extension Redis: Service {
+    /// A single redis connection
+    public static func connection(
+        _ host: String,
+        port: Int = 6379,
+        password: String? = nil,
+        database: Int? = nil,
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
+    ) -> Redis {
+        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize)
     }
     
     /// Convenience initializer for creating a redis client with the
@@ -33,15 +26,15 @@ public final class Redis {
     ///     connection pool. **Note:** There is one connection pool
     ///     per `EventLoop` of your application (meaning 1 per logical
     ///     core on your machine).
-    public convenience init(
-        _ instances: Socket...,
+    public static func cluster(
+        _ sockets: Socket...,
         password: String? = nil,
         database: Int? = nil,
         poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
-    ) {
-        self.init(
-            config: RedisConnectionPool.Configuration(
-                initialServerConnectionAddresses: instances.map(\.nio),
+    ) -> Redis {
+        return .rawPoolConfiguration(
+            RedisConnectionPool.Configuration(
+                initialServerConnectionAddresses: sockets.map(\.nio),
                 maximumConnectionCount: poolSize,
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
@@ -50,6 +43,32 @@ public final class Redis {
                 )
             )
         )
+    }
+    
+    /// A custom configuration for the Redis instance's connection
+    /// pool. Other initializers passthrough to this.
+    public static func rawPoolConfiguration(_ config: RedisConnectionPool.Configuration) -> Redis {
+        return Redis(config: config)
+    }
+}
+
+/// A client for interfacing with a Redis instance.
+public final class Redis { 
+    fileprivate let driver: RedisDriver
+
+    /// Creates a Redis client that will connect with the given
+    /// configuration.
+    ///
+    /// - Parameters:
+    ///   - config: The configuration of the pool backing this `Redis`
+    ///     client.
+    fileprivate init(config: RedisConnectionPool.Configuration) {
+        self.driver = ConnectionPool(config: config)
+    }
+
+    /// Used for `Redis.transaction(...)`
+    fileprivate init(connection: RedisConnection) {
+        self.driver = Connection(connection: connection)
     }
     
     /// Shuts down this `Redis` client, closing it's associated
@@ -110,7 +129,7 @@ private final class ConnectionPool: RedisDriver {
     /// - Returns: A `RedisConnectionPool` associated with the current
     ///   `EventLoop` for sending commands to.
     fileprivate func getPool() -> RedisConnectionPool {
-        let loop = Services.eventLoop
+        let loop = Loop.current
         let key = ObjectIdentifier(loop)
         if let pool = self.poolStorage[key] {
             return pool
@@ -175,7 +194,7 @@ extension RedisClient {
 /// RedisClient conformance. See `RedisClient` for docs.
 extension Redis: RedisClient {
     public var eventLoop: EventLoop {
-        Services.eventLoop
+        Loop.current
     }
     
     public func logging(to logger: Logger) -> RedisClient {
@@ -183,7 +202,7 @@ extension Redis: RedisClient {
     }
     
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
-        driver.getClient().send(command: command, with: arguments).hop(to: Services.eventLoop)
+        driver.getClient().send(command: command, with: arguments).hop(to: Loop.current)
     }
     
     public func subscribe(

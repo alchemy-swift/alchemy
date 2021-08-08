@@ -10,7 +10,7 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// An `Router` responds to HTTP requests from the client.
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
-public final class Router: HTTPRouter {
+public final class Router: HTTPRouter, Service {
     /// A router handler. Takes a request and returns a future with a
     /// response.
     private typealias RouterHandler = (Request) -> EventLoopFuture<Response>

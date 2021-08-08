@@ -45,7 +45,7 @@ public struct WhereColumn: WhereClause {
 
 public typealias WhereNestedClosure = (Query) -> Query
 public struct WhereNested: WhereClause {
-    let database: Database
+    let database: DatabaseDriver
     let closure: WhereNestedClosure
     var boolean: WhereBoolean = .and
     

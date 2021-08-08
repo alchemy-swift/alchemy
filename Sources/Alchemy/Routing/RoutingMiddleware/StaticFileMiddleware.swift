@@ -19,7 +19,7 @@ public struct StaticFileMiddleware: Middleware {
     private let directory: String
     
     /// The file IO helper for streaming files.
-    private let fileIO = NonBlockingFileIO(threadPool: Services.threadPool)
+    private let fileIO = NonBlockingFileIO(threadPool: .default)
     
     /// Used for allocating buffers when pulling out file data.
     private let bufferAllocator = ByteBufferAllocator()
@@ -35,10 +35,7 @@ public struct StaticFileMiddleware: Middleware {
     
     // MARK: Middleware
     
-    public func intercept(
-        _ request: Request,
-        next: @escaping Next
-    ) throws -> EventLoopFuture<Response> {
+    public func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
         // Ignore non `GET` requests.
         guard request.method == .GET else {
             return next(request)
@@ -73,7 +70,7 @@ public struct StaticFileMiddleware: Middleware {
                     byteCount: fileSizeBytes,
                     chunkSize: NonBlockingFileIO.defaultChunkSize,
                     allocator: self.bufferAllocator,
-                    eventLoop: Services.eventLoop,
+                    eventLoop: Loop.current,
                     chunkHandler: { buffer in
                         responseWriter.writeBody(buffer)
                         return .new(())
