@@ -19,7 +19,7 @@ struct App: Application {
 }
 ```
 
-# About Alchemy
+# About
 
 Alchemy provides you with Swifty APIs for everything you need to build production-ready backends.
 
@@ -66,6 +66,8 @@ mint install alchemy-swift/cli@main
 
 You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
 
+Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
+
 ## Swift Package Manager
 
 You can also add Alchemy to your project manually with the [Swift Package Manager](https://github.com/apple/swift-package-manager). Until `1.0.0` is released, minor version changes might be breaking, so you may want to use `upToNextMinor`.
@@ -73,8 +75,6 @@ You can also add Alchemy to your project manually with the [Swift Package Manage
 ```swift
 .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.2.0"))
 ```
-
-Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
 
 # Usage
 
