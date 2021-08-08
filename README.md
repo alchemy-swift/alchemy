@@ -1,6 +1,6 @@
-<p><img src="https://user-images.githubusercontent.com/6025554/104392567-3226f000-54f7-11eb-9ad6-b8795764aace.png" width="400"></a></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/6025554/104392567-3226f000-54f7-11eb-9ad6-b8795764aace.png" width="400"></a></p>
 
-<p>
+<p align="center">
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.4-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/alchemy-swift/alchemy/releases"><img src="https://img.shields.io/github/release/alchemy-swift/alchemy.svg" alt="Latest Release"></a>
 <a href="https://github.com/alchemy-swift/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/alchemy-swift/alchemy.svg" alt="License"></a>
@@ -76,19 +76,28 @@ You can also add Alchemy to your project manually with the [Swift Package Manage
 
 Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
 
-# Writing Some Code
+# Usage
 
-The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are samples of some of the best pieces.
+The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
 
-## Simple routing
+## Routing
 
-Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app.
+Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
+
+Routing is done with action functions `get()`, `post()`, `delete()`, etc on the application.
 
 ```swift
 @main
 struct App: Application {
     func boot() {
-        get("")
+        get("/hello") { _ in
+            "Hello, World!"
+        }
+
+        post("/say_hello") { req -> String in
+            let name = req.query(for: "name")!
+            return "Hello, \(name)"
+        }
     }
 }
 ```
