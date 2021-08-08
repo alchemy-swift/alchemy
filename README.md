@@ -21,34 +21,34 @@ struct App: Application {
 
 # About
 
-Alchemy provides you with Swifty APIs for everything you need to build production-ready backends.
+Alchemy provides you with Swifty APIs for everything you need to build production-ready backends. It makes writing your backend in Swift a breeze by easing typical tasks, such as:
 
 - Simple, fast **routing engine**.
 - Powerful **dependency injection** container.
-- Expressive, Swifty database ORM supporting MySQL and Postgres.
+- Expressive, Swifty database ORM.
 - Database agnostic query builder and schema **migrations**.
 - Robust job queues backed by Redis or SQL.
-- Supporting libraries to import your typesafe backend APIs directly into Swift frontends.
 - First class support for [Plot](https://github.com/JohnSundell/Plot), a typesafe HTML DSL.
+- Supporting libraries to share typesafe backend APIs with Swift frontends.
 
 ## Why Alchemy?
 
-Swift on the server is exciting but also relatively nascant ecosystem. Building a backend with it can be daunting and the pains of building in a new ecosystem can get in the way. involve wading through many tools, spread across lots of repos with partial features or incomplete documentation. 
+Swift on the server is exciting but also relatively nascant ecosystem. Building a backend with it can be daunting and the pains of building in a new ecosystem (navigating piecemeal projects, sparse feature sets, incomplete documentation) can get in the way.
 
-The goal of Alchemy is to provide a robust, batteries included framework with everything you need to build production ready backends. Stay focused on building your next amazing project in elegant, Swifty style without sweating the details.
+The goal of Alchemy is to provide a robust, batteries included framework with everything you need to build production ready backends. Stay focused on building your next amazing project in modern, Swifty style without sweating the details.
 
 ## Guiding principles
 
-- *Batteries included*: With Routing, an ORM, advanced Redis & SQL support, Authentication, Cron, Caching and much more, `import Alchemy` gives you all the pieces you need to start building a production grade server app.
-- *Convention over configuration*: APIs focus on simple syntax with lots of baked in convention so you can build much more with less code. This doesn't mean you can't customize; there's always an escape hatch to configure things your own way.
-- *Ease of use*: A fully documented codebase organized in a single repo make it easy to get building, extending and contributing.
-- *Keep it Swifty*: Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs.
+- **Batteries included**: With Routing, an ORM, advanced Redis & SQL support, Authentication, Cron, Caching and much more, `import Alchemy` gives you all the pieces you need to start building a production grade server app.
+- **Convention over configuration**: APIs focus on simple syntax with lots of baked in convention so you can build much more with less code. This doesn't mean you can't customize; there's always an escape hatch to configure things your own way.
+- **Ease of use**: A fully documented codebase organized in a single repo make it easy to get building, extending and contributing.
+- **Keep it Swifty**: *Fully `async/await`*! Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs.
 
 # Get Started
 
 ## Install Alchemy
 
-The Alchemy CLI can help you get started. It is installable with [Mint](https://github.com/yonaskolb/Mint).
+The Alchemy CLI is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
 mint install alchemy-swift/cli@main
@@ -56,14 +56,14 @@ mint install alchemy-swift/cli@main
 
 ## Create a New App
 
+Creating an app with the CLI will let you pick between a backend or a fullstack (`iOS` frontend, `Alchemy` backend, `Shared` library) project. 
+
 1. `alchemy new MyNewProject`
-2. `cd MyNewProject`
+2. `cd MyNewProject` (if you selected fullstack, `MyNewProject/Backend`)
 3. `swift run`
 4. view your brand new app at http://localhost:8080
 
-You'll be guided through picking a new project template, either `Backend` or `Fullstack`.
-
-Check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
+When you're ready to ship, check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
 
 ## Swift Package Manager
 
@@ -77,7 +77,7 @@ You can also add Alchemy to your project manually with the [Swift Package Manage
 
 The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
 
-## Getting started with routing
+## Getting started
 
 Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
 
@@ -99,7 +99,7 @@ struct App: Application {
 }
 ```
 
-Route handlers will automatically convert returned Swift.Codable types to JSON.
+Route handlers will automatically convert returned Swift.Codable types to JSON. You can also return a `Response` if you'd like full control over the returned content & it's encoding.
 
 ```swift
 struct Todo {
@@ -111,9 +111,25 @@ struct Todo {
 post("/json") { req -> Todo in
     return Todo(name: "Laundry", isComplete: false, created: Date())
 }
+
+get("/xml") { req -> Response in
+    let xmlData = """
+            <note>
+                <to>Rachel</to>
+                <from>Josh</from>
+                <heading>Reminder</heading>
+                <body>Hello from XML!</body>
+            </note>
+            """.data(using: .utf8)!
+    return Response(
+        status: .accepted,
+        headers: ["Some-Header": "value"],
+        body: HTTPBody(data: xmlData, mimeType: .xml)
+    )
+}
 ```
 
-You can also bundle groups of routes together with controllers.
+Bundling groups of routes together with controllers can be a great way to clean up your code. This can help organize your projects by resource type.
 
 ```swift
 struct TodoController: Controller {
@@ -143,7 +159,69 @@ myApp.controller(TodoController())
 
 ## Environment variables
 
-## Services & dependency injection
+Often, you'll want to configure variables & secrets in your app's environment depending on whether your building for dev, stage or prod. The de facto method for this is a `.env` file, which Alchemy supports out of the box. 
+
+Keys and values are defined per line, with an `=` separating them. Comments can be added with a `#.`
+
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB=alchemy
+DB_USER=prod
+DB_PASSWORD=eLnGRkw55mHEssyP
+```
+
+You can access these variables in your code through the `Env` type. If you're feeling fancy, `Env` supports dynamic member lookup.
+
+```swift
+let dbHost: String = Env.current.get("DB_HOST")!
+let dbPort: Int = Env.current.get("DB_PORT")!
+let isProd: Bool = Env.current.get("IS_PROD")!
+
+let db: String = Env.DB_DATABASE
+let dbUsername: String = Env.DB_USER
+let dbPass: String = Env.DB_PASS
+```
+
+## Services & DI
+
+Alchemy makes DI a breeze to make your services easily pluggable and swappable in tests. Most services conform to  `Service`, built on top of [Fusion](https://github.com/alchemy-swift/fusion), which you can use to set sensible default instances for your services.
+
+You can use `Service.config(default: ...)` to configure the default instance of a service for the app. `Service.configure("key", ...)` lets you configure another, named instance. Most functions that interact with a `Service`, will default to running on your `Service`'s default configuration.
+
+```swift
+// Set the default database for the app.
+Database.config(
+    default: .postgres(
+        host: "localhost",
+        database: "alchemy",
+        username: "user",
+        password: "password"
+    )
+)
+
+// Set the database identified by the "mysql" key.
+Database.config("mysql",  .mysql(host: "localhost", database: "alchemy"))
+
+// Get's all `User`s from the default Database (postgres).
+Todo.all()
+
+// Get's all `User`s from the "mysql" database.
+Todo.all(db: .named("mysql"))
+```
+
+In this way, you can easily configure as many `Database`s as you need while having Alchemy use the Postgres one by default. When it comes time for testing, injecting a mock database is dead simple.
+
+```swift
+final class MyTests: XCTestCase {
+    func setup() {
+        Database.configure(default: .mock())
+    }
+}
+```
+
+A variety of services are set up and accessed this way including `Database`, `Redis`, `Router`, `Queue`, `Cache`, `HTTPClient`, `Scheduler`, `NIOThreadPool`, and `ServiceLifecycle`.
 
 ## SQL queries
 
