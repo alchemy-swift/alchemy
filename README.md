@@ -96,13 +96,9 @@ Routing is done with action functions `get()`, `post()`, `delete()`, etc on the 
 @main
 struct App: Application {
     func boot() {
-        get("/hello") { req in
-            return "Hello, World!"
-        }
-
         post("/say_hello") { req -> String in
             let name = req.query(for: "name")!
-            return "Hello, \(name)"
+            return "Hello, \(name)!"
         }
     }
 }
