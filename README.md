@@ -39,14 +39,25 @@ The goal of Alchemy is to provide a robust, batteries included framework with ev
 
 ## Guiding principles
 
-- **Batteries included**: With Routing, an ORM, advanced Redis & SQL support, Authentication, Cron, Caching and much more, `import Alchemy` gives you all the pieces you need to start building a production grade server app.
-- **Convention over configuration**: APIs focus on simple syntax with lots of baked in convention so you can build much more with less code. This doesn't mean you can't customize; there's always an escape hatch to configure things your own way.
-- **Ease of use**: A fully documented codebase organized in a single repo make it easy to get building, extending and contributing.
-- **Keep it Swifty**: *Fully `async/await`*! Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs.
+**1. Batteries Included**
+
+With Routing, an ORM, advanced Redis & SQL support, Authentication, Cron, Caching and much more, `import Alchemy` gives you all the pieces you need to start building a production grade server app.
+
+**2. Convention over Configuration**
+
+APIs focus on simple syntax with lots of baked in convention so you can build much more with less code. This doesn't mean you can't customize; there's always an escape hatch to configure things your own way.
+
+**3. Ease of Use** 
+
+A fully documented codebase organized in a single repo make it easy to get building, extending and contributing.
+
+**4. Keep it Swifty** 
+
+*Fully `async/await`*! 
+
+Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs.
 
 # Get Started
-
-## Install Alchemy
 
 The Alchemy CLI is installable with [Mint](https://github.com/yonaskolb/Mint).
 
@@ -56,28 +67,28 @@ mint install alchemy-swift/cli@main
 
 ## Create a New App
 
-Creating an app with the CLI will let you pick between a backend or a fullstack (`iOS` frontend, `Alchemy` backend, `Shared` library) project. 
+Creating an app with the CLI will let you pick between a backend or fullstack (`iOS` frontend, `Alchemy` backend, `Shared` library) project. 
 
 1. `alchemy new MyNewProject`
 2. `cd MyNewProject` (if you selected fullstack, `MyNewProject/Backend`)
 3. `swift run`
 4. view your brand new app at http://localhost:8080
 
-When you're ready to ship, check out the [deployment guide](Docs/9_Deploying.md) for deploying to Linux or Docker.
-
 ## Swift Package Manager
 
-You can also add Alchemy to your project manually with the [Swift Package Manager](https://github.com/apple/swift-package-manager). Until `1.0.0` is released, minor version changes might be breaking, so you may want to use `upToNextMinor`.
+You can also add Alchemy to your project manually with the [Swift Package Manager](https://github.com/apple/swift-package-manager).
 
 ```swift
 .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.2.0"))
 ```
 
+Until `1.0.0` is released, minor version changes might be breaking, so you may want to use `upToNextMinor`.
+
 # Usage
 
 The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
 
-## Routing & Controllers
+## Basics & Routing
 
 Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
 
@@ -108,16 +119,16 @@ struct Todo {
     let created: Date
 }
 
-post("/json") { req -> Todo in
+app.post("/json") { req -> Todo in
     return Todo(name: "Laundry", isComplete: false, created: Date())
 }
 
-get("/xml") { req -> Response in
+app.get("/xml") { req -> Response in
     let xmlData = """
             <note>
                 <to>Rachel</to>
                 <from>Josh</from>
-                <heading>Reminder</heading>
+                <heading>Message</heading>
                 <body>Hello from XML!</body>
             </note>
             """.data(using: .utf8)!
@@ -241,7 +252,7 @@ Alchemy comes with a powerful query builder to make it easy to interact with SQL
 // Runs on Database.default
 Query.from("users").select("id").where("age" > 30)
 
-Database.default.rawQuery("SELECT * FROM users WHERE id = 1")
+database.rawQuery("SELECT * FROM users WHERE id = 1")
 ```
 
 Most SQL operations are supported, including nested `WHERE`s and atomic transactions.
@@ -254,7 +265,7 @@ Query.from("users")
     .first()
 
 // Wraps all inner queries in an atomic transaction.
-Database.default.transaction { conn in
+database.transaction { conn in
     conn.query()
         .where("account" == 1)
         .update(values: ["amount": 100])
@@ -484,6 +495,6 @@ Check out the docs for more advanced guides on all of the above as well as Migra
 
 # Contributing
 
-Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to readable code and documentation, so don't be afraid to dive in and submit PRs for bug fixes, documentation cleanup, forks or tune ups!
+Alchemy was designed to make it easy for you to contribute code. It's a single codebase with special attention given to readable code and documentation, so feel free to dive in and contribute features, bug fixes, docs or tune ups.
 
 You can report bugs, contribute features, or just say hi on [Github discussions](https://github.com/alchemy-swift/alchemy/discussions) and [Discord](https://discord.gg/74Bq29q22u).
