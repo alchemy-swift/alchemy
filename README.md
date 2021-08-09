@@ -53,8 +53,6 @@ A fully documented codebase organized in a single repo make it easy to get build
 
 **4. Keep it Swifty** 
 
-*Fully `async/await`*! 
-
 Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs.
 
 # Get Started
@@ -452,7 +450,7 @@ struct EmailJob: Job {
 }
 ```
 
-For advanced Queue usage including channels, queue priorities, failed job tables, backoff time, and retry policies. Check out the guide on Queues.
+For advanced Queue usage including channels, queue priorities, backoff times, and retry policies. Check out the guide on Queues.
 
 
 ## Scheduling tasks
