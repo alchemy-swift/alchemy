@@ -88,7 +88,7 @@ The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy h
 
 ## Basics & Routing
 
-Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
+Each Alchemy project starts with an implemention of the `Application` protocol. It has a single function, `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
 
 Routing is done with action functions `get()`, `post()`, `delete()`, etc on the application.
 
@@ -189,9 +189,11 @@ let dbUsername: String = Env.DB_USER
 let dbPass: String = Env.DB_PASS
 ```
 
+Choose what env file your app uses by setting APP_ENV, your program will load it's environment from the file at `.{APP_ENV} `.
+
 ## Services & DI
 
-Alchemy makes DI a breeze to make your services easily pluggable and swappable in tests. Most services conform to  `Service`, built on top of [Fusion](https://github.com/alchemy-swift/fusion), which you can use to set sensible default instances for your services.
+Alchemy makes DI a breeze to keep your services pluggable and swappable in tests. Most services in Alchemy conform to `Service`, a protocol built on top of [Fusion](https://github.com/alchemy-swift/fusion), which you can use to set sensible default configurations for your services.
 
 You can use `Service.config(default: ...)` to configure the default instance of a service for the app. `Service.configure("key", ...)` lets you configure another, named instance. Most functions that interact with a `Service`, will default to running on your `Service`'s default configuration.
 
@@ -216,12 +218,12 @@ Todo.all()
 Todo.all(db: .named("mysql"))
 ```
 
-In this way, you can easily configure as many `Database`s as you need while having Alchemy use the Postgres one by default. When it comes time for testing, injecting a mock database is dead simple.
+In this way, you can easily configure as many `Database`s as you need while having Alchemy use the Postgres one by default. When it comes time for testing, injecting a mock service is easy.
 
 ```swift
 final class MyTests: XCTestCase {
     func setup() {
-        Database.configure(default: .mock())
+        Queue.configure(default: .mock())
     }
 }
 ```
@@ -273,7 +275,7 @@ database.transaction { conn in
 
 ## Rune ORM
 
-To make interacting with SQL databases even easier, Alchemy provides a powerful, expressive ORM called Rune. Built on Swift's Codable it lets you make a 1-1 mapping between simple Swift types and your database tables. Just conform your types to Model and you're good to go.
+To make interacting with SQL databases even easier, Alchemy provides a powerful, expressive ORM called Rune. Built on Swift's Codable, it lets you make a 1-1 mapping between simple Swift types and your database tables. Just conform your types to Model, add a static `tableName` property and you're good to go.
 
 ```swift
 struct User: Model {
@@ -349,6 +351,8 @@ You'll often want to authenticate incoming requests using your database models. 
 ```swift
 struct User: Model { ... }
 struct UserToken: Model, TokenAuthable {
+    static let tableName = "user_tokens"
+
     var id: Int?
     let value: String
 
@@ -362,13 +366,13 @@ app.get("/user") { req -> User in
 }
 ```
 
-Note that to make things simple for you, a few things are happening under the hood. A `tokenAuthMiddleware()` is automatically available since UserToken conforms to TokenAuthable. This middleware automatically parse tokens from the `Authorization` header of incoming Requests and validates them against the UserToken table. If the token matches a UserToken row, the related User and UserToken will be `.set()` on the Request for access via `get(User.self)`. If there is no match, your server will return a `401: Unauthorized` before hitting the handler.
+Note that to make things simple for you, a few things are happening under the hood. A `tokenAuthMiddleware()` is automatically available since `UserToken` conforms to `TokenAuthable`. This middleware automatically parse tokens from the `Authorization` header of incoming Requests and validates them against the `user_tokens` table. If the token matches a `UserToken` row, the related `User` and `UserToken` will be `.set()` on the Request for access via `get(User.self)`. If there is no match, your server will return a `401: Unauthorized` before hitting the handler.
 
-Also note that because `Model` descends from `Codable` you can return your database models directly from a handler to the client.
+Also note that, in this case, because `Model` descends from `Codable` you can return your database models directly from a handler to the client.
 
 ## Redis
 
-Working with Redis is extremely simple and powered by the excellent [RedisStack](https://github.com/Mordil/RediStack) package. Once you register a configuration, the `Redis` type has most Redis commands, including pub/sub, as functions you can access.
+Working with Redis is powered by the excellent [RedisStack](https://github.com/Mordil/RediStack) package. Once you register a configuration, the `Redis` type has most Redis commands, including pub/sub, as functions you can access.
 
 ```swift
 Redis.config(default: .connection("localhost"))
@@ -396,12 +400,12 @@ redis.transaction { redisConn in
 
 ## Queues
 
-Alchemy offers the `Queue` as a unified API around various queue backends. Queues allow your application to fire off or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis` and relational databases are supported, but you can easily write your own driver by conforming to the simple `QueueDriver` protocol. 
+Alchemy offers `Queue` as a unified API around various queue backends. Queues allow your application to dispatch or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis` and relational databases are supported, but you can easily write your own driver by conforming to the `QueueDriver` protocol. 
 
-To get started, configure the default `Queue` and `dispatch()` a `Job`. You can add any `Codable` fields to `Job`, such as a database `Model`, and they will be encoded and decoded when it's time to run the `Job`.
+To get started, configure the default `Queue` and `dispatch()` a `Job`. You can add any `Codable` fields to `Job`, such as a database `Model`, and they will be stored and decoded when it's time to run the job.
 
 ```swift
-// Will back this queue with your default Redis config
+// Will back the default queue with your default Redis config
 Queue.config(default: .redis())
 
 struct ProcessNewUser: Job {
@@ -424,10 +428,10 @@ swift run MyApp queue
 If you'd like, you can run a worker as part of your main server by passing the `--workers` flag.
 
 ```shell
-swift run --workers 3
+swift run MyApp --workers 3
 ```
 
-When a Job is successfully run, you can optionally run logic by overriding the `finished(result:)` function on `Job`. It receives the `Result` of the job being run, along with any error that may have occurred. From finished you can access any of the jobs properties, just like in `run()`.
+When a job is successfully run, you can optionally run logic by overriding the `finished(result:)` function on `Job`. It receives the `Result` of the job being run, along with any error that may have occurred. From `finished(result:)` you can access any of the jobs properties, just like in `run()`.
 
 ```swift
 struct EmailJob: Job {
@@ -446,7 +450,7 @@ struct EmailJob: Job {
 }
 ```
 
-For advanced Queue usage including channels, queue priorities, backoff times, and retry policies. Check out the guide on Queues.
+For advanced queue usage including channels, queue priorities, backoff times, and retry policies, check out the guide on Queues.
 
 
 ## Scheduling tasks
