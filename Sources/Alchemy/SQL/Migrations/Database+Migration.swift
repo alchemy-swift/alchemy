@@ -64,7 +64,7 @@ extension Database {
                 guard value != 0 else {
                     Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
                     let statements = AlchemyMigration.Migration().upStatements(for: self.grammar)
-                    return self.runRawQuery(statements.first!.query).voided()
+                    return self.rawQuery(statements.first!.query).voided()
                 }
                 
                 return .new()
@@ -129,7 +129,7 @@ extension Database {
         var elf = Loop.current.future()
         for statement in statements {
             elf = elf.flatMap { _ in
-                self.runRawQuery(statement.query, values: statement.bindings)
+                self.rawQuery(statement.query, values: statement.bindings)
                     .voided()
             }
         }

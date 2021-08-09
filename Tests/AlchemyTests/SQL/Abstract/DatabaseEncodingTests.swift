@@ -113,8 +113,7 @@ private struct CustomKeyedModel: Model {
     
     @BelongsTo
     var belongsTo: CustomKeyedModel
-    
-    static var keyMappingStrategy: DatabaseKeyMappingStrategy { .useDefaultKeys }
+    static var keyMapping: DatabaseKeyMapping = .useDefaultKeys
 }
 
 private struct CustomDecoderModel: Model {

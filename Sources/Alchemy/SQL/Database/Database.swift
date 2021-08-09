@@ -67,7 +67,7 @@ public final class Database: Service {
     ///     as there are '?'s in `sql`.
     /// - Returns: An `EventLoopFuture` of the rows returned by the
     ///   query.
-    public func runRawQuery(_ sql: String, values: [DatabaseValue] = []) -> EventLoopFuture<[DatabaseRow]> {
+    public func rawQuery(_ sql: String, values: [DatabaseValue] = []) -> EventLoopFuture<[DatabaseRow]> {
         driver.runRawQuery(sql, values: values)
     }
     
@@ -84,6 +84,11 @@ public final class Database: Service {
     /// - Throws: Any error that occurred when shutting down.
     func shutdown() throws {
         try driver.shutdown()
+    }
+    
+    /// Returns a `Query` for the default database.
+    public static func query() -> Query {
+        Query(database: Database.default.driver)
     }
 }
 

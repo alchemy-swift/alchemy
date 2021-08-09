@@ -22,7 +22,7 @@ import Foundation
 /// database columns. Note that in the example above you
 /// won't need to override, since keyMappingStrategy is,
 /// by default, convertToSnakeCase.
-public enum DatabaseKeyMappingStrategy {
+public enum DatabaseKeyMapping {
     /// Use the literal name for all properties on an object as its
     /// corresponding database column.
     case useDefaultKeys

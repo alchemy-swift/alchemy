@@ -165,6 +165,6 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     /// - Returns: The column name that `key` is mapped to.
     private func string(for key: Key, includeIdSuffix: Bool = false) -> String {
         let value = key.stringValue + (includeIdSuffix ? M.belongsToColumnSuffix : "")
-        return M.keyMappingStrategy.map(input: value)
+        return M.keyMapping.map(input: value)
     }
 }

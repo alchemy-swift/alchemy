@@ -154,7 +154,7 @@ extension HTTPClient {
                         return (responseJSON, response)
                     } catch {
                         throw PapyrusClientError(
-                            message: "Error decoding response type `\(Response.self)` from the request response. \(error)",
+                            message: "Error decoding `\(Response.self)` from the response. \(error)",
                             response: response
                         )
                     }

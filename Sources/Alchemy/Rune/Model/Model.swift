@@ -35,7 +35,7 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// How should the Swift `CodingKey`s be mapped to database
     /// columns? Defaults to `.convertToSnakeCase`. Can be
     /// overridden on a per-type basis.
-    static var keyMappingStrategy: DatabaseKeyMappingStrategy { get }
+    static var keyMapping: DatabaseKeyMapping { get }
     
     /// When mapping a `Model` to an SQL table, `@BelongsTo`
     /// properties will have their property names suffixed by this
@@ -75,7 +75,7 @@ extension Model {
         String(describing: Self.self)
     }
     
-    public static var keyMappingStrategy: DatabaseKeyMappingStrategy {
+    public static var keyMapping: DatabaseKeyMapping {
         .convertToSnakeCase
     }
     
