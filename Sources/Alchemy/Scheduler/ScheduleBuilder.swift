@@ -52,7 +52,7 @@ public struct ScheduleBuilder {
     /// - Parameters:
     ///   - frequency: The frequency at which this `Job` should be
     ///     run. See `Frequency`.
-    public func every(_ frequency: Frequency) {
+    func every(_ frequency: Frequency) {
         let schedule = Schedule(validate: frequency.cronExpression)
         self.buildingFinished(schedule)
     }

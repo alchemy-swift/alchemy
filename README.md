@@ -77,7 +77,7 @@ You can also add Alchemy to your project manually with the [Swift Package Manage
 
 The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
 
-## Getting started
+## Routing & Controllers
 
 Each Alchemy project starts with an implemention of the `Application` protocol. It has a single `boot()` for you to set up your app. In `boot()` you'll define your configurations, routes, jobs, and anything else needed to set up your application.
 
@@ -221,7 +221,17 @@ final class MyTests: XCTestCase {
 }
 ```
 
-A variety of services are set up and accessed this way including `Database`, `Redis`, `Router`, `Queue`, `Cache`, `HTTPClient`, `Scheduler`, `NIOThreadPool`, and `ServiceLifecycle`.
+Since Service wraps [Fusion](https://github.com/alchemy-swift/fusion), you can also access default and named configurations via the @Inject property wrapper. A variety of services can be set up and accessed this way including `Database`, `Redis`, `Router`, `Queue`, `Cache`, `HTTPClient`, `Scheduler`, `NIOThreadPool`, and `ServiceLifecycle`.
+
+```swift
+@Inject          var postgres: Database
+@Inject("mysql") var mysql: Database
+@Inject          var redis: Redis
+
+postgres.rawQuery("select * from users")
+mysql.rawQuery("select * from some_table")
+redis.get("cached_data_key")
+```
 
 ## SQL queries
 
@@ -294,7 +304,6 @@ Relationships are defined via property wrappers & can be eager loaded using `.wi
 ```swift
 struct Todo: Model {
     ...
-
     @BelongsTo var user: User
 }
 
@@ -304,13 +313,174 @@ Todo.all().with(\.$user)
 
 ## Middleware
 
+Middleware lets you intercept requests coming in and responses coming out of your server. You can use them to log, authenticate, or modify an incoming `Request` and outgoing `Response`. Add it to your app with `use()` or `useAll()`.
+
+```swift
+struct LoggingMiddleware: Middleware {
+    func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+        let start = Date()
+        let requestInfo = "\(request.head.method.rawValue) \(request.path)"
+         Log.info("Incoming Request: \(requestInfo)")
+        return next(request)
+            .map { response in
+                let elapsedTime = String(format: "%.2fs", Date().timeIntervalSince(start))
+                Log.info("Outgoing Response: \(response.status.code) \(requestInfo) after \(elapsedTime)")
+                return response
+            }
+    }
+}
+
+// Applies the Middleware to all subsequently defined handlers.
+app.use(LoggingMiddleware())
+
+// Applies the Middleware to all incoming requests & outgoing responses.
+app.useAll(OtherMiddleware())
+```
+
 ## Authentication
 
-## Redis & caching
+You'll often want to authenticate incoming requests using your database models. Alchemy provides out of the box middlewares for authing requests against your ORM models using Basic & Token based auth.
+
+```swift
+struct User: Model { ... }
+struct UserToken: Model, TokenAuthable {
+    var id: Int?
+    let value: String
+
+    @BelongsTo var user: User
+}
+
+app.use(UserToken.tokenAuthMiddleware())
+app.get("/user") { req -> User in
+    let user = req.get(User.self)
+    return user
+}
+```
+
+Note that to make things simple for you, a few things are happening under the hood. A `tokenAuthMiddleware()` is automatically available since UserToken conforms to TokenAuthable. This middleware automatically parse tokens from the `Authorization` header of incoming Requests and validates them against the UserToken table. If the token matches a UserToken row, the related User and UserToken will be `.set()` on the Request for access via `get(User.self)`. If there is no match, your server will return a `401: Unauthorized` before hitting the handler.
+
+Also note that because `Model` descends from `Codable` you can return your database models directly from a handler to the client.
+
+## Redis
+
+Working with Redis is extremely simple and powered by the excellent [RedisStack](https://github.com/Mordil/RediStack) package. Once you register a configuration, the `Redis` type has most Redis commands, including pub/sub, as functions you can access.
+
+```swift
+Redis.config(default: .connection("localhost"))
+
+// Elsewhere
+@Inject var redis: Redis
+
+let value = redis.lpop(from: "my_list", as: String.self)
+
+redis.subscribe(to: "my_channel") { val in
+    print("got a \(val.string)")
+}
+```
+
+If the function you want isn't available, you can always send a raw command. Atomic `MULTI`/`EXEC` transactions are supported with `.transaction()`.
+
+```swift
+redis.send(command: "GET my_key")
+
+redis.transaction { redisConn in
+    redisConn.increment("foo")
+        .flatMap { _ in redisConn.increment("bar") }
+}
+```
 
 ## Queues
 
+Alchemy offers the `Queue` as a unified API around various queue backends. Queues allow your application to fire off or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis` and relational databases are supported, but you can easily write your own driver by conforming to the simple `QueueDriver` protocol. 
+
+To get started, configure the default `Queue` and `dispatch()` a `Job`. You can add any `Codable` fields to `Job`, such as a database `Model`, and they will be encoded and decoded when it's time to run the `Job`.
+
+```swift
+// Will back this queue with your default Redis config
+Queue.config(default: .redis())
+
+struct ProcessNewUser: Job {
+    let user: User
+    
+    func run() -> EventLoopFuture<Void> {
+        // do something with the new user
+    }
+}
+
+ProcessNewUser(user: someUser).dispatch()
+```
+
+Note that no jobs will be dequeued and run until you run a worker to do so. You can spin up workers by separately running your app with the `queue` argument.
+
+```shell
+swift run MyApp queue
+```
+
+If you'd like, you can run a worker as part of your main server by passing the `--workers` flag.
+
+```shell
+swift run --workers 3
+```
+
+When a Job is successfully run, you can optionally run logic by overriding the `finished(result:)` function on `Job`. It receives the `Result` of the job being run, along with any error that may have occurred. From finished you can access any of the jobs properties, just like in `run()`.
+
+```swift
+struct EmailJob: Job {
+    let email: String
+
+    func run() -> EventLoopFuture<Void> { ... }
+
+    func finished(result: Result<Void, Error>) {
+        switch result {
+        case .failure(let error):
+            Log.error("failed to send an email to \(email)!")
+        case .success:
+            Log.info("successfully sent an email to \(email)!")
+        }
+    }
+}
+```
+
+For advanced Queue usage including channels, queue priorities, failed job tables, backoff time, and retry policies. Check out the guide on Queues.
+
+
 ## Scheduling tasks
+
+Alchemy contains a built in task scheduler so that you don't need to generate cron entries for repetitive work, and can instead schedule recurring tasks right from your code. You can schedule code or jobs from your `Application` instance.
+
+```swift
+// Say good morning every day at 9:00 am.
+app.schedule { print("Good morning!") }
+    .daily(hour: 9)
+
+// Run `SendInvoices` job on the first of every month at 9:30 am.
+app.schedule(job: SendInvoices())
+    .monthly(day: 1, hour: 9, min: 30)
+```
+
+A variety of builder functions are offered to customize your schedule frequency. If your desired frequency is complex, you can even schedule a task using a cron expression.
+
+```swift
+// Every week on tuesday at 8:00 pm
+app.schedule { ... }
+    .weekly(day: .tue, hour: 20)
+
+// Every second
+app.schedule { ... }
+    .secondly()
+
+// Every minute at 30 seconds
+app.schedule { ... }
+    .minutely(sec: 30)
+
+// At 22:00 on every day-of-week from Monday through Friday.”
+app.schedule { ... }
+    .cron("0 22 * * 1-5")
+```
+
+## ...and more!
+
+Check out the docs for more advanced guides on all of the above as well as Migrations, Caching, Logging, making HTTP Requests, using the HTML DSL, advanced Request / Response, sharing API interfaces between client and server, deploying your apps to production, and much more.
 
 # Contributing
 
