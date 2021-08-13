@@ -41,10 +41,6 @@ extension Endpoint {
         _ dto: Request,
         with client: HTTPClient = .default
     ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
-        let encoder = jsonEncoder
-        let decoder = jsonDecoder
-        encoder.keyEncodingStrategy = keyMapping.jsonEncodingStrategy
-        decoder.keyDecodingStrategy = keyMapping.jsonDecodingStrategy
         return catchError {
             client.performRequest(
                 baseURL: baseURL,
@@ -71,16 +67,12 @@ extension Endpoint where Request == Empty {
     public func request(
         with client: HTTPClient = .default
     ) -> EventLoopFuture<(content: Response, response: HTTPClient.Response)> {
-        let encoder = jsonEncoder
-        let decoder = jsonDecoder
-        encoder.keyEncodingStrategy = keyMapping.jsonEncodingStrategy
-        decoder.keyDecodingStrategy = keyMapping.jsonDecodingStrategy
         return catchError {
             client.performRequest(
                 baseURL: baseURL,
                 parameters: try parameters(dto: .value),
-                encoder: encoder,
-                decoder: decoder
+                encoder: jsonEncoder,
+                decoder: jsonDecoder
             )
         }
     }
