@@ -60,7 +60,7 @@ Swift is built to write concice, safe and elegant code. Alchemy leverages it's b
 The Alchemy CLI is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
-mint install alchemy-swift/cli@main
+mint install alchemy-swift/alchemy-cli
 ```
 
 ## Create a New App
