@@ -12,7 +12,7 @@ Welcome to Alchemy, an elegant, batteries included backend framework for Swift. 
 @main 
 struct App: Application {
     func boot() {
-        get("/hello") { req in
+        get("/") { req in
             "Hello World!"
         }
     }
