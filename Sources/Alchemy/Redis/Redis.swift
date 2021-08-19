@@ -73,14 +73,14 @@ public final class Redis {
     
     /// Shuts down this `Redis` client, closing it's associated
     /// connection pools.
-    public func shutdown() {
-        driver.shutdown()
+    public func shutdown() throws {
+        try driver.shutdown()
     }
 }
 
 private protocol RedisDriver {
     func getClient() -> RedisClient
-    func shutdown()
+    func shutdown() throws
     func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 }
 
@@ -91,8 +91,8 @@ private struct Connection: RedisDriver {
         connection 
     }
 
-    func shutdown() {
-        connection.close()
+    func shutdown() throws {
+        try connection.close().wait()
     }
     
     func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
@@ -120,8 +120,12 @@ private final class ConnectionPool: RedisDriver {
         getPool().leaseConnection(transaction)
     }
 
-    func shutdown() {
-        poolStorage.values.forEach { $0.close() }
+    func shutdown() throws {
+        try poolStorage.values.forEach {
+            let promise: EventLoopPromise<Void> = $0.eventLoop.makePromise()
+            $0.close(promise: promise)
+            try promise.futureResult.wait()
+        }
     }
 
     /// Gets or creates a pool for the current `EventLoop`.

@@ -19,11 +19,11 @@ public final class Scheduler: Service {
     }
     
     private func schedule(schedule: Schedule, task: @escaping (EventLoop) throws -> Void, on loop: EventLoop) {
-        guard 
+        guard
             let next = schedule.next(),
             let nextDate = next.date
         else {
-            return Log.error("schedule doesn't have a future date to run.")
+            return Log.error("[Scheduler] schedule doesn't have a future date to run.")
         }
 
         func scheduleNextAndRun() throws -> Void {

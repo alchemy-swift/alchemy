@@ -22,11 +22,10 @@ extension Application {
     /// This should not be run on an `EventLoop`!
     func shutdownServices() throws {
         try HTTPClient.default.syncShutdown()
-        // Shutdown the main database, if it exists.
         try Container.global.resolveOptional(Database.self)?.shutdown()
+        try Container.global.resolveOptional(Redis.self)?.shutdown()
         try NIOThreadPool.default.syncShutdownGracefully()
         try Loop.group.syncShutdownGracefully()
-        Container.global.resolveOptional(Redis.self)?.shutdown()
     }
     
     /// Mocks many common services. Can be called in the `setUp()`

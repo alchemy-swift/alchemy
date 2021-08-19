@@ -104,8 +104,15 @@ extension QueueDriver {
             case .failure where jobData.canRetry:
                 jobData.backoffUntil = jobData.nextRetryDate()
                 return self.complete(jobData, outcome: .retry)
-            case .failure:
-                return self.complete(jobData, outcome: .failed)
+            case .failure(let error):
+                if let err = error as? JobError, err == JobError.unknownType {
+                    // Always retry if the type was unknown, and
+                    // ignore the attempt.
+                    jobData.attempts -= 1
+                    return self.complete(jobData, outcome: .retry)
+                } else {
+                    return self.complete(jobData, outcome: .failed)
+                }
             }
         }
     }

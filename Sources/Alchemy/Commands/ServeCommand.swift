@@ -102,7 +102,7 @@ extension ServeCommand: Runner {
                     fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
                 }
                 
-                Log.info("[Server] started and listening on \(channelLocalAddress.prettyName)")
+                Log.info("[Server] listening on \(channelLocalAddress.prettyName)")
                 return boundChannel
             }
     }
