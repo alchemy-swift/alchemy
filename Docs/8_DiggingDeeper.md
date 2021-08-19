@@ -33,7 +33,7 @@ struct BackupDatabase: Job {
 
 Often backend services need to schedule recurring work such as running various database queries or pulling from external endpoints.
 
-To do this, use `Scheduler`. It is automatically registered in Container.global & will likely be setup in your `Application.setup`.
+To do this, use `Scheduler`. It is automatically registered in Container.default & will likely be setup in your `Application.setup`.
 
 ```swift
 struct ExampleApp: Application {

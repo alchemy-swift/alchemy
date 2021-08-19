@@ -20,7 +20,8 @@ final class RedisQueueDriver: QueueDriver {
     }
     
     private func monitorBackoffs() {
-        Loop.current.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { (task: RepeatedTask) ->
+        let loop = Loop.group.next()
+        loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { (task: RepeatedTask) ->
             EventLoopFuture<Void> in
             return self.redis
                 .zrangebyscore(from: self.backoffsKey, withMinimumScoreOf: 0)
@@ -44,7 +45,7 @@ final class RedisQueueDriver: QueueDriver {
 
                     return toRetry
                 }
-                .flatMapEach(on: Loop.current) { backoffKey -> EventLoopFuture<Void> in
+                .flatMapEach(on: loop) { backoffKey -> EventLoopFuture<Void> in
                     let values = backoffKey.split(separator: ":")
                     let jobId = String(values[0])
                     let channel = String(values[1])

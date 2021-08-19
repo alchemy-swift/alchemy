@@ -43,7 +43,7 @@ final class PostgresDatabase: DatabaseDriver {
                     )
                 }
             }()),
-            on: Container.global.resolve(EventLoopGroup.self)
+            on: Loop.group
         )
     }
     

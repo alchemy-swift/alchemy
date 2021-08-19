@@ -82,7 +82,7 @@ public final class Database: Service {
     /// Called when the database connection will shut down.
     ///
     /// - Throws: Any error that occurred when shutting down.
-    func shutdown() throws {
+    public func shutdown() throws {
         try driver.shutdown()
     }
     

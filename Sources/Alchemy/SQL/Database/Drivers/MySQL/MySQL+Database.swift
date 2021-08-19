@@ -39,7 +39,7 @@ final class MySQLDatabase: DatabaseDriver {
                     )
                 }
             }()),
-            on: Container.global.resolve(EventLoopGroup.self)
+            on: Loop.group
         )
     }
     

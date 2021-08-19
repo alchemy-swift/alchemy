@@ -12,7 +12,7 @@
   * [Creating a Custom Container](#creating-a-custom-container)
   * [Creating a Child Container](#creating-a-child-container)
   * [Accessing Custom Containers from `@Inject`](#accessing-custom-containers-from---inject-)
-  * [Service Automatically Registered to `Container.global`](#service-automatically-registered-to--containerglobal-)
+  * [Service Automatically Registered to `Container.default`](#service-automatically-registered-to--containerglobal-)
   * [`Services`](#-services-)
 - [Using Fusion in non-server targets](#using-fusion-in-non-server-targets)
 
@@ -24,12 +24,12 @@ DI helps keep your code modular, testable and maintainable. It lets you define s
 
 ## Registering & Resolving Services
 
-"Services" (a fancy word for an abstract interface, often a protocol) are registered and resolved from `Container`s. By default there is a global container, `Container.global`, that you can use to register & resolve services from.
+"Services" (a fancy word for an abstract interface, often a protocol) are registered and resolved from `Container`s. By default there is a global container, `Container.default`, that you can use to register & resolve services from. For convenience, there are static `resolve` & `register` functions on `Container` that passthrough to `Container.default`
 
 For example, consider an abstract type, `protocol Database`, that is implemented by a concrete type, `class PostgresDatabase: Database`. You could register the `PostgresDatabase` type to `Database` via
 
 ```swift
-Container.global.register(Database.self) { _ in
+Container.register(Database.self) { _ in
     PostgresDatabase(...)
 }
 ```
@@ -37,20 +37,20 @@ Container.global.register(Database.self) { _ in
 Whenever you want to access the database; you can access it through `Container.resolve`.
 
 ```swift
-let database = Container.global.resolve(Database.self)
+let database = Container.resolve(Database.self)
 ```
 
 This makes it easy to swap out the Database for another implementation, all you'd need to do is change the register closure.
 
 ```swift
-Container.global.register(Database.self) { _ in
+Container.register(Database.self) { _ in
     MySQLDatabase(...)
 }
 ```
 
 ### Resolving with `@Inject`
 
-You may also resolve a service with the `@Inject` property wrapper. The instance of the service will be resolved via the global container (`Container.global`) the first time this property is accessed.
+You may also resolve a service with the `@Inject` property wrapper. The instance of the service will be resolved via the global container (`Container.default`) the first time this property is accessed.
 
 ```swift
 @Inject var database: Database
@@ -90,7 +90,7 @@ By default, services registered are "transient" meaning that their register clos
 Sometimes, you'll want only a single instance of this service being passed around (a singleton). In this case, you can use `.register(singleton:)` to register your service.
 
 ```swift
-Container.global.register(singleton: Database.self) { _ in
+Container.register(singleton: Database.self) { _ in
     PostgresDatabase(...)
 }
 ```
@@ -131,7 +131,7 @@ var mainDB: Database
 
 ## Advanced Container Usage
 
-In many cases, only using `Container.global` will be enough for what you're trying to do. There are some cases however, where you'd like to further modularize your code with custom containers.
+In many cases, only using `Container.default` will be enough for what you're trying to do. There are some cases however, where you'd like to further modularize your code with custom containers.
 
 ### Creating a Custom Container
 
@@ -170,7 +170,7 @@ let string = childContainer.resolve(String.self)
 let int = childContainer.resolve(Int.self)
 
 // fatalError; parents do not have access to their children's services
-let int = Container.global.resolve(String.self)
+let int = Container.resolve(String.self)
 ```
 
 ### Accessing Custom Containers from `@Inject`
@@ -198,7 +198,7 @@ print(myType.string) // "Howdy"
 print(myType.int) // 42
 ```
 
-### Services Automatically Registered to `Container.global`
+### Services Automatically Registered to `Container.default`
 
 There are a few types to be aware of that Alchemy automatically injects into the global container during setup. These can be accessed via `@Inject` or `Container.resolve` anywhere in your app.
 
@@ -218,7 +218,7 @@ You may also add custom static properties to it at your own convenience:
 ```swift
 extension Services {
     static var someType: SomeType {
-        Container.global.resolve(SomeType.self)
+        Container.resolve(SomeType.self)
     }
 }
 ```

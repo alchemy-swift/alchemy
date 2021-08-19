@@ -23,7 +23,7 @@ extension Application {
     /// - Throws: Any error that may be encountered in booting the
     ///   application.
     func launch(_ runner: Runner) throws {
-        // Create app lifecycle
+        // Create and register app lifecycle
         var lifecycleLogger = Log.logger
         lifecycleLogger.logLevel = lifecycleLogLevel
         let lifecycle = ServiceLifecycle(
@@ -33,24 +33,15 @@ extension Application {
             )
         )
         
-        // Boot all services
-        lifecycle.register(
-            label: "AlchemyCore",
-            start: .sync { bootServices(lifecycle: lifecycle) },
-            shutdown: .sync(shutdownServices)
-        )
+        ServiceLifecycle.config(default: lifecycle, shutdownWithApp: false)
         
-        // Setup app
-        lifecycle.register(
-            label: "\(Self.self)",
-            start: .eventLoopFuture {
-                Loop.group.next()
-                    // Run setup
-                    .submit(self.boot)
-            },
-            shutdown: .none
-        )
+        // Boot default services
+        bootServices()
         
+        // Boot the app
+        boot()
+        
+        // Register the runner
         runner.register(lifecycle: lifecycle)
         
         // Start the lifecycle
