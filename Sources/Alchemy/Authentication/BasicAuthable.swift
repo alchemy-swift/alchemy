@@ -1,3 +1,5 @@
+import NIO
+
 /// A protocol for automatically authenticating incoming requests
 /// based on their `Authentication: Basic ...` header. When the
 /// request is intercepted by the `BasicAuthMiddleware<T>`, it will
@@ -84,6 +86,40 @@ extension BasicAuthable {
     public static func basicAuthMiddleware() -> BasicAuthMiddleware<Self> {
         BasicAuthMiddleware()
     }
+    
+    /// Authenticates this model with a username and password.
+    ///
+    /// - Parameters:
+    ///   - username: The username to authenticate with.
+    ///   - password: The password to authenticate with.
+    ///   - error: An error to throw if the username password combo
+    ///     doesn't have a match.
+    /// - Returns: A future containing the authenticated
+    ///   `BasicAuthable`, if there was one. The future will result in
+    ///   `error` if the model is not found, or the password doesn't
+    ///   match.
+    public static func authenticate(
+        username: String,
+        password: String,
+        else error: Error = HTTPError(.unauthorized)
+    ) -> EventLoopFuture<Self> {
+        return query()
+            .where(usernameKeyString == username)
+            .get(["\(tableName).*", passwordKeyString])
+            .flatMapThrowing { rows -> Self in
+                guard let firstRow = rows.first else {
+                    throw error
+                }
+                
+                let passwordHash = try firstRow.getField(column: passwordKeyString).string()
+                
+                guard try verify(password: password, passwordHash: passwordHash) else {
+                    throw error
+                }
+                
+                return try firstRow.decode(Self.self)
+            }
+    }
 }
 
 /// A `Middleware` type configured to work with `BasicAuthable`. This
@@ -103,22 +139,7 @@ public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
                 throw HTTPError(.unauthorized)
             }
             
-            return B.query()
-                .where(B.usernameKeyString == basicAuth.username)
-                .get(["\(B.tableName).*", B.passwordKeyString])
-                .flatMapThrowing { rows -> B in
-                    guard let firstRow = rows.first else {
-                        throw HTTPError(.unauthorized)
-                    }
-                    
-                    let passwordHash = try firstRow.getField(column: B.passwordKeyString).string()
-                    
-                    guard try B.verify(password: basicAuth.password, passwordHash: passwordHash) else {
-                        throw HTTPError(.unauthorized)
-                    }
-                    
-                    return try firstRow.decode(B.self)
-                }
+            return B.authenticate(username: basicAuth.username, password: basicAuth.password)
                 .flatMap { next(request.set($0)) }
         }
     }

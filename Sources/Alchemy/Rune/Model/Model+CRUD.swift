@@ -157,7 +157,7 @@ extension Model {
             return Self.query(database: db)
                 .where("id" == id)
                 .update(values: try copy.fieldDictionary().unorderedDictionary)
-                .map { _ in self }
+                .map { _ in copy }
         }
     }
     

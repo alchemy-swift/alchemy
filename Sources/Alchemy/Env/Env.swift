@@ -43,12 +43,8 @@ public struct Env: Equatable {
     }
     
     /// Required for dynamic member lookup.
-    public static subscript<T: StringInitializable>(dynamicMember member: String) -> T {
-        if let val: T = Env.current.get(member) {
-            return val
-        } else {
-            fatalError("Unable to find an environment value for \(member)")
-        }
+    public static subscript<T: StringInitializable>(dynamicMember member: String) -> T? {
+        return Env.current.get(member)
     }
     
     /// All environment variables available to the program.
