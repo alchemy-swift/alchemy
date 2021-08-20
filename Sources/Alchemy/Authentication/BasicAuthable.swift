@@ -8,9 +8,9 @@
 /// ```swift
 /// // Start with a Rune `Model`.
 /// struct MyUser: BasicAuthable {
-///     // Note that this defaults to "username" but you can override
+///     // Note that this defaults to "email" but you can override
 ///     // with a custom value.
-///     static var usernameKeyString = "email"
+///     static var usernameKeyString = "username"
 ///
 ///     var id: Int?
 ///     let email: String
@@ -30,13 +30,13 @@
 /// ```
 public protocol BasicAuthable: Model {
     /// The name of the username row in the model. Defaults to
-    /// "username", but can be overridden for custom rows.
+    /// "email", but can be overridden for custom rows.
     /// This row should be unique.
     static var usernameKeyString: String { get }
     
-    /// The name of the hashed password row in the model. Defaults to
-    /// "password_hash", but can be overridden for custom rows.
-    static var passwordHashKeyString: String { get }
+    /// The name of the password row in the model. Defaults to
+    /// "password", but can be overridden for custom rows.
+    static var passwordKeyString: String { get }
     
     /// Verifies a model's password hash given the password string
     /// from the `Authentication` header. Defaults to comparing
@@ -57,8 +57,8 @@ public protocol BasicAuthable: Model {
 }
 
 extension BasicAuthable {
-    public static var usernameKeyString: String { "username" }
-    public static var passwordHashKeyString: String { "password_hash" }
+    public static var usernameKeyString: String { "email" }
+    public static var passwordKeyString: String { "password" }
     
     /// Default implementation of verification, compares a bcrypt hash
     /// of `password` to `passwordHash`.
@@ -71,10 +71,7 @@ extension BasicAuthable {
     /// - Throws: A `CryptoError` if hashing fails.
     /// - Returns: A `Bool` indicating if `password` matched
     ///   `passwordHash`.
-    public static func verify(
-        password: String,
-        passwordHash: String
-    ) throws -> Bool {
+    public static func verify(password: String, passwordHash: String) throws -> Bool {
         try Bcrypt.verify(password, created: passwordHash)
     }
     
@@ -108,13 +105,13 @@ public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
             
             return B.query()
                 .where(B.usernameKeyString == basicAuth.username)
-                .get(["\(B.tableName).*", B.passwordHashKeyString])
+                .get(["\(B.tableName).*", B.passwordKeyString])
                 .flatMapThrowing { rows -> B in
                     guard let firstRow = rows.first else {
                         throw HTTPError(.unauthorized)
                     }
                     
-                    let passwordHash = try firstRow.getField(column: B.passwordHashKeyString).string()
+                    let passwordHash = try firstRow.getField(column: B.passwordKeyString).string()
                     
                     guard try B.verify(password: basicAuth.password, passwordHash: passwordHash) else {
                         throw HTTPError(.unauthorized)

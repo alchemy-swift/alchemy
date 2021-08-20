@@ -105,15 +105,15 @@ router.middleWare(User.basicAuthMiddleware())
     }
 ```
 
-Note that Rune is inferring a username at column `"username"` and password hash at column `"password_hash"` when verifying credentials. You may set custom columns by overriding the `usernameKeyString` or `passwordHashKeyString` of your `Model`.
+Note that Rune is inferring a username at column `"email"` and password at column `"password"` when verifying credentials. You may set custom columns by overriding the `usernameKeyString` or `passwordKeyString` of your `Model`.
 
 ```swift
 struct User: Model, BasicAuthable {
-    static let usernameKeyString = "email"
+    static let usernameKeyString = "username"
     static let passwordKeyString = "hashed_password"
 
     var id: Int?
-    let email: String
+    let username: String
     let hashedPassword: String
 }
 ```

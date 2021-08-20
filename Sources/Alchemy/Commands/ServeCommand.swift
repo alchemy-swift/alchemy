@@ -10,8 +10,8 @@ struct ServeCommand<A: Application>: ParsableCommand {
     
     /// The host to serve at. Defaults to `127.0.0.1`.
     @Option var host = "127.0.0.1"
-    /// The port to serve at. Defaults to `8080`.
-    @Option var port = 8080
+    /// The port to serve at. Defaults to `3000`.
+    @Option var port = 3000
     /// The unix socket to serve at. If this is provided, the host and
     /// port will be ignored.
     @Option var unixSocket: String?
@@ -59,9 +59,7 @@ extension ServeCommand: Runner {
     private func start() -> EventLoopFuture<Channel> {
         // Much of this is courtesy of [apple/swift-nio-examples](
         // https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
-        func childChannelInitializer(
-            channel: Channel
-        ) -> EventLoopFuture<Void> {
+        func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
             channel.pipeline
                 .configureHTTPServerPipeline(withErrorHandling: true)
                 .flatMap { channel.pipeline.addHandler(HTTPHandler(router: Router.default)) }
@@ -71,20 +69,14 @@ extension ServeCommand: Runner {
             // Specify backlog and enable SO_REUSEADDR for the server
             // itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
-            .serverChannelOption(
-                ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR),
-                value: 1
-            )
+            .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
 
             // Set the handlers that are applied to the accepted
             // `Channel`s
             .childChannelInitializer(childChannelInitializer(channel:))
 
             // Enable SO_REUSEADDR for the accepted `Channel`s
-            .childChannelOption(
-                ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR),
-                value: 1
-            )
+            .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
         let channel = { () -> EventLoopFuture<Channel> in

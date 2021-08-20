@@ -9,7 +9,7 @@
 Welcome to Alchemy, an elegant, batteries included backend framework for Swift. You can use it to build a production ready backend for your next mobile app, cloud project or website.
 
 ```swift
-@main 
+@main
 struct App: Application {
     func boot() {
         get("/") { req in
@@ -70,7 +70,7 @@ Creating an app with the CLI will let you pick between a backend or fullstack (`
 1. `alchemy new MyNewProject`
 2. `cd MyNewProject` (if you selected fullstack, `MyNewProject/Backend`)
 3. `swift run`
-4. view your brand new app at http://localhost:8080
+4. view your brand new app at http://localhost:3000
 
 ## Swift Package Manager
 
