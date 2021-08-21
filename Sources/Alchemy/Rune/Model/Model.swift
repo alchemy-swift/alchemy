@@ -1,4 +1,5 @@
 import Foundation
+import InflectorKit
 
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
@@ -18,8 +19,8 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     var id: Self.Identifier? { get set }
     
     /// The table with which this object is associated. Defaults to
-    /// `String(describing: Self.self)` aka the name of the type. Can
-    /// be overridden for custom table names.
+    /// the type name, pluralized. Affected by `keyMapping`. This
+    /// can be overridden for custom table names.
     ///
     /// ```swift
     /// struct User: Model {
@@ -72,7 +73,9 @@ public protocol Model: Identifiable, ModelMaybeOptional {
 
 extension Model {
     public static var tableName: String {
-        String(describing: Self.self)
+        let typeName = String(describing: Self.self)
+        let mapped = keyMapping.map(input: typeName)
+        return mapped.pluralized
     }
     
     public static var keyMapping: DatabaseKeyMapping {

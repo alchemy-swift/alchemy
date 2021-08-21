@@ -25,6 +25,7 @@ let package = Package(
         .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),
         .package(url: "https://github.com/Mordil/RediStack.git", from: "1.0.0"),
+        .package(url: "https://github.com/mattt/InflectorKit", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -46,6 +47,7 @@ let package = Package(
                 .product(name: "Papyrus", package: "papyrus"),
                 .product(name: "Fusion", package: "fusion"),
                 .product(name: "Cron", package: "cron"),
+                .product(name: "InflectorKit", package: "InflectorKit"),
                 
                 /// Internal dependencies
                 "CAlchemy",
