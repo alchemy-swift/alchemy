@@ -1,5 +1,5 @@
 import Foundation
-import InflectorKit
+import Pluralize
 
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
