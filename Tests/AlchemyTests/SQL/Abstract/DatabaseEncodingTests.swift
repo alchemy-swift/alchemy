@@ -35,12 +35,14 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "belongs_to_id", value: .int(5)),
         ]
         
+        XCTAssertEqual("test_models", TestModel.tableName)
         XCTAssertEqual(expectedFields, try model.fields())
     }
     
     func testKeyMapping() throws {
         let model = CustomKeyedModel(belongsTo: .init(9))
         let fields = try model.fields()
+        XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
         XCTAssertEqual([
             "val1",
             "valueTwo",
@@ -57,6 +59,8 @@ final class DatabaseEncodingTests: XCTestCase {
         let expectedFields: [DatabaseField] = [
             DatabaseField(column: "json", value: .json(jsonData))
         ]
+        
+        XCTAssertEqual("custom_decoder_models", CustomDecoderModel.tableName)
         XCTAssertEqual(expectedFields, try model.fields())
     }
 }

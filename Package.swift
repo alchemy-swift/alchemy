@@ -23,6 +23,7 @@ let package = Package(
         .package(url: "https://github.com/alchemy-swift/papyrus", from: "0.1.0"),
         .package(url: "https://github.com/alchemy-swift/fusion", from: "0.1.0"),
         .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
+        .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),
         .package(url: "https://github.com/Mordil/RediStack.git", from: "1.0.0"),
     ],
@@ -46,6 +47,7 @@ let package = Package(
                 .product(name: "Papyrus", package: "papyrus"),
                 .product(name: "Fusion", package: "fusion"),
                 .product(name: "Cron", package: "cron"),
+                .product(name: "Pluralize", package: "pluralize"),
                 
                 /// Internal dependencies
                 "CAlchemy",
