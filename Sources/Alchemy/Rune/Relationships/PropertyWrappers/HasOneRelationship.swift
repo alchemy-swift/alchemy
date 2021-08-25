@@ -7,7 +7,7 @@ import NIO
 public final class HasOneRelationship<
     From: Model,
     To: ModelMaybeOptional
->: HasRelationship<From, To>, Encodable, Relationship {
+>: AnyHas, Codable, Relationship {
     /// Internal value for storing the `To` object of this
     /// relationship, when it is loaded.
     private var value: To?
@@ -33,64 +33,20 @@ public final class HasOneRelationship<
     
     // MARK: Overrides
     
-    public required init(
-        propertyName: String? = nil,
-        to key: KeyPath<To.Value, To.Value.BelongsTo<From?>>,
-        keyString: String = To.Value.keyMapping.map(input: "\(From.self)Id")
-    ) {
-        super.init(propertyName: propertyName, to: key, keyString: keyString)
-    }
-    
-    public required init(
-        propertyName: String? = nil,
-        to key: KeyPath<To.Value, To.Value.BelongsTo<From>>,
-        keyString: String = To.Value.keyMapping.map(input: "\(From.self)Id")
-    ) {
-        super.init(propertyName: propertyName, to: key, keyString: keyString)
-    }
-    
-    public required init<Through: Model>(
-        propertyName: String? = nil,
-        from fromKey: KeyPath<Through, Through.BelongsTo<From.Value>>,
-        to toKey: KeyPath<Through, Through.BelongsTo<To.Value>>,
-        fromString: String = Through.keyMapping.map(input: "\(From.self)Id"),
-        toString: String = Through.keyMapping.map(input: "\(To.Value.self)Id")
-    ) {
-        super.init(
-            propertyName: propertyName,
-            from: fromKey,
-            to: toKey,
-            fromString: fromString,
-            toString: toString
-        )
-    }
+    public init() {}
     
     // MARK: Relationship
     
-    public func loadRelationships(
-        for from: [From],
-        query nestedQuery: @escaping (ModelQuery<To.Value>) -> ModelQuery<To.Value>,
-        into eagerLoadKeyPath: KeyPath<From, From.HasOne<To>>) -> EventLoopFuture<[From]>
-    {
-        self.eagerLoadClosure(nestedQuery)(from)
-            .flatMapThrowing { dict in
-                var updatedResults = [From]()
-                for result in from {
-                    let values = dict[result.id as! From.Value.Identifier]
-                    result[keyPath: eagerLoadKeyPath].wrappedValue = try To.from(values?.first)
-                    updatedResults.append(result)
-                }
-
-                return updatedResults
-        }
+    public static func defaultConfig() -> RelationConfig {
+        return .defaultHas(from: From.self, to: To.Value.self)
+    }
+    
+    public func set(values: [To]) throws {
+        self.wrappedValue = try To.from(values.first)
     }
     
     // MARK: Codable
     
-    public required init(from decoder: Decoder) throws {
-        try super.init(from: decoder)
-    }
-
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
             try self.value.encode(to: encoder)

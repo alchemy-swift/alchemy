@@ -201,7 +201,7 @@ private struct _KeyedEncodingContainer<
             // Special case parent relationships to append
             // `M.belongsToColumnSuffix` to the property name.
             let keyString = self.encoder.mappingStrategy
-                .map(input: key.stringValue + M.belongsToColumnSuffix)
+                .map(input: key.stringValue + "Id")
             try value.encode(
                 to: _SingleValueEncoder<M>(column: keyString, encoder: self.encoder)
             )

@@ -13,24 +13,9 @@ public protocol Relationship {
     /// property on.
     associatedtype To: ModelMaybeOptional
     
-    /// Given an array of `From`s, this function loads objects from
-    /// the relationship `eagerLoadKeyPath` and sets them on each
-    /// `From`.
-    ///
-    /// - Parameters:
-    ///   - from: The array of `From` to eager load a relationship on.
-    ///   - nestedQuery: A closure for generating the query to find
-    ///     the related `To` objects.
-    ///   - eagerLoadKeyPath: The `KeyPath` of the relationship. Once
-    ///     loaded, the `To` objects will be set here.
-    /// - Returns: A future containing the `From` models, with the
-    ///   relationships at the `eagerLoadKeyPath` populated &
-    ///   ready for access.
-    func loadRelationships(
-        for from: [From],
-        query nestedQuery: @escaping (ModelQuery<To.Value>) -> ModelQuery<To.Value>,
-        into eagerLoadKeyPath: KeyPath<From, Self>
-    ) -> EventLoopFuture<[From]>
+    func set(values: [To]) throws
+    
+    static func defaultConfig() -> RelationConfig
 }
 
 /// Either a `Model` or a `Model?`.

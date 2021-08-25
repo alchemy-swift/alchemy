@@ -35,14 +35,21 @@ public class ModelQuery<M: Model>: Query {
     ///    of doing this could be to call eager loading @ the
     ///    `.decode` level of a `DatabaseRow`, but that's too
     ///    complicated for now).
-    private var eagerLoadQueries: [([M]) -> EventLoopFuture<[M]>] = []
+    private var eagerLoadQueries: [([(M, DatabaseRow)]) -> EventLoopFuture<[(M, DatabaseRow)]>] = []
     
     /// Gets all models matching this query from the database.
     ///
     /// - Returns: A future containing all models matching this query.
     public func allModels() -> EventLoopFuture<[M]> {
-        self.get(["\(M.tableName).*"])
-            .flatMapThrowing { try $0.map { try $0.decode(M.self) } }
+        self._allModels().mapEach(\.0)
+    }
+    
+    private func _allModels() -> EventLoopFuture<[(M, DatabaseRow)]> {
+        print("\(self.toSQL().query) \(self.toSQL().bindings)")
+        return self.get(["\(M.tableName).*"])
+            .flatMapThrowing {
+                try $0.map { (try $0.decode(M.self), $0) }
+            }
             .flatMap { self.evaluateEagerLoads(for: $0) }
     }
     
@@ -52,14 +59,21 @@ public class ModelQuery<M: Model>: Query {
     ///   query or nil if this query has no results.
     public func firstModel() -> EventLoopFuture<M?> {
         self.first(["\(M.tableName).*"])
-            .flatMapThrowing { try $0?.decode(M.self) }
-            .flatMap { result -> EventLoopFuture<M?> in
+            .flatMapThrowing { result -> (M, DatabaseRow)? in
+                guard let result = result else {
+                    return nil
+                }
+                
+                return (try result.decode(M.self), result)
+            }
+            .flatMap { result -> EventLoopFuture<(M, DatabaseRow)?> in
                 if let result = result {
                     return self.evaluateEagerLoads(for: [result]).map { $0.first }
                 } else {
                     return .new(nil)
                 }
             }
+            .map { $0?.0 }
     }
     
     /// Similary to `getFirst`. Gets the first result of a query, but
@@ -134,14 +148,46 @@ public class ModelQuery<M: Model>: Query {
         _ relationshipKeyPath: KeyPath<M, R>,
         nested: @escaping NestedEagerLoads<R.To.Value> = { $0 }
     ) -> ModelQuery<M> where R.From == M {
+        let mapper = RelationMapper<M>()
+        M.mapRelations(mapper)
+        let config = mapper.config(for: relationshipKeyPath)
         self.eagerLoadQueries.append { results in
             // If there are no results, don't need to eager load.
-            guard let firstResult = results.first else {
+            guard !results.isEmpty else {
+                print("no results for with")
                 return .new([])
             }
-
-            return firstResult[keyPath: relationshipKeyPath]
-                .loadRelationships(for: results, query: nested, into: relationshipKeyPath)
+            
+            let allRows = results.map(\.1)
+            let query = nested(config.load(allRows))
+            return query
+                ._allModels()
+                .flatMapThrowing { rows -> [R.To.Value.Identifier: [(R.To, DatabaseRow)]] in
+                    var results: [R.To.Value.Identifier: [(R.To, DatabaseRow)]] = [:]
+                    for (model, row) in rows {
+                        let pk = try R.To.Value.Identifier(field: row.getField(column: config.to.key))
+                        let toModel = try R.To.from(model)
+                        if var array = results[pk] {
+                            array.append((toModel, row))
+                            results[pk] = array
+                        } else {
+                            results[pk] = [(toModel, row)]
+                        }
+                    }
+                    return results
+                }
+                .map { mapping in
+                    var newResults: [(M, DatabaseRow)] = []
+                    for (model, row) in results {
+                        let field = try! row.getField(column: config.from.key)
+                        let pk = try! R.To.Value.Identifier(field: field)
+                        let raw = mapping[pk]!
+                        let models = raw.map(\.0)
+                        try! model[keyPath: relationshipKeyPath].set(values: models)
+                        newResults.append((model, row))
+                    }
+                    return newResults
+                }
         }
         
         return self
@@ -154,7 +200,7 @@ public class ModelQuery<M: Model>: Query {
     ///   query.
     /// - Returns: A future containing the loaded models that will
     ///   have all specified relationships loaded.
-    private func evaluateEagerLoads(for models: [M]) -> EventLoopFuture<[M]> {
+    private func evaluateEagerLoads(for models: [(M, DatabaseRow)]) -> EventLoopFuture<[(M, DatabaseRow)]> {
         self.eagerLoadQueries
             .reduce(.new(models)) { future, eagerLoad in
                 future.flatMap { eagerLoad($0) }

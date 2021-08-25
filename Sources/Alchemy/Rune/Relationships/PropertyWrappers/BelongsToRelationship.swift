@@ -61,74 +61,29 @@ public final class BelongsToRelationship<
         self
     }
     
-    /// Initialize this relationship with an `Identifier` of the
-    /// `Parent` type.
-    ///
-    /// - Parameter parentID: the identifier of the `Parent` to which this child belongs.
-    public init(_ parentID: Parent.Value.Identifier) {
-        self.id = parentID
-    }
-    
     /// Initialize this relationship with an instance of `Parent`.
     ///
     /// - Parameter parent: The `Parent` object to which this child
     ///   belongs.
-    public init(_ parent: Parent.Value) {
-        guard let id = parent.id else {
+    public init(wrappedValue: Parent) {
+        guard let id = wrappedValue.id else {
             fatalError("Can't form a relation with an unidentified object.")
         }
 
         self.id = id
-        // `.from` only throws if it's passed nil so this will always
-        // succeed.
-        self.value = try? Parent.from(parent)
-    }
-    
-    /// Initializes this `BelongsToRelationship` with nil values.
-    /// Should only be called on a `BelongsTo` that has an
-    /// `Optional` `Parent` type.
-    ///
-    /// - Parameter nil: A void closure. Ideally this signature would
-    ///   be `init()` but that seems to throw a compiler error
-    ///   related to property wrappers.
-    private init(nil: Void) {
-        self.id = nil
-        self.value = nil
+        self.value = wrappedValue
     }
     
     // MARK: Relationship
     
-    public func loadRelationships(
-        for from: [Child],
-        query nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
-        into eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
-    {
-        let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
-        guard !parentIDs.isEmpty else {
-            return .new(from)
-        }
-        
-        let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
-        return nestedQuery(initialQuery)
-            .allModels()
-            .flatMapThrowing { parents in
-                var updatedResults = [Child]()
-                let dict = Dictionary(grouping: parents, by: { $0.id! })
-                for child in from {
-                    guard let parentID = child[keyPath: eagerLoadKeyPath].id else {
-                        updatedResults.append(child)
-                        continue
-                    }
-                    
-                    let parent = dict[parentID]
-                    child[keyPath: eagerLoadKeyPath].wrappedValue = try Parent.from(parent?.first)
-                    updatedResults.append(child)
-                }
-
-                return updatedResults
-            }
+    public static func defaultConfig() -> RelationConfig {
+        return .defaultBelongsTo(from: From.self, to: To.Value.self)
     }
-
+    
+    public func set(values: [To]) throws {
+        self.wrappedValue = try To.from(values.first)
+    }
+    
     // MARK: Codable
     
     public func encode(to encoder: Encoder) throws {
@@ -160,11 +115,5 @@ public final class BelongsToRelationship<
                 self.id = try container.decode(Parent.Value.Identifier.self)
             }
         }
-    }
-}
-
-extension BelongsToRelationship: ExpressibleByNilLiteral where Parent: AnyOptional {
-    public convenience init(nilLiteral: ()) {
-        self.init(nil: nilLiteral)
     }
 }
