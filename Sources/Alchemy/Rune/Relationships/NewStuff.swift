@@ -148,7 +148,6 @@ extension Relation {
             query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
         }
 
-        print("from key: \(fromKey)")
         let ids = try values.map { try $0.getField(column: fromKey).value }
         query = query.where(key: "\(whereKey)", in: ids)
         return query

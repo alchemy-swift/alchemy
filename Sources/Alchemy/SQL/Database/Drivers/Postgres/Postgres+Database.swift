@@ -48,8 +48,7 @@ final class PostgresDatabase: DatabaseDriver {
     }
     
     func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        print("\(sql) \(values)")
-        return withConnection { $0.runRawQuery(sql, values: values) }
+        withConnection { $0.runRawQuery(sql, values: values) }
     }
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
