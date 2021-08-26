@@ -15,7 +15,7 @@ public protocol Relationship {
     
     func set(values: [To]) throws
     
-    static func defaultConfig() -> RelationConfig
+    static func defaultConfig() -> Relation<From, To.Value>
 }
 
 /// Either a `Model` or a `Model?`.

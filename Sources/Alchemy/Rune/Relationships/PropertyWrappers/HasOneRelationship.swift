@@ -37,8 +37,8 @@ public final class HasOneRelationship<
     
     // MARK: Relationship
     
-    public static func defaultConfig() -> RelationConfig {
-        return .defaultHas(from: From.self, to: To.Value.self)
+    public static func defaultConfig() -> Relation<From, To.Value> {
+        return .defaultHas()
     }
     
     public func set(values: [To]) throws {

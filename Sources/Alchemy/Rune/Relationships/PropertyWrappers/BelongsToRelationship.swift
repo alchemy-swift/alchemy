@@ -76,8 +76,8 @@ public final class BelongsToRelationship<
     
     // MARK: Relationship
     
-    public static func defaultConfig() -> RelationConfig {
-        return .defaultBelongsTo(from: From.self, to: To.Value.self)
+    public static func defaultConfig() -> Relation<From, To.Value> {
+        return .defaultBelongsTo()
     }
     
     public func set(values: [To]) throws {

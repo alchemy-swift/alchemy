@@ -150,38 +150,38 @@ public class ModelQuery<M: Model>: Query {
         let mapper = RelationMapper<M>()
         M.mapRelations(mapper)
         let config = mapper.config(for: relationshipKeyPath)
-        self.eagerLoadQueries.append { results in
+        self.eagerLoadQueries.append { fromResults in
             // If there are no results, don't need to eager load.
-            guard !results.isEmpty else {
+            guard !fromResults.isEmpty else {
                 return .new([])
             }
             
-            let allRows = results.map(\.1)
-            let query = nested(config.load(allRows))
+            let allRows = fromResults.map(\.1)
+            let query = nested(try! config.load(allRows))
             return query
                 ._allModels()
-                .flatMapThrowing { rows -> [M.Identifier: [(R.To, DatabaseRow)]] in
-                    var results: [M.Identifier: [(R.To, DatabaseRow)]] = [:]
-                    for (model, row) in rows {
-                        let pk = try M.Identifier(field: row.getField(column: config.indexKey))
-                        let toModel = try R.To.from(model)
-                        if var array = results[pk] {
-                            array.append((toModel, row))
-                            results[pk] = array
+                .flatMapThrowing { toRows -> [M.Identifier: [(R.To, DatabaseRow)]] in
+                    var toResultsKeyedByFromId: [M.Identifier: [(R.To, DatabaseRow)]] = [:]
+                    for (toModel, toRow) in toRows {
+                        let pk = try M.Identifier(field: toRow.getField(column: config.toJoinKey))
+                        let toModel = try R.To.from(toModel)
+                        if var array = toResultsKeyedByFromId[pk] {
+                            array.append((toModel, toRow))
+                            toResultsKeyedByFromId[pk] = array
                         } else {
-                            results[pk] = [(toModel, row)]
+                            toResultsKeyedByFromId[pk] = [(toModel, toRow)]
                         }
                     }
-                    return results
+                    return toResultsKeyedByFromId
                 }
-                .flatMapThrowing { mapping in
+                .flatMapThrowing { toResultsKeyedByFromId in
                     var newResults: [(M, DatabaseRow)] = []
-                    for (model, row) in results {
-                        let field = try row.getField(column: config.from.key)
+                    for (fromModel, fromRow) in fromResults {
+                        let field = try fromRow.getField(column: config.fromJoinKey)
                         let pk = try M.Identifier(field: field)
-                        let models = mapping[pk]?.map(\.0) ?? []
-                        try model[keyPath: relationshipKeyPath].set(values: models)
-                        newResults.append((model, row))
+                        let models = toResultsKeyedByFromId[pk]?.map(\.0) ?? []
+                        try fromModel[keyPath: relationshipKeyPath].set(values: models)
+                        newResults.append((fromModel, fromRow))
                     }
                     return newResults
                 }
