@@ -15,8 +15,7 @@ final class DatabaseEncodingTests: XCTestCase {
             double: 3.14159,
             json: json,
             stringEnum: .third,
-            intEnum: .two,
-            belongsTo: .init(5)
+            intEnum: .two
         )
         
         let jsonData = try TestModel.jsonEncoder.encode(json)
@@ -32,7 +31,6 @@ final class DatabaseEncodingTests: XCTestCase {
             DatabaseField(column: "int_enum", value: .int(1)),
             DatabaseField(column: "test_conversion_caps_test", value: .string("")),
             DatabaseField(column: "test_conversion123", value: .string("")),
-            DatabaseField(column: "belongs_to_id", value: .int(5)),
         ]
         
         XCTAssertEqual("test_models", TestModel.tableName)
@@ -40,15 +38,15 @@ final class DatabaseEncodingTests: XCTestCase {
     }
     
     func testKeyMapping() throws {
-        let model = CustomKeyedModel(belongsTo: .init(9))
+        let model = try CustomKeyedModel(from: DummyDecoder())
         let fields = try model.fields()
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
         XCTAssertEqual([
+            "id",
             "val1",
             "valueTwo",
             "valueThreeInt",
-            "snake_case",
-            "belongsToId"
+            "snake_case"
         ], fields.map(\.column))
     }
     
@@ -92,15 +90,6 @@ private struct TestModel: Model {
     var testConversionCAPSTest: String = ""
     var testConversion123: String = ""
     
-    @BelongsTo
-    var belongsTo: TestModel
-    
-    @HasOne(to: \.$belongsTo)
-    var hasOne: TestModel
-    
-    @HasMany(to: \.$belongsTo)
-    var hasMany: [TestModel]
-    
     static var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
@@ -109,24 +98,22 @@ private struct TestModel: Model {
 }
 
 private struct CustomKeyedModel: Model {
+    static var keyMapping: DatabaseKeyMapping = .useDefaultKeys
+    
     var id: Int?
     var val1: String = "foo"
     var valueTwo: Int = 0
     var valueThreeInt: Int = 1
     var snake_case: String = "bar"
-    
-    @BelongsTo
-    var belongsTo: CustomKeyedModel
-    static var keyMapping: DatabaseKeyMapping = .useDefaultKeys
 }
 
 private struct CustomDecoderModel: Model {
-    var id: Int?
-    var json: DatabaseJSON
-    
     static var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return encoder
     }()
+    
+    var id: Int?
+    var json: DatabaseJSON
 }

@@ -7,7 +7,7 @@ import Foundation
 /// All fields are optional by default, it's up to the end user to
 /// decide if a nil value in that field is appropriate and
 /// potentially throw an error.
-public enum DatabaseValue: Equatable {
+public enum DatabaseValue: Equatable, Hashable {
     /// An `Int` value.
     case int(Int?)
     /// A `Double` value.

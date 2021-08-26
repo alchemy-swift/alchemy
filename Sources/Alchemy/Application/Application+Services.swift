@@ -20,6 +20,7 @@ extension Application {
     /// function of test cases.
     public func mockServices() {
         Container.default = Container()
+        Container.register(singleton: ServiceLifecycle.self) { _ in ServiceLifecycle() }
         Container.register(singleton: Router.self) { _ in Router() }
         Container.register(EventLoop.self) { _ in EmbeddedEventLoop() }
         Container.register(singleton: EventLoopGroup.self) { _ in MultiThreadedEventLoopGroup(numberOfThreads: 1) }

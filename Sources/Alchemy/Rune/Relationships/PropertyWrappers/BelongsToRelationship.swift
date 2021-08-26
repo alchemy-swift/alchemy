@@ -1,9 +1,5 @@
 import NIO
 
-/// A type erased `BelongsToRelationship`. Used for special casing
-/// decoding behavior for `BelongsTo`s.
-protocol AnyBelongsTo {}
-
 /// The child of a 1 - M or a 1 - 1 relationship. Backed by an
 /// identifier of the parent, when encoded to a database, this
 /// type attempt to write that identifier to a column named 
@@ -61,83 +57,38 @@ public final class BelongsToRelationship<
         self
     }
     
-    /// Initialize this relationship with an `Identifier` of the
-    /// `Parent` type.
-    ///
-    /// - Parameter parentID: the identifier of the `Parent` to which this child belongs.
-    public init(_ parentID: Parent.Value.Identifier) {
-        self.id = parentID
-    }
-    
     /// Initialize this relationship with an instance of `Parent`.
     ///
     /// - Parameter parent: The `Parent` object to which this child
     ///   belongs.
-    public init(_ parent: Parent.Value) {
-        guard let id = parent.id else {
+    public init(wrappedValue: Parent) {
+        guard let id = wrappedValue.id else {
             fatalError("Can't form a relation with an unidentified object.")
         }
 
         self.id = id
-        // `.from` only throws if it's passed nil so this will always
-        // succeed.
-        self.value = try? Parent.from(parent)
-    }
-    
-    /// Initializes this `BelongsToRelationship` with nil values.
-    /// Should only be called on a `BelongsTo` that has an
-    /// `Optional` `Parent` type.
-    ///
-    /// - Parameter nil: A void closure. Ideally this signature would
-    ///   be `init()` but that seems to throw a compiler error
-    ///   related to property wrappers.
-    private init(nil: Void) {
-        self.id = nil
-        self.value = nil
+        self.value = wrappedValue
     }
     
     // MARK: Relationship
     
-    public func loadRelationships(
-        for from: [Child],
-        query nestedQuery: @escaping (ModelQuery<Parent.Value>) -> ModelQuery<Parent.Value>,
-        into eagerLoadKeyPath: KeyPath<Child, Child.BelongsTo<Parent>>) -> EventLoopFuture<[Child]>
-    {
-        let parentIDs = from.compactMap { $0[keyPath: eagerLoadKeyPath].id }.uniques
-        guard !parentIDs.isEmpty else {
-            return .new(from)
-        }
-        
-        let initialQuery = Parent.Value.query().where(key: "id", in: parentIDs)
-        return nestedQuery(initialQuery)
-            .allModels()
-            .flatMapThrowing { parents in
-                var updatedResults = [Child]()
-                let dict = Dictionary(grouping: parents, by: { $0.id! })
-                for child in from {
-                    guard let parentID = child[keyPath: eagerLoadKeyPath].id else {
-                        updatedResults.append(child)
-                        continue
-                    }
-                    
-                    let parent = dict[parentID]
-                    child[keyPath: eagerLoadKeyPath].wrappedValue = try Parent.from(parent?.first)
-                    updatedResults.append(child)
-                }
-
-                return updatedResults
-            }
+    public static func defaultConfig() -> RelationshipMapping<From, To.Value> {
+        return .defaultBelongsTo()
     }
-
+    
+    public func set(values: [To]) throws {
+        self.wrappedValue = try To.from(values.first)
+    }
+    
     // MARK: Codable
     
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
-            try self.value.encode(to: encoder)
+            try value.encode(to: encoder)
         } else {
             // When encoding to the database, just encode the Parent's ID.
             var container = encoder.singleValueContainer()
-            try container.encode(self.id)
+            try container.encode(id)
         }
     }
     
@@ -145,26 +96,20 @@ public final class BelongsToRelationship<
         if !(decoder is ModelDecoder) {
             let container = try decoder.singleValueContainer()
             if container.decodeNil() {
-                self.id = nil
+                id = nil
             } else {
                 let parent = try Parent(from: decoder)
-                self.id = parent.id
-                self.value = parent
+                id = parent.id
+                value = parent
             }
         } else {
             let container = try decoder.singleValueContainer()
             if container.decodeNil() {
-                self.id = nil
+                id = nil
             } else {
                 // When decode from a database, just decode the Parent's ID.
-                self.id = try container.decode(Parent.Value.Identifier.self)
+                id = try container.decode(Parent.Value.Identifier.self)
             }
         }
-    }
-}
-
-extension BelongsToRelationship: ExpressibleByNilLiteral where Parent: AnyOptional {
-    public convenience init(nilLiteral: ()) {
-        self.init(nil: nilLiteral)
     }
 }

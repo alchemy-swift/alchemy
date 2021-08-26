@@ -122,7 +122,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
             let field = try self.row.getField(column: self.string(for: key, includeIdSuffix: true))
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is AnyHas.Type {
-            // Special case the `AnyHas` to decode the coding key.
+            // Special case the `AnyHas` to decode dummy data.
             let field = DatabaseField(column: "key", value: .string(key.stringValue))
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is ModelEnum.Type {
@@ -164,7 +164,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     ///   mapped.
     /// - Returns: The column name that `key` is mapped to.
     private func string(for key: Key, includeIdSuffix: Bool = false) -> String {
-        let value = key.stringValue + (includeIdSuffix ? M.belongsToColumnSuffix : "")
+        let value = key.stringValue + (includeIdSuffix ? "Id" : "")
         return M.keyMapping.map(input: value)
     }
 }

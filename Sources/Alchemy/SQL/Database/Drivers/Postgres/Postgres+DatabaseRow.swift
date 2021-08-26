@@ -12,7 +12,7 @@ public struct PostgresDatabaseRow: DatabaseRow {
     
     public func getField(column: String) throws -> DatabaseField {
         try self.row.column(column)
-            .unwrap(or: DatabaseError("No column named `\(column)` was found."))
+            .unwrap(or: DatabaseError("No column named `\(column)` was found \(allColumns)."))
             .toDatabaseField(from: column)
     }
 }

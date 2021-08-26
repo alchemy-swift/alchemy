@@ -35,14 +35,20 @@ public class ModelQuery<M: Model>: Query {
     ///    of doing this could be to call eager loading @ the
     ///    `.decode` level of a `DatabaseRow`, but that's too
     ///    complicated for now).
-    private var eagerLoadQueries: [([M]) -> EventLoopFuture<[M]>] = []
+    private var eagerLoadQueries: [([(M, DatabaseRow)]) -> EventLoopFuture<[(M, DatabaseRow)]>] = []
     
     /// Gets all models matching this query from the database.
     ///
     /// - Returns: A future containing all models matching this query.
     public func allModels() -> EventLoopFuture<[M]> {
-        self.get(["\(M.tableName).*"])
-            .flatMapThrowing { try $0.map { try $0.decode(M.self) } }
+        self._allModels().mapEach(\.0)
+    }
+    
+    private func _allModels(columns: [Column]? = ["\(M.tableName).*"]) -> EventLoopFuture<[(M, DatabaseRow)]> {
+        return self.get(columns)
+            .flatMapThrowing {
+                try $0.map { (try $0.decode(M.self), $0) }
+            }
             .flatMap { self.evaluateEagerLoads(for: $0) }
     }
     
@@ -51,15 +57,22 @@ public class ModelQuery<M: Model>: Query {
     /// - Returns: A future containing the first model matching this
     ///   query or nil if this query has no results.
     public func firstModel() -> EventLoopFuture<M?> {
-        self.first(["\(M.tableName).*"])
-            .flatMapThrowing { try $0?.decode(M.self) }
-            .flatMap { result -> EventLoopFuture<M?> in
+        self.first()
+            .flatMapThrowing { result -> (M, DatabaseRow)? in
+                guard let result = result else {
+                    return nil
+                }
+                
+                return (try result.decode(M.self), result)
+            }
+            .flatMap { result -> EventLoopFuture<(M, DatabaseRow)?> in
                 if let result = result {
                     return self.evaluateEagerLoads(for: [result]).map { $0.first }
                 } else {
                     return .new(nil)
                 }
             }
+            .map { $0?.0 }
     }
     
     /// Similary to `getFirst`. Gets the first result of a query, but
@@ -134,14 +147,45 @@ public class ModelQuery<M: Model>: Query {
         _ relationshipKeyPath: KeyPath<M, R>,
         nested: @escaping NestedEagerLoads<R.To.Value> = { $0 }
     ) -> ModelQuery<M> where R.From == M {
-        self.eagerLoadQueries.append { results in
-            // If there are no results, don't need to eager load.
-            guard let firstResult = results.first else {
-                return .new([])
+        self.eagerLoadQueries.append { fromResults in
+            catchError {
+                let mapper = RelationshipMapper<M>()
+                M.mapRelations(mapper)
+                let config = mapper.getConfig(for: relationshipKeyPath)
+                
+                // If there are no results, don't need to eager load.
+                guard !fromResults.isEmpty else {
+                    return .new([])
+                }
+                
+                // Alias whatever key we'll join the relationship on
+                let toJoinKeyAlias = "_to_join_key"
+                let toJoinKey: String = {
+                    let table = config.through?.table ?? config.toTable
+                    let key = config.through?.fromKey ?? config.toKey
+                    return "\(table).\(key) as \(toJoinKeyAlias)"
+                }()
+                
+                let allRows = fromResults.map(\.1)
+                return nested(try config.load(allRows))
+                    ._allModels(columns: ["\(R.To.Value.tableName).*", toJoinKey])
+                    .flatMapEachThrowing { (try R.To.from($0), $1) }
+                    // Key the results by the "from" identifier
+                    .flatMapThrowing {
+                        try Dictionary(grouping: $0) { _, row in
+                            try M.Identifier(field: row.getField(column: toJoinKeyAlias))
+                        }
+                    }
+                    // For each `from` populate it's relationship
+                    .flatMapThrowing { toResultsKeyedByFromId in
+                        return try fromResults.map { model, row in
+                            let pk = try M.Identifier(field: row.getField(column: config.fromKey))
+                            let models = toResultsKeyedByFromId[pk]?.map(\.0) ?? []
+                            try model[keyPath: relationshipKeyPath].set(values: models)
+                            return (model, row)
+                        }
+                    }
             }
-
-            return firstResult[keyPath: relationshipKeyPath]
-                .loadRelationships(for: results, query: nested, into: relationshipKeyPath)
         }
         
         return self
@@ -154,10 +198,25 @@ public class ModelQuery<M: Model>: Query {
     ///   query.
     /// - Returns: A future containing the loaded models that will
     ///   have all specified relationships loaded.
-    private func evaluateEagerLoads(for models: [M]) -> EventLoopFuture<[M]> {
+    private func evaluateEagerLoads(for models: [(M, DatabaseRow)]) -> EventLoopFuture<[(M, DatabaseRow)]> {
         self.eagerLoadQueries
             .reduce(.new(models)) { future, eagerLoad in
                 future.flatMap { eagerLoad($0) }
             }
+    }
+}
+
+private extension RelationshipMapping {
+    func load<M: Model>(_ values: [DatabaseRow]) throws -> ModelQuery<M> {
+        var query = M.query().from(table: toTable)
+        var whereKey = "\(toTable).\(toKey)"
+        if let through = through {
+            whereKey = "\(through.table).\(through.fromKey)"
+            query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
+        }
+
+        let ids = try values.map { try $0.getField(column: fromKey).value }
+        query = query.where(key: "\(whereKey)", in: ids)
+        return query
     }
 }

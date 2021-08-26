@@ -38,24 +38,6 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// overridden on a per-type basis.
     static var keyMapping: DatabaseKeyMapping { get }
     
-    /// When mapping a `Model` to an SQL table, `@BelongsTo`
-    /// properties will have their property names suffixed by this
-    /// `String`. Defaults to `Id`. This value is affected by
-    /// `keyMappingStrategy`, so if the `keyMappingStrategy` of the
-    /// database is `.convertToSnakeCase`, the default suffix will
-    /// effectively be `_id`.
-    ///
-    /// Usage:
-    /// ```swift
-    /// struct User: Model {
-    ///     ...
-    ///     @BelongsTo
-    ///     var parent: User // will map to column `parentId` of type
-    ///                      // `User.ID`.
-    /// }
-    /// ```
-    static var belongsToColumnSuffix: String { get }
-    
     /// The `JSONDecoder` to use when decoding any JSON fields of this
     /// type. A JSON field is any `Codable` field that doesn't have a
     /// corresponding `DatabaseValue`.
@@ -69,6 +51,8 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     ///
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
+    
+    static func mapRelations(_ mapper: RelationshipMapper<Self>)
 }
 
 extension Model {
@@ -82,10 +66,6 @@ extension Model {
         .convertToSnakeCase
     }
     
-    public static var belongsToColumnSuffix: String {
-        "Id"
-    }
-    
     public static var jsonDecoder: JSONDecoder {
         JSONDecoder()
     }
@@ -93,6 +73,8 @@ extension Model {
     public static var jsonEncoder: JSONEncoder {
         JSONEncoder()
     }
+    
+    public static func mapRelations(_ mapper: RelationshipMapper<Self>) {}
     
     /// Unwraps the id of this object or throws if it is nil.
     ///
