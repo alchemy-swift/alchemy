@@ -21,6 +21,8 @@ struct ServeCommand<A: Application>: ParsableCommand {
     /// Should the scheduler run in process, scheduling any recurring
     /// work. Defaults to `false`.
     @Flag var schedule: Bool = false
+    /// Should migrations be run before booting. Defaults to `false`.
+    @Flag var migrate: Bool = false
     
     // MARK: ParseableCommand
     
@@ -43,6 +45,18 @@ extension ServeCommand: Runner {
     
     func register(lifecycle: ServiceLifecycle) {
         var channel: Channel?
+        
+        if migrate {
+            lifecycle.register(
+                label: "Migrate",
+                start: .eventLoopFuture {
+                    Loop.group.next()
+                        .flatSubmit(Database.default.migrate)
+                },
+                shutdown: .none
+            )
+        }
+        
         lifecycle.register(
             label: "Serve",
             start: .eventLoopFuture { self.start().map { channel = $0 } },
