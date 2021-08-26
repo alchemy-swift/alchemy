@@ -45,7 +45,7 @@ struct User: Model {
     @BelongsTo var todo: Todo
     
     static func mapRelations(_ mapper: RelationshipMapper<User>) {
-        mapper.relate(\.$todosThrough).through("user_todos")
+        mapper.config(\.$todosThrough).through("user_todos")
     }
 }
 
@@ -55,6 +55,6 @@ struct Todo: Model {
     @BelongsTo var user: User
     
     static func mapRelations(_ mapper: RelationshipMapper<Todo>) {
-        mapper.relate(\.$users).through("user_todos")
+        mapper.config(\.$users).through("user_todos")
     }
 }
