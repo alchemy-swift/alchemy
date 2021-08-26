@@ -47,6 +47,8 @@ public final class HasOneRelationship<
     
     // MARK: Codable
     
+    public init(from decoder: Decoder) throws {}
+    
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
             try self.value.encode(to: encoder)

@@ -26,10 +26,18 @@ struct KeyStrings {
 }
 
 public final class RelationConfig {
+    struct Through {
+        let table: String
+        let left: String
+        let right: String
+    }
+    
     var from: KeyStrings
     var to: KeyStrings
+    var through: Through?
     
-    var through: RelationConfig?
+    // The key to index results by for matching with from models.
+    var indexKey: String { through?.right ?? to.key }
     
     init(from: KeyStrings, to: KeyStrings) {
         self.from = from
@@ -49,21 +57,21 @@ public final class RelationConfig {
     }
     
     @discardableResult
-    public func through(_ table: String, config: ((RelationConfig) -> Void)? = nil) -> RelationConfig {
-        let rel = RelationConfig(
-            from: KeyStrings(
-                table: table,
-                keyDefault: from.keyDefault
-            ),
-            to: KeyStrings(
-                table: to.table,
-                keyDefault: to.keyDefault,
-                keyOverride: "id"
-            )
-        )
-        config?(rel)
-        through = rel
-        return rel
+    public func through(_ table: String, left: String? = nil, right: String? = nil) -> RelationConfig {
+        let left = left ?? from.keyDefault
+        let right = right ?? to.keyDefault
+        
+        // Assume each local key is `id`, unless already set.
+        if from.keyOverride == nil {
+            from.keyOverride = "id"
+        }
+        
+        if to.keyOverride == nil {
+            to.keyOverride = "id"
+        }
+        
+        through = Through(table: table, left: left, right: right)
+        return self
     }
 }
 
@@ -100,14 +108,14 @@ extension RelationConfig {
 extension RelationConfig {
     func load<M: Model>(_ values: [DatabaseRow]) -> ModelQuery<M> {
         var query = M.query().from(table: to.table)
-        var whereTable = to.table
+        var whereKey = "\(to.table).\(to.key)"
         if let through = through {
-            whereTable = through.from.table
-            query = query.leftJoin(table: through.from.table, first: "\(through.from.table).\(through.from.key)", second: "\(through.to.table).\(through.to.key)")
+            whereKey = "\(through.table).\(through.right)"
+            query = query.leftJoin(table: through.table, first: "\(through.table).\(through.left)", second: "\(to.table).\(to.key)")
         }
 
         let ids = values.map { try! $0.getField(column: from.key).value }
-        query = query.where(key: "\(whereTable).\(to.key)", in: ids)
+        query = query.where(key: "\(whereKey)", in: ids)
         return query
     }
 }

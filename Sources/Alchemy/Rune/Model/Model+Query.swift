@@ -45,8 +45,7 @@ public class ModelQuery<M: Model>: Query {
     }
     
     private func _allModels() -> EventLoopFuture<[(M, DatabaseRow)]> {
-        print("\(self.toSQL().query) \(self.toSQL().bindings)")
-        return self.get(["\(M.tableName).*"])
+        return self.get()
             .flatMapThrowing {
                 try $0.map { (try $0.decode(M.self), $0) }
             }
@@ -58,7 +57,7 @@ public class ModelQuery<M: Model>: Query {
     /// - Returns: A future containing the first model matching this
     ///   query or nil if this query has no results.
     public func firstModel() -> EventLoopFuture<M?> {
-        self.first(["\(M.tableName).*"])
+        self.first()
             .flatMapThrowing { result -> (M, DatabaseRow)? in
                 guard let result = result else {
                     return nil
@@ -154,7 +153,6 @@ public class ModelQuery<M: Model>: Query {
         self.eagerLoadQueries.append { results in
             // If there are no results, don't need to eager load.
             guard !results.isEmpty else {
-                print("no results for with")
                 return .new([])
             }
             
@@ -162,10 +160,10 @@ public class ModelQuery<M: Model>: Query {
             let query = nested(config.load(allRows))
             return query
                 ._allModels()
-                .flatMapThrowing { rows -> [R.To.Value.Identifier: [(R.To, DatabaseRow)]] in
-                    var results: [R.To.Value.Identifier: [(R.To, DatabaseRow)]] = [:]
+                .flatMapThrowing { rows -> [M.Identifier: [(R.To, DatabaseRow)]] in
+                    var results: [M.Identifier: [(R.To, DatabaseRow)]] = [:]
                     for (model, row) in rows {
-                        let pk = try R.To.Value.Identifier(field: row.getField(column: config.to.key))
+                        let pk = try M.Identifier(field: row.getField(column: config.indexKey))
                         let toModel = try R.To.from(model)
                         if var array = results[pk] {
                             array.append((toModel, row))
@@ -176,14 +174,13 @@ public class ModelQuery<M: Model>: Query {
                     }
                     return results
                 }
-                .map { mapping in
+                .flatMapThrowing { mapping in
                     var newResults: [(M, DatabaseRow)] = []
                     for (model, row) in results {
-                        let field = try! row.getField(column: config.from.key)
-                        let pk = try! R.To.Value.Identifier(field: field)
-                        let raw = mapping[pk]!
-                        let models = raw.map(\.0)
-                        try! model[keyPath: relationshipKeyPath].set(values: models)
+                        let field = try row.getField(column: config.from.key)
+                        let pk = try M.Identifier(field: field)
+                        let models = mapping[pk]?.map(\.0) ?? []
+                        try model[keyPath: relationshipKeyPath].set(values: models)
                         newResults.append((model, row))
                     }
                     return newResults
