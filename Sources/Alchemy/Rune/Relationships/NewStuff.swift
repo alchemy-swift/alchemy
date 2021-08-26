@@ -18,6 +18,48 @@ public final class RelationMapper<M: Model> {
     init() {}
 }
 
+// 2 Keys on separate tables
+struct Link {
+    var fromTable: String
+    var fromKey: String
+    
+    var throughs: [Through] = []
+    
+    var toTable: String
+    var toKey: String
+    
+    func printOut() {
+        print("\(fromTable).\(fromKey)")
+        for through in throughs {
+            print("-> \(through.table).\(fromKey)")
+            print("-> \(through.table).\(toKey)")
+        }
+        print("-> \(toTable).\(toKey)")
+    }
+}
+
+// 2 keys on the same row
+struct Through {
+    var table: String
+    var fromKey: String
+    var toKey: String
+}
+
+struct Keys {
+    // This table i.e. `users`
+    let table: String
+    // This table's local key i.e. `id`
+    let local: String
+    // A foreign key referencing this table i.e. `user_id`
+    let foreign: String
+    
+    init<T: Model>(_ type: T.Type) {
+        self.table = T.tableName
+        self.local = "id"
+        self.foreign = T.referenceKey
+    }
+}
+
 struct KeyStrings {
     var table: String
     let keyDefault: String
