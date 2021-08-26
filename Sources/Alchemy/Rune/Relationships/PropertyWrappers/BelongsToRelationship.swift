@@ -1,9 +1,5 @@
 import NIO
 
-/// A type erased `BelongsToRelationship`. Used for special casing
-/// decoding behavior for `BelongsTo`s.
-protocol AnyBelongsTo {}
-
 /// The child of a 1 - M or a 1 - 1 relationship. Backed by an
 /// identifier of the parent, when encoded to a database, this
 /// type attempt to write that identifier to a column named 
@@ -88,11 +84,11 @@ public final class BelongsToRelationship<
     
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
-            try self.value.encode(to: encoder)
+            try value.encode(to: encoder)
         } else {
             // When encoding to the database, just encode the Parent's ID.
             var container = encoder.singleValueContainer()
-            try container.encode(self.id)
+            try container.encode(id)
         }
     }
     
@@ -100,19 +96,19 @@ public final class BelongsToRelationship<
         if !(decoder is ModelDecoder) {
             let container = try decoder.singleValueContainer()
             if container.decodeNil() {
-                self.id = nil
+                id = nil
             } else {
                 let parent = try Parent(from: decoder)
-                self.id = parent.id
-                self.value = parent
+                id = parent.id
+                value = parent
             }
         } else {
             let container = try decoder.singleValueContainer()
             if container.decodeNil() {
-                self.id = nil
+                id = nil
             } else {
                 // When decode from a database, just decode the Parent's ID.
-                self.id = try container.decode(Parent.Value.Identifier.self)
+                id = try container.decode(Parent.Value.Identifier.self)
             }
         }
     }

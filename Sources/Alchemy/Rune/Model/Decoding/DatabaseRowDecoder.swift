@@ -122,7 +122,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
             let field = try self.row.getField(column: self.string(for: key, includeIdSuffix: true))
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is AnyHas.Type {
-            // Special case the `AnyHas` to decode the coding key.
+            // Special case the `AnyHas` to decode dummy data.
             let field = DatabaseField(column: "key", value: .string(key.stringValue))
             return try T(from: DatabaseFieldDecoder(field: field))
         } else if type is ModelEnum.Type {

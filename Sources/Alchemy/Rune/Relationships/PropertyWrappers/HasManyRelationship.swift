@@ -53,8 +53,4 @@ public final class HasManyRelationship<
             try self.value.encode(to: encoder)
         }
     }
-    
-    public required init(propertyName: String? = nil, to key: KeyPath<To.Value, To.Value.BelongsTo<From?>>, keyString: String) {
-        fatalError("init(propertyName:to:keyString:) has not been implemented")
-    }
 }
