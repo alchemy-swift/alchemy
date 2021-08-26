@@ -151,7 +151,7 @@ public class ModelQuery<M: Model>: Query {
             catchError {
                 let mapper = RelationshipMapper<M>()
                 M.mapRelations(mapper)
-                let config = mapper.config(for: relationshipKeyPath)
+                let config = mapper.getConfig(for: relationshipKeyPath)
                 
                 // If there are no results, don't need to eager load.
                 guard !fromResults.isEmpty else {

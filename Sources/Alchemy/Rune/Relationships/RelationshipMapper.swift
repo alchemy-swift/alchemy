@@ -4,13 +4,13 @@ public final class RelationshipMapper<M: Model> {
     
     init() {}
     
-    public func relate<R: Relationship>(_ keyPath: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
+    public func config<R: Relationship>(_ keyPath: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
         let rel = R.defaultConfig()
         configs[keyPath] = rel
         return rel
     }
     
-    func config<R: Relationship>(for relation: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
+    func getConfig<R: Relationship>(for relation: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
         if let rel = configs[relation] {
             return rel as! RelationshipMapping<R.From, R.To.Value>
         } else {
