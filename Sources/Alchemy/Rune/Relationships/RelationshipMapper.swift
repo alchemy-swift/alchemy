@@ -1,59 +1,38 @@
-public final class RelationMapper<M: Model> {
+/// Associates Relationships with their mapping.
+public final class RelationshipMapper<M: Model> {
     private var configs: [PartialKeyPath<M>: AnyRelation] = [:]
     
     init() {}
     
-    func config<R: Relationship>(for relation: KeyPath<M, R>) -> Relation<R.From, R.To.Value> {
-        if let rel = configs[relation] {
-            return rel as! Relation<R.From, R.To.Value>
-        } else {
-            return R.defaultConfig()
-        }
-    }
-    
-    public func relate<R: Relationship>(_ keyPath: KeyPath<M, R>) -> Relation<R.From, R.To.Value> {
+    public func relate<R: Relationship>(_ keyPath: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
         let rel = R.defaultConfig()
         configs[keyPath] = rel
         return rel
     }
-}
-
-// 2 keys on the same row
-struct Through {
-    var table: String
-    var fromKey: String
-    var toKey: String
-}
-
-struct Keys {
-    // This table i.e. `users`
-    let table: String
-    // This table's local key i.e. `id`
-    let local: String
-    // A foreign key referencing this table i.e. `user_id`
-    let foreign: String
     
-    init<T: Model>(_ type: T.Type) {
-        self.table = T.tableName
-        self.local = "id"
-        self.foreign = T.referenceKey
+    func config<R: Relationship>(for relation: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
+        if let rel = configs[relation] {
+            return rel as! RelationshipMapping<R.From, R.To.Value>
+        } else {
+            return R.defaultConfig()
+        }
     }
-}
-
-struct KeyStrings {
-    var table: String
-    let keyDefault: String
-    var keyOverride: String?
-    var key: String { keyOverride ?? keyDefault }
 }
 
 protocol AnyRelation {}
 
-enum RelationType {
-    case has, belongs
-}
-
-public final class Relation<From: Model, To: Model>: AnyRelation {
+/// Defines how a `Relationship` is mapped from it's `From` to `To`.
+public final class RelationshipMapping<From: Model, To: Model>: AnyRelation {
+    enum Kind {
+        case has, belongs
+    }
+    
+    struct Through {
+        var table: String
+        var fromKey: String
+        var toKey: String
+    }
+    
     var fromTable: String
     var fromKeyAssumed: String
     var fromKeyOverride: String?
@@ -62,7 +41,7 @@ public final class Relation<From: Model, To: Model>: AnyRelation {
     var toKeyAssumed: String
     var toKeyOverride: String?
     var toKey: String { toKeyOverride ?? toKeyAssumed }
-    var type: RelationType
+    var type: Kind
     
     var through: Through? {
         didSet {
@@ -72,11 +51,8 @@ public final class Relation<From: Model, To: Model>: AnyRelation {
         }
     }
 
-    var fromJoinKey: String { fromKey }
-    var toJoinKey: String { through?.fromKey ?? toKey }
-    
-    internal init(
-        _ type: RelationType,
+    init(
+        _ type: Kind,
         fromTable: String = From.tableName,
         fromKey: String = To.referenceKey,
         toTable: String = To.tableName,
@@ -129,28 +105,13 @@ public final class Relation<From: Model, To: Model>: AnyRelation {
     }
 }
 
-extension Relation {
-    static func defaultHas() -> Relation<From, To> {
-        Relation(.has, fromKey: "id")
+extension RelationshipMapping {
+    static func defaultHas() -> RelationshipMapping<From, To> {
+        RelationshipMapping(.has, fromKey: "id")
     }
     
-    static func defaultBelongsTo() -> Relation<From, To> {
-        Relation(.belongs, toKey: "id")
-    }
-}
-
-extension Relation {
-    func load<M: Model>(_ values: [DatabaseRow]) throws -> ModelQuery<M> {
-        var query = M.query().from(table: toTable)
-        var whereKey = "\(toTable).\(toKey)"
-        if let through = through {
-            whereKey = "\(through.table).\(through.fromKey)"
-            query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
-        }
-
-        let ids = try values.map { try $0.getField(column: fromKey).value }
-        query = query.where(key: "\(whereKey)", in: ids)
-        return query
+    static func defaultBelongsTo() -> RelationshipMapping<From, To> {
+        RelationshipMapping(.belongs, toKey: "id")
     }
 }
 

@@ -147,50 +147,43 @@ public class ModelQuery<M: Model>: Query {
         _ relationshipKeyPath: KeyPath<M, R>,
         nested: @escaping NestedEagerLoads<R.To.Value> = { $0 }
     ) -> ModelQuery<M> where R.From == M {
-        let mapper = RelationMapper<M>()
-        M.mapRelations(mapper)
-        let config = mapper.config(for: relationshipKeyPath)
         self.eagerLoadQueries.append { fromResults in
             catchError {
+                let mapper = RelationshipMapper<M>()
+                M.mapRelations(mapper)
+                let config = mapper.config(for: relationshipKeyPath)
+                
                 // If there are no results, don't need to eager load.
                 guard !fromResults.isEmpty else {
                     return .new([])
                 }
                 
+                // Alias whatever key we'll join the relationship on
+                let toJoinKeyAlias = "_to_join_key"
+                let toJoinKey: String = {
+                    let table = config.through?.table ?? config.toTable
+                    let key = config.through?.fromKey ?? config.toKey
+                    return "\(table).\(key) as \(toJoinKeyAlias)"
+                }()
+                
                 let allRows = fromResults.map(\.1)
-                let query = nested(try config.load(allRows))
-                var joinKey: String?
-                var joinKeyAlias: String?
-                if let through = config.through {
-                    joinKeyAlias = "_from_join_key"
-                    joinKey = "\(through.table).\(through.fromKey) as _from_join_key"
-                }
-                return query
-                    ._allModels(columns: ["\(R.To.Value.tableName).*", joinKey].compactMap { $0 })
-                    .flatMapThrowing { toRows -> [M.Identifier: [(R.To, DatabaseRow)]] in
-                        var toResultsKeyedByFromId: [M.Identifier: [(R.To, DatabaseRow)]] = [:]
-                        for (toModel, toRow) in toRows {
-                            let pk = try M.Identifier(field: toRow.getField(column: joinKeyAlias ?? config.toJoinKey))
-                            let toModel = try R.To.from(toModel)
-                            if var array = toResultsKeyedByFromId[pk] {
-                                array.append((toModel, toRow))
-                                toResultsKeyedByFromId[pk] = array
-                            } else {
-                                toResultsKeyedByFromId[pk] = [(toModel, toRow)]
-                            }
+                return nested(try config.load(allRows))
+                    ._allModels(columns: ["\(R.To.Value.tableName).*", toJoinKey])
+                    .flatMapEachThrowing { (try R.To.from($0), $1) }
+                    // Key the results by the "from" identifier
+                    .flatMapThrowing {
+                        try Dictionary(grouping: $0) { _, row in
+                            try M.Identifier(field: row.getField(column: toJoinKeyAlias))
                         }
-                        return toResultsKeyedByFromId
                     }
+                    // For each `from` populate it's relationship
                     .flatMapThrowing { toResultsKeyedByFromId in
-                        var newResults: [(M, DatabaseRow)] = []
-                        for (fromModel, fromRow) in fromResults {
-                            let field = try fromRow.getField(column: config.fromJoinKey)
-                            let pk = try M.Identifier(field: field)
+                        return try fromResults.map { model, row in
+                            let pk = try M.Identifier(field: row.getField(column: config.fromKey))
                             let models = toResultsKeyedByFromId[pk]?.map(\.0) ?? []
-                            try fromModel[keyPath: relationshipKeyPath].set(values: models)
-                            newResults.append((fromModel, fromRow))
+                            try model[keyPath: relationshipKeyPath].set(values: models)
+                            return (model, row)
                         }
-                        return newResults
                     }
             }
         }
@@ -210,5 +203,20 @@ public class ModelQuery<M: Model>: Query {
             .reduce(.new(models)) { future, eagerLoad in
                 future.flatMap { eagerLoad($0) }
             }
+    }
+}
+
+private extension RelationshipMapping {
+    func load<M: Model>(_ values: [DatabaseRow]) throws -> ModelQuery<M> {
+        var query = M.query().from(table: toTable)
+        var whereKey = "\(toTable).\(toKey)"
+        if let through = through {
+            whereKey = "\(through.table).\(through.fromKey)"
+            query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
+        }
+
+        let ids = try values.map { try $0.getField(column: fromKey).value }
+        query = query.where(key: "\(whereKey)", in: ids)
+        return query
     }
 }

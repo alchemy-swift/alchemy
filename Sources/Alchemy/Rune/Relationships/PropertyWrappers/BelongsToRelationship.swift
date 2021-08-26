@@ -76,7 +76,7 @@ public final class BelongsToRelationship<
     
     // MARK: Relationship
     
-    public static func defaultConfig() -> Relation<From, To.Value> {
+    public static func defaultConfig() -> RelationshipMapping<From, To.Value> {
         return .defaultBelongsTo()
     }
     

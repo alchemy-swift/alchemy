@@ -52,7 +52,7 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
     
-    static func mapRelations(_ mapper: RelationMapper<Self>)
+    static func mapRelations(_ mapper: RelationshipMapper<Self>)
 }
 
 extension Model {
@@ -74,7 +74,7 @@ extension Model {
         JSONEncoder()
     }
     
-    public static func mapRelations(_ mapper: RelationMapper<Self>) {}
+    public static func mapRelations(_ mapper: RelationshipMapper<Self>) {}
     
     /// Unwraps the id of this object or throws if it is nil.
     ///

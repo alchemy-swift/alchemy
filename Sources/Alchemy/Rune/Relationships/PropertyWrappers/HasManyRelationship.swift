@@ -36,7 +36,7 @@ public final class HasManyRelationship<
     
     // MARK: Relationship
     
-    public static func defaultConfig() -> Relation<From, To.Value> {
+    public static func defaultConfig() -> RelationshipMapping<From, To.Value> {
         return .defaultHas()
     }
     
