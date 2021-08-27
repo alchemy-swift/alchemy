@@ -1,10 +1,14 @@
 struct JobDecoding {
     private typealias JobDecoder = (JobData) throws -> Job
     
-    private static var decoders: [String: JobDecoder] = [:]
+    @Locked private static var decoders: [String: JobDecoder] = [:]
     
     static func register<J: Job>(_ type: J.Type) {
         self.decoders[J.name] = { try J(jsonString: $0.json) }
+    }
+    
+    static func isRegistered<J: Job>(_ type: J.Type) -> Bool {
+        decoders[J.name] != nil
     }
     
     static func decode(_ jobData: JobData) throws -> Job {

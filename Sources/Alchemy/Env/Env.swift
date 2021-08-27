@@ -1,6 +1,3 @@
-/// The default env file path (will be prefixed by a .).
-private let kDefaultEnv = "env"
-
 /// The env variable for an env path override.
 private let kEnvVariable = "APP_ENV"
 
@@ -22,6 +19,9 @@ private let kEnvVariable = "APP_ENV"
 /// ```
 @dynamicMemberLookup
 public struct Env: Equatable {
+    /// The default env file path (will be prefixed by a .).
+    static var defaultLocation = "env"
+    
     /// The environment file location of this application. Additional
     /// env variables are pulled from the file at '.{name}'. This
     /// defaults to `env` or `APP_ENV` if that is set.
@@ -55,8 +55,7 @@ public struct Env: Equatable {
     /// The current environment containing all variables loaded from
     /// the environment file.
     public static var current: Env = {
-        let appEnvPath = ProcessInfo.processInfo
-            .environment[kEnvVariable] ?? kDefaultEnv
+        let appEnvPath = ProcessInfo.processInfo.environment[kEnvVariable] ?? defaultLocation
         Env.loadDotEnvFile(path: ".\(appEnvPath)")
         return Env(name: appEnvPath)
     }()

@@ -12,7 +12,11 @@ public final class Queue: Service {
     
     /// Enqueues a generic `Job` to this queue on the given channel.
     public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) -> EventLoopFuture<Void> {
-        catchError { driver.enqueue(try JobData(job, channel: channel)) }
+        // If the Job hasn't been registered, register it.
+        if !JobDecoding.isRegistered(J.self) {
+            JobDecoding.register(J.self)
+        }
+        return catchError { driver.enqueue(try JobData(job, channel: channel)) }
     }
     
     public func startWorker(
