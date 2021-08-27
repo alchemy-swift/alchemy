@@ -159,7 +159,7 @@ public struct CreateIndex {
     func toSQL(table: String) -> String {
         let indexType = self.isUnique ? "UNIQUE INDEX" : "INDEX"
         let indexName = self.name(table: table)
-        let indexColumns = "(\(self.columns.joined(separator: ", ")))"
+        let indexColumns = "(\(self.columns.map(\.sqlEscaped).joined(separator: ", ")))"
         return "CREATE \(indexType) \(indexName) ON \(table) \(indexColumns)"
     }
     
@@ -190,4 +190,10 @@ public struct CreateColumn {
     
     /// Any constraints.
     let constraints: [ColumnConstraint]
+}
+
+extension String {
+    var sqlEscaped: String {
+        "\"\(self)\""
+    }
 }

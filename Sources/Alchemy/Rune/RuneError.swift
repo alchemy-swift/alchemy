@@ -6,7 +6,7 @@ public struct RuneError: Error {
     /// Create a `RuneError` with the given message.
     ///
     /// - Parameter message: A message detailing the error.
-    private init(_ message: String) { self.message = message }
+    public init(_ message: String) { self.message = message }
     
     // MARK: All `RuneError`s.
     

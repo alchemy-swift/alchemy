@@ -336,20 +336,21 @@ extension CreateColumn {
     /// - Returns: The SQL `String` describing this column and any
     ///   table level constraints to add.
     func sqlString(with grammar: Grammar) -> (String, [String]) {
-        var baseSQL = "\(self.column) \(grammar.typeString(for: self.type))"
+        let column = self.column.sqlEscaped
+        var baseSQL = "\(column) \(grammar.typeString(for: self.type))"
         var tableConstraints: [String] = []
         for constraint in self.constraints {
             switch constraint {
             case .notNull:
                 baseSQL.append(" NOT NULL")
             case .primaryKey:
-                tableConstraints.append("PRIMARY KEY (\(self.column))")
+                tableConstraints.append("PRIMARY KEY (\(column))")
             case .unique:
-                tableConstraints.append("UNIQUE (\(self.column))")
+                tableConstraints.append("UNIQUE (\(column))")
             case let .default(val):
                 baseSQL.append(" DEFAULT \(val)")
             case let .foreignKey(column, table, onDelete, onUpdate):
-                var fkBase = "FOREIGN KEY (\(self.column)) REFERENCES \(table) (\(column))"
+                var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(column))"
                 if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
                 if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
                 tableConstraints.append(fkBase)

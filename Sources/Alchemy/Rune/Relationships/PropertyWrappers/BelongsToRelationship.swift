@@ -70,6 +70,10 @@ public final class BelongsToRelationship<
         self.value = wrappedValue
     }
     
+    public init(id: Parent.Value.Identifier) {
+        self.id = id
+    }
+    
     // MARK: Relationship
     
     public static func defaultConfig() -> RelationshipMapping<From, To.Value> {

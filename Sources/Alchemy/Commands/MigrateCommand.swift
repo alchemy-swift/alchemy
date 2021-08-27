@@ -37,7 +37,8 @@ extension MigrateCommand: Runner {
             .flatSubmit(rollback ? Database.default.rollbackMigrations : Database.default.migrate)
             // Shut down everything when migrations are finished.
             .map {
-                Log.info("[Migration] migrations finished, shutting down.")
+                let action = rollback ? "migration rollback" : "migrations"
+                Log.info("[Migration] \(action) finished, shutting down.")
                 lifecycle.shutdown()
             }
     }

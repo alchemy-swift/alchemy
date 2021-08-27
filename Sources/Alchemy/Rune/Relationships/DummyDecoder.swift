@@ -1,5 +1,13 @@
 import Foundation
 
+extension Model {
+    public static func pk(_ id: Self.Identifier) -> Self {
+        var this = try! Self(from: DummyDecoder())
+        this.id = id
+        return this
+    }
+}
+
 struct DummyDecoder: Decoder {
     var codingPath: [CodingKey] = []
     
@@ -82,7 +90,7 @@ struct Single: SingleValueDecodingContainer {
     }
     
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        fatalError()
+        try T(from: DummyDecoder())
     }
 }
 
@@ -156,19 +164,19 @@ struct Unkeyed: UnkeyedDecodingContainer {
     }
     
     mutating func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        fatalError()
+        try T(from: DummyDecoder())
     }
     
     mutating func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support nested keyed containers yet.")
     }
     
     mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support nested unkeyed containers yet.")
     }
     
     mutating func superDecoder() throws -> Decoder {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support super decoders yet.")
     }
 }
 
@@ -243,22 +251,31 @@ struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T : Decodable {
-        try T(from: DummyDecoder())
+        if type is AnyModelEnum.Type {
+            return (type as! AnyModelEnum.Type).defaultCase as! T
+        } else if type is AnyArray.Type {
+            return [] as! T
+        } else {
+            return try T(from: DummyDecoder())
+        }
     }
     
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: K) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support nested keyed containers yet.")
     }
     
     func nestedUnkeyedContainer(forKey key: K) throws -> UnkeyedDecodingContainer {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support nested unkeyed containers yet.")
     }
     
     func superDecoder() throws -> Decoder {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support super decoding yet.")
     }
     
     func superDecoder(forKey key: K) throws -> Decoder {
-        fatalError()
+        throw RuneError("`DummyDecoder` doesn't support super decoding yet.")
     }
 }
+
+private protocol AnyArray {}
+extension Array: AnyArray {}

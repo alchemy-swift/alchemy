@@ -14,4 +14,11 @@
 ///     let priority: TaskPriority // Stored as `Int` in the database.
 /// }
 /// ```
-public protocol ModelEnum: Codable, Parameter {}
+public protocol ModelEnum: AnyModelEnum, CaseIterable {}
+public protocol AnyModelEnum: Codable, Parameter {
+    static var defaultCase: Self { get }
+}
+
+extension ModelEnum {
+    public static var defaultCase: Self { Self.allCases.first! }
+}
