@@ -203,14 +203,13 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: A future containing a freshly synced copy of this
     ///   model.
-    public func sync(db: Database = .default) -> EventLoopFuture<Self> {
+    public func sync(db: Database = .default, query: ((ModelQuery<Self>) -> ModelQuery<Self>) = { $0 }) -> EventLoopFuture<Self> {
         catchError {
             guard let id = self.id else {
                 throw RuneError.syncErrorNoId
             }
 
-            return Self.query(database: db)
-                .where("id" == id)
+            return query(Self.query(database: db).where("id" == id))
                 .first()
                 .flatMapThrowing {
                     try $0.unwrap(or: RuneError.syncErrorNoMatch(table: Self.tableName, id: id))

@@ -50,28 +50,30 @@ struct Migration1: TestMigration {
         [
             SQL("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id uuid DEFAULT uuid_generate_v4(),
-                    bmi float8 DEFAULT 15.0,
-                    email varchar(255) NOT NULL,
-                    age int DEFAULT 21,
-                    counter serial,
-                    is_pro bool DEFAULT false,
-                    created_at timestamptz,
-                    date_default timestamptz DEFAULT '1970-01-01T00:00:00',
-                    uuid_default uuid DEFAULT '\(kFixedUUID.uuidString)',
-                    some_json json DEFAULT '{"age":27,"name":"Josh"}'::jsonb,
-                    other_json json DEFAULT '{}'::jsonb,
-                    parent_id uuid,
-                    PRIMARY KEY (id),
-                    UNIQUE (email),
-                    FOREIGN KEY (parent_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
+                    "id" uuid DEFAULT uuid_generate_v4(),
+                    "bmi" float8 DEFAULT 15.0,
+                    "email" varchar(255) NOT NULL,
+                    "age" int DEFAULT 21,
+                    "counter" serial,
+                    "is_pro" bool DEFAULT false,
+                    "created_at" timestamptz,
+                    "date_default" timestamptz DEFAULT '1970-01-01T00:00:00',
+                    "uuid_default" uuid DEFAULT '\(kFixedUUID.uuidString)',
+                    "some_json" json DEFAULT '{"age":27,"name":"Josh"}'::jsonb,
+                    "other_json" json DEFAULT '{}'::jsonb,
+                    "parent_id" uuid,
+                    PRIMARY KEY ("id"),
+                    UNIQUE ("email"),
+                    FOREIGN KEY ("parent_id") REFERENCES users ("id") ON DELETE CASCADE ON UPDATE CASCADE
                 )
                 """),
-            SQL("CREATE INDEX users_counter_idx ON users (counter)"),
+            SQL("""
+                CREATE INDEX users_counter_idx ON users ("counter")
+                """),
             SQL("""
                 CREATE TABLE foo (
-                    id serial,
-                    PRIMARY KEY (id)
+                    "id" serial,
+                    PRIMARY KEY ("id")
                 )
                 """),
             SQL("ALTER TABLE foo RENAME TO bar"),
@@ -83,31 +85,35 @@ struct Migration1: TestMigration {
         [
             SQL("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id varchar(36) DEFAULT uuid_generate_v4(),
-                    bmi double DEFAULT 15.0,
-                    email varchar(255) NOT NULL,
-                    age int DEFAULT 21,
-                    counter serial,
-                    is_pro boolean DEFAULT false,
-                    created_at datetime,
-                    date_default datetime DEFAULT '1970-01-01T00:00:00',
-                    uuid_default varchar(36) DEFAULT '\(kFixedUUID.uuidString)',
-                    some_json json DEFAULT ('{"age":27,"name":"Josh"}'),
-                    other_json json DEFAULT ('{}'),
-                    parent_id varchar(36),
-                    PRIMARY KEY (id),
-                    UNIQUE (email),
-                    FOREIGN KEY (parent_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
+                    "id" varchar(36) DEFAULT uuid_generate_v4(),
+                    "bmi" double DEFAULT 15.0,
+                    "email" varchar(255) NOT NULL,
+                    "age" int DEFAULT 21,
+                    "counter" serial,
+                    "is_pro" boolean DEFAULT false,
+                    "created_at" datetime,
+                    "date_default" datetime DEFAULT '1970-01-01T00:00:00',
+                    "uuid_default" varchar(36) DEFAULT '\(kFixedUUID.uuidString)',
+                    "some_json" json DEFAULT ('{"age":27,"name":"Josh"}'),
+                    "other_json" json DEFAULT ('{}'),
+                    "parent_id" varchar(36),
+                    PRIMARY KEY ("id"),
+                    UNIQUE ("email"),
+                    FOREIGN KEY ("parent_id") REFERENCES users ("id") ON DELETE CASCADE ON UPDATE CASCADE
                 )
                 """),
-            SQL("CREATE INDEX users_counter_idx ON users (counter)"),
+            SQL("""
+                CREATE INDEX users_counter_idx ON users ("counter")
+                """),
             SQL("""
                 CREATE TABLE foo (
-                    id serial,
-                    PRIMARY KEY (id)
+                    "id" serial,
+                    PRIMARY KEY ("id")
                 )
                 """),
-            SQL("ALTER TABLE foo RENAME TO bar"),
+            SQL("""
+                ALTER TABLE foo RENAME TO bar
+                """),
             SQL("DROP TABLE bar"),
         ]
     }
@@ -132,14 +138,18 @@ struct Migration2: TestMigration {
         [
             SQL("""
                 CREATE TABLE some_table (
-                    email varchar(255),
-                    user_id uuid NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
+                    "email" varchar(255),
+                    "user_id" uuid NOT NULL,
+                    FOREIGN KEY ("user_id") REFERENCES users ("id")
                 )
                 """),
-            SQL("CREATE INDEX some_table_email_idx ON some_table (email)"),
+            SQL("""
+                CREATE INDEX some_table_email_idx ON some_table ("email")
+                """),
             SQL("DROP INDEX users_counter_idx"),
-            SQL("CREATE INDEX users_age_bmi_idx ON users (age, bmi)"),
+            SQL("""
+                CREATE INDEX users_age_bmi_idx ON users ("age", "bmi")
+                """),
         ]
     }
     
@@ -147,14 +157,18 @@ struct Migration2: TestMigration {
         [
             SQL("""
                 CREATE TABLE some_table (
-                    email varchar(255),
-                    user_id varchar(36) NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
+                    "email" varchar(255),
+                    "user_id" varchar(36) NOT NULL,
+                    FOREIGN KEY ("user_id") REFERENCES users ("id")
                 )
                 """),
-            SQL("CREATE INDEX some_table_email_idx ON some_table (email)"),
+            SQL("""
+                CREATE INDEX some_table_email_idx ON some_table ("email")
+                """),
             SQL("DROP INDEX users_counter_idx ON users"),
-            SQL("CREATE INDEX users_age_bmi_idx ON users (age, bmi)"),
+            SQL("""
+                CREATE INDEX users_age_bmi_idx ON users ("age", "bmi")
+                """),
         ]
     }
 }
@@ -176,12 +190,14 @@ struct Migration3: TestMigration {
         [
             SQL("""
                 ALTER TABLE users
-                    ADD COLUMN some_string text DEFAULT 'hello',
-                    ADD COLUMN some_int int NOT NULL,
-                    DROP COLUMN email,
-                    ADD UNIQUE (some_int)
+                    ADD COLUMN "some_string" text DEFAULT 'hello',
+                    ADD COLUMN "some_int" int NOT NULL,
+                    DROP COLUMN "email",
+                    ADD UNIQUE ("some_int")
                 """),
-            SQL("ALTER TABLE users RENAME COLUMN bmi TO bmi2"),
+            SQL("""
+                ALTER TABLE users RENAME COLUMN "bmi" TO "bmi2"
+                """),
             SQL("some raw sql"),
         ]
     }
@@ -190,12 +206,14 @@ struct Migration3: TestMigration {
         [
             SQL("""
                 ALTER TABLE users
-                    ADD COLUMN some_string text DEFAULT ('hello'),
-                    ADD COLUMN some_int int NOT NULL,
-                    DROP COLUMN email,
-                    ADD UNIQUE (some_int)
+                    ADD COLUMN "some_string" text DEFAULT ('hello'),
+                    ADD COLUMN "some_int" int NOT NULL,
+                    DROP COLUMN "email",
+                    ADD UNIQUE ("some_int")
                 """),
-            SQL("ALTER TABLE users RENAME COLUMN bmi TO bmi2"),
+            SQL("""
+                ALTER TABLE users RENAME COLUMN "bmi" TO "bmi2"
+                """),
             SQL("some raw sql"),
         ]
     }
