@@ -10,7 +10,7 @@ public final class HasManyRelationship<
 >: AnyHas, Codable, Relationship {
     /// Internal value for storing the `To` objects of this
     /// relationship, when they are loaded.
-    private var value: [To]?
+    fileprivate var value: [To]?
     
     /// The related `[Model]` object. Accessing this will `fatalError`
     /// if the relationship is not already loaded via eager loading
@@ -51,6 +51,14 @@ public final class HasManyRelationship<
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
             try self.value.encode(to: encoder)
+        }
+    }
+}
+
+public extension KeyedEncodingContainer {
+    mutating func encode<From, To>(_ value: HasManyRelationship<From, To>, forKey key: Key) throws {
+        if let underlyingValue = value.value {
+            try encode(underlyingValue, forKey: key)
         }
     }
 }

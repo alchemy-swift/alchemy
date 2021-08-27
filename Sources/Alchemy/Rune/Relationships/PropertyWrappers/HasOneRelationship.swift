@@ -10,7 +10,7 @@ public final class HasOneRelationship<
 >: AnyHas, Codable, Relationship {
     /// Internal value for storing the `To` object of this
     /// relationship, when it is loaded.
-    private var value: To?
+    fileprivate var value: To?
     
     /// The projected value of this property wrapper is itself. Used
     /// for when a reference to the _relationship_ type is needed,
@@ -52,6 +52,14 @@ public final class HasOneRelationship<
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
             try self.value.encode(to: encoder)
+        }
+    }
+}
+
+public extension KeyedEncodingContainer {
+    mutating func encode<From, To>(_ value: HasOneRelationship<From, To>, forKey key: Key) throws {
+        if let underlyingValue = value.value {
+            try encode(underlyingValue, forKey: key)
         }
     }
 }
