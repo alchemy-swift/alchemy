@@ -210,11 +210,8 @@ extension Model {
             }
 
             return query(Self.query(database: db).where("id" == id))
-                .first()
-                .flatMapThrowing {
-                    try $0.unwrap(or: RuneError.syncErrorNoMatch(table: Self.tableName, id: id))
-                        .decode(Self.self)
-                }
+                .firstModel()
+                .unwrap(orError: RuneError.syncErrorNoMatch(table: Self.tableName, id: id))
         }
     }
 }
