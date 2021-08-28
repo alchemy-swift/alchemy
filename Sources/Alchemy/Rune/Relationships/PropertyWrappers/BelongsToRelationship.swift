@@ -42,12 +42,15 @@ public final class BelongsToRelationship<
     public var wrappedValue: Parent {
         get {
             do {
-                return try Parent.from(self.value)
+                return try Parent.from(value)
             } catch {
                 fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!")
             }
         }
-        set { self.value = newValue }
+        set {
+            self.id = newValue.id
+            self.value = newValue
+        }
     }
     
     /// The projected value of this property wrapper is itself. Used
@@ -68,10 +71,6 @@ public final class BelongsToRelationship<
 
         self.id = id
         self.value = wrappedValue
-    }
-    
-    public init(id: Parent.Value.Identifier) {
-        self.id = id
     }
     
     // MARK: Relationship
