@@ -365,9 +365,12 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func grouped(_ pathPrefix: String, configure: (Application) -> Void) -> Self {
-        Router.default.pathPrefixes.append(pathPrefix)
+        let prefixes = pathPrefix.split(separator: "/").map(String.init)
+        Router.default.pathPrefixes.append(contentsOf: prefixes)
         configure(self)
-        _ = Router.default.pathPrefixes.popLast()
+        for _ in prefixes {
+            _ = Router.default.pathPrefixes.popLast()
+        }
         return self
     }
 }

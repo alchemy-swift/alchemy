@@ -56,21 +56,6 @@ public protocol CacheDriver {
     func wipe() -> EventLoopFuture<Void>
 }
 
-// Convenient defaults.
-extension CacheDriver {
-    public func increment(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
-        self.increment(key, by: amount)
-    }
-    
-    public func decrement(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
-        self.decrement(key, by: amount)
-    }
-    
-    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount? = nil) -> EventLoopFuture<Void> {
-        self.set(key, value: value, for: time)
-    }
-}
-
 /// A type that can be set in a Cache. Must be convertible to and from
 /// a `String`.
 public protocol CacheAllowed {
