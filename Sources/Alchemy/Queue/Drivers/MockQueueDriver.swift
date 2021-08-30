@@ -29,7 +29,8 @@ final class MockQueueDriver: QueueDriver {
         
         guard
             let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
-                return !(jobs[thing]?.inBackoff ?? false)
+                let isInBackoff = jobs[thing]?.inBackoff ?? false
+                return !isInBackoff
             }),
             let job = jobs[id]
         else {
@@ -48,11 +49,11 @@ final class MockQueueDriver: QueueDriver {
         case .success, .failed:
             reserved[job.channel]?.removeAll(where: { $0 == job.id })
             jobs.removeValue(forKey: job.id)
+            return .new()
         case .retry:
-            jobs[job.id] = job
+            reserved[job.channel]?.removeAll(where: { $0 == job.id })
+            return enqueue(job)
         }
-        
-        return .new()
     }
     
     private func append(id: JobID, on channel: String, dict: inout [String: [JobID]]) {

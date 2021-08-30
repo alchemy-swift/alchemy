@@ -7,6 +7,9 @@ struct QueueCommand<A: Application>: ParsableCommand {
         CommandConfiguration(commandName: "queue")
     }
     
+    /// The name of the queue the workers should observe. If no name
+    /// is given, workers will observe the default queue.
+    @Option var name: String?
     /// The channels this worker should observe, separated by comma
     /// and ordered by priority. Defaults to "default"; the default
     /// channel of a queue.
@@ -27,7 +30,8 @@ struct QueueCommand<A: Application>: ParsableCommand {
 
 extension QueueCommand: Runner {
     func register(lifecycle: ServiceLifecycle) {
-        lifecycle.registerWorkers(workers, channels: channels.components(separatedBy: ","))
+        let queue: Queue = name.map { .named($0) } ?? .default
+        lifecycle.registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
         if schedule { 
             lifecycle.registerScheduler() 
         }
@@ -38,21 +42,21 @@ extension QueueCommand: Runner {
 }
 
 extension ServiceLifecycle {
-    func registerWorkers(_ count: Int, channels: [String] = [Queue.defaultChannel]) {
+    func registerWorkers(_ count: Int, on queue: Queue, channels: [String] = [Queue.defaultChannel]) {
         for worker in 0..<count {
             register(
                 label: "Worker\(worker)",
                 start: .eventLoopFuture {
                     Loop.group.next()
-                        .submit { self.startWorker(channels: channels) }
+                        .submit { startWorker(on: queue, channels: channels) }
                 },
                 shutdown: .none
             )
         }
     }
     
-    private func startWorker(channels: [String]) {
-        Queue.default.startWorker(for: channels)
+    private func startWorker(on queue: Queue, channels: [String]) {
+        queue.startWorker(for: channels)
     }
     
     func registerScheduler() {

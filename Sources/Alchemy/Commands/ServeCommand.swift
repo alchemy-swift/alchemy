@@ -76,7 +76,7 @@ extension ServeCommand: Runner {
             lifecycle.registerScheduler()
         }
         
-        lifecycle.registerWorkers(workers)
+        lifecycle.registerWorkers(workers, on: .default)
     }
 
     private func start() -> EventLoopFuture<Channel> {

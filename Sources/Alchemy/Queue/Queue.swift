@@ -37,6 +37,6 @@ extension Job {
     /// - Returns: A future that completes when this job has been
     ///  dispatched to the queue.
     public func dispatch(on queue: Queue = .default, channel: String = Queue.defaultChannel) -> EventLoopFuture<Void> {
-        queue.enqueue(self)
+        queue.enqueue(self, channel: channel)
     }
 }
