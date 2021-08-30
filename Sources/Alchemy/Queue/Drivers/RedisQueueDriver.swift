@@ -24,26 +24,20 @@ final class RedisQueueDriver: QueueDriver {
         loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { (task: RepeatedTask) ->
             EventLoopFuture<Void> in
             return self.redis
-                .zrangebyscore(from: self.backoffsKey, withMinimumScoreOf: 0)
-                .map { (values: [RESPValue]) -> [String] in
-                    guard !values.isEmpty else {
+                // Get and remove backoffs that can be rerun.
+                .transaction { conn -> EventLoopFuture<RESPValue> in
+                    let set = RESPValue(from: self.backoffsKey.rawValue)
+                    let min = RESPValue(from: 0)
+                    let max = RESPValue(from: Date().timeIntervalSince1970)
+                    return conn.send(command: "ZRANGEBYSCORE", with: [set, min, max])
+                        .flatMap { _ in conn.send(command: "ZREMRANGEBYSCORE", with: [set, min, max]) }
+                }
+                .map { (value: RESPValue) -> [String] in
+                    guard let values = value.array, let scores = values.first?.array, !scores.isEmpty else {
                         return []
                     }
-
-                    let now = Int(Date().timeIntervalSince1970)
-                    var toRetry: [String] = []
-                    for index in 0..<values.count/2 {
-                        let position = index * 2
-                        guard
-                            let jobID = values[position].string,
-                            let date = values[position + 1].int
-                        else { continue }
-                        if date <= now {
-                            toRetry.append(jobID)
-                        }
-                    }
-
-                    return toRetry
+                    
+                    return scores.compactMap(\.string)
                 }
                 .flatMapEach(on: loop) { backoffKey -> EventLoopFuture<Void> in
                     let values = backoffKey.split(separator: ":")
@@ -59,20 +53,21 @@ final class RedisQueueDriver: QueueDriver {
     // MARK: - Queue
 
     func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
+        return self.storeJobData(job)
+            .flatMap { self.redis.lpush(job.id, into: self.key(for: job.channel)) }
+            .voided()
+    }
+    
+    private func storeJobData(_ job: JobData) -> EventLoopFuture<Void> {
         catchError {
             let jsonString = try job.jsonString()
-            let queueList = self.key(for: job.channel)
-            // Add job to data
-            return self.redis.hset(job.id, to: jsonString, in: self.dataKey)
-                // Add to end of specific queue
-                .flatMap { _ in self.redis.lpush(job.id, into: queueList) }
-                .voided()
+            return redis.hset(job.id, to: jsonString, in: self.dataKey).voided()
         }
     }
     
     func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
         /// Move from queueList to processing
-        let queueList = self.key(for: channel)
+        let queueList = key(for: channel)
         return self.redis.rpoplpush(from: queueList, to: self.processingKey, valueType: String.self)
             .flatMap { jobID in
                 guard let jobID = jobID else {
@@ -101,7 +96,8 @@ final class RedisQueueDriver: QueueDriver {
                     if let backoffUntil = job.backoffUntil {
                         let backoffKey = "\(job.id):\(job.channel)"
                         let backoffScore = backoffUntil.timeIntervalSince1970
-                        return self.redis.zadd((backoffKey, backoffScore), to: self.backoffsKey)
+                        return self.storeJobData(job)
+                            .flatMap { self.redis.zadd((backoffKey, backoffScore), to: self.backoffsKey) }
                             .voided()
                     } else {
                         return self.enqueue(job)

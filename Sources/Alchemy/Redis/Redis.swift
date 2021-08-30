@@ -206,7 +206,8 @@ extension Redis: RedisClient {
     }
     
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
-        driver.getClient().send(command: command, with: arguments).hop(to: Loop.current)
+        driver.getClient()
+            .send(command: command, with: arguments).hop(to: Loop.current)
     }
     
     public func subscribe(
@@ -251,11 +252,11 @@ extension Redis: RedisClient {
 extension Redis {
     /// Sends a Redis transaction over a single connection. Wrapper around 
     /// "MULTI" ... "EXEC".
-    public func transaction<T>(_ action: @escaping (Redis) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    public func transaction<T>(_ action: @escaping (Redis) -> EventLoopFuture<T>) -> EventLoopFuture<RESPValue> {
         driver.leaseConnection { conn in
-            conn.send(command: "MULTI")
+            return conn.send(command: "MULTI")
                 .flatMap { _ in action(Redis(connection: conn)) }
-                .flatMap { conn.send(command: "EXEC").transform(to: $0) }
+                .flatMap { _ in return conn.send(command: "EXEC") }
         }
     }
 }
