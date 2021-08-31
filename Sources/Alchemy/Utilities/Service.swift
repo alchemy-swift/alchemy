@@ -37,7 +37,7 @@ extension Service {
     }
     
     public static func config(default configuration: Self) {
-        config(default: configuration)
+        config(nil, configuration)
     }
     
     public static func config(_ name: String, _ configuration: Self) {
