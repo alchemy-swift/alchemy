@@ -83,10 +83,10 @@ final class MockCacheDriver: CacheDriver {
 
 /// An in memory cache item.
 public struct MockCacheItem {
-    var text: String
-    var expiration: Int?
+    fileprivate var text: String
+    fileprivate var expiration: Int?
     
-    var isValid: Bool {
+    fileprivate var isValid: Bool {
         guard let expiration = self.expiration else {
             return true
         }
@@ -94,18 +94,30 @@ public struct MockCacheItem {
         return expiration > Int(Date().timeIntervalSince1970)
     }
     
+    /// Create a mock cache item.
+    ///
+    /// - Parameters:
+    ///   - text: The text of the item.
+    ///   - expiration: An optional expiration time, in seconds since
+    ///     epoch.
     public init(text: String, expiration: Int? = nil) {
         self.text = text
         self.expiration = expiration
     }
     
-    func cast<C: CacheAllowed>() throws -> C {
+    fileprivate func cast<C: CacheAllowed>() throws -> C {
         try C(self.text).unwrap(or: CacheError("Unable to cast '\(self.text)' to \(C.self)"))
     }
 }
 
-public extension Cache {
-    static func mock(_ data: [String: MockCacheItem] = [:]) -> Cache {
+extension Cache {
+    /// Create a cache backed by an in memory dictionary. Useful for
+    /// tests.
+    ///
+    /// - Parameter data: Optional mock data to initialize your cache
+    ///   with. Defaults to an empty dict.
+    /// - Returns: A mock cache.
+    public static func mock(_ data: [String: MockCacheItem] = [:]) -> Cache {
         Cache(MockCacheDriver(data))
     }
 }

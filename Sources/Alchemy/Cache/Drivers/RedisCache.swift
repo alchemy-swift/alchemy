@@ -58,6 +58,11 @@ final class RedisCacheDriver: CacheDriver {
 }
 
 public extension Cache {
+    /// Create a cache backed by Redis.
+    ///
+    /// - Parameter redis: The redis instance to drive your cache
+    ///   with. Defaults to your default `Redis` configuration.
+    /// - Returns: A cache.
     static func redis(_ redis: Redis = Redis.default) -> Cache {
         Cache(RedisCacheDriver(redis))
     }

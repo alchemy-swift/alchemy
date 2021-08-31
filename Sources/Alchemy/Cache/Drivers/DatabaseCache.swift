@@ -112,12 +112,18 @@ final class DatabaseCache: CacheDriver {
     }
 }
 
-public extension Cache {
-    static func database(_ database: Database = .default) -> Cache {
+extension Cache {
+    /// Create a cache backed by an SQL database.
+    ///
+    /// - Parameter database: The database to drive your cache with.
+    ///   Defaults to your default `Database`.
+    /// - Returns: A cache.
+    public static func database(_ database: Database = .default) -> Cache {
         Cache(DatabaseCache(database))
     }
 }
 
+/// Model for storing cache data
 private struct CacheItem: Model {
     static var tableName: String { "cache" }
     
@@ -144,6 +150,9 @@ private struct CacheItem: Model {
 }
 
 extension Cache {
+    /// Migration for adding a cache table to your database. Don't
+    /// forget to apply this to your database before using a
+    /// database backed cache.
     public struct AddCacheMigration: Alchemy.Migration {
         public var name: String { "AddCacheMigration" }
         

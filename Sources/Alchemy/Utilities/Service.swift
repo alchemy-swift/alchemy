@@ -1,9 +1,12 @@
 import Fusion
 import Lifecycle
 
+/// A protocol for registering and resolving a type through Alchemy's
+/// dependency injection system, Fusion. Conform a type to this
+/// to make it simple to inject and resolve around your app.
 public protocol Service {
-    // Shutdown this service. Will be called when the main application
-    // shuts down.
+    // Shutdown this service. Will be called when the application your
+    // service is registered to shuts down.
     func shutdown() throws
     
     /// The default instance of this service.

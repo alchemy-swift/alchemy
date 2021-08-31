@@ -5,6 +5,11 @@ import Foundation
 public final class Cache: Service {
     private let driver: CacheDriver
     
+    /// Initializer this cache with a driver. Prefer static functions
+    /// like `.database()` or `.redis()` when configuring your
+    /// application's cache.
+    ///
+    /// - Parameter driver: A driver to back this cache with.
     public init(_ driver: CacheDriver) {
         self.driver = driver
     }

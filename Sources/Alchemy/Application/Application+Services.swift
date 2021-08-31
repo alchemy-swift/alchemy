@@ -2,7 +2,7 @@ import Fusion
 import Lifecycle
 
 extension Application {
-    /// Register some commonly used services to `Container.default`.
+    /// Register core services to `Container.default`.
     func bootServices() {
         Loop.config()
         
@@ -20,10 +20,9 @@ extension Application {
     /// function of test cases.
     public func mockServices() {
         Container.default = Container()
-        Container.register(singleton: ServiceLifecycle.self) { _ in ServiceLifecycle() }
-        Container.register(singleton: Router.self) { _ in Router() }
-        Container.register(EventLoop.self) { _ in EmbeddedEventLoop() }
-        Container.register(singleton: EventLoopGroup.self) { _ in MultiThreadedEventLoopGroup(numberOfThreads: 1) }
+        ServiceLifecycle.config(default: ServiceLifecycle())
+        Router.config(default: Router())
+        Loop.mock()
     }
 }
 

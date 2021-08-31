@@ -1,26 +1,23 @@
 /// The core type for an Alchemy application. Implement this & it's
-/// `setup` function, then call `MyApplication.launch()` in your
-/// `main.swift`.
+/// `boot` function, then add the `@main` attribute to mark it as
+/// the entrypoint for your application.
 ///
 /// ```swift
-/// // MyApplication.swift
+/// @main
 /// struct App: Application {
 ///     func boot() {
-///         self.get("/hello") { _ in
+///         get("/hello") { _ in
 ///             "Hello, world!"
 ///         }
 ///         ...
 ///     }
 /// }
-///
-/// // main.swift
-/// App.launch()
 /// ```
 public protocol Application {
     /// Called before any launch command is run. Called AFTER any
-    /// environment is loaded and the global
-    /// `MultiThreadedEventLoopGroup` is set. Called on an event loop,
-    /// so `Loop.current` is available for use if needed.
+    /// environment is loaded and the global `EventLoopGroup` is
+    /// set. Called on an event loop, so `Loop.current` is
+    /// available for use if needed.
     func boot()
     
     /// Required empty initializer.
