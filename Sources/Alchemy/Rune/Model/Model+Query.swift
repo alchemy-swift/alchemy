@@ -216,7 +216,23 @@ private extension RelationshipMapping {
         }
 
         let ids = try values.map { try $0.getField(column: fromKey).value }
-        query = query.where(key: "\(whereKey)", in: ids)
+        query = query.where(key: "\(whereKey)", in: ids.uniques)
         return query
+    }
+}
+
+private extension Array where Element: Hashable {
+    /// Removes any duplicates from the array while maintaining the
+    /// original order.
+    var uniques: Array {
+        var buffer = Array()
+        var added = Set<Element>()
+        for elem in self {
+            if !added.contains(elem) {
+                buffer.append(elem)
+                added.insert(elem)
+            }
+        }
+        return buffer
     }
 }

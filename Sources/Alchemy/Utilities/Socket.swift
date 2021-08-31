@@ -11,19 +11,3 @@ public enum Socket {
     /// A unix domain socket (IPC socket) at path `path`.
     case unix(path: String)
 }
-
-extension Socket {
-    /// The `NIO.SocketAddress` representing this `Socket`.
-    var nio: SocketAddress {
-        do {
-            switch self {
-            case let .ip(host, port):
-                return try .makeAddressResolvingHost(host, port: port)
-            case let .unix(path):
-                return try .init(unixDomainSocketPath: path)
-            }
-        } catch {
-            fatalError("Error generating socket address from `Socket` \(self)!")
-        }
-    }
-}

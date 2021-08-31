@@ -47,9 +47,7 @@ extension EventLoopFuture where Value == Void {
 ///   `EventLoopFuture<T>`.
 /// - Returns: A future with the given closure run with any errors
 ///   piped into the future.
-public func catchError<T>(
-    _ closure: () throws -> EventLoopFuture<T>
-) -> EventLoopFuture<T> {
+public func catchError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
     do {
         return try closure()
     }

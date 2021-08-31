@@ -638,10 +638,10 @@ public class Query: Sequelizable {
         }
         return self.select([query])
             .first()
-            .unwrap(orError: AlchemyError("a COUNT query didn't return any rows"))
+            .unwrap(orError: DatabaseError("a COUNT query didn't return any rows"))
             .flatMapThrowing {
                 guard let column = $0.allColumns.first else {
-                    throw AlchemyError("a COUNT query didn't return any columns")
+                    throw DatabaseError("a COUNT query didn't return any columns")
                 }
                 
                 return try $0.getField(column: column).int()

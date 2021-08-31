@@ -52,6 +52,23 @@ extension Redis: Service {
     }
 }
 
+private extension Socket {
+    /// The `NIO.SocketAddress` representing this `Socket`.
+    var nio: SocketAddress {
+        do {
+            switch self {
+            case let .ip(host, port):
+                return try .makeAddressResolvingHost(host, port: port)
+            case let .unix(path):
+                return try .init(unixDomainSocketPath: path)
+            }
+        } catch {
+            fatalError("Error generating socket address from `Socket` \(self)!")
+        }
+    }
+}
+
+
 /// A client for interfacing with a Redis instance.
 public final class Redis { 
     fileprivate let driver: RedisDriver

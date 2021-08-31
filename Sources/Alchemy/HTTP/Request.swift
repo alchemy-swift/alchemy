@@ -118,7 +118,7 @@ extension Request {
     ///   access with `self.get(Value.self)`.
     @discardableResult
     public func set<T>(_ value: T) -> Self {
-        self.middlewareData[identifier(of: T.self)] = value
+        middlewareData[ObjectIdentifier(T.self)] = value
         return self
     }
     
@@ -131,13 +131,9 @@ extension Request {
     ///   type `T` found associated with the request.
     /// - Returns: The value of type `T` from the request.
     public func get<T>(_ type: T.Type = T.self) throws -> T {
-        try self.middlewareData[identifier(of: T.self)]
-            .unwrap(
-                as: type,
-                or: AssociatedValueError(
-                    message: "Couldn't find type `\(name(of: type))` on this request"
-                )
-            )
+        let error = AssociatedValueError(message: "Couldn't find type `\(name(of: type))` on this request")
+        return try middlewareData[ObjectIdentifier(T.self)]
+            .unwrap(as: type, or: error)
     }
 }
 
@@ -146,4 +142,23 @@ extension Request {
 struct AssociatedValueError: Error {
     /// What went wrong.
     let message: String
+}
+
+private extension Optional {
+    /// Unwraps an optional as the provided type or throws the
+    /// provided error.
+    ///
+    /// - Parameters:
+    ///   - as: The type to unwrap to.
+    ///   - error: The error to be thrown if `self` is unable to be
+    ///            unwrapped as the provided type.
+    /// - Throws: An error if unwrapping as the provided type fails.
+    /// - Returns: `self` unwrapped and cast as the provided type.
+    func unwrap<T>(as: T.Type = T.self, or error: Error) throws -> T {
+        guard let wrapped = self as? T else {
+            throw error
+        }
+        
+        return wrapped
+    }
 }

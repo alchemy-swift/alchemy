@@ -12,7 +12,12 @@ public struct PapyrusClientError: Error {
     public let response: HTTPClient.Response
     /// The response body, converted to a String, if there is one.
     public var bodyString: String? {
-        response.body?.string
+        guard let body = response.body else {
+            return nil
+        }
+        
+        var copy = body
+        return copy.readString(length: copy.writerIndex)
     }
 }
 
