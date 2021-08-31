@@ -1,6 +1,12 @@
 import Foundation
 
 extension Model {
+    /// Initialize this model from a primary key. All other fields
+    /// will be populated with dummy data. Useful for setting a
+    /// relationship value based on just the primary key.
+    ///
+    /// - Parameter id: The primary key of this model.
+    /// - Returns: An instance of `Self` with the given primary key.
     public static func pk(_ id: Self.Identifier) -> Self {
         var this = try! Self(from: DummyDecoder())
         this.id = id
@@ -8,7 +14,7 @@ extension Model {
     }
 }
 
-struct DummyDecoder: Decoder {
+private struct DummyDecoder: Decoder {
     var codingPath: [CodingKey] = []
     
     var userInfo: [CodingUserInfoKey : Any] = [:]
@@ -26,7 +32,7 @@ struct DummyDecoder: Decoder {
     }
 }
 
-struct Single: SingleValueDecodingContainer {
+private struct Single: SingleValueDecodingContainer {
     var codingPath: [CodingKey] = []
     
     func decodeNil() -> Bool {
@@ -94,7 +100,7 @@ struct Single: SingleValueDecodingContainer {
     }
 }
 
-struct Unkeyed: UnkeyedDecodingContainer {
+private struct Unkeyed: UnkeyedDecodingContainer {
     var codingPath: [CodingKey] = []
     
     var count: Int? = nil
@@ -180,7 +186,7 @@ struct Unkeyed: UnkeyedDecodingContainer {
     }
 }
 
-struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
+private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
     typealias Key = K
     var codingPath: [CodingKey] = []
     

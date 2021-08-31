@@ -42,6 +42,18 @@ extension QueueCommand: Runner {
 }
 
 extension ServiceLifecycle {
+    /// Start the scheduler when the app starts.
+    func registerScheduler() {
+        register(label: "Scheduler", start: .sync { Scheduler.default.start() }, shutdown: .none)
+    }
+    
+    /// Start queue workers when the app starts.
+    ///
+    /// - Parameters:
+    ///   - count: The number of workers to start.
+    ///   - queue: The queue they should monitor for jobs.
+    ///   - channels: The channels they should monitor for jobs.
+    ///     Defaults to `[Queue.defaultChannel]`.
     func registerWorkers(_ count: Int, on queue: Queue, channels: [String] = [Queue.defaultChannel]) {
         for worker in 0..<count {
             register(
@@ -57,14 +69,6 @@ extension ServiceLifecycle {
     
     private func startWorker(on queue: Queue, channels: [String]) {
         queue.startWorker(for: channels)
-    }
-    
-    func registerScheduler() {
-        register(
-            label: "Scheduler",
-            start: .sync { Scheduler.default.start() },
-            shutdown: .none
-        )
     }
 }
 

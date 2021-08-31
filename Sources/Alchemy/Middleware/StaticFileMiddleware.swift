@@ -6,11 +6,9 @@ import NIOHTTP1
 ///
 /// Usage:
 /// ```swift
-/// self.router.globalMiddlewares = [
-///     // Will server static files from the 'Public' directory of
-///     // your project.
-///     StaticFileMiddleware(from: "Public")
-/// ]
+/// /// Will server static files from the 'public' directory of
+/// /// your project.
+/// app.useAll(StaticFileMiddleware(from: "public"))
 /// ```
 /// Now your router will serve the files that are in the `Public`
 /// directory.

@@ -16,37 +16,69 @@ public struct MIMEType {
     
     // MARK: Common MIME types
     
+    /// image/bmp
     public static let bmp =         MIMEType("image/bmp")
+    /// text/css
     public static let css =         MIMEType("text/css")
+    /// text/csv
     public static let csv =         MIMEType("text/csv")
+    /// application/epub+zip
     public static let epub =        MIMEType("application/epub+zip")
+    /// application/gzip
     public static let gzip =        MIMEType("application/gzip")
+    /// image/gif
     public static let gif =         MIMEType("image/gif")
+    /// text/html
     public static let html =        MIMEType("text/html")
+    /// text/calendar
     public static let calendar =    MIMEType("text/calendar")
+    /// image/jpeg
     public static let jpeg =        MIMEType("image/jpeg")
+    /// text/javascript
     public static let javascript =  MIMEType("text/javascript")
+    /// application/json
     public static let json =        MIMEType("application/json")
+    /// audio/midi
     public static let mid =         MIMEType("audio/midi")
+    /// audio/mpeg
     public static let mp3 =         MIMEType("audio/mpeg")
+    /// video/mpeg
     public static let mpeg =        MIMEType("video/mpeg")
+    /// application/octet-stream
     public static let octetStream = MIMEType("application/octet-stream")
+    /// audio/ogg
     public static let oga =         MIMEType("audio/ogg")
+    /// video/ogg
     public static let ogv =         MIMEType("video/ogg")
+    /// font/otf
     public static let otf =         MIMEType("font/otf")
+    /// application/pdf
     public static let pdf =         MIMEType("application/pdf")
+    /// application/x-httpd-php
     public static let php =         MIMEType("application/x-httpd-php")
+    /// text/plain
     public static let plainText =   MIMEType("text/plain")
+    /// image/png
     public static let png =         MIMEType("image/png")
+    /// application/rtf
     public static let rtf =         MIMEType("application/rtf")
+    /// image/svg+xml
     public static let svg =         MIMEType("image/svg+xml")
+    /// application/x-tar
     public static let tar =         MIMEType("application/x-tar")
+    /// image/tiff
     public static let tiff =        MIMEType("image/tiff")
+    /// font/ttf
     public static let ttf =         MIMEType("font/ttf")
+    /// audio/wav
     public static let wav =         MIMEType("audio/wav")
+    /// application/xhtml+xml
     public static let xhtml =       MIMEType("application/xhtml+xml")
+    /// application/xml
     public static let xml =         MIMEType("application/xml")
+    /// application/zip
     public static let zip =         MIMEType("application/zip")
+    
 }
 
 // Map of file extensions

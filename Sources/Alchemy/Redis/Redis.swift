@@ -76,12 +76,23 @@ public struct Redis: Service {
     }
 }
 
+/// Under the hood driver for `Redis`. Used so either connection pools
+/// or connections can be injected into `Redis` for accessing redis.
 protocol RedisDriver {
+    /// Get a redis client for running commands.
     func getClient() -> RedisClient
+    
+    /// Shut down.
     func shutdown() throws
+    
+    /// Lease a private connection for the duration of a transaction.
+    ///
+    /// - Parameter transaction: An asynchronous transaction to run on
+    ///   the connection.
     func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 }
 
+/// A connection pool is a redis driver with a pool per `EventLoop`.
 private final class ConnectionPool: RedisDriver {
     /// Map of `EventLoop` identifiers to respective connection pools.
     @Locked private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]

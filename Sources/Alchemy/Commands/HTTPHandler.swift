@@ -1,5 +1,3 @@
-// Courtesy of [raywenderlich](
-// https://www.raywenderlich.com/8016626-swiftnio-tutorial-practical-guide-for-asynchronous-problems)
 import NIO
 import NIOHTTP1
 
@@ -14,7 +12,7 @@ protocol HTTPRouter {
 }
 
 /// Responds to incoming `HTTPRequests` with an `Response` generated
-/// by the `Responder`.
+/// by the `HTTPRouter`.
 final class HTTPHandler: ChannelInboundHandler {
     typealias InboundIn = HTTPServerRequestPart
     typealias OutboundOut = HTTPServerResponsePart
@@ -23,7 +21,7 @@ final class HTTPHandler: ChannelInboundHandler {
     // response has been sent.
     private var closeAfterResponse = true
   
-    /// A temporary local HTTPRequest that is used to accumulate data
+    /// A temporary local Request that is used to accumulate data
     /// into.
     private var request: Request?
   

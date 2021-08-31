@@ -138,12 +138,19 @@ extension Schedule {
 
 /// A day of the week.
 public enum DayOfWeek: Int, ExpressibleByIntegerLiteral {
+    /// Sunday
     case sun = 0
+    /// Monday
     case mon = 1
+    /// Tuesday
     case tue = 2
+    /// Wednesday
     case wed = 3
+    /// Thursday
     case thu = 4
+    /// Friday
     case fri = 5
+    /// Saturday
     case sat = 6
     
     public init(integerLiteral value: Int) {
@@ -162,17 +169,29 @@ public enum DayOfWeek: Int, ExpressibleByIntegerLiteral {
 
 /// A month of the year.
 public enum Month: Int, ExpressibleByIntegerLiteral {
+    /// January
     case jan = 0
+    /// February
     case feb = 1
+    /// March
     case mar = 2
+    /// April
     case apr = 3
+    /// May
     case may = 4
+    /// June
     case jun = 5
+    /// July
     case jul = 6
+    /// August
     case aug = 7
+    /// September
     case sep = 8
+    /// October
     case oct = 9
+    /// November
     case nov = 10
+    /// December
     case dec = 11
     
     public init(integerLiteral value: Int) {

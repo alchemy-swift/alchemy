@@ -57,6 +57,7 @@ public final class HasOneRelationship<
 }
 
 public extension KeyedEncodingContainer {
+    // Only encode the underlying value if it exists.
     mutating func encode<From, To>(_ value: HasOneRelationship<From, To>, forKey key: Key) throws {
         if let underlyingValue = value.value {
             try encode(underlyingValue, forKey: key)

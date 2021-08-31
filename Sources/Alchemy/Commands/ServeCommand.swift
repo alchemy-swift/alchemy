@@ -124,6 +124,7 @@ extension ServeCommand: Runner {
 }
 
 extension SocketAddress {
+    /// A human readable description for this socket.
     var prettyName: String {
         switch self {
         case .unixDomainSocket:

@@ -21,7 +21,7 @@ import NIO
 ///     func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response>
 ///         // Run some async operation
 ///         Database.default
-///             .runRawQuery(...)
+///             .rawQuery(...)
 ///             .flatMap { someData in
 ///                 // Set some data on the request for access in
 ///                 // subsequent Middleware or request handlers.

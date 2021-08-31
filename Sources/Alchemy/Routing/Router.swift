@@ -36,7 +36,8 @@ public final class Router: HTTPRouter, Service {
     
     /// Current middleware of this router.
     var middlewares: [Middleware] = []
-
+    
+    /// Prefixes to prepend to any registered routes.
     var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
