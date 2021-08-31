@@ -2,45 +2,46 @@ import Fusion
 import Lifecycle
 
 public protocol Service {
-    // Shutdown this service. Will be called when the main
-    // application shuts down.
+    // Shutdown this service. Will be called when the main application
+    // shuts down.
     func shutdown() throws
     
+    /// The default instance of this service.
     static var `default`: Self { get }
+
+    /// A named instance of this service.
+    ///
+    /// - Parameter name: The name of the service to fetch.
     static func named(_ name: String) -> Self
     
+    /// Register the default driver for this service.
     static func config(default: Self)
+    
+    /// Register a named driver driver for this service.
     static func config(_ name: String, _ driver: Self)
 }
 
-public extension Service {
-    private static var lifecycle: ServiceLifecycle {
-        Container.resolve(ServiceLifecycle.self)
-    }
+// Default implementations.
+extension Service {
+    public func shutdown() throws {}
     
-    func shutdown() throws {}
-    
-    static var `default`: Self {
+    public static var `default`: Self {
         Container.resolve(Self.self)
     }
     
-    static func named(_ name: String) -> Self {
+    public static func named(_ name: String) -> Self {
         Container.resolve(Self.self, identifier: name)
     }
     
-    static func config(default configuration: Self) {
-        config(default: configuration, shutdownWithApp: true)
+    public static func config(default configuration: Self) {
+        config(default: configuration)
     }
     
-    static func config(_ name: String, _ configuration: Self) {
-        config(name, configuration, shutdownWithApp: true)
+    public static func config(_ name: String, _ configuration: Self) {
+        config(name, configuration)
     }
     
-    internal static func config(default configuration: Self, shutdownWithApp: Bool) {
-        config(nil, configuration, shutdownWithApp: shutdownWithApp)
-    }
-    
-    internal static func config(_ name: String? = nil, _ configuration: Self, shutdownWithApp: Bool) {
+    private static func config(_ name: String? = nil, _ configuration: Self) {
         let label: String
         if let name = name {
             label = "\(Alchemy.name(of: Self.self)):\(name)"
@@ -50,7 +51,10 @@ public extension Service {
             Container.register(singleton: Self.self) { _ in configuration }
         }
         
-        if shutdownWithApp {
+        if
+            !(configuration is ServiceLifecycle),
+            let lifecycle = Container.resolveOptional(ServiceLifecycle.self)
+        {
             lifecycle.registerShutdown(label: label, .sync(configuration.shutdown))
         }
     }

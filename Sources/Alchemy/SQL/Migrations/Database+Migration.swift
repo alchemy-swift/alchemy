@@ -63,7 +63,7 @@ extension Database {
             .flatMap { value in
                 guard value != 0 else {
                     Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
-                    let statements = AlchemyMigration.Migration().upStatements(for: self.grammar)
+                    let statements = AlchemyMigration.Migration().upStatements(for: self.driver.grammar)
                     return self.rawQuery(statements.first!.query).voided()
                 }
                 
@@ -83,7 +83,7 @@ extension Database {
     private func downMigrations(_ migrations: [Migration]) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for m in migrations.sorted(by: { $0.name > $1.name }) {
-            let statements = m.downStatements(for: self.grammar)
+            let statements = m.downStatements(for: self.driver.grammar)
             elf = elf.flatMap { self.runStatements(statements: statements) }
                 .flatMap {
                     AlchemyMigration.query()
@@ -108,7 +108,7 @@ extension Database {
     private func upMigrations(_ migrations: [Migration], batch: Int) -> EventLoopFuture<Void> {
         var elf = Loop.current.future()
         for m in migrations {
-            let statements = m.upStatements(for: self.grammar)
+            let statements = m.upStatements(for: self.driver.grammar)
             elf = elf.flatMap { self.runStatements(statements: statements) }
                 .flatMap {
                     AlchemyMigration(name: m.name, batch: batch, runAt: Date())

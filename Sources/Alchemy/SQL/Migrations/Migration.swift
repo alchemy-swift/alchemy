@@ -30,7 +30,7 @@ extension Migration {
     /// - Returns: The statements to run to apply this migration.
     func upStatements(for grammar: Grammar) -> [SQL] {
         let schema = Schema(grammar: grammar)
-        self.up(schema: schema)
+        up(schema: schema)
         return schema.statements
     }
     
@@ -41,7 +41,7 @@ extension Migration {
     /// - Returns: The statements to run to rollback this migration.
     func downStatements(for grammar: Grammar) -> [SQL] {
         let schema = Schema(grammar: grammar)
-        self.down(schema: schema)
+        down(schema: schema)
         return schema.statements
     }
 }

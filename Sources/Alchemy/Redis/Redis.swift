@@ -1,7 +1,16 @@
 import NIO
 import RediStack
 
-extension Redis: Service {
+/// A client for interfacing with a Redis instance.
+public struct Redis: Service {
+    let driver: RedisDriver
+    
+    /// Shuts down this `Redis` client, closing it's associated
+    /// connection pools.
+    public func shutdown() throws {
+        try driver.shutdown()
+    }
+    
     /// A single redis connection
     public static func connection(
         _ host: String,
@@ -34,7 +43,18 @@ extension Redis: Service {
     ) -> Redis {
         return .rawPoolConfiguration(
             RedisConnectionPool.Configuration(
-                initialServerConnectionAddresses: sockets.map(\.nio),
+                initialServerConnectionAddresses: sockets.map {
+                    do {
+                        switch $0 {
+                        case let .ip(host, port):
+                            return try .makeAddressResolvingHost(host, port: port)
+                        case let .unix(path):
+                            return try .init(unixDomainSocketPath: path)
+                        }
+                    } catch {
+                        fatalError("Error generating socket address from `Socket` \(self)!")
+                    }
+                },
                 maximumConnectionCount: poolSize,
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
@@ -45,82 +65,26 @@ extension Redis: Service {
         )
     }
     
-    /// A custom configuration for the Redis instance's connection
-    /// pool. Other initializers passthrough to this.
-    public static func rawPoolConfiguration(_ config: RedisConnectionPool.Configuration) -> Redis {
-        return Redis(config: config)
-    }
-}
-
-private extension Socket {
-    /// The `NIO.SocketAddress` representing this `Socket`.
-    var nio: SocketAddress {
-        do {
-            switch self {
-            case let .ip(host, port):
-                return try .makeAddressResolvingHost(host, port: port)
-            case let .unix(path):
-                return try .init(unixDomainSocketPath: path)
-            }
-        } catch {
-            fatalError("Error generating socket address from `Socket` \(self)!")
-        }
-    }
-}
-
-
-/// A client for interfacing with a Redis instance.
-public final class Redis { 
-    fileprivate let driver: RedisDriver
-
-    /// Creates a Redis client that will connect with the given
+    /// Creates a Redis client that will connect with the given pool
     /// configuration.
     ///
     /// - Parameters:
     ///   - config: The configuration of the pool backing this `Redis`
     ///     client.
-    fileprivate init(config: RedisConnectionPool.Configuration) {
-        self.driver = ConnectionPool(config: config)
-    }
-
-    /// Used for `Redis.transaction(...)`
-    fileprivate init(connection: RedisConnection) {
-        self.driver = Connection(connection: connection)
-    }
-    
-    /// Shuts down this `Redis` client, closing it's associated
-    /// connection pools.
-    public func shutdown() throws {
-        try driver.shutdown()
+    public static func rawPoolConfiguration(_ config: RedisConnectionPool.Configuration) -> Redis {
+        return Redis(driver: ConnectionPool(config: config))
     }
 }
 
-private protocol RedisDriver {
+protocol RedisDriver {
     func getClient() -> RedisClient
     func shutdown() throws
     func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
 }
 
-private struct Connection: RedisDriver {
-    let connection: RedisConnection
-
-    func getClient() -> RedisClient { 
-        connection 
-    }
-
-    func shutdown() throws {
-        try connection.close().wait()
-    }
-    
-    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        transaction(connection)
-    }
-}
-
 private final class ConnectionPool: RedisDriver {
     /// Map of `EventLoop` identifiers to respective connection pools.
-    @Locked
-    private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
+    @Locked private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
     
     /// The configuration to create pools with.
     private var config: RedisConnectionPool.Configuration
@@ -149,7 +113,7 @@ private final class ConnectionPool: RedisDriver {
     ///
     /// - Returns: A `RedisConnectionPool` associated with the current
     ///   `EventLoop` for sending commands to.
-    fileprivate func getPool() -> RedisConnectionPool {
+    private func getPool() -> RedisConnectionPool {
         let loop = Loop.current
         let key = ObjectIdentifier(loop)
         if let pool = self.poolStorage[key] {
@@ -158,122 +122,6 @@ private final class ConnectionPool: RedisDriver {
             let newPool = RedisConnectionPool(configuration: self.config, boundEventLoop: loop)
             self.poolStorage[key] = newPool
             return newPool
-        }
-    }
-}
-
-/// Alchemy specific.
-extension RedisClient {
-    /// Wrapper around sending commands to Redis.
-    ///
-    /// - Parameters:
-    ///   - name: The name of the command.
-    ///   - args: Any arguments for the command.
-    /// - Returns: A future containing the return value of the
-    ///   command.
-    public func command(_ name: String, args: RESPValueConvertible...) -> EventLoopFuture<RESPValue> {
-        self.command(name, args: args)
-    }
-    
-    /// Wrapper around sending commands to Redis.
-    ///
-    /// - Parameters:
-    ///   - name: The name of the command.
-    ///   - args: An array of arguments for the command.
-    /// - Returns: A future containing the return value of the
-    ///   command.
-    public func command(_ name: String, args: [RESPValueConvertible]) -> EventLoopFuture<RESPValue> {
-        self.send(command: name, with: args.map { $0.convertedToRESPValue() })
-    }
-    
-    /// Evaluate the given Lua script.
-    ///
-    /// - Parameters:
-    ///   - script: The script to run.
-    ///   - keys: The arguments that represent Redis keys. See
-    ///     [EVAL](https://redis.io/commands/eval) docs for details.
-    ///   - args: All other arguments.
-    /// - Returns: A future that completes with the result of the
-    ///   script.
-    public func eval(_ script: String, keys: [String] = [], args: [RESPValueConvertible] = []) -> EventLoopFuture<RESPValue> {
-        self.command("EVAL", args: [script] + [keys.count] + keys + args)
-    }
-    
-    /// Subscribe to a single channel.
-    ///
-    /// - Parameters:
-    ///   - channel: The name of the channel to subscribe to.
-    ///   - messageReciver: The closure to execute when a message
-    ///     comes through the given channel.
-    /// - Returns: A future that completes when the subscription is
-    ///   established.
-    public func subscribe(to channel: RedisChannelName, messageReciver: @escaping (RESPValue) -> Void) -> EventLoopFuture<Void> {
-        self.subscribe(to: [channel]) { _, value in messageReciver(value) }
-    }
-}
-
-/// RedisClient conformance. See `RedisClient` for docs.
-extension Redis: RedisClient {
-    public var eventLoop: EventLoop {
-        Loop.current
-    }
-    
-    public func logging(to logger: Logger) -> RedisClient {
-        driver.getClient().logging(to: logger)
-    }
-    
-    public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
-        driver.getClient()
-            .send(command: command, with: arguments).hop(to: Loop.current)
-    }
-    
-    public func subscribe(
-        to channels: [RedisChannelName],
-        messageReceiver receiver: @escaping RedisSubscriptionMessageReceiver,
-        onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
-        onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
-    ) -> EventLoopFuture<Void> {
-        driver.getClient()
-            .subscribe(
-                to: channels,
-                messageReceiver: receiver,
-                onSubscribe: subscribeHandler,
-                onUnsubscribe: unsubscribeHandler
-            )
-    }
-
-    public func psubscribe(
-        to patterns: [String],
-        messageReceiver receiver: @escaping RedisSubscriptionMessageReceiver,
-        onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
-        onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
-    ) -> EventLoopFuture<Void> {
-        driver.getClient()
-            .psubscribe(
-                to: patterns,
-                messageReceiver: receiver,
-                onSubscribe: subscribeHandler,
-                onUnsubscribe: unsubscribeHandler
-            )
-    }
-    
-    public func unsubscribe(from channels: [RedisChannelName]) -> EventLoopFuture<Void> {
-        driver.getClient().unsubscribe(from: channels)
-    }
-    
-    public func punsubscribe(from patterns: [String]) -> EventLoopFuture<Void> {
-        driver.getClient().punsubscribe(from: patterns)
-    }
-}
-
-extension Redis {
-    /// Sends a Redis transaction over a single connection. Wrapper around 
-    /// "MULTI" ... "EXEC".
-    public func transaction<T>(_ action: @escaping (Redis) -> EventLoopFuture<T>) -> EventLoopFuture<RESPValue> {
-        driver.leaseConnection { conn in
-            return conn.send(command: "MULTI")
-                .flatMap { _ in action(Redis(connection: conn)) }
-                .flatMap { _ in return conn.send(command: "EXEC") }
         }
     }
 }

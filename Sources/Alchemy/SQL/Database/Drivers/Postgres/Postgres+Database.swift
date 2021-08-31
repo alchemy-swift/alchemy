@@ -10,8 +10,6 @@ final class PostgresDatabase: DatabaseDriver {
     /// database with.
     private let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
 
-    // MARK: Database
-    
     let grammar: Grammar = PostgresGrammar()
     
     /// Initialize with the given configuration. The configuration
@@ -47,6 +45,8 @@ final class PostgresDatabase: DatabaseDriver {
         )
     }
     
+    // MARK: Database
+    
     func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
         withConnection { $0.runRawQuery(sql, values: values) }
     }
@@ -71,12 +71,16 @@ final class PostgresDatabase: DatabaseDriver {
 }
 
 public extension Database {
-    static func postgres(host: String,
-        port: Int = 5432,
-        database: String,
-        username: String,
-        password: String
-    ) -> Database {
+    /// Creates a PostgreSQL database configuration.
+    ///
+    /// - Parameters:
+    ///   - host: The host the database is running on.
+    ///   - port: The port the database is running on.
+    ///   - database: The name of the database to connect to.
+    ///   - username: The username to authorize with.
+    ///   - password: The password to authorize with.
+    /// - Returns: The configuration for connecting to this database.
+    static func postgres(host: String, port: Int = 5432, database: String, username: String, password: String) -> Database {
         return postgres(config: DatabaseConfig(
             socket: .ip(host: host, port: port),
             database: database,
@@ -85,12 +89,17 @@ public extension Database {
         ))
     }
     
+    /// Create a PostgreSQL database configuration.
+    ///
+    /// - Parameter config: The raw configuration to connect with.
+    /// - Returns: The configured database.
     static func postgres(config: DatabaseConfig) -> Database {
         Database(driver: PostgresDatabase(config: config))
     }
 }
 
-/// A database to send through on transactions.
+/// A database driver that is wrapped around a single connection to
+/// with which to send transactions.
 private struct PostgresConnectionDatabase: DatabaseDriver {
     let conn: PostgresConnection
     let grammar: Grammar

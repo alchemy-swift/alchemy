@@ -1,16 +1,21 @@
 import Foundation
 import PostgresKit
 
+/// Used for interacting with an SQL database. This class is an
+/// injectable `Service` so you can register the default one
+/// via `Database.config(default: .postgres())`.
 public final class Database: Service {
+    /// The driver of this database.
     let driver: DatabaseDriver
     
     /// Any migrations associated with this database, whether applied
     /// yet or not.
     public var migrations: [Migration] = []
     
-    var grammar: Grammar { driver.grammar }
-    
-    init(driver: DatabaseDriver) {
+    /// Create a database backed by the given driver.
+    ///
+    /// - Parameter driver: The driver.
+    public init(driver: DatabaseDriver) {
         self.driver = driver
     }
     
@@ -43,7 +48,7 @@ public final class Database: Service {
     /// Usage:
     /// ```swift
     /// // No bindings
-    /// db.runRawQuery("SELECT * FROM users where id = 1")
+    /// db.rawQuery("SELECT * FROM users where id = 1")
     ///     .whenSuccess { rows
     ///         guard let first = rows.first else {
     ///             return print("No rows found :(")
@@ -53,7 +58,7 @@ public final class Database: Service {
     ///     }
     ///
     /// // Bindings, to protect against SQL injection.
-    /// db.runRawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
+    /// db.rawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
     ///     .whenSuccess { rows
     ///         ...
     ///     }
@@ -65,8 +70,7 @@ public final class Database: Service {
     ///   - values: An array, `[DatabaseValue]`, that will replace the
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
-    /// - Returns: An `EventLoopFuture` of the rows returned by the
-    ///   query.
+    /// - Returns: A future containing the rows returned by the query.
     public func rawQuery(_ sql: String, values: [DatabaseValue] = []) -> EventLoopFuture<[DatabaseRow]> {
         driver.runRawQuery(sql, values: values)
     }
@@ -75,6 +79,10 @@ public final class Database: Service {
     /// All database queries in the closure are executed atomically.
     ///
     /// Uses START TRANSACTION; and COMMIT; under the hood.
+    ///
+    /// - Parameter action: The action to run atomically.
+    /// - Returns: A future that completes when the transaction is
+    ///            finished.
     public func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         driver.transaction { action(Database(driver: $0)) }
     }

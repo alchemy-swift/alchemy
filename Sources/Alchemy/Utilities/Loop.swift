@@ -1,11 +1,18 @@
 import Lifecycle
 import NIO
 
+/// Convenience class for easy access to the running `Application`'s
+/// `EventLoopGroup` and currrent `EventLoop`.
 public struct Loop {
+    /// The event loop your code is currently running on.
     @Inject public static var current: EventLoop
+    
+    /// The main `EventLoopGroup` of the Application.
     @Inject public static var group: EventLoopGroup
+    
     @Inject private static var lifecycle: ServiceLifecycle
     
+    /// Configure the Applications `EventLoopGroup` and `EventLoop`.
     static func config() {
         Container.register(EventLoop.self) { _ in
             guard let current = MultiThreadedEventLoopGroup.currentEventLoop else {

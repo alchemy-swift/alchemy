@@ -1,47 +1,91 @@
 import Cron
 
+/// Used to help build schedule frequencies for scheduled tasks.
 public struct ScheduleBuilder {
-    let buildingFinished: (Schedule) -> Void
+    private let buildingFinished: (Schedule) -> Void
     
     init(_ buildingFinished: @escaping (Schedule) -> Void) {
         self.buildingFinished = buildingFinished
     }
     
-    public func yearly(month: Month = .jan, day: Int = 1, hour: Int = 0, min: Int = 0, sec: Int = 0) {
-        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hour)", dayOfMonth: "\(day)", month: "\(month.rawValue)")
+    /// Run this task yearly.
+    ///
+    /// - Parameters:
+    ///   - month: The month to run.
+    ///   - day: The day of the month to run.
+    ///   - hr: The hour to run.
+    ///   - min: The minute to run.
+    ///   - sec: The second to run.
+    public func yearly(month: Month = .jan, day: Int = 1, hr: Int = 0, min: Int = 0, sec: Int = 0) {
+        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hr)", dayOfMonth: "\(day)", month: "\(month.rawValue)")
         self.buildingFinished(schedule)
     }
     
-    public func monthly(day: Int = 1, hour: Int = 0, min: Int = 0, sec: Int = 0) {
-        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hour)", dayOfMonth: "\(day)")
+    /// Run this task monthly.
+    ///
+    /// - Parameters:
+    ///   - day: The day of the month to run.
+    ///   - hr: The hour to run.
+    ///   - min: The minute to run.
+    ///   - sec: The second to run.
+    public func monthly(day: Int = 1, hr: Int = 0, min: Int = 0, sec: Int = 0) {
+        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hr)", dayOfMonth: "\(day)")
         self.buildingFinished(schedule)
     }
     
-    public func weekly(day: DayOfWeek = .sun, hour: Int = 0, min: Int = 0, sec: Int = 0) {
-        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hour)", dayOfWeek: "\(day.rawValue)")
+    /// Run this task weekly.
+    ///
+    /// - Parameters:
+    ///   - day: The day of the week to run.
+    ///   - hr: The hour to run.
+    ///   - min: The minute to run.
+    ///   - sec: The second to run.
+    public func weekly(day: DayOfWeek = .sun, hr: Int = 0, min: Int = 0, sec: Int = 0) {
+        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hr)", dayOfWeek: "\(day.rawValue)")
         self.buildingFinished(schedule)
     }
     
-    public func daily(hour: Int = 0, min: Int = 0, sec: Int = 0) {
-        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hour)")
+    /// Run this task daily.
+    ///
+    /// - Parameters:
+    ///   - hr: The hour to run.
+    ///   - min: The minute to run.
+    ///   - sec: The second to run.
+    public func daily(hr: Int = 0, min: Int = 0, sec: Int = 0) {
+        let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "\(hr)")
         self.buildingFinished(schedule)
     }
     
+    /// Run this task every hour.
+    ///
+    /// - Parameters:
+    ///   - min: The minute to run.
+    ///   - sec: The second to run.
     public func hourly(min: Int = 0, sec: Int = 0) {
         let schedule = Schedule(second: "\(sec)", minute: "\(min)", hour: "*/1")
         self.buildingFinished(schedule)
     }
     
+    /// Run this task every minute.
+    ///
+    /// - Parameters:
+    ///   - sec: The second to run.
     public func minutely(sec: Int = 0) {
         let schedule = Schedule(second: "\(sec)")
         self.buildingFinished(schedule)
     }
     
+    /// Run this task every second.
     public func secondly() {
         let schedule = Schedule()
         self.buildingFinished(schedule)
     }
     
+    
+    /// Run this task according to the given cron expression. Second
+    /// and year fields are acceptable.
+    ///
+    /// - Parameter expression: A cron expression.
     public func cron(_ expression: String) {
         let schedule = Schedule(validate: expression)
         self.buildingFinished(schedule)
@@ -61,6 +105,8 @@ public struct ScheduleBuilder {
 typealias Schedule = DatePattern
 
 extension Schedule {
+    /// Initialize with a cron expression. This will crash if the
+    /// expression is invalid.
     init(validate cronExpression: String) {
         do {
             self = try DatePattern(cronExpression)
@@ -69,6 +115,9 @@ extension Schedule {
         }
     }
     
+    /// Initialize with pieces of a cron expression. Each piece
+    /// defaults to `*`. This will fatal if a piece of the
+    /// expression is invalid.
     init(
         second: String = "*",
         minute: String = "*",
@@ -87,6 +136,7 @@ extension Schedule {
     }
 }
 
+/// A day of the week.
 public enum DayOfWeek: Int, ExpressibleByIntegerLiteral {
     case sun = 0
     case mon = 1
@@ -110,6 +160,7 @@ public enum DayOfWeek: Int, ExpressibleByIntegerLiteral {
     }
 }
 
+/// A month of the year.
 public enum Month: Int, ExpressibleByIntegerLiteral {
     case jan = 0
     case feb = 1

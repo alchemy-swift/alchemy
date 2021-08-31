@@ -33,7 +33,7 @@ extension Application {
             )
         )
         
-        ServiceLifecycle.config(default: lifecycle, shutdownWithApp: false)
+        ServiceLifecycle.config(default: lifecycle)
         
         // Boot default services
         bootServices()

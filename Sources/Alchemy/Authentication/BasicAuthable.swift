@@ -16,7 +16,7 @@ import NIO
 ///
 ///     var id: Int?
 ///     let email: String
-///     let passwordHash: String
+///     let password: String
 /// }
 ///
 /// // Add the BasicAuthMiddleware in front of any endpoints that need

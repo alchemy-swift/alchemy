@@ -6,8 +6,6 @@ final class MySQLDatabase: DatabaseDriver {
     /// database with.
     private let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
     
-    // MARK: Database
-    
     var grammar: Grammar = MySQLGrammar()
 
     /// Initialize with the given configuration. The configuration
@@ -42,6 +40,8 @@ final class MySQLDatabase: DatabaseDriver {
             on: Loop.group
         )
     }
+    
+    // MARK: Database
     
     func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
         withConnection { $0.runRawQuery(sql, values: values) }
@@ -96,12 +96,16 @@ final class MySQLDatabase: DatabaseDriver {
 }
 
 public extension Database {
-    static func mysql(host: String,
-        port: Int = 3306,
-        database: String,
-        username: String,
-        password: String
-    ) -> Database {
+    /// Creates a MySQL database configuration.
+    ///
+    /// - Parameters:
+    ///   - host: The host the database is running on.
+    ///   - port: The port the database is running on.
+    ///   - database: The name of the database to connect to.
+    ///   - username: The username to authorize with.
+    ///   - password: The password to authorize with.
+    /// - Returns: The configuration for connecting to this database.
+    static func mysql(host: String, port: Int = 3306, database: String, username: String, password: String) -> Database {
         return mysql(config: DatabaseConfig(
             socket: .ip(host: host, port: port),
             database: database,
@@ -110,8 +114,12 @@ public extension Database {
         ))
     }
     
+    /// Create a MySQL database configuration.
+    ///
+    /// - Parameter config: The raw configuration to connect with.
+    /// - Returns: The configured database.
     static func mysql(config: DatabaseConfig) -> Database {
-        Database(driver: PostgresDatabase(config: config))
+        Database(driver: MySQLDatabase(config: config))
     }
 }
 
