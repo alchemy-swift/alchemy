@@ -2,7 +2,8 @@ import NIO
 import RediStack
 
 /// A queue that persists jobs to a Redis instance.
-final class RedisQueueDriver: QueueDriver {
+final class RedisQueue: QueueDriver {
+    /// The underlying redis connection.
     private let redis: Redis
     /// All job data.
     private let dataKey = RedisKey("jobs:data")
@@ -112,7 +113,12 @@ final class RedisQueueDriver: QueueDriver {
 }
 
 public extension Queue {
+    /// A queue backed by a Redis connection.
+    ///
+    /// - Parameter redis: A redis connection to drive this queue.
+    ///   Defaults to your default redis connection.
+    /// - Returns: The configured queue.
     static func redis(_ redis: Redis = Redis.default) -> Queue {
-        Queue(RedisQueueDriver(redis: redis))
+        Queue(RedisQueue(redis: redis))
     }
 }

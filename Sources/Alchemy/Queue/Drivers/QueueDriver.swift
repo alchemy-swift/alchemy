@@ -1,5 +1,7 @@
 import NIO
 
+/// Conform to this protocol to implement a custom driver for the
+/// `Queue` class.
 public protocol QueueDriver {
     /// Add a job to the end of the Queue.
     func enqueue(_ job: JobData) -> EventLoopFuture<Void>
@@ -48,6 +50,12 @@ extension QueueDriver {
     }
     
     /// Start monitoring a queue for jobs to run.
+    ///
+    /// - Parameters:
+    ///   - channels: The channels this worker should monitor.
+    ///   - pollRate: The rate at which the worker should check the
+    ///     queue for work.
+    ///   - eventLoop: The loop on which this worker should run.
     func startWorker(for channels: [String], pollRate: TimeAmount, on eventLoop: EventLoop) {
         return eventLoop.execute {
             self.runNext(from: channels)

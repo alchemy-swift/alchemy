@@ -3,7 +3,7 @@ import NIO
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
-final class MockQueueDriver: QueueDriver {
+final class MockQueue: QueueDriver {
     private var jobs: [JobID: JobData] = [:]
     private var pending: [String: [JobID]] = [:]
     private var reserved: [String: [JobID]] = [:]
@@ -63,15 +63,20 @@ final class MockQueueDriver: QueueDriver {
     }
 }
 
-public extension Queue {
+extension Queue {
     /// An in memory queue. Useful primarily for testing.
-    static func mock() -> Queue {
-        Queue(MockQueueDriver())
+    public static func mock() -> Queue {
+        Queue(MockQueue())
     }
 }
 
 extension Array {
-    mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
+    /// Pop the first element that satisfies the given conditional.
+    ///
+    /// - Parameter conditional: A conditional closure.
+    /// - Returns: The first matching element, or nil if no elements
+    ///   match.
+    fileprivate mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
         if let firstIndex = firstIndex(where: conditional) {
             return remove(at: firstIndex)
         } else {

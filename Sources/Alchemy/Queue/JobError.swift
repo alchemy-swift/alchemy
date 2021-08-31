@@ -18,5 +18,6 @@ public struct JobError: Error, Equatable {
         self.init(type: .general(message))
     }
     
+    /// Unable to decode a job; it wasn't registered to the app.
     static let unknownType = JobError(type: .unknownJobType)
 }

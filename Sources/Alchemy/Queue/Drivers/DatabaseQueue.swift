@@ -1,7 +1,8 @@
 import Foundation
 
 /// A queue that persists jobs to a database.
-final class DatabaseQueueDriver: QueueDriver {
+final class DatabaseQueue: QueueDriver {
+    /// The database backing this queue.
     private let database: Database
     
     /// Initialize with a database, to which Jobs will be persisted.
@@ -53,13 +54,19 @@ final class DatabaseQueueDriver: QueueDriver {
 }
 
 public extension Queue {
+    /// A queue backed by an SQL database.
+    ///
+    /// - Parameter database: A database to drive this queue with.
+    ///   Defaults to your default database.
+    /// - Returns: The configured queue.
     static func database(_ database: Database = .default) -> Queue {
-        Queue(DatabaseQueueDriver(database: database))
+        Queue(DatabaseQueue(database: database))
     }
 }
 
 // MARK: - Models
 
+/// Represents the table of jobs backing a `DatabaseQueue`.
 private struct JobModel: Model {
     static var tableName: String = "jobs"
 
@@ -107,8 +114,6 @@ private struct JobModel: Model {
 extension Queue {
     /// A Migration for the table used by DatabaseQueue to store jobs.
     public struct AddJobsMigration: Migration {
-        public var name: String { "AddJobsMigration" }
-        
         public init() {}
         
         public func up(schema: Schema) {

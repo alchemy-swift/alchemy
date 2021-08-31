@@ -18,7 +18,7 @@ public protocol Job: Codable {
     func run() -> EventLoopFuture<Void>
 }
 
-// Defaults
+// Default implementations.
 extension Job {
     public static var name: String { Alchemy.name(of: Self.self) }
     public var recoveryStrategy: RecoveryStrategy { .none }
@@ -40,6 +40,7 @@ public enum RecoveryStrategy {
     /// Retries the task a specified amount of times
     case retry(Int)
     
+    /// The maximum number of retries allowed for this strategy.
     var maximumRetries: Int {
         switch self {
         case .none:

@@ -29,6 +29,8 @@ public struct JobData: Codable {
         self.attempts <= self.recoveryStrategy.maximumRetries
     }
     
+    /// Indicates if this job is currently in backoff, and should not
+    /// be re-run yet.
     public var inBackoff: Bool {
         guard let date = backoffUntil else {
             return false
@@ -59,7 +61,20 @@ public struct JobData: Codable {
         }
     }
     
-    /// Memberwise initializer.
+    /// Create a job data with the given data.
+    ///
+    /// - Parameters:
+    ///   - id: A unique id for this job.
+    ///   - json: The json string of the job.
+    ///   - jobName: The name of this job.
+    ///   - channel: The channel the job is supposed to run on.
+    ///   - recoveryStrategy: How this job should handle failures.
+    ///   - retryBackoff: How long a worker should wait to retry this
+    ///     job after a failure.
+    ///   - attempts: The number of times this job has been attempted
+    ///     so far.
+    ///   - backoffUntil: A date indicating the soonest this job can
+    ///     be retried.
     public init(id: JobID, json: JSONString, jobName: String, channel: String, recoveryStrategy: RecoveryStrategy, retryBackoff: TimeAmount, attempts: Int, backoffUntil: Date?) {
         self.id = id
         self.json = json
@@ -71,10 +86,17 @@ public struct JobData: Codable {
         self.backoffUntil = backoffUntil
     }
     
+    /// The next date this job can be attempted. `nil` if the job can
+    /// be retried immediately.
     func nextRetryDate() -> Date? {
         return backoffSeconds > 0 ? Date().addingTimeInterval(TimeInterval(backoffSeconds)) : nil
     }
     
+    /// Update the job payload.
+    ///
+    /// - Parameter job: The new job payload.
+    /// - Throws: Any error encountered while encoding this payload
+    ///   to a string.
     mutating func updatePayload<J: Job>(_ job: J) throws {
         do {
             self.json = try job.jsonString()
