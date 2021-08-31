@@ -139,4 +139,6 @@ Visit `http://0.0.0.0:8888/hello` in the browser and you should see
 
 Awesome! You're ready to deploy with Docker.
 
+_Up next: [Under The Hood](12_UnderTheHood.md)_
+
 _[Table of Contents](/Docs#docs)_

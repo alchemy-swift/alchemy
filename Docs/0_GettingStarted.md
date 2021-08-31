@@ -1,30 +1,26 @@
 # Getting Started
 
 - [Installation](#installation)
-  * [Quickstart](#quickstart)
+  * [CLI](#cli)
   * [Swift Package Manager](#swift-package-manager)
-- [Run It](#run-it)
 - [Start Coding](#start-coding)
 
 ## Installation
 
-### Quickstart
+### CLI
 
-The Alchemy CLI can help you get started with one of the [Quickstart](../Quickstarts/) templates. It is installable with [Mint](https://github.com/yonaskolb/Mint).
-
-```shell
-brew install mint
-```
+The Alchemy CLI is installable with [Mint](https://github.com/yonaskolb/Mint).
 
 ```shell
-mint install alchemy-swift/cli@main
+mint install alchemy-swift/alchemy-cli
 ```
 
-```shell
-alchemy new MyAwesomeProject
-```
+Creating an app with the CLI will let you pick between a backend or fullstack (`iOS` frontend, `Alchemy` backend, `Shared` library) project. 
 
-You'll be guided through picking a new project template, either `Backend` or `Fullstack`. You can check out the details of each one in the [Quickstarts README](../Quickstarts/)
+1. `alchemy new MyNewProject`
+2. `cd MyNewProject` (if you selected fullstack, `MyNewProject/Backend`)
+3. `swift run`
+4. view your brand new app at http://localhost:3000
 
 ### Swift Package Manager
 
@@ -32,55 +28,35 @@ Alchemy is also installable through the [Swift Package Manager](https://github.c
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.1.0"))
+    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.2.0"))
     ...
 ],
 targets: [
-    .target(name: "MySwiftServer", dependencies: [
+    .target(name: "MyServer", dependencies: [
         .product(name: "Alchemy", package: "alchemy"),
     ]),
 ]
 ```
 
-## Run it!
-
-If you cloned one of the quickstart projects, run the `Backend` scheme in Xcode and you should see something like...
-
-```
-[Server] started and listening on [IPv6]::1/::1:8888.
-```
-
-You can also run it via command line.
-
-```bash
-swift run
-```
-
-If you created a project from scratch via SPM, add a file called `MyApplication.swift` with the following:
+From here, conform to `Application` somewhere in your target and add the `@main` attribute.
 
 ```swift
-import Alchemy
-
-struct MyApplication: Application {
+@main
+struct App: Application {
     func boot() {
-        self.get("/hello") { request in
-            "Hello, World!"
+        get("/") { _ in
+            return "Hello from alchemy!"
         }
     }
 }
 ```
 
-Then add a `main.swift` with...
-
-```swift
-MyApplication.launch()
-```
-Run your server, make a GET request to `localhost:8888/hello` and you should get `"Hello, World!"` as the response.
+Run your app with `swift run` and visit `localhost:3000` in the browser to see your new server in action.
 
 ## Start Coding!
 
 Congrats, you're off to the races! Check out the rest of the guides for what you can do with Alchemy.
 
-_Up next: [Architecture](1a_Architecture.md)_
+_Up next: [Architecture](1_Configuration.md)_
 
 _[Table of Contents](/Docs#docs)_

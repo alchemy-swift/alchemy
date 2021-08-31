@@ -44,14 +44,12 @@ In general, you won't need to access or think about any `EventLoop`s, but if you
 let thisLoop: EventLoop = Loop.current
 ```
 
-Should you need an `EventLoopGroup` for other `NIO` based libraries, you can access the global `EventLoopGroup` (a `MultiThreadedEventLoopGroup`) via `Loop.currentGroup`.
+Should you need an `EventLoopGroup` for other `NIO` based libraries, you can access the global `EventLoopGroup` (a `MultiThreadedEventLoopGroup`) via `Loop.group`.
 
 ```swift
-let globalGroup: EventLoopGroup = Container.resolve(EventLoopGroup.self)
+let appLoopGroup: EventLoopGroup = Loop.group
 ```
 
-Finally, should you need to access a `NIOThreadPool` for a pool that can run expensive CPU work (`Thread.run` uses this!). There is a global one at `Services.threadPool`.
-
-_Up next: [Configuration](1b_Configuration.md)_
+Finally, should you need to run an expensive operation, you may use `Thread.run` which uses an entirely separate thread pool instead of blocking any of your app's `EventLoop`s.
 
 _[Table of Contents](/Docs#docs)_

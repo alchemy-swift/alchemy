@@ -156,6 +156,6 @@ struct UserToken: Model, BasicAuthable {
 }
 ```
 
-_Next page: [Digging Deeper](8_DiggingDeeper.md)_
+_Next page: [Queues](8_Queues.md)_
 
 _[Table of Contents](/Docs#docs)_

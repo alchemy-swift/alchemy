@@ -39,10 +39,10 @@ Out of the box, Alchemy conforms most types you'd need to return from a handler 
 
 ```swift
 /// String
-app.get("/string", do: { _ in "Howdy!" })
+app.get("/string", handler: { _ in "Howdy!" })
 
 /// Int
-app.on(.GET, at: "/int", do: { _ in 42 })
+app.on(.GET, at: "/int", handler: { _ in 42 })
 
 /// Custom type
 

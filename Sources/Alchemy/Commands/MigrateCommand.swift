@@ -15,9 +15,13 @@ struct MigrateCommand<A: Application>: ParsableCommand {
     @Flag(help: "Should migrations be rolled back")
     var rollback: Bool = false
     
+    /// The environment file to load. Defaults to `env`
+    @Option(name: .shortAndLong) var env: String = "env"
+    
     // MARK: ParseableCommand
     
     func run() throws {
+        Env.defaultLocation = env
         try A().launch(self)
     }
 }
