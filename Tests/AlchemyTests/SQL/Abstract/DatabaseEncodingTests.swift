@@ -38,7 +38,7 @@ final class DatabaseEncodingTests: XCTestCase {
     }
     
     func testKeyMapping() throws {
-        let model = try CustomKeyedModel(from: DummyDecoder())
+        let model = CustomKeyedModel.pk(0)
         let fields = try model.fields()
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
         XCTAssertEqual([

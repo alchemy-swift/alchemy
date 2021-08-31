@@ -19,9 +19,6 @@ final class MigrationTests: XCTestCase {
         XCTAssert(self.m2.downStatements(for: postgres).isEmpty)
         XCTAssert(self.m3.downStatements(for: postgres).isEmpty)
         
-        for statement in m3.upStatements(for: postgres) {
-            print(statement.query)
-        }
         XCTAssertEqual(self.m1.upStatements(for: postgres), self.m1.expectedUpStatementsPostgreSQL)
         XCTAssertEqual(self.m2.upStatements(for: postgres), self.m2.expectedUpStatementsPostgreSQL)
         XCTAssertEqual(self.m3.upStatements(for: postgres), self.m3.expectedUpStatementsPostgreSQL)
