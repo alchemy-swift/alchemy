@@ -2,10 +2,10 @@
 
 - [Handling Requests](#handling-requests)
 - [ResponseEncodable](#responseencodable)
-  * [Anything `Codable`](#anything--codable-)
-  * [a `Response`](#a--response-)
-  * [`Void`](#-void-)
-  * [an `EventLoopFuture<Void>` or `EventLoopFuture<T: Codable>`.](#an--eventloopfuture-void---or--eventloopfuture-t--codable--)
+  * [Anything `Codable`](#anything-codable)
+  * [a `Response`](#a-response)
+  * [`Void`](#void)
+  * [Futures that result in a `ResponseConvertible` value](#futures-that-result-in-a-responseconvertible-value)
   * [Chaining Requests](#chaining-requests)
 - [Controller](#controller)
 - [Errors](#errors)
@@ -14,17 +14,17 @@
 
 ## Handling Requests
 
-When a request comes through the host & port on which your server is listening, it immediately gets routed to your Application.
+When a request comes through the host & port on which your server is listening, it immediately gets routed to your application.
 
-You can set up handlers in the `setup()` function of your app.
+You can set up handlers in the `boot()` function of your app.
 
-Handlers are defined with the `.on(method:at:do:)` function, which takes an `HTTPMethod`, a path, and a handler. The handler is a closure that accepts a `Request` and returns a `ResponseConvertable`. There's sugar for registering handlers for specific methods via `get()`, `post()`, `put()`, `patch()`, etc.
+Handlers are defined with the `.on(method:at:handler:)` function, which takes an `HTTPMethod`, a path, and a handler. The handler is a closure that accepts a `Request` and returns a type that conforms to `ResponseConvertable`. There's sugar for registering handlers for specific methods via `get()`, `post()`, `put()`, `patch()`, etc.
 
 ```swift
 struct ExampleApp: Application {
     func boot() {
         // GET {host}:{port}/hello
-        self.get("/hello") { request in
+        get("/hello") { request in
             "Hello, World!"
         }
     }
@@ -72,11 +72,11 @@ app.get("/testing_query") { request in
 }
 ```
 
-### an `EventLoopFuture<Void>` or `EventLoopFuture<T: Codable>`.
+### Futures that result in a `ResponseConvertible` value
 
 ```swift
 app.get("/todos") { _ in
-    self.loadTodosFromDatabase()
+    loadTodosFromDatabase()
 }
 
 func loadTodosFromDatabase() -> EventLoopFuture<[Todo]> {
@@ -84,7 +84,7 @@ func loadTodosFromDatabase() -> EventLoopFuture<[Todo]> {
 }
 ```
 
-*Note* an `EventLoopFuture<T>` is the Swift server world's version of a `Future`. See [Architecture](1a_Architecture.md).
+*Note* an `EventLoopFuture<T>` is the Swift server world's version of a future. See [Under the Hood](12_UnderTheHood.md).
 
 ### Chaining Requests
 
@@ -106,9 +106,9 @@ For convenience, a protocol `Controller` is provided to help break up your route
 ```swift
 struct UserController: Controller {
     func route(_ app: Application) {
-        app.post("/create", handler: self.create)
-            .post("/reset", handler: controller.reset)
-            .post("/login", handler: controller.login)
+        app.post("/create", handler: create)
+            .post("/reset", handler: reset)
+            .post("/login", handler: login)
     }
 
     func create(req: Request) -> String {
@@ -127,18 +127,18 @@ struct UserController: Controller {
 struct App: Application {
     func boot() {
         ...
-        self.controller(UserController())
+        controller(UserController())
     }
 }
 ```
 
 ## Errors
 
-Routing in Alchemy is heavily integrated with Swift's built in error handling. [Middleware](3b_RoutingMiddleware.md) & handlers allow for synchronous code to `throw`.
+Routing in Alchemy is heavily integrated with Swift's built in error handling. [Middleware](3b_RoutingMiddleware.md) & handlers allow for synchronous or asynchronous code to `throw`.
 
 If an error is thrown or an `EventLoopFuture` results in an error, it will be caught & mapped to a `Response`.
 
-Generic errors will result in an `Response` with a status code of 500, but if any error that conforms to `ResponseConvertible` is thrown, it will be converted into the `Response` returned by the error's `convert()` function. 
+Generic errors will result in an `Response` with a status code of 500, but if any error that conforms to `ResponseConvertible` is thrown, it will be converted as such. 
 
 Out of the box `HTTPError` conforms to `ResponseConvertible`. If it is thrown, the response will contain the status code & message of the `HTTPError`.
 
@@ -163,15 +163,14 @@ Dynamic path parameters can be added with a variable name prefaced by a colon (`
 ```swift
 app.on(.GET, at: "/users/:userID") { req in
     let userID: String? = req.pathParameter(named: "userID")
-    ...
 }
 ```
 
-As long as they have different names, you can have as many path parameters as you need.
+As long as they have different names, a route can have as many path parameters as you'd like.
 
 ## Accessing request data
 
-Data you might need to get off of an incoming request is in the `Request` type.
+Data you might need to get off of an incoming request are in the `Request` type.
 
 ```swift
 app.post("/users/:userID") { req in

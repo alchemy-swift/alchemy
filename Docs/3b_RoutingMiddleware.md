@@ -1,7 +1,7 @@
 # Routing: Middleware
 
 - [Creating Middleware](#creating-middleware)
-  * [Accessing the `Request`](#accessing-the--request-)
+  * [Accessing the `Request`](#accessing-the-request)
   * [Setting Data on a Request](#setting-data-on-a-request)
   * [Accessing the `Response`](#accessing-the--response-)
 - [Adding Middleware to Your Application](#adding-middleware-to-your-application)
