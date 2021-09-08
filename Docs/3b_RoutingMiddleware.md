@@ -12,7 +12,7 @@
 
 A middleware is a piece of code that is run before or after a request is handled. It might modify the `Request` or `Response`.
 
-In Alchemy, a middleware is created by conforming to the `Middleware` protocol. It has a single function `intercept` which takes a `Request` and `next` closure. It returns an `EventLoopFuture<Response>`.
+Create a middleware by conforming to the `Middleware` protocol. It has a single function `intercept` which takes a `Request` and `next` closure. It returns an `EventLoopFuture<Response>`.
 
 ### Accessing the `Request`
 
@@ -28,20 +28,15 @@ struct LogRequestMiddleware: Middleware {
 }
 ```
 
-You can also do something with the request asynchronously, just be sure to continue the chain with `next(req)` when you are finished.
+You may also do something with the request asynchronously, just be sure to continue the chain with `next(req)` when you are finished.
 
 ```swift
 /// Runs a database query before passing a request to a handler.
 struct QueryingMiddleware: Middleware {
-    @Inject db: Database
-
     func intercept(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
-        return self.db.query()
-            ...
-            .getAll(...)
-            .flatMap { queryResults in 
-                // handle the query results
-                // continue the handler chain
+        return User.all()
+            .flatMap { users in 
+                // Do something with `users` then continue the chain
                 next(request)
             }
     }
