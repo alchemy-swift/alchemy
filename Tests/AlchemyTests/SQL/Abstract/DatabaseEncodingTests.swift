@@ -111,6 +111,7 @@ private struct CustomDecoderModel: Model {
     static var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .sortedKeys
         return encoder
     }()
     
