@@ -23,13 +23,13 @@ struct App: Application {
 
 Alchemy provides you with Swifty APIs for everything you need to build production-ready backends. It makes writing your backend in Swift a breeze by easing typical tasks, such as:
 
-- Simple, fast **routing engine**.
-- Powerful **dependency injection** container.
-- Expressive, Swifty database ORM.
-- Database agnostic query builder and schema **migrations**.
-- Robust job queues backed by Redis or SQL.
+- [Simple, fast routing engine](Docs/3a_RoutingBasics.md).
+- [Powerful dependency injection container](Docs/2_Fusion.md).
+- Expressive, Swifty [database ORM](Docs/6a_RuneBasics.md).
+- Database agnostic [query builder](Docs/5b_DatabaseQueryBuilder.md) and [schema migrations](Docs/5c_DatabaseMigrations.md).
+- [Robust job queues backed by Redis or SQL](Docs/8_Queues.md).
 - First class support for [Plot](https://github.com/JohnSundell/Plot), a typesafe HTML DSL.
-- Supporting libraries to share typesafe backend APIs with Swift frontends.
+- [Supporting libraries to share typesafe backend APIs with Swift frontends](Docs/4_Papyrus.md).
 
 ## Why Alchemy?
 
@@ -41,7 +41,7 @@ The goal of Alchemy is to provide a robust, batteries included framework with ev
 
 **1. Batteries Included**
 
-With Routing, an ORM, advanced Redis & SQL support, Authentication, Cron, Caching and much more, `import Alchemy` gives you all the pieces you need to start building a production grade server app.
+With Routing, an ORM, advanced Redis & SQL support, Authentication, Queues, Cron, Caching and much more, `import Alchemy` gives you all the pieces you need to start building a production grade server app.
 
 **2. Convention over Configuration**
 
@@ -65,7 +65,7 @@ mint install alchemy-swift/alchemy-cli
 
 ## Create a New App
 
-Creating an app with the CLI will let you pick between a backend or fullstack (`iOS` frontend, `Alchemy` backend, `Shared` library) project. 
+Creating an app with the CLI lets you pick between a backend or fullstack project. 
 
 1. `alchemy new MyNewProject`
 2. `cd MyNewProject` (if you selected fullstack, `MyNewProject/Backend`)
@@ -104,7 +104,7 @@ struct App: Application {
 }
 ```
 
-Route handlers will automatically convert returned Swift.Codable types to JSON. You can also return a `Response` if you'd like full control over the returned content & it's encoding.
+Route handlers will automatically convert returned `Codable` types to JSON. You can also return a `Response` if you'd like full control over the returned content & it's encoding.
 
 ```swift
 struct Todo {
@@ -134,7 +134,7 @@ app.get("/xml") { req -> Response in
 }
 ```
 
-Bundling groups of routes together with controllers can be a great way to clean up your code. This can help organize your projects by resource type.
+Bundling groups of routes together with controllers is a great way to clean up your code. This can help organize your projects by resource type.
 
 ```swift
 struct TodoController: Controller {
@@ -145,17 +145,9 @@ struct TodoController: Controller {
             .patch("/todo/:id", updateTodo)
     }
     
-    func getAllTodos(req: Request) -> [Todo] {
-        ...
-    }
-    
-    func createTodo(req: Request) -> Todo {
-        ...
-    }
-    
-    func updateTodo(req: Request) -> Todo {
-        ...
-    }
+    func getAllTodos(req: Request) -> [Todo] { ... }
+    func createTodo(req: Request) -> Todo { ... }
+    func updateTodo(req: Request) -> Todo { ... }
 }
 
 // Register the controller
@@ -168,7 +160,7 @@ Often, you'll want to configure variables & secrets in your app's environment de
 
 Keys and values are defined per line, with an `=` separating them. Comments can be added with a `#.`
 
-```env
+```shell
 # Database
 DB_HOST=localhost
 DB_PORT=5432
@@ -195,7 +187,7 @@ Choose what env file your app uses by setting APP_ENV, your program will load it
 
 Alchemy makes DI a breeze to keep your services pluggable and swappable in tests. Most services in Alchemy conform to `Service`, a protocol built on top of [Fusion](https://github.com/alchemy-swift/fusion), which you can use to set sensible default configurations for your services.
 
-You can use `Service.config(default: ...)` to configure the default instance of a service for the app. `Service.configure("key", ...)` lets you configure another, named instance. Most functions that interact with a `Service`, will default to running on your `Service`'s default configuration.
+You can use `Service.config(default: ...)` to configure the default instance of a service for the app. `Service.configure("key", ...)` lets you configure another, named instance. To keep you writing less code, most functions that interact with a `Service` will default to running on your `Service`'s default configuration.
 
 ```swift
 // Set the default database for the app.
@@ -242,7 +234,7 @@ redis.get("cached_data_key")
 
 ## SQL queries
 
-Alchemy comes with a powerful query builder to make it easy to interact with SQL databases. You can always run raw SQL strings on a `Database` instance.
+Alchemy comes with a powerful query builder that makes it easy to interact with SQL databases. In addition, you can always run raw SQL strings on a `Database` instance.
 
 ```swift
 // Runs on Database.default
@@ -275,12 +267,11 @@ database.transaction { conn in
 
 ## Rune ORM
 
-To make interacting with SQL databases even easier, Alchemy provides a powerful, expressive ORM called Rune. Built on Swift's Codable, it lets you make a 1-1 mapping between simple Swift types and your database tables. Just conform your types to Model, add a static `tableName` property and you're good to go.
+To make interacting with SQL databases even simpler, Alchemy provides a powerful, expressive ORM called Rune. Built on Swift's Codable, it lets you make a 1-1 mapping between simple Swift types and your database tables. Just conform your types to Model and you're good to go. The related table name is assumed to be the type pluralized.
 
 ```swift
+// Backed by table `users`
 struct User: Model {
-    static let tableName = "users"
-
     var id: Int? 
     let firstName: String
     let lastName: String
@@ -318,9 +309,21 @@ struct Todo: Model {
 Todo.all().with(\.$user)
 ```
 
+You can customize advanced relationship loading behavior, such as "has many through" by overriding `mapRelations()`.
+
+```swift
+struct User: Model {
+    @HasMany var workflows: [Workflow]
+    
+    static func mapRelations(_ mapper: RelationshipMapper<Self>) {
+        mapper.config(\.$workflows).through("projects")
+    }
+}
+```
+
 ## Middleware
 
-Middleware lets you intercept requests coming in and responses coming out of your server. You can use them to log, authenticate, or modify an incoming `Request` and outgoing `Response`. Add it to your app with `use()` or `useAll()`.
+Middleware lets you intercept requests coming in and responses coming out of your server. Use it to log, authenticate, or modify incoming `Request`s and outgoing `Response`s. Add one to your app with `use()` or `useAll()`.
 
 ```swift
 struct LoggingMiddleware: Middleware {
@@ -346,13 +349,11 @@ app.useAll(OtherMiddleware())
 
 ## Authentication
 
-You'll often want to authenticate incoming requests using your database models. Alchemy provides out of the box middlewares for authing requests against your ORM models using Basic & Token based auth.
+You'll often want to authenticate incoming requests using your database models. Alchemy provides out of the box middlewares for authorizing requests against your ORM models using Basic & Token based auth.
 
 ```swift
 struct User: Model { ... }
 struct UserToken: Model, TokenAuthable {
-    static let tableName = "user_tokens"
-
     var id: Int?
     let value: String
 
@@ -362,6 +363,7 @@ struct UserToken: Model, TokenAuthable {
 app.use(UserToken.tokenAuthMiddleware())
 app.get("/user") { req -> User in
     let user = req.get(User.self)
+    // Do something with the authorized user...
     return user
 }
 ```
@@ -452,7 +454,6 @@ struct EmailJob: Job {
 
 For advanced queue usage including channels, queue priorities, backoff times, and retry policies, check out the guide on Queues.
 
-
 ## Scheduling tasks
 
 Alchemy contains a built in task scheduler so that you don't need to generate cron entries for repetitive work, and can instead schedule recurring tasks right from your code. You can schedule code or jobs from your `Application` instance.
@@ -489,7 +490,7 @@ app.schedule { ... }
 
 ## ...and more!
 
-Check out the docs for more advanced guides on all of the above as well as Migrations, Caching, Logging, making HTTP Requests, using the HTML DSL, advanced Request / Response, sharing API interfaces between client and server, deploying your apps to production, and much more.
+Check out [the docs](Docs#docs) for more advanced guides on all of the above as well as [Migrations](Docs/5c_DatabaseMigrations.md), [Caching](Docs/9_Cache.md), [Logging](Docs/10_DiggingDeeper.md#logging), [making HTTP Requests](Docs/10_DiggingDeeper.md#making-http-requests), using the [HTML DSL](Docs/10_DiggingDeeper.md#plot--html-dsl), [advanced Request / Response usage](Docs/3a_RoutingBasics.md#responsencodable), [sharing API interfaces](Docs/4_Papyrus.md) between client and server, [deploying your apps to Linux or Docker](Docs/11_Deploying.md), and more.
 
 # Contributing
 
