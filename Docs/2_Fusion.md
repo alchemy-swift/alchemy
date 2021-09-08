@@ -1,4 +1,4 @@
-# Fusion: Services & Dependency Injection
+# Services & Dependency Injection
 
 - [Why Use Dependency Injection?](#why-use-dependency-injection-)
 - [Registering & Resolving Services](#registering---resolving-services)
@@ -16,228 +16,78 @@
   * [`Services`](#-services-)
 - [Using Fusion in non-server targets](#using-fusion-in-non-server-targets)
 
-Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties. Fusion can also be added to non-Alchemy targets, such as iOS or macOS apps.
+Alchemy handles dependency injection using [Fusion](https://github.com/alchemy-swift/fusion). In addition, it includes a custom `Service` protocol to make it easy to inject common Alchemy such as `Database`, `Redis` and `Queue`.
 
-## Why Use Dependency Injection?
+## Registering and Injecting Services
 
-DI helps keep your code modular, testable and maintainable. It lets you define services in one place so that you may easily swap them for other implementations down the road or during tests.
+Most Alchemy services conform to the `Service` protocol, which you can use to configure and access various connections.
 
-## Registering & Resolving Services
+For example, you probably want to use an SQL database in your app. You can use the `Service` methods to set up a default database driver. You'll probably want to do this in your `Application.boot`.
 
-"Services" (a fancy word for an abstract interface, often a protocol) are registered and resolved from `Container`s. By default there is a global container, `Container.default`, that you can use to register & resolve services from. For convenience, there are static `resolve` & `register` functions on `Container` that passthrough to `Container.default`
+### Registering Defaults
 
-For example, consider an abstract type, `protocol Database`, that is implemented by a concrete type, `class PostgresDatabase: Database`. You could register the `PostgresDatabase` type to `Database` via
-
-```swift
-Container.register(Database.self) { _ in
-    PostgresDatabase(...)
-}
-```
-
-Whenever you want to access the database; you can access it through `Container.resolve`.
+Services typically have static driver functions to your configure defaults. 
 
 ```swift
-let database = Container.resolve(Database.self)
+Database.config(
+    default: .postgres(
+        host: "localhost", 
+        database: "alchemy"))
 ```
 
-This makes it easy to swap out the Database for another implementation, all you'd need to do is change the register closure.
-
-```swift
-Container.register(Database.self) { _ in
-    MySQLDatabase(...)
-}
-```
-
-### Resolving with `@Inject`
-
-You may also resolve a service with the `@Inject` property wrapper. The instance of the service will be resolved via the global container (`Container.default`) the first time this property is accessed.
+You can now inject this database anywhere in your code via `@Inject`, and the service container will resolve the registered configuration.
 
 ```swift
 @Inject var database: Database
 ```
 
-### Cross service dependencies
-
-Sometimes, services rely on other services to function. You may resolve other services from the `Container` parameter in the register closure.
+You can also inject with `Database.default`. Many Alchemy APIs default to using a service's `default` so that you don't have to pass an instance in every time. For example for loading models from Rune, Alchemy's built in ORM.
 
 ```swift
-Container.register(Logger.self) { ... }
+struct User: Model { ... }
 
-Container.register(Database.self) { container in
-    let logger = container.resolve(Logger.self)
-    return PostgresDatabase(..., logger)
-}
+// Fetchs all `User` models from `Database.default`
+User.all()
 ```
 
-### Optional Resolving
+### Registering Additional Instances
 
-By default, `.resolve` will `fatalError` if you try to resolve a service that isn't registered. This helps ensure that your program won't make it out of testing with you forgetting to register any services.
-
-That being said, there may be special cases where you want to optionally resolve a service; returning `nil` if it isn't registered. For this, you may use `Container.resolveOptional`.
+If you have more than one instance of a service that you'd like to use, you can pass an identifier to the `Service.config` function to associate it with the given configuration.
 
 ```swift
-let optionalDatabase: Database? = Container.resolveOptional(Database.self)
+Database.config(
+    "mysql", 
+    .mysql(
+        host: "localhost", 
+        database: "alchemy"))
 ```
 
-**Note**: Optional resolving is not available when injecting via `@Inject`.
-
-## Service Types
-
-### Singleton Services
-
-By default, services registered are "transient" meaning that their register closure is called each time it's resolved. 
-
-Sometimes, you'll want only a single instance of this service being passed around (a singleton). In this case, you can use `.register(singleton:)` to register your service.
+This can now be injected by passing that identifier to `@Inject`.
 
 ```swift
-Container.register(singleton: Database.self) { _ in
-    PostgresDatabase(...)
-}
+@Inject("mysql") var mysqlDB: Database
 ```
 
-A singleton instance is resolved once, then cached in it's `Container` to be injected on future calls to `resolve`.
-
-### Identified Singletons / Multitons
-
-Sometimes you might want multiple instances of a singleton, each tied to a specific identifier (multiton / identified singleton). You can do this by passing an identifier when registering the singleton.
-
-Perhaps you are working with two databases, one main one and one for writing logs to. You might register them like so,
+It can also be inject by using the `Service.named()` function.
 
 ```swift
-enum DatabaseType: String {
-    case main
-    case logs
-}
-
-Container.register(singleton: Database, DatabaseType.main) { _ in
-    PostgresDatabase(mainConfiguration)
-}
-
-Container.register(singleton: Database, DatabaseType.logs) { _ in
-    PostgresDatabase(logConfiguration)
-}
+User.all(db: .named("mysql"))
 ```
 
-These can now be resolved by passing an identifier to the resolve function or the `@Inject` property wrapper.
+## Mocking
+
+When it comes time to write tests for your app, you can leverage the service protocol to inject mock interfaces of various services.
 
 ```swift
-// Via `.resolve`
-let mainDB = Container.resolve(Database.self, identifier: DatabaseType.main)
+final class RouterTests: XCTestCase {
+    private var app = TestApp()
 
-// Via `@Inject`
-@Inject(DatabaseType.main)
-var mainDB: Database
-```
-
-## Advanced Container Usage
-
-In many cases, only using `Container.default` will be enough for what you're trying to do. There are some cases however, where you'd like to further modularize your code with custom containers.
-
-### Creating a Custom Container
-
-You easily create your own containers.
-
-```swift
-let myContainer = Container()
-myContainer.register(String.self) { 
-    "Hello from my container!" 
-}
-
-let string = myContainer.resolve(String.self)
-print(string) // "Hello from my container!"
-```
-
-**Note**: All closures and cached singletons are tied to the lifecycle of their container. When your custom container is deallocated, so will all it's closures and cached singletons.
-
-### Creating a Child Container
-
-You can give a container a parent container. This means that if the child container doesn't have a service registered to it, `resolving` it will attempt to register the service from the parent container.
-
-```swift
-Container.register(Int.self) {
-    0
-}
-
-let childContainer = Container(parent: .global)
-childContainer.register(String.self) {
-    "foo"
-}
-
-// "foo"
-let string = childContainer.resolve(String.self)
-
-// 0; inherited from parent
-let int = childContainer.resolve(Int.self)
-
-// fatalError; parents do not have access to their children's services
-let int = Container.resolve(String.self)
-```
-
-### Accessing Custom Containers from `@Inject`
-
-By default, `@Inject` resolves services from the global container. If you'd like to inject from a custom container, you must conform the enclosing type to `Containerized`, which requires a `var container: Container { get }`.
-
-```swift
-class MyEnclosingType: Containerized {
-    let container: Container
-
-    @Inject var string: String
-    @Inject var int: Int
-
-    init(container: Container) {
-        self.container = container
-    }
-}
-
-let container = Container()
-container.register(String.self) { "Howdy" }
-container.register(Int.self) { 42 }
-
-let myType = MyEnclosingType(container: container)
-print(myType.string) // "Howdy"
-print(myType.int) // 42
-```
-
-### Services Automatically Registered to `Container.default`
-
-There are a few types to be aware of that Alchemy automatically injects into the global container during setup. These can be accessed via `@Inject` or `Container.resolve` anywhere in your app.
-
-- `Router`: the router that will handle all incoming requests.
-- `EventLoopGroup`: the group of `EventLoop`s to which your application runs requests on.
-
-### `Services`
-
-`Alchemy` contains a `Services` type providing convenient static variables for injecting commonly used services from the global container.
-
-```swift
-let scheduler = Services.scheduler
-let eventLoopGroup = Loop.currentGroup
-```
-
-You may also add custom static properties to it at your own convenience:
-```swift
-extension Services {
-    static var someType: SomeType {
-        Container.resolve(SomeType.self)
+    override func setUp() {
+        super.setUp()
+        Cache.config(default: .mock())
     }
 }
 ```
-
-**Note**: Many `QueryBuilder` & `Rune ORM` APIs default to running queries on `Database.default`. Be sure to register a singleton global database in your `Application.setup` to use them.
-
-**Other Note**: You can mock many of these common services in tests by calling `Services.mock()` in your test case `setUp()`.
-
-```swift
-// In Application.setup
-
-Container.register(singleton: Database.self) { _ in
-    PostgresDatabase(...)
-}
-```
-
-## Using Fusion in non-server targets
-
-When you `import Alchemy`, you automatically import Fusion. If you'd like to use Fusion in a non-server target, you can add `Fusion` as a dependency through SPM and import it via `import Fusion`.
 
 _Next page: [Routing: Basics](3a_RoutingBasics.md)_
 
