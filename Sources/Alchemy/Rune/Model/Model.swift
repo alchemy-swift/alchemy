@@ -52,6 +52,10 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
     
+    /// Defines any custom behavior when loading relationships.
+    ///
+    /// - Parameter mapper: An object with which to customize
+    ///   relationship loading behavior.
     static func mapRelations(_ mapper: RelationshipMapper<Self>)
 }
 

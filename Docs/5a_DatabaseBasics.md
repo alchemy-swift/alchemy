@@ -33,7 +33,7 @@ Database.default
 
 ## Querying data
 
-You can query with raw SQL strings using `Database.runRawQuery`. It supports bindings to protect against SQL injection.
+You can query with raw SQL strings using `Database.rawQuery`. It supports bindings to protect against SQL injection.
 
 ```swift
 let email = "josh@withapollo.com"

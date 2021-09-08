@@ -20,7 +20,7 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     var codingPath = [CodingKey]()
     var userInfo: [CodingUserInfoKey: Any] = [:]
     
-    /// Create with an associated `DatabaseKeyMappingStrategy`.
+    /// Create with an associated `DatabasekeyMapping`.
     ///
     /// - Parameter mappingStrategy: The strategy for mapping
     /// `CodingKey` string values to the `column`s of

@@ -8,7 +8,7 @@ protocol ModelDecoder: Decoder {}
 /// Properties of the `Decodable` type are matched to
 /// columns with matching names (either the same
 /// name or a specific name mapping based on
-/// the supplied `keyMappingStrategy`).
+/// the supplied `keyMapping`).
 struct DatabaseRowDecoder<M: Model>: ModelDecoder {
     /// The row that will be decoded out of.
     let row: DatabaseRow
@@ -153,7 +153,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     }
     
     /// Returns the database column string for a `CodingKey` given
-    /// this container's `keyMappingStrategy`.
+    /// this container's `keyMapping`.
     ///
     /// Keys to parent relationships are special cased to append
     /// `M.belongsToColumnSuffix` to the field name.

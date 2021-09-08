@@ -17,10 +17,10 @@ import Foundation
 ///     let lastName: String // doesn't match database field of `last_name`
 /// }
 /// ```
-/// By overriding the `keyMappingStrategy` on `User`, you can
+/// By overriding the `keyMapping` on `User`, you can
 /// customize the mapping between the property names and
 /// database columns. Note that in the example above you
-/// won't need to override, since keyMappingStrategy is,
+/// won't need to override, since keyMapping is,
 /// by default, convertToSnakeCase.
 public enum DatabaseKeyMapping {
     /// Use the literal name for all properties on an object as its
