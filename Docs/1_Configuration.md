@@ -15,7 +15,7 @@
 
 When Alchemy is run, it takes an argument that determines how it behaves on launch. When no argument is passed, the default command is `serve` which boots the app and serves it on the machine.
 
-Additionally, there are `migrate` and `queue` commands which help run migrations and queue workers/schedulers respectively.
+There are also `migrate` and `queue` commands which help run migrations and queue workers/schedulers respectively.
 
 You can run these like so.
 
@@ -23,7 +23,7 @@ You can run these like so.
 swift run Server migrate
 ```
 
-Each command has options for customizing how it runs. If you're running your server from Xcode, you can configure flags passed on launch by editing the current scheme and navigating to `Run` -> `Arguments`.
+Each command has options for customizing how it runs. If you're running your app from Xcode, you can configure launch arguments by editing the current scheme and navigating to `Run` -> `Arguments`.
 
 ### Serve
 
@@ -33,9 +33,9 @@ Each command has options for customizing how it runs. If you're running your ser
 |-|-|-|
 |--host|127.0.0.1|The host to listen on|
 |--port|3000|The port to listen on|
-|--unixSocket|nil|The unix socket to listen on. Mutally exclusive with `host` & `port`|
+|--unixSocket|nil|The unix socket to listen on. Mutually exclusive with `host` & `port`|
 |--workers|0|The number of workers to run|
-|--schedule|false|Whether scheduled tasks should also be run|
+|--schedule|false|Whether scheduled tasks should be scheduled|
 |--migrate|false|Whether any outstanding migrations should be run before serving|
 |--env|env|The environment to load|
 
@@ -57,7 +57,7 @@ Each command has options for customizing how it runs. If you're running your ser
 |--name|`nil`|The queue to monitor. Leave empty to monitor `Queue.default`|
 |--channels|`default`|The channels to monitor, separated by comma|
 |--workers|1|The number of workers to run|
-|--schedule|false|Whether scheduled tasks should also be run|
+|--schedule|false|Whether scheduled tasks should be scheduled|
 |--env|env|The environment to load|
 
 ## Environment
@@ -66,9 +66,9 @@ Often you'll need to access environment variables of the running program. To do 
 
 ```swift
 // The type is inferred
-let envBool: Bool? = Env.current.get("some_bool")
-let envInt: Int? = Env.current.get("some_int")
-let envString: String? = Env.current.get("some_string")
+let envBool: Bool? = Env.current.get("SOME_BOOL")
+let envInt: Int? = Env.current.get("SOME_INT")
+let envString: String? = Env.current.get("SOME_STRING")
 ```
 
 ### Dynamic member lookup

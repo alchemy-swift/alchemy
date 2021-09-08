@@ -22,6 +22,15 @@ Like other Alchemy services, Queue conforms to the `Service` protocol. Configure
 Queue.config(default: .redis())
 ```
 
+If you're using the `Queue.sql()` queue configuration, you'll need to add the `Queue.AddJobsMigration` migration to your database's migrations.
+
+```swift
+Database.default.migrations = [
+    Queue.AddJobsMigration(),
+    ...
+]
+```
+
 ## Creating Jobs
 
 To make a task to run on a queue, conform to the `Job` protocol. It includes a single `run` function. It also requires `Codable` conformance, so that any properties will be serialized and available when the job is run.
