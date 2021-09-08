@@ -452,7 +452,7 @@ struct EmailJob: Job {
 }
 ```
 
-For advanced queue usage including channels, queue priorities, backoff times, and retry policies, check out the guide on Queues.
+For advanced queue usage including channels, queue priorities, backoff times, and retry policies, check out the [Queues guide](Docs/8_Queues.md).
 
 ## Scheduling tasks
 
