@@ -101,7 +101,7 @@ app
 
 ## Controller
 
-For convenience, a protocol `Controller` is provided to help break up your route handlers. Implement the `route(_ app: Application)` function and register it in your `Application.setup`.
+For convenience, a protocol `Controller` is provided to help break up your route handlers. Implement the `route(_ app: Application)` function and register it in your `Application.boot`.
 
 ```swift
 struct UserController: Controller {

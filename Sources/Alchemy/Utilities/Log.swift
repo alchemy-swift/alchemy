@@ -9,7 +9,7 @@ import Logging
 ///
 /// You can set a custom default logger like so:
 /// ```swift
-/// // In Application.setup...
+/// // In Application.boot...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
 public struct Log {

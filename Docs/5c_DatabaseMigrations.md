@@ -25,9 +25,7 @@ You can create a new migration using the CLI.
 alchemy migrate new MyMigration
 ```
 
-This will create a new migration file in the `Sources/Migrations/` with the current timestamp (`yyyyMMddHHmmss`) and provided name.
-
-**Note**: Generated migration types are prefaced with an underscore since Swift doesn't allow type names to begin with a number.
+This will create a new migration file in the `Sources/Migrations`.
 
 **Note**: if the `Sources/Migrations` directory doesn't exist, this command will create the file in `Sources/`. If _that_ doesn't exist, it will create the file in the current directory (aka `.`).
 
@@ -40,7 +38,7 @@ A migration conforms to the `Migration` protocol and is implemented by filling o
 For example, this migration renames the `user_todos` table to `todos`. Notice the `down` function does the reverse. You don't _have_ to fill out the down function of a migration, but it may be useful for rolling back the operation later.
 
 ```swift
-struct _20201231142209RenameTodos: Migration {
+struct RenameTodos: Migration {
     func up(schema: Schema) {
         schema.rename(table: "user_todos", to: "todos")
     }
@@ -66,7 +64,7 @@ schema.create(table: "users") { table in
     table.uuid("id").primary()
     table.string("name").notNull()
     table.string("email").notNull().unique()
-    table.uuid("mom").references("id", on: "")
+    table.uuid("mom").references("id", on: "users")
 }
 ```
 
@@ -122,19 +120,19 @@ You can also drop tables, rename tables, or execute arbitrary SQL strings from a
 ```swift
 schema.drop(table: "old_users")
 schema.rename(table: "createdAt", to: "created_at")
-schema.raw(table: "drop schema public cascade")
+schema.raw("drop schema public cascade")
 ```
 
 ## Running a Migration
 
-To begin, you need to ensure that your migrations are registered on `Database.default`. You can should do this in your `Application.setup` function.
+To begin, you need to ensure that your migrations are registered on `Database.default`. You can should do this in your `Application.boot` function.
 
 ```swift
-// Make sure to register a database with `Database.default = ...` first!
+// Make sure to register a database with `Database.config(default: )` first!
 Database.default.migrations = [
-    _20201220142243CreateUsers(),
-    _20201222181209CreateTodos(),
-    _20201225094501RenameTodos(),
+    CreateUsers(),
+    CreateTodos(),
+    RenameTodos()
 ]
 ```
 
@@ -146,7 +144,7 @@ You can then apply all outstanding migrations in a single batch by passing the `
 
 ```bash
 # Applies all outstanding migrations
-./MyServer migrate 
+swift run Server migrate 
 ```
 
 #### Rolling Back
@@ -155,10 +153,18 @@ You can pass the `--rollback` flag to instead rollback the latest batch of migra
 
 ```bash
 # Rolls back the most recent batch of migrations
-./MyServer migrate --rollback
+swift run Server migrate --rollback
 ```
 
-**Note**: Alchemy keeps track of run migrations and the current batch in your database. You can delete this table to clear all records of migrations.
+#### When Serving
+
+If you'd prefer to avoid running a separate migration command, you may pass the `--migrate` flag when running your server to automatically run outstanding migrations before serving.
+
+```swift
+swift run Server --migrate
+```
+
+**Note**: Alchemy keeps track of run migrations and the current batch in your database in the `migrations` table. You can delete this table to clear all records of migrations.
 
 ### Via Code
 
@@ -167,7 +173,7 @@ You can pass the `--rollback` flag to instead rollback the latest batch of migra
 You may also migrate your database in code. The future will complete when the migration is finished.
 
 ```swift
-let future = database.migrate()
+database.migrate()
 ```
 
 #### Rolling Back
@@ -175,9 +181,9 @@ let future = database.migrate()
 Rolling back the latest migration batch is also possible in code.
 
 ```swift
-let future = database.rollbackMigrations()
+database.rollbackMigrations()
 ```
 
-_Next page: [Rune: Basics](6a_RuneBasics.md)_
+_Next page: [Redis](5d_Redis.md)_
 
 _[Table of Contents](/Docs#docs)_

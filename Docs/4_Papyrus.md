@@ -16,8 +16,8 @@
             - [Body](#body)
             - [Combinations](#combinations)
     * [Requesting APIs](#requesting-apis)
-        + [Client, via Alamofire](#client--via-alamofire)
-        + [Server, via AsyncHTTPClient](#server--via-asynchttpclient)
+        + [Client, via Alamofire](#client-via-alamofire)
+        + [Server, via AsyncHTTPClient](#server-via-asynchttpclient)
     * [Providing APIs](#providing-apis)
     * [Interceptors](#interceptors)
 
@@ -300,7 +300,7 @@ Requesting an `Endpoint` client side is built on top of [Alamofire](https://gith
 
 #### Server, via AsyncHTTPClient
 
-Request an `Endpoint` in an `Alchemy` server is built on top of [AsyncHTTPClient](https://github.com/swift-server/async-http-client). By default, requests are run on `Services.client`, but you may provide a custom `HTTPClient`.
+Request an `Endpoint` in an `Alchemy` server is built on top of [AsyncHTTPClient](https://github.com/swift-server/async-http-client). By default, requests are run on the default `HTTPClient`, but you may provide a custom `HTTPClient`.
 
 ### Providing APIs
 

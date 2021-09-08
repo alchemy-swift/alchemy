@@ -33,7 +33,7 @@ struct BackupDatabase: Job {
 
 Often backend services need to schedule recurring work such as running various database queries or pulling from external endpoints.
 
-To do this, use `Scheduler`. It is automatically registered in Container.default & will likely be setup in your `Application.setup`.
+To do this, use `Scheduler`. It is automatically registered in Container.default & will likely be setup in your `Application.boot`.
 
 ```swift
 struct ExampleApp: Application {
@@ -108,7 +108,7 @@ Thread
 
 ## Making HTTP Requests
 
-HTTP requests should be made with [AsyncHTTPClient](https://github.com/swift-server/async-http-client). For convenience, an `HTTPClient` configured with the applications `EventLoopGroup` is available for usage via `Services.client`.
+HTTP requests should be made with [AsyncHTTPClient](https://github.com/swift-server/async-http-client). For convenience, an `HTTPClient` configured with the applications `EventLoopGroup` is available for usage via `HTTPClient.default`.
 
 ```swift
 Services.client

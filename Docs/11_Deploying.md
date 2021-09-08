@@ -72,7 +72,7 @@ cd my-project
 swift run --enable-test-discovery Backend --host <droplet-public-ip> --port 80
 ```
 
-Assuming you had something like this in your `Application.setup`
+Assuming you had something like this in your `Application.boot`
 ```swift
 self.get("/hello") {
     "Hello, World!"

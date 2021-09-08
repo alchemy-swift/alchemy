@@ -14,10 +14,10 @@
   * [Additional Where Clauses](#additional-where-clauses)
     + [Where Null](#where-null)
     + [Where In](#where-in)
-- [Ordering, Grouping, Paging](#ordering--grouping--paging)
+- [Ordering, Grouping, Paging](#ordering-grouping-paging)
   * [Grouping](#grouping)
   * [Ordering](#ordering)
-  * [Paging, Limits & Offsets](#paging--limits---offsets)
+  * [Paging, Limits and Offsets](#paging-limits-and-offsets)
 - [Inserting](#inserting)
 - [Updating](#updating)
 - [Deleting](#deleting)
@@ -35,7 +35,7 @@ Query.from("users")... // Start a query on table `users` using the default datab
 // or 
 Model.query()... // Start a query and automatically sets the table from the model.
 // or
-self.db.query().from("users") // Start a query using a database variable on table `users`.
+database.query().from("users") // Start a query using a database variable on table `users`.
 ```
 
 ### Get all rows
@@ -205,7 +205,7 @@ Query.from("users")
   .get()
 ```
 
-### Paging, Limits & Offsets
+### Paging, Limits and Offsets
 
 If all you are looking for is to break a query down into chunks for paging, the easiest way to accomplish that is to use the `forPage` method. It will automatically set the limits and offsets appropriate for a page size you define.
 
