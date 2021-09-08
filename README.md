@@ -1,4 +1,4 @@
-<p align="center"><img src="https://user-images.githubusercontent.com/6025554/132458427-56fc690a-817c-44e9-8440-50dd497f113b.png" width="400"></a></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/6025554/132458775-5e2a8805-06a4-4dd8-9434-df422f3cf675.png" width="400"></a></p>
 
 <p align="center">
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.4-orange.svg" alt="Swift Version"></a>
