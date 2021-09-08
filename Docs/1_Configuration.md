@@ -131,6 +131,6 @@ By default, Xcode builds and runs your project in a **DerivedData** folder, sepa
 
 To solve this, edit your server target's scheme & change the working directory to your package's root folder. `Edit Scheme` -> `Run` -> `Options` -> `WorkingDirectory`.
 
-_Up next: [Service Container & Dependency Injection](2_Fusion.md)_
+_Up next: [Services & Dependency Injection](2_Fusion.md)_
 
 _[Table of Contents](/Docs#docs)_
