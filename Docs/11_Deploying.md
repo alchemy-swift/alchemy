@@ -29,19 +29,19 @@ Next, install Swift. You can do this by right clicking the name of your droplet 
 Download and decompress the copied link...
 
 ```shell
-wget https://swift.org/builds/swift-5.3.2-release/ubuntu2004/swift-5.3.2-RELEASE/swift-5.3.2-RELEASE-ubuntu20.04.tar.gz
-tar xzf swift-5.3.2-RELEASE-ubuntu20.04.tar.gz
+wget https://swift.org/builds/swift-5.4.2-release/ubuntu2004/swift-5.4.2-RELEASE/swift-5.4.2-RELEASE-ubuntu20.04.tar.gz
+tar xzf swift-5.4.2-RELEASE-ubuntu20.04.tar.gz
 ```
 
 Put Swift somewhere easy to link to, such as a folder `/swift/{version}`.
 ```swift
 sudo mkdir /swift
-sudo mv swift-5.3.2-RELEASE-ubuntu20.04 /swift/5.3.2
+sudo mv swift-5.4.2-RELEASE-ubuntu20.04 /swift/5.4.2
 ```
 
 Then create a link in `/usr/bin`.
 ```shell
-sudo ln -s /swift/5.3.2/usr/bin/swift /usr/bin/swift
+sudo ln -s /swift/5.4.2/usr/bin/swift /usr/bin/swift
 ```
 
 Verify that it was installed correctly.
@@ -74,12 +74,13 @@ swift run --enable-test-discovery Backend --host <droplet-public-ip> --port 80
 
 Assuming you had something like this in your `Application.boot`
 ```swift
-self.get("/hello") {
+get("/hello") {
     "Hello, World!"
 }
 ```
 
 Visit `<droplet-public-ip>/hello` in your browser and you should see 
+
 ```
 Hello, World!
 ```
@@ -89,7 +90,7 @@ Congrats, your project is live!
 **Note** When you're ready to run a production version of your app, add a couple flags to the `swift run` command to speed it up and enable debug symbols for crash traces. You might just want to run these flags every time so it's less to think about.
 
 ```shell
-swift run -c release -Xswiftc -g --enable-test-discovery Backend --host 12.123.123.123 --port 80
+swift run -c release -Xswiftc -g
 ```
 
 ## Docker
@@ -102,7 +103,7 @@ Start off by creating a `Dockerfile`. This is a file that tells Docker how to bu
 
 Here's a sample one to copy and paste. Note that you may have to change `Backend` to the name of your executable product.
 
-This file tells docker to use a base image of `swift:latest`, build your project, and, when the image is run, run your executable on host 0.0.0.0 at port 8888
+This file tells docker to use a base image of `swift:latest`, build your project, and, when the image is run, run your executable on host 0.0.0.0 at port 3000
 
 ```dockerfile
 FROM swift:latest
@@ -111,8 +112,8 @@ COPY . .
 RUN swift build -c release -Xswiftc -g
 RUN mkdir /app/bin
 RUN mv `swift build -c release --show-bin-path` /app/bin
-EXPOSE 8888
-ENTRYPOINT ./bin/release/Backend --host 0.0.0.0 --port 8888
+EXPOSE 3000
+ENTRYPOINT ./bin/release/Backend --host 0.0.0.0 --port 3000
 ```
 
 ### Build and deploy the image
@@ -125,16 +126,16 @@ $ docker build .
 Successfully built ab21d0f26ecd
 ```
 
-Finally, run the built image. Pass in `-d` to tell Docker to run your image in the background and `-p 8888:8888` to tell it that your container's 8888 port should be exposed to your machine.
+Finally, run the built image. Pass in `-d` to tell Docker to run your image in the background and `-p 3000:3000` to tell it that your container's 3000 port should be exposed to your machine.
 
 ```shell
-docker run -d -p 8888:8888 ab21d0f26ecd
+docker run -d -p 3000:3000 ab21d0f26ecd
 ```
 
-Visit `http://0.0.0.0:8888/hello` in the browser and you should see 
+Visit `http://0.0.0.0:3000/hello` in the browser and you should see 
 
 ```
-"Hello, World!"
+Hello, World!
 ```
 
 Awesome! You're ready to deploy with Docker.

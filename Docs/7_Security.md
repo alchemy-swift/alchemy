@@ -2,9 +2,9 @@
 
 - [Bcrypt](#bcrypt)
 - [Request Auth](#request-auth)
-  * [Authorization: Basic](#authorization--basic)
-  * [Authorization: Bearer](#authorization--bearer)
-  * [Authorization: Either](#authorization--either)
+  * [Authorization: Basic](#authorization-basic)
+  * [Authorization: Bearer](#authorization-bearer)
+  * [Authorization: Either](#authorization-either)
 - [Auth Middleware](#auth-middleware)
   * [Basic Auth Middleware](#basic-auth-middleware)
   * [Token Auth Middleware](#token-auth-middleware)
@@ -90,7 +90,7 @@ To authenticate via the `Authorization: Basic ...` headers on incoming `Request`
 struct User: Model, BasicAuthable {
     var id: Int?
     let username: String
-    let passwordHash: String
+    let password: String
 }
 ```
 
@@ -99,10 +99,11 @@ Now, put `User.basicAuthMiddleware()` in front of any endpoints that need basic 
 If the credentials aren't valid, or there is no `Authorization: Basic ...` header, the Middleware will throw an `HTTPError(.unauthorized)`.
 
 ```swift
-router.middleWare(User.basicAuthMiddleware())
-    .on(.GET, at: "/login") { req in
-        let authedUser = try req.get(User.self)
-    }
+app.use(User.basicAuthMiddleware())
+app.get("/login") { req in
+    let authedUser = try req.get(User.self)
+    // Do something with the authorized user...
+}
 ```
 
 Note that Rune is inferring a username at column `"email"` and password at column `"password"` when verifying credentials. You may set custom columns by overriding the `usernameKeyString` or `passwordKeyString` of your `Model`.
@@ -127,8 +128,7 @@ struct UserToken: Model, BasicAuthable {
     var id: Int?
     let value: String
 
-    @BelongsTo
-    var user: User
+    @BelongsTo var user: User
 }
 ```
 
@@ -151,8 +151,7 @@ struct UserToken: Model, BasicAuthable {
     var id: Int?
     let tokenString: String
 
-    @BelongsTo
-    var user: User
+    @BelongsTo var user: User
 }
 ```
 

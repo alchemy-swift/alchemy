@@ -3,7 +3,7 @@ import Foundation
 /// Represents a frequency that occurs at a `rate` and may have
 /// specific requirements for when it should start running,
 /// such as "every day at 9:30 am".
-public protocol Frequency {
+protocol Frequency {
     /// A cron expression representing this frequency.
     var cronExpression: String { get }
 }
@@ -101,23 +101,4 @@ extension Weeks {
     public func at(hr: Int = 0, min: Int = 0, sec: Int = 0) -> Weeks {
         Weeks(value: self.value, cronExpression: "\(sec) \(min) \(hr) */\(self.value * 7) * * *")
     }
-}
-
-// MARK: - Misc
-
-extension Int {
-    /// A frequence of weeks.
-    public var weeks: Weeks { Weeks(value: self, cronExpression: "0 0 0 */\(self * 7) * * *") }
-
-    /// A frequence of days.
-    public var days: Days { Days(value: self, cronExpression: "0 0 0 */\(self) * * *") }
-
-    /// A frequence of hours.
-    public var hours: Hours { Hours(value: self, cronExpression: "0 0 */\(self) * * * *") }
-
-    /// A frequence of minutes.
-    public var minutes: Minutes { Minutes(value: self, cronExpression: "0 */\(self) * * * * *") }
-
-    /// A frequence of seconds.
-    public var seconds: Seconds { Seconds(value: self, cronExpression: "*/\(self) * * * * * *") }
 }

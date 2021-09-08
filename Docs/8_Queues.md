@@ -1,18 +1,15 @@
 # Queues
 
-- [BelongsTo](#belongsto)
-    * [Custom Column Suffix](#custom-column-suffix)
-- [Eager Loading Relationships](#eager-loading-relationships)
-    * [Nested Eager Loading](#nested-eager-loading)
-- [HasMany](#hasmany)
-    * [One to Many](#one-to-many)
-    * [Has Many Through](#has-many-through)
-- [HasOne](#hasone)
-- [HasRelationship Caveat](#hasrelationship-caveat)
+- [Configuring Queues](#configuring-queues)
+- [Creating Jobs](#creating-jobs)
+- [Dispatching Jobs](#dispatching-jobs)
+- [Dequeuing and Running Jobs](#dequeuing-and-running-jobs)
+- [Channels](#channels)
+- [Handling Job Failures](#handling-job-failures)
 
 Often your app will have long running operations, such as sending emails or reading files, that take too long to run during a client request. To help with this, Alchemy makes it easy to create queued jobs that can be persisted and run in the background. Your requests will stay lightning fast and important long running operations will never be lost if your server restarts or re-deploys.
 
-You configure your queues with the `Queue` class. Out of the box, Alchemy provides drivers for queues backed by Redis and SQL as well as an in-memory mock queue.
+Configure your queues with the `Queue` class. Out of the box, Alchemy provides drivers for queues backed by Redis and SQL as well as an in-memory mock queue.
 
 ## Configuring Queues
 
@@ -22,7 +19,7 @@ Like other Alchemy services, Queue conforms to the `Service` protocol. Configure
 Queue.config(default: .redis())
 ```
 
-If you're using the `Queue.sql()` queue configuration, you'll need to add the `Queue.AddJobsMigration` migration to your database's migrations.
+If you're using the `database()` queue configuration, you'll need to add the `Queue.AddJobsMigration` migration to your database's migrations.
 
 ```swift
 Database.default.migrations = [
@@ -40,7 +37,7 @@ struct SendWelcomeEmail: Job {
     let email: String
 
     func run() -> EventLoopFuture<Void> {
-        // Send welcome email to user
+        // Send welcome email to email
     }
 }
 ```
@@ -73,7 +70,7 @@ ProcessUserTransactions(user: user)
     .dispatch(on: .named("other_queue"))
 ```
 
-If you'd like to run something when your job is finished, you may override the `finished` function to hook into the result of a completed job.
+If you'd like to run something when your job is complete, you may override the `finished` function to hook into the result of a completed job.
 
 ```swift
 struct SendWelcomeEmail: Job {
@@ -102,7 +99,7 @@ You can spin up workers as a separate process using the `queue` command.
 swift run MyApp queues
 ```
 
-If you don't want to manage another running process, you can pass the `--workers` flag when starting your server to specify how many workers it should run.
+If you don't want to manage another running process, you can pass the `--workers` flag when starting your server have it run the given amount of workers in process.
 
 ```swift
 swift run MyApp --workers 2

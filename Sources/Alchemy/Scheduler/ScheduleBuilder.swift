@@ -90,16 +90,6 @@ public struct ScheduleBuilder {
         let schedule = Schedule(validate: expression)
         self.buildingFinished(schedule)
     }
-    
-    /// Schedules a task at a recurring interval.
-    ///
-    /// - Parameters:
-    ///   - frequency: The frequency at which this `Job` should be
-    ///     run. See `Frequency`.
-    func every(_ frequency: Frequency) {
-        let schedule = Schedule(validate: frequency.cronExpression)
-        self.buildingFinished(schedule)
-    }
 }
 
 typealias Schedule = DatePattern

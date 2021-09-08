@@ -273,7 +273,7 @@ Requesting the the `TodosAPI.getAll` endpoint from above looks similar on both c
 // `import PapyrusAlamofire` on client
 import Alchemy
 
-let todosAPI = TodosAPI(baseURL: "http://localhost:8888")
+let todosAPI = TodosAPI(baseURL: "http://localhost:3000")
 todosAPI.getAll
     .request(.init(limit: 50, incompleteOnly: true)) { response, todoResult in
         switch todoResult {
@@ -289,7 +289,7 @@ todosAPI.getAll
 
 This would make a request that looks like:
 ```
-GET http://localhost:8888/todos?limit=50&incompleteOnly=false
+GET http://localhost:3000/todos?limit=50&incompleteOnly=false
 ```
 
 While the APIs are built to look similar, the client and server implementations sit on top of different HTTP libraries and are customizable in separate ways.

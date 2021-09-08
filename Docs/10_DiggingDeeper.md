@@ -1,76 +1,82 @@
 # Digging Deeper
 
-- [Scheduled Jobs](#scheduled-jobs)
-  * [Creating a job](#creating-a-job)
+- [Scheduling Tasks](#scheduling-tasks)
   * [Scheduling](#scheduling)
+    + [Scheduling Jobs](#scheduling-jobs)
   * [Schedule frequencies](#schedule-frequencies)
 - [Logging](#logging)
 - [Thread](#thread)
 - [Making HTTP Requests](#making-http-requests)
-- [Plot: HTML DSL](#plot-html-dsl)
+- [Plot: HTML DSL](#plot--html-dsl)
   * [Control Flow](#control-flow)
   * [HTMLView](#htmlview)
   * [Plot Docs](#plot-docs)
 - [Serving Static Files](#serving-static-files)
 
-## Scheduled Jobs
+## Scheduling Tasks
 
-`Scheduler` provides an API for cron-like scheduling.
+You'll likely want to run various recurring tasks associated with your server. In the past, this may have been done utilizing `cron`, but it can be frustrating to have your scheduling logic disconnected from your code.
+To make this easy, Alchemy provides a clean API for scheduling repeated tasks & jobs.
 
-### Creating a job
+### Scheduling
 
-Jobs must conform to the `Job` protocol. It has a single function `func run() -> EventLoopFuture<Void>` which performs the work to be scheduled.
+You can schedule recurring work for your application using the `schedule()` function. You'll probably want to do this in your `boot()` function. This returns a builder with which you can customize the frequency of the task.
 
 ```swift
-struct BackupDatabase: Job {
-    func run() -> EventLoopFuture<Void> {
-        ...
+struct ExampleApp: Application {
+    func boot() {
+        schedule { print("Good morning!") }
+            .daily()
     }
 }
 ```
 
-### Scheduling
+#### Scheduling Jobs
 
-Often backend services need to schedule recurring work such as running various database queries or pulling from external endpoints.
-
-To do this, use `Scheduler`. It is automatically registered in Container.default & will likely be setup in your `Application.boot`.
+You can also schedule jobs to be dispatched. Don't forget to run a worker to run the dispatched jobs.
 
 ```swift
-struct ExampleApp: Application {
-    @Inject var scheduler: Scheduler
-    ...
-
-    func boot() {
-        ...
-        self.scheduler
-            // The scheduler will fire the `run` function on the BackupDatabase
-            // job every day @ 12am.
-            .every(1.days.at(hr: 0, min: 0), run: BackupDatabase())
-    }
-}
+app.schedule(job: BackupDatabase())
+    .daily(hr: 23)
 ```
 
 ### Schedule frequencies
 
-To aid in fine tuning when your scheduled `Job`s run, Alchemy provides some extensions on `Int` to pass to the `every` parameter.
-
-Note that calls to `every(_:run:)` can be chained for readability.
+A variety of builder functions are offered to customize your schedule frequency. If your desired frequency is complex, you can even schedule a task using a cron expression.
 
 ```swift
-scheduler
-    // Runs every day starting when the server is launched.
-    .every(1.days, run: BackupDatabase())
-    // Runs every day @ 9:30am.
-    .every(1.days.at(hr: 9, min: 30), run: EmailNewUsers())
-    // Runs every hour @ X:00:00.
-    .every(1.hour.at(min: 00, sec: 00), run: SlackAPIStatus())
-    // Runs every minute @ X:XX:30.
-    .every(1.minutes.at(sec: 30), run: CheckAPIStatus())
+// Every week on tuesday at 8:00 pm
+app.schedule { ... }
+    .weekly(day: .tue, hr: 20)
+
+// Every second
+app.schedule { ... }
+    .secondly()
+
+// Every minute at 30 seconds
+app.schedule { ... }
+    .minutely(sec: 30)
+
+// At 22:00 on every day-of-week from Monday through Friday.”
+app.schedule { ... }
+    .cron("0 22 * * 1-5")
+```
+
+### Running the Scheduler
+
+Note that by default, your app won't actually schedule tasks. You'll need to pass the `--schedule` flag to either the `serve` (default) or `queue` command.
+
+```bash
+# Serves and schedules
+swift run MyServer --schedule
+
+# Runs a queue worker and schedules
+swift run MyServer queue --schedule
 ```
 
 ## Logging
 
-To aid with logging, Alchemy provides a thin wrapper on top of [SwiftLog](https://github.com/apple/swift-log).
+To aid with logging, Alchemy provides a lightweight wrapper on top of [SwiftLog](https://github.com/apple/swift-log).
 
 You can conveniently log to the various levels via static functions on the `Log` struct.
 
@@ -88,7 +94,7 @@ These log to `Log.logger`, an instance of `SwiftLog.Logger`, which defaults to a
 
 ## Thread
 
-As mentioned in [Architecture](1a_Architecture.md), you want to avoid blocking the current `EventLoop` as much as possible to help your server have maximum request throughput.
+As mentioned in [Under the Hood](12_UnderTheHood.md), you'll want to avoid blocking the current `EventLoop` as much as possible to help your server have maximum request throughput.
 
 Should you need to do some blocking work, such as file IO or CPU intensive work, `Thread` provides a dead simple interface for running work on a separate (non-`EventLoop`) thread. 
 
@@ -98,20 +104,20 @@ Initiate work with `Thread.run` which takes a closure, runs it on a separate thr
 Thread
     .run { 
         // Will be run on a separate thread.
-        self.blockingWork() 
+        blockingWork() 
     }
     .whenSuccess { value in
         // Back on the initiating `EventLoop`, with access to any value 
-        // returned by `self.blockingWork()`.
+        // returned by `blockingWork()`.
     }
 ```
 
 ## Making HTTP Requests
 
-HTTP requests should be made with [AsyncHTTPClient](https://github.com/swift-server/async-http-client). For convenience, an `HTTPClient` configured with the applications `EventLoopGroup` is available for usage via `HTTPClient.default`.
+HTTP requests should be made with [AsyncHTTPClient](https://github.com/swift-server/async-http-client). For convenience `HTTPClient` is a `Service` and a default one is registered to your application container.
 
 ```swift
-Services.client
+HTTPClient.default
     .get(url: "https://swift.org")
     .whenComplete { result in
         switch result {
@@ -128,8 +134,8 @@ Services.client
 Out of the box, Alchemy supports [Plot](https://github.com/JohnSundell/Plot), a Swift DSL for writing type safe HTML. With Plot, returning HTML is dead simple and elegant. You can do so straight from a `Router` handler.
 
 ```swift
-self.router.on(.GET) {
-    HTML {
+app.get("/website") { _ in
+    return HTML {
         .head(
             .title("My website"),
             .stylesheet("styles.css")
@@ -208,7 +214,7 @@ struct HomeView: HTMLView {
     }
 }
 
-router.on(.GET) { _ in
+app.get("/home") { _ in
     HomeView(showSubtitle: true, animals: ["Orangutan", "Axolotl", "Echidna"], username: "Kendra")
 }
 ```
@@ -247,14 +253,14 @@ app.useAll(StaticFileMiddleware())
 
 Now, assets in the `Public/` directory can be requested.
 ``` 
-http://localhost:8888/index.html
-http://localhost:8888/css/style.css
-http://localhost:8888/js/app.js
-http://localhost:8888/images/puppy.png
-http://localhost:8888/ (by default, will return any `index.html` file)
+http://localhost:3000/index.html
+http://localhost:3000/css/style.css
+http://localhost:3000/js/app.js
+http://localhost:3000/images/puppy.png
+http://localhost:3000/ (by default, will return any `index.html` file)
 ```
 
-**Note**: The given directory is relative to your server's working directory. If you are using Xcode, be sure to set a custom working directory to your project where the static file directory is.
+**Note**: The given directory is relative to your server's working directory. If you are using Xcode, be sure to [set a custom working directory](1_Configuration.md#setting-a-custom-working-directory) for your project where the static file directory is.
 
 _Next page: [Deploying](11_Deploying.md)_
 

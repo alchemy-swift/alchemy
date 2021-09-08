@@ -1,14 +1,14 @@
 # Cache
 
-- [BelongsTo](#belongsto)
-  * [Custom Column Suffix](#custom-column-suffix)
-- [Eager Loading Relationships](#eager-loading-relationships)
-  * [Nested Eager Loading](#nested-eager-loading)
-- [HasMany](#hasmany)
-  * [One to Many](#one-to-many)
-  * [Has Many Through](#has-many-through)
-- [HasOne](#hasone)
-- [HasRelationship Caveat](#hasrelationship-caveat)
+- [Configuration](#configuration)
+- [Interacting with the Cache](#interacting-with-the-cache)
+  * [Storing Items in the Cache](#storing-items-in-the-cache)
+    + [Storing Custom Types](#storing-custom-types)
+  * [Retreiving Cache Items](#retreiving-cache-items)
+    + [Checking for item existence](#checking-for-item-existence)
+    + [Incrementing and Decrementing items](#incrementing-and-decrementing-items)
+  * [Removing Items from the Cache](#removing-items-from-the-cache)
+- [Adding a Custom Cache Driver](#adding-a-custom-cache-driver)
 
 You'll often want to cache the results of expensive or long running operations to save CPU time and respond to future requests faster. Alchemy provides a `Cache` type for easily interacting with common caching backends.
 

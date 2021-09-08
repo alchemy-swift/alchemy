@@ -14,13 +14,13 @@ There are as many unique `EventLoop`s as there are logical cores on your machine
 
 ### Caveat 1: **Don't block `EventLoop`s!**
 
-The faster you finish handling a request, the sooner the `EventLoop` it's running on will be able to handle additional requests. To keep your server fast, don't block the threads on which your router handlers are run. If you need to do some CPU intensive work, spin up another thread with `Thread.run`. This will allow the `EventLoop` of the request to handle other work while your intesive task is being completed on another thread. When the task is done, it will hop back to it's original `EventLoop` where it's handling can be finished.
+The faster you finish handling a request, the sooner the `EventLoop` it's running on will be able to handle additional requests. To keep your server fast, don't block the event loops on which your router handlers are run. If you need to do some CPU intensive work, spin up another thread with `Thread.run`. This will allow the `EventLoop` of the request to handle other work while your intesive task is being completed on another thread. When the task is done, it will hop back to it's original `EventLoop` where it's handling can be finished.
 
 ### Caveat 2: **Use non-blocking APIs (`EventLoopFuture`) when doing async tasks**
 
 Often, handling a request involves waiting for other servers / services to do something. This could include making a database query or making an external HTTP request. So that EventLoop threads aren't blocked, Alchemy leverages `EventLoopFuture`. `EventLoopFuture<T>` is the Swift server world's version of a `Future`. It represents an asynchronous operation that hasn't yet completed, but will complete on a specific `EventLoop` with either an `Error` or a value of `T`.
 
-If you've worked with other future types or `RxSwift` before, these should be straighforward; the API reference is [here](https://apple.github.io/swift-nio/docs/current/NIO/Classes/EventLoopFuture.html). If you haven't, think of them as functional sugar around a value that you'll get in the future (i.e. is being fetched asynchronously). You can chain functions that change the value (`.map { ... }`) or change the value asynchronously (`.flatMap { ... }`) and then respond to the value (or an error) when it's finally resolved.
+If you've worked with other future types before, these should be straighforward; the API reference is [here](https://apple.github.io/swift-nio/docs/current/NIO/Classes/EventLoopFuture.html). If you haven't, think of them as functional sugar around a value that you'll get in the future (i.e. is being fetched asynchronously). You can chain functions that change the value (`.map { ... }`) or change the value asynchronously (`.flatMap { ... }`) and then respond to the value (or an error) when it's finally resolved.
 
 #### Creating a new `EventLoopFuture`
 

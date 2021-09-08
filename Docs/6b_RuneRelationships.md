@@ -10,7 +10,6 @@
 - [Eager Loading Relationships](#eager-loading-relationships)
     * [Nested Eager Loading](#nested-eager-loading)
 
-
 Relationships are an important part of an SQL database. Rune provides first class support for defining, keeping track of, and loading relationships between records.
 
 ## Relationship Types
