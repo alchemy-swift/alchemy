@@ -1,16 +1,17 @@
 # Digging Deeper
 
 - [Scheduling Tasks](#scheduling-tasks)
-  * [Scheduling](#scheduling)
-    + [Scheduling Jobs](#scheduling-jobs)
-  * [Schedule frequencies](#schedule-frequencies)
+    * [Scheduling](#scheduling)
+        + [Scheduling Jobs](#scheduling-jobs)
+    * [Schedule frequencies](#schedule-frequencies)
+    * [Running the Scheduler](#running-the-scheduler)
 - [Logging](#logging)
 - [Thread](#thread)
 - [Making HTTP Requests](#making-http-requests)
 - [Plot: HTML DSL](#plot--html-dsl)
-  * [Control Flow](#control-flow)
-  * [HTMLView](#htmlview)
-  * [Plot Docs](#plot-docs)
+    * [Control Flow](#control-flow)
+    * [HTMLView](#htmlview)
+    * [Plot Docs](#plot-docs)
 - [Serving Static Files](#serving-static-files)
 
 ## Scheduling Tasks
