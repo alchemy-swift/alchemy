@@ -14,7 +14,7 @@ struct QueueCommand<A: Application>: ParsableCommand {
     /// The channels this worker should observe, separated by comma
     /// and ordered by priority. Defaults to "default"; the default
     /// channel of a queue.
-    @Option var channels: String = Queue.defaultChannel
+    @Option(name: .shortAndLong) var channels: String = Queue.defaultChannel
     
     /// The number of Queue workers that should be kicked off in
     /// this process.
