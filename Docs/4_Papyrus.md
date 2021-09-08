@@ -1,24 +1,25 @@
 # Papyrus
 
 - [Installation](#installation)
-  * [Server](#server)
-  * [Shared Library](#shared-library)
-  * [Client](#client)
+    * [Server](#server)
+    * [Shared Library](#shared-library)
+    * [iOS / macOS](#ios---macos)
 - [Usage](#usage)
-  * [Defining APIs](#defining-apis)
-    + [Basics](#basics)
-    + [Supported Methods](#supported-methods)
-    + [Empty Request or Reponse](#empty-request-or-reponse)
-    + [Custom Request Data](#custom-request-data)
-      - [URLQuery](#urlquery)
-      - [Header](#header)
-      - [Path Parameters](#path-parameters)
-      - [Body](#body)
-      - [Combinations](#combinations)
-  * [Requesting APIs](#requesting-apis)
-    + [Client, via Alamofire](#client-via-alamofire)
-    + [Server, via AsyncHTTPClient](#server-via-asynchttpclient)
-  * [Providing APIs](#providing-apis)
+    * [Defining APIs](#defining-apis)
+        + [Basics](#basics)
+        + [Supported Methods](#supported-methods)
+        + [Empty Request or Reponse](#empty-request-or-reponse)
+        + [Custom Request Data](#custom-request-data)
+            - [URLQuery](#urlquery)
+            - [Header](#header)
+            - [Path Parameters](#path-parameters)
+            - [Body](#body)
+            - [Combinations](#combinations)
+    * [Requesting APIs](#requesting-apis)
+        + [Client, via Alamofire](#client--via-alamofire)
+        + [Server, via AsyncHTTPClient](#server--via-asynchttpclient)
+    * [Providing APIs](#providing-apis)
+    * [Interceptors](#interceptors)
 
 Papyrus is a helper library for defining network APIs in Swift.
 
@@ -28,7 +29,7 @@ It leverages `Codable` and Property Wrappers for creating network APIs that are 
 
 ### Server
 
-Like [Fusion](2_Fusion.md), Papyrus is included when you `import Alchemy` on the server side.
+Papyrus is included when you `import Alchemy` on the server side.
 
 ### Shared Library
 
@@ -38,7 +39,7 @@ If you're sharing code between clients and servers with a Swift library, you can
 // in your Package.swift
 
 dependencies: [
-    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.1.0"))
+    .package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.2.0"))
     ...
 ],
 targets: [
@@ -48,7 +49,7 @@ targets: [
 ]
 ```
 
-### Client
+### iOS / macOS
 
 If you want to define or request `Papyrus` APIs on a Swift client (iOS, macOS, etc) you'll add [`PapyrusAlamofire`](https://github.com/alchemy-swift/papyrus-alamofire) as a dependency via SPM. This is a light wrapper around `Papyrus` with support for requesting endpoints with [Alamofire](https://github.com/Alamofire/Alamofire).
 
@@ -64,7 +65,7 @@ Papyrus is used to define, request, and provide HTTP endpoints.
 
 A single endpoint is defined with the `Endpoint<Request, Response>` type. 
 
-`Endpoint.Request` represents the data needed to make this request, and `Endpoint.Response` represents the expected return data from this request. Note that `Request` must conform to `EndpointRequest` and `Response` must conform to `Codable`.
+`Endpoint.Request` represents the data needed to make this request, and `Endpoint.Response` represents the expected return data from this request. Note that `Request` must conform to `RequestComponents` and `Response` must conform to `Codable`.
 
 Define an `Endpoint` on an enclosing `EndpointGroup` subclass, and wrap it with a property wrapper representing it's HTTP method and path, relative to a base URL.
 
@@ -73,7 +74,7 @@ class TodosAPI: EndpointGroup {
     @GET("/todos")
     var getAll: Endpoint<GetTodosRequest, [TodoDTO]>
 
-    struct GetTodosRequest: EndpointRequest {
+    struct GetTodosRequest: RequestComponents {
         @URLQuery
         var limit: Int
 
@@ -91,7 +92,7 @@ class TodosAPI: EndpointGroup {
 Notice a few things about the `getAll` endpoint. 
 
 1. The `@GET("/todos")` indicates that the endpoint is at `POST {some_base_url}/todos`. 
-2. The endpoint expects a request object of `GetUsersRequest` which conforms to `EndpointRequest` and contains two properties, wrapped by `@URLQuery`. The `URLQuery` wrappers indicate data that's expected in the query url of the request. This lets requesters of this endpoint know that the endpoint needs two query values, `limit` and `incompleteOnly`. It also lets the providers of this endpoint know that incoming requests to `GET /todo` will contain two items in their query URLs; `limit` and `incompleteOnly`.
+2. The endpoint expects a request object of `GetUsersRequest` which conforms to `RequestComponents` and contains two properties, wrapped by `@URLQuery`. The `URLQuery` wrappers indicate data that's expected in the query url of the request. This lets requesters of this endpoint know that the endpoint needs two query values, `limit` and `incompleteOnly`. It also lets the providers of this endpoint know that incoming requests to `GET /todo` will contain two items in their query URLs; `limit` and `incompleteOnly`.
 3. The endpoint has a response type of `[TodoDTO]`, defined below it. This lets clients know what response type to expect and lets providers know what response type to return.
 
 This gives anyone reading or using the API all the information they would need to interact with it.
@@ -159,7 +160,7 @@ class SomeAPI: EndpointGroup {
     var queryRequest: Endpoint<QueryRequest, Empty>
 }
 
-struct QueryRequest: EndpointRequest {
+struct QueryRequest: RequestComponents {
     @URLQuery var query1: String
     @URLQuery var query2: String?
     @URLQuery var query3: Int
@@ -177,7 +178,7 @@ class SomeAPI: EndpointGroup {
 }
 
 /// Defines a header "someHeader" on the request.
-struct HeaderRequest: EndpointRequest {
+struct HeaderRequest: RequestComponents {
     @Header var someHeader: String
 }
 ```
@@ -192,14 +193,14 @@ class SomeAPI: EndpointGroup {
     var foo: Endpoint<PathRequest, Empty>
 }
 
-struct PathRequest: EndpointRequest {
+struct PathRequest: RequestComponents {
     @Path var someID: String
 }
 ```
 
 ##### Body
 
-`@Body` can wrap any `Codable` type which will be encoded to the request. By default, the body is encoded as JSON, but you may override `EndpointRequest.contentType` to use another encoding type.
+`@Body` can wrap any `Codable` type which will be encoded to the request. By default, the body is encoded as JSON, but you may override `RequestComponents.contentType` to use another encoding type.
 
 ```swift
 class SomeAPI: EndpointGroup {
@@ -211,12 +212,12 @@ class SomeAPI: EndpointGroup {
 }
 
 /// Will encode `BodyData` in the request body.
-struct JSONBody: EndpointRequest {
+struct JSONBody: RequestComponents {
     @Body var body: BodyData
 }
 
 /// Will encode `BodyData` in the request URL.
-struct URLEncodedBody: EndpointRequest {
+struct URLEncodedBody: RequestComponents {
     static let contentType = .urlEncoded
 
     @Body var body: BodyData
@@ -228,12 +229,21 @@ struct BodyData: Codable {
 }
 ```
 
+You may also use `RequestBody` if the only content of the request is in the body. This will encode whatever fields are on your type into the `Request`'s body, instead of having to add a separate type and use the `@Body` property wrapper.
+
+```swift
+struct JSONBody: RequestBody {
+    var foo: String
+    var baz: Int
+}
+```
+
 ##### Combinations
 
 You can combine any number of these property wrappers, except for `@Body`. There can only be a single `@Body` per request.
 
 ```swift
-struct MyCustomRequest: EndpointRequest {
+struct MyCustomRequest: RequestComponents {
     struct SomeCodable: Codable {
         ...
     }
@@ -315,6 +325,22 @@ If expected data is missing, a `400` is thrown describing the missing expected f
 ```
 
 **Note**: Currently, only `ContentType.json` is supported for decoding request `@Body`s.
+
+### Interceptors
+
+Often you'll have some sort of request component you'd like to apply to every request in a group of endpoints. For example, you may want to add an `Authorization` header. Instead of adding `@Header var authorization: String` to each request content, you can accomplish this using the `intercept()` function of `EndpointGroup`. It gives you the raw `HTTPComponents` to modify right before sending the request.
+
+```swift
+final class TodoAPI: EndpointGroup {
+    @POST("/v1/create") var create: Endpoint<CreateTodo, TodoDTO>
+    @POST("/v1/create") var getAll: Endpoint<Void, [TodoDTO]>
+    @POST("/v1/create") var delete: Endpoint<DeleteTodo, Void>
+
+    func intercept(_ components: inout HTTPComponents) {
+        components.headers["Authorization"] = "Bearer \(some_token)"
+    }
+}
+```
 
 _Next page: [Database: Basics](5a_DatabaseBasics.md)_
 
