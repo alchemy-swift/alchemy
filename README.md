@@ -84,6 +84,8 @@ Until `1.0.0` is released, minor version changes might be breaking, so you may w
 
 # Usage
 
+You can view example apps in the [alchemy-examples repo](https://github.com/alchemy-swift/alchemy-examples).
+
 The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
 
 ## Basics & Routing
