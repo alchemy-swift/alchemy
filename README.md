@@ -33,7 +33,7 @@ Alchemy provides you with Swifty APIs for everything you need to build productio
 
 ## Why Alchemy?
 
-Swift on the server is exciting but also relatively nascant ecosystem. Building a backend with it can be daunting and the pains of building in a new ecosystem (navigating piecemeal projects, sparse feature sets, incomplete documentation) can get in the way.
+Swift on the server is exciting but also relatively nascant ecosystem. Building a backend with it can be daunting and the pains of building in a new ecosystem can get in the way.
 
 The goal of Alchemy is to provide a robust, batteries included framework with everything you need to build production ready backends. Stay focused on building your next amazing project in modern, Swifty style without sweating the details.
 
