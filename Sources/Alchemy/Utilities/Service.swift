@@ -37,14 +37,14 @@ extension Service {
     }
     
     public static func config(default configuration: Self) {
-        config(nil, configuration)
+        _config(nil, configuration)
     }
     
     public static func config(_ name: String, _ configuration: Self) {
-        config(name, configuration)
+        _config(name, configuration)
     }
     
-    private static func config(_ name: String? = nil, _ configuration: Self) {
+    private static func _config(_ name: String? = nil, _ configuration: Self) {
         let label: String
         if let name = name {
             label = "\(Alchemy.name(of: Self.self)):\(name)"
