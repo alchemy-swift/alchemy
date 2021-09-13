@@ -18,7 +18,7 @@ public protocol Application {
     /// environment is loaded and the global `EventLoopGroup` is
     /// set. Called on an event loop, so `Loop.current` is
     /// available for use if needed.
-    func boot()
+    func boot() throws
     
     /// Required empty initializer.
     init()

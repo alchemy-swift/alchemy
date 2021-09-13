@@ -1,5 +1,8 @@
 import ArgumentParser
 import NIO
+import NIOSSL
+import NIOHTTP1
+import NIOHTTP2
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
@@ -68,7 +71,7 @@ extension ServeCommand: Runner {
         
         lifecycle.register(
             label: "Serve",
-            start: .eventLoopFuture { self.start().map { channel = $0 } },
+            start: .eventLoopFuture { start().map { channel = $0 } },
             shutdown: .eventLoopFuture { channel?.close() ?? .new() }
         )
         
@@ -80,23 +83,17 @@ extension ServeCommand: Runner {
     }
 
     private func start() -> EventLoopFuture<Channel> {
-        // Much of this is courtesy of [apple/swift-nio-examples](
-        // https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
-        func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
-            channel.pipeline
-                .configureHTTPServerPipeline(withErrorHandling: true)
-                .flatMap { channel.pipeline.addHandler(HTTPHandler(router: Router.default)) }
-        }
-
         let serverBootstrap = ServerBootstrap(group: Loop.group)
             // Specify backlog and enable SO_REUSEADDR for the server
             // itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-
-            // Set the handlers that are applied to the accepted
-            // `Channel`s
-            .childChannelInitializer(childChannelInitializer(channel:))
+            
+            .childChannelInitializer { channel in
+                return channel.pipeline
+                    .addAnyTLS()
+                    .flatMap { channel.addHTTP() }
+            }
 
             // Enable SO_REUSEADDR for the accepted `Channel`s
             .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
@@ -139,4 +136,82 @@ extension SocketAddress {
             return "\(address):\(port)"
         }
     }
+}
+
+extension ChannelPipeline {
+    func addAnyTLS() -> EventLoopFuture<Void> {
+        let config = Container.resolve(ServerConfiguration.self)
+        if let tls = config.tlsConfig {
+            let sslContext = try! NIOSSLContext(configuration: tls)
+            let sslHandler = NIOSSLServerHandler(context: sslContext)
+            return addHandler(sslHandler)
+        } else {
+            return .new()
+        }
+    }
+}
+
+extension Channel {
+    func addHTTP() -> EventLoopFuture<Void> {
+        let config = Container.resolve(ServerConfiguration.self)
+        if config.httpVersions.contains(.http2) {
+            return configureHTTP2SecureUpgrade(
+                h2ChannelConfigurator: { h2Channel in
+                    h2Channel.configureHTTP2Pipeline(
+                        mode: .server,
+                        inboundStreamInitializer: { channel in
+                            channel.pipeline
+                                .addHandlers([
+                                    HTTP2FramePayloadToHTTP1ServerCodec(),
+                                    HTTPHandler(router: Router.default)
+                                ])
+                        })
+                        .voided()
+                },
+                http1ChannelConfigurator: { http1Channel in
+                    http1Channel.pipeline
+                        .configureHTTPServerPipeline(withErrorHandling: true)
+                        .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
+                }
+            )
+        } else {
+            return pipeline
+                .configureHTTPServerPipeline(withErrorHandling: true)
+                .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
+        }
+    }
+}
+
+extension Application {
+    public func useHTTPS(key: String, cert: String) throws {
+        let config = Container.resolve(ServerConfiguration.self)
+        config.tlsConfig = TLSConfiguration
+            .makeServerConfiguration(
+                certificateChain: try NIOSSLCertificate
+                    .fromPEMFile(cert)
+                    .map { NIOSSLCertificateSource.certificate($0) },
+                privateKey: .file(key))
+    }
+    
+    public func useHTTPS(tlsConfig: TLSConfiguration) {
+        let config = Container.resolve(ServerConfiguration.self)
+        config.tlsConfig = tlsConfig
+    }
+    
+    public func useHTTP2(key: String, cert: String) throws {
+        let config = Container.resolve(ServerConfiguration.self)
+        config.httpVersions = [.http2, .http1_1]
+        try useHTTPS(key: key, cert: cert)
+    }
+    
+    public func useHTTP2(tlsConfig: TLSConfiguration) {
+        let config = Container.resolve(ServerConfiguration.self)
+        config.httpVersions = [.http2, .http1_1]
+        useHTTPS(tlsConfig: tlsConfig)
+    }
+}
+
+public final class ServerConfiguration {
+    public var tlsConfig: TLSConfiguration?
+    public var httpVersions: [HTTPVersion] = [.http1_1]
 }
