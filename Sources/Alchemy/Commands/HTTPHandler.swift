@@ -19,7 +19,7 @@ final class HTTPHandler: ChannelInboundHandler {
   
     // Indicates that the TCP connection needs to be closed after a
     // response has been sent.
-    private var closeAfterResponse = true
+    private var keepAlive = true
   
     /// A temporary local Request that is used to accumulate data
     /// into.
@@ -48,7 +48,7 @@ final class HTTPHandler: ChannelInboundHandler {
         switch part {
         case .head(let requestHead):
             // If the part is a `head`, a new Request is received
-            self.closeAfterResponse = !requestHead.isKeepAlive
+            keepAlive = requestHead.isKeepAlive
       
             let contentLength: Int
       
@@ -103,7 +103,7 @@ final class HTTPHandler: ChannelInboundHandler {
         return responseFuture.flatMap { response in
             let responseWriter = HTTPResponseWriter(handler: self, context: context)
             responseWriter.completionPromise.futureResult.whenComplete { _ in
-                if self.closeAfterResponse {
+                if !self.keepAlive {
                     context.close(promise: nil)
                 }
             }
@@ -156,14 +156,10 @@ private struct HTTPResponseWriter: ResponseWriter {
     }
     
     func writeBody(_ body: ByteBuffer) {
-        context.writeAndFlush(
-            handler.wrapOutboundOut(.body(IOData.byteBuffer(body))),
-            promise: nil
-        )
+        context.writeAndFlush(handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
     }
     
     func writeEnd() {
-        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: nil)
-        completionPromise.succeed(())
+        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
     }
 }
