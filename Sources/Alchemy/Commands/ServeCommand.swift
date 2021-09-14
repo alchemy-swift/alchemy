@@ -143,7 +143,13 @@ extension ChannelPipeline {
     /// - Returns: A future that completes when the config completes.
     fileprivate func addAnyTLS() -> EventLoopFuture<Void> {
         let config = Container.resolve(ApplicationConfiguration.self)
-        if let tls = config.tlsConfig {
+        if var tls = config.tlsConfig {
+            if config.httpVersions.contains(.http2) {
+                tls.applicationProtocols.append("h2")
+            }
+            if config.httpVersions.contains(.http1_1) {
+                tls.applicationProtocols.append("http/1.1")
+            }
             let sslContext = try! NIOSSLContext(configuration: tls)
             let sslHandler = NIOSSLServerHandler(context: sslContext)
             return addHandler(sslHandler)
