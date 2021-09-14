@@ -83,19 +83,17 @@ extension ServeCommand: Runner {
     }
 
     private func start() -> EventLoopFuture<Channel> {
+        func childChannelInitializer(_ channel: Channel) -> EventLoopFuture<Void> {
+            channel.pipeline
+                .addAnyTLS()
+                .flatMap { channel.addHTTP() }
+        }
+        
         let serverBootstrap = ServerBootstrap(group: Loop.group)
-            // Specify backlog and enable SO_REUSEADDR for the server
-            // itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-            
-            .childChannelInitializer { channel in
-                return channel.pipeline
-                    .addAnyTLS()
-                    .flatMap { channel.addHTTP() }
-            }
-
-            // Enable SO_REUSEADDR for the accepted `Channel`s
+            .childChannelInitializer(childChannelInitializer)
+            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
             .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
@@ -139,8 +137,12 @@ extension SocketAddress {
 }
 
 extension ChannelPipeline {
-    func addAnyTLS() -> EventLoopFuture<Void> {
-        let config = Container.resolve(ServerConfiguration.self)
+    /// Configures this pipeline with any TLS config in the
+    /// `ApplicationConfiguration`.
+    ///
+    /// - Returns: A future that completes when the config completes.
+    fileprivate func addAnyTLS() -> EventLoopFuture<Void> {
+        let config = Container.resolve(ApplicationConfiguration.self)
         if let tls = config.tlsConfig {
             let sslContext = try! NIOSSLContext(configuration: tls)
             let sslHandler = NIOSSLServerHandler(context: sslContext)
@@ -152,8 +154,12 @@ extension ChannelPipeline {
 }
 
 extension Channel {
-    func addHTTP() -> EventLoopFuture<Void> {
-        let config = Container.resolve(ServerConfiguration.self)
+    /// Configures this channel to handle whatever HTTP versions the
+    /// server should be speaking over.
+    ///
+    /// - Returns: A future that completes when the config completes.
+    fileprivate func addHTTP() -> EventLoopFuture<Void> {
+        let config = Container.resolve(ApplicationConfiguration.self)
         if config.httpVersions.contains(.http2) {
             return configureHTTP2SecureUpgrade(
                 h2ChannelConfigurator: { h2Channel in
@@ -180,38 +186,4 @@ extension Channel {
                 .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
         }
     }
-}
-
-extension Application {
-    public func useHTTPS(key: String, cert: String) throws {
-        let config = Container.resolve(ServerConfiguration.self)
-        config.tlsConfig = TLSConfiguration
-            .makeServerConfiguration(
-                certificateChain: try NIOSSLCertificate
-                    .fromPEMFile(cert)
-                    .map { NIOSSLCertificateSource.certificate($0) },
-                privateKey: .file(key))
-    }
-    
-    public func useHTTPS(tlsConfig: TLSConfiguration) {
-        let config = Container.resolve(ServerConfiguration.self)
-        config.tlsConfig = tlsConfig
-    }
-    
-    public func useHTTP2(key: String, cert: String) throws {
-        let config = Container.resolve(ServerConfiguration.self)
-        config.httpVersions = [.http2, .http1_1]
-        try useHTTPS(key: key, cert: cert)
-    }
-    
-    public func useHTTP2(tlsConfig: TLSConfiguration) {
-        let config = Container.resolve(ServerConfiguration.self)
-        config.httpVersions = [.http2, .http1_1]
-        useHTTPS(tlsConfig: tlsConfig)
-    }
-}
-
-public final class ServerConfiguration {
-    public var tlsConfig: TLSConfiguration?
-    public var httpVersions: [HTTPVersion] = [.http1_1]
 }

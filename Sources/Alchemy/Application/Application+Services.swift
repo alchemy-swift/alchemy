@@ -7,6 +7,7 @@ extension Application {
         Loop.config()
         
         // Register all services
+        ApplicationConfiguration.config(default: ApplicationConfiguration())
         Router.config(default: Router())
         Scheduler.config(default: Scheduler())
         NIOThreadPool.config(default: NIOThreadPool(numberOfThreads: System.coreCount))
