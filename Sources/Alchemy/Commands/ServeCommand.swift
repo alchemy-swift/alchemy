@@ -1,5 +1,8 @@
 import ArgumentParser
 import NIO
+import NIOSSL
+import NIOHTTP1
+import NIOHTTP2
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
@@ -68,7 +71,7 @@ extension ServeCommand: Runner {
         
         lifecycle.register(
             label: "Serve",
-            start: .eventLoopFuture { self.start().map { channel = $0 } },
+            start: .eventLoopFuture { start().map { channel = $0 } },
             shutdown: .eventLoopFuture { channel?.close() ?? .new() }
         )
         
@@ -80,25 +83,17 @@ extension ServeCommand: Runner {
     }
 
     private func start() -> EventLoopFuture<Channel> {
-        // Much of this is courtesy of [apple/swift-nio-examples](
-        // https://github.com/apple/swift-nio-examples/tree/main/http2-server/Sources/http2-server)
-        func childChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
+        func childChannelInitializer(_ channel: Channel) -> EventLoopFuture<Void> {
             channel.pipeline
-                .configureHTTPServerPipeline(withErrorHandling: true)
-                .flatMap { channel.pipeline.addHandler(HTTPHandler(router: Router.default)) }
+                .addAnyTLS()
+                .flatMap { channel.addHTTP() }
         }
-
+        
         let serverBootstrap = ServerBootstrap(group: Loop.group)
-            // Specify backlog and enable SO_REUSEADDR for the server
-            // itself
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-
-            // Set the handlers that are applied to the accepted
-            // `Channel`s
-            .childChannelInitializer(childChannelInitializer(channel:))
-
-            // Enable SO_REUSEADDR for the accepted `Channel`s
+            .childChannelInitializer(childChannelInitializer)
+            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
             .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
 
@@ -137,6 +132,64 @@ extension SocketAddress {
             let address = ipAddress ?? ""
             let port = port ?? 0
             return "\(address):\(port)"
+        }
+    }
+}
+
+extension ChannelPipeline {
+    /// Configures this pipeline with any TLS config in the
+    /// `ApplicationConfiguration`.
+    ///
+    /// - Returns: A future that completes when the config completes.
+    fileprivate func addAnyTLS() -> EventLoopFuture<Void> {
+        let config = Container.resolve(ApplicationConfiguration.self)
+        if var tls = config.tlsConfig {
+            if config.httpVersions.contains(.http2) {
+                tls.applicationProtocols.append("h2")
+            }
+            if config.httpVersions.contains(.http1_1) {
+                tls.applicationProtocols.append("http/1.1")
+            }
+            let sslContext = try! NIOSSLContext(configuration: tls)
+            let sslHandler = NIOSSLServerHandler(context: sslContext)
+            return addHandler(sslHandler)
+        } else {
+            return .new()
+        }
+    }
+}
+
+extension Channel {
+    /// Configures this channel to handle whatever HTTP versions the
+    /// server should be speaking over.
+    ///
+    /// - Returns: A future that completes when the config completes.
+    fileprivate func addHTTP() -> EventLoopFuture<Void> {
+        let config = Container.resolve(ApplicationConfiguration.self)
+        if config.httpVersions.contains(.http2) {
+            return configureHTTP2SecureUpgrade(
+                h2ChannelConfigurator: { h2Channel in
+                    h2Channel.configureHTTP2Pipeline(
+                        mode: .server,
+                        inboundStreamInitializer: { channel in
+                            channel.pipeline
+                                .addHandlers([
+                                    HTTP2FramePayloadToHTTP1ServerCodec(),
+                                    HTTPHandler(router: Router.default)
+                                ])
+                        })
+                        .voided()
+                },
+                http1ChannelConfigurator: { http1Channel in
+                    http1Channel.pipeline
+                        .configureHTTPServerPipeline(withErrorHandling: true)
+                        .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
+                }
+            )
+        } else {
+            return pipeline
+                .configureHTTPServerPipeline(withErrorHandling: true)
+                .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
         }
     }
 }

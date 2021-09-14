@@ -39,7 +39,7 @@ extension Application {
         bootServices()
         
         // Boot the app
-        boot()
+        try boot()
         
         // Register the runner
         runner.register(lifecycle: lifecycle)

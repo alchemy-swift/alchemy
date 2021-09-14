@@ -19,7 +19,7 @@ final class HTTPHandler: ChannelInboundHandler {
   
     // Indicates that the TCP connection needs to be closed after a
     // response has been sent.
-    private var closeAfterResponse = true
+    private var keepAlive = true
   
     /// A temporary local Request that is used to accumulate data
     /// into.
@@ -48,7 +48,7 @@ final class HTTPHandler: ChannelInboundHandler {
         switch part {
         case .head(let requestHead):
             // If the part is a `head`, a new Request is received
-            self.closeAfterResponse = !requestHead.isKeepAlive
+            keepAlive = requestHead.isKeepAlive
       
             let contentLength: Int
       
@@ -86,7 +86,7 @@ final class HTTPHandler: ChannelInboundHandler {
             self.request = nil
       
             // Writes the response when done
-            self.writeResponse(response, to: context)
+            self.writeResponse(version: request.head.version, response: response, to: context)
         }
     }
   
@@ -94,16 +94,17 @@ final class HTTPHandler: ChannelInboundHandler {
     /// `ChannelHandlerContext`.
     ///
     /// - Parameters:
+    ///   - version: The HTTP version of the connection.
     ///   - response: The reponse to write to the handler context.
     ///   - context: The context to write to.
     /// - Returns: An future that completes when the response is
     ///   written.
     @discardableResult
-    private func writeResponse(_ responseFuture: EventLoopFuture<Response>, to context: ChannelHandlerContext) -> EventLoopFuture<Void> {
-        return responseFuture.flatMap { response in
-            let responseWriter = HTTPResponseWriter(handler: self, context: context)
+    private func writeResponse(version: HTTPVersion, response: EventLoopFuture<Response>, to context: ChannelHandlerContext) -> EventLoopFuture<Void> {
+        return response.flatMap { response in
+            let responseWriter = HTTPResponseWriter(version: version, handler: self, context: context)
             responseWriter.completionPromise.futureResult.whenComplete { _ in
-                if self.closeAfterResponse {
+                if !self.keepAlive {
                     context.close(promise: nil)
                 }
             }
@@ -124,11 +125,11 @@ final class HTTPHandler: ChannelInboundHandler {
 /// Used for writing a response to a remote peer with an
 /// `HTTPHandler`.
 private struct HTTPResponseWriter: ResponseWriter {
-    /// The HTTP version we're working with.
-    static private var httpVersion: HTTPVersion { HTTPVersion(major: 1, minor: 1) }
-    
     /// A promise to hook into for when the writing is finished.
     let completionPromise: EventLoopPromise<Void>
+
+    /// The HTTP version we're working with.
+    private var version: HTTPVersion
     
     /// The handler in which this writer is writing.
     private let handler: HTTPHandler
@@ -138,10 +139,12 @@ private struct HTTPResponseWriter: ResponseWriter {
     
     /// Initialize
     /// - Parameters:
+    ///   - version: The HTTPVersion of this connection.
     ///   - handler: The handler in which this response is writing
     ///     inside.
     ///   - context: The context to write responses to.
-    init(handler: HTTPHandler, context: ChannelHandlerContext) {
+    init(version: HTTPVersion, handler: HTTPHandler, context: ChannelHandlerContext) {
+        self.version = version
         self.handler = handler
         self.context = context
         self.completionPromise = context.eventLoop.makePromise()
@@ -150,20 +153,15 @@ private struct HTTPResponseWriter: ResponseWriter {
     // MARK: ResponseWriter
     
     func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
-        let version = HTTPResponseWriter.httpVersion
         let head = HTTPResponseHead(version: version, status: status, headers: headers)
         context.write(handler.wrapOutboundOut(.head(head)), promise: nil)
     }
     
     func writeBody(_ body: ByteBuffer) {
-        context.writeAndFlush(
-            handler.wrapOutboundOut(.body(IOData.byteBuffer(body))),
-            promise: nil
-        )
+        context.writeAndFlush(handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
     }
     
     func writeEnd() {
-        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: nil)
-        completionPromise.succeed(())
+        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
     }
 }

@@ -88,8 +88,8 @@ public final class Response {
     /// - Parameter writer: An abstraction around writing data to a
     ///   remote peer.
     private func defaultWriterClosure(writer: ResponseWriter) {
-        writer.writeHead(status: self.status, self.headers)
-        if let body = self.body {
+        writer.writeHead(status: status, headers)
+        if let body = body {
             writer.writeBody(body.buffer)
         }
         writer.writeEnd()
@@ -120,11 +120,4 @@ public protocol ResponseWriter {
     /// Write the end of the response. Needs to be called once per
     /// response, when all data has been written.
     func writeEnd()
-}
-
-extension ResponseWriter {
-    // Convenience default parameters for `writeHead`.
-    public func writeHead(status: HTTPResponseStatus = .ok, _ headers: HTTPHeaders = HTTPHeaders()) {
-        self.writeHead(status: status, headers)
-    }
 }
