@@ -2,7 +2,7 @@ import Lifecycle
 import NIO
 
 /// Convenience class for easy access to the running `Application`'s
-/// `EventLoopGroup` and currrent `EventLoop`.
+/// `EventLoopGroup` and current `EventLoop`.
 public struct Loop {
     /// The event loop your code is currently running on.
     @Inject public static var current: EventLoop
