@@ -9,9 +9,8 @@ on:
 
 jobs:
   test-macos:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
-    - uses: fwal/setup-swift@v1
     - uses: actions/checkout@v2
     - name: Build
       run: swift build -v
