@@ -22,12 +22,10 @@ Migrations are a key part of working with an SQL database. Each migration define
 You can create a new migration using the CLI.
 
 ```bash
-alchemy migrate new MyMigration
+alchemy make:migration MyMigration
 ```
 
-This will create a new migration file in the `Sources/Migrations`.
-
-**Note**: if the `Sources/Migrations` directory doesn't exist, this command will create the file in `Sources/`. If _that_ doesn't exist, it will create the file in the current directory (aka `.`).
+This will create a new migration file in `Sources/App/Migrations`.
 
 ## Implementing Migrations
 
