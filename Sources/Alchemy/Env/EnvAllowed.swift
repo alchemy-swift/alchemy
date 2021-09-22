@@ -10,3 +10,8 @@ extension String: StringInitializable {}
 extension Int: StringInitializable {}
 extension Double: StringInitializable {}
 extension Bool: StringInitializable {}
+extension UUID: StringInitializable {
+    public init?(_ value: String) {
+        self.init(uuidString: value)
+    }
+}
