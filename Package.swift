@@ -28,6 +28,8 @@ let package = Package(
         .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),
         .package(url: "https://github.com/Mordil/RediStack.git", from: "1.0.0"),
+        .package(url: "https://github.com/jakeheis/SwiftCLI", .upToNextMajor(from: "6.0.3")),
+        .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
     ],
     targets: [
         .target(
@@ -52,6 +54,8 @@ let package = Package(
                 .product(name: "Fusion", package: "fusion"),
                 .product(name: "Cron", package: "cron"),
                 .product(name: "Pluralize", package: "pluralize"),
+                .product(name: "SwiftCLI", package: "SwiftCLI"),
+                .product(name: "Rainbow", package: "Rainbow"),
                 
                 /// Internal dependencies
                 "CAlchemy",

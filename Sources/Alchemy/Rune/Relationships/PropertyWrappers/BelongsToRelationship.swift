@@ -65,12 +65,12 @@ public final class BelongsToRelationship<
     /// - Parameter parent: The `Parent` object to which this child
     ///   belongs.
     public init(wrappedValue: Parent) {
-        guard let id = wrappedValue.id else {
-            fatalError("Can't form a relation with an unidentified object.")
+        do {
+            self.value = try Parent.from(wrappedValue)
+            self.id = value?.id
+        } catch {
+            fatalError("Error initializing `BelongsTo`; expected a value but got nil. Perhaps this relationship should be optional?")
         }
-
-        self.id = id
-        self.value = wrappedValue
     }
     
     // MARK: Relationship
