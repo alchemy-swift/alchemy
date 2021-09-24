@@ -492,7 +492,7 @@ app.schedule { ... }
 
 ## ...and more!
 
-Check out [the docs](Docs#docs) for more advanced guides on all of the above as well as [Migrations](Docs/5c_DatabaseMigrations.md), [Caching](Docs/9_Cache.md), [Logging](Docs/10_DiggingDeeper.md#logging), [making HTTP Requests](Docs/10_DiggingDeeper.md#making-http-requests), using the [HTML DSL](Docs/10_DiggingDeeper.md#plot--html-dsl), [advanced Request / Response usage](Docs/3a_RoutingBasics.md#responseencodable), [sharing API interfaces](Docs/4_Papyrus.md) between client and server, [deploying your apps to Linux or Docker](Docs/11_Deploying.md), and more.
+Check out [the docs](Docs#docs) for more advanced guides on all of the above as well as [Migrations](Docs/5c_DatabaseMigrations.md), [Caching](Docs/9_Cache.md), [Custom Commands](Docs/13_Commands.md), [Logging](Docs/10_DiggingDeeper.md#logging), [making HTTP Requests](Docs/10_DiggingDeeper.md#making-http-requests), using the [HTML DSL](Docs/10_DiggingDeeper.md#plot--html-dsl), [advanced Request / Response usage](Docs/3a_RoutingBasics.md#responseencodable), [sharing API interfaces](Docs/4_Papyrus.md) between client and server, [deploying your apps to Linux or Docker](Docs/11_Deploying.md), and more.
 
 # Contributing
 
