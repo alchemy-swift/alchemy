@@ -156,6 +156,6 @@ extension Cache {
 Cache.config(default: .memcached())
 ```
 
-_Next page: [Digging Deeper](10_DiggingDeeper.md)_
+_Next page: [Commands](13_DiggingDeeper.md)_
 
 _[Table of Contents](/Docs#docs)_
