@@ -3,6 +3,7 @@ import Lifecycle
 
 /// Command to launch a given application.
 struct Launch: ParsableCommand {
+    @Locked static var userCommands: [Command.Type] = []
     static var configuration: CommandConfiguration {
         CommandConfiguration(
             abstract: "A utility for running an Alchemy command.",
@@ -19,7 +20,7 @@ struct Launch: ParsableCommand {
                 MakeModel.self,
                 MakeJob.self,
                 MakeView.self,
-            ],
+            ] + userCommands,
             defaultSubcommand: RunServe.self
         )
     }

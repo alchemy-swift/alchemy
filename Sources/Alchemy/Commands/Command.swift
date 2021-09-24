@@ -11,8 +11,14 @@ extension Command {
     public static var shutdownAfterRun: Bool { true }
 
     public func run() throws {
+        Log.info("[Command] running \(commandName)")
         // By default, register self to lifecycle
         registerToLifecycle()
+    }
+    
+    public func shutdown() -> EventLoopFuture<Void> {
+        Log.info("[Command] finished \(commandName)")
+        return .new()
     }
 
     public func registerToLifecycle() {
@@ -31,8 +37,8 @@ extension Command {
             shutdown: .eventLoopFuture { Loop.group.next().flatSubmit(shutdown) }
         )
     }
-
-    func shutdown() -> EventLoopFuture<Void> {
-        .new()
+    
+    private var commandName: String {
+        name(of: Self.self)
     }
 }
