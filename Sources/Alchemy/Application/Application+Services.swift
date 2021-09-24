@@ -4,6 +4,16 @@ import Lifecycle
 extension Application {
     /// Register core services to `Container.default`.
     func bootServices() {
+        // Setup app lifecycle
+        var lifecycleLogger = Log.logger
+        lifecycleLogger.logLevel = lifecycleLogLevel
+        ServiceLifecycle.config(
+            default: ServiceLifecycle(
+                configuration: ServiceLifecycle.Configuration(
+                    logger: lifecycleLogger,
+                    installBacktrace: true
+                )))
+        
         Loop.config()
         
         // Register all services

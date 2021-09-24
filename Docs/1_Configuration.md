@@ -25,6 +25,8 @@ swift run Server migrate
 
 Each command has options for customizing how it runs. If you're running your app from Xcode, you can configure launch arguments by editing the current scheme and navigating to `Run` -> `Arguments`.
 
+If you're looking to extend your Alchemy app with your own custom commands, check out [Commands](13_Commands.md).
+
 ### Serve
 
 > `swift run` or `swift run Server serve`

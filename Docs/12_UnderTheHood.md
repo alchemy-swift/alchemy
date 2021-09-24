@@ -1,4 +1,4 @@
-# Architecture
+# Under the Hood
 
 - [Event Loops and You](#event-loops-and-you)
   * [Caveat 1: Don't block EventLoops!](#caveat-1-dont-block-eventloops)

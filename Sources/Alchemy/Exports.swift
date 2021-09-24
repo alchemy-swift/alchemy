@@ -4,6 +4,9 @@
 @_exported import Fusion
 @_exported import Papyrus
 
+// Argument Parser
+@_exported import ArgumentParser
+
 // AsyncHTTPClient
 @_exported import class AsyncHTTPClient.HTTPClient
 @_exported import struct AsyncHTTPClient.HTTPClientError

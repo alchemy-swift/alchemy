@@ -22,11 +22,11 @@ public final class HasOneRelationship<
     /// set manually.
     public var wrappedValue: To {
         get {
-            guard let value = self.value else {
+            do {
+                return try To.from(value)
+            } catch {
                 fatalError("Relationship of type `\(name(of: To.self))` was not loaded!")
             }
-            
-            return value
         }
         set { self.value = newValue }
     }

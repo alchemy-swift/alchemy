@@ -83,10 +83,30 @@ extension Request: DecodableRequest {
             .stringValue
     }
     
-    public func decodeBody<T>(encoding: BodyEncoding = .json) throws -> T where T: Decodable {
-        let body = try self.body.unwrap(or: PapyrusValidationError("Expecting a request body."))
+    /// Returns the first `PathParameter` for the given key,
+    /// converting the value to the given type. Throws if the value is
+    /// not there or not convertible to the given type.
+    ///
+    /// Use this to fetch any parameters from the path.
+    /// ```swift
+    /// app.post("/users/:user_id") { request in
+    ///     let userID: String = try request.pathComponent("user_id")
+    ///     ...
+    /// }
+    /// ```
+    public func parameter<T: StringInitializable>(_ key: String) throws -> T {
+        guard let stringValue = pathParameters.first(where: { $0.parameter == "key" })?.stringValue else {
+            throw PapyrusValidationError("Missing parameter `\(key)` from path.")
+        }
+        
+        return try T(stringValue)
+            .unwrap(or: PapyrusValidationError("Path parameter `\(key)` was not convertible to a `\(name(of: T.self))`"))
+    }
+    
+    public func decodeBody<T: Decodable>(as: T.Type = T.self, with decoder: JSONDecoder = JSONDecoder()) throws -> T {
+        let body = try body.unwrap(or: PapyrusValidationError("Expecting a request body."))
         do {
-            return try body.decodeJSON(as: T.self)
+            return try body.decodeJSON(as: T.self, with: decoder)
         } catch let DecodingError.keyNotFound(key, _) {
             throw PapyrusValidationError("Missing field `\(key.stringValue)` from request body.")
         } catch let DecodingError.typeMismatch(type, context) {
@@ -95,6 +115,10 @@ extension Request: DecodableRequest {
         } catch {
             throw PapyrusValidationError("Invalid request body.")
         }
+    }
+    
+    public func decodeBody<T>(encoding: BodyEncoding = .json) throws -> T where T: Decodable {
+        return try decodeBody(as: T.self)
     }
 }
 

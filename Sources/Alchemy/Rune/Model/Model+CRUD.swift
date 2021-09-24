@@ -13,6 +13,41 @@ extension Model {
             .allModels()
     }
     
+    /// Fetch the first model with the given id.
+    ///
+    /// - Parameters:
+    ///   - db: The database to fetch the model from. Defaults to
+    ///     `Database.default`.
+    ///   - id: The id of the model to find.
+    /// - Returns: A future with a matching model.
+    public static func find(db: Database = .default, _ id: Self.Identifier) -> EventLoopFuture<Self?> {
+        Self.firstWhere("id" == id, db: db)
+    }
+    
+    /// Fetch the first model with the given id, throwing the given
+    /// error if it doesn't exist.
+    ///
+    /// - Parameters:
+    ///   - db: The database to fetch the model from. Defaults to
+    ///     `Database.default`.
+    ///   - id: The id of the model to find.
+    ///   - error: An error to throw if the model doesn't exist.
+    /// - Returns: A future with a matching model.
+    public static func find(db: Database = .default, _ id: Self.Identifier, or error: Error) -> EventLoopFuture<Self> {
+        Self.firstWhere("id" == id, db: db).unwrap(orError: error)
+    }
+    
+    /// Delete the first model with the given id.
+    ///
+    /// - Parameters:
+    ///   - db: The database to delete the model from. Defaults to
+    ///     `Database.default`.
+    ///   - id: The id of the model to delete.
+    /// - Returns: A future that completes when the model is deleted.
+    public static func delete(db: Database = .default, _ id: Self.Identifier) -> EventLoopFuture<Void> {
+        query().where("id" == id).delete().voided()
+    }
+    
     /// Delete all models of this type from a database.
     ///
     /// - Parameter
@@ -159,6 +194,18 @@ extension Model {
                 .update(values: try copy.fieldDictionary().unorderedDictionary)
                 .map { _ in copy }
         }
+    }
+    
+    public static func update(db: Database = .default, _ id: Identifier, with dict: [String: Any]?) -> EventLoopFuture<Self?> {
+        Self.find(id)
+            .optionalFlatMap { $0.update(with: dict ?? [:]) }
+    }
+    
+    public func update(db: Database = .default, with dict: [String: Any]) -> EventLoopFuture<Self> {
+        Self.query()
+            .where("id" == id)
+            .update(values: dict.compactMapValues { $0 as? Parameter })
+            .flatMap { _ in self.sync() }
     }
     
     /// Inserts this model to a database.

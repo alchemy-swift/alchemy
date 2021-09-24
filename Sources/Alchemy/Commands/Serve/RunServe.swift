@@ -3,13 +3,17 @@ import NIO
 import NIOSSL
 import NIOHTTP1
 import NIOHTTP2
+import Lifecycle
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
-struct ServeCommand<A: Application>: ParsableCommand {
+final class RunServe: Command {
     static var configuration: CommandConfiguration {
         CommandConfiguration(commandName: "serve")
     }
+    
+    static var shutdownAfterRun: Bool = false
+    static var logStartAndFinish: Bool = false
     
     /// The host to serve at. Defaults to `127.0.0.1`.
     @Option var host = "127.0.0.1"
@@ -32,32 +36,13 @@ struct ServeCommand<A: Application>: ParsableCommand {
     /// Should migrations be run before booting. Defaults to `false`.
     @Flag var migrate: Bool = false
     
-    /// The environment file to load. Defaults to `env`
-    @Option(name: .shortAndLong) var env: String = "env"
+    @IgnoreDecoding
+    private var channel: Channel?
     
-    // MARK: ParseableCommand
-    
-    func run() throws {
-        Env.defaultLocation = env
-        try A().launch(self)
-    }
-}
+    // MARK: Command
 
-/// Runs a HTTP server, listening on a socket and routing incoming
-/// requests to `Services.router`.
-extension ServeCommand: Runner {
-    // The socket that the server will bind to.
-    private var socket: Socket {
-        if let unixSocket = unixSocket {
-            return .unix(path: unixSocket)
-        } else {
-            return .ip(host: host, port: port)
-        }
-    }
-    
-    func register(lifecycle: ServiceLifecycle) {
-        var channel: Channel?
-        
+    func run() throws {
+        let lifecycle = ServiceLifecycle.default
         if migrate {
             lifecycle.register(
                 label: "Migrate",
@@ -69,11 +54,7 @@ extension ServeCommand: Runner {
             )
         }
         
-        lifecycle.register(
-            label: "Serve",
-            start: .eventLoopFuture { start().map { channel = $0 } },
-            shutdown: .eventLoopFuture { channel?.close() ?? .new() }
-        )
+        registerToLifecycle()
         
         if schedule {
             lifecycle.registerScheduler()
@@ -81,8 +62,8 @@ extension ServeCommand: Runner {
         
         lifecycle.registerWorkers(workers, on: .default)
     }
-
-    private func start() -> EventLoopFuture<Channel> {
+    
+    func start() -> EventLoopFuture<Void> {
         func childChannelInitializer(_ channel: Channel) -> EventLoopFuture<Void> {
             channel.pipeline
                 .addAnyTLS()
@@ -96,13 +77,12 @@ extension ServeCommand: Runner {
             .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
             .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
-
+        
         let channel = { () -> EventLoopFuture<Channel> in
-            switch socket {
-            case .ip(let host, let port):
+            if let unixSocket = unixSocket {
+                return serverBootstrap.bind(unixDomainSocketPath: unixSocket)
+            } else {
                 return serverBootstrap.bind(host: host, port: port)
-            case .unix(let path):
-                return serverBootstrap.bind(unixDomainSocketPath: path)
             }
         }()
         
@@ -112,9 +92,26 @@ extension ServeCommand: Runner {
                     fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
                 }
                 
+                self.channel = boundChannel
                 Log.info("[Server] listening on \(channelLocalAddress.prettyName)")
-                return boundChannel
             }
+    }
+    
+    func shutdown() -> EventLoopFuture<Void> {
+        channel?.close() ?? .new()
+    }
+}
+
+@propertyWrapper
+private struct IgnoreDecoding<T>: Decodable {
+    var wrappedValue: T?
+    
+    init(from decoder: Decoder) throws {
+        wrappedValue = nil
+    }
+    
+    init() {
+        wrappedValue = nil
     }
 }
 

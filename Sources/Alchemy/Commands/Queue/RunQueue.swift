@@ -1,11 +1,15 @@
 import ArgumentParser
+import Lifecycle
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
-struct QueueCommand<A: Application>: ParsableCommand {
+struct RunQueue: Command {
     static var configuration: CommandConfiguration {
         CommandConfiguration(commandName: "queue")
     }
+    
+    static var shutdownAfterRun: Bool = false
+    static var logStartAndFinish: Bool = false
     
     /// The name of the queue the workers should observe. If no name
     /// is given, workers will observe the default queue.
@@ -24,28 +28,21 @@ struct QueueCommand<A: Application>: ParsableCommand {
     /// work.
     @Flag var schedule: Bool = false
     
-    /// The environment file to load. Defaults to `env`
-    @Option(name: .shortAndLong) var env: String = "env"
-    
-    // MARK: ParseableCommand
+    // MARK: Command
     
     func run() throws {
-        Env.defaultLocation = env
-        try A().launch(self)
-    }
-}
-
-extension QueueCommand: Runner {
-    func register(lifecycle: ServiceLifecycle) {
         let queue: Queue = name.map { .named($0) } ?? .default
-        lifecycle.registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
-        if schedule { 
-            lifecycle.registerScheduler() 
+        ServiceLifecycle.default
+            .registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
+        if schedule {
+            ServiceLifecycle.default.registerScheduler()
         }
 
         let schedulerText = schedule ? "scheduler and " : ""
         Log.info("[Queue] started \(schedulerText)\(workers) workers.")
     }
+    
+    func start() -> EventLoopFuture<Void> { .new() }
 }
 
 extension ServiceLifecycle {

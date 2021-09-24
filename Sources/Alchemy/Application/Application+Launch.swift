@@ -11,40 +11,25 @@ extension Application {
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
     public static func main() {
-        Launch<Self>.main()
+        loadEnv()
+        
+        do {
+            let app = Self()
+            app.bootServices()
+            try app.boot()
+            Launch.main()
+            try ServiceLifecycle.default.startAndWait()
+        } catch {
+            Launch.exit(withError: error)
+        }
     }
     
-    /// Launch the application with the provided runner. It will setup
-    /// core services, call `self.setup()`, and then it's behavior
-    /// will be defined by the runner.
-    ///
-    /// - Parameter runner: The runner that defines what the
-    ///   application does when it's launched.
-    /// - Throws: Any error that may be encountered in booting the
-    ///   application.
-    func launch(_ runner: Runner) throws {
-        // Create and register app lifecycle
-        var lifecycleLogger = Log.logger
-        lifecycleLogger.logLevel = lifecycleLogLevel
-        let lifecycle = ServiceLifecycle(
-            configuration: ServiceLifecycle.Configuration(
-                logger: lifecycleLogger,
-                installBacktrace: true
-            )
-        )
-        
-        ServiceLifecycle.config(default: lifecycle)
-        
-        // Boot default services
-        bootServices()
-        
-        // Boot the app
-        try boot()
-        
-        // Register the runner
-        runner.register(lifecycle: lifecycle)
-        
-        // Start the lifecycle
-        try lifecycle.startAndWait()
+    private static func loadEnv() {
+        let args = CommandLine.arguments
+        if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
+            Env.defaultLocation = value
+        } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
+            Env.defaultLocation = value
+        }
     }
 }

@@ -173,13 +173,13 @@ public class ModelQuery<M: Model>: Query {
                     // Key the results by the "from" identifier
                     .flatMapThrowing {
                         try Dictionary(grouping: $0) { _, row in
-                            try M.Identifier(field: row.getField(column: toJoinKeyAlias))
+                            try row.getField(column: toJoinKeyAlias).value
                         }
                     }
                     // For each `from` populate it's relationship
                     .flatMapThrowing { toResultsKeyedByFromId in
                         return try fromResults.map { model, row in
-                            let pk = try M.Identifier(field: row.getField(column: config.fromKey))
+                            let pk = try row.getField(column: config.fromKey).value
                             let models = toResultsKeyedByFromId[pk]?.map(\.0) ?? []
                             try model[keyPath: relationshipKeyPath].set(values: models)
                             return (model, row)
