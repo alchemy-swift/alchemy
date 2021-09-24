@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/mysql-nio.git", from: "1.3.0"),
         .package(url: "https://github.com/vapor/postgres-kit", from: "2.0.0"),
         .package(url: "https://github.com/vapor/mysql-kit", from: "4.1.0"),
-        .package(url: "https://github.com/alchemy-swift/swift-service-lifecycle.git", .branch("main")),
+        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
         .package(url: "https://github.com/alchemy-swift/papyrus", from: "0.1.0"),
         .package(url: "https://github.com/alchemy-swift/fusion", from: "0.1.0"),
