@@ -6,7 +6,7 @@ struct Launch: ParsableCommand {
     @Locked static var userCommands: [Command.Type] = []
     static var configuration: CommandConfiguration {
         CommandConfiguration(
-            abstract: "A utility for running an Alchemy command.",
+            abstract: "Run an Alchemy app.",
             subcommands: [
                 // Running
                 RunServe.self,

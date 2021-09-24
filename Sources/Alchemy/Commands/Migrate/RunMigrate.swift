@@ -8,7 +8,7 @@ struct RunMigrate: Command {
         CommandConfiguration(commandName: "migrate")
     }
     
-    static var shutdownAfterRun: Bool = true
+    static var logStartAndFinish: Bool = false
     
     /// Whether migrations should be run or rolled back. If this is
     /// false (default) then all new migrations will have their

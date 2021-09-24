@@ -1,6 +1,7 @@
 import ArgumentParser
 
 struct MakeMiddleware: Command {
+    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:middleware",
         discussion: "Create a new middleware type"

@@ -2,6 +2,7 @@ import ArgumentParser
 
 public protocol Command: ParsableCommand {
     static var shutdownAfterRun: Bool { get }
+    static var logStartAndFinish: Bool { get }
 
     func start() -> EventLoopFuture<Void>
     func shutdown() -> EventLoopFuture<Void>
@@ -9,15 +10,20 @@ public protocol Command: ParsableCommand {
 
 extension Command {
     public static var shutdownAfterRun: Bool { true }
+    public static var logStartAndFinish: Bool { true }
 
     public func run() throws {
-        Log.info("[Command] running \(commandName)")
+        if Self.logStartAndFinish {
+            Log.info("[Command] running \(commandName)")
+        }
         // By default, register self to lifecycle
         registerToLifecycle()
     }
     
     public func shutdown() -> EventLoopFuture<Void> {
-        Log.info("[Command] finished \(commandName)")
+        if Self.logStartAndFinish {
+            Log.info("[Command] finished \(commandName)")
+        }
         return .new()
     }
 

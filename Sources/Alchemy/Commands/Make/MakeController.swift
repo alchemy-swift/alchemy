@@ -1,6 +1,7 @@
 import ArgumentParser
 
 struct MakeController: Command {
+    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:controller",
         discussion: "Create a new controller type"

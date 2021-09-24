@@ -13,6 +13,7 @@ final class RunServe: Command {
     }
     
     static var shutdownAfterRun: Bool = false
+    static var logStartAndFinish: Bool = false
     
     /// The host to serve at. Defaults to `127.0.0.1`.
     @Option var host = "127.0.0.1"

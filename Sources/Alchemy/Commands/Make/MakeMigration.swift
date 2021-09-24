@@ -3,6 +3,7 @@ import Foundation
 import Pluralize
 
 struct MakeMigration: Command {
+    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:migration",
         discussion: "Create a new migration file"

@@ -3,10 +3,13 @@ import Lifecycle
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
-struct RunQueue: ParsableCommand {
+struct RunQueue: Command {
     static var configuration: CommandConfiguration {
         CommandConfiguration(commandName: "queue")
     }
+    
+    static var shutdownAfterRun: Bool = false
+    static var logStartAndFinish: Bool = false
     
     /// The name of the queue the workers should observe. If no name
     /// is given, workers will observe the default queue.
@@ -38,6 +41,8 @@ struct RunQueue: ParsableCommand {
         let schedulerText = schedule ? "scheduler and " : ""
         Log.info("[Queue] started \(schedulerText)\(workers) workers.")
     }
+    
+    func start() -> EventLoopFuture<Void> { .new() }
 }
 
 extension ServiceLifecycle {

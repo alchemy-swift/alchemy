@@ -6,16 +6,27 @@ typealias Flag = ArgumentParser.Flag
 typealias Option = ArgumentParser.Option
 
 struct MakeModel: Command {
+    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:model",
-        discussion: "Create a new Rune model"
+        discussion: """
+            Create a new Rune model.
+            
+            You can optionally pass field arguments to generate the model and migration with. Each field argument needs a name and type separated by a colon. It can also have any number of modifiers that will be used in generating any migrations.
+            
+            e.g. name:string, email:string:unique, user_id:bigint:references.users.id
+            
+            Available types: increments, int, bigint, string, date, json, double, uuid, bool
+            
+            Available modifiers: primary, unique, notnull, references.table.key
+            """
     )
     
-    @Argument var name: String
-    @Argument var fields: [String] = []
+    @Argument(help: "The model name.") var name: String
+    @Argument(help: "Any fields to generate the model & optional migration with. In the form of <name>:<type>:<modifiers...>") var fields: [String] = []
     
-    @Flag(name: .shortAndLong) var migration: Bool = false
-    @Flag(name: .shortAndLong) var controller: Bool = false
+    @Flag(name: .shortAndLong, help: "Also make a migration file for this model.") var migration: Bool = false
+    @Flag(name: .shortAndLong, help: "Also make a controller with CRUD operations for this model.") var controller: Bool = false
     
     func start() -> EventLoopFuture<Void> {
         catchError {

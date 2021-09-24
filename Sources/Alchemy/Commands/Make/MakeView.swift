@@ -1,6 +1,7 @@
 import ArgumentParser
 
 struct MakeView: Command {
+    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:view",
         discussion: "Create a new Plot view"

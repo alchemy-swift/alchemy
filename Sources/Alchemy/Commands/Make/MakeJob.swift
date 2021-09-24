@@ -1,6 +1,7 @@
 import ArgumentParser
 
 struct MakeJob: Command {
+    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:job",
         discussion: "Create a new job type"
