@@ -11,6 +11,7 @@ public struct Thread {
     /// - Returns: A future containing the result of the expensive
     ///   work that completes on the current `EventLoop`.
     public static func run<T>(_ task: @escaping () throws -> T) -> EventLoopFuture<T> {
-        return NIOThreadPool.default.runIfActive(eventLoop: Loop.current, task)
+        @Inject var pool: NIOThreadPool
+        return pool.runIfActive(eventLoop: Loop.current, task)
     }
 }
