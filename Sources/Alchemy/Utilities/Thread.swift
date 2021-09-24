@@ -14,4 +14,8 @@ public struct Thread {
         @Inject var pool: NIOThreadPool
         return pool.runIfActive(eventLoop: Loop.current, task)
     }
+    
+    private func testAsync() async -> String {
+        "Hello, world!"
+    }
 }

@@ -13,6 +13,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_13.0.app/Contents/Developer
     steps:
+    - uses: dev1an/setup-swift@swift-5.5
     - uses: actions/checkout@v2
     - name: Build
       run: swift build -v
