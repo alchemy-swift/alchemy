@@ -7,7 +7,7 @@
 
 Often, you'll want to run specific tasks around maintenance, cleanup or productivity for your Alchemy app.
 
-The new `Command` interface makes this a cinche, allowing you to create custom commands to run your application with. It's built on the powerful [Swift Argument Parser](https://github.com/apple/swift-argument-parser) making it easy to add arguments, options, flags and help functionality to your custom commands. All commands have access to services registered in `Application.boot` so it's easy to interact with whatever database, queues, & other functionality that your app already has.
+The `Command` interface makes this a cinche, allowing you to create custom commands to run your application with. It's built on the powerful [Swift Argument Parser](https://github.com/apple/swift-argument-parser) making it easy to add arguments, options, flags and help functionality to your custom commands. All commands have access to services registered in `Application.boot` so it's easy to interact with whatever database, queues, & other functionality that your app already has.
 
 ## Writing a custom Command 
 
