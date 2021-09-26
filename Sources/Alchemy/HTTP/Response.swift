@@ -5,6 +5,8 @@ import NIOHTTP1
 /// response can be a failure or success case depending on the
 /// status code in the `head`.
 public final class Response {
+    public typealias WriteResponse = (ResponseWriter) async throws -> Void
+    
     /// The default `JSONEncoder` with which to encode JSON responses.
     public static var defaultJSONEncoder = JSONEncoder()
     
@@ -21,12 +23,12 @@ public final class Response {
     
     /// This will be called when this `Response` writes data to a
     /// remote peer.
-    internal var writerClosure: (ResponseWriter) -> Void {
-        get { self._writerClosure ?? self.defaultWriterClosure }
+    internal var writerClosure: WriteResponse {
+        get { _writerClosure ?? defaultWriterClosure }
     }
     
     /// Closure for deferring writing.
-    private var _writerClosure: ((ResponseWriter) -> Void)?
+    private var _writerClosure: WriteResponse?
   
     /// Creates a new response using a status code, headers and body.
     /// If the headers do not contain `content-length` or
@@ -68,31 +70,31 @@ public final class Response {
     ///
     /// - Parameter writer: A closure take a `ResponseWriter` and
     ///   using it to write response data to a remote peer.
-    public init(_ writer: @escaping (ResponseWriter) -> Void) {
+    public init(_ writeResponse: @escaping WriteResponse) {
         self.status = .ok
         self.headers = HTTPHeaders()
         self.body = nil
-        self._writerClosure = writer
+        self._writerClosure = writeResponse
     }
     
     /// Writes this response to an remote peer via a `ResponseWriter`.
     ///
     /// - Parameter writer: An abstraction around writing data to a
     ///   remote peer.
-    func write(to writer: ResponseWriter) {
-        self.writerClosure(writer)
+    func write(to writer: ResponseWriter) async throws {
+        try await writerClosure(writer)
     }
     
     /// Provides default writing behavior for a `Response`.
     ///
     /// - Parameter writer: An abstraction around writing data to a
     ///   remote peer.
-    private func defaultWriterClosure(writer: ResponseWriter) {
-        writer.writeHead(status: status, headers)
+    private func defaultWriterClosure(writer: ResponseWriter) async throws {
+        try await writer.writeHead(status: status, headers)
         if let body = body {
-            writer.writeBody(body.buffer)
+            try await writer.writeBody(body.buffer)
         }
-        writer.writeEnd()
+        try await writer.writeEnd()
     }
 }
 
@@ -109,15 +111,15 @@ public protocol ResponseWriter {
     /// - Parameters:
     ///   - status: The status code of the response.
     ///   - headers: Any headers of this response.
-    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders)
+    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) async throws
     
     /// Write some body data to the remote peer. May be called 0 or
     /// more times.
     ///
     /// - Parameter body: The buffer of data to write.
-    func writeBody(_ body: ByteBuffer)
+    func writeBody(_ body: ByteBuffer) async throws
     
     /// Write the end of the response. Needs to be called once per
     /// response, when all data has been written.
-    func writeEnd()
+    func writeEnd() async throws
 }

@@ -14,26 +14,32 @@ final class RouterTests: XCTestCase {
         app.mockServices()
     }
     
-    func testMatch() throws {
+    func testMatch() async throws {
         self.app.get { _ in "Hello, world!" }
         self.app.post { _ in 1 }
         self.app.register(.get1)
         self.app.register(.post1)
-        XCTAssertEqual(try self.app.request(TestRequest(method: .GET, path: "", response: "")), "Hello, world!")
-        XCTAssertEqual(try self.app.request(TestRequest(method: .POST, path: "", response: "")), "1")
-        XCTAssertEqual(try self.app.request(.get1), TestRequest.get1.response)
-        XCTAssertEqual(try self.app.request(.post1), TestRequest.post1.response)
+        let res1 = try await app.request(TestRequest(method: .GET, path: "", response: ""))
+        XCTAssertEqual(res1, "Hello, world!")
+        let res2 = try await app.request(TestRequest(method: .POST, path: "", response: ""))
+        XCTAssertEqual(res2, "1")
+        let res3 = try await app.request(.get1)
+        XCTAssertEqual(res3, TestRequest.get1.response)
+        let res4 = try await app.request(.post1)
+        XCTAssertEqual(res4, TestRequest.post1.response)
     }
 
-    func testMissing() throws {
+    func testMissing() async throws {
         self.app.register(.getEmpty)
         self.app.register(.get1)
         self.app.register(.post1)
-        XCTAssertEqual(try self.app.request(.get2), "Not Found")
-        XCTAssertEqual(try self.app.request(.postEmpty), "Not Found")
+        let res1 = try await app.request(.get2)
+        XCTAssertEqual(res1, "Not Found")
+        let res2 = try await app.request(.postEmpty)
+        XCTAssertEqual(res2, "Not Found")
     }
 
-    func testMiddlewareCalling() throws {
+    func testMiddlewareCalling() async throws {
         let shouldFulfull = expectation(description: "The middleware should be called.")
 
         let mw1 = TestMiddleware(req: { request in
@@ -50,12 +56,12 @@ final class RouterTests: XCTestCase {
             .use(mw2)
             .register(.post1)
 
-        _ = try self.app.request(.get1)
+        _ = try await app.request(.get1)
 
         wait(for: [shouldFulfull], timeout: kMinTimeout)
     }
     
-    func testMiddlewareCalledWhenError() throws {
+    func testMiddlewareCalledWhenError() async throws {
         let globalFulfill = expectation(description: "")
         let global = TestMiddleware(res: { _ in globalFulfill.fulfill() })
         
@@ -74,12 +80,12 @@ final class RouterTests: XCTestCase {
             .use(mw2)
             .register(.get1)
         
-        _ = try app.request(.get1)
+        _ = try await app.request(.get1)
         
         wait(for: [globalFulfill, mw1Fulfill, mw2Fulfill], timeout: kMinTimeout)
     }
 
-    func testGroupMiddleware() {
+    func testGroupMiddleware() async throws {
         let expect = expectation(description: "The middleware should be called once.")
         let mw = TestMiddleware(req: { request in
             XCTAssertEqual(request.head.uri, TestRequest.post1.path)
@@ -93,12 +99,14 @@ final class RouterTests: XCTestCase {
             }
             .register(.get1)
 
-        XCTAssertEqual(try self.app.request(.get1), TestRequest.get1.response)
-        XCTAssertEqual(try self.app.request(.post1), TestRequest.post1.response)
-        waitForExpectations(timeout: kMinTimeout)
+        let res1 = try await app.request(.get1)
+        XCTAssertEqual(res1, TestRequest.get1.response)
+        let res2 = try await app.request(.post1)
+        XCTAssertEqual(res2, TestRequest.post1.response)
+        wait(for: [expect], timeout: kMinTimeout)
     }
     
-    func testMiddlewareOrder() throws {
+    func testMiddlewareOrder() async throws {
         var stack = [Int]()
         let mw1Req = expectation(description: "")
         let mw1Res = expectation(description: "")
@@ -135,23 +143,24 @@ final class RouterTests: XCTestCase {
             stack.append(3)
         }
         
-        self.app
+        app
             .use(mw1)
             .use(mw2)
             .use(mw3)
             .register(.getEmpty)
         
-        _ = try self.app.request(.getEmpty)
+        _ = try await app.request(.getEmpty)
         
-        waitForExpectations(timeout: kMinTimeout)
+        wait(for: [mw1Req, mw1Res, mw2Req, mw2Res, mw3Req, mw3Res], timeout: kMinTimeout)
     }
 
-    func testQueriesIgnored() {
-        self.app.register(.get1)
-        XCTAssertEqual(try self.app.request(.get1Queries), TestRequest.get1.response)
+    func testQueriesIgnored() async throws {
+        app.register(.get1)
+        let res = try await app.request(.get1Queries)
+        XCTAssertEqual(res, TestRequest.get1.response)
     }
 
-    func testPathParametersMatch() throws {
+    func testPathParametersMatch() async throws {
         let expect = expectation(description: "The handler should be called.")
 
         let uuidString = UUID().uuidString
@@ -172,11 +181,11 @@ final class RouterTests: XCTestCase {
             return routeResponse
         }
         
-        let res = try self.app.request(TestRequest(method: routeMethod, path: routeToCall, response: ""))
+        let res = try await app.request(TestRequest(method: routeMethod, path: routeToCall, response: ""))
         print(res ?? "N/A")
 
         XCTAssertEqual(res, routeResponse)
-        waitForExpectations(timeout: kMinTimeout)
+        wait(for: [expect], timeout: kMinTimeout)
     }
 
     func testMultipleRequests() {
@@ -192,8 +201,8 @@ final class RouterTests: XCTestCase {
         // automatically add/remove trailing "/", etc.
     }
 
-    func testGroupedPathPrefix() throws {
-        self.app
+    func testGroupedPathPrefix() async throws {
+        app
             .grouped("group") { app in
                 app
                     .register(.get1)
@@ -205,38 +214,47 @@ final class RouterTests: XCTestCase {
             }
             .register(.get3)
 
-        XCTAssertEqual(try self.app.request(TestRequest(
+        let res = try await app.request(TestRequest(
             method: .GET,
             path: "/group\(TestRequest.get1.path)",
             response: TestRequest.get1.path
-        )), TestRequest.get1.response)
+        ))
+        XCTAssertEqual(res, TestRequest.get1.response)
 
-        XCTAssertEqual(try self.app.request(TestRequest(
+        let res2 = try await app.request(TestRequest(
             method: .GET,
             path: "/group\(TestRequest.get2.path)",
             response: TestRequest.get2.path
-        )), TestRequest.get2.response)
+        ))
+        XCTAssertEqual(res2, TestRequest.get2.response)
 
-        XCTAssertEqual(try self.app.request(TestRequest(
+        let res3 = try await app.request(TestRequest(
             method: .POST,
             path: "/group/nested\(TestRequest.post1.path)",
             response: TestRequest.post1.path
-        )), TestRequest.post1.response)
+        ))
+        XCTAssertEqual(res3, TestRequest.post1.response)
 
-        XCTAssertEqual(try self.app.request(TestRequest(
+        let res4 = try await app.request(TestRequest(
             method: .POST,
             path: "/group\(TestRequest.post2.path)",
             response: TestRequest.post2.path
-        )), TestRequest.post2.response)
+        ))
+        XCTAssertEqual(res4, TestRequest.post2.response)
 
         // only available under group prefix
-        XCTAssertEqual(try self.app.request(TestRequest.get1), "Not Found")
-        XCTAssertEqual(try self.app.request(TestRequest.get2), "Not Found")
-        XCTAssertEqual(try self.app.request(TestRequest.post1), "Not Found")
-        XCTAssertEqual(try self.app.request(TestRequest.post2), "Not Found")
+        let res5 = try await app.request(TestRequest.get1)
+        XCTAssertEqual(res5, "Not Found")
+        let res6 = try await app.request(TestRequest.get2)
+        XCTAssertEqual(res6, "Not Found")
+        let res7 = try await app.request(TestRequest.post1)
+        XCTAssertEqual(res7, "Not Found")
+        let res8 = try await app.request(TestRequest.post2)
+        XCTAssertEqual(res8, "Not Found")
 
         // defined outside group --> still available without group prefix
-        XCTAssertEqual(try self.app.request(TestRequest.get3), TestRequest.get3.response)
+        let res9 = try await self.app.request(TestRequest.get3)
+        XCTAssertEqual(res9, TestRequest.get3.response)
     }
 }
 
@@ -245,13 +263,11 @@ struct TestMiddleware: Middleware {
     var req: ((Request) throws -> Void)?
     var res: ((Response) throws -> Void)?
 
-    func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+    func intercept(_ request: Request, next: Next) async throws -> Response {
         try req?(request)
-        return next(request)
-            .flatMapThrowing { response in
-                try res?(response)
-                return response
-            }
+        let response = try await next(request)
+        try res?(response)
+        return response
     }
 }
 
@@ -261,8 +277,8 @@ extension Application {
         self.on(test.method, at: test.path, handler: { _ in test.response })
     }
     
-    func request(_ test: TestRequest) throws -> String? {
-        return try Router.default.handle(
+    func request(_ test: TestRequest) async throws -> String? {
+        return try await Router.default.handle(
             request: Request(
                 head: .init(
                     version: .init(
@@ -274,7 +290,7 @@ extension Application {
                     headers: .init()),
                 bodyBuffer: nil
             )
-        ).wait().body?.decodeString()
+        ).body?.decodeString()
     }
 }
 

@@ -13,7 +13,7 @@ fileprivate let kRouterPathParameterEscape = ":"
 public final class Router: HTTPRouter, Service {
     /// A router handler. Takes a request and returns a future with a
     /// response.
-    private typealias RouterHandler = (Request) -> EventLoopFuture<Response>
+    private typealias RouterHandler = (Request) async throws -> Response
 
     /// The default response for when there is an error along the
     /// routing chain that does not conform to
@@ -54,21 +54,25 @@ public final class Router: HTTPRouter, Service {
     ///     given method and path.
     ///   - method: The method of a request this handler expects.
     ///   - path: The path of a requst this handler can handle.
-    func add(handler: @escaping (Request) throws -> ResponseConvertible, for method: HTTPMethod, path: String) {
+    func add(handler: @escaping (Request) async throws -> ResponseConvertible, for method: HTTPMethod, path: String) {
         let pathPrefixes = pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
         let splitPath = pathPrefixes + path.tokenized
         let middlewareClosures = middlewares.reversed().map(Middleware.interceptConvertError)
         trie.insert(path: splitPath, storageKey: method) {
-            var next = { request in
-                catchError { try handler(request).convert() }.convertErrorToResponse()
+            var next = { (request: Request) async throws -> Response in
+                do {
+                    return try await handler(request).convert()
+                } catch {
+                    return await error.convertToResponse()
+                }
             }
             
             for middleware in middlewareClosures {
                 let oldNext = next
-                next = { middleware($0, oldNext) }
+                next = { try await middleware($0, oldNext) }
             }
             
-            return next($0)
+            return try await next($0)
         }
     }
     
@@ -80,54 +84,54 @@ public final class Router: HTTPRouter, Service {
     /// - Parameter request: The request this router will handle.
     /// - Returns: A future containing the response of a handler or a
     ///   `.notFound` response if there was not a matching handler.
-    func handle(request: Request) -> EventLoopFuture<Response> {
+    func handle(request: Request) async throws -> Response {
         var handler = notFoundHandler
 
         // Find a matching handler
         if let match = trie.search(path: request.path.tokenized, storageKey: request.method) {
-            request.pathParameters = match.1
-            handler = match.0
+            request.pathParameters = match.parameters
+            handler = match.value
         }
 
         // Apply global middlewares
         for middleware in globalMiddlewares.reversed() {
             let lastHandler = handler
-            handler = { middleware.interceptConvertError($0, next: lastHandler) }
+            handler = { try await middleware.interceptConvertError($0, next: lastHandler) }
         }
 
-        return handler(request)
+        return try await handler(request)
     }
 
-    private func notFoundHandler(_ request: Request) -> EventLoopFuture<Response> {
-        return .new(Router.notFoundResponse)
+    private func notFoundHandler(_ request: Request) async throws -> Response {
+        Router.notFoundResponse
     }
 }
 
 private extension Middleware {
-    func interceptConvertError(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
-        return catchError {
-            try intercept(request, next: next)
-        }.convertErrorToResponse()
+    func interceptConvertError(_ request: Request, next: @escaping Next) async throws -> Response {
+        do {
+            return try await intercept(request, next: next)
+        } catch {
+            return await error.convertToResponse()
+        }
     }
 }
 
-private extension EventLoopFuture where Value == Response {
-    func convertErrorToResponse() -> EventLoopFuture<Response> {
-        return flatMapError { error in
-            func serverError() -> EventLoopFuture<Response> {
-                Log.error("[Server] encountered internal error: \(error).")
-                return .new(Router.internalErrorResponse)
-            }
+private extension Error {
+    func convertToResponse() async -> Response {
+        func serverError() -> Response {
+            Log.error("[Server] encountered internal error: \(self).")
+            return Router.internalErrorResponse
+        }
 
-            do {
-                if let error = error as? ResponseConvertible {
-                    return try error.convert()
-                } else {
-                    return serverError()
-                }
-            } catch {
+        do {
+            if let error = self as? ResponseConvertible {
+                return try await error.convert()
+            } else {
                 return serverError()
             }
+        } catch {
+            return serverError()
         }
     }
 }

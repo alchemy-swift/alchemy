@@ -165,49 +165,47 @@ public final class CORSMiddleware: Middleware {
 
     // MARK: Middleware
     
-    public func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+    public func intercept(_ request: Request, next: Next) async throws -> Response {
         // Check if it's valid CORS request
         guard request.headers["Origin"].first != nil else {
-            return next(request)
+            return try await next(request)
         }
         
         // Determine if the request is pre-flight. If it is, create
         // empty response otherwise get response from the responder
         // chain.
-        let response = request.isPreflight ? .new(Response(status: .ok, body: nil)) : next(request)
+        let response = request.isPreflight ? Response(status: .ok, body: nil) : try await next(request)
         
-        return response.map { response in
-            // Modify response headers based on CORS settings
-            response.headers.replaceOrAdd(
-                name: "Access-Control-Allow-Origin",
-                value: self.configuration.allowedOrigin.header(forRequest: request)
-            )
-            response.headers.replaceOrAdd(
-                name: "Access-Control-Allow-Headers",
-                value: self.configuration.allowedHeaders
-            )
-            response.headers.replaceOrAdd(
-                name: "Access-Control-Allow-Methods",
-                value: self.configuration.allowedMethods
-            )
-            
-            if let exposedHeaders = self.configuration.exposedHeaders {
-                response.headers.replaceOrAdd(name: "Access-Control-Expose-Headers", value: exposedHeaders)
-            }
-            
-            if let cacheExpiration = self.configuration.cacheExpiration {
-                response.headers.replaceOrAdd(name: "Access-Control-Max-Age", value: String(cacheExpiration))
-            }
-            
-            if self.configuration.allowCredentials {
-                response.headers.replaceOrAdd(
-                    name: "Access-Control-Allow-Credentials",
-                    value: "true"
-                )
-            }
-            
-            return response
+        // Modify response headers based on CORS settings
+        response.headers.replaceOrAdd(
+            name: "Access-Control-Allow-Origin",
+            value: self.configuration.allowedOrigin.header(forRequest: request)
+        )
+        response.headers.replaceOrAdd(
+            name: "Access-Control-Allow-Headers",
+            value: self.configuration.allowedHeaders
+        )
+        response.headers.replaceOrAdd(
+            name: "Access-Control-Allow-Methods",
+            value: self.configuration.allowedMethods
+        )
+        
+        if let exposedHeaders = self.configuration.exposedHeaders {
+            response.headers.replaceOrAdd(name: "Access-Control-Expose-Headers", value: exposedHeaders)
         }
+        
+        if let cacheExpiration = self.configuration.cacheExpiration {
+            response.headers.replaceOrAdd(name: "Access-Control-Max-Age", value: String(cacheExpiration))
+        }
+        
+        if self.configuration.allowCredentials {
+            response.headers.replaceOrAdd(
+                name: "Access-Control-Allow-Credentials",
+                value: "true"
+            )
+        }
+        
+        return response
     }
 }
 

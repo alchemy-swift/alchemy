@@ -33,13 +33,13 @@ public struct StaticFileMiddleware: Middleware {
     
     // MARK: Middleware
     
-    public func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+    public func intercept(_ request: Request, next: Next) async throws -> Response {
         // Ignore non `GET` requests.
         guard request.method == .GET else {
-            return next(request)
+            return try await next(request)
         }
         
-        let filePath = try self.directory + self.sanitizeFilePath(request.path)
+        let filePath = try directory + sanitizeFilePath(request.path)
         
         // See if there's a file at the given path
         var isDirectory: ObjCBool = false
@@ -60,42 +60,37 @@ public struct StaticFileMiddleware: Middleware {
                    let mediaType = MIMEType(fileExtension: ext) {
                     headers.add(name: "content-type", value: mediaType.value)
                 }
-                responseWriter.writeHead(status: .ok, headers)
+                try await responseWriter.writeHead(status: .ok, headers)
                 
                 // Load the file in chunks, streaming it.
-                self.fileIO.readChunked(
-                    fileHandle: fileHandle,
-                    byteCount: fileSizeBytes,
-                    chunkSize: NonBlockingFileIO.defaultChunkSize,
-                    allocator: self.bufferAllocator,
-                    eventLoop: Loop.current,
-                    chunkHandler: { buffer in
-                        responseWriter.writeBody(buffer)
-                        return .new(())
-                    }
-                )
-                .flatMapThrowing {
+                do {
+                    try await self.fileIO.readChunked(
+                        fileHandle: fileHandle,
+                        byteCount: fileSizeBytes,
+                        chunkSize: NonBlockingFileIO.defaultChunkSize,
+                        allocator: self.bufferAllocator,
+                        eventLoop: Loop.current,
+                        chunkHandler: { buffer in
+                            Task {
+                                try await responseWriter.writeBody(buffer)
+                            }
+                            
+                            return .new(())
+                        }
+                    ).get()
                     try fileHandle.close()
-                }
-                .whenComplete { result in
-                    try? fileHandle.close()
-                    switch result {
-                    case .failure(let error):
-                        // Not a ton that can be done in the case of
-                        // an error, not sure what else can be done
-                        // besides logging and ending the request.
-                        Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
-                        responseWriter.writeEnd()
-                    case .success:
-                        responseWriter.writeEnd()
-                    }
+                } catch {
+                    // Not a ton that can be done in the case of
+                    // an error, not sure what else can be done
+                    // besides logging and ending the request.
+                    Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
                 }
             }
             
-            return .new(response)
+            return response
         } else {
             // No file, continue to handlers.
-            return next(request)
+            return try await next(request)
         }
     }
     

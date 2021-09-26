@@ -9,7 +9,7 @@ extension Application {
     ///   - channel: The queue channel to schedule it on.
     /// - Returns: A builder for customizing the scheduling frequency.
     public func schedule(job: Job, queue: Queue = .default, channel: String = Queue.defaultChannel) -> ScheduleBuilder {
-        ScheduleBuilder(.default) {
+        ScheduleBuilder {
             _ = $0.flatSubmit { () -> EventLoopFuture<Void> in
                 return job.dispatch(on: queue, channel: channel)
                     .flatMapErrorThrowing {
@@ -25,7 +25,7 @@ extension Application {
     /// - Parameter future: The async task to run.
     /// - Returns: A builder for customizing the scheduling frequency.
     public func schedule(future: @escaping () -> EventLoopFuture<Void>) -> ScheduleBuilder {
-        ScheduleBuilder(.default) {
+        ScheduleBuilder {
             _ = $0.flatSubmit(future)
         }
     }
@@ -35,7 +35,7 @@ extension Application {
     /// - Parameter future: The async task to run.
     /// - Returns: A builder for customizing the scheduling frequency.
     public func schedule(task: @escaping () throws -> Void) -> ScheduleBuilder {
-        ScheduleBuilder(.default) { _ in try task() }
+        ScheduleBuilder { _ in try task() }
     }
 }
 

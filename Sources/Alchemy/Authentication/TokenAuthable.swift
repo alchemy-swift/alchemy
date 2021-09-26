@@ -75,28 +75,24 @@ extension TokenAuthable {
 /// header, or the token value isn't valid, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
-    public func intercept(
-        _ request: Request,
-        next: @escaping Next
-    ) -> EventLoopFuture<Response> {
-        catchError {
-            guard let bearerAuth = request.bearerAuth() else {
-                throw HTTPError(.unauthorized)
-            }
-            
-            return T.query()
-                .where(T.valueKeyString == bearerAuth.token)
-                .with(T.userKey)
-                .firstModel()
-                .flatMapThrowing { try $0.unwrap(or: HTTPError(.unauthorized)) }
-                .flatMap {
-                    request
-                        // Set the token
-                        .set($0)
-                        // Set the user
-                        .set($0[keyPath: T.userKey].wrappedValue)
-                    return next(request)
-                }
+    public func intercept(_ request: Request, next: Next) async throws -> Response {
+        guard let bearerAuth = request.bearerAuth() else {
+            throw HTTPError(.unauthorized)
         }
+        
+        let model = try await T.query()
+            .where(T.valueKeyString == bearerAuth.token)
+            .with(T.userKey)
+            .firstModel()
+            .flatMapThrowing { try $0.unwrap(or: HTTPError(.unauthorized)) }
+            .get()
+        
+        return try await next(
+            request
+                // Set the token
+                .set(model)
+                // Set the user
+                .set(model[keyPath: T.userKey].wrappedValue)
+        )
     }
 }

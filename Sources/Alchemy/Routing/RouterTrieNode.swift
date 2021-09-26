@@ -18,7 +18,7 @@ final class RouterTrieNode<StorageKey: Hashable, StorageObject> {
     /// - Returns: A tuple containing the object and any parsed path
     ///   parameters. `nil` if the object isn't in this node or its
     ///   children.
-    func search(path: [String], storageKey: StorageKey) -> (StorageObject, [PathParameter])? {
+    func search(path: [String], storageKey: StorageKey) -> (value: StorageObject, parameters: [PathParameter])? {
         if let first = path.first {
             let newPath = Array(path.dropFirst())
             if let matchingChild = self.children[first] {

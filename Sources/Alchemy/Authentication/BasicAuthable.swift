@@ -94,31 +94,31 @@ extension BasicAuthable {
     ///   - password: The password to authenticate with.
     ///   - error: An error to throw if the username password combo
     ///     doesn't have a match.
-    /// - Returns: A future containing the authenticated
-    ///   `BasicAuthable`, if there was one. The future will result in
-    ///   `error` if the model is not found, or the password doesn't
-    ///   match.
+    /// - Returns: A the authenticated `BasicAuthable`, if there was
+    ///   one. Throws `error` if the model is not found, or the
+    ///   password doesn't match.
     public static func authenticate(
         username: String,
         password: String,
         else error: Error = HTTPError(.unauthorized)
-    ) -> EventLoopFuture<Self> {
-        return query()
+    ) async throws -> Self {
+        let rows = try await query()
             .where(usernameKeyString == username)
             .get(["\(tableName).*", passwordKeyString])
-            .flatMapThrowing { rows -> Self in
-                guard let firstRow = rows.first else {
-                    throw error
-                }
-                
-                let passwordHash = try firstRow.getField(column: passwordKeyString).string()
-                
-                guard try verify(password: password, passwordHash: passwordHash) else {
-                    throw error
-                }
-                
-                return try firstRow.decode(Self.self)
-            }
+            .get()
+        
+        
+        guard let firstRow = rows.first else {
+            throw error
+        }
+        
+        let passwordHash = try firstRow.getField(column: passwordKeyString).string()
+        
+        guard try verify(password: password, passwordHash: passwordHash) else {
+            throw error
+        }
+        
+        return try firstRow.decode(Self.self)
     }
 }
 
@@ -130,17 +130,12 @@ extension BasicAuthable {
 /// basic auth values don't match a row in the database, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
-    public func intercept(
-        _ request: Request,
-        next: @escaping Next
-    ) -> EventLoopFuture<Response> {
-        catchError {
-            guard let basicAuth = request.basicAuth() else {
-                throw HTTPError(.unauthorized)
-            }
-            
-            return B.authenticate(username: basicAuth.username, password: basicAuth.password)
-                .flatMap { next(request.set($0)) }
+    public func intercept(_ request: Request, next: Next) async throws -> Response {
+        guard let basicAuth = request.basicAuth() else {
+            throw HTTPError(.unauthorized)
         }
+        
+        let model = try await B.authenticate(username: basicAuth.username, password: basicAuth.password)
+        return try await next(request.set(model))
     }
 }

@@ -18,11 +18,11 @@ public extension Application {
     @discardableResult
     func on<Req, Res>(
         _ endpoint: Endpoint<Req, Res>,
-        use handler: @escaping (Request, Req) throws -> EventLoopFuture<Res>
+        use handler: @escaping (Request, Req) async throws -> Res
     ) -> Self where Res: Codable {
-        self.on(endpoint.nioMethod, at: endpoint.path) {
-            return try handler($0, try Req(from: $0))
-                .flatMapThrowing { Response(status: .ok, body: try HTTPBody(json: $0, encoder: endpoint.jsonEncoder)) }
+        on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
+            let result = try await handler(request, try Req(from: request))
+            return Response(status: .ok, body: try HTTPBody(json: result, encoder: endpoint.jsonEncoder))
         }
     }
     
@@ -38,31 +38,21 @@ public extension Application {
     @discardableResult
     func on<Res>(
         _ endpoint: Endpoint<Empty, Res>,
-        use handler: @escaping (Request) throws -> EventLoopFuture<Res>
+        use handler: @escaping (Request) async throws -> Res
     ) -> Self {
-        self.on(endpoint.nioMethod, at: endpoint.path) {
-            return try handler($0)
-                .flatMapThrowing { Response(status: .ok, body: try HTTPBody(json: $0, encoder: endpoint.jsonEncoder)) }
+        on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
+            let result = try await handler(request)
+            return Response(status: .ok, body: try HTTPBody(json: result, encoder: endpoint.jsonEncoder))
         }
-    }
-}
-
-extension EventLoopFuture {
-    /// Changes the `Value` of this future to `Empty`. Used for
-    /// interaction with Papyrus APIs.
-    ///
-    /// - Returns: An "empty" `EventLoopFuture`.
-    public func emptied() -> EventLoopFuture<Empty> {
-        self.map { _ in Empty.value }
     }
 }
 
 // Provide a custom response for when `PapyrusValidationError`s are
 // thrown.
 extension PapyrusValidationError: ResponseConvertible {
-    public func convert() throws -> EventLoopFuture<Response> {
+    public func convert() throws -> Response {
         let body = try HTTPBody(json: ["validation_error": self.message])
-        return .new(Response(status: .badRequest, body: body))
+        return Response(status: .badRequest, body: body)
     }
 }
 

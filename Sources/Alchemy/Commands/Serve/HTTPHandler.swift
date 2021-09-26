@@ -8,7 +8,7 @@ protocol HTTPRouter {
     /// - Parameter request: The request to respond to.
     /// - Returns: A future containing the response to send to the
     ///   client.
-    func handle(request: Request) -> EventLoopFuture<Response>
+    func handle(request: Request) async throws -> Response
 }
 
 /// Responds to incoming `HTTPRequests` with an `Response` generated
@@ -35,7 +35,7 @@ final class HTTPHandler: ChannelInboundHandler {
     init(router: HTTPRouter) {
         self.router = router
     }
-  
+    
     /// Received incoming `InboundIn` data, writing a response based
     /// on the `Responder`.
     ///
@@ -43,9 +43,7 @@ final class HTTPHandler: ChannelInboundHandler {
     ///   - context: The context of the handler.
     ///   - data: The inbound data received.
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        let part = self.unwrapInboundIn(data)
-    
-        switch part {
+        switch unwrapInboundIn(data) {
         case .head(let requestHead):
             // If the part is a `head`, a new Request is received
             keepAlive = requestHead.isKeepAlive
@@ -78,15 +76,14 @@ final class HTTPHandler: ChannelInboundHandler {
             self.request?.bodyBuffer?.writeBuffer(&newData)
         case .end:
             guard let request = request else { return }
-      
-            // Responds to the request
-            let response = router.handle(request: request)
-                // Ensure we're on the right ELF or NIO will assert.
-                .hop(to: context.eventLoop)
             self.request = nil
-      
+            
             // Writes the response when done
-            self.writeResponse(version: request.head.version, response: response, to: context)
+            writeResponse(
+                version: request.head.version,
+                getResponse: { try await self.router.handle(request: request) },
+                to: context
+            )
         }
     }
   
@@ -100,17 +97,18 @@ final class HTTPHandler: ChannelInboundHandler {
     /// - Returns: An future that completes when the response is
     ///   written.
     @discardableResult
-    private func writeResponse(version: HTTPVersion, response: EventLoopFuture<Response>, to context: ChannelHandlerContext) -> EventLoopFuture<Void> {
-        return response.flatMap { response in
+    private func writeResponse(
+        version: HTTPVersion,
+        getResponse: @escaping () async throws -> Response,
+        to context: ChannelHandlerContext
+    ) -> Task<Void, Error> {
+        return Task<Void, Error> {
+            let response = try await getResponse()
             let responseWriter = HTTPResponseWriter(version: version, handler: self, context: context)
-            responseWriter.completionPromise.futureResult.whenComplete { _ in
-                if !self.keepAlive {
-                    context.close(promise: nil)
-                }
+            try await response.write(to: responseWriter)
+            if !self.keepAlive {
+                context.close(promise: nil)
             }
-            
-            response.write(to: responseWriter)
-            return responseWriter.completionPromise.futureResult
         }
     }
     
@@ -125,9 +123,6 @@ final class HTTPHandler: ChannelInboundHandler {
 /// Used for writing a response to a remote peer with an
 /// `HTTPHandler`.
 private struct HTTPResponseWriter: ResponseWriter {
-    /// A promise to hook into for when the writing is finished.
-    let completionPromise: EventLoopPromise<Void>
-
     /// The HTTP version we're working with.
     private var version: HTTPVersion
     
@@ -147,21 +142,20 @@ private struct HTTPResponseWriter: ResponseWriter {
         self.version = version
         self.handler = handler
         self.context = context
-        self.completionPromise = context.eventLoop.makePromise()
     }
     
     // MARK: ResponseWriter
     
-    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
+    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) async throws {
         let head = HTTPResponseHead(version: version, status: status, headers: headers)
-        context.write(handler.wrapOutboundOut(.head(head)), promise: nil)
+        try await context.write(handler.wrapOutboundOut(.head(head))).get()
     }
     
-    func writeBody(_ body: ByteBuffer) {
-        context.writeAndFlush(handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
+    func writeBody(_ body: ByteBuffer) async throws {
+        try await context.writeAndFlush(handler.wrapOutboundOut(.body(IOData.byteBuffer(body)))).get()
     }
     
-    func writeEnd() {
-        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
+    func writeEnd() async throws {
+        try await context.writeAndFlush(handler.wrapOutboundOut(.end(nil))).get()
     }
 }

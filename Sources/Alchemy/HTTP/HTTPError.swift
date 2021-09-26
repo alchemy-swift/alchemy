@@ -36,13 +36,10 @@ public struct HTTPError: Error, ResponseConvertible {
     
     // MARK: ResponseConvertible
     
-    public func convert() throws -> EventLoopFuture<Response> {
-        let response = Response(
-            status: self.status,
-            body: try self.message.map {
-                try HTTPBody(json: ["message": $0])
-            }
+    public func convert() throws -> Response {
+        Response(
+            status: status,
+            body: try message.map { try HTTPBody(json: ["message": $0]) }
         )
-        return .new(response)
     }
 }
