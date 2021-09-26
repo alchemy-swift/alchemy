@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(name: "swift-nio", path: "../swift-nio"),
+        .package(url: "https://github.com/alchemy-swift/swift-nio", .branch("main")),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.6.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.9.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
