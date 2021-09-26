@@ -3,7 +3,7 @@
 public final class Scheduler: Service {
     private struct WorkItem {
         let schedule: Schedule
-        let work: (EventLoop) throws -> Void
+        let work: () async throws -> Void
     }
     
     private var workItems: [WorkItem] = []
@@ -31,21 +31,20 @@ public final class Scheduler: Service {
     /// - Parameters:
     ///   - schedule: The schedule to run this work.
     ///   - work: The work to run.
-    func addWork(schedule: Schedule, work: @escaping (EventLoop) throws -> Void) {
+    func addWork(schedule: Schedule, work: @escaping () async throws -> Void) {
         workItems.append(WorkItem(schedule: schedule, work: work))
     }
     
-    private func schedule(schedule: Schedule, task: @escaping (EventLoop) throws -> Void, on loop: EventLoop) {
-        guard
-            let next = schedule.next(),
-            let nextDate = next.date
-        else {
+    @Sendable
+    private func schedule(schedule: Schedule, task: @escaping () async throws -> Void, on loop: EventLoop) {
+        guard let next = schedule.next(), let nextDate = next.date else {
             return Log.error("[Scheduler] schedule doesn't have a future date to run.")
         }
 
-        func scheduleNextAndRun() throws -> Void {
+        @Sendable
+        func scheduleNextAndRun() async throws -> Void {
             self.schedule(schedule: schedule, task: task, on: loop)
-            try task(loop)
+            try await task()
         }
 
         var delay = Int64(nextDate.timeIntervalSinceNow * 1000)
@@ -56,6 +55,12 @@ public final class Scheduler: Service {
             let newDate = schedule.next(next)?.date ?? Date().addingTimeInterval(1)
             delay = Int64(newDate.timeIntervalSinceNow * 1000)
         }
-        loop.scheduleTask(in: .milliseconds(delay), scheduleNextAndRun)
+        
+        let elp = loop.makePromise(of: Void.self)
+        elp.completeWithTask {
+            try await scheduleNextAndRun()
+        }
+        
+        loop.flatScheduleTask(in: .milliseconds(delay)) { elp.futureResult }
     }
 }

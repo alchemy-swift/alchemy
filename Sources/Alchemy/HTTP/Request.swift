@@ -98,10 +98,9 @@ extension Request {
     /// Usage:
     /// ```swift
     /// struct ExampleMiddleware: Middleware {
-    ///     func intercept(_ request: Request) -> EventLoopFuture<Request> {
+    ///     func intercept(_ request: Request, next: Next) async throws -> Response {
     ///         let someData: SomeData = ...
-    ///         request.set(someData)
-    ///         return .new(value: request)
+    ///         return try await next(request.set(someData))
     ///     }
     /// }
     ///
