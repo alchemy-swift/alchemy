@@ -17,9 +17,9 @@ public final class Cache: Service {
     /// Get the value for `key`.
     ///
     /// - Parameter key: The key of the cache record.
-    /// - Returns: A future containing the value, if it exists.
-    public func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
-        driver.get(key)
+    /// - Returns: The value for the key, if it exists.
+    public func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+        try await driver.get(key)
     }
     
     /// Set a record for `key`.
@@ -28,33 +28,31 @@ public final class Cache: Service {
     /// - Parameter value: The value to set.
     /// - Parameter time: How long the cache record should live.
     ///   Defaults to nil, indicating the record has no expiry.
-    /// - Returns: A future indicating the record has been set.
-    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount? = nil) -> EventLoopFuture<Void> {
-        driver.set(key, value: value, for: time)
+    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount? = nil) async throws {
+        try await driver.set(key, value: value, for: time)
     }
     
     /// Determine if a record for the given key exists.
     ///
     /// - Parameter key: The key to check.
-    /// - Returns: A future indicating if the record exists.
-    public func has(_ key: String) -> EventLoopFuture<Bool> {
-        driver.has(key)
+    /// - Returns: Whether the record exists.
+    public func has(_ key: String) async throws -> Bool {
+        try await driver.has(key)
     }
     
     /// Delete and return a record at `key`.
     ///
     /// - Parameter key: The key to delete.
-    /// - Returns: A future with the deleted record, if it existed.
-    public func remove<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
-        driver.remove(key)
+    /// - Returns: The deleted record, if it existed.
+    public func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
+        try await driver.remove(key)
     }
     
     /// Delete a record at `key`.
     ///
     /// - Parameter key: The key to delete.
-    /// - Returns: A future that completes when the record is deleted.
-    public func delete(_ key: String) -> EventLoopFuture<Void> {
-        driver.delete(key)
+    public func delete(_ key: String) async throws {
+        try await driver.delete(key)
     }
     
     /// Increment the record at `key` by the give `amount`.
@@ -62,9 +60,9 @@ public final class Cache: Service {
     /// - Parameters:
     ///   - key: The key to increment.
     ///   - amount: The amount to increment by. Defaults to 1.
-    /// - Returns: A future containing the new value of the record.
-    public func increment(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
-        driver.increment(key, by: amount)
+    /// - Returns: The new value of the record.
+    public func increment(_ key: String, by amount: Int = 1) async throws -> Int {
+        try await driver.increment(key, by: amount)
     }
     
     /// Decrement the record at `key` by the give `amount`.
@@ -72,16 +70,13 @@ public final class Cache: Service {
     /// - Parameters:
     ///   - key: The key to decrement.
     ///   - amount: The amount to decrement by. Defaults to 1.
-    /// - Returns: A future containing the new value of the record.
-    public func decrement(_ key: String, by amount: Int = 1) -> EventLoopFuture<Int> {
-        driver.decrement(key, by: amount)
+    /// - Returns: The new value of the record.
+    public func decrement(_ key: String, by amount: Int = 1) async throws -> Int {
+        try await driver.decrement(key, by: amount)
     }
     
     /// Clear the entire cache.
-    ///
-    /// - Returns: A future that completes when the cache has been
-    ///   wiped.
-    public func wipe() -> EventLoopFuture<Void> {
-        driver.wipe()
+    public func wipe() async throws {
+        try await driver.wipe()
     }
 }

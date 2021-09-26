@@ -8,7 +8,7 @@ final class MockCacheDriver: CacheDriver {
     ///
     /// - Parameter defaultData: The initial items in the Cache.
     init(_ defaultData: [String: MockCacheItem] = [:]) {
-        self.data = defaultData
+        data = defaultData
     }
     
     /// Gets an item and validates that it isn't expired, deleting it
@@ -28,56 +28,46 @@ final class MockCacheDriver: CacheDriver {
     
     // MARK: Cache
     
-    func get<C>(_ key: String) -> EventLoopFuture<C?> where C : CacheAllowed {
-        catchError {
-            try .new(self.getItem(key)?.cast())
+    func get<C: CacheAllowed>(_ key: String) throws -> C? {
+        try getItem(key)?.cast()
+    }
+    
+    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) {
+        data[key] = MockCacheItem(text: value.stringValue, expiration: time.map { Date().adding(time: $0) })
+    }
+    
+    func has(_ key: String) -> Bool {
+        getItem(key) != nil
+    }
+    
+    func remove<C: CacheAllowed>(_ key: String) throws -> C? {
+        let val: C? = try getItem(key)?.cast()
+        data.removeValue(forKey: key)
+        return val
+    }
+    
+    func delete(_ key: String) async throws {
+        data.removeValue(forKey: key)
+    }
+    
+    func increment(_ key: String, by amount: Int) throws -> Int {
+        if let existing = getItem(key) {
+            let currentVal: Int = try existing.cast()
+            let newVal = currentVal + amount
+            self.data[key]?.text = "\(newVal)"
+            return newVal
+        } else {
+            self.data[key] = .init(text: "\(amount)")
+            return amount
         }
     }
     
-    func set<C>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> where C : CacheAllowed {
-        .new(self.data[key] = .init(
-                text: value.stringValue,
-                expiration: time.map { Date().adding(time: $0) })
-        )
+    func decrement(_ key: String, by amount: Int) throws -> Int {
+        try increment(key, by: -amount)
     }
     
-    func has(_ key: String) -> EventLoopFuture<Bool> {
-        .new(self.getItem(key) != nil)
-    }
-    
-    func remove<C>(_ key: String) -> EventLoopFuture<C?> where C : CacheAllowed {
-        catchError {
-            let val: C? = try self.getItem(key)?.cast()
-            self.data.removeValue(forKey: key)
-            return .new(val)
-        }
-    }
-    
-    func delete(_ key: String) -> EventLoopFuture<Void> {
-        self.data.removeValue(forKey: key)
-        return .new()
-    }
-    
-    func increment(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        catchError {
-            if let existing = self.getItem(key) {
-                let currentVal: Int = try existing.cast()
-                let newVal = currentVal + amount
-                self.data[key]?.text = "\(newVal)"
-                return .new(newVal)
-            } else {
-                self.data[key] = .init(text: "\(amount)")
-                return .new(amount)
-            }
-        }
-    }
-    
-    func decrement(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        self.increment(key, by: -amount)
-    }
-    
-    func wipe() -> EventLoopFuture<Void> {
-        .new(self.data = [:])
+    func wipe() {
+        data = [:]
     }
 }
 

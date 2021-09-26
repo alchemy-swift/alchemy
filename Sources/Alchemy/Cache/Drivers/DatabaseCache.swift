@@ -13,102 +13,73 @@ final class DatabaseCache: CacheDriver {
     }
     
     /// Get's the item, deleting it and returning nil if it's expired.
-    private func getItem(key: String) -> EventLoopFuture<CacheItem?> {
-        CacheItem.query(database: self.db)
-            .where("_key" == key)
-            .firstModel()
-            .flatMap { item in
-                guard let item = item else {
-                    return .new(nil)
-                }
-                
-                if item.isValid {
-                    return .new(item)
-                } else {
-                    return CacheItem.query()
-                        .where("_key" == key)
-                        .delete()
-                        .map { _ in nil }
-                }
-            }
+    private func getItem(key: String) async throws -> CacheItem? {
+        let item = try await CacheItem.query(database: db).where("_key" == key).firstModel().get()
+        guard let item = item else {
+            return nil
+        }
+        
+        if item.isValid {
+            return item
+        } else {
+            _ = try await CacheItem.query(database: db).where("_key" == key).delete().get()
+            return nil
+        }
     }
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
-        self.getItem(key: key)
-            .flatMapThrowing { try $0?.cast() }
+    func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+        try await getItem(key: key)?.cast()
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> {
-        self.getItem(key: key)
-            .flatMap { item in
-                let expiration = time.map { Date().adding(time: $0) }
-                if var item = item {
-                    item.text = value.stringValue
-                    item.expiration = expiration ?? -1
-                    return item.save(db: self.db)
-                        .voided()
-                } else {
-                    return CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1)
-                        .save(db: self.db)
-                        .voided()
-                }
-            }
+    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws {
+        let item = try await getItem(key: key)
+        let expiration = time.map { Date().adding(time: $0) }
+        if var item = item {
+            item.text = value.stringValue
+            item.expiration = expiration ?? -1
+            _ = try await item.save(db: db).get()
+        } else {
+            _ = try await CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1).save(db: db).get()
+        }
     }
     
-    func has(_ key: String) -> EventLoopFuture<Bool> {
-        self.getItem(key: key)
-            .map { $0?.isValid ?? false }
+    func has(_ key: String) async throws -> Bool {
+        try await getItem(key: key)?.isValid ?? false
     }
     
-    func remove<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
-        self.getItem(key: key)
-            .flatMap { item in
-                catchError {
-                    if let item = item {
-                        let value: C = try item.cast()
-                        return item
-                            .delete()
-                            .transform(to: item.isValid ? value : nil)
-                    } else {
-                        return .new(nil)
-                    }
-                }
-            }
+    func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
+        if let item = try await getItem(key: key) {
+            let value: C = try item.cast()
+            _ = try await item.delete().get()
+            return item.isValid ? value : nil
+        } else {
+            return nil
+        }
     }
     
-    func delete(_ key: String) -> EventLoopFuture<Void> {
-        CacheItem.query(database: self.db)
-            .where("_key" == key)
-            .delete()
-            .voided()
+    func delete(_ key: String) async throws {
+        _ = try await CacheItem.query(database: db).where("_key" == key).delete().get()
     }
     
-    func increment(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        self.getItem(key: key)
-            .flatMap { item in
-                if var item = item {
-                    return catchError {
-                        let value: Int = try item.cast()
-                        let newVal = value + amount
-                        item.text = "\(value + amount)"
-                        return item.save().transform(to: newVal)
-                    }
-                } else {
-                    return CacheItem(_key: key, text: "\(amount)")
-                        .save(db: self.db)
-                        .transform(to: amount)
-                }
-            }
+    func increment(_ key: String, by amount: Int) async throws -> Int {
+        if let item = try await getItem(key: key) {
+            let newVal = try item.cast() + amount
+            _ = try await item.update { $0.text = "\(newVal)" }.get()
+            return newVal
+        } else {
+            _ = CacheItem(_key: key, text: "\(amount)").save(db: db)
+            return amount
+        }
     }
     
-    func decrement(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        self.increment(key, by: -amount)
+    func decrement(_ key: String, by amount: Int) async throws -> Int {
+        try await increment(key, by: -amount)
     }
     
-    func wipe() -> EventLoopFuture<Void> {
-        CacheItem.deleteAll(db: self.db)
+    func wipe() async throws {
+        try await CacheItem.deleteAll(db: db).get()
     }
 }
 

@@ -14,46 +14,49 @@ final class RedisCacheDriver: CacheDriver {
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
-        self.redis.get(RedisKey(key), as: String.self).map { $0.map(C.init) ?? nil }
+    func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+        guard let value = try await redis.get(RedisKey(key), as: String.self).get() else {
+            return nil
+        }
+        
+        return try C(value).unwrap(or: CacheError("Unable to cast cache item `\(key)` to \(C.self)."))
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> {
+    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws {
         if let time = time {
-            return self.redis.setex(RedisKey(key), to: value.stringValue, expirationInSeconds: time.seconds)
+            try await redis.setex(RedisKey(key), to: value.stringValue, expirationInSeconds: time.seconds).get()
         } else {
-            return self.redis.set(RedisKey(key), to: value.stringValue)
+            try await redis.set(RedisKey(key), to: value.stringValue).get()
         }
     }
     
-    func has(_ key: String) -> EventLoopFuture<Bool> {
-        self.redis.exists(RedisKey(key)).map { $0 > 0 }
+    func has(_ key: String) async throws -> Bool {
+        try await redis.exists(RedisKey(key)).get() > 0
     }
     
-    func remove<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
-        self.get(key).flatMap { (value: C?) -> EventLoopFuture<C?> in
-            guard let value = value else {
-                return .new(nil)
-            }
-            
-            return self.redis.delete(RedisKey(key)).transform(to: value)
+    func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
+        guard let value: C = try await get(key) else {
+            return nil
         }
+        
+        _ = try await redis.delete(RedisKey(key)).get()
+        return value
     }
     
-    func delete(_ key: String) -> EventLoopFuture<Void> {
-        self.redis.delete(RedisKey(key)).voided()
+    func delete(_ key: String) async throws {
+        _ = try await redis.delete(RedisKey(key)).get()
     }
     
-    func increment(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        self.redis.increment(RedisKey(key), by: amount)
+    func increment(_ key: String, by amount: Int) async throws -> Int {
+        try await redis.increment(RedisKey(key), by: amount).get()
     }
     
-    func decrement(_ key: String, by amount: Int) -> EventLoopFuture<Int> {
-        self.redis.decrement(RedisKey(key), by: amount)
+    func decrement(_ key: String, by amount: Int) async throws -> Int {
+        try await redis.decrement(RedisKey(key), by: amount).get()
     }
     
-    func wipe() -> EventLoopFuture<Void> {
-        self.redis.command("FLUSHDB").voided()
+    func wipe() async throws {
+        _ = try await redis.command("FLUSHDB").get()
     }
 }
 
