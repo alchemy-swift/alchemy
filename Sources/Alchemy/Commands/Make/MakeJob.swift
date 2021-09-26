@@ -9,11 +9,8 @@ struct MakeJob: Command {
     
     @Argument var name: String
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try FileCreator.shared.create(fileName: name, contents: jobTemplate(), in: "Jobs")
-            return .new()
-        }
+    func start() throws {
+        try FileCreator.shared.create(fileName: name, contents: jobTemplate(), in: "Jobs")
     }
     
     private func jobTemplate() -> String {

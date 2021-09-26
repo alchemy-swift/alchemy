@@ -65,42 +65,39 @@ final class RunServe: Command {
         }
     }
     
-    func start() -> EventLoopFuture<Void> {
-        func childChannelInitializer(_ channel: Channel) -> EventLoopFuture<Void> {
-            channel.pipeline
-                .addAnyTLS()
-                .flatMap { channel.addHTTP() }
+    func start() async throws {
+        func childChannelInitializer(_ channel: Channel) async throws {
+            try await channel.pipeline.addAnyTLS()
+            try await channel.addHTTP()
         }
         
         let serverBootstrap = ServerBootstrap(group: Loop.group)
             .serverChannelOption(ChannelOptions.backlog, value: 256)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-            .childChannelInitializer(childChannelInitializer)
+            .childChannelInitializer { channel in
+                channel.eventLoop.wrapAsync { try await childChannelInitializer(channel) }
+            }
             .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
             .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
         
-        let channel = { () -> EventLoopFuture<Channel> in
-            if let unixSocket = unixSocket {
-                return serverBootstrap.bind(unixDomainSocketPath: unixSocket)
-            } else {
-                return serverBootstrap.bind(host: host, port: port)
-            }
-        }()
+        let channel: Channel
+        if let unixSocket = unixSocket {
+            channel = try await serverBootstrap.bind(unixDomainSocketPath: unixSocket).get()
+        } else {
+            channel = try await serverBootstrap.bind(host: host, port: port).get()
+        }
         
-        return channel
-            .map { boundChannel in
-                guard let channelLocalAddress = boundChannel.localAddress else {
-                    fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
-                }
-                
-                self.channel = boundChannel
-                Log.info("[Server] listening on \(channelLocalAddress.prettyName)")
-            }
+        guard let channelLocalAddress = channel.localAddress else {
+            fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
+        }
+        
+        self.channel = channel
+        Log.info("[Server] listening on \(channelLocalAddress.prettyName)")
     }
     
-    func shutdown() -> EventLoopFuture<Void> {
-        channel?.close() ?? .new()
+    func shutdown() async throws {
+        try await channel?.close()
     }
 }
 
@@ -140,20 +137,14 @@ extension ChannelPipeline {
     /// `ApplicationConfiguration`.
     ///
     /// - Returns: A future that completes when the config completes.
-    fileprivate func addAnyTLS() -> EventLoopFuture<Void> {
+    fileprivate func addAnyTLS() async throws {
         let config = Container.resolve(ApplicationConfiguration.self)
         if var tls = config.tlsConfig {
-            if config.httpVersions.contains(.http2) {
-                tls.applicationProtocols.append("h2")
-            }
-            if config.httpVersions.contains(.http1_1) {
-                tls.applicationProtocols.append("http/1.1")
-            }
-            let sslContext = try! NIOSSLContext(configuration: tls)
+            if config.httpVersions.contains(.http2) { tls.applicationProtocols.append("h2") }
+            if config.httpVersions.contains(.http1_1) { tls.applicationProtocols.append("http/1.1") }
+            let sslContext = try NIOSSLContext(configuration: tls)
             let sslHandler = NIOSSLServerHandler(context: sslContext)
-            return addHandler(sslHandler)
-        } else {
-            return .new()
+            try await addHandler(sslHandler)
         }
     }
 }
@@ -163,10 +154,10 @@ extension Channel {
     /// server should be speaking over.
     ///
     /// - Returns: A future that completes when the config completes.
-    fileprivate func addHTTP() -> EventLoopFuture<Void> {
+    fileprivate func addHTTP() async throws {
         let config = Container.resolve(ApplicationConfiguration.self)
         if config.httpVersions.contains(.http2) {
-            return configureHTTP2SecureUpgrade(
+            try await configureHTTP2SecureUpgrade(
                 h2ChannelConfigurator: { h2Channel in
                     h2Channel.configureHTTP2Pipeline(
                         mode: .server,
@@ -184,11 +175,10 @@ extension Channel {
                         .configureHTTPServerPipeline(withErrorHandling: true)
                         .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
                 }
-            )
+            ).get()
         } else {
-            return pipeline
-                .configureHTTPServerPipeline(withErrorHandling: true)
-                .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
+            try await pipeline.configureHTTPServerPipeline(withErrorHandling: true).get()
+            try await pipeline.addHandler(HTTPHandler(router: Router.default))
         }
     }
 }

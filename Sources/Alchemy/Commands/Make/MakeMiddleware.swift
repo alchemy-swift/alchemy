@@ -9,11 +9,8 @@ struct MakeMiddleware: Command {
     
     @Argument var name: String
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try FileCreator.shared.create(fileName: name, contents: middlewareTemplate(), in: "Middleware")
-            return .new()
-        }
+    func start() throws {
+        try FileCreator.shared.create(fileName: name, contents: middlewareTemplate(), in: "Middleware")
     }
     
     private func middlewareTemplate() -> String {

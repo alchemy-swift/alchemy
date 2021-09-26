@@ -18,14 +18,7 @@ struct MakeController: Command {
         self.model = model
     }
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try createController()
-            return .new()
-        }
-    }
-    
-    private func createController() throws {
+    func start() throws {
         let template = model.map(modelControllerTemplate) ?? controllerTemplate()
         let fileName = model.map { "\($0)Controller" } ?? name
         try FileCreator.shared.create(fileName: "\(fileName)", contents: template, in: "Controllers")

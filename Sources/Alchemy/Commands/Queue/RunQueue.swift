@@ -42,7 +42,7 @@ struct RunQueue: Command {
         Log.info("[Queue] started \(schedulerText)\(workers) workers.")
     }
     
-    func start() -> EventLoopFuture<Void> { .new() }
+    func start() {}
 }
 
 extension ServiceLifecycle {
@@ -63,8 +63,7 @@ extension ServiceLifecycle {
             register(
                 label: "Worker\(worker)",
                 start: .eventLoopFuture {
-                    Loop.group.next()
-                        .submit { startWorker(on: queue, channels: channels) }
+                    Loop.group.next().submit { startWorker(on: queue, channels: channels) }
                 },
                 shutdown: .none
             )

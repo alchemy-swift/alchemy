@@ -19,7 +19,7 @@ import ArgumentParser
 ///     @Flag(help: "Should data be loaded but not saved.")
 ///     var dry: Bool = false
 ///
-///     func start() -> EventLoopFuture<Void> {
+///     func start() async throws {
 ///         if let userId = id {
 ///             // sync only a specific user's data
 ///         } else {
@@ -55,17 +55,12 @@ public protocol Command: ParsableCommand {
     static var logStartAndFinish: Bool { get }
     
     /// Start the command. Your command's main logic should be here.
-    ///
-    /// - Returns: A future signalling the end of the command's
-    ///   execution.
-    func start() -> EventLoopFuture<Void>
+    func start() async throws
     
     /// An optional function to run when your command receives a
     /// shutdown signal. You likely don't need this unless your
     /// command runs indefinitely. Defaults to a no-op.
-    ///
-    /// - Returns: A future that finishes when shutdown finishes.
-    func shutdown() -> EventLoopFuture<Void>
+    func shutdown() async throws
 }
 
 extension Command {
@@ -76,15 +71,14 @@ extension Command {
         if Self.logStartAndFinish {
             Log.info("[Command] running \(commandName)")
         }
-        // By default, register self to lifecycle
+        // By default, register start & shutdown to lifecycle
         registerToLifecycle()
     }
     
-    public func shutdown() -> EventLoopFuture<Void> {
+    public func shutdown() {
         if Self.logStartAndFinish {
             Log.info("[Command] finished \(commandName)")
         }
-        return .new()
     }
 
     /// Registers this command to the application lifecycle; useful
@@ -94,15 +88,16 @@ extension Command {
         lifecycle.register(
             label: Self.configuration.commandName ?? name(of: Self.self),
             start: .eventLoopFuture {
-                Loop.group.next()
-                    .flatSubmit(start)
+                Loop.group.next().wrapAsync { try await start() }
                     .map {
                         if Self.shutdownAfterRun {
                             lifecycle.shutdown()
                         }
                     }
             },
-            shutdown: .eventLoopFuture { Loop.group.next().flatSubmit(shutdown) }
+            shutdown: .eventLoopFuture {
+                Loop.group.next().wrapAsync { try await shutdown() }
+            }
         )
     }
     

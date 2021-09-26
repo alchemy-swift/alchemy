@@ -20,15 +20,16 @@ struct RunMigrate: Command {
     
     // MARK: Command
     
-    func start() -> EventLoopFuture<Void> {
-        // Run on event loop
-        Loop.group.next()
-            .flatSubmit(rollback ? Database.default.rollbackMigrations : Database.default.migrate)
+    func start() async throws {
+        if rollback {
+            try await Database.default.rollbackMigrations().get()
+        } else {
+            try await Database.default.migrate().get()
+        }
     }
     
-    func shutdown() -> EventLoopFuture<Void> {
+    func shutdown() async throws {
         let action = rollback ? "migration rollback" : "migrations"
         Log.info("[Migration] \(action) finished, shutting down.")
-        return .new()
     }
 }

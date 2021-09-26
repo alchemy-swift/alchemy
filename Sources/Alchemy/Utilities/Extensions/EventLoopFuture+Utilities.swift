@@ -55,3 +55,11 @@ public func catchError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLo
         return .new(error: error)
     }
 }
+
+extension EventLoop {
+    func wrapAsync<T>(_ action: @escaping () async throws -> T) -> EventLoopFuture<T> {
+        let elp = makePromise(of: T.self)
+        elp.completeWithTask { try await action() }
+        return elp.futureResult
+    }
+}

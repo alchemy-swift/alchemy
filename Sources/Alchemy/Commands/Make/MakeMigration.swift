@@ -24,24 +24,21 @@ struct MakeMigration: Command {
         self.columns = columns
     }
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            guard !name.contains(":") else {
-                throw CommandError(message: "Invalid migration name `\(name)`. Perhaps you forgot to pass a name?")
-            }
-            
-            var migrationColumns: [ColumnData] = columns
-            
-            // Initialize rows
-            if migrationColumns.isEmpty {
-                migrationColumns = try fields.map(ColumnData.init)
-                if migrationColumns.isEmpty { migrationColumns = .defaultData }
-            }
-            
-            // Create files
-            try createMigration(columns: migrationColumns)
-            return .new()
+    func start() throws {
+        guard !name.contains(":") else {
+            throw CommandError(message: "Invalid migration name `\(name)`. Perhaps you forgot to pass a name?")
         }
+        
+        var migrationColumns: [ColumnData] = columns
+        
+        // Initialize rows
+        if migrationColumns.isEmpty {
+            migrationColumns = try fields.map(ColumnData.init)
+            if migrationColumns.isEmpty { migrationColumns = .defaultData }
+        }
+        
+        // Create files
+        try createMigration(columns: migrationColumns)
     }
     
     private func createMigration(columns: [ColumnData]) throws {

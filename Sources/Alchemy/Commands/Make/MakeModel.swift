@@ -28,27 +28,28 @@ struct MakeModel: Command {
     @Flag(name: .shortAndLong, help: "Also make a migration file for this model.") var migration: Bool = false
     @Flag(name: .shortAndLong, help: "Also make a controller with CRUD operations for this model.") var controller: Bool = false
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            guard !name.contains(":") else {
-                throw CommandError(message: "Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
-            }
-            
-            // Initialize rows
-            var columns = try fields.map(ColumnData.init)
-            if columns.isEmpty { columns = .defaultData }
-            
-            // Create files
-            try createModel(columns: columns)
-            
-            let migrationFuture = migration ? MakeMigration(
+    func start() throws {
+        guard !name.contains(":") else {
+            throw CommandError(message: "Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
+        }
+        
+        // Initialize rows
+        var columns = try fields.map(ColumnData.init)
+        if columns.isEmpty { columns = .defaultData }
+        
+        // Create files
+        try createModel(columns: columns)
+        
+        if migration {
+            try MakeMigration(
                 name: "Create\(name.pluralized)",
                 table: name.camelCaseToSnakeCase().pluralized,
                 columns: columns
-            ).start() : .new()
-            
-            let controllerFuture = controller ? MakeController(model: name).start() : .new()
-            return migrationFuture.flatMap { controllerFuture }
+            ).start()
+        }
+        
+        if controller {
+            try MakeController(model: name).start()
         }
     }
     
