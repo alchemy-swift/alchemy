@@ -11,7 +11,7 @@ extension Application {
     public func schedule(job: Job, queue: Queue = .default, channel: String = Queue.defaultChannel) -> ScheduleBuilder {
         ScheduleBuilder(.default) {
             do {
-                try await job.dispatch(on: queue, channel: channel).get()
+                try await job.dispatch(on: queue, channel: channel)
             } catch {
                 Log.error("[Scheduler] error scheduling Job: \(error)")
                 throw error

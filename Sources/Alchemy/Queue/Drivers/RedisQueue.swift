@@ -20,6 +20,47 @@ final class RedisQueue: QueueDriver {
         monitorBackoffs()
     }
     
+    // MARK: - Queue
+
+    func enqueue(_ job: JobData) async throws {
+        try await storeJobData(job)
+        _ = try await redis.lpush(job.id, into: key(for: job.channel)).get()
+    }
+    
+    func dequeue(from channel: String) async throws -> JobData? {
+        let jobId = try await redis.rpoplpush(from: key(for: channel), to: processingKey, valueType: String.self).get()
+        guard let jobId = jobId else {
+            return nil
+        }
+        
+        let jobString = try await redis.hget(jobId, from: dataKey, as: String.self).get()
+        let unwrappedJobString = try jobString.unwrap(or: JobError("Missing job data for key `\(jobId)`."))
+        return try JobData(jsonString: unwrappedJobString)
+    }
+    
+    func complete(_ job: JobData, outcome: JobOutcome) async throws {
+        _ = try await redis.lrem(job.id, from: processingKey).get()
+        switch outcome {
+        case .success, .failed:
+            _ = try await redis.hdel(job.id, from: dataKey).get()
+        case .retry:
+            if let backoffUntil = job.backoffUntil {
+                let backoffKey = "\(job.id):\(job.channel)"
+                let backoffScore = backoffUntil.timeIntervalSince1970
+                try await storeJobData(job)
+                _ = try await redis.zadd((backoffKey, backoffScore), to: backoffsKey).get()
+            } else {
+                try await enqueue(job)
+            }
+        }
+    }
+    
+    // MARK: - Private Helpers
+    
+    private func key(for channel: String) -> RedisKey {
+        RedisKey("jobs:queue:\(channel)")
+    }
+    
     private func monitorBackoffs() {
         let loop = Loop.group.next()
         loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { (task: RepeatedTask) ->
@@ -51,64 +92,9 @@ final class RedisQueue: QueueDriver {
         }
     }
     
-    // MARK: - Queue
-
-    func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
-        return self.storeJobData(job)
-            .flatMap { self.redis.lpush(job.id, into: self.key(for: job.channel)) }
-            .voided()
-    }
-    
-    private func storeJobData(_ job: JobData) -> EventLoopFuture<Void> {
-        catchError {
-            let jsonString = try job.jsonString()
-            return redis.hset(job.id, to: jsonString, in: self.dataKey).voided()
-        }
-    }
-    
-    func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
-        /// Move from queueList to processing
-        let queueList = key(for: channel)
-        return self.redis.rpoplpush(from: queueList, to: self.processingKey, valueType: String.self)
-            .flatMap { jobID in
-                guard let jobID = jobID else {
-                    return .new(nil)
-                }
-                
-                return self.redis
-                    .hget(jobID, from: self.dataKey, as: String.self)
-                    .unwrap(orError: JobError("Missing job data for key `\(jobID)`."))
-                    .flatMapThrowing { try JobData(jsonString: $0) }
-            }
-    }
-    
-    func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
-        switch outcome {
-        case .success, .failed:
-            // Remove from processing.
-            return self.redis.lrem(job.id, from: self.processingKey)
-                // Remove job data.
-                .flatMap { _ in self.redis.hdel(job.id, from: self.dataKey) }
-                .voided()
-        case .retry:
-            // Remove from processing
-            return self.redis.lrem(job.id, from: self.processingKey)
-                .flatMap { _ in
-                    if let backoffUntil = job.backoffUntil {
-                        let backoffKey = "\(job.id):\(job.channel)"
-                        let backoffScore = backoffUntil.timeIntervalSince1970
-                        return self.storeJobData(job)
-                            .flatMap { self.redis.zadd((backoffKey, backoffScore), to: self.backoffsKey) }
-                            .voided()
-                    } else {
-                        return self.enqueue(job)
-                    }
-                }
-        }
-    }
-    
-    private func key(for channel: String) -> RedisKey {
-        RedisKey("jobs:queue:\(channel)")
+    private func storeJobData(_ job: JobData) async throws {
+        let jsonString = try job.jsonString()
+        _ = try await redis.hset(job.id, to: jsonString, in: self.dataKey).get()
     }
 }
 

@@ -91,17 +91,4 @@ public struct JobData: Codable {
     func nextRetryDate() -> Date? {
         return backoffSeconds > 0 ? Date().addingTimeInterval(TimeInterval(backoffSeconds)) : nil
     }
-    
-    /// Update the job payload.
-    ///
-    /// - Parameter job: The new job payload.
-    /// - Throws: Any error encountered while encoding this payload
-    ///   to a string.
-    mutating func updatePayload<J: Job>(_ job: J) throws {
-        do {
-            self.json = try job.jsonString()
-        } catch {
-            throw JobError("Error updating JobData payload to Job type `\(J.name)`: \(error)")
-        }
-    }
 }

@@ -14,16 +14,15 @@ final class MockQueue: QueueDriver {
     
     // MARK: - Queue
     
-    func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
+    func enqueue(_ job: JobData) async throws {
         lock.lock()
         defer { lock.unlock() }
         
         jobs[job.id] = job
         append(id: job.id, on: job.channel, dict: &pending)
-        return .new()
     }
     
-    func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
+    func dequeue(from channel: String) async throws -> JobData? {
         lock.lock()
         defer { lock.unlock() }
         
@@ -34,14 +33,14 @@ final class MockQueue: QueueDriver {
             }),
             let job = jobs[id]
         else {
-            return .new(nil)
+            return nil
         }
         
         append(id: id, on: job.channel, dict: &reserved)
-        return .new(job)
+        return job
     }
     
-    func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
+    func complete(_ job: JobData, outcome: JobOutcome) async throws {
         lock.lock()
         defer { lock.unlock() }
         
@@ -49,10 +48,9 @@ final class MockQueue: QueueDriver {
         case .success, .failed:
             reserved[job.channel]?.removeAll(where: { $0 == job.id })
             jobs.removeValue(forKey: job.id)
-            return .new()
         case .retry:
             reserved[job.channel]?.removeAll(where: { $0 == job.id })
-            return enqueue(job)
+            try await enqueue(job)
         }
     }
     

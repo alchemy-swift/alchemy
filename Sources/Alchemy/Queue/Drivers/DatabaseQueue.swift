@@ -15,12 +15,12 @@ final class DatabaseQueue: QueueDriver {
     
     // MARK: - Queue
     
-    func enqueue(_ job: JobData) -> EventLoopFuture<Void> {
-        JobModel(jobData: job).insert(db: database).voided()
+    func enqueue(_ job: JobData) async throws {
+        _ = try await JobModel(jobData: job).insert(db: database).get()
     }
 
-    func dequeue(from channel: String) -> EventLoopFuture<JobData?> {
-        return database.transaction { (database: Database) -> EventLoopFuture<JobData?> in
+    func dequeue(from channel: String) async throws -> JobData? {
+        return try await database.transaction { (database: Database) -> EventLoopFuture<JobData?> in
             return JobModel.query(database: database)
                 .where("reserved" != true)
                 .where("channel" == channel)
@@ -36,19 +36,19 @@ final class DatabaseQueue: QueueDriver {
                     return job.save(db: database)
                 }
                 .map { $0?.toJobData() }
-        }
+        }.get()
     }
     
-    func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void> {
+    func complete(_ job: JobData, outcome: JobOutcome) async throws {
         switch outcome {
         case .success, .failed:
-            return JobModel.query(database: database)
+            _ = try await JobModel.query(database: database)
                 .where("id" == job.id)
                 .where("channel" == job.channel)
                 .delete()
-                .voided()
+                .get()
         case .retry:
-            return JobModel(jobData: job).update(db: database).voided()
+            _ = try await JobModel(jobData: job).update(db: database).get()
         }
     }
 }

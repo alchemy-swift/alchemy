@@ -15,7 +15,7 @@ public protocol Job: Codable {
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
     /// Run this Job.
-    func run() -> EventLoopFuture<Void>
+    func run() async throws -> Void
 }
 
 // Default implementations.

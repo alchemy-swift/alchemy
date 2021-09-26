@@ -3,17 +3,19 @@ import NIO
 /// Conform to this protocol to implement a custom driver for the
 /// `Queue` class.
 public protocol QueueDriver {
-    /// Add a job to the end of the Queue.
-    func enqueue(_ job: JobData) -> EventLoopFuture<Void>
+    /// Enqueue a job.
+    func enqueue(_ job: JobData) async throws
+    
     /// Dequeue the next job from the given channel.
-    func dequeue(from channel: String) -> EventLoopFuture<JobData?>
+    func dequeue(from channel: String) async throws -> JobData?
+    
     /// Handle an in progress job that has been completed with the
     /// given outcome.
     ///
     /// The `JobData` will have any fields that should be updated
     /// (such as `attempts`) already updated when it is passed
     /// to this function.
-    func complete(_ job: JobData, outcome: JobOutcome) -> EventLoopFuture<Void>
+    func complete(_ job: JobData, outcome: JobOutcome) async throws
 }
 
 /// An outcome of when a job is run. It should either be flagged as
@@ -32,21 +34,17 @@ extension QueueDriver {
     /// priority.
     ///
     /// - Parameter channels: The channels to dequeue from.
-    /// - Returns: A future containing a dequeued `Job`, if there is
-    ///   one.
-    func dequeue(from channels: [String]) -> EventLoopFuture<JobData?> {
+    /// - Returns: A dequeued `Job`, if there is one.
+    func dequeue(from channels: [String]) async throws -> JobData? {
         guard let channel = channels.first else {
-            return .new(nil)
+            return nil
         }
         
-        return dequeue(from: channel)
-            .flatMap { result in
-                guard let result = result else {
-                    return dequeue(from: Array(channels.dropFirst()))
-                }
-                
-                return .new(result)
-            }
+        if let job = try await dequeue(from: channel) {
+            return job
+        } else {
+            return try await dequeue(from: Array(channels.dropFirst()))
+        }
     }
     
     /// Start monitoring a queue for jobs to run.
@@ -57,71 +55,58 @@ extension QueueDriver {
     ///     queue for work.
     ///   - eventLoop: The loop on which this worker should run.
     func startWorker(for channels: [String], pollRate: TimeAmount, on eventLoop: EventLoop) {
-        return eventLoop.execute {
-            self.runNext(from: channels)
-                .whenComplete { _ in
-                    // Run check again in the `pollRate`.
-                    eventLoop.scheduleTask(in: pollRate) {
-                        self.startWorker(for: channels, pollRate: pollRate, on: eventLoop)
-                    }
+        let elp = eventLoop.makePromise(of: Void.self)
+        elp.completeWithTask {
+            try await runNext(from: channels)
+        }
+        eventLoop.flatSubmit { elp.futureResult }
+            .whenComplete { _ in
+                // Run check again in the `pollRate`.
+                eventLoop.scheduleTask(in: pollRate) {
+                    self.startWorker(for: channels, pollRate: pollRate, on: eventLoop)
                 }
+            }
+    }
+
+    private func runNext(from channels: [String]) async throws -> Void {
+        do {
+            guard let jobData = try await dequeue(from: channels) else {
+                return
+            }
+            
+            Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
+            try await execute(jobData)
+            try await runNext(from: channels)
+        } catch {
+            Log.error("[Queue] error dequeueing job from `\(channels)`. \(error)")
+            throw error
         }
     }
-
-    private func runNext(from channels: [String]) -> EventLoopFuture<Void> {
-        dequeue(from: channels)
-            .flatMapErrorThrowing {
-                Log.error("[Queue] error dequeueing job from `\(channels)`. \($0)")
-                throw $0
-            }
-            .flatMap { jobData in
-                guard let jobData = jobData else {
-                    return .new()
-                }
-                
-                Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
-                return self.execute(jobData)
-                    .flatMap { self.runNext(from: channels) }
-            }
-    }
-
-    private func execute(_ jobData: JobData) -> EventLoopFuture<Void> {
+    
+    private func execute(_ jobData: JobData) async throws -> Void {
         var jobData = jobData
-        return catchError {
-            do {
-                let job = try JobDecoding.decode(jobData)
-                return job.run()
-                    .always {
-                        job.finished(result: $0)
-                        do {
-                            jobData.json = try job.jsonString()
-                        } catch {
-                            Log.error("[QueueWorker] tried updating Job persistance object after completion, but encountered error \(error)")
-                        }
-                    }
-            } catch {
-                Log.error("error decoding job named \(jobData.jobName). Error was: \(error).")
-                throw error
-            }
+        jobData.attempts += 1
+        
+        func retry(ignoreAttempt: Bool = false) async throws {
+            if ignoreAttempt { jobData.attempts -= 1 }
+            jobData.backoffUntil = jobData.nextRetryDate()
+            try await complete(jobData, outcome: .retry)
         }
-        .flatMapAlways { (result: Result<Void, Error>) -> EventLoopFuture<Void> in
-            jobData.attempts += 1
-            switch result {
-            case .success:
-                return self.complete(jobData, outcome: .success)
-            case .failure where jobData.canRetry:
-                jobData.backoffUntil = jobData.nextRetryDate()
-                return self.complete(jobData, outcome: .retry)
-            case .failure(let error):
-                if let err = error as? JobError, err == JobError.unknownType {
-                    // Always retry if the type was unknown, and
-                    // ignore the attempt.
-                    jobData.attempts -= 1
-                    return self.complete(jobData, outcome: .retry)
-                } else {
-                    return self.complete(jobData, outcome: .failed)
-                }
-            }
+        
+        var job: Job?
+        do {
+            job = try JobDecoding.decode(jobData)
+            try await job?.run()
+            job?.finished(result: .success(()))
+            try await complete(jobData, outcome: .success)
+        } catch where jobData.canRetry {
+            try await retry()
+        } catch where (error as? JobError) == JobError.unknownType {
+            // So that an old worker won't fail new jobs.
+            try await retry(ignoreAttempt: true)
+        } catch {
+            job?.finished(result: .failure(error))
+            try await complete(jobData, outcome: .failed)
         }
     }
 }
