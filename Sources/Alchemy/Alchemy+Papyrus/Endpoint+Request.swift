@@ -33,8 +33,8 @@ extension PapyrusClientError: CustomStringConvertible {
 }
 
 extension Endpoint {
-    /// Requests a `Papyrus.Endpoint`, returning a future with the
-    /// decoded `Endpoint.Response`.
+    /// Requests a `Papyrus.Endpoint`, returning a decoded
+    /// `Endpoint.Response`.
     ///
     /// - Parameters:
     ///   - dto: An instance of the request DTO; `Endpoint.Request`.
@@ -57,8 +57,7 @@ extension Endpoint {
 
 extension Endpoint where Request == Empty {
     /// Requests a `Papyrus.Endpoint` where the `Request` type is
-    /// `Empty`, returning a future with the decoded
-    /// `Endpoint.Response`.
+    /// `Empty`, returning a decoded `Endpoint.Response`.
     ///
     /// - Parameters:
     ///   - client: The HTTPClient to request this with. Defaults to

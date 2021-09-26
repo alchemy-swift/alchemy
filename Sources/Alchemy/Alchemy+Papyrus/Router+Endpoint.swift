@@ -11,9 +11,8 @@ public extension Application {
     /// - Parameters:
     ///   - endpoint: The endpoint to register on this router.
     ///   - handler: The handler for handling incoming requests that
-    ///     match this endpoint's path. This handler expects a
-    ///     future containing an instance of the endpoint's
-    ///     response type.
+    ///     match this endpoint's path. This handler returns an
+    ///     instance of the endpoint's response type.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
     func on<Req, Res>(
@@ -32,8 +31,8 @@ public extension Application {
     /// - Parameters:
     ///   - endpoint: The endpoint to register on this application.
     ///   - handler: The handler for handling incoming requests that
-    ///     match this endpoint's path. This handler expects a future
-    ///     containing an instance of the endpoint's response type.
+    ///     match this endpoint's path. This handler returns an
+    ///     instance of the endpoint's response type.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
     func on<Res>(

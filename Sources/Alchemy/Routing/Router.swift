@@ -11,8 +11,7 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
 public final class Router: HTTPRouter, Service {
-    /// A router handler. Takes a request and returns a future with a
-    /// response.
+    /// A router handler. Takes a request and returns a response.
     private typealias RouterHandler = (Request) async throws -> Response
 
     /// The default response for when there is an error along the
@@ -82,8 +81,9 @@ public final class Router: HTTPRouter, Service {
     /// passing it to the handler closure.
     ///
     /// - Parameter request: The request this router will handle.
-    /// - Returns: A future containing the response of a handler or a
-    ///   `.notFound` response if there was not a matching handler.
+    /// - Returns: The response of a matching handler or a
+    ///   `.notFound` response if there was not a
+    ///   matching handler.
     func handle(request: Request) async throws -> Response {
         var handler = notFoundHandler
 
