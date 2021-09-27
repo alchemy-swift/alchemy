@@ -8,7 +8,7 @@ public extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
     static func query(database: Database = .default) -> ModelQuery<Self> {
-        ModelQuery<Self>(database: database.driver).from(table: Self.tableName)
+        ModelQuery<Self>(database: database.driver).from(Self.tableName)
     }
 }
 
@@ -208,7 +208,7 @@ public class ModelQuery<M: Model>: Query {
 
 private extension RelationshipMapping {
     func load<M: Model>(_ values: [DatabaseRow]) throws -> ModelQuery<M> {
-        var query = M.query().from(table: toTable)
+        var query = M.query().from(toTable)
         var whereKey = "\(toTable).\(toKey)"
         if let through = through {
             whereKey = "\(through.table).\(through.fromKey)"

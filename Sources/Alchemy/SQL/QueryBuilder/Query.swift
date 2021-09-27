@@ -70,7 +70,7 @@ public class Query: Sequelizable {
     ///     `nil`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func from(table: String, as alias: String? = nil) -> Self {
+    public func from(_ table: String, as alias: String? = nil) -> Self {
         guard let alias = alias else {
             return self.table(table)
         }
@@ -578,19 +578,14 @@ public class Query: Sequelizable {
     ///   original select columns.
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
-    /// - Returns: An `EventLoopFuture` to be run that contains the
-    ///   returned rows from the database.
-    public func get(_ columns: [Column]? = nil) -> EventLoopFuture<[DatabaseRow]> {
+    /// - Returns: The rows returned by the database.
+    public func get(_ columns: [Column]? = nil) async throws -> [DatabaseRow] {
         if let columns = columns {
-            self.select(columns)
+            select(columns)
         }
-        do {
-            let sql = try self.database.grammar.compileSelect(query: self)
-            return self.database.runRawQuery(sql.query, values: sql.bindings)
-        }
-        catch let error {
-            return .new(error: error)
-        }
+        
+        let sql = try self.database.grammar.compileSelect(query: self)
+        return try await database.runRawQuery(sql.query, values: sql.bindings).get()
     }
 
     /// Run a select query and return the first database row only row.
@@ -599,12 +594,9 @@ public class Query: Sequelizable {
     ///   original select columns.
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
-    /// - Returns: An `EventLoopFuture` to be run that contains the
-    ///   returned row from the database.
-    public func first(_ columns: [Column]? = nil) -> EventLoopFuture<DatabaseRow?> {
-        return self.limit(1)
-            .get(columns)
-            .map { $0.first }
+    /// - Returns: The first row in the database, if it exists.
+    public func first(_ columns: [Column]? = nil) async throws -> DatabaseRow? {
+        try await limit(1).get(columns).first
     }
 
     /// Run a select query that looks for a single row matching the
@@ -614,13 +606,10 @@ public class Query: Sequelizable {
     ///   original select columns.
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
-    /// - Returns: An `EventLoopFuture` to be run that contains the
-    ///   returned row from the database.
-    public func find(field: DatabaseField, columns: [Column]? = nil) -> EventLoopFuture<DatabaseRow?> {
-        self.wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
-        return self.limit(1)
-            .get(columns)
-            .map { $0.first }
+    /// - Returns: The row from the database, if it exists.
+    public func find(field: DatabaseField, columns: [Column]? = nil) async throws -> DatabaseRow? {
+        wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
+        return try await limit(1).get(columns).first
     }
 
     /// Find the total count of the rows that match the given query.
@@ -629,23 +618,17 @@ public class Query: Sequelizable {
     ///   - column: What column to count. Defaults to `*`.
     ///   - name: The alias that can be used for renaming the returned
     ///     count.
-    /// - Returns: An `EventLoopFuture` to be run that contains the
-    ///   returned count value.
-    public func count(column: Column = "*", as name: String? = nil) -> EventLoopFuture<Int> {
+    /// - Returns: The count returned by the database.
+    public func count(column: Column = "*", as name: String? = nil) async throws -> Int {
         var query = "COUNT(\(column))"
         if let name = name {
             query += " as \(name)"
         }
-        return self.select([query])
-            .first()
-            .unwrap(orError: DatabaseError("a COUNT query didn't return any rows"))
-            .flatMapThrowing {
-                guard let column = $0.allColumns.first else {
-                    throw DatabaseError("a COUNT query didn't return any columns")
-                }
-                
-                return try $0.getField(column: column).int()
-        }
+        let row = try await select([query]).first()
+            .unwrap(or: DatabaseError("a COUNT query didn't return any rows"))
+        let column = try row.allColumns.first
+            .unwrap(or: DatabaseError("a COUNT query didn't return any columns"))
+        return try row.getField(column: column).int()
     }
 
     /// Perform an insert and create a database row from the provided
@@ -659,10 +642,12 @@ public class Query: Sequelizable {
     ///   Postgres which always returns inserted items, but on MySQL
     ///   it means this will run two queries; one to insert and one to
     ///   fetch.
-    /// - Returns: An `EventLoopFuture` to be run that contains the
-    ///   inserted rows.
-    public func insert(_ value: OrderedDictionary<String, Parameter>, returnItems: Bool = true) -> EventLoopFuture<[DatabaseRow]> {
-        return insert([value], returnItems: returnItems)
+    /// - Returns: The inserted rows.
+    public func insert(
+        _ value: OrderedDictionary<String, Parameter>,
+        returnItems: Bool = true
+    ) async throws -> [DatabaseRow] {
+        try await insert([value], returnItems: returnItems)
     }
 
     /// Perform an insert and create database rows from the provided
@@ -677,10 +662,12 @@ public class Query: Sequelizable {
     ///   inserted items. On MySQL it means this will run two queries
     ///   _per value_; one to insert and one to fetch. If this is
     ///   `false`, MySQL will run a single query inserting all values.
-    /// - Returns: An `EventLoopFuture` to be run that contains the
-    ///   inserted rows.
-    public func insert(_ values: [OrderedDictionary<String, Parameter>], returnItems: Bool = true) -> EventLoopFuture<[DatabaseRow]> {
-        self.database.grammar.insert(values, query: self, returnItems: returnItems)
+    /// - Returns: The inserted rows.
+    public func insert(
+        _ values: [OrderedDictionary<String, Parameter>],
+        returnItems: Bool = true
+    ) async throws -> [DatabaseRow] {
+        try await database.grammar.insert(values, query: self, returnItems: returnItems)
     }
 
     /// Perform an update on all data matching the query in the
@@ -699,27 +686,15 @@ public class Query: Sequelizable {
     ///
     /// - Parameter values: An dictionary containing the values to be
     ///   updated.
-    /// - Returns: An `EventLoopFuture` to be run that will update all
-    ///   matched rows.
-    public func update(values: [String: Parameter]) -> EventLoopFuture<[DatabaseRow]> {
-        catchError {
-            let sql = try self.database.grammar.compileUpdate(self, values: values)
-            return self.database.runRawQuery(sql.query, values: sql.bindings)
-        }
+    public func update(values: [String: Parameter]) async throws {
+        let sql = try database.grammar.compileUpdate(self, values: values)
+        _ = try await database.runRawQuery(sql.query, values: sql.bindings).get()
     }
 
     /// Perform a deletion on all data matching the given query.
-    ///
-    /// - Returns: An `EventLoopFuture` to be run that will delete all
-    ///   matched rows.
-    public func delete() -> EventLoopFuture<[DatabaseRow]> {
-        do {
-            let sql = try self.database.grammar.compileDelete(self)
-            return self.database.runRawQuery(sql.query, values: sql.bindings)
-        }
-        catch let error {
-            return .new(error: error)
-        }
+    public func delete() async throws {
+        let sql = try database.grammar.compileDelete(self)
+        _ = try await database.runRawQuery(sql.query, values: sql.bindings).get()
     }
 }
 
@@ -746,7 +721,7 @@ extension Query {
     ///     `nil`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public static func from(table: String, as alias: String? = nil) -> Query {
+    public static func from(_ table: String, as alias: String? = nil) -> Query {
         guard let alias = alias else {
             return Query.table(table)
         }

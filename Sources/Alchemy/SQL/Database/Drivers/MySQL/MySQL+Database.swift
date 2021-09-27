@@ -43,8 +43,8 @@ final class MySQLDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        withConnection { $0.runRawQuery(sql, values: values) }
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+        try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
     /// MySQL doesn't have a way to return a row after inserting. This
@@ -56,37 +56,37 @@ final class MySQLDatabase: DatabaseDriver {
     ///   - table: The table from which `lastInsertID` should be
     ///     fetched.
     ///   - values: Any bindings for the query.
-    /// - Returns: A future containing the result of fetching the last
-    ///   inserted id, or the result of the original query.
-    func runAndReturnLastInsertedItem(_ sql: String, table: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        pool.withConnection(logger: Log.logger, on: Loop.current) { conn in
+    /// - Returns: The result of fetching the last inserted id, or the
+    ///   result of the original query.
+    func runAndReturnLastInsertedItem(_ sql: String, table: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+        try await pool.withConnection(logger: Log.logger, on: Loop.current) { conn in
             var lastInsertId: Int?
-            return conn
+            var rows = try await conn
                 .query(sql, values.map(MySQLData.init), onMetadata: { lastInsertId = $0.lastInsertID.map(Int.init) })
-                .flatMap { rows -> EventLoopFuture<[MySQLRow]> in
-                    if let lastInsertId = lastInsertId {
-                        return conn.query("select * from \(table) where id = ?;", [MySQLData(.int(lastInsertId))])
-                    } else {
-                        return .new(rows)
-                    }
-                }
-                .map { $0.map(MySQLDatabaseRow.init) }
+                .get()
+            
+            if let lastInsertId = lastInsertId {
+                rows = try await conn.query("select * from \(table) where id = ?;", [MySQLData(.int(lastInsertId))]).get()
+            }
+            
+            return rows.map(MySQLDatabaseRow.init)
         }
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        withConnection { database in
+    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+        try await withConnection { database in
             let conn = database.conn
-            // SimpleQuery since MySQL can't handle START TRANSACTION in prepared statements.
-            return conn.simpleQuery("START TRANSACTION;")
-                .flatMap { _ in action(database) }
-                .flatMap { conn.simpleQuery("COMMIT;").transform(to: $0) }
+            // `simpleQuery` since MySQL can't handle START TRANSACTION in prepared statements.
+            _ = try await conn.simpleQuery("START TRANSACTION;").get()
+            let val = try await action(database)
+            _ = try await conn.simpleQuery("COMMIT;").get()
+            return val
         }
     }
 
-    private func withConnection<T>(_ action: @escaping (MySQLConnectionDatabase) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        return pool.withConnection(logger: Log.logger, on: Loop.current) {
-            action(MySQLConnectionDatabase(conn: $0, grammar: self.grammar))
+    private func withConnection<T>(_ action: @escaping (MySQLConnectionDatabase) async throws -> T) async throws -> T {
+        try await pool.withConnection(logger: Log.logger, on: Loop.current) {
+            try await action(MySQLConnectionDatabase(conn: $0, grammar: self.grammar))
         }
     }
     
@@ -129,13 +129,12 @@ private struct MySQLConnectionDatabase: DatabaseDriver {
     let conn: MySQLConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        return conn.query(sql, values.map(MySQLData.init))
-            .map { $0.map(MySQLDatabaseRow.init) }
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+        try await conn.query(sql, values.map(MySQLData.init)).get().map(MySQLDatabaseRow.init)
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        action(self)
+    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+        try await action(self)
     }
     
     func shutdown() throws {

@@ -1,5 +1,36 @@
 import Foundation
 
+/// Represents a type that may be a primary key in a database. Out of
+/// the box `UUID`, `String` and `Int` are supported but you can
+/// easily support your own by conforming to this protocol.
+public protocol PrimaryKey: Hashable, Parameter, Codable {
+    /// Initialize this value from a `DatabaseField`.
+    ///
+    /// - Throws: If there is an error decoding this type from the
+    ///   given database value.
+    /// - Parameter field: The field with which this type should be
+    ///   initialzed from.
+    init(field: DatabaseField) throws
+}
+
+extension UUID: PrimaryKey {
+    public init(field: DatabaseField) throws {
+        self = try field.uuid()
+    }
+}
+
+extension Int: PrimaryKey {
+    public init(field: DatabaseField) throws {
+        self = try field.int()
+    }
+}
+
+extension String: PrimaryKey {
+    public init(field: DatabaseField) throws {
+        self = try field.string()
+    }
+}
+
 extension Model {
     /// Initialize this model from a primary key. All other fields
     /// will be populated with dummy data. Useful for setting a
@@ -28,11 +59,11 @@ private struct DummyDecoder: Decoder {
     }
     
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        Single()
+        SingleValue()
     }
 }
 
-private struct Single: SingleValueDecodingContainer {
+private struct SingleValue: SingleValueDecodingContainer {
     var codingPath: [CodingKey] = []
     
     func decodeNil() -> Bool {

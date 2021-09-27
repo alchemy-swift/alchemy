@@ -47,15 +47,16 @@ final class PostgresDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        withConnection { $0.runRawQuery(sql, values: values) }
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+        try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        withConnection { conn in
-            conn.runRawQuery("START TRANSACTION;", values: [])
-                .flatMap { _ in action(conn) }
-                .flatMap { conn.runRawQuery("COMMIT;", values: []).transform(to: $0) }
+    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+        try await withConnection { conn in
+            _ = try await conn.runRawQuery("START TRANSACTION;", values: [])
+            let val = try await action(conn)
+            _ = try await conn.runRawQuery("COMMIT;", values: [])
+            return val
         }
     }
     
@@ -63,9 +64,9 @@ final class PostgresDatabase: DatabaseDriver {
         try pool.syncShutdownGracefully()
     }
     
-    private func withConnection<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        return pool.withConnection(logger: Log.logger, on: Loop.current) {
-            action(PostgresConnectionDatabase(conn: $0, grammar: self.grammar))
+    private func withConnection<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+        try await pool.withConnection(logger: Log.logger, on: Loop.current) {
+            try await action(PostgresConnectionDatabase(conn: $0, grammar: self.grammar))
         }
     }
 }
@@ -104,13 +105,13 @@ private struct PostgresConnectionDatabase: DatabaseDriver {
     let conn: PostgresConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]> {
-        conn.query(sql.positionPostgresBindings(), values.map(PostgresData.init))
-            .map { $0.rows.map(PostgresDatabaseRow.init) }
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+        try await conn.query(sql.positionPostgresBindings(), values.map(PostgresData.init))
+            .get().rows.map(PostgresDatabaseRow.init)
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        action(self)
+    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+        try await action(self)
     }
     
     func shutdown() throws {

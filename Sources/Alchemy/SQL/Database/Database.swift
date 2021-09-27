@@ -24,20 +24,12 @@ public final class Database: Service {
     ///
     /// Usage:
     /// ```swift
-    /// database.query()
-    ///     .from(table: "users")
-    ///     .where("id" == 1)
-    ///     .first()
-    ///     .whenSuccess { row in
-    ///         guard let row = row else {
-    ///             return print("No row found :(")
-    ///         }
-    ///
-    ///         print("Got a row with fields: \(row.allColumns)")
-    ///     }
+    /// if let row = try await database.query().from("users").where("id" == 1).first() {
+    ///     print("Got a row with fields: \(row.allColumns)")
+    /// }
     /// ```
     ///
-    /// - Returns: The start of a QueryBuilder `Query`.
+    /// - Returns: A `Query` builder.
     public func query() -> Query {
         Query(database: driver)
     }
@@ -48,20 +40,12 @@ public final class Database: Service {
     /// Usage:
     /// ```swift
     /// // No bindings
-    /// db.rawQuery("SELECT * FROM users where id = 1")
-    ///     .whenSuccess { rows
-    ///         guard let first = rows.first else {
-    ///             return print("No rows found :(")
-    ///         }
-    ///
-    ///         print("Got a user row with columns \(rows.allColumns)!")
-    ///     }
+    /// let rows = try await db.rawQuery("SELECT * FROM users where id = 1")
+    /// print("Got \(rows.count) users.")
     ///
     /// // Bindings, to protect against SQL injection.
-    /// db.rawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
-    ///     .whenSuccess { rows
-    ///         ...
-    ///     }
+    /// let rows = db.rawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
+    /// print("Got \(rows.count) users.")
     /// ```
     ///
     /// - Parameters:
@@ -70,9 +54,9 @@ public final class Database: Service {
     ///   - values: An array, `[DatabaseValue]`, that will replace the
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
-    /// - Returns: A future containing the rows returned by the query.
-    public func rawQuery(_ sql: String, values: [DatabaseValue] = []) -> EventLoopFuture<[DatabaseRow]> {
-        driver.runRawQuery(sql, values: values)
+    /// - Returns: The database rows returned by the query.
+    public func rawQuery(_ sql: String, values: [DatabaseValue] = []) async throws -> [DatabaseRow] {
+        try await driver.runRawQuery(sql, values: values)
     }
     
     /// Runs a transaction on the database, using the given closure.
@@ -81,10 +65,9 @@ public final class Database: Service {
     /// Uses START TRANSACTION; and COMMIT; under the hood.
     ///
     /// - Parameter action: The action to run atomically.
-    /// - Returns: A future that completes when the transaction is
-    ///            finished.
-    public func transaction<T>(_ action: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        driver.transaction { action(Database(driver: $0)) }
+    /// - Returns: The return value of the transaction.
+    public func transaction<T>(_ action: @escaping (Database) async throws -> T) async throws -> T {
+        try await driver.transaction { try await action(Database(driver: $0)) }
     }
     
     /// Called when the database connection will shut down.
@@ -115,20 +98,12 @@ public protocol DatabaseDriver {
     /// Usage:
     /// ```swift
     /// // No bindings
-    /// db.runRawQuery("SELECT * FROM users where id = 1")
-    ///     .whenSuccess { rows
-    ///         guard let first = rows.first else {
-    ///             return print("No rows found :(")
-    ///         }
-    ///
-    ///         print("Got a user row with columns \(rows.allColumns)!")
-    ///     }
+    /// let rows = try await db.rawQuery("SELECT * FROM users where id = 1")
+    /// print("Got \(rows.count) users.")
     ///
     /// // Bindings, to protect against SQL injection.
-    /// db.runRawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
-    ///     .whenSuccess { rows
-    ///         ...
-    ///     }
+    /// let rows = db.rawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
+    /// print("Got \(rows.count) users.")
     /// ```
     ///
     /// - Parameters:
@@ -137,18 +112,18 @@ public protocol DatabaseDriver {
     ///   - values: An array, `[DatabaseValue]`, that will replace the
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
-    /// - Returns: An `EventLoopFuture` of the rows returned by the
-    ///   query.
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) -> EventLoopFuture<[DatabaseRow]>
+    /// - Returns: The database rows returned by the query.
+    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow]
     
     /// Runs a transaction on the database, using the given closure.
     /// All database queries in the closure are executed atomically.
     ///
     /// Uses START TRANSACTION; and COMMIT; under the hood.
-    func transaction<T>(_ action: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+    ///
+    /// - Parameter action: The action to run atomically.
+    /// - Returns: The return value of the transaction.
+    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T
     
     /// Called when the database connection will shut down.
-    ///
-    /// - Throws: Any error that occurred when shutting down.
     func shutdown() throws
 }

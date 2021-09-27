@@ -47,21 +47,26 @@ final class MySQLGrammar: Grammar {
     
     // MySQL needs custom insert behavior, since bulk inserting and
     // returning is not supported.
-    override func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query, returnItems: Bool) -> EventLoopFuture<[DatabaseRow]> {
-        catchError {
-            guard
-                returnItems,
-                let table = query.from,
-                let database = query.database as? MySQLDatabase
-            else {
-                return super.insert(values, query: query, returnItems: returnItems)
+    override func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+        guard returnItems, let table = query.from, let database = query.database as? MySQLDatabase else {
+            return try await super.insert(values, query: query, returnItems: returnItems)
+        }
+        
+        let inserts = try values.map { try compileInsert(query, values: [$0]) }
+        var results: [DatabaseRow] = []
+        try await withThrowingTaskGroup(of: [DatabaseRow].self) { group in
+            for insert in inserts {
+                group.addTask {
+                    async let result = database.runAndReturnLastInsertedItem(insert.query, table: table, values: insert.bindings)
+                    return try await result
+                }
             }
             
-            return try values
-                .map { try self.compileInsert(query, values: [$0]) }
-                .map { database.runAndReturnLastInsertedItem($0.query, table: table, values: $0.bindings) }
-                .flatten(on: Loop.current)
-                .map { $0.flatMap { $0 } }
+            for try await image in group {
+                results += image
+            }
         }
+        
+        return results
     }
 }
