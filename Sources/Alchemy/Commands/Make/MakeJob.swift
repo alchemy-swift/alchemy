@@ -18,9 +18,8 @@ struct MakeJob: Command {
         import Alchemy
         
         struct \(name): Job {
-            func run() -> EventLoopFuture<Void> {
+            func run() async throws {
                 // Write some code!
-                return .new()
             }
         }
         """

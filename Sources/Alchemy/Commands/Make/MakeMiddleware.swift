@@ -18,9 +18,9 @@ struct MakeMiddleware: Command {
         import Alchemy
 
         struct \(name): Middleware {
-            func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+            func intercept(_ request: Request, next: Next) async throws -> Response {
                 // Write some code!
-                return next(request)
+                return try await next(request)
             }
         }
         """

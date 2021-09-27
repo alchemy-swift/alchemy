@@ -57,26 +57,25 @@ struct MakeController: Command {
                     .delete("/\(resourcePath)/:id", handler: delete)
             }
             
-            private func index(req: Request) -> EventLoopFuture<[\(name)]> {
-                \(name).all()
+            private func index(req: Request) async throws -> [\(name)] {
+                try await \(name).all()
             }
             
-            private func create(req: Request) throws -> EventLoopFuture<\(name)> {
-                try req.decodeBody(as: \(name).self).insert()
+            private func create(req: Request) async throws -> \(name) {
+                try await req.decodeBody(as: \(name).self).insert()
             }
             
-            private func show(req: Request) throws -> EventLoopFuture<\(name)> {
-                \(name).find(try req.parameter("id"))
-                    .unwrap(orError: HTTPError(.notFound))
+            private func show(req: Request) async throws -> \(name) {
+                try await \(name).find(req.parameter("id")).unwrap(or: HTTPError(.notFound))
             }
             
-            private func update(req: Request) throws -> EventLoopFuture<\(name)> {
-                \(name).update(try req.parameter("id"), with: try req.bodyDict())
-                    .unwrap(orError: HTTPError(.notFound))
+            private func update(req: Request) async throws -> \(name) {
+                try await \(name).update(req.parameter("id"), with: req.bodyDict())
+                    .unwrap(or: HTTPError(.notFound))
             }
             
-            private func delete(req: Request) throws -> EventLoopFuture<Void> {
-                \(name).delete(try req.parameter("id"))
+            private func delete(req: Request) async throws {
+                try await \(name).delete(req.parameter("id"))
             }
         }
         """

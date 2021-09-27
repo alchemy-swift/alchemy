@@ -68,7 +68,7 @@ public final class Router: HTTPRouter, Service {
             
             for middleware in middlewareClosures {
                 let oldNext = next
-                next = { try await middleware($0, oldNext) }
+                next = { await middleware($0, oldNext) }
             }
             
             return try await next($0)
@@ -84,31 +84,37 @@ public final class Router: HTTPRouter, Service {
     /// - Returns: The response of a matching handler or a
     ///   `.notFound` response if there was not a
     ///   matching handler.
-    func handle(request: Request) async throws -> Response {
+    func handle(request: Request) async -> Response {
         var handler = notFoundHandler
 
         // Find a matching handler
         if let match = trie.search(path: request.path.tokenized, storageKey: request.method) {
             request.pathParameters = match.parameters
-            handler = match.value
+            handler = { request in
+                do {
+                    return try await match.value(request)
+                } catch {
+                    return await error.convertToResponse()
+                }
+            }
         }
 
         // Apply global middlewares
         for middleware in globalMiddlewares.reversed() {
             let lastHandler = handler
-            handler = { try await middleware.interceptConvertError($0, next: lastHandler) }
+            handler = { await middleware.interceptConvertError($0, next: lastHandler) }
         }
 
-        return try await handler(request)
+        return await handler(request)
     }
 
-    private func notFoundHandler(_ request: Request) async throws -> Response {
+    private func notFoundHandler(_ request: Request) async -> Response {
         Router.notFoundResponse
     }
 }
 
 private extension Middleware {
-    func interceptConvertError(_ request: Request, next: @escaping Next) async throws -> Response {
+    func interceptConvertError(_ request: Request, next: @escaping Next) async -> Response {
         do {
             return try await intercept(request, next: next)
         } catch {

@@ -278,7 +278,7 @@ extension Application {
     }
     
     func request(_ test: TestRequest) async throws -> String? {
-        return try await Router.default.handle(
+        return await Router.default.handle(
             request: Request(
                 head: .init(
                     version: .init(

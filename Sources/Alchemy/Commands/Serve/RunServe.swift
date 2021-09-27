@@ -135,8 +135,6 @@ extension SocketAddress {
 extension ChannelPipeline {
     /// Configures this pipeline with any TLS config in the
     /// `ApplicationConfiguration`.
-    ///
-    /// - Returns: A future that completes when the config completes.
     fileprivate func addAnyTLS() async throws {
         let config = Container.resolve(ApplicationConfiguration.self)
         if var tls = config.tlsConfig {
@@ -152,8 +150,6 @@ extension ChannelPipeline {
 extension Channel {
     /// Configures this channel to handle whatever HTTP versions the
     /// server should be speaking over.
-    ///
-    /// - Returns: A future that completes when the config completes.
     fileprivate func addHTTP() async throws {
         let config = Container.resolve(ApplicationConfiguration.self)
         if config.httpVersions.contains(.http2) {

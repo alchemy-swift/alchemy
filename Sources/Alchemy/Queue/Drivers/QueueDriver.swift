@@ -55,11 +55,7 @@ extension QueueDriver {
     ///     queue for work.
     ///   - eventLoop: The loop on which this worker should run.
     func startWorker(for channels: [String], pollRate: TimeAmount, on eventLoop: EventLoop) {
-        let elp = eventLoop.makePromise(of: Void.self)
-        elp.completeWithTask {
-            try await runNext(from: channels)
-        }
-        eventLoop.flatSubmit { elp.futureResult }
+        eventLoop.wrapAsync { try await runNext(from: channels) }
             .whenComplete { _ in
                 // Run check again in the `pollRate`.
                 eventLoop.scheduleTask(in: pollRate) {

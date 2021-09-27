@@ -8,14 +8,9 @@ public struct Thread {
     /// back on the current `EventLoop`.
     ///
     /// - Parameter task: The work to run.
-    /// - Returns: A future containing the result of the expensive
-    ///   work that completes on the current `EventLoop`.
-    public static func run<T>(_ task: @escaping () throws -> T) -> EventLoopFuture<T> {
-        @Inject var pool: NIOThreadPool
-        return pool.runIfActive(eventLoop: Loop.current, task)
-    }
-    
-    private func testAsync() async -> String {
-        "Hello, world!"
+    /// - Returns: The result of the expensive work that completes on
+    ///   the current `EventLoop`.
+    public static func run<T>(_ task: @escaping () throws -> T) async throws -> T {
+        try await NIOThreadPool.default.runIfActive(eventLoop: Loop.current, task).get()
     }
 }

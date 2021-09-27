@@ -56,11 +56,6 @@ public final class Scheduler: Service {
             delay = Int64(newDate.timeIntervalSinceNow * 1000)
         }
         
-        let elp = loop.makePromise(of: Void.self)
-        elp.completeWithTask {
-            try await scheduleNextAndRun()
-        }
-        
-        loop.flatScheduleTask(in: .milliseconds(delay)) { elp.futureResult }
+        loop.flatScheduleTask(in: .milliseconds(delay)) { loop.wrapAsync { try await scheduleNextAndRun() } }
     }
 }

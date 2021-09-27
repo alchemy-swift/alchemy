@@ -1,6 +1,6 @@
 import NIO
 
-/// A task that can be persisted and queued for future handling.
+/// A task that can be persisted and queued for background processing.
 public protocol Job: Codable {
     /// The name of this Job. Defaults to the type name.
     static var name: String { get }

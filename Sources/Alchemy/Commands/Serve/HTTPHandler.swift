@@ -3,12 +3,10 @@ import NIOHTTP1
 
 /// A type that can respond to HTTP requests.
 protocol HTTPRouter {
-    /// Handle a `Request` with a future containing a `Response`. Should never result in an error.
+    /// Given a `Request`, return a `Response`. Should never result in an error.
     ///
     /// - Parameter request: The request to respond to.
-    /// - Returns: A future containing the response to send to the
-    ///   client.
-    func handle(request: Request) async throws -> Response
+    func handle(request: Request) async -> Response
 }
 
 /// Responds to incoming `HTTPRequests` with an `Response` generated
@@ -81,7 +79,7 @@ final class HTTPHandler: ChannelInboundHandler {
             // Writes the response when done
             writeResponse(
                 version: request.head.version,
-                getResponse: { try await self.router.handle(request: request) },
+                getResponse: { await self.router.handle(request: request) },
                 to: context
             )
         }
@@ -94,8 +92,7 @@ final class HTTPHandler: ChannelInboundHandler {
     ///   - version: The HTTP version of the connection.
     ///   - response: The reponse to write to the handler context.
     ///   - context: The context to write to.
-    /// - Returns: An future that completes when the response is
-    ///   written.
+    /// - Returns: A handle for the task of writing the response.
     @discardableResult
     private func writeResponse(
         version: HTTPVersion,
@@ -107,7 +104,7 @@ final class HTTPHandler: ChannelInboundHandler {
             let responseWriter = HTTPResponseWriter(version: version, handler: self, context: context)
             try await response.write(to: responseWriter)
             if !self.keepAlive {
-                context.close(promise: nil)
+                try await context.close()
             }
         }
     }
