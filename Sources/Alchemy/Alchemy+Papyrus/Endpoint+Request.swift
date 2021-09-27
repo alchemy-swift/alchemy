@@ -119,37 +119,34 @@ extension HTTPClient {
             body: bodyData.map { HTTPClient.Body.data($0) }
         )
         
-        return try await execute(request: request)
-            .flatMapThrowing { response in
-                guard (200...299).contains(response.status.code) else {
-                    throw PapyrusClientError(
-                        message: "The response code was not successful",
-                        response: response
-                    )
-                }
-                
-                if Response.self == Empty.self {
-                    return (Empty.value as! Response, response)
-                }
+        let response = try await execute(request: request).get()
+        guard (200...299).contains(response.status.code) else {
+            throw PapyrusClientError(
+                message: "The response code was not successful",
+                response: response
+            )
+        }
+        
+        if Response.self == Empty.self {
+            return (Empty.value as! Response, response)
+        }
 
-                guard let bodyBuffer = response.body else {
-                    throw PapyrusClientError(
-                        message: "Unable to decode response type `\(Response.self)`; the body of the response was empty!",
-                        response: response
-                    )
-                }
+        guard let bodyBuffer = response.body else {
+            throw PapyrusClientError(
+                message: "Unable to decode response type `\(Response.self)`; the body of the response was empty!",
+                response: response
+            )
+        }
 
-                // Decode
-                do {
-                    let responseJSON = try HTTPBody(buffer: bodyBuffer).decodeJSON(as: Response.self, with: decoder)
-                    return (responseJSON, response)
-                } catch {
-                    throw PapyrusClientError(
-                        message: "Error decoding `\(Response.self)` from the response. \(error)",
-                        response: response
-                    )
-                }
-            }
-            .get()
+        // Decode
+        do {
+            let responseJSON = try HTTPBody(buffer: bodyBuffer).decodeJSON(as: Response.self, with: decoder)
+            return (responseJSON, response)
+        } catch {
+            throw PapyrusClientError(
+                message: "Error decoding `\(Response.self)` from the response. \(error)",
+                response: response
+            )
+        }
     }
 }
