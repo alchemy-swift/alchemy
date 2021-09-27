@@ -105,15 +105,12 @@ extension BasicAuthable {
         let rows = try await query()
             .where(usernameKeyString == username)
             .get(["\(tableName).*", passwordKeyString])
-            .get()
-        
         
         guard let firstRow = rows.first else {
             throw error
         }
         
         let passwordHash = try firstRow.getField(column: passwordKeyString).string()
-        
         guard try verify(password: password, passwordHash: passwordHash) else {
             throw error
         }

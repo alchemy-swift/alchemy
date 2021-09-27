@@ -101,7 +101,7 @@ open class Grammar {
     
     open func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
         let sql = try compileInsert(query, values: values)
-        return query.database.runRawQuery(sql.query, values: sql.bindings).get()
+        return try await query.database.runRawQuery(sql.query, values: sql.bindings)
     }
     
     open func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {

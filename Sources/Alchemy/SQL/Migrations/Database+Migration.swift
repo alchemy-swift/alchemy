@@ -52,7 +52,7 @@ extension Database {
             try await runStatements(statements: statements)
         }
         
-        return try await AlchemyMigration.query(database: self).allModels().get()
+        return try await AlchemyMigration.query(database: self).allModels()
     }
     
     /// Run the `.down` functions of an array of migrations, in order.
@@ -78,7 +78,7 @@ extension Database {
         for m in migrations {
             let statements = m.upStatements(for: driver.grammar)
             try await runStatements(statements: statements)
-            _ = try await AlchemyMigration(name: m.name, batch: batch, runAt: Date()).save(db: self).get()
+            _ = try await AlchemyMigration(name: m.name, batch: batch, runAt: Date()).save(db: self)
         }
     }
     

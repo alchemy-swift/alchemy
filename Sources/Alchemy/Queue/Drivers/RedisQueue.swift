@@ -86,15 +86,15 @@ final class RedisQueue: QueueDriver {
                     let jobId = String(values[0])
                     let channel = String(values[1])
                     let queueList = self.key(for: channel)
-                    return self.redis.lpush(jobId, into: queueList).voided()
+                    return self.redis.lpush(jobId, into: queueList).map { _ in }
                 }
-                .voided()
+                .map { _ in }
         }
     }
     
     private func storeJobData(_ job: JobData) async throws {
         let jsonString = try job.jsonString()
-        _ = try await redis.hset(job.id, to: jsonString, in: self.dataKey).get()
+        _ = try await redis.hset(job.id, to: jsonString, in: dataKey).get()
     }
 }
 

@@ -585,7 +585,7 @@ public class Query: Sequelizable {
         }
         
         let sql = try self.database.grammar.compileSelect(query: self)
-        return try await database.runRawQuery(sql.query, values: sql.bindings).get()
+        return try await database.runRawQuery(sql.query, values: sql.bindings)
     }
 
     /// Run a select query and return the first database row only row.
@@ -688,13 +688,13 @@ public class Query: Sequelizable {
     ///   updated.
     public func update(values: [String: Parameter]) async throws {
         let sql = try database.grammar.compileUpdate(self, values: values)
-        _ = try await database.runRawQuery(sql.query, values: sql.bindings).get()
+        _ = try await database.runRawQuery(sql.query, values: sql.bindings)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
         let sql = try database.grammar.compileDelete(self)
-        _ = try await database.runRawQuery(sql.query, values: sql.bindings).get()
+        _ = try await database.runRawQuery(sql.query, values: sql.bindings)
     }
 }
 

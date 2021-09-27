@@ -16,12 +16,12 @@ final class DatabaseQueue: QueueDriver {
     // MARK: - Queue
     
     func enqueue(_ job: JobData) async throws {
-        _ = try await JobModel(jobData: job).insert(db: database).get()
+        _ = try await JobModel(jobData: job).insert(db: database)
     }
 
     func dequeue(from channel: String) async throws -> JobData? {
-        return try await database.transaction { (database: Database) -> EventLoopFuture<JobData?> in
-            return JobModel.query(database: database)
+        return try await database.transaction { conn in
+            let job = try await JobModel.query(database: conn)
                 .where("reserved" != true)
                 .where("channel" == channel)
                 .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
@@ -29,14 +29,12 @@ final class DatabaseQueue: QueueDriver {
                 .limit(1)
                 .forLock(.update, option: .skipLocked)
                 .firstModel()
-                .optionalFlatMap { job -> EventLoopFuture<JobModel> in
-                    var job = job
-                    job.reserved = true
-                    job.reservedAt = Date()
-                    return job.save(db: database)
-                }
-                .map { $0?.toJobData() }
-        }.get()
+            
+            return try await job?.update {
+                $0.reserved = true
+                $0.reservedAt = Date()
+            }.toJobData()
+        }
     }
     
     func complete(_ job: JobData, outcome: JobOutcome) async throws {
@@ -46,9 +44,8 @@ final class DatabaseQueue: QueueDriver {
                 .where("id" == job.id)
                 .where("channel" == job.channel)
                 .delete()
-                .get()
         case .retry:
-            _ = try await JobModel(jobData: job).update(db: database).get()
+            _ = try await JobModel(jobData: job).update(db: database)
         }
     }
 }

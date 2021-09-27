@@ -84,8 +84,7 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
             .where(T.valueKeyString == bearerAuth.token)
             .with(T.userKey)
             .firstModel()
-            .flatMapThrowing { try $0.unwrap(or: HTTPError(.unauthorized)) }
-            .get()
+            .unwrap(or: HTTPError(.unauthorized))
         
         return try await next(
             request

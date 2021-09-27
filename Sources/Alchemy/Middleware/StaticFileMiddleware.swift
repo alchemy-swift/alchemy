@@ -75,7 +75,7 @@ public struct StaticFileMiddleware: Middleware {
                                 try await responseWriter.writeBody(buffer)
                             }
                             
-                            return .new(())
+                            return Loop.current.makeSucceededVoidFuture()
                         }
                     ).get()
                     try fileHandle.close()

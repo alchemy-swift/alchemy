@@ -47,8 +47,9 @@ final class RunServe: Command {
             lifecycle.register(
                 label: "Migrate",
                 start: .eventLoopFuture {
-                    Loop.group.next()
-                        .flatSubmit(Database.default.migrate)
+                    Loop.group.next().wrapAsync {
+                        try await Database.default.migrate()
+                    }
                 },
                 shutdown: .none
             )
@@ -164,7 +165,7 @@ extension Channel {
                                     HTTPHandler(router: Router.default)
                                 ])
                         })
-                        .voided()
+                        .map { _ in }
                 },
                 http1ChannelConfigurator: { http1Channel in
                     http1Channel.pipeline

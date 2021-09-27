@@ -14,7 +14,7 @@ final class DatabaseCache: CacheDriver {
     
     /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) async throws -> CacheItem? {
-        let item = try await CacheItem.query(database: db).where("_key" == key).firstModel().get()
+        let item = try await CacheItem.query(database: db).where("_key" == key).firstModel()
         guard let item = item else {
             return nil
         }
@@ -22,7 +22,7 @@ final class DatabaseCache: CacheDriver {
         if item.isValid {
             return item
         } else {
-            _ = try await CacheItem.query(database: db).where("_key" == key).delete().get()
+            _ = try await CacheItem.query(database: db).where("_key" == key).delete()
             return nil
         }
     }
@@ -39,9 +39,9 @@ final class DatabaseCache: CacheDriver {
         if var item = item {
             item.text = value.stringValue
             item.expiration = expiration ?? -1
-            _ = try await item.save(db: db).get()
+            _ = try await item.save(db: db)
         } else {
-            _ = try await CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1).save(db: db).get()
+            _ = try await CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1).save(db: db)
         }
     }
     
@@ -52,7 +52,7 @@ final class DatabaseCache: CacheDriver {
     func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
         if let item = try await getItem(key: key) {
             let value: C = try item.cast()
-            _ = try await item.delete().get()
+            _ = try await item.delete()
             return item.isValid ? value : nil
         } else {
             return nil
@@ -60,16 +60,16 @@ final class DatabaseCache: CacheDriver {
     }
     
     func delete(_ key: String) async throws {
-        _ = try await CacheItem.query(database: db).where("_key" == key).delete().get()
+        _ = try await CacheItem.query(database: db).where("_key" == key).delete()
     }
     
     func increment(_ key: String, by amount: Int) async throws -> Int {
         if let item = try await getItem(key: key) {
             let newVal = try item.cast() + amount
-            _ = try await item.update { $0.text = "\(newVal)" }.get()
+            _ = try await item.update { $0.text = "\(newVal)" }
             return newVal
         } else {
-            _ = CacheItem(_key: key, text: "\(amount)").save(db: db)
+            _ = try await CacheItem(_key: key, text: "\(amount)").save(db: db)
             return amount
         }
     }
@@ -79,7 +79,7 @@ final class DatabaseCache: CacheDriver {
     }
     
     func wipe() async throws {
-        try await CacheItem.deleteAll(db: db).get()
+        try await CacheItem.deleteAll(db: db)
     }
 }
 
