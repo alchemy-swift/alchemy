@@ -1,4 +1,4 @@
-import Foundation
+import NIO
 import RediStack
 
 /// RedisClient conformance. See `RedisClient` for docs.
@@ -64,10 +64,9 @@ extension Redis: RedisClient {
     /// - Parameters:
     ///   - name: The name of the command.
     ///   - args: Any arguments for the command.
-    /// - Returns: A future containing the return value of the
-    ///   command.
-    public func command(_ name: String, args: RESPValueConvertible...) -> EventLoopFuture<RESPValue> {
-        self.command(name, args: args)
+    /// - Returns: The return value of the command.
+    public func command(_ name: String, args: RESPValueConvertible...) async throws -> RESPValue {
+        try await command(name, args: args)
     }
     
     /// Wrapper around sending commands to Redis.
@@ -75,10 +74,9 @@ extension Redis: RedisClient {
     /// - Parameters:
     ///   - name: The name of the command.
     ///   - args: An array of arguments for the command.
-    /// - Returns: A future containing the return value of the
-    ///   command.
-    public func command(_ name: String, args: [RESPValueConvertible]) -> EventLoopFuture<RESPValue> {
-        self.send(command: name, with: args.map { $0.convertedToRESPValue() })
+    /// - Returns: The return value of the command.
+    public func command(_ name: String, args: [RESPValueConvertible]) async throws -> RESPValue {
+        try await send(command: name, with: args.map { $0.convertedToRESPValue() }).get()
     }
     
     /// Evaluate the given Lua script.
@@ -88,10 +86,9 @@ extension Redis: RedisClient {
     ///   - keys: The arguments that represent Redis keys. See
     ///     [EVAL](https://redis.io/commands/eval) docs for details.
     ///   - args: All other arguments.
-    /// - Returns: A future that completes with the result of the
-    ///   script.
-    public func eval(_ script: String, keys: [String] = [], args: [RESPValueConvertible] = []) -> EventLoopFuture<RESPValue> {
-        self.command("EVAL", args: [script] + [keys.count] + keys + args)
+    /// - Returns: The result of the script.
+    public func eval(_ script: String, keys: [String] = [], args: [RESPValueConvertible] = []) async throws -> RESPValue {
+        try await command("EVAL", args: [script] + [keys.count] + keys + args)
     }
     
     /// Subscribe to a single channel.
@@ -100,19 +97,19 @@ extension Redis: RedisClient {
     ///   - channel: The name of the channel to subscribe to.
     ///   - messageReciver: The closure to execute when a message
     ///     comes through the given channel.
-    /// - Returns: A future that completes when the subscription is
-    ///   established.
-    public func subscribe(to channel: RedisChannelName, messageReciver: @escaping (RESPValue) -> Void) -> EventLoopFuture<Void> {
-        self.subscribe(to: [channel]) { _, value in messageReciver(value) }
+    public func subscribe(to channel: RedisChannelName, messageReciver: @escaping (RESPValue) -> Void) async throws {
+        try await subscribe(to: [channel]) { _, value in messageReciver(value) }.get()
     }
     
     /// Sends a Redis transaction over a single connection. Wrapper around
     /// "MULTI" ... "EXEC".
-    public func transaction<T>(_ action: @escaping (Redis) -> EventLoopFuture<T>) -> EventLoopFuture<RESPValue> {
-        driver.leaseConnection { conn in
-            return conn.send(command: "MULTI")
-                .flatMap { _ in action(Redis(driver: conn)) }
-                .flatMap { _ in return conn.send(command: "EXEC") }
+    ///
+    /// - Returns: The result of finishing the transaction.
+    public func transaction(_ action: @escaping (Redis) async throws -> Void) async throws -> RESPValue {
+        try await driver.leaseConnection { conn in
+            _ = try await conn.send(command: "MULTI").get()
+            try await action(Redis(driver: conn))
+            return try await conn.send(command: "EXEC").get()
         }
     }
 }
@@ -126,7 +123,7 @@ extension RedisConnection: RedisDriver {
         try close().wait()
     }
     
-    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        transaction(self)
+    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) async throws -> T) async throws -> T {
+        try await transaction(self)
     }
 }

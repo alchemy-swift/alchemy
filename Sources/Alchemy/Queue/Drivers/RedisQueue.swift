@@ -2,7 +2,7 @@ import NIO
 import RediStack
 
 /// A queue that persists jobs to a Redis instance.
-final class RedisQueue: QueueDriver {
+struct RedisQueue: QueueDriver {
     /// The underlying redis connection.
     private let redis: Redis
     /// All job data.
@@ -63,32 +63,29 @@ final class RedisQueue: QueueDriver {
     
     private func monitorBackoffs() {
         let loop = Loop.group.next()
-        loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { (task: RepeatedTask) ->
-            EventLoopFuture<Void> in
-            return self.redis
-                // Get and remove backoffs that can be rerun.
-                .transaction { conn -> EventLoopFuture<RESPValue> in
-                    let set = RESPValue(from: self.backoffsKey.rawValue)
-                    let min = RESPValue(from: 0)
-                    let max = RESPValue(from: Date().timeIntervalSince1970)
-                    return conn.send(command: "ZRANGEBYSCORE", with: [set, min, max])
-                        .flatMap { _ in conn.send(command: "ZREMRANGEBYSCORE", with: [set, min, max]) }
-                }
-                .map { (value: RESPValue) -> [String] in
-                    guard let values = value.array, let scores = values.first?.array, !scores.isEmpty else {
-                        return []
+        loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
+            loop.wrapAsync {
+                let result = try await redis
+                    // Get and remove backoffs that can be rerun.
+                    .transaction { conn in
+                        let set = RESPValue(from: backoffsKey.rawValue)
+                        let min = RESPValue(from: 0)
+                        let max = RESPValue(from: Date().timeIntervalSince1970)
+                        _ = try await conn.send(command: "ZRANGEBYSCORE", with: [set, min, max]).get()
+                        _ = try await conn.send(command: "ZREMRANGEBYSCORE", with: [set, min, max]).get()
                     }
-                    
-                    return scores.compactMap(\.string)
+                
+                guard let values = result.array, let scores = values.first?.array, !scores.isEmpty else {
+                    return
                 }
-                .flatMapEach(on: loop) { backoffKey -> EventLoopFuture<Void> in
+                
+                for backoffKey in scores.compactMap(\.string) {
                     let values = backoffKey.split(separator: ":")
                     let jobId = String(values[0])
                     let channel = String(values[1])
-                    let queueList = self.key(for: channel)
-                    return self.redis.lpush(jobId, into: queueList).map { _ in }
+                    _ = try await redis.lpush(jobId, into: key(for: channel)).get()
                 }
-                .map { _ in }
+            }
         }
     }
     

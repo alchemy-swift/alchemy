@@ -89,7 +89,8 @@ protocol RedisDriver {
     ///
     /// - Parameter transaction: An asynchronous transaction to run on
     ///   the connection.
-    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T>
+    /// - Returns: The resulting value of the transaction.
+    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) async throws -> T) async throws -> T
 }
 
 /// A connection pool is a redis driver with a pool per `EventLoop`.
@@ -108,8 +109,11 @@ private final class ConnectionPool: RedisDriver {
         getPool()
     }
 
-    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        getPool().leaseConnection(transaction)
+    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) async throws -> T) async throws -> T {
+        let pool = getPool()
+        return try await pool.leaseConnection { conn in
+            pool.eventLoop.wrapAsync { try await transaction(conn) }
+        }.get()
     }
 
     func shutdown() throws {

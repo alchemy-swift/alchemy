@@ -56,7 +56,7 @@ final class RedisCacheDriver: CacheDriver {
     }
     
     func wipe() async throws {
-        _ = try await redis.command("FLUSHDB").get()
+        _ = try await redis.command("FLUSHDB")
     }
 }
 
