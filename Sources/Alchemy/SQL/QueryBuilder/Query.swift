@@ -730,31 +730,31 @@ extension Query {
 }
 
 extension String {
-    public static func ==(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func == (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .equals, value: rhs.value)
     }
 
-    public static func !=(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func != (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .notEqualTo, value: rhs.value)
     }
 
-    public static func <(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func < (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .lessThan, value: rhs.value)
     }
 
-    public static func >(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func > (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .greaterThan, value: rhs.value)
     }
 
-    public static func <=(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func <= (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .lessThanOrEqualTo, value: rhs.value)
     }
 
-    public static func >=(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func >= (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .greaterThanOrEqualTo, value: rhs.value)
     }
 
-    public static func ~=(lhs: String, rhs: Parameter) -> WhereValue {
+    public static func ~= (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .like, value: rhs.value)
     }
 }

@@ -1,10 +1,10 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.5
 import PackageDescription
 
 let package = Package(
     name: "alchemy",
     platforms: [
-        .macOS(.v10_15),
+        .macOS(.v11),
         .iOS(.v13),
     ],
     products: [
@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/alchemy-swift/swift-nio", .branch("main")),
+        .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.6.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.9.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
@@ -23,7 +23,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
         .package(url: "https://github.com/alchemy-swift/papyrus", from: "0.1.0"),
-        .package(url: "https://github.com/alchemy-swift/fusion", from: "0.1.0"),
+        .package(url: "https://github.com/alchemy-swift/fusion", from: "0.2.0"),
         .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
         .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),

@@ -75,11 +75,11 @@ extension Request {
 
 /// A type representing any auth that may be on an HTTP request.
 /// Supports `Basic` and `Bearer`.
-public enum HTTPAuth {
+public enum HTTPAuth: Equatable {
     /// The basic auth of an Request. Corresponds to a header that
     /// looks like
     /// `Authorization: Basic <base64-encoded-username-password>`.
-    public struct Basic {
+    public struct Basic: Equatable {
         /// The username of this authorization. Comes before the colon
         /// in the decoded `Authorization` header value i.e.
         /// `Basic <username>:<password>`.
@@ -92,7 +92,7 @@ public enum HTTPAuth {
 
     /// The bearer auth of an Request. Corresponds to a header that
     /// looks like `Authorization: Bearer <token>`.
-    public struct Bearer {
+    public struct Bearer: Equatable {
         /// The token in the `Authorization` header value.
         /// i.e. `Bearer <token>`.
         public let token: String

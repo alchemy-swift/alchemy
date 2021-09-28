@@ -18,8 +18,19 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
-    public static func find(db: Database = .default, _ id: Self.Identifier) async throws -> Self? {
+    public static func find(_ id: Self.Identifier, db: Database = .default) async throws -> Self? {
         try await Self.firstWhere("id" == id, db: db)
+    }
+    
+    /// Fetch the first model with the given id.
+    ///
+    /// - Parameters:
+    ///   - db: The database to fetch the model from. Defaults to
+    ///     `Database.default`.
+    ///   - id: The id of the model to find.
+    /// - Returns: A matching model, if one exists.
+    public static func find(_ where: WhereValue, db: Database = .default) async throws -> Self? {
+        try await Self.firstWhere(`where`, db: db)
     }
     
     /// Fetch the first model with the given id, throwing the given

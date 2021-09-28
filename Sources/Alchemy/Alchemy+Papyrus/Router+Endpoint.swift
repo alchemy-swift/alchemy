@@ -44,6 +44,41 @@ public extension Application {
             return Response(status: .ok, body: try HTTPBody(json: result, encoder: endpoint.jsonEncoder))
         }
     }
+    
+    /// Registers a `Papyrus.Endpoint` that has an `Empty` response
+    /// type.
+    ///
+    /// - Parameters:
+    ///   - endpoint: The endpoint to register on this application.
+    ///   - handler: The handler for handling incoming requests that
+    ///     match this endpoint's path. This handler returns Void.
+    /// - Returns: `self`, for chaining more requests.
+    @discardableResult
+    func on<Req>(
+        _ endpoint: Endpoint<Req, Empty>,
+        use handler: @escaping (Request, Req) async throws -> Void
+    ) -> Self {
+        on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
+            try await handler(request, Req(from: request))
+            return Response(status: .ok, body: nil)
+        }
+    }
+    
+    /// Registers a `Papyrus.Endpoint` that has an `Empty` request and
+    /// response type.
+    ///
+    /// - Parameters:
+    ///   - endpoint: The endpoint to register on this application.
+    ///   - handler: The handler for handling incoming requests that
+    ///     match this endpoint's path. This handler returns Void.
+    /// - Returns: `self`, for chaining more requests.
+    @discardableResult
+    func on(_ endpoint: Endpoint<Empty, Empty>, use handler: @escaping (Request) async throws -> Void) -> Self {
+        on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
+            try await handler(request)
+            return Response(status: .ok, body: nil)
+        }
+    }
 }
 
 // Provide a custom response for when `PapyrusValidationError`s are
