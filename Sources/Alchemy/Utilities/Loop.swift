@@ -16,7 +16,10 @@ public struct Loop {
     static func config() {
         Container.register(EventLoop.self) { _ in
             guard let current = MultiThreadedEventLoopGroup.currentEventLoop else {
-                fatalError("This code isn't running on an `EventLoop`!")
+                // With async/await there is no guarantee that you'll
+                // be running on an event loop. When one is needed,
+                // return a random one for now.
+                return Loop.group.next()
             }
 
             return current

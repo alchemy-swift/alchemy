@@ -60,30 +60,35 @@ public struct StaticFileMiddleware: Middleware {
                    let mediaType = MIMEType(fileExtension: ext) {
                     headers.add(name: "content-type", value: mediaType.value)
                 }
-                try await responseWriter.writeHead(status: .ok, headers)
+                responseWriter.writeHead(status: .ok, headers)
                 
                 // Load the file in chunks, streaming it.
-                do {
-                    try await self.fileIO.readChunked(
-                        fileHandle: fileHandle,
-                        byteCount: fileSizeBytes,
-                        chunkSize: NonBlockingFileIO.defaultChunkSize,
-                        allocator: self.bufferAllocator,
-                        eventLoop: Loop.current,
-                        chunkHandler: { buffer in
-                            Task {
-                                try await responseWriter.writeBody(buffer)
-                            }
-                            
-                            return Loop.current.makeSucceededVoidFuture()
-                        }
-                    ).get()
+                self.fileIO.readChunked(
+                    fileHandle: fileHandle,
+                    byteCount: fileSizeBytes,
+                    chunkSize: NonBlockingFileIO.defaultChunkSize,
+                    allocator: self.bufferAllocator,
+                    eventLoop: Loop.current,
+                    chunkHandler: { buffer in
+                        responseWriter.writeBody(buffer)
+                        return Loop.current.makeSucceededVoidFuture()
+                    }
+                )
+                .flatMapThrowing {
                     try fileHandle.close()
-                } catch {
-                    // Not a ton that can be done in the case of
-                    // an error, not sure what else can be done
-                    // besides logging and ending the request.
-                    Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
+                }
+                .whenComplete { result in
+                    try? fileHandle.close()
+                    switch result {
+                    case .failure(let error):
+                        // Not a ton that can be done in the case of
+                        // an error, not sure what else can be done
+                        // besides logging and ending the request.
+                        Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
+                        responseWriter.writeEnd()
+                    case .success:
+                        responseWriter.writeEnd()
+                    }
                 }
             }
             
