@@ -211,7 +211,7 @@ extension Model {
     /// - Parameter db: The database to remove this model from.
     ///   Defaults to `Database.default`.
     public func delete(db: Database = .default) async throws {
-        try await Self.query(database: db).where("id" == getID()).delete()
+        try await Self.query(database: db).where("id" == id).delete()
     }
 
     /// Fetches an copy of this model from a database, with any
