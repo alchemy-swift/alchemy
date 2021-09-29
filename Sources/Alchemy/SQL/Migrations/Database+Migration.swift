@@ -63,7 +63,7 @@ extension Database {
         for m in migrations.sorted(by: { $0.name > $1.name }) {
             let statements = m.downStatements(for: driver.grammar)
             try await runStatements(statements: statements)
-            try await query().where("name" == m.name).delete()
+            try await AlchemyMigration.query(database: self).where("name" == m.name).delete()
         }
     }
     

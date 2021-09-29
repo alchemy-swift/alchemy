@@ -15,9 +15,18 @@ public struct PapyrusClientError: Error {
         guard let body = response.body else {
             return nil
         }
-        
+
         var copy = body
-        return copy.readString(length: copy.writerIndex)
+        if
+            let data = copy.readData(length: copy.writerIndex),
+            let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
+            let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
+        {
+            return String(decoding: jsonData, as: UTF8.self)
+        } else {
+            var otherCopy = body
+            return otherCopy.readString(length: otherCopy.writerIndex)
+        }
     }
 }
 

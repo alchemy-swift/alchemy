@@ -149,19 +149,19 @@ private struct HTTPResponseWriter: ResponseWriter {
     
     func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
         let head = HTTPResponseHead(version: version, status: status, headers: headers)
-        context.eventLoop.submit {
+        _ = context.eventLoop.submit {
             self.context.write(self.handler.wrapOutboundOut(.head(head)), promise: nil)
         }
     }
     
     func writeBody(_ body: ByteBuffer) {
-        context.eventLoop.submit {
+        _ = context.eventLoop.submit {
             self.context.writeAndFlush(self.handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
         }
     }
     
     func writeEnd() {
-        context.eventLoop.submit {
+        _ = context.eventLoop.submit {
             self.context.writeAndFlush(self.handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
         }
     }
