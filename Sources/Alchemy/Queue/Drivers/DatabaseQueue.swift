@@ -30,7 +30,7 @@ final class DatabaseQueue: QueueDriver {
                 .forLock(.update, option: .skipLocked)
                 .firstModel()
             
-            return try await job?.update {
+            return try await job?.update(db: conn) {
                 $0.reserved = true
                 $0.reservedAt = Date()
             }.toJobData()

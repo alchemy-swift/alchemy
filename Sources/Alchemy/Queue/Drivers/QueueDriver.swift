@@ -70,7 +70,7 @@ extension QueueDriver {
                 return
             }
             
-            Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
+            Log.debug("[Queue] dequeued job \(jobData.jobName) from queue \(jobData.channel)")
             try await execute(jobData)
             try await runNext(from: channels)
         } catch {

@@ -47,6 +47,8 @@ public final class Queue: Service {
         pollRate: TimeAmount = Queue.defaultPollRate,
         on eventLoop: EventLoop = Loop.group.next()
     ) {
+        let loopId = ObjectIdentifier(eventLoop).debugDescription.dropLast().suffix(6)
+        Log.info("[Queue] starting worker \(loopId)")
         driver.startWorker(for: channels, pollRate: pollRate, on: eventLoop)
     }
 }
