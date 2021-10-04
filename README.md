@@ -77,7 +77,7 @@ Creating an app with the CLI lets you pick between a backend or fullstack projec
 You can also add Alchemy to your project manually with the [Swift Package Manager](https://github.com/apple/swift-package-manager).
 
 ```swift
-.package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.2.0"))
+.package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.3.0"))
 ```
 
 Until `1.0.0` is released, minor version changes might be breaking, so you may want to use `upToNextMinor`.
