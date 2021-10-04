@@ -60,7 +60,9 @@ final class RunServe: Command {
             lifecycle.registerScheduler()
         }
         
-        lifecycle.registerWorkers(workers, on: .default)
+        if workers > 0 {
+            lifecycle.registerWorkers(workers, on: .default)
+        }
     }
     
     func start() -> EventLoopFuture<Void> {
