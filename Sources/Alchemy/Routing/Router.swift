@@ -11,22 +11,33 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
 public final class Router: HTTPRouter, Service {
-    /// A router handler. Takes a request and returns a response.
-    private typealias RouterHandler = (Request) async throws -> Response
+    /// A route handler. Takes a request and returns a response.
+    public typealias Handler = (Request) async throws -> ResponseConvertible
+    
+    /// A handler for returning a response after an error is
+    /// encountered while initially handling the request.
+    public typealias ErrorHandler = (Request, Error) async -> Response
+    
+    private typealias HTTPHandler = (Request) async -> Response
 
     /// The default response for when there is an error along the
     /// routing chain that does not conform to
     /// `ResponseConvertible`.
-    public static var internalErrorResponse = Response(
-        status: .internalServerError,
-        body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
-    )
+    var internalErrorHandler: ErrorHandler = { _, err in
+        Log.error("[Server] encountered internal error: \(err).")
+        return Response(
+            status: .internalServerError,
+            body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
+        )
+    }
 
     /// The response for when no handler is found for a Request.
-    public static var notFoundResponse = Response(
-        status: .notFound,
-        body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
-    )
+    var notFoundHandler: Handler = { _ in
+        Response(
+            status: .notFound,
+            body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
+        )
+    }
     
     /// `Middleware` that will intercept all requests through this
     /// router, before all other `Middleware` regardless of
@@ -40,7 +51,7 @@ public final class Router: HTTPRouter, Service {
     var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
-    private let trie = RouterTrieNode<HTTPMethod, RouterHandler>()
+    private let trie = RouterTrieNode<HTTPMethod, HTTPHandler>()
     
     /// Creates a new router.
     init() {}
@@ -53,25 +64,19 @@ public final class Router: HTTPRouter, Service {
     ///     given method and path.
     ///   - method: The method of a request this handler expects.
     ///   - path: The path of a requst this handler can handle.
-    func add(handler: @escaping (Request) async throws -> ResponseConvertible, for method: HTTPMethod, path: String) {
+    func add(handler: @escaping Handler, for method: HTTPMethod, path: String) {
         let pathPrefixes = pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
         let splitPath = pathPrefixes + path.tokenized
-        let middlewareClosures = middlewares.reversed().map(Middleware.interceptConvertError)
+        let middlewareClosures = middlewares.reversed().map(Middleware.intercept)
         trie.insert(path: splitPath, storageKey: method) {
-            var next = { (request: Request) async throws -> Response in
-                do {
-                    return try await handler(request).convert()
-                } catch {
-                    return await error.convertToResponse()
-                }
-            }
+            var next = self.cleanHandler(handler)
             
             for middleware in middlewareClosures {
                 let oldNext = next
-                next = { await middleware($0, oldNext) }
+                next = self.cleanHandler { try await middleware($0, oldNext) }
             }
             
-            return try await next($0)
+            return await next($0)
         }
     }
     
@@ -85,59 +90,42 @@ public final class Router: HTTPRouter, Service {
     ///   `.notFound` response if there was not a
     ///   matching handler.
     func handle(request: Request) async -> Response {
-        var handler = notFoundHandler
+        var handler = cleanHandler(notFoundHandler)
 
         // Find a matching handler
         if let match = trie.search(path: request.path.tokenized, storageKey: request.method) {
             request.pathParameters = match.parameters
-            handler = { request in
-                do {
-                    return try await match.value(request)
-                } catch {
-                    return await error.convertToResponse()
-                }
-            }
+            handler = match.value
         }
-
+        
         // Apply global middlewares
         for middleware in globalMiddlewares.reversed() {
             let lastHandler = handler
-            handler = { await middleware.interceptConvertError($0, next: lastHandler) }
+            handler = cleanHandler {
+                try await middleware.intercept($0, next: lastHandler)
+            }
         }
-
+        
         return await handler(request)
     }
-
-    private func notFoundHandler(_ request: Request) async -> Response {
-        Router.notFoundResponse
-    }
-}
-
-private extension Middleware {
-    func interceptConvertError(_ request: Request, next: @escaping Next) async -> Response {
-        do {
-            return try await intercept(request, next: next)
-        } catch {
-            return await error.convertToResponse()
-        }
-    }
-}
-
-private extension Error {
-    func convertToResponse() async -> Response {
-        func serverError() -> Response {
-            Log.error("[Server] encountered internal error: \(self).")
-            return Router.internalErrorResponse
-        }
-
-        do {
-            if let error = self as? ResponseConvertible {
-                return try await error.convert()
-            } else {
-                return serverError()
+    
+    /// Converts a throwing, ResponseConvertible handler into a
+    /// non-throwing Response handler.
+    private func cleanHandler(_ handler: @escaping Handler) -> (Request) async -> Response {
+        return { req in
+            do {
+                return try await handler(req).convert()
+            } catch {
+                if let error = error as? ResponseConvertible {
+                    do {
+                        return try await error.convert()
+                    } catch {
+                        return await self.internalErrorHandler(req, error)
+                    }
+                } else {
+                    return await self.internalErrorHandler(req, error)
+                }
             }
-        } catch {
-            return serverError()
         }
     }
 }

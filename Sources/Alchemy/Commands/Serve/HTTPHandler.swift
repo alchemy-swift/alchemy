@@ -3,7 +3,8 @@ import NIOHTTP1
 
 /// A type that can respond to HTTP requests.
 protocol HTTPRouter {
-    /// Given a `Request`, return a `Response`. Should never result in an error.
+    /// Given a `Request`, return a `Response`. Should never result in
+    /// an error.
     ///
     /// - Parameter request: The request to respond to.
     func handle(request: Request) async -> Response
