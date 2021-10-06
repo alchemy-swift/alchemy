@@ -1,8 +1,8 @@
 import NIO
 import NIOHTTP1
 
-/// A type that can respond to HTTP requests.
-protocol HTTPRouter {
+/// A type that can handle HTTP requests.
+protocol RequestHandler {
     /// Given a `Request`, return a `Response`. Should never result in
     /// an error.
     ///
@@ -25,14 +25,14 @@ final class HTTPHandler: ChannelInboundHandler {
     private var request: Request?
   
     /// The responder to all requests.
-    private let router: HTTPRouter
+    private let handler: RequestHandler
     
-    /// Initialize with a responder to handle all requests.
+    /// Initialize with a handler to respond to all requests.
     ///
-    /// - Parameter responder: The object to respond to all incoming
+    /// - Parameter handler: The object to respond to all incoming
     ///   `Request`s.
-    init(router: HTTPRouter) {
-        self.router = router
+    init(handler: RequestHandler) {
+        self.handler = handler
     }
     
     /// Received incoming `InboundIn` data, writing a response based
@@ -80,7 +80,7 @@ final class HTTPHandler: ChannelInboundHandler {
             // Writes the response when done
             writeResponse(
                 version: request.head.version,
-                getResponse: { await self.router.handle(request: request) },
+                getResponse: { await self.handler.handle(request: request) },
                 to: context
             )
         }

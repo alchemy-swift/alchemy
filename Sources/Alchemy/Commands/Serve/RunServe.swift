@@ -162,7 +162,7 @@ extension Channel {
                             channel.pipeline
                                 .addHandlers([
                                     HTTP2FramePayloadToHTTP1ServerCodec(),
-                                    HTTPHandler(router: Router.default)
+                                    HTTPHandler(handler: Router.default)
                                 ])
                         })
                         .map { _ in }
@@ -170,12 +170,12 @@ extension Channel {
                 http1ChannelConfigurator: { http1Channel in
                     http1Channel.pipeline
                         .configureHTTPServerPipeline(withErrorHandling: true)
-                        .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
+                        .flatMap { self.pipeline.addHandler(HTTPHandler(handler: Router.default)) }
                 }
             ).get()
         } else {
             try await pipeline.configureHTTPServerPipeline(withErrorHandling: true).get()
-            try await pipeline.addHandler(HTTPHandler(router: Router.default))
+            try await pipeline.addHandler(HTTPHandler(handler: Router.default))
         }
     }
 }

@@ -13,20 +13,20 @@ final class RouterTests: XCTestCase {
         app = TestApp()
         app.mockServices()
     }
-
+    
     func testMatch() {
         app.get { _ in "Hello, world!" }
         app.post { _ in 1 }
         app.register(.get1)
         app.register(.post1)
         wrapAsync {
-            let res1 = try await self.app.request(TestRequest(method: .GET, path: "", response: ""))
+            let res1 = await self.app.request(TestRequest(method: .GET, path: "", response: ""))
             XCTAssertEqual(res1, "Hello, world!")
-            let res2 = try await self.app.request(TestRequest(method: .POST, path: "", response: ""))
+            let res2 = await self.app.request(TestRequest(method: .POST, path: "", response: ""))
             XCTAssertEqual(res2, "1")
-            let res3 = try await self.app.request(.get1)
+            let res3 = await self.app.request(.get1)
             XCTAssertEqual(res3, TestRequest.get1.response)
-            let res4 = try await self.app.request(.post1)
+            let res4 = await self.app.request(.post1)
             XCTAssertEqual(res4, TestRequest.post1.response)
         }
     }
@@ -36,9 +36,9 @@ final class RouterTests: XCTestCase {
         app.register(.get1)
         app.register(.post1)
         wrapAsync {
-            let res1 = try await self.app.request(.get2)
+            let res1 = await self.app.request(.get2)
             XCTAssertEqual(res1, "Not Found")
-            let res2 = try await self.app.request(.postEmpty)
+            let res2 = await self.app.request(.postEmpty)
             XCTAssertEqual(res2, "Not Found")
         }
     }
@@ -61,7 +61,7 @@ final class RouterTests: XCTestCase {
             .register(.post1)
 
         wrapAsync {
-            _ = try await self.app.request(.get1)
+            _ = await self.app.request(.get1)
         }
 
         wait(for: [shouldFulfull], timeout: kMinTimeout)
@@ -87,7 +87,7 @@ final class RouterTests: XCTestCase {
             .register(.get1)
 
         wrapAsync {
-            _ = try await self.app.request(.get1)
+            _ = await self.app.request(.get1)
         }
 
         wait(for: [globalFulfill, mw1Fulfill, mw2Fulfill], timeout: kMinTimeout)
@@ -108,9 +108,9 @@ final class RouterTests: XCTestCase {
             .register(.get1)
 
         wrapAsync {
-            let res1 = try await self.app.request(.get1)
+            let res1 = await self.app.request(.get1)
             XCTAssertEqual(res1, TestRequest.get1.response)
-            let res2 = try await self.app.request(.post1)
+            let res2 = await self.app.request(.post1)
             XCTAssertEqual(res2, TestRequest.post1.response)
         }
         
@@ -161,16 +161,25 @@ final class RouterTests: XCTestCase {
             .register(.getEmpty)
         
         wrapAsync {
-            _ = try await self.app.request(.getEmpty)
+            _ = await self.app.request(.getEmpty)
         }
 
         wait(for: [mw1Req, mw1Res, mw2Req, mw2Res, mw3Req, mw3Res], timeout: kMinTimeout)
+    }
+    
+    func testArray() {
+        let array = ["Hello", "World"]
+        app.get { _ in array }
+        wrapAsync {
+            let res = await self.app._request(.GET, path: "/")
+            XCTAssertEqual(try res?.body?.decodeJSON(as: [String].self), array)
+        }
     }
 
     func testQueriesIgnored() {
         app.register(.get1)
         wrapAsync {
-            let res = try await self.app.request(.get1Queries)
+            let res = await self.app.request(.get1Queries)
             XCTAssertEqual(res, TestRequest.get1.response)
         }
     }
@@ -197,7 +206,7 @@ final class RouterTests: XCTestCase {
         }
         
         wrapAsync {
-            let res = try await self.app.request(TestRequest(method: routeMethod, path: routeToCall, response: ""))
+            let res = await self.app.request(TestRequest(method: routeMethod, path: routeToCall, response: ""))
             XCTAssertEqual(res, routeResponse)
         }
 
@@ -223,7 +232,7 @@ final class RouterTests: XCTestCase {
                 app
                     .register(.get1)
                     .register(.get2)
-                    .grouped("nested") { app in
+                    .grouped("/nested") { app in
                         app.register(.post1)
                     }
                     .register(.post2)
@@ -231,28 +240,28 @@ final class RouterTests: XCTestCase {
             .register(.get3)
 
         wrapAsync {
-            let res = try await self.app.request(TestRequest(
+            let res = await self.app.request(TestRequest(
                 method: .GET,
                 path: "/group\(TestRequest.get1.path)",
                 response: TestRequest.get1.path
             ))
             XCTAssertEqual(res, TestRequest.get1.response)
 
-            let res2 = try await self.app.request(TestRequest(
+            let res2 = await self.app.request(TestRequest(
                 method: .GET,
                 path: "/group\(TestRequest.get2.path)",
                 response: TestRequest.get2.path
             ))
             XCTAssertEqual(res2, TestRequest.get2.response)
 
-            let res3 = try await self.app.request(TestRequest(
+            let res3 = await self.app.request(TestRequest(
                 method: .POST,
                 path: "/group/nested\(TestRequest.post1.path)",
                 response: TestRequest.post1.path
             ))
             XCTAssertEqual(res3, TestRequest.post1.response)
 
-            let res4 = try await self.app.request(TestRequest(
+            let res4 = await self.app.request(TestRequest(
                 method: .POST,
                 path: "/group\(TestRequest.post2.path)",
                 response: TestRequest.post2.path
@@ -260,21 +269,61 @@ final class RouterTests: XCTestCase {
             XCTAssertEqual(res4, TestRequest.post2.response)
 
             // only available under group prefix
-            let res5 = try await self.app.request(TestRequest.get1)
+            let res5 = await self.app.request(TestRequest.get1)
             XCTAssertEqual(res5, "Not Found")
-            let res6 = try await self.app.request(TestRequest.get2)
+            let res6 = await self.app.request(TestRequest.get2)
             XCTAssertEqual(res6, "Not Found")
-            let res7 = try await self.app.request(TestRequest.post1)
+            let res7 = await self.app.request(TestRequest.post1)
             XCTAssertEqual(res7, "Not Found")
-            let res8 = try await self.app.request(TestRequest.post2)
+            let res8 = await self.app.request(TestRequest.post2)
             XCTAssertEqual(res8, "Not Found")
 
             // defined outside group --> still available without group prefix
-            let res9 = try await self.app.request(TestRequest.get3)
+            let res9 = await self.app.request(TestRequest.get3)
             XCTAssertEqual(res9, TestRequest.get3.response)
         }
     }
+    
+    func testErrorHandling() {
+        app.put { _ -> String in
+            throw NonConvertibleError()
+        }
+        
+        app.get { _ -> String in
+            throw ConvertibleError(shouldThrowWhenConverting: false)
+        }
+        
+        app.post { _ -> String in
+            throw ConvertibleError(shouldThrowWhenConverting: true)
+        }
+        
+        wrapAsync {
+            let res1 = await self.app._request(.GET, path: "/")
+            XCTAssertEqual(res1?.status, .badGateway)
+            XCTAssert(res1?.body == nil)
+            let res2 = await self.app._request(.POST, path: "/")
+            XCTAssertEqual(res2?.status, .internalServerError)
+            XCTAssert(res2?.body?.decodeString() == "Internal Server Error")
+            let res3 = await self.app._request(.PUT, path: "/")
+            XCTAssertEqual(res3?.status, .internalServerError)
+            XCTAssert(res3?.body?.decodeString() == "Internal Server Error")
+        }
+    }
 }
+
+struct ConvertibleError: Error, ResponseConvertible {
+    let shouldThrowWhenConverting: Bool
+    
+    func convert() async throws -> Response {
+        if shouldThrowWhenConverting {
+            throw NonConvertibleError()
+        }
+        
+        return Response(status: .badGateway, body: nil)
+    }
+}
+
+struct NonConvertibleError: Error {}
 
 /// Runs the specified callback on a request / response.
 struct TestMiddleware: Middleware {
@@ -295,7 +344,11 @@ extension Application {
         self.on(test.method, at: test.path, handler: { _ in test.response })
     }
     
-    func request(_ test: TestRequest) async throws -> String? {
+    func request(_ test: TestRequest) async -> String? {
+        return await _request(test.method, path: test.path)?.body?.decodeString()
+    }
+    
+    func _request(_ method: HTTPMethod, path: String) async -> Response? {
         return await Router.default.handle(
             request: Request(
                 head: .init(
@@ -303,12 +356,12 @@ extension Application {
                         major: 1,
                         minor: 1
                     ),
-                    method: test.method,
-                    uri: test.path,
+                    method: method,
+                    uri: path,
                     headers: .init()),
                 bodyBuffer: nil
             )
-        ).body?.decodeString()
+        )
     }
 }
 

@@ -10,7 +10,7 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// An `Router` responds to HTTP requests from the client.
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
-public final class Router: HTTPRouter, Service {
+public final class Router: RequestHandler, Service {
     /// A route handler. Takes a request and returns a response.
     public typealias Handler = (Request) async throws -> ResponseConvertible
     
@@ -51,7 +51,7 @@ public final class Router: HTTPRouter, Service {
     var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
-    private let trie = Trie<HTTPMethod, HTTPHandler>()
+    private let trie = Trie<HTTPHandler>()
     
     /// Creates a new router.
     init() {}
@@ -65,10 +65,9 @@ public final class Router: HTTPRouter, Service {
     ///   - method: The method of a request this handler expects.
     ///   - path: The path of a requst this handler can handle.
     func add(handler: @escaping Handler, for method: HTTPMethod, path: String) {
-        let pathPrefixes = pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
-        let splitPath = pathPrefixes + path.tokenized
+        let splitPath = pathPrefixes + path.tokenized(with: method)
         let middlewareClosures = middlewares.reversed().map(Middleware.intercept)
-        trie.insert(path: splitPath, storageKey: method) {
+        trie.insert(path: splitPath) {
             var next = self.cleanHandler(handler)
             
             for middleware in middlewareClosures {
@@ -93,7 +92,7 @@ public final class Router: HTTPRouter, Service {
         var handler = cleanHandler(notFoundHandler)
 
         // Find a matching handler
-        if let match = trie.search(path: request.path.tokenized, storageKey: request.method) {
+        if let match = trie.search(path: request.path.tokenized(with: request.method)) {
             request.pathParameters = match.parameters
             handler = match.value
         }
@@ -122,22 +121,16 @@ public final class Router: HTTPRouter, Service {
                     } catch {
                         return await self.internalErrorHandler(req, error)
                     }
-                } else {
-                    return await self.internalErrorHandler(req, error)
                 }
+                
+                return await self.internalErrorHandler(req, error)
             }
         }
     }
 }
 
 private extension String {
-    var tokenized: [String] {
-        return split(separator: "/").map(String.init)
-    }
-}
-
-extension HTTPMethod: Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.rawValue)
+    func tokenized(with method: HTTPMethod) -> [String] {
+        split(separator: "/").map(String.init) + [method.rawValue]
     }
 }
