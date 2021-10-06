@@ -51,7 +51,7 @@ public final class Router: HTTPRouter, Service {
     var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
-    private let trie = RouterTrieNode<HTTPMethod, HTTPHandler>()
+    private let trie = Trie<HTTPMethod, HTTPHandler>()
     
     /// Creates a new router.
     init() {}

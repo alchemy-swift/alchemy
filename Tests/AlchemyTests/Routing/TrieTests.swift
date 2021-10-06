@@ -3,7 +3,7 @@ import XCTest
 
 final class TrieTests: XCTestCase {
     func testTrie() {
-        let trie = RouterTrieNode<Int, String>()
+        let trie = Trie<Int, String>()
         
         trie.insert(path: ["one"], storageKey: 0, value: "foo")
         trie.insert(path: ["one", "two"], storageKey: 1, value: "bar")
