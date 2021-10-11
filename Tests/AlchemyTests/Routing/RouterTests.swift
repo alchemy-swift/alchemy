@@ -1,7 +1,6 @@
-import NIO
-import NIOHTTP1
-import XCTest
-@testable import Alchemy
+@testable
+import Alchemy
+import XCTAlchemy
 
 let kMinTimeout: TimeInterval = 0.01
 
@@ -386,15 +385,15 @@ struct TestRequest {
     static let get3 = TestRequest(method: .GET, path: "/something_else", response: "get 3")
 }
 
-extension XCTestCase {
-    /// Stopgap for wrapping async tests until they are fixed on Linux &
-    /// available for macOS under 12
-    func wrapAsync(_ action: @escaping () async throws -> Void) {
-        let exp = expectation(description: "The async operation should complete.")
-        Task {
-            try await action()
-            exp.fulfill()
-        }
-        wait(for: [exp], timeout: kMinTimeout)
-    }
-}
+//extension XCTestCase {
+//    /// Stopgap for wrapping async tests until they are fixed on Linux &
+//    /// available for macOS under 12
+//    func wrapAsync(_ action: @escaping () async throws -> Void) {
+//        let exp = expectation(description: "The async operation should complete.")
+//        Task {
+//            try await action()
+//            exp.fulfill()
+//        }
+//        wait(for: [exp], timeout: kMinTimeout)
+//    }
+//}

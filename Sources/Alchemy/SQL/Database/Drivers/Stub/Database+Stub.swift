@@ -15,4 +15,3 @@ extension Database {
         return driver
     }
 }
-

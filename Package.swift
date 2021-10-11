@@ -68,6 +68,6 @@ let package = Package(
         ),
         .target(name: "CAlchemy", dependencies: []),
         .target(name: "XCTAlchemy", dependencies: ["Alchemy"]),
-        .testTarget(name: "AlchemyTests", dependencies: ["Alchemy"]),
+        .testTarget(name: "AlchemyTests", dependencies: ["XCTAlchemy"]),
     ]
 )
