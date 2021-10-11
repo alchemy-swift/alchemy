@@ -4,7 +4,7 @@ extension Database {
     ///
     /// - Parameter name: The name of the database to stub, defaults
     ///   to nil for stubbing the default database.
-    static func stub(_ name: String? = nil) -> StubDatabase {
+    public static func stub(_ name: String? = nil) -> StubDatabase {
         let driver = StubDatabase()
         if let name = name {
             config(name, Database(driver: driver))

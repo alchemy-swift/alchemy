@@ -55,6 +55,12 @@ extension Model {
         try await Self.query().firstModel()
     }
     
+    /// Returns a random model of this type, if one exists.
+    public static func random() async throws -> Self? {
+        // Note; MySQL should be `RAND()`
+        try await Self.query().select().orderBy(column: "RANDOM()").limit(1).firstModel()
+    }
+    
     /// Delete all models that match the given where clause.
     ///
     /// - Parameters:

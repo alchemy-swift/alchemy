@@ -30,9 +30,5 @@ extension Faker {
 }
 
 extension Model {
-    public static func random() async throws -> Self? {
-        try await Self.query().select().orderBy(column: "RANDOM()").limit(1).firstModel()
-    }
-    
     public static var faker: Faker { .default }
 }

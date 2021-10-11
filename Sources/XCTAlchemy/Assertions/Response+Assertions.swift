@@ -4,23 +4,23 @@ import XCTest
 extension Response {
     // MARK: Status Assertions
     
-    func assertCreated() {
+    public func assertCreated() {
         XCTAssertEqual(status, .created)
     }
     
-    func assertForbidden() {
+    public func assertForbidden() {
         XCTAssertEqual(status, .forbidden)
     }
     
-    func assertNotFound() {
+    public func assertNotFound() {
         XCTAssertEqual(status, .notFound)
     }
     
-    func assertOk() {
+    public func assertOk() {
         XCTAssertEqual(status, .ok)
     }
     
-    func assertRedirect(to uri: String? = nil) {
+    public func assertRedirect(to uri: String? = nil) {
         XCTAssertTrue((300...399).contains(status.code))
         
         if let uri = uri {
@@ -28,39 +28,39 @@ extension Response {
         }
     }
     
-    func assertStatus(_ status: HTTPResponseStatus) {
+    public func assertStatus(_ status: HTTPResponseStatus) {
         XCTAssertEqual(self.status, status)
     }
     
-    func assertStatus(_ code: UInt) {
+    public func assertStatus(_ code: UInt) {
         XCTAssertEqual(status.code, code)
     }
     
-    func assertSuccessful() {
+    public func assertSuccessful() {
         XCTAssertTrue((200...299).contains(status.code))
     }
     
-    func assertUnauthorized() {
+    public func assertUnauthorized() {
         XCTAssertEqual(status, .unauthorized)
     }
     
     // MARK: Header Assertions
     
-    func assertHeader(_ header: String, value: String) {
+    public func assertHeader(_ header: String, value: String) {
         XCTAssertTrue(headers[header].contains(value))
     }
     
-    func assertHeaderMissing(_ header: String) {
+    public func assertHeaderMissing(_ header: String) {
         XCTAssert(headers[header].isEmpty)
     }
     
-    func assertLocation(_ uri: String) {
+    public func assertLocation(_ uri: String) {
         assertHeader("Location", value: uri)
     }
     
     // MARK: Body Assertions
     
-    func assertJson<D: Decodable & Equatable>(_ value: D) {
+    public func assertJson<D: Decodable & Equatable>(_ value: D) {
         guard let body = self.body else {
             return XCTFail("Request body was nil.")
         }
@@ -74,7 +74,7 @@ extension Response {
     }
     
     // Convert to anything? String, Int, Bool, Double, Array, Object...
-    func assertJson(_ value: [String: Any]) {
+    public func assertJson(_ value: [String: Any]) {
         guard let body = self.body else {
             return XCTFail("Request body was nil.")
         }

@@ -1,14 +1,14 @@
-public extension Database {
+extension Database {
     /// A file based SQLite database configuration.
     ///
     /// - Parameter path: The path of the SQLite database file.
     /// - Returns: The configuration for connecting to this database.
-    static func sqlite(path: String) -> Database {
+    public static func sqlite(path: String) -> Database {
         Database(driver: SQLiteDatabase(config: .file(path)))
     }
     
     /// An in memory SQLite database configuration.
-    static var sqlite: Database {
+    public static var sqlite: Database {
         Database(driver: SQLiteDatabase(config: .memory))
     }
 }
@@ -16,9 +16,16 @@ public extension Database {
 extension Database {
     /// Fake the database with an in memory SQLite database.
     ///
-    /// - Parameter name: The name of the database to fake, defaults
-    ///   to nil for faking the default database.
-    static func fake(_ name: String? = nil) {
+    ////// - Parameter name:
+    ///
+    /// - Parameters:
+    ///   - name: The name of the database to fake, defaults to `nil`
+    ///     which fakes the default database.
+    ///   - migrate: Whether migrations should be synchronously run
+    ///     before returning from this function. Defaults to `true`.
+    ///   - seed: Whether the database should be synchronously seeded
+    ///     before returning from this function. Defaults to `false`.
+    public static func fake(_ name: String? = nil, migrate: Bool = true, seed: Bool = false) {
         let db = Database.sqlite
         if let name = name {
             db.migrations = named(name).migrations
@@ -31,9 +38,10 @@ extension Database {
         let sem = DispatchSemaphore(value: 0)
         Task {
             do {
-                try await db.migrate()
+                if migrate { try await db.migrate() }
+                if seed { try await db.seed() }
             } catch {
-                Log.error("Error mocking database: \(error)")
+                Log.error("Error initializing fake database: \(error)")
             }
             
             sem.signal()

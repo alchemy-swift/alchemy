@@ -18,7 +18,7 @@ final class RouterTests: XCTestCase {
         app.post { _ in 1 }
         app.register(.get1)
         app.register(.post1)
-        wrapAsync {
+        testAsync {
             let res1 = await self.app.request(TestRequest(method: .GET, path: "", response: ""))
             XCTAssertEqual(res1, "Hello, world!")
             let res2 = await self.app.request(TestRequest(method: .POST, path: "", response: ""))
@@ -34,7 +34,7 @@ final class RouterTests: XCTestCase {
         app.register(.getEmpty)
         app.register(.get1)
         app.register(.post1)
-        wrapAsync {
+        testAsync {
             let res1 = await self.app.request(.get2)
             XCTAssertEqual(res1, "Not Found")
             let res2 = await self.app.request(.postEmpty)
@@ -59,7 +59,7 @@ final class RouterTests: XCTestCase {
             .use(mw2)
             .register(.post1)
 
-        wrapAsync {
+        testAsync {
             _ = await self.app.request(.get1)
         }
 
@@ -85,7 +85,7 @@ final class RouterTests: XCTestCase {
             .use(mw2)
             .register(.get1)
 
-        wrapAsync {
+        testAsync {
             _ = await self.app.request(.get1)
         }
 
@@ -106,7 +106,7 @@ final class RouterTests: XCTestCase {
             }
             .register(.get1)
 
-        wrapAsync {
+        testAsync {
             let res1 = await self.app.request(.get1)
             XCTAssertEqual(res1, TestRequest.get1.response)
             let res2 = await self.app.request(.post1)
@@ -159,7 +159,7 @@ final class RouterTests: XCTestCase {
             .use(mw3)
             .register(.getEmpty)
         
-        wrapAsync {
+        testAsync {
             _ = await self.app.request(.getEmpty)
         }
 
@@ -169,7 +169,7 @@ final class RouterTests: XCTestCase {
     func testArray() {
         let array = ["Hello", "World"]
         app.get { _ in array }
-        wrapAsync {
+        testAsync {
             let res = await self.app._request(.GET, path: "/")
             XCTAssertEqual(try res?.body?.decodeJSON(as: [String].self), array)
         }
@@ -177,7 +177,7 @@ final class RouterTests: XCTestCase {
 
     func testQueriesIgnored() {
         app.register(.get1)
-        wrapAsync {
+        testAsync {
             let res = await self.app.request(.get1Queries)
             XCTAssertEqual(res, TestRequest.get1.response)
         }
@@ -204,7 +204,7 @@ final class RouterTests: XCTestCase {
             return routeResponse
         }
         
-        wrapAsync {
+        testAsync {
             let res = await self.app.request(TestRequest(method: routeMethod, path: routeToCall, response: ""))
             XCTAssertEqual(res, routeResponse)
         }
@@ -238,7 +238,7 @@ final class RouterTests: XCTestCase {
             }
             .register(.get3)
 
-        wrapAsync {
+        testAsync {
             let res = await self.app.request(TestRequest(
                 method: .GET,
                 path: "/group\(TestRequest.get1.path)",
@@ -296,7 +296,7 @@ final class RouterTests: XCTestCase {
             throw ConvertibleError(shouldThrowWhenConverting: true)
         }
         
-        wrapAsync {
+        testAsync {
             let res1 = await self.app._request(.GET, path: "/")
             XCTAssertEqual(res1?.status, .badGateway)
             XCTAssert(res1?.body == nil)
@@ -384,16 +384,3 @@ struct TestRequest {
     static let get2 = TestRequest(method: .GET, path: "/something/else", response: "get 2")
     static let get3 = TestRequest(method: .GET, path: "/something_else", response: "get 3")
 }
-
-//extension XCTestCase {
-//    /// Stopgap for wrapping async tests until they are fixed on Linux &
-//    /// available for macOS under 12
-//    func wrapAsync(_ action: @escaping () async throws -> Void) {
-//        let exp = expectation(description: "The async operation should complete.")
-//        Task {
-//            try await action()
-//            exp.fulfill()
-//        }
-//        wait(for: [exp], timeout: kMinTimeout)
-//    }
-//}

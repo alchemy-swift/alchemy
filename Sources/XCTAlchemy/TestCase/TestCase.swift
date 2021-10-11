@@ -2,7 +2,7 @@
 import XCTest
 
 open class TestCase<A: Application>: XCTestCase {
-    private var app = A()
+    public var app = A()
     
     open override func setUp() {
         super.setUp()
