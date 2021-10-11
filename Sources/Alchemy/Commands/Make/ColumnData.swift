@@ -12,7 +12,7 @@ struct ColumnData: Codable {
     init(from input: String) throws {
         let components = input.split(separator: ":").map(String.init)
         guard components.count >= 2 else {
-            throw CommandError(message: "Invalid field: \(input). Need at least name and type, such as `name:string`")
+            throw CommandError("Invalid field: \(input). Need at least name and type, such as `name:string`")
         }
         
         let name = components[0]
@@ -25,7 +25,7 @@ struct ColumnData: Codable {
         case "bigint":
             type = "bigInt"
         default:
-            throw CommandError(message: "Unknown field type `\(type)`")
+            throw CommandError("Unknown field type `\(type)`")
         }
         
         self.name = name

@@ -30,7 +30,7 @@ struct MakeModel: Command {
     
     func start() throws {
         guard !name.contains(":") else {
-            throw CommandError(message: "Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
+            throw CommandError("Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
         }
         
         // Initialize rows

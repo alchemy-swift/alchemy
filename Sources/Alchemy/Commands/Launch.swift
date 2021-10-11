@@ -13,6 +13,9 @@ struct Launch: ParsableCommand {
                 RunMigrate.self,
                 RunQueue.self,
                 
+                // Database
+                SeedDatabase.self,
+                
                 // Make
                 MakeController.self,
                 MakeMiddleware.self,

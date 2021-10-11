@@ -26,7 +26,7 @@ struct MakeMigration: Command {
     
     func start() throws {
         guard !name.contains(":") else {
-            throw CommandError(message: "Invalid migration name `\(name)`. Perhaps you forgot to pass a name?")
+            throw CommandError("Invalid migration name `\(name)`. Perhaps you forgot to pass a name?")
         }
         
         var migrationColumns: [ColumnData] = columns
@@ -80,7 +80,7 @@ private extension ColumnData {
         for modifier in modifiers.map({ String($0) }) {
             let splitComponents = modifier.split(separator: ".")
             guard let modifier = splitComponents.first else {
-                throw CommandError(message: "There was an empty field modifier.")
+                throw CommandError("There was an empty field modifier.")
             }
             
             switch modifier.lowercased() {
@@ -95,12 +95,12 @@ private extension ColumnData {
                     let table = splitComponents[safe: 1],
                     let key = splitComponents[safe: 2]
                 else {
-                    throw CommandError(message: "Invalid references format `\(modifier)` expected `references.table.key`")
+                    throw CommandError("Invalid references format `\(modifier)` expected `references.table.key`")
                 }
                 
                 returnString.append(".references(\"\(key)\", on: \"\(table)\")")
             default:
-                throw CommandError(message: "Unknown column modifier \(modifier)")
+                throw CommandError("Unknown column modifier \(modifier)")
             }
         }
         
