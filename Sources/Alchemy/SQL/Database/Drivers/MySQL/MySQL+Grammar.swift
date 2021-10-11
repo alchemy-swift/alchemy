@@ -62,8 +62,8 @@ final class MySQLGrammar: Grammar {
                 }
             }
             
-            for try await image in group {
-                results += image
+            for try await model in group {
+                results += model
             }
         }
         

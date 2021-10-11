@@ -167,7 +167,7 @@ extension CreateColumnBuilder where Default == Date {
     ///
     /// - Returns: This column builder.
     @discardableResult public func defaultNow() -> Self {
-        self.default(expression: "NOW()")
+        self.default(expression: "CURRENT_TIMESTAMP")
     }
 }
 

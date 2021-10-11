@@ -12,6 +12,9 @@ public final class Database: Service {
     /// yet or not.
     public var migrations: [Migration] = []
     
+    /// Any seeders associated with this database.
+    public var seeders: [Seeder] = []
+    
     /// Create a database backed by the given driver.
     ///
     /// - Parameter driver: The driver.

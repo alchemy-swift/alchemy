@@ -4,9 +4,9 @@ import NIO
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
 final class MockQueue: QueueDriver {
-    private var jobs: [JobID: JobData] = [:]
-    private var pending: [String: [JobID]] = [:]
-    private var reserved: [String: [JobID]] = [:]
+    var jobs: [JobID: JobData] = [:]
+    var pending: [String: [JobID]] = [:]
+    var reserved: [String: [JobID]] = [:]
     
     private let lock = NSRecursiveLock()
     
@@ -63,8 +63,17 @@ final class MockQueue: QueueDriver {
 
 extension Queue {
     /// An in memory queue. Useful primarily for testing.
-    public static func mock() -> Queue {
-        Queue(MockQueue())
+    @discardableResult
+    static func mock(_ name: String? = nil) -> MockQueue {
+        let mock = MockQueue()
+        let q = Queue(mock)
+        if let name = name {
+            config(name, q)
+        } else {
+            config(default: q)
+        }
+        
+        return mock
     }
 }
 

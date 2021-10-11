@@ -6,6 +6,8 @@ open class Grammar {
         let message: String
         static let missingTable = GrammarError(message: "Missing a table to run the query on.")
     }
+    
+    open var isSQLite: Bool { false }
 
     // MARK: Compiling Query Builders
     
@@ -295,7 +297,7 @@ open class Grammar {
 /// An abstraction around various supported SQL column types.
 /// `Grammar`s will map the `ColumnType` to the backing
 /// dialect type string.
-public enum ColumnType {
+public enum ColumnType: Equatable {
     /// Self incrementing integer.
     case increments
     /// Integer.
@@ -317,7 +319,7 @@ public enum ColumnType {
 }
 
 /// The length of an SQL string column in characters.
-public enum StringLength {
+public enum StringLength: Equatable {
     /// This value of this column can be any number of characters.
     case unlimited
     /// This value of this column must be at most the provided number
@@ -340,7 +342,9 @@ extension CreateColumn {
             case .notNull:
                 baseSQL.append(" NOT NULL")
             case .primaryKey:
-                tableConstraints.append("PRIMARY KEY (\(columnEscaped))")
+                if type != .increments || !grammar.isSQLite {
+                    tableConstraints.append("PRIMARY KEY (\(columnEscaped))")
+                }
             case .unique:
                 tableConstraints.append("UNIQUE (\(columnEscaped))")
             case let .default(val):

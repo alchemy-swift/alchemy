@@ -2,7 +2,7 @@ import Foundation
 
 /// An in memory driver for `Cache` for testing.
 final class MockCacheDriver: CacheDriver {
-    private var data: [String: MockCacheItem] = [:]
+    var data: [String: MockCacheItem] = [:]
     
     /// Create this cache populated with the given data.
     ///

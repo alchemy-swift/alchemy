@@ -87,11 +87,18 @@ extension DatabaseField {
     /// - Returns: The unwrapped `Date` of this field's value, if it
     ///   was indeed a non-null `.date`.
     public func date() throws -> Date {
-        guard case let .date(value) = self.value else {
+        if case let .date(value) = self.value {
+            return try self.unwrapOrError(value)
+        } else if case let .string(value) = self.value {
+            let formatter = ISO8601DateFormatter()
+            if let value = value, let date = formatter.date(from: value) {
+                return date
+            } else {
+                throw typeError("date")
+            }
+        } else {
             throw typeError("date")
         }
-        
-        return try self.unwrapOrError(value)
     }
     
     /// Unwrap and return a JSON `Data` value from this

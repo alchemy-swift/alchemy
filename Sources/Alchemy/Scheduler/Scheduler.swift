@@ -35,13 +35,11 @@ public final class Scheduler: Service {
         workItems.append(WorkItem(schedule: schedule, work: work))
     }
     
-    @Sendable
     private func schedule(schedule: Schedule, task: @escaping () async throws -> Void, on loop: EventLoop) {
         guard let next = schedule.next(), let nextDate = next.date else {
             return Log.error("[Scheduler] schedule doesn't have a future date to run.")
         }
 
-        @Sendable
         func scheduleNextAndRun() async throws -> Void {
             self.schedule(schedule: schedule, task: task, on: loop)
             try await task()

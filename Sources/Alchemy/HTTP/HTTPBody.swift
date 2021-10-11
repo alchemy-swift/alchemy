@@ -94,8 +94,7 @@ extension HTTPBody {
     /// - Returns: The dictionary decoded from the contents of this
     ///   body.
     public func decodeJSONDictionary() throws -> [String: Any]? {
-        try JSONSerialization.jsonObject(with: self.data, options: [])
-            as? [String: Any]
+        try JSONSerialization.jsonObject(with: self.data, options: []) as? [String: Any]
     }
     
     /// Decodes the body as JSON into the provided Decodable type.

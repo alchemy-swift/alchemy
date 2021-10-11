@@ -22,12 +22,12 @@ extension Model {
         try await Self.firstWhere("id" == id, db: db)
     }
     
-    /// Fetch the first model with the given id.
+    /// Fetch the first model that matches the given where clause.
     ///
     /// - Parameters:
+    ///   - where: A where clause for filtering models.
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
-    ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
     public static func find(_ where: WhereValue, db: Database = .default) async throws -> Self? {
         try await Self.firstWhere(`where`, db: db)
@@ -37,13 +37,32 @@ extension Model {
     /// error if it doesn't exist.
     ///
     /// - Parameters:
-    ///   - db: The database to fetch the model from. Defaults to
+    ///   - db: The database to delete the model from. Defaults to
     ///     `Database.default`.
-    ///   - id: The id of the model to find.
+    ///   - id: The id of the model to delete.
     ///   - error: An error to throw if the model doesn't exist.
     /// - Returns: A matching model.
     public static func find(db: Database = .default, _ id: Self.Identifier, or error: Error) async throws -> Self {
         try await Self.firstWhere("id" == id, db: db).unwrap(or: error)
+    }
+    
+    /// Fetch the first model of this type.
+    ///
+    /// - Parameters: db: The database to search the model for.
+    ///   Defaults to `Database.default`.
+    /// - Returns: The first model, if one exists.
+    public static func first(db: Database = .default) async throws -> Self? {
+        try await Self.query().firstModel()
+    }
+    
+    /// Delete all models that match the given where clause.
+    ///
+    /// - Parameters:
+    ///   - db: The database to fetch the model from. Defaults to
+    ///     `Database.default`.
+    ///   - where: A where clause to filter models.
+    public static func delete(_ where: WhereValue, db: Database = .default) async throws {
+        try await query().where(`where`).delete()
     }
     
     /// Delete the first model with the given id.

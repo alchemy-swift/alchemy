@@ -30,6 +30,8 @@ let package = Package(
         .package(url: "https://github.com/Mordil/RediStack.git", from: "1.0.0"),
         .package(url: "https://github.com/jakeheis/SwiftCLI", .upToNextMajor(from: "6.0.3")),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
+        .package(url: "https://github.com/vapor/sqlite-kit", from: "4.0.0"),
+        .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
     ],
     targets: [
         .target(
@@ -56,6 +58,8 @@ let package = Package(
                 .product(name: "Pluralize", package: "pluralize"),
                 .product(name: "SwiftCLI", package: "SwiftCLI"),
                 .product(name: "Rainbow", package: "Rainbow"),
+                .product(name: "SQLiteKit", package: "sqlite-kit"),
+                .product(name: "Fakery", package: "Fakery"),
                 
                 /// Internal dependencies
                 "CAlchemy",

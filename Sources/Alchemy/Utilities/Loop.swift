@@ -35,7 +35,7 @@ public struct Loop {
     /// Register mocks of `EventLoop` and `EventLoop` to the
     /// application container.
     static func mock() {
-        Container.register(EventLoop.self) { _ in EmbeddedEventLoop() }
         Container.register(singleton: EventLoopGroup.self) { _ in MultiThreadedEventLoopGroup(numberOfThreads: 1) }
+        Container.register(EventLoop.self) { _ in group.next() }
     }
 }

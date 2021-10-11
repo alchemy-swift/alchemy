@@ -10,9 +10,7 @@ extension Application {
         ServiceLifecycle.config(
             default: ServiceLifecycle(
                 configuration: ServiceLifecycle.Configuration(
-                    logger: lifecycleLogger,
-                    installBacktrace: true
-                )))
+                    logger: lifecycleLogger)))
         
         Loop.config()
         
@@ -31,8 +29,18 @@ extension Application {
     /// function of test cases.
     public func mockServices() {
         Container.default = Container()
-        ServiceLifecycle.config(default: ServiceLifecycle())
+        
+        var lifecycleLogger = Log.logger
+        lifecycleLogger.logLevel = lifecycleLogLevel
+        ServiceLifecycle.config(
+            default: ServiceLifecycle(
+                configuration: ServiceLifecycle.Configuration(
+                    logger: lifecycleLogger,
+                    installBacktrace: false)))
+        
         Router.config(default: Router())
+        Scheduler.config(default: Scheduler())
+        NIOThreadPool.config(default: NIOThreadPool(numberOfThreads: System.coreCount))
         Loop.mock()
     }
 }
