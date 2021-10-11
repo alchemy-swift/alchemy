@@ -1,19 +1,19 @@
 import Foundation
 
 /// An in memory driver for `Cache` for testing.
-final class MockCacheDriver: CacheDriver {
-    var data: [String: MockCacheItem] = [:]
+public final class MemoryCache: CacheDriver {
+    var data: [String: MemoryCacheItem] = [:]
     
     /// Create this cache populated with the given data.
     ///
     /// - Parameter defaultData: The initial items in the Cache.
-    init(_ defaultData: [String: MockCacheItem] = [:]) {
+    init(_ defaultData: [String: MemoryCacheItem] = [:]) {
         data = defaultData
     }
     
     /// Gets an item and validates that it isn't expired, deleting it
     /// if it is.
-    private func getItem(_ key: String) -> MockCacheItem? {
+    private func getItem(_ key: String) -> MemoryCacheItem? {
         guard let item = self.data[key] else {
             return nil
         }
@@ -28,29 +28,29 @@ final class MockCacheDriver: CacheDriver {
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) throws -> C? {
+    public func get<C: CacheAllowed>(_ key: String) throws -> C? {
         try getItem(key)?.cast()
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) {
-        data[key] = MockCacheItem(text: value.stringValue, expiration: time.map { Date().adding(time: $0) })
+    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) {
+        data[key] = MemoryCacheItem(text: value.stringValue, expiration: time.map { Date().adding(time: $0) })
     }
     
-    func has(_ key: String) -> Bool {
+    public func has(_ key: String) -> Bool {
         getItem(key) != nil
     }
     
-    func remove<C: CacheAllowed>(_ key: String) throws -> C? {
+    public func remove<C: CacheAllowed>(_ key: String) throws -> C? {
         let val: C? = try getItem(key)?.cast()
         data.removeValue(forKey: key)
         return val
     }
     
-    func delete(_ key: String) async throws {
+    public func delete(_ key: String) async throws {
         data.removeValue(forKey: key)
     }
     
-    func increment(_ key: String, by amount: Int) throws -> Int {
+    public func increment(_ key: String, by amount: Int) throws -> Int {
         if let existing = getItem(key) {
             let currentVal: Int = try existing.cast()
             let newVal = currentVal + amount
@@ -62,17 +62,17 @@ final class MockCacheDriver: CacheDriver {
         }
     }
     
-    func decrement(_ key: String, by amount: Int) throws -> Int {
+    public func decrement(_ key: String, by amount: Int) throws -> Int {
         try increment(key, by: -amount)
     }
     
-    func wipe() {
+    public func wipe() {
         data = [:]
     }
 }
 
 /// An in memory cache item.
-public struct MockCacheItem {
+public struct MemoryCacheItem {
     fileprivate var text: String
     fileprivate var expiration: Int?
     
@@ -104,10 +104,30 @@ extension Cache {
     /// Create a cache backed by an in memory dictionary. Useful for
     /// tests.
     ///
-    /// - Parameter data: Optional mock data to initialize your cache
-    ///   with. Defaults to an empty dict.
-    /// - Returns: A mock cache.
-    public static func mock(_ data: [String: MockCacheItem] = [:]) -> Cache {
-        Cache(MockCacheDriver(data))
+    /// - Parameter data: Any data to initialize your cache with.
+    ///   Defaults to an empty dict.
+    /// - Returns: A memory backed cache.
+    public static func memory(_ data: [String: MemoryCacheItem] = [:]) -> Cache {
+        Cache(MemoryCache(data))
+    }
+    
+    /// Fakes a cache using by a memory based cache. Useful for tests.
+    ///
+    /// - Parameters:
+    ///   - name: The name of the cache to fake. Defaults to `nil`
+    ///     which fakes the default cache.
+    ///   - data: Any data to initialize your cache with. Defaults to
+    ///     an empty dict.
+    /// - Returns: A `MemoryCache` for verifying test expectations.
+    public static func fake(_ name: String? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
+        let driver = MemoryCache(data)
+        let cache = Cache(driver)
+        if let name = name {
+            config(name, cache)
+        } else {
+            config(default: cache)
+        }
+        
+        return driver
     }
 }

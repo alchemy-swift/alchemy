@@ -3,7 +3,7 @@ import NIO
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
-final class MockQueue: QueueDriver {
+public final class MemoryQueue: QueueDriver {
     var jobs: [JobID: JobData] = [:]
     var pending: [String: [JobID]] = [:]
     var reserved: [String: [JobID]] = [:]
@@ -14,7 +14,7 @@ final class MockQueue: QueueDriver {
     
     // MARK: - Queue
     
-    func enqueue(_ job: JobData) async throws {
+    public func enqueue(_ job: JobData) async throws {
         lock.lock()
         defer { lock.unlock() }
         
@@ -22,7 +22,7 @@ final class MockQueue: QueueDriver {
         append(id: job.id, on: job.channel, dict: &pending)
     }
     
-    func dequeue(from channel: String) async throws -> JobData? {
+    public func dequeue(from channel: String) async throws -> JobData? {
         lock.lock()
         defer { lock.unlock() }
         
@@ -40,7 +40,7 @@ final class MockQueue: QueueDriver {
         return job
     }
     
-    func complete(_ job: JobData, outcome: JobOutcome) async throws {
+    public func complete(_ job: JobData, outcome: JobOutcome) async throws {
         lock.lock()
         defer { lock.unlock() }
         
@@ -62,10 +62,19 @@ final class MockQueue: QueueDriver {
 }
 
 extension Queue {
-    /// An in memory queue. Useful primarily for testing.
+    /// An in memory queue.
+    public static var memory: Queue {
+        Queue(MemoryQueue())
+    }
+
+    /// Fake the queue with an in memory queue. Useful for testing.
+    ///
+    /// - Parameter name: The name of the queue to fake. Defaults to
+    ///   `nil` which fakes the default queue.
+    /// - Returns: A `MemoryQueue` for verifying test expectations.
     @discardableResult
-    static func mock(_ name: String? = nil) -> MockQueue {
-        let mock = MockQueue()
+    public static func fake(_ name: String? = nil) -> MemoryQueue {
+        let mock = MemoryQueue()
         let q = Queue(mock)
         if let name = name {
             config(name, q)

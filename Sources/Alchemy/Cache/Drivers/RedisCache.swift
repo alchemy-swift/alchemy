@@ -2,7 +2,7 @@ import Foundation
 import RediStack
 
 /// A Redis based driver for `Cache`.
-final class RedisCacheDriver: CacheDriver {
+final class RedisCache: CacheDriver {
     private let redis: Redis
     
     /// Initialize this cache with a Redis client.
@@ -67,6 +67,6 @@ public extension Cache {
     ///   with. Defaults to your default `Redis` configuration.
     /// - Returns: A cache.
     static func redis(_ redis: Redis = Redis.default) -> Cache {
-        Cache(RedisCacheDriver(redis))
+        Cache(RedisCache(redis))
     }
 }

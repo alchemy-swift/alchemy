@@ -8,11 +8,11 @@ public final class StubDatabase: DatabaseDriver {
     
     public func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
         guard !isShutdown else {
-            throw MockDatabaseError(message: "This database has been shutdown.")
+            throw DatabaseError("This stubbed database has been shutdown.")
         }
         
         guard let mockedRows = stubs.first else {
-            throw MockDatabaseError(message: "Before running a query on a MockDatabase, please mock it with `mockQuery()`.")
+            throw DatabaseError("Before running a query on a stubbed database, please stub it's resposne with `stub()`.")
         }
         
         return mockedRows
@@ -36,10 +36,6 @@ public struct StubDatabaseRow: DatabaseRow {
     public var allColumns: Set<String> { Set(data.keys) }
     
     public func getField(column: String) throws -> DatabaseField {
-        try data[column].unwrap(or: MockDatabaseError(message: "Mocked database row had no column `\(column)`."))
+        try data[column].unwrap(or: DatabaseError("Stubbed database row had no column `\(column)`."))
     }
-}
-
-struct MockDatabaseError: Error {
-    let message: String
 }

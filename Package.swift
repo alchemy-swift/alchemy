@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "Alchemy", targets: ["Alchemy"]),
+        .library(name: "XCTAlchemy", targets: ["XCTAlchemy"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -66,6 +67,7 @@ let package = Package(
             ]
         ),
         .target(name: "CAlchemy", dependencies: []),
+        .target(name: "XCTAlchemy", dependencies: ["Alchemy"]),
         .testTarget(name: "AlchemyTests", dependencies: ["Alchemy"]),
     ]
 )
