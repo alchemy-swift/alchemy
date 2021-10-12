@@ -3,15 +3,15 @@ import Foundation
 struct Expression: Parameter {
     private var _value: String
     
+    var value: DatabaseValue { .string(_value) }
+    
     init(_ value: String) {
         self._value = value
     }
     
-    static func databaseValue(for value: Expression?) -> DatabaseValue {
-        .string(value?._value)
-    }
+    public static var nilValue: DatabaseValue { .string(nil) }
 }
 
 extension Expression: CustomStringConvertible {
-    var description: String { return self._value }
+    var description: String { _value }
 }
