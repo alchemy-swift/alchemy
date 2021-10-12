@@ -1,41 +1,63 @@
 import Foundation
 
 public protocol Parameter {
-    var value: DatabaseValue { get }
+    static func databaseValue(for value: Self?) -> DatabaseValue
+}
+
+extension Parameter {
+    public var value: DatabaseValue { Self.databaseValue(for: self) }
 }
 
 extension DatabaseValue: Parameter {
-    public var value: DatabaseValue { self }
+    public static func databaseValue(for value: DatabaseValue?) -> DatabaseValue {
+        value ?? .string(nil)
+    }
 }
 
 extension String: Parameter {
-    public var value: DatabaseValue { .string(self) }
+    public static func databaseValue(for value: String?) -> DatabaseValue {
+        .string(value)
+    }
 }
 
 extension Int: Parameter {
-    public var value: DatabaseValue { .int(self) }
+    public static func databaseValue(for value: Int?) -> DatabaseValue {
+        .int(value)
+    }
 }
 
 extension Bool: Parameter {
-    public var value: DatabaseValue { .bool(self) }
+    public static func databaseValue(for value: Bool?) -> DatabaseValue {
+        .bool(value)
+    }
 }
 
 extension Double: Parameter {
-    public var value: DatabaseValue { .double(self) }
+    public static func databaseValue(for value: Double?) -> DatabaseValue {
+        .double(value)
+    }
 }
 
 extension Date: Parameter {
-    public var value: DatabaseValue { .date(self) }
+    public static func databaseValue(for value: Date?) -> DatabaseValue {
+        .date(value)
+    }
 }
 
 extension UUID: Parameter {
-    public var value: DatabaseValue { .uuid(self) }
+    public static func databaseValue(for value: UUID?) -> DatabaseValue {
+        .uuid(value)
+    }
 }
 
 extension Optional: Parameter where Wrapped: Parameter {
-    public var value: DatabaseValue { self?.value ?? .string(nil) }
+    public static func databaseValue(for value: Optional<Wrapped>?) -> DatabaseValue {
+        Wrapped.databaseValue(for: value ?? nil)
+    }
 }
 
 extension RawRepresentable where RawValue: Parameter {
-    public var value: DatabaseValue { self.rawValue.value }
+    public static func databaseValue(for value: Self?) -> DatabaseValue {
+        RawValue.databaseValue(for: value?.rawValue)
+    }
 }
