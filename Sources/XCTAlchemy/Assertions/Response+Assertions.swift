@@ -85,4 +85,8 @@ extension Response {
         
         XCTAssertEqual(NSDictionary(dictionary: dict), NSDictionary(dictionary: value))
     }
+    
+    public func assertEmpty() {
+        XCTAssertTrue(body == nil)
+    }
 }

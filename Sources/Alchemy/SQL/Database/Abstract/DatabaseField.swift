@@ -71,11 +71,13 @@ extension DatabaseField {
     /// - Returns: The unwrapped `Bool` of this field's value, if it
     ///   was indeed a non-null `.bool`.
     public func bool() throws -> Bool {
-        guard case let .bool(value) = self.value else {
+        if case let .bool(value) = self.value {
+            return try self.unwrapOrError(value)
+        } else if case let .int(value) = self.value {
+            return try self.unwrapOrError(value.map { $0 != 0 })
+        } else {
             throw typeError("bool")
         }
-        
-        return try self.unwrapOrError(value)
     }
     
     /// Unwrap and return a `Date` value from this `DatabaseField`.
