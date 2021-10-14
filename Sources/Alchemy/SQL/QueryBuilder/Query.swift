@@ -730,6 +730,8 @@ extension Query {
 }
 
 extension String {
+    // MARK: Operators
+    
     public static func == (lhs: String, rhs: Parameter) -> WhereValue {
         return WhereValue(key: lhs, op: .equals, value: rhs.value)
     }

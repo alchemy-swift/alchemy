@@ -8,10 +8,10 @@ extension Application {
     ///   - queue: The queue to schedule it on.
     ///   - channel: The queue channel to schedule it on.
     /// - Returns: A builder for customizing the scheduling frequency.
-    public func schedule(job: Job, queue: Queue = .default, channel: String = Queue.defaultChannel) -> ScheduleBuilder {
+    public func schedule(job: @escaping @autoclosure () -> Job, queue: Queue = .default, channel: String = Queue.defaultChannel) -> ScheduleBuilder {
         ScheduleBuilder(.default) {
             do {
-                try await job.dispatch(on: queue, channel: channel)
+                try await job().dispatch(on: queue, channel: channel)
             } catch {
                 Log.error("[Scheduler] error scheduling Job: \(error)")
                 throw error

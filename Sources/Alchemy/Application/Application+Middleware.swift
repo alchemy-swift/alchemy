@@ -3,23 +3,23 @@ extension Application {
     /// Applies a middleware to all requests that come through the
     /// application, whether they are handled or not.
     ///
-    /// - Parameter middleware: The middleware which will intercept
+    /// - Parameter middlewares: The middlewares which will intercept
     ///   all requests to this application.
     /// - Returns: This Application for chaining.
     @discardableResult
-    public func useAll<M: Middleware>(_ middleware: M) -> Self {
-        Router.default.globalMiddlewares.append(middleware)
+    public func useAll(_ middlewares: Middleware...) -> Self {
+        Router.default.globalMiddlewares.append(contentsOf: middlewares)
         return self
     }
     
-    /// Adds a middleware that will intercept before all subsequent
+    /// Adds middleware that will intercept before all subsequent
     /// handlers.
     ///
-    /// - Parameter middleware: The middleware.
+    /// - Parameter middlewares: The middlewares.
     /// - Returns: This application for chaining.
     @discardableResult
-    public func use<M: Middleware>(_ middleware: M) -> Self {
-        Router.default.middlewares.append(middleware)
+    public func use(_ middlewares: Middleware...) -> Self {
+        Router.default.middlewares.append(contentsOf: middlewares)
         return self
     }
     
