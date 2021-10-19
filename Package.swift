@@ -1,11 +1,10 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.5
 import PackageDescription
 
 let package = Package(
     name: "alchemy",
     platforms: [
-        .macOS(.v11),
-        .iOS(.v13),
+        .macOS(.v12),
     ],
     products: [
         .library(name: "Alchemy", targets: ["Alchemy"]),
@@ -13,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/alchemy-swift/swift-nio", .branch("main")),
+        .package(url: "https://github.com/apple/swift-nio", from: "2.33.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.6.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.9.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
