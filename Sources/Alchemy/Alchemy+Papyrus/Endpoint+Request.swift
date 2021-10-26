@@ -8,15 +8,15 @@ import Papyrus
 public struct PapyrusClientError: Error {
     /// What went wrong.
     public let message: String
+    /// The `HTTPClient.Request` that initiated the failed response.
+    public let request: HTTPClient.Request
     /// The `HTTPClient.Response` of the failed response.
     public let response: HTTPClient.Response
-    /// The response body, converted to a String, if there is one.
-    public var bodyString: String? {
-        guard let body = response.body else {
-            return nil
-        }
+}
 
-        var copy = body
+extension ByteBuffer {
+    var jsonString: String? {
+        var copy = self
         if
             let data = copy.readData(length: copy.writerIndex),
             let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
@@ -24,7 +24,7 @@ public struct PapyrusClientError: Error {
         {
             return String(decoding: jsonData, as: UTF8.self)
         } else {
-            var otherCopy = body
+            var otherCopy = self
             return otherCopy.readString(length: otherCopy.writerIndex)
         }
     }
@@ -34,9 +34,20 @@ extension PapyrusClientError: CustomStringConvertible {
     public var description: String {
         """
         \(message)
-        Response: \(response.headers)
+        
+        *** Request ***
+        URL: \(request.method.rawValue) \(request.url.absoluteString)
+        Headers: [
+            \(request.headers.map { "\($0) \($1)" }.joined(separator: "\n    "))
+        ]
+        Body Exists: \(request.body != nil)
+        
+        *** Response ***
         Status: \(response.status.code) \(response.status.reasonPhrase)
-        Body: \(bodyString ?? "N/A")
+        Headers: [
+            \(response.headers.map { "\($0) \($1)" }.joined(separator: "\n    "))
+        ]
+        Body: \(response.body?.jsonString ?? "N/A")
         """
     }
 }
@@ -132,6 +143,7 @@ extension HTTPClient {
         guard (200...299).contains(response.status.code) else {
             throw PapyrusClientError(
                 message: "The response code was not successful",
+                request: request,
                 response: response
             )
         }
@@ -143,6 +155,7 @@ extension HTTPClient {
         guard let bodyBuffer = response.body else {
             throw PapyrusClientError(
                 message: "Unable to decode response type `\(Response.self)`; the body of the response was empty!",
+                request: request,
                 response: response
             )
         }
@@ -154,6 +167,7 @@ extension HTTPClient {
         } catch {
             throw PapyrusClientError(
                 message: "Error decoding `\(Response.self)` from the response. \(error)",
+                request: request,
                 response: response
             )
         }
