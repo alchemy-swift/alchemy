@@ -79,7 +79,7 @@ open class Grammar {
         return SQL("offset \(offset)")
     }
 
-    open func compileInsert(_ query: Query, values: [OrderedDictionary<String, Parameter>]) throws -> SQL {
+    open func compileInsert(_ query: Query, values: [OrderedDictionary<String, QueryParameter>]) throws -> SQL {
         
         guard let table = query.from else { throw GrammarError.missingTable }
 
@@ -101,12 +101,12 @@ open class Grammar {
         )
     }
     
-    open func insert(_ values: [OrderedDictionary<String, Parameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    open func insert(_ values: [OrderedDictionary<String, QueryParameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
         let sql = try compileInsert(query, values: values)
         return try await query.database.runRawQuery(sql.query, values: sql.bindings)
     }
     
-    open func compileUpdate(_ query: Query, values: [String: Parameter]) throws -> SQL {
+    open func compileUpdate(_ query: Query, values: [String: QueryParameter]) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
         var bindings: [DatabaseValue] = []
         let columnSQL = compileUpdateColumns(query, values: values)
@@ -128,7 +128,7 @@ open class Grammar {
         return SQL(base, bindings: bindings)
     }
 
-    open func compileUpdateColumns(_ query: Query, values: [String: Parameter]) -> SQL {
+    open func compileUpdateColumns(_ query: Query, values: [String: QueryParameter]) -> SQL {
         var bindings: [DatabaseValue] = []
         var parts: [String] = []
         for value in values {
@@ -248,11 +248,11 @@ open class Grammar {
         false
     }
 
-    private func parameterize(_ values: [Parameter]) -> String {
+    private func parameterize(_ values: [QueryParameter]) -> String {
         return values.map { parameter($0) }.joined(separator: ", ")
     }
 
-    private func parameter(_ value: Parameter) -> String {
+    private func parameter(_ value: QueryParameter) -> String {
         if let value = value as? Expression {
             return value.description
         }

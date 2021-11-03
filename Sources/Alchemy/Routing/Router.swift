@@ -93,7 +93,7 @@ public final class Router: RequestHandler, Service {
 
         // Find a matching handler
         if let match = trie.search(path: request.path.tokenized(with: request.method)) {
-            request.pathParameters = match.parameters
+            request.parameters = match.parameters
             handler = match.value
         }
         

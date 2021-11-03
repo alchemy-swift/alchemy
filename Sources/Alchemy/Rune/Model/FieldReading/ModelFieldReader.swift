@@ -250,7 +250,7 @@ extension ModelValueReader {
     /// - Returns: A `DatabaseValue` representing `value` or `nil` if
     ///   value is a Rune relationship.
     fileprivate func databaseValue<E: Encodable>(of value: E) throws -> DatabaseValue? {
-        if let value = value as? Parameter {
+        if let value = value as? QueryParameter {
             return value.value
         } else if value is AnyBelongsTo || value is AnyHas {
             return nil

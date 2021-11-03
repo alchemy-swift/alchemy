@@ -30,19 +30,19 @@ final class TrieTests: XCTestCase {
         XCTAssertEqual(result3?.value, "baz")
         XCTAssertEqual(result3?.parameters, [])
         XCTAssertEqual(result4?.value, "doo")
-        XCTAssertEqual(result4?.parameters, [PathParameter(parameter: "id", stringValue: "zonk")])
+        XCTAssertEqual(result4?.parameters, [Parameter(key: "id", value: "zonk")])
         XCTAssertEqual(result5?.value, "dar")
-        XCTAssertEqual(result5?.parameters, [PathParameter(parameter: "id", stringValue: "fail")])
+        XCTAssertEqual(result5?.parameters, [Parameter(key: "id", value: "fail")])
         XCTAssertEqual(result6?.value, "dar")
-        XCTAssertEqual(result6?.parameters, [PathParameter(parameter: "id", stringValue: "aaa")])
+        XCTAssertEqual(result6?.parameters, [Parameter(key: "id", value: "aaa")])
         XCTAssertEqual(result7?.value, "dar")
-        XCTAssertEqual(result7?.parameters, [PathParameter(parameter: "id", stringValue: "bbb")])
+        XCTAssertEqual(result7?.parameters, [Parameter(key: "id", value: "bbb")])
         XCTAssertEqual(result8?.value, "hmm")
         XCTAssertEqual(result8?.parameters, [
-            PathParameter(parameter: "id0", stringValue: "1"),
-            PathParameter(parameter: "id1", stringValue: "2"),
-            PathParameter(parameter: "id2", stringValue: "3"),
-            PathParameter(parameter: "id3", stringValue: "4"),
+            Parameter(key: "id0", value: "1"),
+            Parameter(key: "id1", value: "2"),
+            Parameter(key: "id2", value: "3"),
+            Parameter(key: "id3", value: "4"),
         ])
         XCTAssertEqual(result9?.0, nil)
         XCTAssertEqual(result9?.1, nil)

@@ -188,8 +188,8 @@ final class RouterTests: XCTestCase {
 
         let uuidString = UUID().uuidString
         let orderedExpectedParameters = [
-            PathParameter(parameter: "uuid", stringValue: uuidString),
-            PathParameter(parameter: "user_id", stringValue: "123"),
+            Parameter(key: "uuid", value: uuidString),
+            Parameter(key: "user_id", value: "123"),
         ]
 
         let routeMethod = HTTPMethod.GET
@@ -198,7 +198,7 @@ final class RouterTests: XCTestCase {
         let routeResponse = "some response"
 
         self.app.on(routeMethod, at: routeToRegister) { request -> ResponseConvertible in
-            XCTAssertEqual(request.pathParameters, orderedExpectedParameters)
+            XCTAssertEqual(request.parameters, orderedExpectedParameters)
             expect.fulfill()
 
             return routeResponse
@@ -340,7 +340,7 @@ struct TestMiddleware: Middleware {
 extension Application {
     @discardableResult
     func register(_ test: TestRequest) -> Self {
-        self.on(test.method, at: test.path, handler: { _ in test.response })
+        self.on(test.method, at: test.path, use: { _ in test.response })
     }
     
     func request(_ test: TestRequest) async -> String? {

@@ -88,7 +88,15 @@ extension RequestBuilder {
         try await request(.PATCH, path)
     }
     
+    public func delete(_ path: String) async throws -> Res {
+        try await request(.DELETE, path)
+    }
+    
     public func head(_ path: String) async throws -> Res {
         try await request(.HEAD, path)
+    }
+    
+    public func options(_ path: String) async throws -> Res {
+        try await request(.OPTIONS, path)
     }
 }

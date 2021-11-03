@@ -2,7 +2,7 @@ import Foundation
 
 /// An HTTP Media Type. It has a `value: String` appropriate for
 /// putting into `Content-Type` headers.
-public struct MIMEType {
+public struct MIMEType: Equatable {
     /// The value of this MIME type, appropriate for `Content-Type`
     /// headers.
     public var value: String

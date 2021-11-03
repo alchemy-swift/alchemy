@@ -70,7 +70,7 @@ struct MakeController: Command {
             }
             
             private func update(req: Request) async throws -> \(name) {
-                try await \(name).update(req.parameter("id"), with: req.bodyDict())
+                try await \(name).update(req.parameter("id"), with: req.decodeBodyDict())
                     .unwrap(or: HTTPError(.notFound))
             }
             
