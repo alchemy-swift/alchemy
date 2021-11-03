@@ -211,7 +211,7 @@ extension Model {
     }
     
     public func update(db: Database = .default, with dict: [String: Any]) async throws -> Self {
-        let updateValues = dict.compactMapValues { $0 as? QueryParameter }
+        let updateValues = dict.compactMapValues { $0 as? SQLParameter }
         try await Self.query().where("id" == id).update(values: updateValues)
         return try await sync()
     }

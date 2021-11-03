@@ -7,10 +7,6 @@
 // Argument Parser
 @_exported import ArgumentParser
 
-// AsyncHTTPClient
-@_exported import class AsyncHTTPClient.HTTPClient
-@_exported import struct AsyncHTTPClient.HTTPClientError
-
 // Foundation
 @_exported import Foundation
 

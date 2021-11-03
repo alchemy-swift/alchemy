@@ -17,7 +17,7 @@
 public protocol ModelEnum: AnyModelEnum, CaseIterable {}
 
 /// A type erased `ModelEnum`.
-public protocol AnyModelEnum: Codable, QueryParameter {
+public protocol AnyModelEnum: Codable, SQLParameter {
     /// The default case of this enum. Defaults to the first of
     /// `Self.allCases`.
     static var defaultCase: Self { get }

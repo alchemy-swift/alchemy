@@ -1,7 +1,7 @@
-import XCTest
+import XCTAlchemy
 @testable import Alchemy
 
-final class PapyrusRequestTests: XCTestCase {
+final class PapyrusRequestTests: TestCase<TestApp> {
     func testRequest() {
         
     }

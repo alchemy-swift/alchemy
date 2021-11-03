@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol RequestBuilder {
     associatedtype Res
     associatedtype Builder: RequestBuilder where Builder.Builder == Builder, Builder.Res == Res
@@ -29,21 +31,23 @@ extension RequestBuilder {
         try await builder.request(method, path)
     }
     
-    // MARK: Content
-    
-    public func withHeaders(_ dict: [String: String]) -> Builder {
-        var toReturn = builder
-        for (k, v) in dict {
-            toReturn = withHeader(k, value: v)
-        }
-        
-        return toReturn
-    }
+    // MARK: Queries
     
     public func withQueries(_ dict: [String: String]) -> Builder {
         var toReturn = builder
         for (k, v) in dict {
             toReturn = withQuery(k, value: v)
+        }
+        
+        return toReturn
+    }
+    
+    // MARK: - Headers
+    
+    public func withHeaders(_ dict: [String: String]) -> Builder {
+        var toReturn = builder
+        for (k, v) in dict {
+            toReturn = withHeader(k, value: v)
         }
         
         return toReturn
@@ -58,15 +62,24 @@ extension RequestBuilder {
         return withHeader("Authorization", value: "Bearer \(token)")
     }
     
-    public func withBody(_ dict: [String: Any?]) -> Builder {
+    // MARK: - Body
+    
+    public func withBody(_ data: Data?) -> Builder {
+        guard let data = data else {
+            return builder
+        }
+
+        return withBody { ByteBuffer(data: data) }
+    }
+    
+    public func withJSON(_ dict: [String: Any?]) -> Builder {
         self
             .withBody { ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)) }
             .withHeader("Content-Type", value: "application/json")
     }
     
-    public func withBody<T: Encodable>(_ body: T) -> Builder {
-        self
-            .withBody { ByteBuffer(data: try JSONEncoder().encode(body)) }
+    public func withJSON<T: Encodable>(_ body: T, encoder: JSONEncoder = JSONEncoder()) -> Builder {
+        withBody { ByteBuffer(data: try encoder.encode(body)) }
             .withHeader("Content-Type", value: "application/json")
     }
     

@@ -5,7 +5,7 @@ final class SQLiteGrammar: Grammar {
         true
     }
     
-    override func insert(_ values: [OrderedDictionary<String, QueryParameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    override func insert(_ values: [OrderedDictionary<String, SQLParameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
         return try await query.database.transaction { conn in
             let sql = try super.compileInsert(query, values: values)
             let initial = try await conn.runRawQuery(sql.query, values: sql.bindings)

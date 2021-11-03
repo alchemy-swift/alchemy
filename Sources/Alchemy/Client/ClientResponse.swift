@@ -30,6 +30,20 @@ public struct ClientResponse {
         (500...599).contains(status.code)
     }
     
+    func validateSuccessful() throws -> Self {
+        try wrapDebug {
+            guard isSuccessful else {
+                throw ClientError(
+                    message: "The response code was not successful",
+                    request: request,
+                    response: response
+                )
+            }
+            
+            return self
+        }
+    }
+    
     // MARK: Headers
     
     public var headers: [(String, String)] {
@@ -50,10 +64,39 @@ public struct ClientResponse {
         response.body?.string()
     }
     
-    public func decode<D: Decodable>(_ type: D.Type = D.self, using jsonDecoder: JSONDecoder = JSONDecoder()) throws -> D {
-        try jsonDecoder.decode(
-            D.self,
-            from: bodyData.unwrap(or: ClientError("The request had no body to decode JSON from.")))
+    public func decodeJSON<D: Decodable>(_ type: D.Type = D.self, using jsonDecoder: JSONDecoder = JSONDecoder()) throws -> D {
+        try wrapDebug {
+            guard let bodyData = bodyData else {
+                throw ClientError(
+                    message: "The response had no body to decode JSON from.",
+                    request: request,
+                    response: response
+                )
+            }
+
+            do {
+                return try jsonDecoder.decode(D.self, from: bodyData)
+            } catch {
+                throw ClientError(
+                    message: "Error decoding `\(D.self)` from a `ClientResponse`. \(error)",
+                    request: request,
+                    response: response
+                )
+            }
+        }
+    }
+}
+
+extension ClientResponse {
+    func wrapDebug<T>(_ closure: () throws -> T) throws -> T {
+        do {
+            return try closure()
+        } catch let clientError as ClientError {
+            clientError.logDebug()
+            throw clientError
+        } catch {
+            throw error
+        }
     }
 }
 

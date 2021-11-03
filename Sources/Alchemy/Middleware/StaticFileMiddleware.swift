@@ -57,7 +57,7 @@ public struct StaticFileMiddleware: Middleware {
                 // Set any relevant headers based off the file info.
                 var headers: HTTPHeaders = ["content-length": "\(fileSizeBytes)"]
                 if let ext = filePath.components(separatedBy: ".").last,
-                   let mediaType = MIMEType(fileExtension: ext) {
+                   let mediaType = ContentType(fileExtension: ext) {
                     headers.add(name: "content-type", value: mediaType.value)
                 }
                 responseWriter.writeHead(status: .ok, headers)

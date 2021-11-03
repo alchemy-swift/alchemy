@@ -44,7 +44,7 @@ public final class Response {
     public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: HTTPBody?) {
         var headers = headers
         headers.replaceOrAdd(name: "content-length", value: String(body?.buffer.writerIndex ?? 0))
-        body?.mimeType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
+        body?.contentType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
         
         self.status = status
         self.headers = headers

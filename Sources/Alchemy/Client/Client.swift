@@ -4,6 +4,10 @@ public final class Client: RequestBuilder, Service {
     private let httpClient = HTTPClient(eventLoopGroupProvider: .shared(Loop.group))
     private var stubs: [String: ClientResponseStub]?
     
+    public static func stub(_ stubs: [String: ClientResponseStub]? = nil) {
+        Client.default.stub(stubs)
+    }
+    
     public func stub(_ stubs: [String: ClientResponseStub]? = nil) {
         self.stubs = stubs
     }
@@ -77,8 +81,7 @@ public final class ClientRequestBuilder: RequestBuilder {
         )
         
         if stubs == nil {
-            let res = try await httpClient.execute(request: req).get()
-            return ClientResponse(request: req, response: res)
+            return ClientResponse(request: req, response: try await httpClient.execute(request: req).get())
         } else {
             return stubFor(req)
         }

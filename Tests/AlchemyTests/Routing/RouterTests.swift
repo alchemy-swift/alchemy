@@ -4,15 +4,7 @@ import XCTAlchemy
 
 let kMinTimeout: TimeInterval = 0.01
 
-final class RouterTests: XCTestCase {
-    private var app = TestApp()
-
-    override func setUp() {
-        super.setUp()
-        app = TestApp()
-        app.mockServices()
-    }
-    
+final class RouterTests: TestCase<TestApp> {
     func testMatch() {
         app.get { _ in "Hello, world!" }
         app.post { _ in 1 }

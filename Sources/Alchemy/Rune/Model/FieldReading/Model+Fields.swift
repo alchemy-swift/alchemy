@@ -17,8 +17,8 @@ extension Model {
     ///   creating any of the fields of this instance.
     /// - Returns: An ordered dictionary mapping column names to
     ///   parameters for use in a QueryBuilder `Query`.
-    public func fieldDictionary() throws -> OrderedDictionary<String, QueryParameter> {
-        var dict = OrderedDictionary<String, QueryParameter>()
+    public func fieldDictionary() throws -> OrderedDictionary<String, SQLParameter> {
+        var dict = OrderedDictionary<String, SQLParameter>()
         for field in try self.fields() {
             dict.updateValue(field.value, forKey: field.column)
         }

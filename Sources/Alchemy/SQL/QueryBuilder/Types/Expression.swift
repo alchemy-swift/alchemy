@@ -1,6 +1,6 @@
 import Foundation
 
-struct Expression: QueryParameter {
+struct Expression: SQLParameter {
     private var _value: String
     
     var value: DatabaseValue { .string(_value) }

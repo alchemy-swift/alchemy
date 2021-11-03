@@ -1,53 +1,53 @@
 import Foundation
 
-public protocol QueryParameter {
+public protocol SQLParameter {
     var value: DatabaseValue { get }
     
     // Replace with `static func value(value: Self?)` once 5.6 drops.
     static var nilValue: DatabaseValue { get }
 }
 
-extension DatabaseValue: QueryParameter {
+extension DatabaseValue: SQLParameter {
     public var value: DatabaseValue { self }
     public static var nilValue: DatabaseValue { .string(nil) }
 }
 
-extension String: QueryParameter {
+extension String: SQLParameter {
     public var value: DatabaseValue { .string(self) }
     public static var nilValue: DatabaseValue { .string(nil) }
 }
 
-extension Int: QueryParameter {
+extension Int: SQLParameter {
     public var value: DatabaseValue { .int(self) }
     public static var nilValue: DatabaseValue { .int(nil) }
 }
 
-extension Bool: QueryParameter {
+extension Bool: SQLParameter {
     public var value: DatabaseValue { .bool(self) }
     public static var nilValue: DatabaseValue { .bool(nil) }
 }
 
-extension Double: QueryParameter {
+extension Double: SQLParameter {
     public var value: DatabaseValue { .double(self) }
     public static var nilValue: DatabaseValue { .double(nil) }
 }
 
-extension Date: QueryParameter {
+extension Date: SQLParameter {
     public var value: DatabaseValue { .date(self) }
     public static var nilValue: DatabaseValue { .date(nil) }
 }
 
-extension UUID: QueryParameter {
+extension UUID: SQLParameter {
     public var value: DatabaseValue { .uuid(self) }
     public static var nilValue: DatabaseValue { .uuid(nil) }
 }
 
-extension Optional: QueryParameter where Wrapped: QueryParameter {
+extension Optional: SQLParameter where Wrapped: SQLParameter {
     public var value: DatabaseValue { self?.value ?? Wrapped.nilValue }
     public static var nilValue: DatabaseValue { Wrapped.nilValue }
 }
 
-extension RawRepresentable where RawValue: QueryParameter {
+extension RawRepresentable where RawValue: SQLParameter {
     public var value: DatabaseValue { self.rawValue.value }
     public static var nilValue: DatabaseValue { RawValue.nilValue }
 }

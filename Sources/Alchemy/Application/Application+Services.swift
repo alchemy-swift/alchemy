@@ -19,7 +19,7 @@ extension Application {
         Router.config(default: Router())
         Scheduler.config(default: Scheduler())
         NIOThreadPool.config(default: NIOThreadPool(numberOfThreads: System.coreCount))
-        HTTPClient.config(default: HTTPClient(eventLoopGroupProvider: .shared(Loop.group)))
+        Client.config(default: Client())
         
         // Start threadpool
         NIOThreadPool.default.start()
@@ -38,16 +38,11 @@ extension Application {
                     logger: lifecycleLogger,
                     installBacktrace: false)))
         
+        Loop.mock()
         Router.config(default: Router())
+        Client.config(default: Client())
         Scheduler.config(default: Scheduler())
         NIOThreadPool.config(default: NIOThreadPool(numberOfThreads: System.coreCount))
-        Loop.mock()
-    }
-}
-
-extension HTTPClient: Service {
-    public func shutdown() throws {
-        try syncShutdown()
     }
 }
 

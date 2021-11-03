@@ -13,7 +13,7 @@ extension Request: DecodableRequest {
         parameter(key)?.value
     }
     
-    public func decodeContent<T>(type: ContentType) throws -> T where T : Decodable {
+    public func decodeContent<T>(type: Papyrus.ContentType) throws -> T where T : Decodable {
         switch type {
         case .json:
             return try decodeBodyJSON(as: T.self)

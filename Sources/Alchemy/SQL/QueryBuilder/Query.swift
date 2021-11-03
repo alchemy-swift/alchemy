@@ -273,7 +273,7 @@ public class Query: Sequelizable {
     ///   queries to.
     public func `where`(
         key: String,
-        in values: [QueryParameter],
+        in values: [SQLParameter],
         type: WhereIn.InType = .in,
         boolean: WhereBoolean = .and
     ) -> Self {
@@ -295,7 +295,7 @@ public class Query: Sequelizable {
     ///     Defaults to `.in`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(key: String, in values: [QueryParameter], type: WhereIn.InType = .in) -> Self {
+    public func orWhere(key: String, in values: [SQLParameter], type: WhereIn.InType = .in) -> Self {
         return self.where(
             key: key,
             in: values,
@@ -314,7 +314,7 @@ public class Query: Sequelizable {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNot(key: String, in values: [QueryParameter], boolean: WhereBoolean = .and) -> Self {
+    public func whereNot(key: String, in values: [SQLParameter], boolean: WhereBoolean = .and) -> Self {
         return self.where(key: key, in: values, type: .notIn, boolean: boolean)
     }
 
@@ -325,7 +325,7 @@ public class Query: Sequelizable {
     ///   - values: The values that the column should not match.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNot(key: String, in values: [QueryParameter]) -> Self {
+    public func orWhereNot(key: String, in values: [SQLParameter]) -> Self {
         self.where(key: key, in: values, type: .notIn, boolean: .or)
     }
 
@@ -338,7 +338,7 @@ public class Query: Sequelizable {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereRaw(sql: String, bindings: [QueryParameter], boolean: WhereBoolean = .and) -> Self {
+    public func whereRaw(sql: String, bindings: [SQLParameter], boolean: WhereBoolean = .and) -> Self {
         self.wheres.append(WhereRaw(
             query: sql,
             values: bindings.map { $0.value },
@@ -354,7 +354,7 @@ public class Query: Sequelizable {
     ///   - bindings: Any variables for binding in the SQL.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereRaw(sql: String, bindings: [QueryParameter]) -> Self {
+    public func orWhereRaw(sql: String, bindings: [SQLParameter]) -> Self {
         self.whereRaw(sql: sql, bindings: bindings, boolean: .or)
     }
 
@@ -474,7 +474,7 @@ public class Query: Sequelizable {
     ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(key: String, op: Operator, value: QueryParameter, boolean: WhereBoolean = .and) -> Self {
+    public func having(key: String, op: Operator, value: SQLParameter, boolean: WhereBoolean = .and) -> Self {
         return self.having(WhereValue(
             key: key,
             op: op,
@@ -644,7 +644,7 @@ public class Query: Sequelizable {
     ///   fetch.
     /// - Returns: The inserted rows.
     public func insert(
-        _ value: OrderedDictionary<String, QueryParameter>,
+        _ value: OrderedDictionary<String, SQLParameter>,
         returnItems: Bool = true
     ) async throws -> [DatabaseRow] {
         try await insert([value], returnItems: returnItems)
@@ -664,7 +664,7 @@ public class Query: Sequelizable {
     ///   `false`, MySQL will run a single query inserting all values.
     /// - Returns: The inserted rows.
     public func insert(
-        _ values: [OrderedDictionary<String, QueryParameter>],
+        _ values: [OrderedDictionary<String, SQLParameter>],
         returnItems: Bool = true
     ) async throws -> [DatabaseRow] {
         try await database.grammar.insert(values, query: self, returnItems: returnItems)
@@ -686,7 +686,7 @@ public class Query: Sequelizable {
     ///
     /// - Parameter values: An dictionary containing the values to be
     ///   updated.
-    public func update(values: [String: QueryParameter]) async throws {
+    public func update(values: [String: SQLParameter]) async throws {
         let sql = try database.grammar.compileUpdate(self, values: values)
         _ = try await database.runRawQuery(sql.query, values: sql.bindings)
     }
@@ -732,31 +732,31 @@ extension Query {
 extension String {
     // MARK: Operators
     
-    public static func == (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func == (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .equals, value: rhs.value)
     }
 
-    public static func != (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func != (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .notEqualTo, value: rhs.value)
     }
 
-    public static func < (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func < (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .lessThan, value: rhs.value)
     }
 
-    public static func > (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func > (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .greaterThan, value: rhs.value)
     }
 
-    public static func <= (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func <= (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .lessThanOrEqualTo, value: rhs.value)
     }
 
-    public static func >= (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func >= (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .greaterThanOrEqualTo, value: rhs.value)
     }
 
-    public static func ~= (lhs: String, rhs: QueryParameter) -> WhereValue {
+    public static func ~= (lhs: String, rhs: SQLParameter) -> WhereValue {
         return WhereValue(key: lhs, op: .like, value: rhs.value)
     }
 }
