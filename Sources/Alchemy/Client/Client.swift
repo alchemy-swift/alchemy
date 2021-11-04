@@ -2,14 +2,18 @@ import AsyncHTTPClient
 
 public final class Client: RequestBuilder, Service {
     private let httpClient = HTTPClient(eventLoopGroupProvider: .shared(Loop.group))
-    private var stubs: [String: ClientResponseStub]?
     
-    public static func stub(_ stubs: [String: ClientResponseStub]? = nil) {
-        Client.default.stub(stubs)
+    // MARK: - Testing
+
+    private var stubs: [String: ClientResponseStub]? = nil
+    var stubbedRequests: [HTTPClient.Request] = []
+    
+    public func stub(_ stubs: [String: ClientResponseStub] = [:]) {
+        self.stubs = stubs
     }
     
-    public func stub(_ stubs: [String: ClientResponseStub]? = nil) {
-        self.stubs = stubs
+    public static func stub(_ stubs: [String: ClientResponseStub] = [:]) {
+        Client.default.stub(stubs)
     }
     
     // MARK: - RequestBuilder
@@ -17,7 +21,9 @@ public final class Client: RequestBuilder, Service {
     public typealias Res = ClientResponse
     
     public var builder: ClientRequestBuilder {
-        ClientRequestBuilder(httpClient: httpClient, stubs: stubs)
+        ClientRequestBuilder(httpClient: httpClient, stubs: stubs) { [weak self] request in
+            self?.stubbedRequests.append(request)
+        }
     }
     
     // MARK: - Service
@@ -41,16 +47,19 @@ public struct ClientResponseStub {
 
 public final class ClientRequestBuilder: RequestBuilder {
     private let httpClient: HTTPClient
-    private let stubs: [String: ClientResponseStub]?
     private var queries: [String: String] = [:]
     private var headers: [(String, String)] = []
     private var createBody: (() throws -> ByteBuffer?)?
     
+    private let stubs: [String: ClientResponseStub]?
+    private let didStub: ((HTTPClient.Request) -> Void)?
+    
     public var builder: ClientRequestBuilder { self }
     
-    init(httpClient: HTTPClient, stubs: [String: ClientResponseStub]?) {
+    init(httpClient: HTTPClient, stubs: [String: ClientResponseStub]?, didStub: ((HTTPClient.Request) -> Void)? = nil) {
         self.httpClient = httpClient
         self.stubs = stubs
+        self.didStub = didStub
     }
 
     public func withHeader(_ header: String, value: String) -> ClientRequestBuilder {
@@ -80,10 +89,11 @@ public final class ClientRequestBuilder: RequestBuilder {
             tlsConfiguration: nil
         )
         
-        if stubs == nil {
-            return ClientResponse(request: req, response: try await httpClient.execute(request: req).get())
-        } else {
+        if stubs != nil {
+            didStub?(req)
             return stubFor(req)
+        } else {
+            return ClientResponse(request: req, response: try await httpClient.execute(request: req).get())
         }
     }
     
@@ -127,7 +137,11 @@ extension HTTPClient.Request {
         let cleanedPattern = pattern.deletingPrefix("https://").deletingPrefix("http://")
         if cleanedPattern == wildcard {
             return true
-        } else if let host = url.host {
+        } else if var host = url.host {
+            if let port = url.port {
+                host += ":\(port)"
+            }
+            
             let fullPath = host + url.path
             for (hostChar, patternChar) in zip(fullPath, pattern) {
                 if String(patternChar) == wildcard {

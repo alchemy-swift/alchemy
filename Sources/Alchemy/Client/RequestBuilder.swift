@@ -36,7 +36,7 @@ extension RequestBuilder {
     public func withQueries(_ dict: [String: String]) -> Builder {
         var toReturn = builder
         for (k, v) in dict {
-            toReturn = withQuery(k, value: v)
+            toReturn = toReturn.withQuery(k, value: v)
         }
         
         return toReturn
@@ -47,7 +47,7 @@ extension RequestBuilder {
     public func withHeaders(_ dict: [String: String]) -> Builder {
         var toReturn = builder
         for (k, v) in dict {
-            toReturn = withHeader(k, value: v)
+            toReturn = toReturn.withHeader(k, value: v)
         }
         
         return toReturn
@@ -59,7 +59,11 @@ extension RequestBuilder {
     }
     
     public func withBearerAuth(_ token: String) -> Builder {
-        return withHeader("Authorization", value: "Bearer \(token)")
+        withHeader("Authorization", value: "Bearer \(token)")
+    }
+    
+    public func withContentType(_ contentType: ContentType) -> Builder {
+        withHeader("Content-Type", value: contentType.value)
     }
     
     // MARK: - Body
@@ -75,12 +79,12 @@ extension RequestBuilder {
     public func withJSON(_ dict: [String: Any?]) -> Builder {
         self
             .withBody { ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)) }
-            .withHeader("Content-Type", value: "application/json")
+            .withContentType(.json)
     }
     
     public func withJSON<T: Encodable>(_ body: T, encoder: JSONEncoder = JSONEncoder()) -> Builder {
         withBody { ByteBuffer(data: try encoder.encode(body)) }
-            .withHeader("Content-Type", value: "application/json")
+            .withContentType(.json)
     }
     
     // MARK: Methods

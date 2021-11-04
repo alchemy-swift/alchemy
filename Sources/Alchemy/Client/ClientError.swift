@@ -25,7 +25,7 @@ extension ClientError {
     
     func debugString() async throws -> String {
         return """
-            *** Client Error ***
+            *** HTTP Client Error ***
             \(message)
             
             *** Request ***

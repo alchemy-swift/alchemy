@@ -42,13 +42,14 @@ extension Client {
         let components = try endpoint.httpComponents(dto: request)
         var request = withHeaders(components.headers)
         
-        switch components.bodyEncoding {
+        switch components.contentEncoding {
         case .json:
-            request = request.withJSON(components.body, encoder: endpoint.jsonEncoder)
-        case .urlEncoded:
             request = request
-                .withHeader("Content-Type", value: components.bodyEncoding.contentType.value)
+                .withJSON(components.body, encoder: endpoint.jsonEncoder)
+        case .url:
+            request = request
                 .withBody(try components.urlParams()?.data(using: .utf8))
+                .withContentType(.urlEncoded)
         }
         
         let clientResponse = try await request
@@ -57,19 +58,8 @@ extension Client {
         
         if Response.self == Empty.self {
             return (clientResponse, Empty.value as! Response)
-        } else {
-            return (clientResponse, try clientResponse.decodeJSON(Response.self, using: endpoint.jsonDecoder))
         }
-    }
-}
-
-extension Papyrus.ContentType {
-    var contentType: ContentType {
-        switch self {
-        case .urlEncoded:
-            return .urlEncoded
-        case .json:
-            return .json
-        }
+        
+        return (clientResponse, try clientResponse.decodeJSON(Response.self, using: endpoint.jsonDecoder))
     }
 }

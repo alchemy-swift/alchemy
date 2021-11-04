@@ -29,6 +29,6 @@ final class RequestDecodingTests: XCTestCase {
         }
         
         XCTAssertEqual(try request.decodeContent(type: .json), JsonSample())
-        XCTAssertThrowsError(try request.decodeContent(type: .urlEncoded) as JsonSample)
+        XCTAssertThrowsError(try request.decodeContent(type: .url) as JsonSample)
     }
 }
