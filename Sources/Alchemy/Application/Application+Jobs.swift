@@ -7,4 +7,9 @@ extension Application {
     public func registerJob<J: Job>(_ jobType: J.Type) {
         JobDecoding.register(jobType)
     }
+    
+    /// All custom Job types registered to this application.
+    public var registeredJobs: [Job.Type] {
+        JobDecoding.registeredJobs
+    }
 }

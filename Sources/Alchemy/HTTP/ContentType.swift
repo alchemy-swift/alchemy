@@ -1,6 +1,6 @@
 import Foundation
 
-/// An HTTP Media Type. It has a `value: String` appropriate for
+/// An HTTP content type. It has a `value: String` appropriate for
 /// putting into `Content-Type` headers.
 public struct ContentType: Equatable {
     /// The value of this content type, appropriate for `Content-Type`
@@ -94,7 +94,7 @@ extension ContentType {
     ///
     /// Usage:
     /// ```swift
-    /// let mt = MediaType(fileExtension: "html")!
+    /// let mt = ContentType(fileExtension: "html")!
     /// print(mt.value) // "text/html"
     /// ```
     ///

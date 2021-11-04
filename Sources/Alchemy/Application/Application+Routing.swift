@@ -1,55 +1,4 @@
-import NIO
 import NIOHTTP1
-
-extension Application {
-    /// Groups a set of endpoints by a path prefix.
-    /// All endpoints added in the `configure` closure will
-    /// be prefixed, but none in the handler chain that continues
-    /// after the `.grouped`.
-    ///
-    /// - Parameters:
-    ///   - pathPrefix: The path prefix for all routes
-    ///     defined in the `configure` closure.
-    ///   - configure: A closure for adding routes that will be
-    ///     prefixed by the given path prefix.
-    /// - Returns: This application for chaining handlers.
-    @discardableResult
-    public func grouped(_ pathPrefix: String, configure: (Application) -> Void) -> Self {
-        let prefixes = pathPrefix.split(separator: "/").map(String.init)
-        Router.default.pathPrefixes.append(contentsOf: prefixes)
-        configure(self)
-        for _ in prefixes {
-            _ = Router.default.pathPrefixes.popLast()
-        }
-        return self
-    }
-}
-
-extension Application {
-    /// Set a custom handler for when a handler isn't found for a
-    /// request.
-    ///
-    /// - Parameter handler: The handler that returns a custom not
-    ///   found response.
-    /// - Returns: This application for chaining handlers.
-    @discardableResult
-    public func notFound(use handler: @escaping Handler) -> Self {
-        Router.default.notFoundHandler = handler
-        return self
-    }
-    
-    /// Set a custom handler for when an internal error happens while
-    /// handling a request.
-    ///
-    /// - Parameter handler: The handler that returns a custom
-    ///   internal error response.
-    /// - Returns: This application for chaining handlers.
-    @discardableResult
-    public func internalError(use handler: @escaping Router.ErrorHandler) -> Self {
-        Router.default.internalErrorHandler = handler
-        return self
-    }
-}
 
 extension Application {
     /// A basic route handler closure. Most types you'll need conform
@@ -247,5 +196,29 @@ extension Application {
     @discardableResult
     public func head<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
         self.on(.HEAD, at: path, use: handler)
+    }
+}
+
+extension Application {
+    /// Groups a set of endpoints by a path prefix.
+    /// All endpoints added in the `configure` closure will
+    /// be prefixed, but none in the handler chain that continues
+    /// after the `.grouped`.
+    ///
+    /// - Parameters:
+    ///   - pathPrefix: The path prefix for all routes
+    ///     defined in the `configure` closure.
+    ///   - configure: A closure for adding routes that will be
+    ///     prefixed by the given path prefix.
+    /// - Returns: This application for chaining handlers.
+    @discardableResult
+    public func grouped(_ pathPrefix: String, configure: (Application) -> Void) -> Self {
+        let prefixes = pathPrefix.split(separator: "/").map(String.init)
+        Router.default.pathPrefixes.append(contentsOf: prefixes)
+        configure(self)
+        for _ in prefixes {
+            _ = Router.default.pathPrefixes.popLast()
+        }
+        return self
     }
 }

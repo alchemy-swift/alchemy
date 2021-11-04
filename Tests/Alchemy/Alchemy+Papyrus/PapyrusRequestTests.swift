@@ -1,5 +1,4 @@
-import Alchemy
-import XCTAlchemy
+import AlchemyTest
 
 final class PapyrusRequestTests: TestCase<TestApp> {
     let api = SampleAPI()

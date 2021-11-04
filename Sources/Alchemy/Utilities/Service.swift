@@ -5,6 +5,10 @@ import Lifecycle
 /// dependency injection system, Fusion. Conform a type to this
 /// to make it simple to inject and resolve around your app.
 public protocol Service {
+    // Start this service. Will be called immediately after your service is
+    // registered.
+    func startup()
+    
     // Shutdown this service. Will be called when the application your
     // service is registered to shuts down.
     func shutdown() throws
@@ -26,6 +30,7 @@ public protocol Service {
 
 // Default implementations.
 extension Service {
+    public func startup() {}
     public func shutdown() throws {}
     
     public static var `default`: Self {
@@ -60,5 +65,7 @@ extension Service {
         {
             lifecycle.registerShutdown(label: label, .sync(configuration.shutdown))
         }
+        
+        configuration.startup()
     }
 }

@@ -8,7 +8,7 @@ let package = Package(
     ],
     products: [
         .library(name: "Alchemy", targets: ["Alchemy"]),
-        .library(name: "XCTAlchemy", targets: ["XCTAlchemy"]),
+        .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -64,14 +64,18 @@ let package = Package(
                 .product(name: "Fakery", package: "Fakery"),
                 
                 /// Internal dependencies
-                "CAlchemy",
-            ],
-            swiftSettings: [
-                .unsafeFlags(["-Xfrontend", "-debug-time-function-bodies"])
+                "AlchemyC",
             ]
         ),
-        .target(name: "CAlchemy", dependencies: []),
-        .target(name: "XCTAlchemy", dependencies: ["Alchemy"]),
-        .testTarget(name: "AlchemyTests", dependencies: ["XCTAlchemy"]),
+        .target(name: "AlchemyC", dependencies: []),
+        .target(name: "AlchemyTest", dependencies: ["Alchemy"]),
+        .testTarget(
+            name: "AlchemyTests",
+            dependencies: ["AlchemyTest"],
+            path: "Tests/Alchemy"),
+        .testTarget(
+            name: "AlchemyTestUtilsTests",
+            dependencies: ["AlchemyTest"],
+            path: "Tests/AlchemyTest"),
     ]
 )

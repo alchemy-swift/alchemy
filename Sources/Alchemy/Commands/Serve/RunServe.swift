@@ -37,7 +37,7 @@ final class RunServe: Command {
     @Flag var migrate: Bool = false
     
     @IgnoreDecoding
-    private var channel: Channel?
+    private var server: Server?
     
     // MARK: Command
 
@@ -67,38 +67,18 @@ final class RunServe: Command {
     }
     
     func start() async throws {
-        func childChannelInitializer(_ channel: Channel) async throws {
-            try await channel.pipeline.addAnyTLS()
-            try await channel.addHTTP()
-        }
-        
-        let serverBootstrap = ServerBootstrap(group: Loop.group)
-            .serverChannelOption(ChannelOptions.backlog, value: 256)
-            .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-            .childChannelInitializer { channel in
-                channel.eventLoop.wrapAsync { try await childChannelInitializer(channel) }
-            }
-            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
-            .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-            .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
-        
-        let channel: Channel
+        let server = Server()
         if let unixSocket = unixSocket {
-            channel = try await serverBootstrap.bind(unixDomainSocketPath: unixSocket).get()
+            try await server.listen(on: .unix(path: unixSocket))
         } else {
-            channel = try await serverBootstrap.bind(host: host, port: port).get()
+            try await server.listen(on: .ip(host: host, port: port))
         }
         
-        guard let channelLocalAddress = channel.localAddress else {
-            fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
-        }
-        
-        self.channel = channel
-        Log.info("[Server] listening on \(channelLocalAddress.prettyName)")
+        self.server = server
     }
     
     func shutdown() async throws {
-        try await channel?.close()
+        try await server?.shutdown()
     }
 }
 
@@ -112,70 +92,5 @@ private struct IgnoreDecoding<T>: Decodable {
     
     init() {
         wrappedValue = nil
-    }
-}
-
-extension SocketAddress {
-    /// A human readable description for this socket.
-    var prettyName: String {
-        switch self {
-        case .unixDomainSocket:
-            return pathname ?? ""
-        case .v4:
-            let address = ipAddress ?? ""
-            let port = port ?? 0
-            return "\(address):\(port)"
-        case .v6:
-            let address = ipAddress ?? ""
-            let port = port ?? 0
-            return "\(address):\(port)"
-        }
-    }
-}
-
-extension ChannelPipeline {
-    /// Configures this pipeline with any TLS config in the
-    /// `ApplicationConfiguration`.
-    fileprivate func addAnyTLS() async throws {
-        let config = Container.resolve(ApplicationConfiguration.self)
-        if var tls = config.tlsConfig {
-            if config.httpVersions.contains(.http2) { tls.applicationProtocols.append("h2") }
-            if config.httpVersions.contains(.http1_1) { tls.applicationProtocols.append("http/1.1") }
-            let sslContext = try NIOSSLContext(configuration: tls)
-            let sslHandler = NIOSSLServerHandler(context: sslContext)
-            try await addHandler(sslHandler)
-        }
-    }
-}
-
-extension Channel {
-    /// Configures this channel to handle whatever HTTP versions the
-    /// server should be speaking over.
-    fileprivate func addHTTP() async throws {
-        let config = Container.resolve(ApplicationConfiguration.self)
-        if config.httpVersions.contains(.http2) {
-            try await configureHTTP2SecureUpgrade(
-                h2ChannelConfigurator: { h2Channel in
-                    h2Channel.configureHTTP2Pipeline(
-                        mode: .server,
-                        inboundStreamInitializer: { channel in
-                            channel.pipeline
-                                .addHandlers([
-                                    HTTP2FramePayloadToHTTP1ServerCodec(),
-                                    HTTPHandler(handler: Router.default)
-                                ])
-                        })
-                        .map { _ in }
-                },
-                http1ChannelConfigurator: { http1Channel in
-                    http1Channel.pipeline
-                        .configureHTTPServerPipeline(withErrorHandling: true)
-                        .flatMap { self.pipeline.addHandler(HTTPHandler(handler: Router.default)) }
-                }
-            ).get()
-        } else {
-            try await pipeline.configureHTTPServerPipeline(withErrorHandling: true).get()
-            try await pipeline.addHandler(HTTPHandler(handler: Router.default))
-        }
     }
 }

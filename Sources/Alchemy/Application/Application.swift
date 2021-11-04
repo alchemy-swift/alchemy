@@ -14,10 +14,8 @@
 /// }
 /// ```
 public protocol Application {
-    /// Called before any launch command is run. Called AFTER any
-    /// environment is loaded and the global `EventLoopGroup` is
-    /// set. Called on an event loop, so `Loop.current` is
-    /// available for use if needed.
+    /// Called before any launch command is run. Called after any
+    /// environment is loaded.
     func boot() throws
     
     /// Required empty initializer.

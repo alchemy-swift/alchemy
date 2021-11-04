@@ -7,7 +7,7 @@ open class TestCase<A: Application>: XCTestCase {
     open override func setUp() {
         super.setUp()
         app = A()
-        app.mockServices()
+        app.bootServices(testing: true)
         
         do {
             try app.boot()

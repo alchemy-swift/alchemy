@@ -3,21 +3,26 @@ import AsyncHTTPClient
 import XCTest
 
 extension Client {
-    public func assertNothingSent() {
-        XCTAssert(stubbedRequests.isEmpty)
+    public func assertNothingSent(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssert(stubbedRequests.isEmpty, file: file, line: line)
     }
     
-    public func assertSent(_ count: Int? = nil, validate: ((HTTPClient.Request) throws -> Bool)? = nil) {
-        XCTAssertFalse(stubbedRequests.isEmpty)
+    public func assertSent(
+        _ count: Int? = nil,
+        validate: ((HTTPClient.Request) throws -> Bool)? = nil,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertFalse(stubbedRequests.isEmpty, file: file, line: line)
         if let count = count {
-            XCTAssertEqual(stubbedRequests.count, count)
+            XCTAssertEqual(stubbedRequests.count, count, file: file, line: line)
         }
         
         if let validate = validate {
             XCTAssertTrue(try stubbedRequests.reduce(false) {
                 let validation = try validate($1)
                 return $0 || validation
-            })
+            }, file: file, line: line)
         }
     }
 }

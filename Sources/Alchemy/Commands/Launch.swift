@@ -22,12 +22,12 @@ struct Launch: ParsableCommand {
                 MakeModel.self,
                 MakeJob.self,
                 MakeView.self,
-            ] + userCommands,
+            ] + customCommands,
             defaultSubcommand: RunServe.self
         )
     }
     
-    @Locked static var userCommands: [Command.Type] = []
+    @Locked static var customCommands: [Command.Type] = []
     
     /// The environment file to load. Defaults to `env`.
     ///

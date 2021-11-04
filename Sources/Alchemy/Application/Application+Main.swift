@@ -3,15 +3,15 @@ import LifecycleNIOCompat
 
 extension Application {
     /// Lifecycle logs quite a bit by default, this quiets it's `info`
-    /// level logs by default. To output messages lower than `notice`,
-    /// you can override this property to `.info` or lower.
+    /// level logs. To output messages lower than `notice`, you may
+    /// override this property to `.info` or lower.
     public var lifecycleLogLevel: Logger.Level { .notice }
     
     /// Launch this application. By default it serves, see `Launch`
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
     public static func main() {
-        loadEnv()
+        bootEnv()
         
         do {
             let app = Self()
@@ -24,7 +24,7 @@ extension Application {
         }
     }
     
-    private static func loadEnv() {
+    private static func bootEnv() {
         let args = CommandLine.arguments
         if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
             Env.defaultLocation = value

@@ -1,15 +1,6 @@
 import NIO
 import NIOHTTP1
 
-/// A type that can handle HTTP requests.
-protocol RequestHandler {
-    /// Given a `Request`, return a `Response`. Should never result in
-    /// an error.
-    ///
-    /// - Parameter request: The request to respond to.
-    func handle(request: Request) async -> Response
-}
-
 /// Responds to incoming `HTTPRequests` with an `Response` generated
 /// by the `HTTPRouter`.
 final class HTTPHandler: ChannelInboundHandler {
@@ -25,13 +16,13 @@ final class HTTPHandler: ChannelInboundHandler {
     private var request: Request?
   
     /// The responder to all requests.
-    private let handler: RequestHandler
+    private let handler: (Request) async -> Response
     
     /// Initialize with a handler to respond to all requests.
     ///
     /// - Parameter handler: The object to respond to all incoming
     ///   `Request`s.
-    init(handler: RequestHandler) {
+    init(handler: @escaping (Request) async -> Response) {
         self.handler = handler
     }
     
@@ -80,7 +71,7 @@ final class HTTPHandler: ChannelInboundHandler {
             // Writes the response when done
             writeResponse(
                 version: request.head.version,
-                getResponse: { await self.handler.handle(request: request) },
+                getResponse: { await self.handler(request) },
                 to: context
             )
         }
@@ -101,9 +92,8 @@ final class HTTPHandler: ChannelInboundHandler {
         to context: ChannelHandlerContext
     ) -> Task<Void, Error> {
         return Task<Void, Error> {
-            let response = try await getResponse()
-            let responseWriter = HTTPResponseWriter(version: version, handler: self, context: context)
-            response.write(to: responseWriter)
+            let writer = HTTPResponseWriter(version: version, handler: self, context: context)
+            writer.write(response: try await getResponse())
             if !self.keepAlive {
                 try await context.close()
             }

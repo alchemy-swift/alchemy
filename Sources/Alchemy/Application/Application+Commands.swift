@@ -4,6 +4,11 @@ extension Application {
     ///
     /// - Parameter commandType: The type of the command to register.
     public func registerCommand<C: Command>(_ commandType: C.Type) {
-        Launch.userCommands.append(commandType)
+        Launch.customCommands.append(commandType)
+    }
+    
+    /// All custom commands types registered to this application.
+    public var customCommands: [Command.Type] {
+        Launch.customCommands
     }
 }

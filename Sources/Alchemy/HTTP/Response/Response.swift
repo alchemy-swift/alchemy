@@ -23,7 +23,7 @@ public final class Response {
     
     /// This will be called when this `Response` writes data to a
     /// remote peer.
-    var writerClosure: WriteResponse {
+    fileprivate var writerClosure: WriteResponse {
         get { _writerClosure ?? defaultWriterClosure }
     }
     
@@ -77,14 +77,6 @@ public final class Response {
         self._writerClosure = writeResponse
     }
     
-    /// Writes this response to an remote peer via a `ResponseWriter`.
-    ///
-    /// - Parameter writer: An abstraction around writing data to a
-    ///   remote peer.
-    func write(to writer: ResponseWriter) {
-        writerClosure(writer)
-    }
-    
     /// Provides default writing behavior for a `Response`.
     ///
     /// - Parameter writer: An abstraction around writing data to a
@@ -94,32 +86,16 @@ public final class Response {
         if let body = body {
             writer.writeBody(body.buffer)
         }
+        
         writer.writeEnd()
     }
 }
 
-/// An abstraction around writing data to a remote peer. Conform to
-/// this protocol and inject it into the `Response` for responding
-/// to a remote peer at a later point in time.
-///
-/// Be sure to call `writeEnd` when you are finished writing data or
-/// the client response will never complete.
-public protocol ResponseWriter {
-    /// Write the status and head of a response. Should only be called
-    /// once.
+extension ResponseWriter {
+    /// Writes a response to a remote peer with this `ResponseWriter`.
     ///
-    /// - Parameters:
-    ///   - status: The status code of the response.
-    ///   - headers: Any headers of this response.
-    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders)
-    
-    /// Write some body data to the remote peer. May be called 0 or
-    /// more times.
-    ///
-    /// - Parameter body: The buffer of data to write.
-    func writeBody(_ body: ByteBuffer)
-    
-    /// Write the end of the response. Needs to be called once per
-    /// response, when all data has been written.
-    func writeEnd()
+    /// - Parameter response: The response to write.
+    func write(response: Response) {
+        response.writerClosure(self)
+    }
 }

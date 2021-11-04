@@ -1,5 +1,4 @@
-import XCTAlchemy
-@testable import Alchemy
+import AlchemyTest
 
 final class PapyrusRoutingTests: TestCase<TestApp> {
     let api = TestAPI()
