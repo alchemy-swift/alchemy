@@ -11,12 +11,6 @@ public protocol ResponseConvertible {
 
 // MARK: Convenient `ResponseConvertible` Conformances.
 
-extension Array: ResponseConvertible where Element: Encodable {
-    public func convert() async throws -> Response {
-        Response(status: .ok, body: try HTTPBody(json: self))
-    }
-}
-
 extension Response: ResponseConvertible {
     public func convert() async throws -> Response {
         self

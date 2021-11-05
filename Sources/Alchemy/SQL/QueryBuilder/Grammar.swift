@@ -1,3 +1,4 @@
+import Collections
 import Foundation
 
 /// Used for compiling query builders into raw SQL statements.

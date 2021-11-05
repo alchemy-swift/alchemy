@@ -16,13 +16,13 @@ extension Request {
     
     /// The path of the request. Does not include the query string.
     public var path: String {
-        URLComponents(string: head.uri)?.path ?? ""
+        components?.path ?? ""
     }
     
     /// Any query items parsed from the URL. These are not percent
     /// encoded.
     public var queryItems: [URLQueryItem] {
-        URLComponents(string: head.uri)?.queryItems ?? []
+        components?.queryItems ?? []
     }
     
     /// Returns the first parameter for the given key, if there is one.

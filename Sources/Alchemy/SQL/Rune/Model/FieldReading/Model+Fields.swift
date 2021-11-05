@@ -1,3 +1,5 @@
+import Collections
+
 extension Model {
     /// Returns all `DatabaseField`s on a `Model` object. Useful for
     /// inserting or updating values into a database.

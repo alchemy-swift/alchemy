@@ -36,24 +36,16 @@ public final class Scheduler: Service {
     }
     
     private func schedule(schedule: Schedule, task: @escaping () async throws -> Void, on loop: EventLoop) {
-        guard let next = schedule.next(), let nextDate = next.date else {
-            return Log.error("[Scheduler] schedule doesn't have a future date to run.")
-        }
-
-        func scheduleNextAndRun() async throws -> Void {
-            self.schedule(schedule: schedule, task: task, on: loop)
-            try await task()
-        }
-
-        var delay = Int64(nextDate.timeIntervalSinceNow * 1000)
-        // Occasionally Cron library returns the `next()` as fractions of a 
-        // millisecond before or after now. If the delay is 0, get the next
-        // date and use that instead.
-        if delay == 0 {
-            let newDate = schedule.next(next)?.date ?? Date().addingTimeInterval(1)
-            delay = Int64(newDate.timeIntervalSinceNow * 1000)
+        guard let delay = schedule.next() else {
+            return Log.info("[Scheduler] scheduling finished; there's no future date to run.")
         }
         
-        loop.flatScheduleTask(in: .milliseconds(delay)) { loop.wrapAsync { try await scheduleNextAndRun() } }
+        loop.flatScheduleTask(in: delay) {
+            loop.wrapAsync {
+                // Schedule next and run
+                self.schedule(schedule: schedule, task: task, on: loop)
+                try await task()
+            }
+        }
     }
 }

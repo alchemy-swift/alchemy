@@ -21,23 +21,23 @@ extension Request {
                 // Or maybe we should throw error?
                 return nil
             }
-            
-            let components = authString.components(separatedBy: ":")
-            guard let username = components.first else {
+
+            guard !authString.isEmpty else {
                 return nil
             }
             
+            let components = authString.components(separatedBy: ":")
+            let username = components[0]
             let password = components.dropFirst().joined()
-            
             return .basic(
                 HTTPAuth.Basic(username: username, password: password)
             )
         } else if authString.starts(with: "Bearer ") {
             authString.removeFirst(7)
             return .bearer(HTTPAuth.Bearer(token: authString))
-        } else {
-            return nil
         }
+        
+        return nil
     }
     
     /// Gets any `Basic` authorization data from this request.
@@ -51,9 +51,9 @@ extension Request {
         
         if case let .basic(authData) = auth {
             return authData
-        } else {
-            return nil
         }
+        
+        return nil
     }
     
     /// Gets any `Bearer` authorization data from this request.
@@ -67,9 +67,9 @@ extension Request {
         
         if case let .bearer(authData) = auth {
             return authData
-        } else {
-            return nil
         }
+        
+        return nil
     }
 }
 

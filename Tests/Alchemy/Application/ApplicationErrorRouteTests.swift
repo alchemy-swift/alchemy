@@ -26,4 +26,19 @@ final class ApplicationErrorRouteTests: TestCase<TestApp> {
         
         try await get("/error").assertBody("Nothing to see here.").assertOk()
     }
+    
+    func testThrowingCustomInternalError() async throws {
+        struct TestError: Error {}
+        
+        app.get("/error") { _ -> String in
+            throw TestError()
+        }
+        
+        app.internalError { _, _ in
+            throw TestError()
+        }
+        
+        let status = HTTPResponseStatus.internalServerError
+        try await get("/error").assertBody(status.reasonPhrase).assertStatus(.internalServerError)
+    }
 }

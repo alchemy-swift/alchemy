@@ -1,3 +1,5 @@
+import Collections
+
 /// A Postgres specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
 final class PostgresGrammar: Grammar {

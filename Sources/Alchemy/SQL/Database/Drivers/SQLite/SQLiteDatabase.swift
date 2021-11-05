@@ -1,3 +1,4 @@
+import Collections
 import SQLiteKit
 
 final class SQLiteGrammar: Grammar {

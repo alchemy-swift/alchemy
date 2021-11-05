@@ -188,7 +188,7 @@ extension Model {
     ///   database.
     public func update(db: Database = .default) async throws -> Self {
         let id = try getID()
-        let fields = try fieldDictionary().unorderedDictionary
+        let fields = try fieldDictionary().dictionary
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return self
     }
@@ -197,7 +197,7 @@ extension Model {
         let id = try self.getID()
         var copy = self
         updateClosure(&copy)
-        let fields = try copy.fieldDictionary().unorderedDictionary
+        let fields = try copy.fieldDictionary().dictionary
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return copy
     }
