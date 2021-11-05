@@ -9,6 +9,6 @@ final class ApplicationJobTests: TestCase<TestApp> {
     }
 }
 
-struct TestJob: Job {
+private struct TestJob: Job {
     func run() async throws {}
 }

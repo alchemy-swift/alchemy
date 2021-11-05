@@ -150,11 +150,7 @@ extension Env {
         
         let fileManager = FileManager.default
         let filePath = fileManager.currentDirectoryPath + relativePath
-        if fileManager.fileExists(atPath: filePath) {
-            return filePath
-        } else {
-            return nil
-        }
+        return fileManager.fileExists(atPath: filePath) ? filePath : nil
     }
     
     static func warnIfUsingDerivedData(_ directory: String = FileManager.default.currentDirectoryPath) {

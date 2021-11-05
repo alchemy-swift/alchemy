@@ -21,7 +21,7 @@ public struct Loop {
                 // return a random one for now.
                 return Loop.group.next()
             }
-
+            
             return current
         }
         

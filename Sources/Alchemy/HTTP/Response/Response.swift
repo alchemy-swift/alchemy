@@ -40,8 +40,8 @@ public final class Response {
     ///   - headers: Any headers to return in the response. Defaults
     ///     to empty headers.
     ///   - body: The body of this response. See `HTTPBody` for
-    ///     initializing with various data.
-    public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: HTTPBody?) {
+    ///     initializing with various data. Defaults to nil.
+    public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: HTTPBody? = nil) {
         var headers = headers
         headers.replaceOrAdd(name: "content-length", value: String(body?.buffer.writerIndex ?? 0))
         body?.contentType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
