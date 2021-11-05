@@ -10,7 +10,7 @@ public enum WhereBoolean: String {
 public struct WhereValue: WhereClause {
     let key: String
     let op: Operator
-    let value: DatabaseValue
+    let value: SQLValue
     var boolean: WhereBoolean = .and
     
     // MARK: - Sequelizable
@@ -68,7 +68,7 @@ public struct WhereIn: WhereClause {
     }
 
     let key: String
-    let values: [DatabaseValue]
+    let values: [SQLValue]
     let type: InType
     var boolean: WhereBoolean = .and
     
@@ -82,7 +82,7 @@ public struct WhereIn: WhereClause {
 
 public struct WhereRaw: WhereClause {
     let query: String
-    var values: [DatabaseValue] = []
+    var values: [SQLValue] = []
     var boolean: WhereBoolean = .and
     
     // MARK: - Sequelizable

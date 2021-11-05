@@ -19,12 +19,12 @@ public final class MySQLDatabaseRow: DatabaseRow {
 }
 
 extension MySQLData {
-    /// Initialize from an Alchemy `DatabaseValue`.
+    /// Initialize from an Alchemy `SQLValue`.
     ///
     /// - Parameter value: The value with which to initialize. Given
     ///   the type of the value, the `MySQLData` will be initialized
     ///   with the best corresponding type.
-    init(_ value: DatabaseValue) {
+    init(_ value: SQLValue) {
         switch value {
         case .bool(let value):
             self = value.map(MySQLData.init(bool:)) ?? .null
@@ -72,21 +72,21 @@ extension MySQLData {
 
         switch self.type {
         case .int24, .short, .long, .longlong:
-            let value = DatabaseValue.int(try validateNil(self.int))
+            let value = SQLValue.int(try validateNil(self.int))
             return DatabaseField(column: column, value: value)
         case .tiny:
-            let value = DatabaseValue.bool(try validateNil(self.bool))
+            let value = SQLValue.bool(try validateNil(self.bool))
             return DatabaseField(column: column, value: value)
         case .varchar, .string, .varString, .blob, .tinyBlob, .mediumBlob, .longBlob:
-            let value = DatabaseValue.string(try validateNil(self.string))
+            let value = SQLValue.string(try validateNil(self.string))
             return DatabaseField(column: column, value: value)
         case .date, .timestamp, .timestamp2, .datetime, .datetime2:
-            let value = DatabaseValue.date(try validateNil(self.time?.date))
+            let value = SQLValue.date(try validateNil(self.time?.date))
             return DatabaseField(column: column, value: value)
         case .time:
             throw DatabaseError("Times aren't supported yet.")
         case .float, .decimal, .double:
-            let value = DatabaseValue.double(try validateNil(self.double))
+            let value = SQLValue.double(try validateNil(self.double))
             return DatabaseField(column: column, value: value)
         case .json:
             guard var buffer = self.buffer else {

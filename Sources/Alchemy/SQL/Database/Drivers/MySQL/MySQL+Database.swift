@@ -43,7 +43,7 @@ final class MySQLDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
@@ -58,7 +58,7 @@ final class MySQLDatabase: DatabaseDriver {
     ///   - values: Any bindings for the query.
     /// - Returns: The result of fetching the last inserted id, or the
     ///   result of the original query.
-    func runAndReturnLastInsertedItem(_ sql: String, table: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runAndReturnLastInsertedItem(_ sql: String, table: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) { conn in
             var lastInsertId: Int?
             var rows = try await conn
@@ -129,7 +129,7 @@ private struct MySQLConnectionDatabase: DatabaseDriver {
     let conn: MySQLConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await conn.query(sql, values.map(MySQLData.init)).get().map(MySQLDatabaseRow.init)
     }
     

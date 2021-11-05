@@ -1,17 +1,6 @@
 import Collections
 
 extension Model {
-    /// Returns all `DatabaseField`s on a `Model` object. Useful for
-    /// inserting or updating values into a database.
-    ///
-    /// - Throws: A `DatabaseCodingError` if there is an error
-    ///   creating any of the fields of this instance.
-    /// - Returns: An array of database fields representing the stored
-    ///   properties of `self`.
-    public func fields() throws -> [DatabaseField] {
-        try ModelFieldReader(Self.keyMapping).getFields(of: self)
-    }
-    
     /// Returns an ordered dictionary of column names to `Parameter`
     /// values, appropriate for working with the QueryBuilder.
     ///
@@ -19,11 +8,13 @@ extension Model {
     ///   creating any of the fields of this instance.
     /// - Returns: An ordered dictionary mapping column names to
     ///   parameters for use in a QueryBuilder `Query`.
-    public func fieldDictionary() throws -> OrderedDictionary<String, SQLParameter> {
-        var dict = OrderedDictionary<String, SQLParameter>()
-        for field in try self.fields() {
+    public func fields() throws -> OrderedDictionary<String, SQLValueConvertible> {
+        var dict = OrderedDictionary<String, SQLValueConvertible>()
+        let allFields = try ModelFieldReader(Self.keyMapping).getFields(of: self)
+        for field in allFields {
             dict.updateValue(field.value, forKey: field.column)
         }
+        
         return dict
     }
 }

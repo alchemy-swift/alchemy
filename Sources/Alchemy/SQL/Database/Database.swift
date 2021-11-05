@@ -54,11 +54,11 @@ public final class Database: Service {
     /// - Parameters:
     ///   - sql: The SQL string with '?'s denoting variables that
     ///     should be parameterized.
-    ///   - values: An array, `[DatabaseValue]`, that will replace the
+    ///   - values: An array, `[SQLValue]`, that will replace the
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
-    public func rawQuery(_ sql: String, values: [DatabaseValue] = []) async throws -> [DatabaseRow] {
+    public func rawQuery(_ sql: String, values: [SQLValue] = []) async throws -> [DatabaseRow] {
         try await driver.runRawQuery(sql, values: values)
     }
     
@@ -112,11 +112,11 @@ public protocol DatabaseDriver {
     /// - Parameters:
     ///   - sql: The SQL string with '?'s denoting variables that
     ///     should be parameterized.
-    ///   - values: An array, `[DatabaseValue]`, that will replace the
+    ///   - values: An array, `[SQLValue]`, that will replace the
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow]
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow]
     
     /// Runs a transaction on the database, using the given closure.
     /// All database queries in the closure are executed atomically.

@@ -47,7 +47,7 @@ final class PostgresDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
@@ -105,7 +105,7 @@ private struct PostgresConnectionDatabase: DatabaseDriver {
     let conn: PostgresConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await conn.query(sql.positionPostgresBindings(), values.map(PostgresData.init))
             .get().rows.map(PostgresDatabaseRow.init)
     }

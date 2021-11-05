@@ -6,7 +6,7 @@ public final class StubDatabase: DatabaseDriver {
     
     init() {}
     
-    public func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    public func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         guard !isShutdown else {
             throw DatabaseError("This stubbed database has been shutdown.")
         }

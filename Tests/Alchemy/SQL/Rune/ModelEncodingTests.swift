@@ -1,7 +1,7 @@
 @testable import Alchemy
 import XCTest
 
-final class DatabaseEncodingTests: XCTestCase {
+final class ModelEncodingTests: XCTestCase {
     func testEncoding() throws {
         let uuid = UUID()
         let date = Date()
@@ -34,12 +34,16 @@ final class DatabaseEncodingTests: XCTestCase {
         ]
         
         XCTAssertEqual("test_models", TestModel.tableName)
-        XCTAssertEqual(expectedFields, try model.fields())
+        XCTAssertEqual(expectedFields, try model.fields().map {
+            DatabaseField(column: $0, value: $1.value)
+        })
     }
     
     func testKeyMapping() throws {
         let model = CustomKeyedModel.pk(0)
-        let fields = try model.fields()
+        let fields = try model.fields().map {
+            DatabaseField(column: $0, value: $1.value)
+        }
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
         XCTAssertEqual([
             "id",
@@ -59,7 +63,9 @@ final class DatabaseEncodingTests: XCTestCase {
         ]
         
         XCTAssertEqual("custom_decoder_models", CustomDecoderModel.tableName)
-        XCTAssertEqual(expectedFields, try model.fields())
+        XCTAssertEqual(expectedFields, try model.fields().map {
+            DatabaseField(column: $0, value: $1.value)
+        })
     }
 }
 

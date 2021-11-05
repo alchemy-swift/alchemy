@@ -7,7 +7,7 @@ import Foundation
 /// All fields are optional by default, it's up to the end user to
 /// decide if a nil value in that field is appropriate and
 /// potentially throw an error.
-public enum DatabaseValue: Equatable, Hashable {
+public enum SQLValue: Equatable, Hashable {
     /// An `Int` value.
     case int(Int?)
     /// A `Double` value.
@@ -24,7 +24,7 @@ public enum DatabaseValue: Equatable, Hashable {
     case uuid(UUID?)
 }
 
-extension DatabaseValue {
+extension SQLValue {
     /// Indicates if the associated value inside this enum is nil.
     public var isNil: Bool {
         switch self {

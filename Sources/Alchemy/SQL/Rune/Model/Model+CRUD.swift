@@ -188,7 +188,7 @@ extension Model {
     ///   database.
     public func update(db: Database = .default) async throws -> Self {
         let id = try getID()
-        let fields = try fieldDictionary().dictionary
+        let fields = try fields().dictionary
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return self
     }
@@ -197,7 +197,7 @@ extension Model {
         let id = try self.getID()
         var copy = self
         updateClosure(&copy)
-        let fields = try copy.fieldDictionary().dictionary
+        let fields = try copy.fields().dictionary
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return copy
     }
@@ -211,7 +211,7 @@ extension Model {
     }
     
     public func update(db: Database = .default, with dict: [String: Any]) async throws -> Self {
-        let updateValues = dict.compactMapValues { $0 as? SQLParameter }
+        let updateValues = dict.compactMapValues { $0 as? SQLValueConvertible }
         try await Self.query().where("id" == id).update(values: updateValues)
         return try await sync()
     }
@@ -225,7 +225,7 @@ extension Model {
     ///   database. (an `id` being populated, for example).
     public func insert(db: Database = .default) async throws -> Self {
         try await Self.query(database: db)
-            .insert(try self.fieldDictionary()).first
+            .insert(try self.fields()).first
             .unwrap(or: RuneError.notFound)
             .decode(Self.self)
     }
@@ -263,7 +263,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertAll(db: Database = .default) async throws -> Self {
         try await Element.query(database: db)
-            .insert(try self.map { try $0.fieldDictionary() })
+            .insert(try self.map { try $0.fields() })
             .map { try $0.decode(Element.self) }
     }
 

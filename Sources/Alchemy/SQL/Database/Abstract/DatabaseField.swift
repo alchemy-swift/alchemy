@@ -8,7 +8,7 @@ public struct DatabaseField: Equatable {
     /// The name of the column this value came from.
     public let column: String
     /// The value of this field.
-    public let value: DatabaseValue
+    public let value: SQLValue
 }
 
 /// Functions for easily accessing the unwrapped contents of
@@ -19,7 +19,7 @@ extension DatabaseField {
     /// the `.int` has a `nil` associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.int` or its contents is nil.
+    ///   `SQLValue.int` or its contents is nil.
     /// - Returns: The unwrapped `Int` of this field's value, if it
     ///   was indeed a non-null `.int`.
     public func int() throws -> Int {
@@ -35,7 +35,7 @@ extension DatabaseField {
     /// the `.string` has a nil associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.string` or its contents is nil.
+    ///   `SQLValue.string` or its contents is nil.
     /// - Returns: The unwrapped `String` of this field's value, if
     ///   it was indeed a non-null `.string`.
     public func string() throws -> String {
@@ -51,7 +51,7 @@ extension DatabaseField {
     /// the `.double` has a nil associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.double` or its contents is nil.
+    ///   `SQLValue.double` or its contents is nil.
     /// - Returns: The unwrapped `Double` of this field's value, if it
     ///   was indeed a non-null `.double`.
     public func double() throws -> Double {
@@ -67,7 +67,7 @@ extension DatabaseField {
     /// the `.bool` has a nil associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.bool` or its contents is nil.
+    ///   `SQLValue.bool` or its contents is nil.
     /// - Returns: The unwrapped `Bool` of this field's value, if it
     ///   was indeed a non-null `.bool`.
     public func bool() throws -> Bool {
@@ -85,7 +85,7 @@ extension DatabaseField {
     /// the `.date` has a nil associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.date` or its contents is nil.
+    ///   `SQLValue.date` or its contents is nil.
     /// - Returns: The unwrapped `Date` of this field's value, if it
     ///   was indeed a non-null `.date`.
     public func date() throws -> Date {
@@ -108,7 +108,7 @@ extension DatabaseField {
     /// a `.json` or the `.json` has a nil associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.json` or its contents is nil.
+    ///   `SQLValue.json` or its contents is nil.
     /// - Returns: The `Data` of this field's unwrapped json value, if
     ///   it was indeed a non-null `.json`.
     public func json() throws -> Data {
@@ -124,7 +124,7 @@ extension DatabaseField {
     /// the `.uuid` has a nil associated value.
     ///
     /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `DatabaseValue.uuid` or its contents is nil.
+    ///   `SQLValue.uuid` or its contents is nil.
     /// - Returns: The unwrapped `UUID` of this field's value, if it
     ///   was indeed a non-null `.uuid`.
     public func uuid() throws -> UUID {

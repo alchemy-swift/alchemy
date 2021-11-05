@@ -32,7 +32,7 @@ open class Grammar {
 
     open func compileJoins(_ query: Query, joins: [JoinClause]?) -> SQL? {
         guard let joins = joins else { return nil }
-        var bindings: [DatabaseValue] = []
+        var bindings: [SQLValue] = []
         let query = joins.compactMap { join -> String? in
             guard let whereSQL = compileWheres(join) else {
                 return nil
@@ -80,7 +80,7 @@ open class Grammar {
         return SQL("offset \(offset)")
     }
 
-    open func compileInsert(_ query: Query, values: [OrderedDictionary<String, SQLParameter>]) throws -> SQL {
+    open func compileInsert(_ query: Query, values: [OrderedDictionary<String, SQLValueConvertible>]) throws -> SQL {
         
         guard let table = query.from else { throw GrammarError.missingTable }
 
@@ -89,7 +89,7 @@ open class Grammar {
         }
 
         let columns = values[0].map { $0.key }.joined(separator: ", ")
-        var parameters: [DatabaseValue] = []
+        var parameters: [SQLValue] = []
         var placeholders: [String] = []
 
         for value in values {
@@ -102,14 +102,14 @@ open class Grammar {
         )
     }
     
-    open func insert(_ values: [OrderedDictionary<String, SQLParameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    open func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
         let sql = try compileInsert(query, values: values)
         return try await query.database.runRawQuery(sql.query, values: sql.bindings)
     }
     
-    open func compileUpdate(_ query: Query, values: [String: SQLParameter]) throws -> SQL {
+    open func compileUpdate(_ query: Query, values: [String: SQLValueConvertible]) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
-        var bindings: [DatabaseValue] = []
+        var bindings: [SQLValue] = []
         let columnSQL = compileUpdateColumns(query, values: values)
 
         var base = "update \(table)"
@@ -129,8 +129,8 @@ open class Grammar {
         return SQL(base, bindings: bindings)
     }
 
-    open func compileUpdateColumns(_ query: Query, values: [String: SQLParameter]) -> SQL {
-        var bindings: [DatabaseValue] = []
+    open func compileUpdateColumns(_ query: Query, values: [String: SQLValueConvertible]) -> SQL {
+        var bindings: [SQLValue] = []
         var parts: [String] = []
         for value in values {
             if let expression = value.value as? Expression {
@@ -249,11 +249,11 @@ open class Grammar {
         false
     }
 
-    private func parameterize(_ values: [SQLParameter]) -> String {
+    private func parameterize(_ values: [SQLValueConvertible]) -> String {
         return values.map { parameter($0) }.joined(separator: ", ")
     }
 
-    private func parameter(_ value: SQLParameter) -> String {
+    private func parameter(_ value: SQLValueConvertible) -> String {
         if let value = value as? Expression {
             return value.description
         }

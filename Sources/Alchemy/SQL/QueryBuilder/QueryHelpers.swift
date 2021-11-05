@@ -11,12 +11,12 @@ enum QueryHelpers {
         return value
     }
 
-    static func groupSQL(values: [Sequelizable]) -> ([String], [DatabaseValue]) {
+    static func groupSQL(values: [Sequelizable]) -> ([String], [SQLValue]) {
         self.groupSQL(values: values.map { $0.toSQL() })
     }
 
-    static func groupSQL(values: [SQL?]) -> ([String], [DatabaseValue]) {
-        return values.reduce(([String](), [DatabaseValue]())) {
+    static func groupSQL(values: [SQL?]) -> ([String], [SQLValue]) {
+        return values.reduce(([String](), [SQLValue]())) {
             var parts = $0
             guard let sql = $1 else { return parts }
             parts.0.append(sql.query)

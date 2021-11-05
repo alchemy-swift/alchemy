@@ -2,25 +2,25 @@ import Foundation
 
 public struct SQL {
     var query: String
-    let bindings: [DatabaseValue]
+    let bindings: [SQLValue]
 
-    public init(_ query: String = "", bindings: [DatabaseValue] = []) {
+    public init(_ query: String = "", bindings: [SQLValue] = []) {
         self.query = query
         self.bindings = bindings
     }
 
-    public init(_ query: String, binding: DatabaseValue) {
+    public init(_ query: String, binding: SQLValue) {
         self.init(query, bindings: [binding])
     }
 
     @discardableResult
-    func bind(_ bindings: inout [DatabaseValue]) -> SQL {
+    func bind(_ bindings: inout [SQLValue]) -> SQL {
         bindings.append(contentsOf: self.bindings)
         return self
     }
 
     @discardableResult
-    func bind(queries: inout [String], bindings: inout [DatabaseValue]) -> SQL {
+    func bind(queries: inout [String], bindings: inout [SQLValue]) -> SQL {
         queries.append(self.query)
         bindings.append(contentsOf: self.bindings)
         return self

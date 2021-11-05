@@ -239,18 +239,18 @@ private protocol ModelValueReader {
 }
 
 extension ModelValueReader {
-    /// Returns a `DatabaseValue` for a `Model` value. If the value
-    /// isn't a supported `DatabaseValue`, it is encoded to `Data`
+    /// Returns a `SQLValue` for a `Model` value. If the value
+    /// isn't a supported `SQLValue`, it is encoded to `Data`
     /// returned as `.json(Data)`. This is special cased to
     /// return nil if the value is a Rune relationship.
     ///
-    /// - Parameter value: The value to map to a `DatabaseValue`.
+    /// - Parameter value: The value to map to a `SQLValue`.
     /// - Throws: An `EncodingError` if there is an issue encoding a
     ///   value perceived to be JSON.
-    /// - Returns: A `DatabaseValue` representing `value` or `nil` if
+    /// - Returns: A `SQLValue` representing `value` or `nil` if
     ///   value is a Rune relationship.
-    fileprivate func databaseValue<E: Encodable>(of value: E) throws -> DatabaseValue? {
-        if let value = value as? SQLParameter {
+    fileprivate func databaseValue<E: Encodable>(of value: E) throws -> SQLValue? {
+        if let value = value as? SQLValueConvertible {
             return value.value
         } else if value is AnyBelongsTo || value is AnyHas {
             return nil

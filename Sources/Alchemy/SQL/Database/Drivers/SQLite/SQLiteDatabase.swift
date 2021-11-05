@@ -6,7 +6,7 @@ final class SQLiteGrammar: Grammar {
         true
     }
     
-    override func insert(_ values: [OrderedDictionary<String, SQLParameter>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
         return try await query.database.transaction { conn in
             let sql = try super.compileInsert(query, values: values)
             let initial = try await conn.runRawQuery(sql.query, values: sql.bindings)
@@ -77,7 +77,7 @@ final class SQLiteDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
@@ -105,7 +105,7 @@ private struct SQLiteConnectionDatabase: DatabaseDriver {
     let conn: SQLiteConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [DatabaseValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
         try await conn.query(sql, values.map(SQLiteData.init)).get().map(SQLiteDatabaseRow.init)
     }
     
@@ -138,12 +138,12 @@ public struct SQLiteDatabaseRow: DatabaseRow {
 extension SQLiteData {
     private static let dateFormatter = ISO8601DateFormatter()
     
-    /// Initialize from an Alchemy `DatabaseValue`.
+    /// Initialize from an Alchemy `SQLValue`.
     ///
     /// - Parameter value: the value with which to initialize. Given
     ///   the type of the value, the `SQLiteData` will be
     ///   initialized with the best corresponding type.
-    init(_ value: DatabaseValue) {
+    init(_ value: SQLValue) {
         switch value {
         case .bool(let value):
             self = value.map { $0 ? .integer(1) : .integer(0) } ?? .null

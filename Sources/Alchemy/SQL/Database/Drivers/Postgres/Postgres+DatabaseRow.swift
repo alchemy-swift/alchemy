@@ -18,12 +18,12 @@ public struct PostgresDatabaseRow: DatabaseRow {
 }
 
 extension PostgresData {
-    /// Initialize from an Alchemy `DatabaseValue`.
+    /// Initialize from an Alchemy `SQLValue`.
     ///
     /// - Parameter value: the value with which to initialize. Given
     ///   the type of the value, the `PostgresData` will be
     ///   initialized with the best corresponding type.
-    init(_ value: DatabaseValue) {
+    init(_ value: SQLValue) {
         switch value {
         case .bool(let value):
             self = value.map(PostgresData.init(bool:)) ?? PostgresData(type: .bool)
@@ -65,24 +65,24 @@ extension PostgresData {
         
         switch self.type {
         case .int2, .int4, .int8:
-            let value = DatabaseValue.int(try validateNil(self.int))
+            let value = SQLValue.int(try validateNil(self.int))
             return DatabaseField(column: column, value: value)
         case .bool:
-            let value = DatabaseValue.bool(try validateNil(self.bool))
+            let value = SQLValue.bool(try validateNil(self.bool))
             return DatabaseField(column: column, value: value)
         case .varchar, .text:
-            let value = DatabaseValue.string(try validateNil(self.string))
+            let value = SQLValue.string(try validateNil(self.string))
             return DatabaseField(column: column, value: value)
         case .date:
-            let value = DatabaseValue.date(try validateNil(self.date))
+            let value = SQLValue.date(try validateNil(self.date))
             return DatabaseField(column: column, value: value)
         case .timestamptz, .timestamp:
-            let value = DatabaseValue.date(try validateNil(self.date))
+            let value = SQLValue.date(try validateNil(self.date))
             return DatabaseField(column: column, value: value)
         case .time, .timetz:
             throw DatabaseError("Times aren't supported yet.")
         case .float4, .float8:
-            let value = DatabaseValue.double(try validateNil(self.double))
+            let value = SQLValue.double(try validateNil(self.double))
             return DatabaseField(column: column, value: value)
         case .uuid:
             // The `PostgresNIO` `UUID` parser doesn't seem to work
@@ -99,7 +99,7 @@ extension PostgresData {
             }
             return DatabaseField(column: column, value: .uuid(uuid))
         case .json, .jsonb:
-            let value = DatabaseValue.json(try validateNil(self.json))
+            let value = SQLValue.json(try validateNil(self.json))
             return DatabaseField(column: column, value: value)
         default:
             throw DatabaseError("Couldn't parse a `\(self.type)` from column "
