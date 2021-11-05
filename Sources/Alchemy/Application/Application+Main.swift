@@ -11,7 +11,7 @@ extension Application {
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
     public static func main() {
-        bootEnv()
+        Env.boot()
         
         do {
             let app = Self()
@@ -21,15 +21,6 @@ extension Application {
             try ServiceLifecycle.default.startAndWait()
         } catch {
             Launch.exit(withError: error)
-        }
-    }
-    
-    private static func bootEnv() {
-        let args = CommandLine.arguments
-        if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
-            Env.defaultLocation = value
-        } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
-            Env.defaultLocation = value
         }
     }
 }

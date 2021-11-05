@@ -1,3 +1,4 @@
+import NIOCore
 /// A service for scheduling recurring work, in lieu of a separate
 /// cron task running apart from your server.
 public final class Scheduler: Service {
@@ -8,6 +9,14 @@ public final class Scheduler: Service {
     
     private var workItems: [WorkItem] = []
     private var isStarted: Bool = false
+    private let isTesting: Bool
+    
+    /// Initialize this Scheduler, potentially flagging it for testing. If
+    /// testing is enabled, work items will only be run once, and not
+    /// rescheduled.
+    init(isTesting: Bool = false) {
+        self.isTesting = isTesting
+    }
     
     /// Start scheduling with the given loop.
     ///
@@ -43,7 +52,10 @@ public final class Scheduler: Service {
         loop.flatScheduleTask(in: delay) {
             loop.wrapAsync {
                 // Schedule next and run
-                self.schedule(schedule: schedule, task: task, on: loop)
+                if !self.isTesting {
+                    self.schedule(schedule: schedule, task: task, on: loop)
+                }
+                
                 try await task()
             }
         }
