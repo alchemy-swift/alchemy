@@ -1,12 +1,12 @@
 public final class StubDatabase: DatabaseDriver {
     private var isShutdown = false
-    private var stubs: [[DatabaseRow]] = []
+    private var stubs: [[SQLRow]] = []
     
     public let grammar = Grammar()
     
     init() {}
     
-    public func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
+    public func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         guard !isShutdown else {
             throw DatabaseError("This stubbed database has been shutdown.")
         }
@@ -31,11 +31,16 @@ public final class StubDatabase: DatabaseDriver {
     }
 }
 
-public struct StubDatabaseRow: DatabaseRow {
-    public let data: [String: DatabaseField] = [:]
-    public var allColumns: Set<String> { Set(data.keys) }
+public struct StubDatabaseRow: SQLRow {
+    public let data: [String: SQLValueConvertible]
+    public let columns: Set<String>
     
-    public func getField(column: String) throws -> DatabaseField {
-        try data[column].unwrap(or: DatabaseError("Stubbed database row had no column `\(column)`."))
+    public init(data: [String: SQLValueConvertible] = [:]) {
+        self.data = data
+        self.columns = Set(data.keys)
+    }
+    
+    public func get(_ column: String) throws -> SQLValue {
+        try data[column].unwrap(or: DatabaseError("Stubbed database row had no column `\(column)`.")).value
     }
 }

@@ -110,7 +110,7 @@ extension BasicAuthable {
             throw error
         }
         
-        let passwordHash = try firstRow.getField(column: passwordKeyString).string()
+        let passwordHash = try firstRow.get(passwordKeyString).value.string()
         guard try verify(password: password, passwordHash: passwordHash) else {
             throw error
         }

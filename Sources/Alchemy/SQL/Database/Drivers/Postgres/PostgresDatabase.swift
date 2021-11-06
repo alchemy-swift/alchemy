@@ -8,7 +8,7 @@ import NIO
 final class PostgresDatabase: DatabaseDriver {
     /// The connection pool from which to make connections to the
     /// database with.
-    private let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
+    let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
 
     let grammar: Grammar = PostgresGrammar()
     
@@ -47,7 +47,7 @@ final class PostgresDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
@@ -105,7 +105,7 @@ private struct PostgresConnectionDatabase: DatabaseDriver {
     let conn: PostgresConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql.positionPostgresBindings(), values.map(PostgresData.init))
             .get().rows.map(PostgresDatabaseRow.init)
     }
@@ -119,7 +119,7 @@ private struct PostgresConnectionDatabase: DatabaseDriver {
     }
 }
 
-private extension String {
+extension String {
     /// The Alchemy query builder constructs bindings with question
     /// marks ('?') in the SQL string. PostgreSQL requires bindings
     /// to be denoted by $1, $2, etc. This function converts all
@@ -141,7 +141,7 @@ private extension String {
     ///     pattern. Takes an index and a string that is the token to
     ///     replace.
     /// - Returns: The string with replaced patterns.
-    func replaceAll(matching pattern: String, callback: (Int, String) -> String?) -> String {
+    func replaceAll(matching pattern: String, callback: (Int, String) -> String) -> String {
         let expression = try! NSRegularExpression(pattern: pattern, options: [])
         let matches = expression
             .matches(in: self, options: [], range: NSRange(startIndex..<endIndex, in: self))
@@ -152,7 +152,7 @@ private extension String {
                 let (index, result) = match
                 let range = Range(result.range, in: current)!
                 let token = String(current[range])
-                guard let replacement = callback(size-index, token) else { return }
+                let replacement = callback(size-index, token)
                 current.replaceSubrange(range, with: replacement)
         }
     }

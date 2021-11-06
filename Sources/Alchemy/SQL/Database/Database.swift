@@ -58,7 +58,7 @@ public final class Database: Service {
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
-    public func rawQuery(_ sql: String, values: [SQLValue] = []) async throws -> [DatabaseRow] {
+    public func rawQuery(_ sql: String, values: [SQLValue] = []) async throws -> [SQLRow] {
         try await driver.runRawQuery(sql, values: values)
     }
     
@@ -116,7 +116,7 @@ public protocol DatabaseDriver {
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow]
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow]
     
     /// Runs a transaction on the database, using the given closure.
     /// All database queries in the closure are executed atomically.

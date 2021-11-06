@@ -1,5 +1,6 @@
 @testable import Alchemy
 import XCTest
+import OrderedCollections
 
 final class ModelEncodingTests: XCTestCase {
     func testEncoding() throws {
@@ -19,31 +20,27 @@ final class ModelEncodingTests: XCTestCase {
         )
         
         let jsonData = try TestModel.jsonEncoder.encode(json)
-        let expectedFields: [DatabaseField] = [
-            DatabaseField(column: "string", value: .string("one")),
-            DatabaseField(column: "int", value: .int(2)),
-            DatabaseField(column: "uuid", value: .uuid(uuid)),
-            DatabaseField(column: "date", value: .date(date)),
-            DatabaseField(column: "bool", value: .bool(true)),
-            DatabaseField(column: "double", value: .double(3.14159)),
-            DatabaseField(column: "json", value: .json(jsonData)),
-            DatabaseField(column: "string_enum", value: .string("third")),
-            DatabaseField(column: "int_enum", value: .int(1)),
-            DatabaseField(column: "test_conversion_caps_test", value: .string("")),
-            DatabaseField(column: "test_conversion123", value: .string("")),
+        let expectedFields: OrderedDictionary<String, SQLValue> = [
+            "string": .string("one"),
+            "int": .int(2),
+            "uuid": .uuid(uuid),
+            "date": .date(date),
+            "bool": .bool(true),
+            "double": .double(3.14159),
+            "json": .json(jsonData),
+            "string_enum": .string("third"),
+            "int_enum": .int(1),
+            "test_conversion_caps_test": .string(""),
+            "test_conversion123": .string("")
         ]
         
         XCTAssertEqual("test_models", TestModel.tableName)
-        XCTAssertEqual(expectedFields, try model.fields().map {
-            DatabaseField(column: $0, value: $1.value)
-        })
+        XCTAssertEqual(expectedFields, try model.fields())
     }
     
     func testKeyMapping() throws {
         let model = CustomKeyedModel.pk(0)
-        let fields = try model.fields().map {
-            DatabaseField(column: $0, value: $1.value)
-        }
+        let fields = try model.fields()
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
         XCTAssertEqual([
             "id",
@@ -51,21 +48,18 @@ final class ModelEncodingTests: XCTestCase {
             "valueTwo",
             "valueThreeInt",
             "snake_case"
-        ], fields.map(\.column))
+        ], fields.keys)
     }
     
     func testCustomJSONEncoder() throws {
         let json = DatabaseJSON(val1: "one", val2: Date())
         let jsonData = try CustomDecoderModel.jsonEncoder.encode(json)
         let model = CustomDecoderModel(json: json)
-        let expectedFields: [DatabaseField] = [
-            DatabaseField(column: "json", value: .json(jsonData))
-        ]
         
         XCTAssertEqual("custom_decoder_models", CustomDecoderModel.tableName)
-        XCTAssertEqual(expectedFields, try model.fields().map {
-            DatabaseField(column: $0, value: $1.value)
-        })
+        XCTAssertEqual(try model.fields(), [
+            "json": .json(jsonData)
+        ])
     }
 }
 

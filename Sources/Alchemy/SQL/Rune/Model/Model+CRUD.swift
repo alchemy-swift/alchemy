@@ -225,7 +225,7 @@ extension Model {
     ///   database. (an `id` being populated, for example).
     public func insert(db: Database = .default) async throws -> Self {
         try await Self.query(database: db)
-            .insert(try self.fields()).first
+            .insert(try self.fields().mapValues { $0 }).first
             .unwrap(or: RuneError.notFound)
             .decode(Self.self)
     }
@@ -263,7 +263,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertAll(db: Database = .default) async throws -> Self {
         try await Element.query(database: db)
-            .insert(try self.map { try $0.fields() })
+            .insert(try self.map { try $0.fields().mapValues { $0 } })
             .map { try $0.decode(Element.self) }
     }
 

@@ -2,19 +2,19 @@ import MySQLNIO
 import MySQLKit
 import NIO
 
-public final class MySQLDatabaseRow: DatabaseRow {
-    public let allColumns: Set<String>
+public final class MySQLDatabaseRow: SQLRow {
+    public let columns: Set<String>
     private let row: MySQLRow
     
     init(_ row: MySQLRow) {
         self.row = row
-        self.allColumns = Set(self.row.columnDefinitions.map(\.name))
+        self.columns = Set(self.row.columnDefinitions.map(\.name))
     }
 
-    public func getField(column: String) throws -> DatabaseField {
+    public func get(_ column: String) throws -> SQLValue {
         try self.row.column(column)
             .unwrap(or: DatabaseError("No column named `\(column)` was found."))
-            .toDatabaseField(from: column)
+            .toSQLValue(column)
     }
 }
 
@@ -52,53 +52,36 @@ extension MySQLData {
         }
     }
     
-    /// Converts a `MySQLData` to the Alchemy `DatabaseField` type.
+    /// Converts a `MySQLData` to the Alchemy `SQLValue` type.
     ///
     /// - Parameter column: The name of the column this data is at.
     /// - Throws: A `DatabaseError` if there is an issue converting
     ///   the `MySQLData` to its expected type.
-    /// - Returns: A `DatabaseField` with the column, type and value,
+    /// - Returns: An `SQLValue` with the column, type and value,
     ///   best representing this `MySQLData`.
-    func toDatabaseField(from column: String) throws -> DatabaseField {
-        func validateNil<T>(_ value: T?) throws -> T? {
-            if self.buffer == nil {
-                return nil
-            } else {
-                let errorMessage = "Unable to unwrap expected type "
-                    + "`\(Swift.type(of: T.self))` from column '\(column)'."
-                return try value.unwrap(or: DatabaseError(errorMessage))
-            }
-        }
-
+    func toSQLValue(_ column: String) throws -> SQLValue {
         switch self.type {
         case .int24, .short, .long, .longlong:
-            let value = SQLValue.int(try validateNil(self.int))
-            return DatabaseField(column: column, value: value)
+            return .int(int)
         case .tiny:
-            let value = SQLValue.bool(try validateNil(self.bool))
-            return DatabaseField(column: column, value: value)
+            return .bool(bool)
         case .varchar, .string, .varString, .blob, .tinyBlob, .mediumBlob, .longBlob:
-            let value = SQLValue.string(try validateNil(self.string))
-            return DatabaseField(column: column, value: value)
+            return .string(string)
         case .date, .timestamp, .timestamp2, .datetime, .datetime2:
-            let value = SQLValue.date(try validateNil(self.time?.date))
-            return DatabaseField(column: column, value: value)
-        case .time:
-            throw DatabaseError("Times aren't supported yet.")
+            return .date(time?.date)
         case .float, .decimal, .double:
-            let value = SQLValue.double(try validateNil(self.double))
-            return DatabaseField(column: column, value: value)
+            return .double(double)
         case .json:
             guard var buffer = self.buffer else {
-                return DatabaseField(column: column, value: .json(nil))
+                return .json(nil)
             }
             
             let data = buffer.readData(length: buffer.writerIndex)
-            return DatabaseField(column: column, value: .json(data))
+            return .json(data)
+        case .null:
+            return .string(nil)
         default:
-            let errorMessage = "Couldn't parse a `\(self.type)` from column "
-                + "'\(column)'. That MySQL datatype isn't supported, yet."
-            throw DatabaseError(errorMessage)
+            throw DatabaseError("Couldn't parse a `\(type)` from column '\(column)'. That MySQL datatype isn't supported, yet.")
         }
     }
 }

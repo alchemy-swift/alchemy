@@ -8,13 +8,7 @@ extension Model {
     ///   creating any of the fields of this instance.
     /// - Returns: An ordered dictionary mapping column names to
     ///   parameters for use in a QueryBuilder `Query`.
-    public func fields() throws -> OrderedDictionary<String, SQLValueConvertible> {
-        var dict = OrderedDictionary<String, SQLValueConvertible>()
-        let allFields = try ModelFieldReader(Self.keyMapping).getFields(of: self)
-        for field in allFields {
-            dict.updateValue(field.value, forKey: field.column)
-        }
-        
-        return dict
+    public func fields() throws -> OrderedDictionary<String, SQLValue> {
+        try ModelFieldReader(Self.keyMapping).getFields(of: self)
     }
 }

@@ -4,30 +4,30 @@ import Foundation
 /// the box `UUID`, `String` and `Int` are supported but you can
 /// easily support your own by conforming to this protocol.
 public protocol PrimaryKey: Hashable, SQLValueConvertible, Codable {
-    /// Initialize this value from a `DatabaseField`.
+    /// Initialize this value from an `SQLValue`.
     ///
     /// - Throws: If there is an error decoding this type from the
     ///   given database value.
     /// - Parameter field: The field with which this type should be
     ///   initialzed from.
-    init(field: DatabaseField) throws
+    init(value: SQLValue) throws
 }
 
 extension UUID: PrimaryKey {
-    public init(field: DatabaseField) throws {
-        self = try field.uuid()
+    public init(value: SQLValue) throws {
+        self = try value.uuid()
     }
 }
 
 extension Int: PrimaryKey {
-    public init(field: DatabaseField) throws {
-        self = try field.int()
+    public init(value: SQLValue) throws {
+        self = try value.int()
     }
 }
 
 extension String: PrimaryKey {
-    public init(field: DatabaseField) throws {
-        self = try field.string()
+    public init(value: SQLValue) throws {
+        self = try value.string()
     }
 }
 

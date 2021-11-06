@@ -25,7 +25,7 @@ public class ModelQuery<M: Model>: Query {
     /// _other_ model.
     public typealias NestedEagerLoads<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
     
-    private typealias ModelRow = (model: M, row: DatabaseRow)
+    private typealias ModelRow = (model: M, row: SQLRow)
     
     /// The closures of any eager loads to run. To be run after the
     /// initial models of type `Self` are fetched.
@@ -35,7 +35,7 @@ public class ModelQuery<M: Model>: Query {
     ///    finishes a query with a `get()` we don't know if/when the
     ///    decode will happen and how to handle it. A potential ways
     ///    of doing this could be to call eager loading @ the
-    ///    `.decode` level of a `DatabaseRow`, but that's too
+    ///    `.decode` level of a `SQLRow`, but that's too
     ///    complicated for now).
     private var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []
     
@@ -145,12 +145,12 @@ public class ModelQuery<M: Model>: Query {
             
             // Key the results by the join key value
             let toResultsKeyedByJoinKey = try Dictionary(grouping: toResults) { _, row in
-                try row.getField(column: toJoinKeyAlias).value
+                try row.get(toJoinKeyAlias).value
             }
             
             // For each `from` populate it's relationship
             return try fromResults.map { model, row in
-                let pk = try row.getField(column: config.fromKey).value
+                let pk = try row.get(config.fromKey).value
                 let models = toResultsKeyedByJoinKey[pk]?.map(\.0) ?? []
                 try model[keyPath: relationshipKeyPath].set(values: models)
                 return (model, row)
@@ -177,7 +177,7 @@ public class ModelQuery<M: Model>: Query {
 }
 
 private extension RelationshipMapping {
-    func load<M: Model>(_ values: [DatabaseRow]) throws -> ModelQuery<M> {
+    func load<M: Model>(_ values: [SQLRow]) throws -> ModelQuery<M> {
         var query = M.query().from(toTable)
         var whereKey = "\(toTable).\(toKey)"
         if let through = through {
@@ -185,7 +185,7 @@ private extension RelationshipMapping {
             query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
         }
 
-        let ids = try values.map { try $0.getField(column: fromKey).value }
+        let ids = try values.map { try $0.get(fromKey).value }
         query = query.where(key: "\(whereKey)", in: ids.uniques)
         return query
     }

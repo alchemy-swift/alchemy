@@ -1,9 +1,10 @@
-/// Used in the internals of the `DatabaseRowDecoder`, used when
-/// the `DatabaseRowDecoder` attempts to decode a `Decodable`,
-/// not primitive, property from a single `DatabaseField`.
-struct DatabaseFieldDecoder: ModelDecoder {
-    /// The field this `Decoder` will be decoding from.
-    let field: DatabaseField
+/// Used in the internals of the `SQLRowDecoder`, used when
+/// the `SQLRowDecoder` attempts to decode a `Decodable`,
+/// not primitive, property from a single `SQLValue`.
+struct SQLValueDecoder: ModelDecoder {
+    /// The value this `Decoder` will be decoding from.
+    let value: SQLValue
+    let column: String
     
     // MARK: Decoder
     
@@ -23,89 +24,89 @@ struct DatabaseFieldDecoder: ModelDecoder {
     }
     
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        _SingleValueDecodingContainer(field: self.field)
+        _SingleValueDecodingContainer(value: value, column: column)
     }
 }
 
-/// A `SingleValueDecodingContainer` for decoding from a
-/// `DatabaseField`.
+/// A `SingleValueDecodingContainer` for decoding from an `SQLValue`.
 private struct _SingleValueDecodingContainer: SingleValueDecodingContainer {
-    /// The field from which the container will be decoding from.
-    let field: DatabaseField
+    /// The value from which to decode.
+    let value: SQLValue
+    let column: String
     
     // MARK: SingleValueDecodingContainer
     
     var codingPath: [CodingKey] = []
     
     func decodeNil() -> Bool {
-        self.field.value.isNil
+        value.isNil
     }
     
     func decode(_ type: Bool.Type) throws -> Bool {
-        try self.field.bool()
+        try value.bool(column)
     }
     
     func decode(_ type: String.Type) throws -> String {
-        try self.field.string()
+        try value.string(column)
     }
     
     func decode(_ type: Double.Type) throws -> Double {
-        try self.field.double()
+        try value.double(column)
     }
     
     func decode(_ type: Float.Type) throws -> Float {
-        Float(try self.field.double())
+        Float(try value.double(column))
     }
     
     func decode(_ type: Int.Type) throws -> Int {
-        try self.field.int()
+        try value.int(column)
     }
     
     func decode(_ type: Int8.Type) throws -> Int8 {
-        Int8(try self.field.int())
+        Int8(try value.int(column))
     }
     
     func decode(_ type: Int16.Type) throws -> Int16 {
-        Int16(try self.field.int())
+        Int16(try value.int(column))
     }
     
     func decode(_ type: Int32.Type) throws -> Int32 {
-        Int32(try self.field.int())
+        Int32(try value.int(column))
     }
     
     func decode(_ type: Int64.Type) throws -> Int64 {
-        Int64(try self.field.int())
+        Int64(try value.int(column))
     }
     
     func decode(_ type: UInt.Type) throws -> UInt {
-        UInt(try self.field.int())
+        UInt(try value.int(column))
     }
     
     func decode(_ type: UInt8.Type) throws -> UInt8 {
-        UInt8(try self.field.int())
+        UInt8(try value.int(column))
     }
     
     func decode(_ type: UInt16.Type) throws -> UInt16 {
-        UInt16(try self.field.int())
+        UInt16(try value.int(column))
     }
     
     func decode(_ type: UInt32.Type) throws -> UInt32 {
-        UInt32(try self.field.int())
+        UInt32(try value.int(column))
     }
     
     func decode(_ type: UInt64.Type) throws -> UInt64 {
-        UInt64(try self.field.int())
+        UInt64(try value.int(column))
     }
     
     func decode<T>(_ type: T.Type) throws -> T where T: Decodable {
         if type == Int.self {
-            return try self.field.int() as! T
+            return try value.int(column) as! T
         } else if type == UUID.self {
-            return try self.field.uuid() as! T
+            return try value.uuid(column) as! T
         } else if type == String.self {
-            return try self.field.string() as! T
+            return try value.string(column) as! T
         } else {
-            throw DatabaseCodingError("Decoding a \(type) from a `DatabaseField` is not supported. \(field.column)")
+            throw DatabaseCodingError("Decoding a \(type) from a `SQLValue` is not supported. \(column)")
         }
     }
 }

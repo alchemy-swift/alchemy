@@ -102,7 +102,7 @@ open class Grammar {
         )
     }
     
-    open func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    open func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
         let sql = try compileInsert(query, values: values)
         return try await query.database.runRawQuery(sql.query, values: sql.bindings)
     }

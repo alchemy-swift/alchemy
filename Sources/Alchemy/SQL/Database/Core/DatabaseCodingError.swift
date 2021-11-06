@@ -1,5 +1,4 @@
-/// An error encountered when decoding a `Model` from a `DatabaseRow`
-/// or encoding it to a `[DatabaseField]`.
+/// An error encountered when decoding or encoding a `Model`.
 struct DatabaseCodingError: Error {
     /// What went wrong.
     let message: String

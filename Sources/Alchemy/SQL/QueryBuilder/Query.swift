@@ -580,7 +580,7 @@ public class Query: Sequelizable {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
-    public func get(_ columns: [Column]? = nil) async throws -> [DatabaseRow] {
+    public func get(_ columns: [Column]? = nil) async throws -> [SQLRow] {
         if let columns = columns {
             select(columns)
         }
@@ -596,7 +596,7 @@ public class Query: Sequelizable {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The first row in the database, if it exists.
-    public func first(_ columns: [Column]? = nil) async throws -> DatabaseRow? {
+    public func first(_ columns: [Column]? = nil) async throws -> SQLRow? {
         try await limit(1).get(columns).first
     }
 
@@ -608,8 +608,8 @@ public class Query: Sequelizable {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The row from the database, if it exists.
-    public func find(field: DatabaseField, columns: [Column]? = nil) async throws -> DatabaseRow? {
-        wheres.append(WhereValue(key: field.column, op: .equals, value: field.value))
+    public func find(_ column: String, equals value: SQLValue, columns: [Column]? = nil) async throws -> SQLRow? {
+        wheres.append(WhereValue(key: column, op: .equals, value: value))
         return try await limit(1).get(columns).first
     }
 
@@ -627,9 +627,9 @@ public class Query: Sequelizable {
         }
         let row = try await select([query]).first()
             .unwrap(or: DatabaseError("a COUNT query didn't return any rows"))
-        let column = try row.allColumns.first
+        let column = try row.columns.first
             .unwrap(or: DatabaseError("a COUNT query didn't return any columns"))
-        return try row.getField(column: column).int()
+        return try row.get(column).value.int()
     }
 
     /// Perform an insert and create a database row from the provided
@@ -647,7 +647,7 @@ public class Query: Sequelizable {
     public func insert(
         _ value: OrderedDictionary<String, SQLValueConvertible>,
         returnItems: Bool = true
-    ) async throws -> [DatabaseRow] {
+    ) async throws -> [SQLRow] {
         try await insert([value], returnItems: returnItems)
     }
 
@@ -667,7 +667,7 @@ public class Query: Sequelizable {
     public func insert(
         _ values: [OrderedDictionary<String, SQLValueConvertible>],
         returnItems: Bool = true
-    ) async throws -> [DatabaseRow] {
+    ) async throws -> [SQLRow] {
         try await database.grammar.insert(values, query: self, returnItems: returnItems)
     }
 

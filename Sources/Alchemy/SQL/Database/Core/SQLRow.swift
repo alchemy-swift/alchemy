@@ -1,17 +1,16 @@
 /// A row of data returned from a database. Various database packages
 /// can use this as an abstraction around their internal row types.
-public protocol DatabaseRow {
-    /// The `String` names of all columns that have values in this
-    /// `DatabaseRow`.
-    var allColumns: Set<String> { get }
+public protocol SQLRow {
+    /// The `String` names of all columns that have values in this row.
+    var columns: Set<String> { get }
     
-    /// Get the `DatabaseField` of a column from this row.
+    /// Get the `SQLValue` of a column from this row.
     ///
     /// - Parameter column: The column to get the value for.
     /// - Throws: A `DatabaseError` if the column does not exist on
     ///   this row.
-    /// - Returns: The field at `column`.
-    func getField(column: String) throws -> DatabaseField
+    /// - Returns: The value at `column`.
+    func get(_ column: String) throws -> SQLValue
     
     /// Decode a `Model` type `D` from this row.
     ///
@@ -23,11 +22,13 @@ public protocol DatabaseRow {
     func decode<D: Model>(_ type: D.Type) throws -> D
 }
 
-extension DatabaseRow {
+extension SQLRow {
     public func decode<M: Model>(_ type: M.Type) throws -> M {
-        // For each stored coding key, pull out the column name. Will
-        // need to write a custom decoder that pulls out of a database
-        // row.
-        try M(from: DatabaseRowDecoder<M>(row: self))
+        try M(from: SQLRowDecoder<M>(row: self))
+    }
+    
+    /// Subscript for convenience access.
+    public subscript(column: String) -> SQLValue? {
+        columns.contains(column) ? try? get(column) : nil
     }
 }

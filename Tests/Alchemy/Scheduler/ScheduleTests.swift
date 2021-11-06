@@ -64,7 +64,7 @@ final class ScheduleTests: XCTestCase {
             let next = schedule.next()
             XCTAssertNotNil(next)
             if let next = next {
-                XCTAssertLessThan(next, .seconds(1))
+                XCTAssertLessThanOrEqual(next, .seconds(1))
             }
         }.secondly()
         

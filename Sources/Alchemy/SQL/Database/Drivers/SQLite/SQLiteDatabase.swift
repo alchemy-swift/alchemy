@@ -6,7 +6,7 @@ final class SQLiteGrammar: Grammar {
         true
     }
     
-    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
         return try await query.database.transaction { conn in
             let sql = try super.compileInsert(query, values: values)
             let initial = try await conn.runRawQuery(sql.query, values: sql.bindings)
@@ -77,7 +77,7 @@ final class SQLiteDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
@@ -105,7 +105,7 @@ private struct SQLiteConnectionDatabase: DatabaseDriver {
     let conn: SQLiteConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [DatabaseRow] {
+    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql, values.map(SQLiteData.init)).get().map(SQLiteDatabaseRow.init)
     }
     
@@ -118,20 +118,20 @@ private struct SQLiteConnectionDatabase: DatabaseDriver {
     }
 }
 
-public struct SQLiteDatabaseRow: DatabaseRow {
-    public let allColumns: Set<String>
+public struct SQLiteDatabaseRow: SQLRow {
+    public let columns: Set<String>
     
     private let row: SQLiteRow
     
     init(_ row: SQLiteRow) {
         self.row = row
-        self.allColumns = Set(row.columns.map(\.name))
+        self.columns = Set(row.columns.map(\.name))
     }
     
-    public func getField(column: String) throws -> DatabaseField {
+    public func get(_ column: String) throws -> SQLValue {
         try self.row.column(column)
-            .unwrap(or: DatabaseError("No column named `\(column)` was found \(allColumns)."))
-            .toDatabaseField(from: column)
+            .unwrap(or: DatabaseError("No column named `\(column)` was found \(columns)."))
+            .toSQLValue()
     }
 }
 
@@ -164,25 +164,24 @@ extension SQLiteData {
         }
     }
     
-    /// Converts a `SQLiteData` to the Alchemy `DatabaseField` type.
+    /// Converts a `SQLiteData` to the Alchemy `SQLValue` type.
     ///
-    /// - Parameter column: The name of the column this data is at.
     /// - Throws: A `DatabaseError` if there is an issue converting
     ///   the `SQLiteData` to its expected type.
-    /// - Returns: A `DatabaseField` with the column, type and value,
+    /// - Returns: A `SQLValue` with the column, type and value,
     ///   best representing this `SQLiteData`.
-    fileprivate func toDatabaseField(from column: String) throws -> DatabaseField {
+    fileprivate func toSQLValue() throws -> SQLValue {
         switch self {
         case .integer(let int):
-            return DatabaseField(column: column, value: .int(int))
+            return .int(int)
         case .float(let double):
-            return DatabaseField(column: column, value: .double(double))
+            return .double(double)
         case .text(let string):
-            return DatabaseField(column: column, value: .string(string))
+            return .string(string)
         case .blob:
             throw DatabaseError("SQLite blob isn't supported yet")
         case .null:
-            return DatabaseField(column: column, value: .string(nil))
+            return .string(nil)
         }
     }
 }

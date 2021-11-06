@@ -48,14 +48,14 @@ final class MySQLGrammar: Grammar {
     
     // MySQL needs custom insert behavior, since bulk inserting and
     // returning is not supported.
-    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [DatabaseRow] {
+    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
         guard returnItems, let table = query.from, let database = query.database as? MySQLDatabase else {
             return try await super.insert(values, query: query, returnItems: returnItems)
         }
         
         let inserts = try values.map { try compileInsert(query, values: [$0]) }
-        var results: [DatabaseRow] = []
-        try await withThrowingTaskGroup(of: [DatabaseRow].self) { group in
+        var results: [SQLRow] = []
+        try await withThrowingTaskGroup(of: [SQLRow].self) { group in
             for insert in inserts {
                 group.addTask {
                     async let result = database.runAndReturnLastInsertedItem(insert.query, table: table, values: insert.bindings)
