@@ -1,4 +1,4 @@
-import Collections
+import OrderedCollections
 import NIO
 
 /// A MySQL specific Grammar for compiling QueryBuilder statements

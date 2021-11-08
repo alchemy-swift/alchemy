@@ -1,4 +1,4 @@
-import Collections
+import OrderedCollections
 
 extension Model {
     /// Returns an ordered dictionary of column names to `Parameter`

@@ -1,4 +1,4 @@
-import Collections
+import OrderedCollections
 
 extension OrderedDictionary {
     var dictionary: [Key: Value] {

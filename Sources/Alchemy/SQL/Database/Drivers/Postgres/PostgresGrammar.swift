@@ -1,4 +1,4 @@
-import Collections
+import OrderedCollections
 
 /// A Postgres specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.

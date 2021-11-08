@@ -32,5 +32,8 @@
 @_exported import struct NIOHTTP1.HTTPVersion
 @_exported import enum NIOHTTP1.HTTPResponseStatus
 
+// Collections
+@_exported import struct OrderedCollections.OrderedDictionary
+
 // Plot
 @_exported import Plot

@@ -1,4 +1,4 @@
-import Collections
+import OrderedCollections
 import SQLiteKit
 
 final class SQLiteGrammar: Grammar {

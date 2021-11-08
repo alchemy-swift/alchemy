@@ -43,7 +43,7 @@ let package = Package(
                 /// External dependencies
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
-                .product(name: "Collections", package: "swift-collections"),
+                .product(name: "OrderedCollections", package: "swift-collections"),
                 .product(name: "PostgresKit", package: "postgres-kit"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "MySQLKit", package: "mysql-kit"),

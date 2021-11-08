@@ -1,5 +1,5 @@
-import Collections
 import Foundation
+import OrderedCollections
 
 /// Used for compiling query builders into raw SQL statements.
 open class Grammar {

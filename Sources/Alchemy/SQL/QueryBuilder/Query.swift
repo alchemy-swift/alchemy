@@ -1,6 +1,6 @@
-import Collections
 import Foundation
 import NIO
+import OrderedCollections
 
 public class Query: Sequelizable {
     public enum LockStrength: String {
