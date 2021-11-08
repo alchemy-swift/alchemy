@@ -9,6 +9,8 @@ open class Grammar {
     }
     
     open var isSQLite: Bool { false }
+    
+    public init() {}
 
     // MARK: Compiling Query Builders
     

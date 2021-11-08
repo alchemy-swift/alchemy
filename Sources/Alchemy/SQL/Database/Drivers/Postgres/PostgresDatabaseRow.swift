@@ -1,8 +1,7 @@
 import PostgresNIO
 
-public struct PostgresDatabaseRow: SQLRow {
-    public let columns: Set<String>
-    
+struct PostgresDatabaseRow: SQLRow {
+    let columns: Set<String>
     private let row: PostgresRow
     
     init(_ row: PostgresRow) {
@@ -10,8 +9,8 @@ public struct PostgresDatabaseRow: SQLRow {
         self.columns = Set(self.row.rowDescription.fields.map(\.name))
     }
     
-    public func get(_ column: String) throws -> SQLValue {
-        try self.row.column(column)
+    func get(_ column: String) throws -> SQLValue {
+        try row.column(column)
             .unwrap(or: DatabaseError("No column named `\(column)` was found \(columns)."))
             .toSQLValue(column)
     }
@@ -26,19 +25,21 @@ extension PostgresData {
     init(_ value: SQLValue) {
         switch value {
         case .bool(let value):
-            self = value.map(PostgresData.init(bool:)) ?? PostgresData(type: .bool)
+            self = PostgresData(bool: value)
         case .date(let value):
-            self = value.map(PostgresData.init(date:)) ?? PostgresData(type: .date)
+            self = PostgresData(date: value)
         case .double(let value):
-            self = value.map(PostgresData.init(double:)) ?? PostgresData(type: .float8)
+            self = PostgresData(double: value)
         case .int(let value):
-            self = value.map(PostgresData.init(int:)) ?? PostgresData(type: .int4)
+            self = PostgresData(int: value)
         case .json(let value):
-            self = value.map(PostgresData.init(json:)) ?? PostgresData(type: .json)
+            self = PostgresData(json: value)
         case .string(let value):
-            self = value.map(PostgresData.init(string:)) ?? PostgresData(type: .text)
+            self = PostgresData(string: value)
         case .uuid(let value):
-            self = value.map(PostgresData.init(uuid:)) ?? PostgresData(type: .uuid)
+            self = PostgresData(uuid: value)
+        case .null:
+            self = .null
         }
     }
     
@@ -49,40 +50,27 @@ extension PostgresData {
     ///   the `PostgresData` to its expected type.
     /// - Returns: An `SQLValue` with the column, type and value,
     ///   best representing this `PostgresData`.
-    func toSQLValue(_ column: String) throws -> SQLValue {
-        // Ensures that if value is nil, it's because the database
-        // column is actually nil and not because we are attempting
-        // to pull out the wrong type.
-        func validateNil<T>(_ value: T?) throws -> T? {
-            guard self.value != nil else {
-                return nil
-            }
-            
-            let errorMessage = "Unable to unwrap expected type `\(name(of: T.self))` from column '\(column)'."
-            return try value.unwrap(or: DatabaseError(errorMessage))
-        }
-        
+    func toSQLValue(_ column: String? = nil) throws -> SQLValue {
         switch self.type {
         case .int2, .int4, .int8:
-            return .int(try validateNil(self.int))
+            return int.map { .int($0) } ?? .null
         case .bool:
-            return .bool(try validateNil(self.bool))
+            return bool.map { .bool($0) } ?? .null
         case .varchar, .text:
-            return .string(try validateNil(self.string))
-        case .date:
-            return .date(try validateNil(self.date))
-        case .timestamptz, .timestamp:
-            return .date(try validateNil(self.date))
+            return string.map { .string($0) } ?? .null
+        case .date, .timestamptz, .timestamp:
+            return date.map { .date($0) } ?? .null
         case .float4, .float8:
-            return .double(try validateNil(self.double))
+            return double.map { .double($0) } ?? .null
         case .uuid:
-            // The `PostgresNIO` `UUID` parser doesn't seem to work
-            // properly `self.uuid` returns nil.
-            return .uuid(try validateNil(self.uuid))
+            return uuid.map { .uuid($0) } ?? .null
         case .json, .jsonb:
-            return .json(try validateNil(self.json))
+            return json.map { .json($0) } ?? .null
+        case .null:
+            return .null
         default:
-            throw DatabaseError("Couldn't parse a `\(type)` from column '\(column)'. That Postgres datatype isn't supported, yet.")
+            let desc = column.map { "from column `\($0)`" } ?? "from PostgreSQL column"
+            throw DatabaseError("Couldn't parse a `\(type)` from \(desc). That PostgreSQL datatype isn't supported, yet.")
         }
     }
 }

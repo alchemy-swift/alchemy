@@ -2,8 +2,8 @@ import MySQLNIO
 import MySQLKit
 import NIO
 
-public final class MySQLDatabaseRow: SQLRow {
-    public let columns: Set<String>
+final class MySQLDatabaseRow: SQLRow {
+    let columns: Set<String>
     private let row: MySQLRow
     
     init(_ row: MySQLRow) {
@@ -11,8 +11,8 @@ public final class MySQLDatabaseRow: SQLRow {
         self.columns = Set(self.row.columnDefinitions.map(\.name))
     }
 
-    public func get(_ column: String) throws -> SQLValue {
-        try self.row.column(column)
+    func get(_ column: String) throws -> SQLValue {
+        try row.column(column)
             .unwrap(or: DatabaseError("No column named `\(column)` was found."))
             .toSQLValue(column)
     }
@@ -27,28 +27,21 @@ extension MySQLData {
     init(_ value: SQLValue) {
         switch value {
         case .bool(let value):
-            self = value.map(MySQLData.init(bool:)) ?? .null
+            self = MySQLData(bool: value)
         case .date(let value):
-            self = value.map(MySQLData.init(date:)) ?? .null
+            self = MySQLData(date: value)
         case .double(let value):
-            self = value.map(MySQLData.init(double:)) ?? .null
+            self = MySQLData(double: value)
         case .int(let value):
-            self = value.map(MySQLData.init(int:)) ?? .null
+            self = MySQLData(int: value)
         case .json(let value):
-            guard let data = value else {
-                self = .null
-                return
-            }
-            
-            // `MySQLData` doesn't support initializing from
-            // `Foundation.Data`.
-            var buffer = ByteBufferAllocator().buffer(capacity: data.count)
-            buffer.writeBytes(data)
-            self = MySQLData(type: .string, format: .text, buffer: buffer, isUnsigned: true)
+            self = MySQLData(type: .json, format: .text, buffer: ByteBuffer(data: value))
         case .string(let value):
-            self = value.map(MySQLData.init(string:)) ?? .null
+            self = MySQLData(string: value)
         case .uuid(let value):
-            self = value.map(MySQLData.init(uuid:)) ?? .null
+            self = MySQLData(string: value.uuidString)
+        case .null:
+            self = .null
         }
     }
     
@@ -59,29 +52,33 @@ extension MySQLData {
     ///   the `MySQLData` to its expected type.
     /// - Returns: An `SQLValue` with the column, type and value,
     ///   best representing this `MySQLData`.
-    func toSQLValue(_ column: String) throws -> SQLValue {
+    func toSQLValue(_ column: String? = nil) throws -> SQLValue {
         switch self.type {
         case .int24, .short, .long, .longlong:
-            return .int(int)
+            return int.map { .int($0) } ?? .null
         case .tiny:
-            return .bool(bool)
+            return bool.map { .bool($0) } ?? .null
         case .varchar, .string, .varString, .blob, .tinyBlob, .mediumBlob, .longBlob:
-            return .string(string)
+            return string.map { .string($0) } ?? .null
         case .date, .timestamp, .timestamp2, .datetime, .datetime2:
-            return .date(time?.date)
-        case .float, .decimal, .double:
-            return .double(double)
-        case .json:
-            guard var buffer = self.buffer else {
-                return .json(nil)
+            guard let date = time?.date else {
+                return .null
             }
             
-            let data = buffer.readData(length: buffer.writerIndex)
+            return .date(date)
+        case .float, .decimal, .double:
+            return double.map { .double($0) } ?? .null
+        case .json:
+            guard let data = self.buffer?.data() else {
+                return .null
+            }
+            
             return .json(data)
         case .null:
-            return .string(nil)
+            return .null
         default:
-            throw DatabaseError("Couldn't parse a `\(type)` from column '\(column)'. That MySQL datatype isn't supported, yet.")
+            let desc = column.map { "from column `\($0)`" } ?? "from MySQL column"
+            throw DatabaseError("Couldn't parse a `\(type)` from \(desc). That MySQL datatype isn't supported, yet.")
         }
     }
 }

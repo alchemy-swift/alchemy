@@ -6,7 +6,7 @@ final class PostgresDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
         let db = Database.postgres(host: "localhost", database: "foo", username: "bar", password: "baz")
         guard let driver = db.driver as? Alchemy.PostgresDatabase else {
-            XCTFail("The database driver should be postgres.")
+            XCTFail("The database driver should be PostgreSQL.")
             return
         }
         

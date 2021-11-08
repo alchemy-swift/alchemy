@@ -1,14 +1,14 @@
 import AlchemyTest
 
 final class SQLValueTests: XCTestCase {
-    func testNil() {
-        XCTAssertTrue(SQLValue.int(nil).isNil)
-        XCTAssertTrue(SQLValue.double(nil).isNil)
-        XCTAssertTrue(SQLValue.bool(nil).isNil)
-        XCTAssertTrue(SQLValue.string(nil).isNil)
-        XCTAssertTrue(SQLValue.date(nil).isNil)
-        XCTAssertTrue(SQLValue.json(nil).isNil)
-        XCTAssertTrue(SQLValue.uuid(nil).isNil)
+    func testNull() {
+        XCTAssertThrowsError(try SQLValue.null.int())
+        XCTAssertThrowsError(try SQLValue.null.double())
+        XCTAssertThrowsError(try SQLValue.null.bool())
+        XCTAssertThrowsError(try SQLValue.null.string())
+        XCTAssertThrowsError(try SQLValue.null.json())
+        XCTAssertThrowsError(try SQLValue.null.date())
+        XCTAssertThrowsError(try SQLValue.null.uuid("foo"))
     }
     
     func testInt() {
@@ -55,6 +55,8 @@ final class SQLValueTests: XCTestCase {
     func testUuid() {
         let uuid = UUID()
         XCTAssertEqual(try SQLValue.uuid(uuid).uuid(), uuid)
-        XCTAssertThrowsError(try SQLValue.string("foo").uuid())
+        XCTAssertEqual(try SQLValue.string(uuid.uuidString).uuid(), uuid)
+        XCTAssertThrowsError(try SQLValue.string("").uuid())
+        XCTAssertThrowsError(try SQLValue.int(1).uuid("foo"))
     }
 }

@@ -9,42 +9,26 @@ import Foundation
 /// potentially throw an error.
 public enum SQLValue: Equatable, Hashable {
     /// An `Int` value.
-    case int(Int?)
+    case int(Int)
     /// A `Double` value.
-    case double(Double?)
+    case double(Double)
     /// A `Bool` value.
-    case bool(Bool?)
+    case bool(Bool)
     /// A `String` value.
-    case string(String?)
+    case string(String)
     /// A `Date` value.
-    case date(Date?)
+    case date(Date)
     /// A JSON value, given as `Data`.
-    case json(Data?)
+    case json(Data)
     /// A `UUID` value.
-    case uuid(UUID?)
+    case uuid(UUID)
+    /// A null value of any type.
+    case null
 }
 
 /// Extension for easily accessing the unwrapped contents of an `SQLValue`.
 extension SQLValue {
-    /// Indicates if the associated value inside this enum is nil.
-    public var isNil: Bool {
-        switch self {
-        case .int(let value):
-            return value == nil
-        case .double(let value):
-            return value == nil
-        case .bool(let value):
-            return value == nil
-        case .string(let value):
-            return value == nil
-        case .date(let value):
-            return value == nil
-        case .json(let value):
-            return value == nil
-        case .uuid(let value):
-            return value == nil
-        }
-    }
+    static let iso8601DateFormatter = ISO8601DateFormatter()
     
     /// Unwrap and return an `Int` value from this `SQLValue`.
     /// This throws if the underlying `value` isn't an `.int` or
@@ -55,11 +39,14 @@ extension SQLValue {
     /// - Returns: The unwrapped `Int` of this field's value, if it
     ///   was indeed a non-null `.int`.
     public func int(_ columnName: String? = nil) throws -> Int {
-        guard case let .int(value) = self else {
-            throw typeError("int", columnName: columnName)
-        }
+        try ensureNotNull(columnName)
         
-        return try self.unwrapOrError(value, columnName: columnName)
+        switch self {
+        case .int(let value):
+            return value
+        default:
+            throw typeError("Int", columnName: columnName)
+        }
     }
     
     /// Unwrap and return a `String` value from this `SQLValue`.
@@ -71,11 +58,14 @@ extension SQLValue {
     /// - Returns: The unwrapped `String` of this field's value, if
     ///   it was indeed a non-null `.string`.
     public func string(_ columnName: String? = nil) throws -> String {
-        guard case let .string(value) = self else {
-            throw typeError("string", columnName: columnName)
-        }
+        try ensureNotNull(columnName)
         
-        return try self.unwrapOrError(value, columnName: columnName)
+        switch self {
+        case .string(let value):
+            return value
+        default:
+            throw typeError("String", columnName: columnName)
+        }
     }
     
     /// Unwrap and return a `Double` value from this `SQLValue`.
@@ -87,11 +77,14 @@ extension SQLValue {
     /// - Returns: The unwrapped `Double` of this field's value, if it
     ///   was indeed a non-null `.double`.
     public func double(_ columnName: String? = nil) throws -> Double {
-        guard case let .double(value) = self else {
-            throw typeError("double", columnName: columnName)
-        }
+        try ensureNotNull(columnName)
         
-        return try self.unwrapOrError(value, columnName: columnName)
+        switch self {
+        case .double(let value):
+            return value
+        default:
+            throw typeError("Double", columnName: columnName)
+        }
     }
     
     /// Unwrap and return a `Bool` value from this `SQLValue`.
@@ -103,13 +96,16 @@ extension SQLValue {
     /// - Returns: The unwrapped `Bool` of this field's value, if it
     ///   was indeed a non-null `.bool`.
     public func bool(_ columnName: String? = nil) throws -> Bool {
-        if case let .bool(value) = self {
-            return try self.unwrapOrError(value, columnName: columnName)
-        } else if case let .int(value) = self {
-            return try self.unwrapOrError(value.map { $0 != 0 }, columnName: columnName)
-        }
+        try ensureNotNull(columnName)
         
-        throw typeError("bool", columnName: columnName)
+        switch self {
+        case .bool(let value):
+            return value
+        case .int(let value):
+            return value != 0
+        default:
+            throw typeError("Bool", columnName: columnName)
+        }
     }
     
     /// Unwrap and return a `Date` value from this `SQLValue`.
@@ -121,18 +117,20 @@ extension SQLValue {
     /// - Returns: The unwrapped `Date` of this field's value, if it
     ///   was indeed a non-null `.date`.
     public func date(_ columnName: String? = nil) throws -> Date {
-        if case let .date(value) = self {
-            return try self.unwrapOrError(value, columnName: columnName)
-        } else if case let .string(value) = self {
-            let formatter = ISO8601DateFormatter()
-            if let value = value, let date = formatter.date(from: value) {
-                return date
+        try ensureNotNull(columnName)
+        
+        switch self {
+        case .date(let value):
+            return value
+        case .string(let value):
+            guard let date = SQLValue.iso8601DateFormatter.date(from: value) else {
+                throw typeError("Date", columnName: columnName)
             }
             
-            throw typeError("date", columnName: columnName)
+            return date
+        default:
+            throw typeError("Date", columnName: columnName)
         }
-        
-        throw typeError("date", columnName: columnName)
     }
     
     /// Unwrap and return a JSON `Data` value from this
@@ -144,11 +142,14 @@ extension SQLValue {
     /// - Returns: The `Data` of this field's unwrapped json value, if
     ///   it was indeed a non-null `.json`.
     public func json(_ columnName: String? = nil) throws -> Data {
-        guard case let .json(value) = self else {
-            throw typeError("json", columnName: columnName)
-        }
+        try ensureNotNull(columnName)
         
-        return try self.unwrapOrError(value, columnName: columnName)
+        switch self {
+        case .json(let value):
+            return value
+        default:
+            throw typeError("JSON", columnName: columnName)
+        }
     }
     
     /// Unwrap and return a `UUID` value from this `SQLValue`.
@@ -160,11 +161,20 @@ extension SQLValue {
     /// - Returns: The unwrapped `UUID` of this field's value, if it
     ///   was indeed a non-null `.uuid`.
     public func uuid(_ columnName: String? = nil) throws -> UUID {
-        guard case let .uuid(value) = self else {
-            throw typeError("uuid", columnName: columnName)
-        }
+        try ensureNotNull(columnName)
         
-        return try self.unwrapOrError(value, columnName: columnName)
+        switch self {
+        case .uuid(let value):
+            return value
+        case .string(let string):
+            guard let uuid = UUID(string) else {
+                throw typeError("UUID", columnName: columnName)
+            }
+            
+            return uuid
+        default:
+            throw typeError("UUID", columnName: columnName)
+        }
     }
     
     /// Generates an error appropriate to throw if the user tries to get a type
@@ -180,17 +190,10 @@ extension SQLValue {
         return DatabaseError("Unable to convert '\(self)' to a `\(typeName)`.")
     }
     
-    /// Unwraps a value of type `T`, or throws an error detailing the
-    /// nil data at the column.
-    ///
-    /// - Parameter value: The value to unwrap.
-    /// - Throws: A `DatabaseError` if the value is nil.
-    /// - Returns: The value, `T`, if it was successfully unwrapped.
-    private func unwrapOrError<T>(_ value: T?, columnName: String? = nil) throws -> T {
-        if let columnName = columnName {
-            return try value.unwrap(or: DatabaseError("Tried to get a value from '\(columnName)' but it was `nil`."))
+    private func ensureNotNull(_ columnName: String? = nil) throws {
+        if case .null = self {
+            let desc = columnName.map { "column `\($0)`" } ?? "SQLValue"
+            throw DatabaseError("Expected \(desc) to have a value but it was `nil`.")
         }
-        
-        return try value.unwrap(or: DatabaseError("Tried to get a value from '\(self)' but it was `nil`."))
     }
 }

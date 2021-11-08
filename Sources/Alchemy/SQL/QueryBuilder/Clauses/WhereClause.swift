@@ -16,7 +16,7 @@ public struct WhereValue: WhereClause {
     // MARK: - Sequelizable
     
     public func toSQL() -> SQL {
-        if self.value.isNil {
+        if self.value == .null {
             if self.op == .notEqualTo {
                 return SQL("\(boolean) \(key) IS NOT NULL")
             } else if self.op == .equals {

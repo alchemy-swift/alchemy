@@ -8,11 +8,11 @@ public final class StubDatabase: DatabaseDriver {
     
     public func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         guard !isShutdown else {
-            throw DatabaseError("This stubbed database has been shutdown.")
+            throw StubDatabaseError("This stubbed database has been shutdown.")
         }
         
         guard let mockedRows = stubs.first else {
-            throw DatabaseError("Before running a query on a stubbed database, please stub it's resposne with `stub()`.")
+            throw StubDatabaseError("Before running a query on a stubbed database, please stub it's resposne with `stub()`.")
         }
         
         return mockedRows
@@ -41,6 +41,20 @@ public struct StubDatabaseRow: SQLRow {
     }
     
     public func get(_ column: String) throws -> SQLValue {
-        try data[column].unwrap(or: DatabaseError("Stubbed database row had no column `\(column)`.")).value
+        try data[column].unwrap(or: StubDatabaseError("Stubbed database row had no column `\(column)`.")).value
+    }
+}
+
+/// An error encountered when interacting with a `StubDatabase`.
+public struct StubDatabaseError: Error {
+    /// What went wrong.
+    let message: String
+    
+    /// Initialize a `DatabaseError` with a message detailing what
+    /// went wrong.
+    ///
+    /// - Parameter message: Why this error was thrown.
+    init(_ message: String) {
+        self.message = message
     }
 }

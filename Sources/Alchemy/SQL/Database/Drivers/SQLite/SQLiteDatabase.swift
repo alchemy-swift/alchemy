@@ -1,57 +1,14 @@
 import OrderedCollections
 import SQLiteKit
 
-final class SQLiteGrammar: Grammar {
-    override var isSQLite: Bool {
-        true
-    }
-    
-    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
-        return try await query.database.transaction { conn in
-            let sql = try super.compileInsert(query, values: values)
-            let initial = try await conn.runRawQuery(sql.query, values: sql.bindings)
-            if let from = query.from {
-                return try await conn.runRawQuery("select * from \(from) where id = last_insert_rowid()", values: [])
-            } else {
-                return initial
-            }
-        }
-    }
-    
-    override func typeString(for type: ColumnType) -> String {
-        switch type {
-        case .bool:
-            return "integer"
-        case .date:
-            return "text"
-        case .double:
-            return "double"
-        case .increments:
-            return "integer PRIMARY KEY AUTOINCREMENT"
-        case .int:
-            return "integer"
-        case .bigInt:
-            return "integer"
-        case .json:
-            return "text"
-        case .string:
-            return "text"
-        case .uuid:
-            // There isn't a MySQL UUID type; store UUIDs as a 36
-            // length varchar.
-            return "text"
-        }
-    }
-}
-
 final class SQLiteDatabase: DatabaseDriver {
     /// The connection pool from which to make connections to the
     /// database with.
-    private let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
-
+    let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
+    let config: Config
     let grammar: Grammar = SQLiteGrammar()
     
-    enum Config {
+    enum Config: Equatable {
         case memory
         case file(String)
     }
@@ -62,6 +19,7 @@ final class SQLiteDatabase: DatabaseDriver {
     /// - Parameter config: the info needed to connect to the
     ///   database.
     init(config: Config) {
+        self.config = config
         self.pool = EventLoopGroupConnectionPool(
             source: SQLiteConnectionSource(configuration: {
                 switch config {
@@ -115,73 +73,5 @@ private struct SQLiteConnectionDatabase: DatabaseDriver {
     
     func shutdown() throws {
         _ = conn.close()
-    }
-}
-
-public struct SQLiteDatabaseRow: SQLRow {
-    public let columns: Set<String>
-    
-    private let row: SQLiteRow
-    
-    init(_ row: SQLiteRow) {
-        self.row = row
-        self.columns = Set(row.columns.map(\.name))
-    }
-    
-    public func get(_ column: String) throws -> SQLValue {
-        try self.row.column(column)
-            .unwrap(or: DatabaseError("No column named `\(column)` was found \(columns)."))
-            .toSQLValue()
-    }
-}
-
-extension SQLiteData {
-    private static let dateFormatter = ISO8601DateFormatter()
-    
-    /// Initialize from an Alchemy `SQLValue`.
-    ///
-    /// - Parameter value: the value with which to initialize. Given
-    ///   the type of the value, the `SQLiteData` will be
-    ///   initialized with the best corresponding type.
-    init(_ value: SQLValue) {
-        switch value {
-        case .bool(let value):
-            self = value.map { $0 ? .integer(1) : .integer(0) } ?? .null
-        case .date(let value):
-            let dateString = value.map { SQLiteData.dateFormatter.string(from: $0) }
-            self = dateString.map { .text($0) } ?? .null
-        case .double(let value):
-            self = value.map { .float($0) } ?? .null
-        case .int(let value):
-            self = value.map { .integer($0) } ?? .null
-        case .json(let value):
-            let jsonString = value.map { String(data: $0, encoding: .utf8) } ?? nil
-            self = jsonString.map { .text($0) } ?? .null
-        case .string(let value):
-            self = value.map { .text($0) } ?? .null
-        case .uuid(let value):
-            self = value.map { .text($0.uuidString) } ?? .null
-        }
-    }
-    
-    /// Converts a `SQLiteData` to the Alchemy `SQLValue` type.
-    ///
-    /// - Throws: A `DatabaseError` if there is an issue converting
-    ///   the `SQLiteData` to its expected type.
-    /// - Returns: A `SQLValue` with the column, type and value,
-    ///   best representing this `SQLiteData`.
-    fileprivate func toSQLValue() throws -> SQLValue {
-        switch self {
-        case .integer(let int):
-            return .int(int)
-        case .float(let double):
-            return .double(double)
-        case .text(let string):
-            return .string(string)
-        case .blob:
-            throw DatabaseError("SQLite blob isn't supported yet")
-        case .null:
-            return .string(nil)
-        }
     }
 }

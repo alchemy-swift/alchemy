@@ -8,8 +8,6 @@ struct Expression: SQLValueConvertible {
     init(_ value: String) {
         self._value = value
     }
-    
-    public static var nilValue: SQLValue { .string(nil) }
 }
 
 extension Expression: CustomStringConvertible {

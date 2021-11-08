@@ -5,6 +5,10 @@ import RediStack
 public struct Redis: Service {
     let driver: RedisDriver
     
+    public init(driver: RedisDriver) {
+        self.driver = driver
+    }
+    
     /// Shuts down this `Redis` client, closing it's associated
     /// connection pools.
     public func shutdown() throws {

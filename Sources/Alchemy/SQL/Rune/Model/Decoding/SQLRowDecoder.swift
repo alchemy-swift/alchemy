@@ -54,7 +54,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     }
     
     func decodeNil(forKey key: Key) throws -> Bool {
-        try self.row.get(self.string(for: key)).value.isNil
+        try self.row.get(self.string(for: key)).value == .null
     }
     
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {

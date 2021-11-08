@@ -6,7 +6,7 @@ final class MySQLDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
         let db = Database.mysql(host: "localhost", database: "foo", username: "bar", password: "baz")
         guard let driver = db.driver as? Alchemy.MySQLDatabase else {
-            XCTFail("The database driver should be postgres.")
+            XCTFail("The database driver should be MySQL.")
             return
         }
         
