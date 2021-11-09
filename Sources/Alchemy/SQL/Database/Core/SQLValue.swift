@@ -26,6 +26,30 @@ public enum SQLValue: Equatable, Hashable {
     case null
 }
 
+extension SQLValue: SQLConvertible {
+    public var sql: SQL {
+        switch self {
+        case .int(let value):
+            return SQL("\(value)")
+        case .double(let value):
+            return SQL("\(value)")
+        case .bool(let value):
+            return SQL("\(value)")
+        case .string(let value):
+            // ' -> '' is escape for MySQL & Postgres... not sure if this will break elsewhere.
+            return SQL("'\(value.replacingOccurrences(of: "'", with: "''"))'")
+        case .date(let value):
+            return SQL("'\(value)'")
+        case .json(_):
+            fatalError()
+        case .uuid(let value):
+            return SQL("'\(value.uuidString)'")
+        case .null:
+            return SQL("NULL")
+        }
+    }
+}
+
 /// Extension for easily accessing the unwrapped contents of an `SQLValue`.
 extension SQLValue {
     static let iso8601DateFormatter = ISO8601DateFormatter()

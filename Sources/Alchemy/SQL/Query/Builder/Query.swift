@@ -29,7 +29,7 @@ public class Query {
     ///     Defaults to `[*]`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func select(_ columns: [Column] = ["*"]) -> Self {
+    public func select(_ columns: [String] = ["*"]) -> Self {
         self.columns = columns.map(\.columnSQL)
         return self
     }
