@@ -8,9 +8,9 @@ extension Query {
     }
     
     /// Adds custom SQL to the end of a SELECT query.
-    public func forLock(_ lock: LockStrength, option: LockOption? = nil) -> Self {
-        let lockOptionString = option.map { " \($0.rawValue)" } ?? ""
-        self.lock = lock.rawValue + lockOptionString
+    public func forLock(_ strength: LockStrength, option: LockOption? = nil) -> Self {
+        lock = strength.rawValue
+        if let option = option { lock?.append(" \(option.rawValue)") }
         return self
     }
 }

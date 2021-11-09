@@ -5,7 +5,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func groupBy(_ group: String) -> Self {
-        self.groups.append(group)
+        groups.append(group)
         return self
     }
     
@@ -16,8 +16,8 @@ extension Query {
     ///   value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(_ clause: WhereValue) -> Self {
-        self.havings.append(clause)
+    public func having(_ clause: Where) -> Self {
+        havings.append(clause)
         return self
     }
 
@@ -28,10 +28,10 @@ extension Query {
     ///   value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orHaving(_ clause: WhereValue) -> Self {
+    public func orHaving(_ clause: Where) -> Self {
         var clause = clause
         clause.boolean = .or
-        return self.having(clause)
+        return having(clause)
     }
 
     /// Add a having clause to filter results from aggregate functions
@@ -46,11 +46,6 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func having(key: String, op: Operator, value: SQLValueConvertible, boolean: WhereBoolean = .and) -> Self {
-        return self.having(WhereValue(
-            key: key,
-            op: op,
-            value: value.value,
-            boolean: boolean)
-        )
+        having(Where(type: .value(key: key, op: op, value: value.value), boolean: boolean))
     }
 }

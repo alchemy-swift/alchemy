@@ -16,7 +16,7 @@ extension Database {
             return try seeders
                 .first(where: {
                     $0.name.lowercased() == name.lowercased() ||
-                    $0.name.lowercased().deletingSuffix("seeder") == name.lowercased()
+                    $0.name.lowercased().droppingSuffix("seeder") == name.lowercased()
                 })
                 .unwrap(or: DatabaseError("Unable to find a seeder on this database named \(name) or \(name)Seeder."))
             

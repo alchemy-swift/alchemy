@@ -134,7 +134,7 @@ public final class ClientRequestBuilder: RequestBuilder {
 extension HTTPClient.Request {
     fileprivate func matchesFakePattern(_ pattern: String) -> Bool {
         let wildcard = "*"
-        let cleanedPattern = pattern.deletingPrefix("https://").deletingPrefix("http://")
+        let cleanedPattern = pattern.droppingPrefix("https://").droppingPrefix("http://")
         if cleanedPattern == wildcard {
             return true
         } else if var host = url.host {

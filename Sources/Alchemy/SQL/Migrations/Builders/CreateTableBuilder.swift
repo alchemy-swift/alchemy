@@ -11,8 +11,13 @@ public class CreateTableBuilder {
     
     /// All the columns to create on this table.
     var createColumns: [CreateColumn] {
-        self.columnBuilders.map { $0.toCreate() }
+        columnBuilders.map { $0.toCreate() }
     }
+    
+    /// References to the builders for all the columns on this table.
+    /// Need to store these since they may be modified via column
+    /// builder functions.
+    private var columnBuilders: [ColumnBuilderErased] = []
     
     /// Create a table builder with the given grammar.
     ///
@@ -21,12 +26,9 @@ public class CreateTableBuilder {
     init(grammar: Grammar) {
         self.grammar = grammar
     }
-    
-    /// References to the builders for all the columns on this table.
-    /// Need to store these since they may be modified via column
-    /// builder functions.
-    private var columnBuilders: [ColumnBuilderErased] = []
-    
+}
+
+extension CreateTableBuilder {
     /// Add an index.
     ///
     /// It's name will be `<tableName>_<columnName1>_<columnName2>...`
@@ -79,7 +81,7 @@ public class CreateTableBuilder {
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func string(
         _ column: String,
-        length: StringLength = .limit(255)
+        length: ColumnType.StringLength = .limit(255)
     ) -> CreateColumnBuilder<String> {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .string(length)))
     }
@@ -134,66 +136,8 @@ public class CreateTableBuilder {
     /// - Parameter builder: The column builder to add to this table
     ///   builder.
     /// - Returns: The passed in `builder`.
-    private func appendAndReturn<T: SQLConvertible>( builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
+    private func appendAndReturn<T: SQLValueConvertible>( builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
         self.columnBuilders.append(builder)
         return builder
-    }
-}
-
-/// A type for keeping track of data associated with creating an
-/// index.
-public struct CreateIndex {
-    /// The columns that make up this index.
-    let columns: [String]
-    
-    /// Whether this index is unique or not.
-    let isUnique: Bool
-    
-    /// Generate an SQL string for creating this index on a given
-    /// table.
-    ///
-    /// - Parameter table: The name of the table this index will be
-    ///   created on.
-    /// - Returns: An SQL string for creating this index on the given
-    ///   table.
-    func toSQL(table: String) -> String {
-        let indexType = self.isUnique ? "UNIQUE INDEX" : "INDEX"
-        let indexName = self.name(table: table)
-        let indexColumns = "(\(self.columns.map(\.sqlEscaped).joined(separator: ", ")))"
-        return "CREATE \(indexType) \(indexName) ON \(table) \(indexColumns)"
-    }
-    
-    /// Generate the name of this index given the table it will be
-    /// created on.
-    ///
-    /// - Parameter table: The table this index will be created on.
-    /// - Returns: The name of this index.
-    private func name(table: String) -> String {
-        ([table] + self.columns + [self.nameSuffix]).joined(separator: "_")
-    }
-    
-    /// The suffix of the index name. "key" if it's a unique index,
-    /// "idx" if not.
-    private var nameSuffix: String {
-        self.isUnique ? "key" : "idx"
-    }
-}
-
-/// A type for keeping track of data associated with creating an
-/// column.
-public struct CreateColumn {
-    /// The name.
-    let column: String
-    
-    /// The type string.
-    let type: ColumnType
-    
-    /// Any constraints.
-    let constraints: [ColumnConstraint]
-}
-
-extension String {
-    var sqlEscaped: String {
-        "\"\(self)\""
     }
 }

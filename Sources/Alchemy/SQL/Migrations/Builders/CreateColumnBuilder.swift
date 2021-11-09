@@ -4,46 +4,11 @@ protocol ColumnBuilderErased {
     func toCreate() -> CreateColumn
 }
 
-/// Options for an `onDelete` or `onUpdate` reference constraint.
-public enum ReferenceOption: String {
-    /// RESTRICT
-    case restrict = "RESTRICT"
-    /// CASCADE
-    case cascade = "CASCADE"
-    /// SET NULL
-    case setNull = "SET NULL"
-    /// NO ACTION
-    case noAction = "NO ACTION"
-    /// SET DEFAULT
-    case setDefault = "SET DEFAULT"
-}
-
-/// Various constraints for columns.
-enum ColumnConstraint {
-    /// This column shouldn't be null.
-    case notNull
-    /// The default value for this column.
-    case `default`(String)
-    /// This column is the primary key of it's table.
-    case primaryKey
-    /// This column is unique on this table.
-    case unique
-    /// This column references a `column` on another `table`.
-    case foreignKey(
-            column: String,
-            table: String,
-            onDelete: ReferenceOption? = nil,
-            onUpdate: ReferenceOption? = nil
-         )
-    /// This int column is unsigned.
-    case unsigned
-}
-
 /// A builder for creating columns on a table in a relational database.
 ///
 /// `Default` is a Swift type that can be used to add a default value
 /// to this column.
-public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
+public final class CreateColumnBuilder<Default: SQLValueConvertible>: ColumnBuilderErased {
     /// The grammar of this builder.
     private let grammar: Grammar
     
@@ -71,6 +36,14 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
         self.constraints = constraints
     }
     
+    // MARK: ColumnBuilderErased
+    
+    func toCreate() -> CreateColumn {
+        CreateColumn(column: self.name, type: self.type, constraints: self.constraints)
+    }
+}
+
+extension CreateColumnBuilder {
     /// Adds an expression as the default value of this column.
     ///
     /// - Parameter expression: An expression for generating the
@@ -88,10 +61,10 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
         // Janky, but MySQL requires parentheses around text (but not
         // varchar...) literals.
         if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
-            return self.adding(constraint: .default("(\(val.sql.query))"))
+            return self.adding(constraint: .default("(\(val.sqlString))"))
         }
         
-        return self.adding(constraint: .default(val.sql.query))
+        return self.adding(constraint: .default(val.sqlString))
     }
     
     /// Define this column as not nullable.
@@ -115,8 +88,8 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
     @discardableResult public func references(
         _ column: String,
         on table: String,
-        onDelete: ReferenceOption? = nil,
-        onUpdate: ReferenceOption? = nil
+        onDelete: ColumnConstraint.ReferenceOption? = nil,
+        onUpdate: ColumnConstraint.ReferenceOption? = nil
     ) -> Self {
         self.adding(constraint: .foreignKey(column: column, table: table, onDelete: onDelete, onUpdate: onUpdate))
     }
@@ -142,12 +115,6 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
     private func adding(constraint: ColumnConstraint) -> Self {
         self.constraints.append(constraint)
         return self
-    }
-
-    // MARK: ColumnBuilderErased
-    
-    func toCreate() -> CreateColumn {
-        CreateColumn(column: self.name, type: self.type, constraints: self.constraints)
     }
 }
 
@@ -203,40 +170,6 @@ extension CreateColumnBuilder where Default == SQLJSON {
     }
 }
 
-extension Bool: SQLConvertible {
-    public var sql: SQL { SQL("\(self)") }
-}
-
-extension UUID: SQLConvertible {
-    public var sql: SQL { SQL("'\(self.uuidString)'") }
-}
-
-extension String: SQLConvertible {
-    public var sql: SQL { SQL("'\(self)'") }
-}
-
-extension Int: SQLConvertible {
-    public var sql: SQL { SQL("\(self)") }
-}
-
-extension Double: SQLConvertible {
-    public var sql: SQL { SQL("\(self)") }
-}
-
-extension Date: SQLConvertible {
-    /// The date formatter for turning this `Date` into an SQL string.
-    private static let sqlFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.timeZone = TimeZone(abbreviation: "GMT")
-        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        return df
-    }()
-    
-    // MARK: SQLConvertible
-    
-    public var sql: SQL { SQL("'\(Date.sqlFormatter.string(from: self))'") }
-}
-
 /// A type used to signify that a column on a database has a JSON
 /// type.
 ///
@@ -244,11 +177,11 @@ extension Date: SQLConvertible {
 /// generic `default` function on `CreateColumnBuilder`. Instead,
 /// opt to use `.default(jsonString:)` or `.default(encodable:)`
 /// to set a default value for a JSON column.
-public struct SQLJSON: SQLConvertible {
+public struct SQLJSON: SQLValueConvertible {
     /// `init()` is kept private to this from ever being instantiated.
     private init() {}
     
     // MARK: SQLConvertible
     
-    public var sql: SQL { SQL() }
+    public var value: SQLValue { .null }
 }

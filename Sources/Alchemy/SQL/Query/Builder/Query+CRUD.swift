@@ -6,13 +6,13 @@ extension Query {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
-    public func get(_ columns: [Column]? = nil) async throws -> [SQLRow] {
+    public func get(_ columns: [String]? = nil) async throws -> [SQLRow] {
         if let columns = columns {
-            self.columns = columns.map(\.columnSQL)
+            self.columns = columns
         }
         
         let sql = try self.database.grammar.compileSelect(query: self)
-        return try await database.runRawQuery(sql.query, values: sql.bindings)
+        return try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 
     /// Run a select query and return the first database row only row.
@@ -22,7 +22,7 @@ extension Query {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The first row in the database, if it exists.
-    public func first(_ columns: [SQL]? = nil) async throws -> SQLRow? {
+    public func first(_ columns: [String]? = nil) async throws -> SQLRow? {
         try await limit(1).get(columns).first
     }
 
@@ -34,8 +34,8 @@ extension Query {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The row from the database, if it exists.
-    public func find(_ column: String, equals value: SQLValue, columns: [Column]? = nil) async throws -> SQLRow? {
-        wheres.append(WhereValue(key: column, op: .equals, value: value))
+    public func find(_ column: String, equals value: SQLValue, columns: [String]? = nil) async throws -> SQLRow? {
+        wheres.append(column == value)
         return try await limit(1).get(columns).first
     }
 
@@ -46,7 +46,7 @@ extension Query {
     ///   - name: The alias that can be used for renaming the returned
     ///     count.
     /// - Returns: The count returned by the database.
-    public func count(column: Column = "*", as name: String? = nil) async throws -> Int {
+    public func count(column: String = "*", as name: String? = nil) async throws -> Int {
         var query = "COUNT(\(column))"
         if let name = name {
             query += " as \(name)"
@@ -115,12 +115,12 @@ extension Query {
     ///   updated.
     public func update(values: [String: SQLValueConvertible]) async throws {
         let sql = try database.grammar.compileUpdate(self, values: values)
-        _ = try await database.runRawQuery(sql.query, values: sql.bindings)
+        _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
         let sql = try database.grammar.compileDelete(self)
-        _ = try await database.runRawQuery(sql.query, values: sql.bindings)
+        _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 }

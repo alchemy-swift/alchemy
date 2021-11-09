@@ -5,6 +5,6 @@ import OrderedCollections
 final class PostgresGrammar: Grammar {
     override func compileInsert(_ query: Query, values: [OrderedDictionary<String, SQLValueConvertible>]) throws -> SQL {
         let initial = try super.compileInsert(query, values: values)
-        return SQL(initial.query + " returning *", bindings: initial.bindings)
+        return SQL(initial.statement + " returning *", bindings: initial.bindings)
     }
 }

@@ -1,4 +1,47 @@
 extension Query {
+    /// The type of the join clause.
+    public enum JoinType: String {
+        /// INNER JOIN.
+        case inner
+        /// OUTER JOIN.
+        case outer
+        /// LEFT JOIN.
+        case left
+        /// RIGHT JOIN.
+        case right
+        /// CROSS JOIN.
+        case cross
+    }
+
+    /// A JOIN query builder.
+    public final class Join: Query {
+        /// The type of the join to perform.
+        public let type: JoinType
+        /// The table to join to.
+        public let table: String
+        
+        /// Create a join builder with a query, type, and table.
+        ///
+        /// - Parameters:
+        ///   - database: The database the join table is on.
+        ///   - type: The type of join this is.
+        ///   - table: The name of the table to join to.
+        init(database: DatabaseDriver, type: JoinType, table: String) {
+            self.type = type
+            self.table = table
+            super.init(database: database)
+        }
+        
+        func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Join {
+            self.whereColumn(first: first, op: op, second: second, boolean: boolean)
+            return self
+        }
+
+        func orOn(first: String, op: Operator, second: String) -> Join {
+            return self.on(first: first, op: op, second: second, boolean: .or)
+        }
+    }
+    
     /// Join data from a separate table into the current query data.
     ///
     /// - Parameters:
@@ -11,21 +54,14 @@ extension Query {
     ///     `.inner`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func join(
-        table: String,
-        first: String,
-        op: Operator = .equals,
-        second: String,
-        type: JoinType = .inner
-    ) -> Self {
-        let join = JoinClause(database: self.database, type: type, table: table)
-            .on(first: first, op: op, second: second)
+    public func join(table: String, first: String, op: Operator = .equals, second: String, type: JoinType = .inner) -> Self {
+        let join = Join(database: database, type: type, table: table).on(first: first, op: op, second: second)
         if joins == nil {
             joins = [join]
-        }
-        else {
+        } else {
             joins?.append(join)
         }
+        
         return self
     }
 
@@ -40,19 +76,8 @@ extension Query {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func leftJoin(
-        table: String,
-        first: String,
-        op: Operator = .equals,
-        second: String
-    ) -> Self {
-        self.join(
-            table: table,
-            first: first,
-            op: op,
-            second: second,
-            type: .left
-        )
+    public func leftJoin(table: String, first: String, op: Operator = .equals, second: String) -> Self {
+        join(table: table, first: first, op: op, second: second, type: .left)
     }
 
     /// Right join data from a separate table into the current query
@@ -66,19 +91,8 @@ extension Query {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func rightJoin(
-        table: String,
-        first: String,
-        op: Operator = .equals,
-        second: String
-    ) -> Self {
-        self.join(
-            table: table,
-            first: first,
-            op: op,
-            second: second,
-            type: .right
-        )
+    public func rightJoin(table: String, first: String, op: Operator = .equals, second: String) -> Self {
+        join(table: table, first: first, op: op, second: second, type: .right)
     }
 
     /// Cross join data from a separate table into the current query
@@ -92,18 +106,7 @@ extension Query {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func crossJoin(
-        table: String,
-        first: String,
-        op: Operator = .equals,
-        second: String
-    ) -> Self {
-        self.join(
-            table: table,
-            first: first,
-            op: op,
-            second: second,
-            type: .cross
-        )
+    public func crossJoin(table: String, first: String, op: Operator = .equals, second: String) -> Self {
+        join(table: table, first: first, op: op, second: second, type: .cross)
     }
 }

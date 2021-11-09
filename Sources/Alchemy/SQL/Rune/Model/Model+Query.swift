@@ -46,7 +46,7 @@ public class ModelQuery<M: Model>: Query {
         try await _allModels().map(\.model)
     }
     
-    private func _allModels(columns: [Column]? = ["\(M.tableName).*"]) async throws -> [ModelRow] {
+    private func _allModels(columns: [String]? = ["\(M.tableName).*"]) async throws -> [ModelRow] {
         let initialResults = try await get(columns).map { (try $0.decode(M.self), $0) }
         return try await evaluateEagerLoads(for: initialResults)
     }

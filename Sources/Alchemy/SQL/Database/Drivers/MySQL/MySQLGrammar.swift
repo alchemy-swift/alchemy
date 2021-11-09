@@ -58,7 +58,7 @@ final class MySQLGrammar: Grammar {
         try await withThrowingTaskGroup(of: [SQLRow].self) { group in
             for insert in inserts {
                 group.addTask {
-                    async let result = database.runAndReturnLastInsertedItem(insert.query, table: table, values: insert.bindings)
+                    async let result = database.runAndReturnLastInsertedItem(insert.statement, table: table, values: insert.bindings)
                     return try await result
                 }
             }

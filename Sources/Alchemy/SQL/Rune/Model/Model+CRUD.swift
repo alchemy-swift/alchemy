@@ -29,7 +29,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ where: WhereValue, db: Database = .default) async throws -> Self? {
+    public static func find(_ where: Query.Where, db: Database = .default) async throws -> Self? {
         try await Self.firstWhere(`where`, db: db)
     }
     
@@ -67,7 +67,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
-    public static func delete(_ where: WhereValue, db: Database = .default) async throws {
+    public static func delete(_ where: Query.Where, db: Database = .default) async throws {
         try await query().where(`where`).delete()
     }
     
@@ -88,7 +88,7 @@ extension Model {
     ///     to `Database.default`.
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
-    public static func deleteAll(db: Database = .default, where: WhereValue? = nil) async throws {
+    public static func deleteAll(db: Database = .default, where: Query.Where? = nil) async throws {
         var query = Self.query(database: db)
         if let clause = `where` { query = query.where(clause) }
         try await query.delete()
@@ -105,7 +105,7 @@ extension Model {
     ///   - error: The error that will be thrown, should a query with
     ///     the where clause find a result.
     ///   - db: The database to query. Defaults to `Database.default`.
-    public static func ensureNotExists(_ where: WhereValue, else error: Error, db: Database = .default) async throws {
+    public static func ensureNotExists(_ where: Query.Where, else error: Error, db: Database = .default) async throws {
         try await Self.query(database: db).where(`where`).first()
             .map { _ in throw error }
     }
@@ -118,7 +118,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A query on the `Model`'s table that matches the
     ///   given where clause.
-    public static func `where`(_ where: WhereValue, db: Database = .default) -> ModelQuery<Self> {
+    public static func `where`(_ where: Query.Where, db: Database = .default) -> ModelQuery<Self> {
         Self.query(database: db).where(`where`)
     }
     
@@ -130,7 +130,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause, if
     ///   one exists.
-    public static func firstWhere(_ where: WhereValue, db: Database = .default) async throws -> Self? {
+    public static func firstWhere(_ where: Query.Where, db: Database = .default) async throws -> Self? {
         try await Self.query(database: db).where(`where`).firstModel()
     }
     
@@ -141,7 +141,7 @@ extension Model {
     ///     clause.
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: All the models matching the `where` clause.
-    public static func allWhere(_ where: WhereValue, db: Database = .default) async throws -> [Self] {
+    public static func allWhere(_ where: Query.Where, db: Database = .default) async throws -> [Self] {
         try await Self.query(database: db).where(`where`).allModels()
     }
     
@@ -156,7 +156,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause.
     public static func unwrapFirstWhere(
-        _ where: WhereValue,
+        _ where: Query.Where,
         or error: Error,
         db: Database = .default
     ) async throws -> Self {

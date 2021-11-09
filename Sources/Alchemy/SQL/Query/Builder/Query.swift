@@ -5,12 +5,12 @@ import OrderedCollections
 public class Query {
     let database: DatabaseDriver
     
-    var columns: [SQL] = [SQL("*")]
-    var joins: [JoinClause]? = nil
-    var wheres: [WhereClause] = []
+    var columns: [String] = ["*"]
+    var joins: [Join]? = nil
+    var wheres: [Where] = []
     var groups: [String] = []
-    var havings: [WhereClause] = []
-    var orders: [OrderClause] = []
+    var havings: [Where] = []
+    var orders: [Order] = []
     
     var from: String?
     var limit: Int? = nil
@@ -30,7 +30,7 @@ public class Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func select(_ columns: [String] = ["*"]) -> Self {
-        self.columns = columns.map(\.columnSQL)
+        self.columns = columns
         return self
     }
 
@@ -59,29 +59,6 @@ public class Query {
             return self.table(table)
         }
         return self.table("\(table) as \(alias)")
-    }
-
-    /// Order the data from the query based on given clause.
-    ///
-    /// - Parameter order: The `OrderClause` that defines the
-    ///   ordering.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public func orderBy(_ order: OrderClause) -> Self {
-        self.orders.append(order)
-        return self
-    }
-
-    /// Order the data from the query based on a column and direction.
-    ///
-    /// - Parameters:
-    ///   - column: The column to order data by.
-    ///   - direction: The `OrderClause.Sort` direction (either `.asc`
-    ///     or `.desc`). Defaults to `.asc`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public func orderBy(column: Column, direction: OrderClause.Direction = .asc) -> Self {
-        self.orderBy(OrderClause(column: column, direction: direction))
     }
 
     /// Set query to only return distinct entries.

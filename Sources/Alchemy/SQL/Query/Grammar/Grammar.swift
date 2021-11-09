@@ -1,13 +1,13 @@
 import Foundation
 import OrderedCollections
 
+struct GrammarError: Error {
+    let message: String
+    static let missingTable = GrammarError(message: "Missing a table to run the query on.")
+}
+
 /// Used for compiling query builders into raw SQL statements.
 open class Grammar {
-    struct GrammarError: Error {
-        let message: String
-        static let missingTable = GrammarError(message: "Missing a table to run the query on.")
-    }
-    
     open var isSQLite: Bool { false }
     
     public init() {}
@@ -15,24 +15,21 @@ open class Grammar {
     // MARK: Compiling Query Builders
     
     open func compileSelect(query: Query) throws -> SQL {
-        let parts: [SQL?] = [
-            self.compileColumns(query, columns: query.columns),
-            try self.compileFrom(query, table: query.from),
-            self.compileJoins(query, joins: query.joins),
-            self.compileWheres(query),
-            self.compileGroups(query, groups: query.groups),
-            self.compileHavings(query),
-            self.compileOrders(query, orders: query.orders),
-            self.compileLimit(query, limit: query.limit),
-            self.compileOffset(query, offset: query.offset),
+        return [
+            compileColumns(query, columns: query.columns),
+            try compileFrom(query, table: query.from),
+            compileJoins(query, joins: query.joins),
+            compileWheres(query),
+            compileGroups(query, groups: query.groups),
+            compileHavings(query),
+            compileOrders(query, orders: query.orders),
+            compileLimit(query, limit: query.limit),
+            compileOffset(query, offset: query.offset),
             query.lock.map { SQL($0) }
-        ]
-
-        let (sql, bindings) = QueryHelpers.groupSQL(values: parts)
-        return SQL(sql.joined(separator: " "), bindings: bindings)
+        ].compactMap { $0 }.joined()
     }
 
-    open func compileJoins(_ query: Query, joins: [JoinClause]?) -> SQL? {
+    open func compileJoins(_ query: Query, joins: [Query.Join]?) -> SQL? {
         guard let joins = joins else { return nil }
         var bindings: [SQLValue] = []
         let query = joins.compactMap { join -> String? in
@@ -43,9 +40,9 @@ open class Grammar {
             if let nestedJoins = join.joins,
                 let nestedSQL = compileJoins(query, joins: nestedJoins) {
                 bindings += nestedSQL.bindings
-                return self.trim("\(join.type) join (\(join.table)\(nestedSQL.query)) \(whereSQL.query)")
+                return self.trim("\(join.type) join (\(join.table)\(nestedSQL.statement)) \(whereSQL.statement)")
             }
-            return self.trim("\(join.type) join \(join.table) \(whereSQL.query)")
+            return self.trim("\(join.type) join \(join.table) \(whereSQL.statement)")
         }.joined(separator: " ")
         return SQL(query, bindings: bindings)
     }
@@ -56,19 +53,17 @@ open class Grammar {
     }
 
     open func compileHavings(_ query: Query) -> SQL? {
-        let (sql, bindings) = QueryHelpers.groupSQL(values: query.havings)
-        if (sql.count > 0) {
-            let clauses = QueryHelpers.removeLeadingBoolean(
-                sql.joined(separator: " ")
-            )
-            return SQL("having \(clauses)", bindings: bindings)
+        guard query.havings.count > 0 else {
+            return nil
         }
-        return nil
+        
+        let sql = query.havings.joined().droppingLeadingBoolean()
+        return SQL("having \(sql.statement)", bindings: sql.bindings)
     }
 
-    open func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL? {
+    open func compileOrders(_ query: Query, orders: [Query.Order]) -> SQL? {
         if orders.isEmpty { return nil }
-        let ordersSQL = orders.map { $0.sql.query }.joined(separator: ", ")
+        let ordersSQL = orders.map { $0.sql.statement }.joined(separator: ", ")
         return SQL("order by \(ordersSQL)")
     }
 
@@ -107,7 +102,7 @@ open class Grammar {
     
     open func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
         let sql = try compileInsert(query, values: values)
-        return try await query.database.runRawQuery(sql.query, values: sql.bindings)
+        return try await query.database.runRawQuery(sql.statement, values: sql.bindings)
     }
     
     open func compileUpdate(_ query: Query, values: [String: SQLValueConvertible]) throws -> SQL {
@@ -123,11 +118,11 @@ open class Grammar {
         }
 
         bindings += columnSQL.bindings
-        base += " set \(columnSQL.query)"
+        base += " set \(columnSQL.statement)"
 
         if let whereSQL = compileWheres(query) {
             bindings += whereSQL.bindings
-            base += " \(whereSQL.query)"
+            base += " \(whereSQL.statement)"
         }
         return SQL(base, bindings: bindings)
     }
@@ -138,7 +133,7 @@ open class Grammar {
         
         for value in values {
             if let expression = value.value as? SQL {
-                parts.append("\(value.key) = \(expression.query)")
+                parts.append("\(value.key) = \(expression.statement)")
             } else {
                 bindings.append(value.value.value)
                 parts.append("\(value.key) = ?")
@@ -151,7 +146,7 @@ open class Grammar {
     open func compileDelete(_ query: Query) throws -> SQL {
         guard let table = query.from else { throw GrammarError.missingTable }
         if let whereSQL = compileWheres(query) {
-            return SQL("delete from \(table) \(whereSQL.query)", bindings: whereSQL.bindings)
+            return SQL("delete from \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
         }
         else {
             return SQL("delete from \(table)")
@@ -208,8 +203,18 @@ open class Grammar {
         SQL("ALTER TABLE \(table) RENAME COLUMN \(column.sqlEscaped) TO \(to.sqlEscaped)")
     }
     
+    /// Compile the given create indexes into SQL.
+    ///
+    /// - Parameter table: The name of the table this index will be
+    ///   created on.
+    /// - Returns: SQL objects for creating these indexes on the given table.
     open func compileCreateIndexes(table: String, indexes: [CreateIndex]) -> [SQL] {
-        indexes.map { SQL($0.toSQL(table: table)) }
+        indexes.map { index in
+            let indexType = index.isUnique ? "UNIQUE INDEX" : "INDEX"
+            let indexName = index.name(table: table)
+            let indexColumns = "(\(index.columns.map(\.sqlEscaped).joined(separator: ", ")))"
+            return SQL("CREATE \(indexType) \(indexName) ON \(table) \(indexColumns)")
+        }
     }
     
     open func compileDropIndex(table: String, indexName: String) -> SQL {
@@ -258,7 +263,7 @@ open class Grammar {
 
     private func parameter(_ value: SQLValueConvertible) -> String {
         if let value = value as? SQL {
-            return value.query
+            return value.statement
         }
         
         return "?"
@@ -269,28 +274,18 @@ open class Grammar {
     }
     
     private func compileWheres(_ query: Query) -> SQL? {
-        // If we actually have some where clauses, we will strip off
-        // the first boolean operator, which is added by the query
-        // builders for convenience so we can avoid checking for
-        // the first clauses in each of the compilers methods.
-
-        // Need to handle nested stuff somehow
-        
-        let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
-        if (sql.count > 0) {
-            let conjunction = query is JoinClause ? "on" : "where"
-            let clauses = QueryHelpers.removeLeadingBoolean(
-                sql.joined(separator: " ")
-            )
-            return SQL("\(conjunction) \(clauses)", bindings: bindings)
+        guard query.wheres.count > 0 else {
+            return nil
         }
-        return nil
+        
+        let conjunction = query is Query.Join ? "on" : "where"
+        let sql = query.wheres.joined().droppingLeadingBoolean()
+        return SQL("\(conjunction) \(sql.statement)", bindings: sql.bindings)
     }
     
-    private func compileColumns(_ query: Query, columns: [SQL]) -> SQL {
+    private func compileColumns(_ query: Query, columns: [String]) -> SQL {
         let select = query.isDistinct ? "select distinct" : "select"
-        let (sql, bindings) = QueryHelpers.groupSQL(values: columns)
-        return SQL("\(select) \(sql.joined(separator: ", "))", bindings: bindings)
+        return SQL("\(select) \(columns.joined(separator: ", "))")
     }
 
     private func compileFrom(_ query: Query, table: String?) throws -> SQL {
@@ -299,46 +294,13 @@ open class Grammar {
     }
 }
 
-/// An abstraction around various supported SQL column types.
-/// `Grammar`s will map the `ColumnType` to the backing
-/// dialect type string.
-public enum ColumnType: Equatable {
-    /// Self incrementing integer.
-    case increments
-    /// Integer.
-    case int
-    /// Big integer.
-    case bigInt
-    /// Double.
-    case double
-    /// String, with a given max length.
-    case string(StringLength)
-    /// UUID.
-    case uuid
-    /// Boolean.
-    case bool
-    /// Date.
-    case date
-    /// JSON.
-    case json
-}
-
-/// The length of an SQL string column in characters.
-public enum StringLength: Equatable {
-    /// This value of this column can be any number of characters.
-    case unlimited
-    /// This value of this column must be at most the provided number
-    /// of characters.
-    case limit(Int)
-}
-
 extension CreateColumn {
     /// Convert this `CreateColumn` to a `String` for inserting into
     /// an SQL statement.
     ///
     /// - Returns: The SQL `String` describing this column and any
     ///   table level constraints to add.
-    func sqlString(with grammar: Grammar) -> (String, [String]) {
+    fileprivate func sqlString(with grammar: Grammar) -> (String, [String]) {
         let columnEscaped = self.column.sqlEscaped
         var baseSQL = "\(columnEscaped) \(grammar.typeString(for: self.type))"
         var tableConstraints: [String] = []
@@ -367,5 +329,11 @@ extension CreateColumn {
         }
         
         return (baseSQL, tableConstraints)
+    }
+}
+
+extension String {
+    var sqlEscaped: String {
+        "\"\(self)\""
     }
 }
