@@ -1,6 +1,6 @@
 extension Query {
     /// A clause for ordering rows by a certain column.
-    public struct Order: SQLConvertible, Equatable {
+    public struct Order: Equatable {
         /// A sorting direction.
         public enum Direction: String {
             /// Sort elements in ascending order.
@@ -13,12 +13,6 @@ extension Query {
         let column: String
         /// The direction to order by.
         let direction: Direction
-        
-        // MARK: - SQLConvertible
-        
-        public var sql: SQL {
-            return SQL("\(column) \(direction)")
-        }
     }
     
     /// Order the data from the query based on given clause.

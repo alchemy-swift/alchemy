@@ -17,7 +17,7 @@ open class Grammar {
         orders: [Query.Order],
         limit: Int?,
         offset: Int?,
-        lock: String?
+        lock: Query.Lock?
     ) throws -> SQL {
         let select = isDistinct ? "select distinct" : "select"
         return [
@@ -30,7 +30,7 @@ open class Grammar {
             compileOrders(orders),
             compileLimit(limit),
             compileOffset(offset),
-            lock.map { SQL($0) }
+            lock?.sql
         ].compactMap { $0 }.joined()
     }
 
@@ -328,5 +328,63 @@ open class Grammar {
 extension String {
     fileprivate var escapedColumn: String {
         "\"\(self)\""
+    }
+}
+
+extension Query.Where: SQLConvertible {
+    public var sql: SQL {
+        switch type {
+        case .value(let key, let op, let value):
+            if value == .null {
+                if op == .notEqualTo {
+                    return SQL("\(boolean) \(key) IS NOT NULL")
+                } else if op == .equals {
+                    return SQL("\(boolean) \(key) IS NULL")
+                } else {
+                    fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
+                }
+            } else {
+                return SQL("\(boolean) \(key) \(op) ?", bindings: [value])
+            }
+        case .column(let first, let op, let second):
+            return SQL("\(boolean) \(first) \(op) \(second)")
+        case .nested(let wheres):
+            let nestedSQL = wheres.joined().droppingLeadingBoolean()
+            return SQL("\(boolean) (\(nestedSQL))", bindings: nestedSQL.bindings)
+        case .in(let key, let values, let type):
+            let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
+            return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
+        case .raw(let sql):
+            return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
+        }
+    }
+}
+
+extension Query.Order: SQLConvertible {
+    public var sql: SQL {
+        return SQL("\(column) \(direction)")
+    }
+}
+
+extension Query.Lock: SQLConvertible {
+    public var sql: SQL {
+        var string = ""
+        switch strength {
+        case .update:
+            string = "FOR UPDATE"
+        case .share:
+            string = "FOR SHARE"
+        }
+        
+        switch option {
+        case .noWait:
+            string.append(" NO WAIT")
+        case .skipLocked:
+            string.append(" SKIP LOCKED")
+        case .none:
+            break
+        }
+        
+        return SQL(string)
     }
 }

@@ -16,11 +16,11 @@ extension Query {
     /// A JOIN query builder.
     public final class Join: Query {
         /// The type of the join to perform.
-        public let type: JoinType
+        var type: JoinType
         /// The table to join to.
-        public let joinTable: String
+        let joinTable: String
         /// The join conditions
-        public var joinWheres: [Query.Where] = []
+        var joinWheres: [Query.Where] = []
         
         /// Create a join builder with a query, type, and table.
         ///
@@ -28,7 +28,7 @@ extension Query {
         ///   - database: The database the join table is on.
         ///   - type: The type of join this is.
         ///   - joinTable: The name of the table to join to.
-        init(database: DatabaseDriver, type: JoinType, table: String, joinTable: String) {
+        init(database: DatabaseDriver, table: String, type: JoinType, joinTable: String) {
             self.type = type
             self.joinTable = joinTable
             super.init(database: database, table: table)
@@ -69,9 +69,22 @@ extension Query {
     ///   queries to.
     public func join(table: String, first: String, op: Operator = .equals, second: String, type: JoinType = .inner) -> Self {
         joins.append(
-            Join(database: database, type: type, table: table, joinTable: table)
+            Join(database: database, table: self.table, type: type, joinTable: table)
                 .on(first: first, op: op, second: second)
         )
+        return self
+    }
+    
+    /// Joins data from a separate table into the current query, using the given
+    /// conditions closure.
+    ///
+    /// - Parameters:
+    ///   - table: The table to join with.
+    ///   - type: The type of join. Defaults to `.inner`
+    ///   - conditions: A closure that sets the conditions on the join using.
+    /// - Returns: This query builder.
+    public func join(table: String, type: JoinType = .inner, conditions: (Join) -> Join) -> Self {
+        joins.append(conditions(Join(database: database, table: self.table, type: type, joinTable: table)))
         return self
     }
 

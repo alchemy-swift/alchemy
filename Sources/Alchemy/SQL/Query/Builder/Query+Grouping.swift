@@ -29,9 +29,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func orHaving(_ clause: Where) -> Self {
-        var clause = clause
-        clause.boolean = .or
-        return having(clause)
+        having(Where(type: clause.type, boolean: .or))
     }
 
     /// Add a having clause to filter results from aggregate functions

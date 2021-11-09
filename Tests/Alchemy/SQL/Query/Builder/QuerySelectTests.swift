@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTest
 
-final class QueryTests: TestCase<TestApp> {
+final class QuerySelectTests: TestCase<TestApp> {
     override func setUp() {
         super.setUp()
         Database.stub()
@@ -21,5 +21,16 @@ final class QueryTests: TestCase<TestApp> {
         XCTAssertEqual(query.groups, [])
         XCTAssertEqual(query.havings, [])
         XCTAssertEqual(query.orders, [])
+    }
+    
+    func testSelect() {
+        let specific = Database.table("foo").select(["bar", "baz"])
+        XCTAssertEqual(specific.columns, ["bar", "baz"])
+        let all = Database.table("foo").select()
+        XCTAssertEqual(all.columns, ["*"])
+    }
+    
+    func testDistinct() {
+        XCTAssertEqual(Database.table("foo").distinct().isDistinct, true)
     }
 }

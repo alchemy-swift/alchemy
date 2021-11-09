@@ -19,36 +19,9 @@ extension Query {
         case notIn
     }
     
-    public struct Where: SQLConvertible, Equatable {
+    public struct Where: Equatable {
         public let type: WhereType
-        public var boolean: WhereBoolean = .and
-        
-        public var sql: SQL {
-            switch type {
-            case .value(let key, let op, let value):
-                if value == .null {
-                    if op == .notEqualTo {
-                        return SQL("\(boolean) \(key) IS NOT NULL")
-                    } else if op == .equals {
-                        return SQL("\(boolean) \(key) IS NULL")
-                    } else {
-                        fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
-                    }
-                } else {
-                    return SQL("\(boolean) \(key) \(op) ?", bindings: [value])
-                }
-            case .column(let first, let op, let second):
-                return SQL("\(boolean) \(first) \(op) \(second)")
-            case .nested(let wheres):
-                let nestedSQL = wheres.joined().droppingLeadingBoolean()
-                return SQL("\(boolean) (\(nestedSQL))", bindings: nestedSQL.bindings)
-            case .in(let key, let values, let type):
-                let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-                return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
-            case .raw(let sql):
-                return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
-            }
-        }
+        public let boolean: WhereBoolean
     }
 
     /// Add a basic where clause to the query to filter down results.
@@ -72,9 +45,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func orWhere(_ clause: Where) -> Self {
-        var clause = clause
-        clause.boolean = .or
-        return `where`(clause)
+        `where`(Where(type: clause.type, boolean: .or))
     }
 
     /// Add a nested where clause that is a group of combined clauses.
