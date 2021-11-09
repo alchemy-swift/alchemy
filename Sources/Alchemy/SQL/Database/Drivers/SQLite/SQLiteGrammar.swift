@@ -1,13 +1,10 @@
 final class SQLiteGrammar: Grammar {
-    override var isSQLite: Bool {
-        true
-    }
-    
-    override func insert(_ table: String, values: [[String: SQLValueConvertible]], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
-        return try await database.transaction { conn in
-            let sql = try super.compileInsert(table, values: values)
-            _ = try await conn.runRawQuery(sql.statement, values: sql.bindings)
-            return try await conn.runRawQuery("select * from \(table) where id = last_insert_rowid()", values: [])
+    override func compileInsertAndReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+        return values.flatMap {
+            return [
+                compileInsert(table, values: [$0]),
+                SQL("select * from \(table) where id = last_insert_rowid()")
+            ]
         }
     }
     
@@ -30,9 +27,16 @@ final class SQLiteGrammar: Grammar {
         case .string:
             return "text"
         case .uuid:
-            // There isn't a MySQL UUID type; store UUIDs as a 36
-            // length varchar.
             return "text"
+        }
+    }
+    
+    override func sqlString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+        switch constraint {
+        case .primaryKey where type == .increments:
+            return nil
+        default:
+            return super.sqlString(for: constraint, on: column, of: type)
         }
     }
 }

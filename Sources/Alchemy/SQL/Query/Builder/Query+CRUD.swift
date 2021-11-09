@@ -11,7 +11,18 @@ extension Query {
             self.columns = columns
         }
         
-        let sql = try self.database.grammar.compileSelect(query: self)
+        let sql = try database.grammar.compileSelect(
+            table: table,
+            isDistinct: isDistinct,
+            columns: self.columns,
+            joins: joins,
+            wheres: wheres,
+            groups: groups,
+            havings: havings,
+            orders: orders,
+            limit: limit,
+            offset: offset,
+            lock: lock)
         return try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 
@@ -63,32 +74,39 @@ extension Query {
     ///
     /// - Parameter value: A dictionary containing the values to be
     ///   inserted.
-    /// - Parameter returnItems: Indicates whether the inserted items
-    ///   should be returned with any fields updated/set by the
-    ///   insert. Defaults to `true`. This flag doesn't affect
-    ///   Postgres which always returns inserted items, but on MySQL
-    ///   it means this will run two queries; one to insert and one to
-    ///   fetch.
-    /// - Returns: The inserted rows.
-    public func insert(_ value: [String: SQLValueConvertible], returnItems: Bool = true) async throws -> [SQLRow] {
-        try await insert([value], returnItems: returnItems)
+    public func insert(_ value: [String: SQLValueConvertible]) async throws {
+        try await insert([value])
     }
 
-    /// Perform an insert and create database rows from the provided
-    /// data.
+    /// Perform an insert and create database rows from the provided data.
     ///
-    /// - Parameter values: An array of dictionaries containing the
-    ///   values to be inserted.
-    /// - Parameter returnItems: Indicates whether the inserted items
-    ///   should be returned with any fields updated/set by the
-    ///   insert. Defaults to `true`. This flag doesn't affect
-    ///   Postgres which always runs a single query and returns
-    ///   inserted items. On MySQL it means this will run two queries
-    ///   _per value_; one to insert and one to fetch. If this is
-    ///   `false`, MySQL will run a single query inserting all values.
+    /// - Parameter values: An array of dictionaries containing the values to be
+    ///   inserted.
+    public func insert(_ values: [[String: SQLValueConvertible]]) async throws {
+        let sql = database.grammar.compileInsert(table, values: values)
+        _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
+        return
+    }
+    
+    public func insertAndReturn(_ values: [String: SQLValueConvertible]) async throws -> [SQLRow] {
+        try await insertAndReturn([values])
+    }
+    
+    /// Perform an insert and return the inserted records.
+    ///
+    /// - Parameter values: An array of dictionaries containing the values to be
+    ///   inserted.
     /// - Returns: The inserted rows.
-    public func insert(_ values: [[String: SQLValueConvertible]], returnItems: Bool = true) async throws -> [SQLRow] {
-        try await database.grammar.insert(from, values: values, database: self.database, returnItems: returnItems)
+    public func insertAndReturn(_ values: [[String: SQLValueConvertible]]) async throws -> [SQLRow] {
+        let statements = database.grammar.compileInsertAndReturn(table, values: values)
+        return try await database.transaction { conn in
+            var toReturn: [SQLRow] = []
+            for sql in statements {
+                toReturn = try await conn.runRawQuery(sql.statement, values: sql.bindings)
+            }
+            
+            return toReturn
+        }
     }
 
     /// Perform an update on all data matching the query in the
@@ -97,7 +115,7 @@ extension Query {
     /// For example, if you wanted to update the first name of a user
     /// whose ID equals 10, you could do so as follows:
     /// ```swift
-    /// Query
+    /// database
     ///     .table("users")
     ///     .where("id" == 10)
     ///     .update(values: [
@@ -108,13 +126,13 @@ extension Query {
     /// - Parameter values: An dictionary containing the values to be
     ///   updated.
     public func update(values: [String: SQLValueConvertible]) async throws {
-        let sql = try database.grammar.compileUpdate(from, joins: joins, wheres: wheres, values: values)
+        let sql = try database.grammar.compileUpdate(table, joins: joins, wheres: wheres, values: values)
         _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
-        let sql = try database.grammar.compileDelete(from, wheres: wheres)
+        let sql = try database.grammar.compileDelete(table, wheres: wheres)
         _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 }

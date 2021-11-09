@@ -39,7 +39,7 @@ public final class CreateColumnBuilder<Default: SQLValueConvertible>: ColumnBuil
     // MARK: ColumnBuilderErased
     
     func toCreate() -> CreateColumn {
-        CreateColumn(column: self.name, type: self.type, constraints: self.constraints)
+        CreateColumn(name: self.name, type: self.type, constraints: self.constraints)
     }
 }
 

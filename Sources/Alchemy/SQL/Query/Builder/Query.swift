@@ -3,6 +3,7 @@ import NIO
 
 public class Query {
     let database: DatabaseDriver
+    var table: String
     
     var columns: [String] = ["*"]
     var joins: [Join] = []
@@ -11,15 +12,14 @@ public class Query {
     var havings: [Where] = []
     var orders: [Order] = []
     
-    var from: String
     var limit: Int? = nil
     var offset: Int? = nil
     var isDistinct = false
     var lock: String? = nil
 
-    public init(database: DatabaseDriver, from: String) {
+    public init(database: DatabaseDriver, table: String) {
         self.database = database
-        self.from = from
+        self.table = table
     }
 
     /// Set the columns that should be returned by the query.

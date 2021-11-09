@@ -3,6 +3,15 @@ import NIO
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
 final class MySQLGrammar: Grammar {
+    override func compileInsertAndReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+        return values.flatMap {
+            return [
+                compileInsert(table, values: [$0]),
+                SQL("select * from \(table) where id = LAST_INSERT_ID()")
+            ]
+        }
+    }
+    
     override func compileDropIndex(on table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName) ON \(table)")
     }
@@ -37,34 +46,16 @@ final class MySQLGrammar: Grammar {
         }
     }
     
+    override func sqlString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+        switch constraint {
+        case .unsigned:
+            return "UNSIGNED"
+        default:
+            return super.sqlString(for: constraint, on: column, of: type)
+        }
+    }
+    
     override func jsonLiteral(from jsonString: String) -> String {
         "('\(jsonString)')"
-    }
-    
-    override func allowsUnsigned() -> Bool {
-        true
-    }
-    
-    override func insert(_ table: String, values: [[String: SQLValueConvertible]], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
-        guard returnItems, let database = database as? MySQLDatabase else {
-            return try await super.insert(table, values: values, database: database, returnItems: returnItems)
-        }
-        
-        let inserts = try values.map { try compileInsert(table, values: [$0]) }
-        var results: [SQLRow] = []
-        try await withThrowingTaskGroup(of: [SQLRow].self) { group in
-            for insert in inserts {
-                group.addTask {
-                    async let result = database.runAndReturnLastInsertedItem(insert.statement, table: table, values: insert.bindings)
-                    return try await result
-                }
-            }
-            
-            for try await model in group {
-                results += model
-            }
-        }
-        
-        return results
     }
 }

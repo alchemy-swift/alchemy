@@ -40,7 +40,7 @@ extension Query {
             case .column(let first, let op, let second):
                 return SQL("\(boolean) \(first) \(op) \(second)")
             case .nested(let driver, let closure, let fromTable):
-                let query = closure(Query(database: driver, from: fromTable))
+                let query = closure(Query(database: driver, table: fromTable))
                 let nestedSQL = query.wheres.joined().droppingLeadingBoolean()
                 return SQL("\(boolean) (\(nestedSQL))", bindings: nestedSQL.bindings)
             case .in(let key, let values, let type):
@@ -105,7 +105,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ closure: @escaping (Query) -> Query, boolean: WhereBoolean = .and) -> Self {
-        wheres.append(Where(type: .nested(driver: database, closure: closure, fromTable: from), boolean: boolean))
+        wheres.append(Where(type: .nested(driver: database, closure: closure, fromTable: table), boolean: boolean))
         return self
     }
 

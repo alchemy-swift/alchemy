@@ -2,25 +2,35 @@ import Foundation
 
 /// Used for compiling query builders into raw SQL statements.
 open class Grammar {
-    open var isSQLite: Bool { false }
-    
     public init() {}
 
     // MARK: Compiling Query Builder
     
-    open func compileSelect(query: Query) throws -> SQL {
-        let select = query.isDistinct ? "select distinct" : "select"
+    open func compileSelect(
+        table: String,
+        isDistinct: Bool,
+        columns: [String],
+        joins: [Query.Join],
+        wheres: [Query.Where],
+        groups: [String],
+        havings: [Query.Where],
+        orders: [Query.Order],
+        limit: Int?,
+        offset: Int?,
+        lock: String?
+    ) throws -> SQL {
+        let select = isDistinct ? "select distinct" : "select"
         return [
-            SQL("\(select) \(query.columns.joined(separator: ", "))"),
-            SQL("from \(query.from)"),
-            compileJoins(query.joins),
-            compileWheres(query.wheres, isJoin: query is Query.Join),
-            compileGroups(query.groups),
-            compileHavings(query.havings),
-            compileOrders(query.orders),
-            compileLimit(query.limit),
-            compileOffset(query.offset),
-            query.lock.map { SQL($0) }
+            SQL("\(select) \(columns.joined(separator: ", "))"),
+            SQL("from \(table)"),
+            compileJoins(joins),
+            compileWheres(wheres, isJoin: false),
+            compileGroups(groups),
+            compileHavings(havings),
+            compileOrders(orders),
+            compileLimit(limit),
+            compileOffset(offset),
+            lock.map { SQL($0) }
         ].compactMap { $0 }.joined()
     }
 
@@ -38,11 +48,11 @@ open class Grammar {
             bindings += whereSQL.bindings
             if let nestedSQL = compileJoins(join.joins) {
                 bindings += nestedSQL.bindings
-                return "\(join.type) join (\(join.table)\(nestedSQL.statement)) \(whereSQL.statement)"
+                return "\(join.type) join (\(join.joinTable)\(nestedSQL.statement)) \(whereSQL.statement)"
                     .trimmingCharacters(in: .whitespacesAndNewlines)
             }
             
-            return "\(join.type) join \(join.table) \(whereSQL.statement)"
+            return "\(join.type) join \(join.joinTable) \(whereSQL.statement)"
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }.joined(separator: " ")
         
@@ -93,7 +103,7 @@ open class Grammar {
         offset.map { SQL("offset \($0)") }
     }
 
-    open func compileInsert(_ table: String, values: [[String: SQLValueConvertible]]) throws -> SQL {
+    open func compileInsert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL {
         guard !values.isEmpty else {
             return SQL("insert into \(table) default values")
         }
@@ -112,22 +122,12 @@ open class Grammar {
         return SQL("insert into \(table) (\(columnsJoined)) values \(placeholders.joined(separator: ", "))", bindings: parameters)
     }
     
-    open func insert(
-        _ table: String,
-        values: [[String: SQLValueConvertible]],
-        database: DatabaseDriver,
-        returnItems: Bool
-    ) async throws -> [SQLRow] {
-        let sql = try compileInsert(table, values: values)
-        return try await database.runRawQuery(sql.statement, values: sql.bindings)
+    open func compileInsertAndReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
+        let insert = compileInsert(table, values: values)
+        return [SQL("\(insert.statement) returning *", bindings: insert.bindings)]
     }
     
-    open func compileUpdate(
-        _ table: String,
-        joins: [Query.Join],
-        wheres: [Query.Where],
-        values: [String: SQLValueConvertible]
-    ) throws -> SQL {
+    open func compileUpdate(_ table: String, joins: [Query.Join], wheres: [Query.Where], values: [String: SQLValueConvertible]) throws -> SQL {
         var bindings: [SQLValue] = []
         let columnSQL = values.map { key, val in
             if let expression = val as? SQL {
@@ -169,7 +169,7 @@ open class Grammar {
     open func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
         var columnStrings: [String] = []
         var constraintStrings: [String] = []
-        for (column, constraints) in columns.map({ $0.sqlString(with: self) }) {
+        for (column, constraints) in columns.map({ sqlString(for: $0) }) {
             columnStrings.append(column)
             constraintStrings.append(contentsOf: constraints)
         }
@@ -198,7 +198,7 @@ open class Grammar {
         
         var adds: [String] = []
         var constraints: [String] = []
-        for (sql, tableConstraints) in addColumns.map({ $0.sqlString(with: self) }) {
+        for (sql, tableConstraints) in addColumns.map({ sqlString(for: $0) }) {
             adds.append("ADD COLUMN \(sql)")
             constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
         }
@@ -263,54 +263,65 @@ open class Grammar {
         }
     }
     
+    open func sqlString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+        switch constraint {
+        case .notNull:
+            return "NOT NULL"
+        case .default(let string):
+            return "DEFAULT \(string)"
+        case .primaryKey:
+            return "PRIMARY KEY (\(column))"
+        case .unique:
+            return "UNIQUE (\(column))"
+        case .foreignKey(let fkColumn, let table, let onDelete, let onUpdate):
+            var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(fkColumn.escapedColumn))"
+            if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
+            if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
+            return fkBase
+        case .unsigned:
+            return nil
+        }
+    }
+    
     open func jsonLiteral(from jsonString: String) -> String {
         "'\(jsonString)'::jsonb"
     }
     
-    open func allowsUnsigned() -> Bool {
-        false
-    }
-
-    private func parameterize(_ values: [SQLValueConvertible]) -> String {
-        values.map { ($0 as? SQL)?.statement ?? "?" }.joined(separator: ", ")
-    }
-}
-
-extension CreateColumn {
-    /// Convert this `CreateColumn` to a `String` for inserting into
-    /// an SQL statement.
+    /// Convert a `CreateColumn` to a `String` for inserting into an SQL
+    /// statement.
     ///
-    /// - Returns: The SQL `String` describing this column and any
-    ///   table level constraints to add.
-    fileprivate func sqlString(with grammar: Grammar) -> (String, [String]) {
-        let columnEscaped = column.escapedColumn
-        var baseSQL = "\(columnEscaped) \(grammar.typeString(for: type))"
+    /// - Returns: The SQL `String` describing the column and any table level
+    ///   constraints to add.
+    private func sqlString(for column: CreateColumn) -> (String, [String]) {
+        let columnEscaped = column.name.escapedColumn
+        var baseSQL = "\(columnEscaped) \(typeString(for: column.type))"
         var tableConstraints: [String] = []
-        for constraint in constraints {
+        for constraint in column.constraints {
+            guard let constraintString = sqlString(for: constraint, on: column.name.escapedColumn, of: column.type) else {
+                continue
+            }
+            
             switch constraint {
             case .notNull:
-                baseSQL.append(" NOT NULL")
-            case .primaryKey:
-                if type != .increments || !grammar.isSQLite {
-                    tableConstraints.append("PRIMARY KEY (\(columnEscaped))")
-                }
-            case .unique:
-                tableConstraints.append("UNIQUE (\(columnEscaped))")
-            case let .default(val):
-                baseSQL.append(" DEFAULT \(val)")
-            case let .foreignKey(column, table, onDelete, onUpdate):
-                var fkBase = "FOREIGN KEY (\(columnEscaped)) REFERENCES \(table) (\(column.escapedColumn))"
-                if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
-                if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
-                tableConstraints.append(fkBase)
+                baseSQL.append(" \(constraintString)")
+            case .default:
+                baseSQL.append(" \(constraintString)")
             case .unsigned:
-                if grammar.allowsUnsigned() {
-                    baseSQL.append(" UNSIGNED")
-                }
+                baseSQL.append(" \(constraintString)")
+            case .primaryKey:
+                tableConstraints.append(constraintString)
+            case .unique:
+                tableConstraints.append(constraintString)
+            case .foreignKey:
+                tableConstraints.append(constraintString)
             }
         }
         
         return (baseSQL, tableConstraints)
+    }
+    
+    private func parameterize(_ values: [SQLValueConvertible]) -> String {
+        values.map { ($0 as? SQL)?.statement ?? "?" }.joined(separator: ", ")
     }
 }
 

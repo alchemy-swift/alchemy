@@ -18,18 +18,18 @@ extension Query {
         /// The type of the join to perform.
         public let type: JoinType
         /// The table to join to.
-        public let table: String
+        public let joinTable: String
         
         /// Create a join builder with a query, type, and table.
         ///
         /// - Parameters:
         ///   - database: The database the join table is on.
         ///   - type: The type of join this is.
-        ///   - table: The name of the table to join to.
-        init(database: DatabaseDriver, type: JoinType, table: String, from: String) {
+        ///   - joinTable: The name of the table to join to.
+        init(database: DatabaseDriver, type: JoinType, table: String, joinTable: String) {
             self.type = type
-            self.table = table
-            super.init(database: database, from: table)
+            self.joinTable = joinTable
+            super.init(database: database, table: table)
         }
         
         func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Join {
@@ -56,7 +56,7 @@ extension Query {
     ///   queries to.
     public func join(table: String, first: String, op: Operator = .equals, second: String, type: JoinType = .inner) -> Self {
         joins.append(
-            Join(database: database, type: type, table: table, from: from)
+            Join(database: database, type: type, table: table, joinTable: table)
                 .on(first: first, op: op, second: second)
         )
         return self

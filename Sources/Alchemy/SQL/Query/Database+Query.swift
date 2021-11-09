@@ -44,7 +44,7 @@ extension Database {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func table(_ table: String) -> Query {
-        Query(database: driver, from: table)
+        Query(database: driver, table: table)
     }
 
     /// An alias for `table(_ table: String)` to be used when running.

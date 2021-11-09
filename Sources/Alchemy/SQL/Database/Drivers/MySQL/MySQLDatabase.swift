@@ -47,32 +47,6 @@ final class MySQLDatabase: DatabaseDriver {
         try await withConnection { try await $0.runRawQuery(sql, values: values) }
     }
     
-    /// MySQL doesn't have a way to return a row after inserting. This
-    /// runs a query and if MySQL metadata contains a `lastInsertID`,
-    /// fetches the row with that id from the given table.
-    ///
-    /// - Parameters:
-    ///   - sql: The SQL to run.
-    ///   - table: The table from which `lastInsertID` should be
-    ///     fetched.
-    ///   - values: Any bindings for the query.
-    /// - Returns: The result of fetching the last inserted id, or the
-    ///   result of the original query.
-    func runAndReturnLastInsertedItem(_ sql: String, table: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await pool.withConnection(logger: Log.logger, on: Loop.current) { conn in
-            var lastInsertId: Int?
-            var rows = try await conn
-                .query(sql, values.map(MySQLData.init), onMetadata: { lastInsertId = $0.lastInsertID.map(Int.init) })
-                .get()
-            
-            if let lastInsertId = lastInsertId {
-                rows = try await conn.query("select * from \(table) where id = ?;", [MySQLData(.int(lastInsertId))]).get()
-            }
-            
-            return rows.map(MySQLDatabaseRow.init)
-        }
-    }
-    
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
         try await withConnection { database in
             let conn = database.conn

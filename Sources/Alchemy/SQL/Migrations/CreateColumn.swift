@@ -1,8 +1,8 @@
 /// A type for keeping track of data associated with creating an
 /// column.
 public struct CreateColumn {
-    /// The name.
-    let column: String
+    /// The name for this column.
+    let name: String
     
     /// The type string.
     let type: ColumnType
