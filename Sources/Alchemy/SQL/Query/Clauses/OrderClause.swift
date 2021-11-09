@@ -17,10 +17,11 @@ public struct OrderClause: SQLConvertible {
     
     // MARK: - SQLConvertible
     
-    public func toSQL() -> SQL {
+    public var sql: SQL {
         if let raw = column as? SQL {
             return raw
         }
+        
         return SQL("\(column) \(direction)")
     }
 }

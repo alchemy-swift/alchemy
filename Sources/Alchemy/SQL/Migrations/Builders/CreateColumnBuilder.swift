@@ -88,10 +88,10 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
         // Janky, but MySQL requires parentheses around text (but not
         // varchar...) literals.
         if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
-            return self.adding(constraint: .default("(\(val.toSQL().query))"))
+            return self.adding(constraint: .default("(\(val.sql.query))"))
         }
         
-        return self.adding(constraint: .default(val.toSQL().query))
+        return self.adding(constraint: .default(val.sql.query))
     }
     
     /// Define this column as not nullable.
@@ -204,23 +204,23 @@ extension CreateColumnBuilder where Default == SQLJSON {
 }
 
 extension Bool: SQLConvertible {
-    public func toSQL() -> SQL { SQL("\(self)") }
+    public var sql: SQL { SQL("\(self)") }
 }
 
 extension UUID: SQLConvertible {
-    public func toSQL() -> SQL { SQL("'\(self.uuidString)'") }
+    public var sql: SQL { SQL("'\(self.uuidString)'") }
 }
 
 extension String: SQLConvertible {
-    public func toSQL() -> SQL { SQL("'\(self)'") }
+    public var sql: SQL { SQL("'\(self)'") }
 }
 
 extension Int: SQLConvertible {
-    public func toSQL() -> SQL { SQL("\(self)") }
+    public var sql: SQL { SQL("\(self)") }
 }
 
 extension Double: SQLConvertible {
-    public func toSQL() -> SQL { SQL("\(self)") }
+    public var sql: SQL { SQL("\(self)") }
 }
 
 extension Date: SQLConvertible {
@@ -234,7 +234,7 @@ extension Date: SQLConvertible {
     
     // MARK: SQLConvertible
     
-    public func toSQL() -> SQL { SQL("'\(Date.sqlFormatter.string(from: self))'") }
+    public var sql: SQL { SQL("'\(Date.sqlFormatter.string(from: self))'") }
 }
 
 /// A type used to signify that a column on a database has a JSON
@@ -250,5 +250,5 @@ public struct SQLJSON: SQLConvertible {
     
     // MARK: SQLConvertible
     
-    public func toSQL() -> SQL { SQL() }
+    public var sql: SQL { SQL() }
 }

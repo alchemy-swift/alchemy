@@ -12,7 +12,7 @@ enum QueryHelpers {
     }
 
     static func groupSQL(values: [SQLConvertible]) -> ([String], [SQLValue]) {
-        self.groupSQL(values: values.map { $0.toSQL() })
+        self.groupSQL(values: values.map(\.sql))
     }
 
     static func groupSQL(values: [SQL?]) -> ([String], [SQLValue]) {

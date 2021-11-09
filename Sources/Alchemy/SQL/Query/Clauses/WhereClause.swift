@@ -15,7 +15,7 @@ public struct WhereValue: WhereClause {
     
     // MARK: - SQLConvertible
     
-    public func toSQL() -> SQL {
+    public var sql: SQL {
         if self.value == .null {
             if self.op == .notEqualTo {
                 return SQL("\(boolean) \(key) IS NOT NULL")
@@ -38,7 +38,7 @@ public struct WhereColumn: WhereClause {
     
     // MARK: - SQLConvertible
     
-    public func toSQL() -> SQL {
+    public var sql: SQL {
         return SQL("\(boolean) \(first) \(op) \(second.description)")
     }
 }
@@ -51,12 +51,10 @@ public struct WhereNested: WhereClause {
     
     // MARK: - SQLConvertible
     
-    public func toSQL() -> SQL {
+    public var sql: SQL {
         let query = self.closure(Query(database: self.database))
         let (sql, bindings) = QueryHelpers.groupSQL(values: query.wheres)
-        let clauses = QueryHelpers.removeLeadingBoolean(
-            sql.joined(separator: " ")
-        )
+        let clauses = QueryHelpers.removeLeadingBoolean(sql.joined(separator: " "))
         return SQL("\(boolean) (\(clauses))", bindings: bindings)
     }
 }
@@ -74,7 +72,7 @@ public struct WhereIn: WhereClause {
     
     // MARK: - SQLConvertible
     
-    public func toSQL() -> SQL {
+    public var sql: SQL {
         let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
         return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
     }
@@ -87,7 +85,7 @@ public struct WhereRaw: WhereClause {
     
     // MARK: - SQLConvertible
     
-    public func toSQL() -> SQL {
+    public var sql: SQL {
         return SQL("\(boolean) \(self.query)", bindings: values)
     }
 }

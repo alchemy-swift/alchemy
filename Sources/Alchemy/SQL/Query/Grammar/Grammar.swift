@@ -68,7 +68,7 @@ open class Grammar {
 
     open func compileOrders(_ query: Query, orders: [OrderClause]) -> SQL? {
         if orders.isEmpty { return nil }
-        let ordersSQL = orders.map { $0.toSQL().query }.joined(separator: ", ")
+        let ordersSQL = orders.map { $0.sql.query }.joined(separator: ", ")
         return SQL("order by \(ordersSQL)")
     }
 
