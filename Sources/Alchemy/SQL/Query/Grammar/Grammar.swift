@@ -98,6 +98,7 @@ open class Grammar {
             parameters.append(contentsOf: value.map { $0.value.value })
             placeholders.append("(\(parameterize(value.map { $0.value })))")
         }
+        
         return SQL(
             "insert into \(table) (\(columns)) values \(placeholders.joined(separator: ", "))",
             bindings: parameters
@@ -134,11 +135,11 @@ open class Grammar {
     open func compileUpdateColumns(_ query: Query, values: [String: SQLValueConvertible]) -> SQL {
         var bindings: [SQLValue] = []
         var parts: [String] = []
+        
         for value in values {
-            if let expression = value.value as? Expression {
-                parts.append("\(value.key) = \(expression.description)")
-            }
-            else {
+            if let expression = value.value as? SQL {
+                parts.append("\(value.key) = \(expression.query)")
+            } else {
                 bindings.append(value.value.value)
                 parts.append("\(value.key) = ?")
             }
@@ -256,9 +257,10 @@ open class Grammar {
     }
 
     private func parameter(_ value: SQLValueConvertible) -> String {
-        if let value = value as? Expression {
-            return value.description
+        if let value = value as? SQL {
+            return value.query
         }
+        
         return "?"
     }
 

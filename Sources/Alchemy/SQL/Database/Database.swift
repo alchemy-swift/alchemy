@@ -22,21 +22,6 @@ public final class Database: Service {
         self.driver = driver
     }
     
-    /// Start a QueryBuilder query on this database. See `Query` or
-    /// QueryBuilder guides.
-    ///
-    /// Usage:
-    /// ```swift
-    /// if let row = try await database.query().from("users").where("id" == 1).first() {
-    ///     print("Got a row with fields: \(row.allColumns)")
-    /// }
-    /// ```
-    ///
-    /// - Returns: A `Query` builder.
-    public func query() -> Query {
-        Query(database: driver)
-    }
-    
     /// Run a parameterized query on the database. Parameterization
     /// helps protect against SQL injection.
     ///
@@ -78,11 +63,6 @@ public final class Database: Service {
     /// - Throws: Any error that occurred when shutting down.
     public func shutdown() throws {
         try driver.shutdown()
-    }
-    
-    /// Returns a `Query` for the default database.
-    public static func query() -> Query {
-        Query(database: Database.default.driver)
     }
 }
 

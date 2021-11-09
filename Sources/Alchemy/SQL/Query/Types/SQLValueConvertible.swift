@@ -4,10 +4,6 @@ public protocol SQLValueConvertible {
     var value: SQLValue { get }
 }
 
-extension SQLValueConvertible {
-    public static var nilValue: SQLValue { .null }
-}
-
 extension SQLValue: SQLValueConvertible {
     public var value: SQLValue { self }
 }
@@ -37,9 +33,9 @@ extension UUID: SQLValueConvertible {
 }
 
 extension Optional: SQLValueConvertible where Wrapped: SQLValueConvertible {
-    public var value: SQLValue { self?.value ?? Wrapped.nilValue }
+    public var value: SQLValue { self?.value ?? .null }
 }
 
 extension RawRepresentable where RawValue: SQLValueConvertible {
-    public var value: SQLValue { self.rawValue.value }
+    public var value: SQLValue { rawValue.value }
 }

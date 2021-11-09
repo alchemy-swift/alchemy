@@ -1,9 +1,9 @@
 import Foundation
 
 /// A clause for ordering rows by a certain column.
-public struct OrderClause: Sequelizable {
+public struct OrderClause: SQLConvertible {
     /// A sorting direction.
-    public enum Sort: String {
+    public enum Direction: String {
         /// Sort elements in ascending order.
         case asc
         /// Sort elements in descending order.
@@ -13,9 +13,9 @@ public struct OrderClause: Sequelizable {
     /// The column to order by.
     let column: Column
     /// The direction to order by.
-    let direction: Sort
+    let direction: Direction
     
-    // MARK: - Sequelizable
+    // MARK: - SQLConvertible
     
     public func toSQL() -> SQL {
         if let raw = column as? SQL {

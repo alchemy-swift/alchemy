@@ -11,7 +11,7 @@ enum QueryHelpers {
         return value
     }
 
-    static func groupSQL(values: [Sequelizable]) -> ([String], [SQLValue]) {
+    static func groupSQL(values: [SQLConvertible]) -> ([String], [SQLValue]) {
         self.groupSQL(values: values.map { $0.toSQL() })
     }
 

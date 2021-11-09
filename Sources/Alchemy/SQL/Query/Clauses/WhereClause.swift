@@ -1,6 +1,6 @@
 import Foundation
 
-protocol WhereClause: Sequelizable {}
+protocol WhereClause: SQLConvertible {}
 
 public enum WhereBoolean: String {
     case and
@@ -13,7 +13,7 @@ public struct WhereValue: WhereClause {
     let value: SQLValue
     var boolean: WhereBoolean = .and
     
-    // MARK: - Sequelizable
+    // MARK: - SQLConvertible
     
     public func toSQL() -> SQL {
         if self.value == .null {
@@ -25,7 +25,7 @@ public struct WhereValue: WhereClause {
                 fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
             }
         } else {
-            return SQL("\(boolean) \(key) \(op) ?", binding: value)
+            return SQL("\(boolean) \(key) \(op) ?", bindings: [value])
         }
     }
 }
@@ -33,10 +33,10 @@ public struct WhereValue: WhereClause {
 public struct WhereColumn: WhereClause {
     let first: String
     let op: Operator
-    let second: Expression
+    let second: String
     var boolean: WhereBoolean = .and
     
-    // MARK: - Sequelizable
+    // MARK: - SQLConvertible
     
     public func toSQL() -> SQL {
         return SQL("\(boolean) \(first) \(op) \(second.description)")
@@ -49,7 +49,7 @@ public struct WhereNested: WhereClause {
     let closure: WhereNestedClosure
     var boolean: WhereBoolean = .and
     
-    // MARK: - Sequelizable
+    // MARK: - SQLConvertible
     
     public func toSQL() -> SQL {
         let query = self.closure(Query(database: self.database))
@@ -72,7 +72,7 @@ public struct WhereIn: WhereClause {
     let type: InType
     var boolean: WhereBoolean = .and
     
-    // MARK: - Sequelizable
+    // MARK: - SQLConvertible
     
     public func toSQL() -> SQL {
         let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
@@ -85,7 +85,7 @@ public struct WhereRaw: WhereClause {
     var values: [SQLValue] = []
     var boolean: WhereBoolean = .and
     
-    // MARK: - Sequelizable
+    // MARK: - SQLConvertible
     
     public func toSQL() -> SQL {
         return SQL("\(boolean) \(self.query)", bindings: values)

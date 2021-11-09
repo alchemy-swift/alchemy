@@ -43,7 +43,7 @@ enum ColumnConstraint {
 ///
 /// `Default` is a Swift type that can be used to add a default value
 /// to this column.
-public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderErased {
+public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     /// The grammar of this builder.
     private let grammar: Grammar
     
@@ -203,27 +203,27 @@ extension CreateColumnBuilder where Default == SQLJSON {
     }
 }
 
-extension Bool: Sequelizable {
+extension Bool: SQLConvertible {
     public func toSQL() -> SQL { SQL("\(self)") }
 }
 
-extension UUID: Sequelizable {
+extension UUID: SQLConvertible {
     public func toSQL() -> SQL { SQL("'\(self.uuidString)'") }
 }
 
-extension String: Sequelizable {
+extension String: SQLConvertible {
     public func toSQL() -> SQL { SQL("'\(self)'") }
 }
 
-extension Int: Sequelizable {
+extension Int: SQLConvertible {
     public func toSQL() -> SQL { SQL("\(self)") }
 }
 
-extension Double: Sequelizable {
+extension Double: SQLConvertible {
     public func toSQL() -> SQL { SQL("\(self)") }
 }
 
-extension Date: Sequelizable {
+extension Date: SQLConvertible {
     /// The date formatter for turning this `Date` into an SQL string.
     private static let sqlFormatter: DateFormatter = {
         let df = DateFormatter()
@@ -232,7 +232,7 @@ extension Date: Sequelizable {
         return df
     }()
     
-    // MARK: Sequelizable
+    // MARK: SQLConvertible
     
     public func toSQL() -> SQL { SQL("'\(Date.sqlFormatter.string(from: self))'") }
 }
@@ -244,11 +244,11 @@ extension Date: Sequelizable {
 /// generic `default` function on `CreateColumnBuilder`. Instead,
 /// opt to use `.default(jsonString:)` or `.default(encodable:)`
 /// to set a default value for a JSON column.
-public struct SQLJSON: Sequelizable {
+public struct SQLJSON: SQLConvertible {
     /// `init()` is kept private to this from ever being instantiated.
     private init() {}
     
-    // MARK: Sequelizable
+    // MARK: SQLConvertible
     
     public func toSQL() -> SQL { SQL() }
 }
