@@ -70,7 +70,7 @@ extension Query {
     ///   it means this will run two queries; one to insert and one to
     ///   fetch.
     /// - Returns: The inserted rows.
-    public func insert(_ value: OrderedDictionary<String, SQLValueConvertible>, returnItems: Bool = true) async throws -> [SQLRow] {
+    public func insert(_ value: [String: SQLValueConvertible], returnItems: Bool = true) async throws -> [SQLRow] {
         try await insert([value], returnItems: returnItems)
     }
 
@@ -87,7 +87,7 @@ extension Query {
     ///   _per value_; one to insert and one to fetch. If this is
     ///   `false`, MySQL will run a single query inserting all values.
     /// - Returns: The inserted rows.
-    public func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], returnItems: Bool = true) async throws -> [SQLRow] {
+    public func insert(_ values: [[String: SQLValueConvertible]], returnItems: Bool = true) async throws -> [SQLRow] {
         try await database.grammar.insert(from, values: values, database: self.database, returnItems: returnItems)
     }
 

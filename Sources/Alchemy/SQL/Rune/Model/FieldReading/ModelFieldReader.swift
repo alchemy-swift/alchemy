@@ -1,5 +1,4 @@
 import Foundation
-import OrderedCollections
 
 /// Used so `Relationship` types can know not to encode themselves to
 /// a `ModelEncoder`.
@@ -35,9 +34,9 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     /// - Throws: A `DatabaseCodingError` if there is an error reading
     ///   fields from `value`.
     /// - Returns: An ordered dictionary of the model's columns and values.
-    func getFields(of model: M) throws -> OrderedDictionary<String, SQLValue> {
+    func getFields(of model: M) throws -> [String: SQLValue] {
         try model.encode(to: self)
-        let toReturn = OrderedDictionary(uniqueKeysWithValues: readFields.map { ($0.column, $0.value) })
+        let toReturn = Dictionary(uniqueKeysWithValues: readFields)
         readFields = []
         return toReturn
     }

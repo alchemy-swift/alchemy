@@ -1,4 +1,3 @@
-import OrderedCollections
 import NIO
 
 /// A MySQL specific Grammar for compiling QueryBuilder statements
@@ -46,7 +45,7 @@ final class MySQLGrammar: Grammar {
         true
     }
     
-    override func insert(_ table: String, values: [OrderedDictionary<String, SQLValueConvertible>], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
+    override func insert(_ table: String, values: [[String: SQLValueConvertible]], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
         guard returnItems, let database = database as? MySQLDatabase else {
             return try await super.insert(table, values: values, database: database, returnItems: returnItems)
         }

@@ -12,7 +12,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-collections.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-nio", from: "2.33.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.6.0"),
         .package(url: "https://github.com/apple/swift-nio-http2.git", from: "1.9.0"),
@@ -43,7 +42,6 @@ let package = Package(
                 /// External dependencies
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
-                .product(name: "OrderedCollections", package: "swift-collections"),
                 .product(name: "PostgresKit", package: "postgres-kit"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "MySQLKit", package: "mysql-kit"),

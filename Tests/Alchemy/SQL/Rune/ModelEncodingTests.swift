@@ -1,6 +1,5 @@
 @testable import Alchemy
 import XCTest
-import OrderedCollections
 
 final class ModelEncodingTests: XCTestCase {
     func testEncoding() throws {
@@ -20,7 +19,7 @@ final class ModelEncodingTests: XCTestCase {
         )
         
         let jsonData = try TestModel.jsonEncoder.encode(json)
-        let expectedFields: OrderedDictionary<String, SQLValue> = [
+        let expectedFields: [String: SQLValue] = [
             "string": .string("one"),
             "int": .int(2),
             "uuid": .uuid(uuid),
@@ -48,7 +47,7 @@ final class ModelEncodingTests: XCTestCase {
             "valueTwo",
             "valueThreeInt",
             "snake_case"
-        ], fields.keys)
+        ].sorted(), fields.map { $0.key }.sorted())
     }
     
     func testCustomJSONEncoder() throws {

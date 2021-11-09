@@ -188,7 +188,7 @@ extension Model {
     ///   database.
     public func update(db: Database = .default) async throws -> Self {
         let id = try getID()
-        let fields = try fields().dictionary
+        let fields = try fields()
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return self
     }
@@ -197,7 +197,7 @@ extension Model {
         let id = try self.getID()
         var copy = self
         updateClosure(&copy)
-        let fields = try copy.fields().dictionary
+        let fields = try copy.fields()
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return copy
     }
@@ -225,7 +225,8 @@ extension Model {
     ///   database. (an `id` being populated, for example).
     public func insert(db: Database = .default) async throws -> Self {
         try await Self.query(database: db)
-            .insert(try self.fields().mapValues { $0 }).first
+            .insert(try fields().mapValues { $0 })
+            .first
             .unwrap(or: RuneError.notFound)
             .decode(Self.self)
     }

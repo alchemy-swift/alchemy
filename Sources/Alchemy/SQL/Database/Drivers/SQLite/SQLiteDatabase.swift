@@ -1,4 +1,3 @@
-import OrderedCollections
 import SQLiteKit
 
 final class SQLiteDatabase: DatabaseDriver {

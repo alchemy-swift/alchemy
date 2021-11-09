@@ -1,5 +1,4 @@
 import Foundation
-import OrderedCollections
 
 /// Used for compiling query builders into raw SQL statements.
 open class Grammar {
@@ -94,26 +93,28 @@ open class Grammar {
         offset.map { SQL("offset \($0)") }
     }
 
-    open func compileInsert(_ table: String, values: [OrderedDictionary<String, SQLValueConvertible>]) throws -> SQL {
+    open func compileInsert(_ table: String, values: [[String: SQLValueConvertible]]) throws -> SQL {
         guard !values.isEmpty else {
             return SQL("insert into \(table) default values")
         }
 
-        let columns = values[0].map { $0.key }.joined(separator: ", ")
+        let columns = values[0].map { $0.key }
         var parameters: [SQLValue] = []
         var placeholders: [String] = []
 
         for value in values {
-            parameters.append(contentsOf: value.map { $0.value.value })
-            placeholders.append("(\(parameterize(value.map { $0.value })))")
+            let orderedValues = columns.compactMap { value[$0]?.value }
+            parameters.append(contentsOf: orderedValues)
+            placeholders.append("(\(parameterize(orderedValues)))")
         }
         
-        return SQL("insert into \(table) (\(columns)) values \(placeholders.joined(separator: ", "))", bindings: parameters)
+        let columnsJoined = columns.joined(separator: ", ")
+        return SQL("insert into \(table) (\(columnsJoined)) values \(placeholders.joined(separator: ", "))", bindings: parameters)
     }
     
     open func insert(
         _ table: String,
-        values: [OrderedDictionary<String, SQLValueConvertible>],
+        values: [[String: SQLValueConvertible]],
         database: DatabaseDriver,
         returnItems: Bool
     ) async throws -> [SQLRow] {

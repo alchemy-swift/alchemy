@@ -1,6 +1,5 @@
 import Foundation
 import NIO
-import OrderedCollections
 
 public class Query {
     let database: DatabaseDriver

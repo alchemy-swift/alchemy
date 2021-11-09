@@ -3,7 +3,7 @@ final class SQLiteGrammar: Grammar {
         true
     }
     
-    override func insert(_ table: String, values: [OrderedDictionary<String, SQLValueConvertible>], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
+    override func insert(_ table: String, values: [[String: SQLValueConvertible]], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
         return try await database.transaction { conn in
             let sql = try super.compileInsert(table, values: values)
             _ = try await conn.runRawQuery(sql.statement, values: sql.bindings)
