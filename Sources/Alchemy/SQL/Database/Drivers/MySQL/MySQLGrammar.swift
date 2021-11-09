@@ -4,7 +4,7 @@ import NIO
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
 final class MySQLGrammar: Grammar {
-    override func compileDropIndex(table: String, indexName: String) -> SQL {
+    override func compileDropIndex(on table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName) ON \(table)")
     }
     
@@ -46,14 +46,12 @@ final class MySQLGrammar: Grammar {
         true
     }
     
-    // MySQL needs custom insert behavior, since bulk inserting and
-    // returning is not supported.
-    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
-        guard returnItems, let table = query.from, let database = query.database as? MySQLDatabase else {
-            return try await super.insert(values, query: query, returnItems: returnItems)
+    override func insert(_ table: String, values: [OrderedDictionary<String, SQLValueConvertible>], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
+        guard returnItems, let database = database as? MySQLDatabase else {
+            return try await super.insert(table, values: values, database: database, returnItems: returnItems)
         }
         
-        let inserts = try values.map { try compileInsert(query, values: [$0]) }
+        let inserts = try values.map { try compileInsert(table, values: [$0]) }
         var results: [SQLRow] = []
         try await withThrowingTaskGroup(of: [SQLRow].self) { group in
             for insert in inserts {

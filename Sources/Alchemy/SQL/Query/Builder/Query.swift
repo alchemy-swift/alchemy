@@ -6,20 +6,21 @@ public class Query {
     let database: DatabaseDriver
     
     var columns: [String] = ["*"]
-    var joins: [Join]? = nil
+    var joins: [Join] = []
     var wheres: [Where] = []
     var groups: [String] = []
     var havings: [Where] = []
     var orders: [Order] = []
     
-    var from: String?
+    var from: String
     var limit: Int? = nil
     var offset: Int? = nil
     var isDistinct = false
     var lock: String? = nil
 
-    public init(database: DatabaseDriver) {
+    public init(database: DatabaseDriver, from: String) {
         self.database = database
+        self.from = from
     }
 
     /// Set the columns that should be returned by the query.
@@ -32,33 +33,6 @@ public class Query {
     public func select(_ columns: [String] = ["*"]) -> Self {
         self.columns = columns
         return self
-    }
-
-    /// Set the table to perform a query from.
-    ///
-    /// - Parameters:
-    ///   - table: The table to run the query on.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public func table(_ table: String) -> Self {
-        self.from = table
-        return self
-    }
-
-    /// An alias for `table(_ table: String)` to be used when running.
-    /// a `select` query that also lets you alias the table name.
-    ///
-    /// - Parameters:
-    ///   - table: The table to select data from.
-    ///   - alias: An alias to use in place of table name. Defaults to
-    ///     `nil`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public func from(_ table: String, as alias: String? = nil) -> Self {
-        guard let alias = alias else {
-            return self.table(table)
-        }
-        return self.table("\(table) as \(alias)")
     }
 
     /// Set query to only return distinct entries.

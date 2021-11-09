@@ -26,10 +26,10 @@ extension Query {
         ///   - database: The database the join table is on.
         ///   - type: The type of join this is.
         ///   - table: The name of the table to join to.
-        init(database: DatabaseDriver, type: JoinType, table: String) {
+        init(database: DatabaseDriver, type: JoinType, table: String, from: String) {
             self.type = type
             self.table = table
-            super.init(database: database)
+            super.init(database: database, from: table)
         }
         
         func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Join {
@@ -55,13 +55,10 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func join(table: String, first: String, op: Operator = .equals, second: String, type: JoinType = .inner) -> Self {
-        let join = Join(database: database, type: type, table: table).on(first: first, op: op, second: second)
-        if joins == nil {
-            joins = [join]
-        } else {
-            joins?.append(join)
-        }
-        
+        joins.append(
+            Join(database: database, type: type, table: table, from: from)
+                .on(first: first, op: op, second: second)
+        )
         return self
     }
 

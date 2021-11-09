@@ -70,10 +70,7 @@ extension Query {
     ///   it means this will run two queries; one to insert and one to
     ///   fetch.
     /// - Returns: The inserted rows.
-    public func insert(
-        _ value: OrderedDictionary<String, SQLValueConvertible>,
-        returnItems: Bool = true
-    ) async throws -> [SQLRow] {
+    public func insert(_ value: OrderedDictionary<String, SQLValueConvertible>, returnItems: Bool = true) async throws -> [SQLRow] {
         try await insert([value], returnItems: returnItems)
     }
 
@@ -90,11 +87,8 @@ extension Query {
     ///   _per value_; one to insert and one to fetch. If this is
     ///   `false`, MySQL will run a single query inserting all values.
     /// - Returns: The inserted rows.
-    public func insert(
-        _ values: [OrderedDictionary<String, SQLValueConvertible>],
-        returnItems: Bool = true
-    ) async throws -> [SQLRow] {
-        try await database.grammar.insert(values, query: self, returnItems: returnItems)
+    public func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], returnItems: Bool = true) async throws -> [SQLRow] {
+        try await database.grammar.insert(from, values: values, database: self.database, returnItems: returnItems)
     }
 
     /// Perform an update on all data matching the query in the
@@ -114,13 +108,13 @@ extension Query {
     /// - Parameter values: An dictionary containing the values to be
     ///   updated.
     public func update(values: [String: SQLValueConvertible]) async throws {
-        let sql = try database.grammar.compileUpdate(self, values: values)
+        let sql = try database.grammar.compileUpdate(from, joins: joins, wheres: wheres, values: values)
         _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
-        let sql = try database.grammar.compileDelete(self)
+        let sql = try database.grammar.compileDelete(from, wheres: wheres)
         _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
     }
 }

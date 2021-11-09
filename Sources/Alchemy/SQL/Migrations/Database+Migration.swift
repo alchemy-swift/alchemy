@@ -47,9 +47,9 @@ extension Database {
     private func getMigrations() async throws -> [AlchemyMigration] {
         let count: Int
         if driver is PostgresDatabase || driver is MySQLDatabase {
-            count = try await query().from("information_schema.tables").where("table_name" == AlchemyMigration.tableName).count()
+            count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.tableName).count()
         } else {
-            count = try await query().from("sqlite_master")
+            count = try await table("sqlite_master")
                 .where("type" == "table")
                 .where(Query.Where(type: .value(key: "name", op: .notLike, value: .string("sqlite_%"))))
                 .count()

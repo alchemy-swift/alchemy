@@ -4,7 +4,7 @@ extension Query {
     public enum WhereType {
         case value(key: String, op: Operator, value: SQLValue)
         case column(first: String, op: Operator, second: String)
-        case nested(driver: DatabaseDriver, closure: (Query) -> Query)
+        case nested(driver: DatabaseDriver, closure: (Query) -> Query, fromTable: String)
         case `in`(key: String, values: [SQLValue], type: WhereInType)
         case raw(SQL)
     }
@@ -39,8 +39,8 @@ extension Query {
                 }
             case .column(let first, let op, let second):
                 return SQL("\(boolean) \(first) \(op) \(second)")
-            case .nested(let driver, let closure):
-                let query = closure(Query(database: driver))
+            case .nested(let driver, let closure, let fromTable):
+                let query = closure(Query(database: driver, from: fromTable))
                 let nestedSQL = query.wheres.joined().droppingLeadingBoolean()
                 return SQL("\(boolean) (\(nestedSQL))", bindings: nestedSQL.bindings)
             case .in(let key, let values, let type):
@@ -105,7 +105,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ closure: @escaping (Query) -> Query, boolean: WhereBoolean = .and) -> Self {
-        wheres.append(Where(type: .nested(driver: database, closure: closure), boolean: boolean))
+        wheres.append(Where(type: .nested(driver: database, closure: closure, fromTable: from), boolean: boolean))
         return self
     }
 

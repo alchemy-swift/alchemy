@@ -3,15 +3,11 @@ final class SQLiteGrammar: Grammar {
         true
     }
     
-    override func insert(_ values: [OrderedDictionary<String, SQLValueConvertible>], query: Query, returnItems: Bool) async throws -> [SQLRow] {
-        return try await query.database.transaction { conn in
-            let sql = try super.compileInsert(query, values: values)
-            let initial = try await conn.runRawQuery(sql.statement, values: sql.bindings)
-            if let from = query.from {
-                return try await conn.runRawQuery("select * from \(from) where id = last_insert_rowid()", values: [])
-            } else {
-                return initial
-            }
+    override func insert(_ table: String, values: [OrderedDictionary<String, SQLValueConvertible>], database: DatabaseDriver, returnItems: Bool) async throws -> [SQLRow] {
+        return try await database.transaction { conn in
+            let sql = try super.compileInsert(table, values: values)
+            _ = try await conn.runRawQuery(sql.statement, values: sql.bindings)
+            return try await conn.runRawQuery("select * from \(table) where id = last_insert_rowid()", values: [])
         }
     }
     
