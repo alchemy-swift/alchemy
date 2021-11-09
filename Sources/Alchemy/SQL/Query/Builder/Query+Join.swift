@@ -19,6 +19,8 @@ extension Query {
         public let type: JoinType
         /// The table to join to.
         public let joinTable: String
+        /// The join conditions
+        public var joinWheres: [Query.Where] = []
         
         /// Create a join builder with a query, type, and table.
         ///
@@ -33,12 +35,23 @@ extension Query {
         }
         
         func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Join {
-            self.whereColumn(first: first, op: op, second: second, boolean: boolean)
+            joinWheres.append(Where(type: .column(first: first, op: op, second: second), boolean: boolean))
             return self
         }
 
         func orOn(first: String, op: Operator, second: String) -> Join {
-            return self.on(first: first, op: op, second: second, boolean: .or)
+            on(first: first, op: op, second: second, boolean: .or)
+        }
+        
+        override func isEqual(to other: Query) -> Bool {
+            guard let other = other as? Join else {
+                return false
+            }
+            
+            return super.isEqual(to: other) &&
+                type == other.type &&
+                joinTable == other.joinTable &&
+                joinWheres == other.joinWheres
         }
     }
     

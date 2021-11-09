@@ -7,8 +7,8 @@ extension Query {
         case noWait = "NO WAIT", skipLocked = "SKIP LOCKED"
     }
     
-    /// Adds custom SQL to the end of a SELECT query.
-    public func forLock(_ strength: LockStrength, option: LockOption? = nil) -> Self {
+    /// Adds custom locking SQL to the end of a SELECT query.
+    public func lock(for strength: LockStrength, option: LockOption? = nil) -> Self {
         lock = strength.rawValue
         if let option = option { lock?.append(" \(option.rawValue)") }
         return self

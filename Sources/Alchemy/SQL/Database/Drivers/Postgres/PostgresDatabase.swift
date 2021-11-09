@@ -2,6 +2,7 @@ import Fusion
 import Foundation
 import PostgresKit
 import NIO
+import MySQLKit
 
 /// A concrete `Database` for connecting to and querying a PostgreSQL
 /// database.
@@ -18,7 +19,7 @@ final class PostgresDatabase: DatabaseDriver {
     /// - Parameter config: the info needed to connect to the
     ///   database.
     init(config: DatabaseConfig) {
-        self.pool = EventLoopGroupConnectionPool(
+        pool = EventLoopGroupConnectionPool(
             source: PostgresConnectionSource(configuration: {
                 switch config.socket {
                 case .ip(let host, let port):
@@ -47,15 +48,19 @@ final class PostgresDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.runRawQuery(sql, values: values) }
+    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection { try await $0.query(sql, values: values) }
+    }
+    
+    func raw(_ sql: String) async throws -> [SQLRow] {
+        try await withConnection { try await $0.raw(sql) }
     }
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
         try await withConnection { conn in
-            _ = try await conn.runRawQuery("START TRANSACTION;", values: [])
+            _ = try await conn.query("START TRANSACTION;", values: [])
             let val = try await action(conn)
-            _ = try await conn.runRawQuery("COMMIT;", values: [])
+            _ = try await conn.query("COMMIT;", values: [])
             return val
         }
     }
@@ -66,28 +71,31 @@ final class PostgresDatabase: DatabaseDriver {
     
     private func withConnection<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
-            try await action(PostgresConnectionDatabase(conn: $0, grammar: self.grammar))
+            try await action($0)
         }
     }
 }
 
-/// A database driver that is wrapped around a single connection to
-/// with which to send transactions.
-private struct PostgresConnectionDatabase: DatabaseDriver {
-    let conn: PostgresConnection
-    let grammar: Grammar
+/// A database driver that is wrapped around a single connection to with which
+/// to send transactions.
+extension PostgresConnection: DatabaseDriver {
+    public var grammar: Grammar { PostgresGrammar() }
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await conn.query(sql.positionPostgresBindings(), values.map(PostgresData.init))
+    public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+        try await query(sql.positionPostgresBindings(), values.map(PostgresData.init))
             .get().rows.map(PostgresDatabaseRow.init)
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    public func raw(_ sql: String) async throws -> [SQLRow] {
+        try await simpleQuery(sql).get().map(PostgresDatabaseRow.init)
+    }
+    
+    public func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
         try await action(self)
     }
     
-    func shutdown() throws {
-        _ = conn.close()
+    public func shutdown() throws {
+        _ = close()
     }
 }
 

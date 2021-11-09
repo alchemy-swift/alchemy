@@ -43,17 +43,19 @@ final class MySQLDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.runRawQuery(sql, values: values) }
+    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection { try await $0.query(sql, values: values) }
+    }
+    
+    func raw(_ sql: String) async throws -> [SQLRow] {
+        try await withConnection { try await $0.raw(sql) }
     }
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
-        try await withConnection { database in
-            let conn = database.conn
-            // `simpleQuery` since MySQL can't handle START TRANSACTION in prepared statements.
-            _ = try await conn.simpleQuery("START TRANSACTION;").get()
-            let val = try await action(database)
-            _ = try await conn.simpleQuery("COMMIT;").get()
+        try await withConnection {
+            _ = try await $0.raw("START TRANSACTION;")
+            let val = try await action($0)
+            _ = try await $0.raw("COMMIT;")
             return val
         }
     }
@@ -74,8 +76,12 @@ private struct MySQLConnectionDatabase: DatabaseDriver {
     let conn: MySQLConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql, values.map(MySQLData.init)).get().map(MySQLDatabaseRow.init)
+    }
+    
+    func raw(_ sql: String) async throws -> [SQLRow] {
+        try await conn.simpleQuery(sql).get().map(MySQLDatabaseRow.init)
     }
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {

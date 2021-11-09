@@ -1,6 +1,6 @@
 extension Query {
     /// A clause for ordering rows by a certain column.
-    public struct Order: SQLConvertible {
+    public struct Order: SQLConvertible, Equatable {
         /// A sorting direction.
         public enum Direction: String {
             /// Sort elements in ascending order.

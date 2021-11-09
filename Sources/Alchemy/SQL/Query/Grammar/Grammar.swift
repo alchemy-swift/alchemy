@@ -24,7 +24,7 @@ open class Grammar {
             SQL("\(select) \(columns.joined(separator: ", "))"),
             SQL("from \(table)"),
             compileJoins(joins),
-            compileWheres(wheres, isJoin: false),
+            compileWheres(wheres),
             compileGroups(groups),
             compileHavings(havings),
             compileOrders(orders),
@@ -41,7 +41,7 @@ open class Grammar {
         
         var bindings: [SQLValue] = []
         let query = joins.compactMap { join -> String? in
-            guard let whereSQL = compileWheres(join.wheres, isJoin: true) else {
+            guard let whereSQL = compileWheres(join.joinWheres, isJoin: true) else {
                 return nil
             }
             
@@ -59,7 +59,7 @@ open class Grammar {
         return SQL(query, bindings: bindings)
     }
     
-    open func compileWheres(_ wheres: [Query.Where], isJoin: Bool) -> SQL? {
+    open func compileWheres(_ wheres: [Query.Where], isJoin: Bool = false) -> SQL? {
         guard wheres.count > 0 else {
             return nil
         }
@@ -148,7 +148,7 @@ open class Grammar {
         bindings += columnSQL.bindings
         base += " set \(columnSQL.statement)"
 
-        if let whereSQL = compileWheres(wheres, isJoin: false) {
+        if let whereSQL = compileWheres(wheres) {
             bindings += whereSQL.bindings
             base += " \(whereSQL.statement)"
         }
@@ -157,7 +157,7 @@ open class Grammar {
     }
 
     open func compileDelete(_ table: String, wheres: [Query.Where]) throws -> SQL {
-        if let whereSQL = compileWheres(wheres, isJoin: false) {
+        if let whereSQL = compileWheres(wheres) {
             return SQL("delete from \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
         } else {
             return SQL("delete from \(table)")

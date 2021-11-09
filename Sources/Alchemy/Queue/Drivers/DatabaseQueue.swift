@@ -27,7 +27,7 @@ final class DatabaseQueue: QueueDriver {
                 .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
                 .orderBy(column: "queued_at")
                 .limit(1)
-                .forLock(.update, option: .skipLocked)
+                .lock(for: .update, option: .skipLocked)
                 .firstModel()
             
             return try await job?.update(db: conn) {

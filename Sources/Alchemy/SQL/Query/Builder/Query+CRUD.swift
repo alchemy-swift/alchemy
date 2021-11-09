@@ -23,7 +23,7 @@ extension Query {
             limit: limit,
             offset: offset,
             lock: lock)
-        return try await database.runRawQuery(sql.statement, values: sql.bindings)
+        return try await database.query(sql.statement, values: sql.bindings)
     }
 
     /// Run a select query and return the first database row only row.
@@ -84,7 +84,7 @@ extension Query {
     ///   inserted.
     public func insert(_ values: [[String: SQLValueConvertible]]) async throws {
         let sql = database.grammar.compileInsert(table, values: values)
-        _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
+        _ = try await database.query(sql.statement, values: sql.bindings)
         return
     }
     
@@ -102,7 +102,7 @@ extension Query {
         return try await database.transaction { conn in
             var toReturn: [SQLRow] = []
             for sql in statements {
-                toReturn = try await conn.runRawQuery(sql.statement, values: sql.bindings)
+                toReturn = try await conn.query(sql.statement, values: sql.bindings)
             }
             
             return toReturn
@@ -127,12 +127,12 @@ extension Query {
     ///   updated.
     public func update(values: [String: SQLValueConvertible]) async throws {
         let sql = try database.grammar.compileUpdate(table, joins: joins, wheres: wheres, values: values)
-        _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
+        _ = try await database.query(sql.statement, values: sql.bindings)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
         let sql = try database.grammar.compileDelete(table, wheres: wheres)
-        _ = try await database.runRawQuery(sql.statement, values: sql.bindings)
+        _ = try await database.query(sql.statement, values: sql.bindings)
     }
 }

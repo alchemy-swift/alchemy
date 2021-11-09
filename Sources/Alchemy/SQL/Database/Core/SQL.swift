@@ -15,6 +15,10 @@ extension SQL: ExpressibleByStringLiteral {
     }
 }
 
+extension SQL: SQLConvertible {
+    public var sql: SQL { self }
+}
+
 extension SQL: SQLValueConvertible {
     public var value: SQLValue {
         .string(statement)

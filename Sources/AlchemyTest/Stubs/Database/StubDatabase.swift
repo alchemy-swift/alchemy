@@ -6,7 +6,7 @@ public final class StubDatabase: DatabaseDriver {
     
     init() {}
     
-    public func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+    public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         guard !isShutdown else {
             throw StubDatabaseError("This stubbed database has been shutdown.")
         }
@@ -16,6 +16,10 @@ public final class StubDatabase: DatabaseDriver {
         }
         
         return mockedRows
+    }
+    
+    public func raw(_ sql: String) async throws -> [SQLRow] {
+        try await query(sql, values: [])
     }
     
     public func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {

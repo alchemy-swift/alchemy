@@ -1,10 +1,10 @@
 protocol WhereClause: SQLConvertible {}
 
 extension Query {
-    public enum WhereType {
+    public indirect enum WhereType: Equatable {
         case value(key: String, op: Operator, value: SQLValue)
         case column(first: String, op: Operator, second: String)
-        case nested(driver: DatabaseDriver, closure: (Query) -> Query, fromTable: String)
+        case nested(wheres: [Where])
         case `in`(key: String, values: [SQLValue], type: WhereInType)
         case raw(SQL)
     }
@@ -19,7 +19,7 @@ extension Query {
         case notIn
     }
     
-    public struct Where: SQLConvertible {
+    public struct Where: SQLConvertible, Equatable {
         public let type: WhereType
         public var boolean: WhereBoolean = .and
         
@@ -39,9 +39,8 @@ extension Query {
                 }
             case .column(let first, let op, let second):
                 return SQL("\(boolean) \(first) \(op) \(second)")
-            case .nested(let driver, let closure, let fromTable):
-                let query = closure(Query(database: driver, table: fromTable))
-                let nestedSQL = query.wheres.joined().droppingLeadingBoolean()
+            case .nested(let wheres):
+                let nestedSQL = wheres.joined().droppingLeadingBoolean()
                 return SQL("\(boolean) (\(nestedSQL))", bindings: nestedSQL.bindings)
             case .in(let key, let values, let type):
                 let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
@@ -105,7 +104,8 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ closure: @escaping (Query) -> Query, boolean: WhereBoolean = .and) -> Self {
-        wheres.append(Where(type: .nested(driver: database, closure: closure, fromTable: table), boolean: boolean))
+        let query = closure(Query(database: database, table: table))
+        wheres.append(Where(type: .nested(wheres: query.wheres), boolean: boolean))
         return self
     }
 

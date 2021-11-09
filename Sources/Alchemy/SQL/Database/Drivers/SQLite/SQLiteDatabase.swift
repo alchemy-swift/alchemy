@@ -34,15 +34,19 @@ final class SQLiteDatabase: DatabaseDriver {
     
     // MARK: Database
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.runRawQuery(sql, values: values) }
+    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection { try await $0.query(sql, values: values) }
+    }
+    
+    func raw(_ sql: String) async throws -> [SQLRow] {
+        try await withConnection { try await $0.raw(sql) }
     }
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
         try await withConnection { conn in
-            _ = try await conn.runRawQuery("BEGIN;", values: [])
+            _ = try await conn.query("BEGIN;", values: [])
             let val = try await action(conn)
-            _ = try await conn.runRawQuery("COMMIT;", values: [])
+            _ = try await conn.query("COMMIT;", values: [])
             return val
         }
     }
@@ -62,8 +66,12 @@ private struct SQLiteConnectionDatabase: DatabaseDriver {
     let conn: SQLiteConnection
     let grammar: Grammar
     
-    func runRawQuery(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql, values.map(SQLiteData.init)).get().map(SQLiteDatabaseRow.init)
+    }
+    
+    func raw(_ sql: String) async throws -> [SQLRow] {
+        try await conn.query(sql).get().map(SQLiteDatabaseRow.init)
     }
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
