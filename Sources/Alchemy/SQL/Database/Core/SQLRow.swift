@@ -1,3 +1,5 @@
+import Foundation
+
 /// A row of data returned from a database. Various database packages
 /// can use this as an abstraction around their internal row types.
 public protocol SQLRow {
@@ -23,8 +25,12 @@ public protocol SQLRow {
 }
 
 extension SQLRow {
+    public func decode<D: Decodable>(_ type: D.Type) throws -> D {
+        try D(from: SQLRowDecoder(row: self, keyMapping: .useDefaultKeys, jsonDecoder: JSONDecoder()))
+    }
+    
     public func decode<M: Model>(_ type: M.Type) throws -> M {
-        try M(from: SQLRowDecoder<M>(row: self))
+        try M(from: SQLRowDecoder(row: self, keyMapping: M.keyMapping, jsonDecoder: M.jsonDecoder))
     }
     
     /// Subscript for convenience access.

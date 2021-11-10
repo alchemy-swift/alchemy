@@ -44,9 +44,9 @@ final class SQLiteDatabase: DatabaseDriver {
     
     func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
         try await withConnection { conn in
-            _ = try await conn.query("BEGIN;", values: [])
+            _ = try await conn.raw("BEGIN;")
             let val = try await action(conn)
-            _ = try await conn.query("COMMIT;", values: [])
+            _ = try await conn.raw("COMMIT;")
             return val
         }
     }

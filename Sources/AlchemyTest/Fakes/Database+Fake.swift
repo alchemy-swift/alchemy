@@ -10,21 +10,21 @@ extension Database {
     ///     before returning from this function. Defaults to `true`.
     ///   - seed: Whether the database should be synchronously seeded
     ///     before returning from this function. Defaults to `false`.
-    public static func fake(_ name: String? = nil, migrate: Bool = true, seed: Bool = false) {
+    public static func fake(_ name: String? = nil, migrations: [Migration] = [], seeders: [Seeder] = []) {
         let db = Database.sqlite
+        db.migrations = migrations
+        db.seeders = seeders
         if let name = name {
-            db.migrations = named(name).migrations
             config(name, db)
         } else {
-            db.migrations = `default`.migrations
             config(default: db)
         }
         
         let sem = DispatchSemaphore(value: 0)
         Task {
             do {
-                if migrate { try await db.migrate() }
-                if seed { try await db.seed() }
+                if !migrations.isEmpty { try await db.migrate() }
+                if !seeders.isEmpty { try await db.seed() }
             } catch {
                 Log.error("Error initializing fake database: \(error)")
             }

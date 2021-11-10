@@ -139,7 +139,8 @@ public class ModelQuery<M: Model>: Query {
             
             // Load the matching `To` rows
             let allRows = fromResults.map(\.1)
-            let toResults = try await nested(config.load(allRows))
+            let query = try nested(config.load(allRows, database: Database(driver: self.database)))
+            let toResults = try await query
                 ._allModels(columns: ["\(R.To.Value.tableName).*", toJoinKey])
                 .map { (try R.To.from($0), $1) }
             
@@ -172,20 +173,21 @@ public class ModelQuery<M: Model>: Query {
         for query in eagerLoadQueries {
             results = try await query(results)
         }
+        
         return results
     }
 }
 
 private extension RelationshipMapping {
-    func load<M: Model>(_ values: [SQLRow]) throws -> ModelQuery<M> {
-        var query = M.query()
+    func load<M: Model>(_ values: [SQLRow], database: Database) throws -> ModelQuery<M> {
+        var query = M.query(database: database)
         query.table = toTable
         var whereKey = "\(toTable).\(toKey)"
         if let through = through {
             whereKey = "\(through.table).\(through.fromKey)"
             query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
         }
-
+        
         let ids = try values.map { try $0.get(fromKey).value }
         query = query.where(key: "\(whereKey)", in: ids.uniques)
         return query

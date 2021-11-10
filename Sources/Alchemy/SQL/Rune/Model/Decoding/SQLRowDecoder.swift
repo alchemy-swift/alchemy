@@ -9,21 +9,19 @@ protocol ModelDecoder: Decoder {}
 /// columns with matching names (either the same
 /// name or a specific name mapping based on
 /// the supplied `keyMapping`).
-struct SQLRowDecoder<M: Model>: ModelDecoder {
+struct SQLRowDecoder: ModelDecoder {
     /// The row that will be decoded out of.
     let row: SQLRow
+    let keyMapping: DatabaseKeyMapping
+    let jsonDecoder: JSONDecoder
     
     // MARK: Decoder
     
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
     
-    func container<Key>(
-        keyedBy type: Key.Type
-    ) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
-        KeyedDecodingContainer(
-            KeyedContainer<Key, M>(row: self.row)
-        )
+    func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
+        KeyedDecodingContainer(KeyedContainer<Key>(row: row, keyMapping: keyMapping, jsonDecoder: jsonDecoder))
     }
     
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -40,14 +38,16 @@ struct SQLRowDecoder<M: Model>: ModelDecoder {
 
 /// A `KeyedDecodingContainerProtocol` used to decode keys from a
 /// `SQLRow`.
-private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerProtocol {
+private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     /// The row to decode from.
     let row: SQLRow
+    let keyMapping: DatabaseKeyMapping
+    let jsonDecoder: JSONDecoder
     
     // MARK: KeyedDecodingContainerProtocol
     
     var codingPath: [CodingKey] = []
-    var allKeys: [Key] { [] }
+    var allKeys: [Key] = []
     
     func contains(_ key: Key) -> Bool {
         self.row.columns.contains(self.string(for: key))
@@ -132,7 +132,7 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
             return try T(from: SQLValueDecoder(value: field.value, column: column))
         } else {
             let field = try self.row.get(self.string(for: key))
-            return try M.jsonDecoder.decode(T.self, from: field.json())
+            return try jsonDecoder.decode(T.self, from: field.json())
         }
     }
     
@@ -167,6 +167,6 @@ private struct KeyedContainer<Key: CodingKey, M: Model>: KeyedDecodingContainerP
     /// - Returns: The column name that `key` is mapped to.
     private func string(for key: Key, includeIdSuffix: Bool = false) -> String {
         let value = key.stringValue + (includeIdSuffix ? "Id" : "")
-        return M.keyMapping.map(input: value)
+        return keyMapping.map(input: value)
     }
 }

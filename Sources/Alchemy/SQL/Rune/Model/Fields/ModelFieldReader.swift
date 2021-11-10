@@ -89,9 +89,7 @@ private struct _SingleValueEncoder<M: Model>: ModelEncoder {
     }
 }
 
-private struct _SingleValueEncodingContainer<
-    M: Model
->: SingleValueEncodingContainer, ModelValueReader {
+private struct _SingleValueEncodingContainer<M: Model>: SingleValueEncodingContainer, ModelValueReader {
     /// The database column to which a value encoded to this container
     /// should map to.
     let column: String
@@ -169,16 +167,12 @@ private struct _SingleValueEncodingContainer<
         if let value = try databaseValue(of: value) {
             encoder.readFields.append((column: column, value: value))
         } else {
-            throw DatabaseCodingError("Error encoding type `\(type(of: T.self))` into single value "
-                                        + "container.")
+            throw DatabaseCodingError("Error encoding type `\(type(of: T.self))` into single value container.")
         }
     }
 }
 
-private struct _KeyedEncodingContainer<
-    M: Model,
-    Key: CodingKey
->: KeyedEncodingContainerProtocol, ModelValueReader {
+private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingContainerProtocol, ModelValueReader {
     var encoder: ModelFieldReader<M>
 
     // MARK: KeyedEncodingContainerProtocol

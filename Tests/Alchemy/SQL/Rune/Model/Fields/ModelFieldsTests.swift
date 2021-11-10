@@ -1,7 +1,7 @@
 @testable import Alchemy
 import XCTest
 
-final class ModelEncodingTests: XCTestCase {
+final class ModelFieldsTests: XCTestCase {
     func testEncoding() throws {
         let uuid = UUID()
         let date = Date()
@@ -38,7 +38,7 @@ final class ModelEncodingTests: XCTestCase {
     }
     
     func testKeyMapping() throws {
-        let model = CustomKeyedModel.pk(0)
+        let model = try CustomKeyedModel.pk(0)
         let fields = try model.fields()
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
         XCTAssertEqual([

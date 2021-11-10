@@ -146,7 +146,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
     ///   for this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(jsonString: String) -> Self {
-        self.adding(constraint: .default(self.grammar.jsonLiteral(from: jsonString)))
+        self.adding(constraint: .default(self.grammar.jsonLiteral(for: jsonString)))
     }
     
     /// Adds an `Encodable` as the default for this column.
@@ -166,7 +166,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
         }
         
         let jsonString = String(decoding: jsonData, as: UTF8.self)
-        return self.adding(constraint: .default(self.grammar.jsonLiteral(from: jsonString)))
+        return self.adding(constraint: .default(self.grammar.jsonLiteral(for: jsonString)))
     }
 }
 

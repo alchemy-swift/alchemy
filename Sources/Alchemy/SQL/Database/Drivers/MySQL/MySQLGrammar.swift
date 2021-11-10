@@ -16,7 +16,7 @@ final class MySQLGrammar: Grammar {
         SQL("DROP INDEX \(indexName) ON \(table)")
     }
     
-    override func typeString(for type: ColumnType) -> String {
+    override func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
             return "boolean"
@@ -46,16 +46,16 @@ final class MySQLGrammar: Grammar {
         }
     }
     
-    override func sqlString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+    override func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
         switch constraint {
         case .unsigned:
             return "UNSIGNED"
         default:
-            return super.sqlString(for: constraint, on: column, of: type)
+            return super.columnConstraintString(for: constraint, on: column, of: type)
         }
     }
     
-    override func jsonLiteral(from jsonString: String) -> String {
+    override func jsonLiteral(for jsonString: String) -> String {
         "('\(jsonString)')"
     }
 }

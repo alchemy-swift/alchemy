@@ -30,7 +30,7 @@ open class Grammar {
             compileOrders(orders),
             compileLimit(limit),
             compileOffset(offset),
-            lock?.sql
+            compileLock(lock)
         ].compactMap { $0 }.joined()
     }
 
@@ -91,7 +91,9 @@ open class Grammar {
             return nil
         }
         
-        let ordersSQL = orders.map { $0.sql.statement }.joined(separator: ", ")
+        let ordersSQL = orders
+            .map { "\($0.column) \($0.direction)" }
+            .joined(separator: ", ")
         return SQL("order by \(ordersSQL)")
     }
 
@@ -129,15 +131,15 @@ open class Grammar {
     
     open func compileUpdate(_ table: String, joins: [Query.Join], wheres: [Query.Where], values: [String: SQLValueConvertible]) throws -> SQL {
         var bindings: [SQLValue] = []
-        let columnSQL = values.map { key, val in
+        let columnStatements: [SQL] = values.map { key, val in
             if let expression = val as? SQL {
                 return SQL("\(key) = \(expression.statement)")
             } else {
                 return SQL("\(key) = ?", bindings: [val.value.value])
             }
-        }.reduce(SQL()) { (lhs: SQL, rhs: SQL) -> SQL in
-            SQL("\(lhs.statement), \(rhs.statement)", bindings: lhs.bindings + rhs.bindings)
         }
+        
+        let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), bindings: columnStatements.flatMap(\.bindings))
         
         var base = "update \(table)"
         if let joinSQL = compileJoins(joins) {
@@ -164,12 +166,37 @@ open class Grammar {
         }
     }
     
+    open func compileLock(_ lock: Query.Lock?) -> SQL? {
+        guard let lock = lock else {
+            return nil
+        }
+        
+        var string = ""
+        switch lock.strength {
+        case .update:
+            string = "FOR UPDATE"
+        case .share:
+            string = "FOR SHARE"
+        }
+        
+        switch lock.option {
+        case .noWait:
+            string.append(" NO WAIT")
+        case .skipLocked:
+            string.append(" SKIP LOCKED")
+        case .none:
+            break
+        }
+        
+        return SQL(string)
+    }
+    
     // MARK: - Compiling Migrations
     
     open func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
         var columnStrings: [String] = []
         var constraintStrings: [String] = []
-        for (column, constraints) in columns.map({ sqlString(for: $0) }) {
+        for (column, constraints) in columns.map({ createColumnString(for: $0) }) {
             columnStrings.append(column)
             constraintStrings.append(contentsOf: constraints)
         }
@@ -198,7 +225,7 @@ open class Grammar {
         
         var adds: [String] = []
         var constraints: [String] = []
-        for (sql, tableConstraints) in addColumns.map({ sqlString(for: $0) }) {
+        for (sql, tableConstraints) in addColumns.map({ createColumnString(for: $0) }) {
             adds.append("ADD COLUMN \(sql)")
             constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
         }
@@ -235,7 +262,7 @@ open class Grammar {
     
     // MARK: - Misc
     
-    open func typeString(for type: ColumnType) -> String {
+    open func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
             return "bool"
@@ -263,41 +290,17 @@ open class Grammar {
         }
     }
     
-    open func sqlString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
-        switch constraint {
-        case .notNull:
-            return "NOT NULL"
-        case .default(let string):
-            return "DEFAULT \(string)"
-        case .primaryKey:
-            return "PRIMARY KEY (\(column))"
-        case .unique:
-            return "UNIQUE (\(column))"
-        case .foreignKey(let fkColumn, let table, let onDelete, let onUpdate):
-            var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(fkColumn.escapedColumn))"
-            if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
-            if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
-            return fkBase
-        case .unsigned:
-            return nil
-        }
-    }
-    
-    open func jsonLiteral(from jsonString: String) -> String {
-        "'\(jsonString)'::jsonb"
-    }
-    
     /// Convert a `CreateColumn` to a `String` for inserting into an SQL
     /// statement.
     ///
     /// - Returns: The SQL `String` describing the column and any table level
     ///   constraints to add.
-    private func sqlString(for column: CreateColumn) -> (String, [String]) {
+    open func createColumnString(for column: CreateColumn) -> (String, [String]) {
         let columnEscaped = column.name.escapedColumn
-        var baseSQL = "\(columnEscaped) \(typeString(for: column.type))"
+        var baseSQL = "\(columnEscaped) \(columnTypeString(for: column.type))"
         var tableConstraints: [String] = []
         for constraint in column.constraints {
-            guard let constraintString = sqlString(for: constraint, on: column.name.escapedColumn, of: column.type) else {
+            guard let constraintString = columnConstraintString(for: constraint, on: column.name.escapedColumn, of: column.type) else {
                 continue
             }
             
@@ -318,6 +321,30 @@ open class Grammar {
         }
         
         return (baseSQL, tableConstraints)
+    }
+    
+    open func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+        switch constraint {
+        case .notNull:
+            return "NOT NULL"
+        case .default(let string):
+            return "DEFAULT \(string)"
+        case .primaryKey:
+            return "PRIMARY KEY (\(column))"
+        case .unique:
+            return "UNIQUE (\(column))"
+        case .foreignKey(let fkColumn, let table, let onDelete, let onUpdate):
+            var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(fkColumn.escapedColumn))"
+            if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
+            if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
+            return fkBase
+        case .unsigned:
+            return nil
+        }
+    }
+    
+    open func jsonLiteral(for jsonString: String) -> String {
+        "'\(jsonString)'::jsonb"
     }
     
     private func parameterize(_ values: [SQLValueConvertible]) -> String {
@@ -357,34 +384,5 @@ extension Query.Where: SQLConvertible {
         case .raw(let sql):
             return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
         }
-    }
-}
-
-extension Query.Order: SQLConvertible {
-    public var sql: SQL {
-        return SQL("\(column) \(direction)")
-    }
-}
-
-extension Query.Lock: SQLConvertible {
-    public var sql: SQL {
-        var string = ""
-        switch strength {
-        case .update:
-            string = "FOR UPDATE"
-        case .share:
-            string = "FOR SHARE"
-        }
-        
-        switch option {
-        case .noWait:
-            string.append(" NO WAIT")
-        case .skipLocked:
-            string.append(" SKIP LOCKED")
-        case .none:
-            break
-        }
-        
-        return SQL(string)
     }
 }

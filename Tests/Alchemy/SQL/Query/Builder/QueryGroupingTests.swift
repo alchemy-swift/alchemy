@@ -18,8 +18,7 @@ final class QueryGroupingTests: TestCase<TestApp> {
     }
     
     func testHaving() {
-        var orWhere = sampleWhere
-        orWhere.boolean = .or
+        let orWhere = Query.Where(type: sampleWhere.type, boolean: .or)
         let query = Database.table("foo")
             .having(sampleWhere)
             .orHaving(orWhere)

@@ -68,10 +68,10 @@ final class DatabaseCache: CacheDriver {
             let newVal = try item.cast() + amount
             _ = try await item.update { $0.text = "\(newVal)" }
             return newVal
-        } else {
-            _ = try await CacheItem(_key: key, text: "\(amount)").save(db: db)
-            return amount
         }
+        
+        _ = try await CacheItem(_key: key, text: "\(amount)").save(db: db)
+        return amount
     }
     
     func decrement(_ key: String, by amount: Int) async throws -> Int {

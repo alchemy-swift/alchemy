@@ -8,7 +8,7 @@ final class SQLiteGrammar: Grammar {
         }
     }
     
-    override func typeString(for type: ColumnType) -> String {
+    override func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
             return "integer"
@@ -31,12 +31,12 @@ final class SQLiteGrammar: Grammar {
         }
     }
     
-    override func sqlString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+    override func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
         switch constraint {
         case .primaryKey where type == .increments:
             return nil
         default:
-            return super.sqlString(for: constraint, on: column, of: type)
+            return super.columnConstraintString(for: constraint, on: column, of: type)
         }
     }
 }

@@ -148,7 +148,7 @@ extension SQLValue {
         case .json(let value):
             return value
         default:
-            throw typeError("JSON", columnName: columnName)
+            throw typeError("json", columnName: columnName)
         }
     }
     
