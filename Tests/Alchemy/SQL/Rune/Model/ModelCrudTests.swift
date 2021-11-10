@@ -3,7 +3,7 @@ import AlchemyTest
 final class ModelCrudTests: TestCase<TestApp> {
     override func setUp() {
         super.setUp()
-        Database.fake(migrations: [TestModelMigration()])
+        Database.fake(migrations: [TestModelMigration(), TestModelCustomIdMigration()])
     }
     
     func testAll() async throws {
@@ -20,7 +20,7 @@ final class ModelCrudTests: TestCase<TestApp> {
         let first = try await TestModel.first()
         XCTAssertEqual(first, nil)
         
-        let model = try await TestModel(foo: "baz", bar: false).insert()
+        let model = try await TestModel(foo: "baz", bar: false).insertReturn()
         
         let findById = try await TestModel.find(model.getID())
         XCTAssertEqual(findById, model)
@@ -69,6 +69,15 @@ final class ModelCrudTests: TestCase<TestApp> {
         XCTAssertEqual(newCount, 0)
     }
     
+    func testInsertReturn() async throws {
+        let model = try await TestModel(foo: "bar", bar: false).insertReturn()
+        XCTAssertEqual(model.foo, "bar")
+        XCTAssertEqual(model.bar, false)
+        
+        let customId = try await TestModelCustomId(foo: "bar").insertReturn()
+        XCTAssertEqual(customId.foo, "bar")
+    }
+    
     func testUpdate() async throws {
         var model = try await TestModel.seed()
         model.foo = "baz"
@@ -81,6 +90,11 @@ final class ModelCrudTests: TestCase<TestApp> {
 }
 
 private struct TestError: Error {}
+
+private struct TestModelCustomId: Model {
+    var id: UUID? = UUID()
+    var foo: String
+}
 
 private struct TestModel: Model, Seedable, Equatable {
     var id: Int?
@@ -103,5 +117,18 @@ private struct TestModelMigration: Migration {
     
     func down(schema: Schema) {
         schema.drop(table: "test_models")
+    }
+}
+
+private struct TestModelCustomIdMigration: Migration {
+    func up(schema: Schema) {
+        schema.create(table: "test_model_custom_ids") {
+            $0.uuid("id").primary()
+            $0.string("foo").notNull()
+        }
+    }
+    
+    func down(schema: Schema) {
+        schema.drop(table: "test_model_custom_ids")
     }
 }

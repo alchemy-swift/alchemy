@@ -7,7 +7,7 @@ import Foundation
 /// All fields are optional by default, it's up to the end user to
 /// decide if a nil value in that field is appropriate and
 /// potentially throw an error.
-public enum SQLValue: Equatable, Hashable {
+public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
     /// An `Int` value.
     case int(Int)
     /// A `Double` value.
@@ -24,11 +24,37 @@ public enum SQLValue: Equatable, Hashable {
     case uuid(UUID)
     /// A null value of any type.
     case null
+    
+    public var description: String {
+        switch self {
+        case .int(let int):
+            return "SQLValue.int(\(int))"
+        case .double(let double):
+            return "SQLValue.double(\(double))"
+        case .bool(let bool):
+            return "SQLValue.bool(\(bool))"
+        case .string(let string):
+            return "SQLValue.string(`\(string)`)"
+        case .date(let date):
+            return "SQLValue.date(\(date))"
+        case .json(let data):
+            return "SQLValue.json(\(String(data: data, encoding: .utf8) ?? "\(data)"))"
+        case .uuid(let uuid):
+            return "SQLValue.uuid(\(uuid.uuidString))"
+        case .null:
+            return "SQLValue.null"
+        }
+    }
 }
 
 /// Extension for easily accessing the unwrapped contents of an `SQLValue`.
 extension SQLValue {
     static let iso8601DateFormatter = ISO8601DateFormatter()
+    static let simpleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter
+    }()
     
     /// Unwrap and return an `Int` value from this `SQLValue`.
     /// This throws if the underlying `value` isn't an `.int` or
@@ -123,7 +149,10 @@ extension SQLValue {
         case .date(let value):
             return value
         case .string(let value):
-            guard let date = SQLValue.iso8601DateFormatter.date(from: value) else {
+            guard
+                let date = SQLValue.iso8601DateFormatter.date(from: value)
+                    ?? SQLValue.simpleFormatter.date(from: value)
+            else {
                 throw typeError("Date", columnName: columnName)
             }
             
@@ -147,8 +176,14 @@ extension SQLValue {
         switch self {
         case .json(let value):
             return value
+        case .string(let string):
+            guard let data = string.data(using: .utf8) else {
+                throw typeError("JSON", columnName: columnName)
+            }
+            
+            return data
         default:
-            throw typeError("json", columnName: columnName)
+            throw typeError("JSON", columnName: columnName)
         }
     }
     
@@ -184,10 +219,10 @@ extension SQLValue {
     /// - Returns: A `DatabaseError` with a message describing the predicament.
     private func typeError(_ typeName: String, columnName: String? = nil) -> Error {
         if let columnName = columnName {
-            return DatabaseError("Field at column '\(columnName)' expected to be `\(typeName)` but wasn't.")
+            return DatabaseError("Unable to coerce \(self) at column `\(columnName)` to \(typeName)")
         }
         
-        return DatabaseError("Unable to convert '\(self)' to a `\(typeName)`.")
+        return DatabaseError("Unable to coerce \(self) to \(typeName).")
     }
     
     private func ensureNotNull(_ columnName: String? = nil) throws {

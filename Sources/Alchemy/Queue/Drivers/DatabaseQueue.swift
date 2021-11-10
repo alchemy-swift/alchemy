@@ -16,7 +16,7 @@ final class DatabaseQueue: QueueDriver {
     // MARK: - Queue
     
     func enqueue(_ job: JobData) async throws {
-        _ = try await JobModel(jobData: job).insert(db: database)
+        _ = try await JobModel(jobData: job).insertReturn(db: database)
     }
 
     func dequeue(from channel: String) async throws -> JobData? {
@@ -59,12 +59,17 @@ public extension Queue {
     static func database(_ database: Database = .default) -> Queue {
         Queue(DatabaseQueue(database: database))
     }
+    
+    /// A queue backed by the default SQL database.
+    static var database: Queue {
+        .database(.default)
+    }
 }
 
 // MARK: - Models
 
 /// Represents the table of jobs backing a `DatabaseQueue`.
-private struct JobModel: Model {
+struct JobModel: Model {
     static var tableName: String = "jobs"
 
     var id: String?
@@ -87,7 +92,7 @@ private struct JobModel: Model {
         json = jobData.json
         attempts = jobData.attempts
         recoveryStrategy = jobData.recoveryStrategy
-        backoffSeconds = jobData.backoffSeconds
+        backoffSeconds = jobData.backoff.seconds
         backoffUntil = jobData.backoffUntil
         reserved = false
     }

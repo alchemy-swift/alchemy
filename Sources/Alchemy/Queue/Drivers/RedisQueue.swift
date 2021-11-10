@@ -104,4 +104,9 @@ public extension Queue {
     static func redis(_ redis: Redis = Redis.default) -> Queue {
         Queue(RedisQueue(redis: redis))
     }
+    
+    /// A queue backed by the default Redis connection.
+    static var redis: Queue {
+        .redis(.default)
+    }
 }

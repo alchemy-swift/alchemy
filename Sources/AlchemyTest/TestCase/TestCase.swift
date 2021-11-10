@@ -19,6 +19,7 @@ open class TestCase<A: Application>: XCTestCase {
     open override func tearDown() {
         super.tearDown()
         app.shutdown()
+        JobDecoding.reset()
     }
 }
 

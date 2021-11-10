@@ -16,9 +16,11 @@ public final class Cache: Service {
     
     /// Get the value for `key`.
     ///
-    /// - Parameter key: The key of the cache record.
+    /// - Parameters:
+    ///   - key: The key of the cache record.
+    ///   - type: The type to coerce fetched key to for return.
     /// - Returns: The value for the key, if it exists.
-    public func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+    public func get<C: CacheAllowed>(_ key: String, as type: C.Type = C.self) async throws -> C? {
         try await driver.get(key)
     }
     
@@ -42,9 +44,11 @@ public final class Cache: Service {
     
     /// Delete and return a record at `key`.
     ///
-    /// - Parameter key: The key to delete.
+    /// - Parameters:
+    ///   - key: The key to delete.
+    ///   - type: The type to coerce the removed key to for return.
     /// - Returns: The deleted record, if it existed.
-    public func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
+    public func remove<C: CacheAllowed>(_ key: String, as type: C.Type = C.self) async throws -> C? {
         try await driver.remove(key)
     }
     

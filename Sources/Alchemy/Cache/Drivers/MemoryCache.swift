@@ -111,6 +111,11 @@ extension Cache {
         Cache(MemoryCache(data))
     }
     
+    /// A cache backed by an in memory dictionary. Useful for tests.
+    public static var memory: Cache {
+        .memory()
+    }
+    
     /// Fakes a cache using by a memory based cache. Useful for tests.
     ///
     /// - Parameters:
@@ -119,6 +124,7 @@ extension Cache {
     ///   - data: Any data to initialize your cache with. Defaults to
     ///     an empty dict.
     /// - Returns: A `MemoryCache` for verifying test expectations.
+    @discardableResult
     public static func fake(_ name: String? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
         let driver = MemoryCache(data)
         let cache = Cache(driver)

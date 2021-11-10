@@ -48,8 +48,12 @@ final class SQLValueTests: XCTestCase {
     }
     
     func testJson() {
+        let jsonString = """
+        {"foo":1}
+        """
         XCTAssertEqual(try SQLValue.json(Data()).json(), Data())
-        XCTAssertThrowsError(try SQLValue.string("foo").json())
+        XCTAssertEqual(try SQLValue.string(jsonString).json(), jsonString.data(using: .utf8))
+        XCTAssertThrowsError(try SQLValue.int(1).json())
     }
     
     func testUuid() {

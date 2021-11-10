@@ -39,4 +39,9 @@ struct JobDecoding {
             throw error
         }
     }
+    
+    static func reset() {
+        decoders = [:]
+        registeredJobs = []
+    }
 }

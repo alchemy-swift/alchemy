@@ -92,6 +92,11 @@ extension Cache {
     public static func database(_ database: Database = .default) -> Cache {
         Cache(DatabaseCache(database))
     }
+    
+    /// Create a cache backed by the default SQL database.
+    public static var database: Cache {
+        .database(.default)
+    }
 }
 
 /// Model for storing cache data

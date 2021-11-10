@@ -45,7 +45,7 @@ public struct Redis: Service {
         database: Int? = nil,
         poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
     ) -> Redis {
-        return .rawPoolConfiguration(
+        return .configuration(
             RedisConnectionPool.Configuration(
                 initialServerConnectionAddresses: sockets.map {
                     do {
@@ -75,7 +75,7 @@ public struct Redis: Service {
     /// - Parameters:
     ///   - config: The configuration of the pool backing this `Redis`
     ///     client.
-    public static func rawPoolConfiguration(_ config: RedisConnectionPool.Configuration) -> Redis {
+    public static func configuration(_ config: RedisConnectionPool.Configuration) -> Redis {
         return Redis(driver: ConnectionPool(config: config))
     }
 }

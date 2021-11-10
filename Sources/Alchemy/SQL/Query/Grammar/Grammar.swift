@@ -377,7 +377,7 @@ extension Query.Where: SQLConvertible {
             return SQL("\(boolean) \(first) \(op) \(second)")
         case .nested(let wheres):
             let nestedSQL = wheres.joined().droppingLeadingBoolean()
-            return SQL("\(boolean) (\(nestedSQL))", bindings: nestedSQL.bindings)
+            return SQL("\(boolean) (\(nestedSQL.statement))", bindings: nestedSQL.bindings)
         case .in(let key, let values, let type):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
             return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
