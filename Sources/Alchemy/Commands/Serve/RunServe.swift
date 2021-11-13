@@ -42,7 +42,8 @@ final class RunServe: Command {
     // MARK: Command
 
     func run() throws {
-        let lifecycle = ServiceLifecycle.default
+        @Inject var lifecycle: ServiceLifecycle
+        
         if migrate {
             lifecycle.register(
                 label: "Migrate",

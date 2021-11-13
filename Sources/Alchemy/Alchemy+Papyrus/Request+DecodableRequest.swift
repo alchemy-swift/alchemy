@@ -10,7 +10,7 @@ extension Request: DecodableRequest {
     }
     
     public func parameter(_ key: String) -> String? {
-        parameter(key)?.value
+        parameters.first(where: { $0.key == key })?.value
     }
     
     public func decodeContent<T>(type: Papyrus.ContentEncoding) throws -> T where T : Decodable {

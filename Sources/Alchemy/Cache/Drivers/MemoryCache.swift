@@ -28,20 +28,20 @@ public final class MemoryCache: CacheDriver {
     
     // MARK: Cache
     
-    public func get<C: CacheAllowed>(_ key: String) throws -> C? {
+    public func get<L: LosslessStringConvertible>(_ key: String) throws -> L? {
         try getItem(key)?.cast()
     }
     
-    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) {
-        data[key] = MemoryCacheItem(text: value.stringValue, expiration: time.map { Date().adding(time: $0) })
+    public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) {
+        data[key] = MemoryCacheItem(text: value.description, expiration: time.map { Date().adding(time: $0) })
     }
     
     public func has(_ key: String) -> Bool {
         getItem(key) != nil
     }
     
-    public func remove<C: CacheAllowed>(_ key: String) throws -> C? {
-        let val: C? = try getItem(key)?.cast()
+    public func remove<L: LosslessStringConvertible>(_ key: String) throws -> L? {
+        let val: L? = try getItem(key)?.cast()
         data.removeValue(forKey: key)
         return val
     }
@@ -95,8 +95,8 @@ public struct MemoryCacheItem {
         self.expiration = expiration
     }
     
-    fileprivate func cast<C: CacheAllowed>() throws -> C {
-        try C(self.text).unwrap(or: CacheError("Unable to cast '\(self.text)' to \(C.self)"))
+    fileprivate func cast<L: LosslessStringConvertible>() throws -> L {
+        try L(text).unwrap(or: CacheError("Unable to cast '\(text)' to \(L.self)"))
     }
 }
 
@@ -119,21 +119,15 @@ extension Cache {
     /// Fakes a cache using by a memory based cache. Useful for tests.
     ///
     /// - Parameters:
-    ///   - name: The name of the cache to fake. Defaults to `nil`
-    ///     which fakes the default cache.
+    ///   - id: The identifier of the cache to fake. Defaults to `default`.
     ///   - data: Any data to initialize your cache with. Defaults to
     ///     an empty dict.
     /// - Returns: A `MemoryCache` for verifying test expectations.
     @discardableResult
-    public static func fake(_ name: String? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
+    public static func fake(_ identifier: Identifier = .default, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
         let driver = MemoryCache(data)
         let cache = Cache(driver)
-        if let name = name {
-            config(name, cache)
-        } else {
-            config(default: cache)
-        }
-        
+        register(identifier, cache)
         return driver
     }
 }

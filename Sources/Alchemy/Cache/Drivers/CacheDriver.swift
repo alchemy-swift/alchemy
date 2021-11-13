@@ -5,7 +5,7 @@ public protocol CacheDriver {
     ///
     /// - Parameter key: The key of the cache record.
     /// - Returns: The value, if it exists.
-    func get<C: CacheAllowed>(_ key: String) async throws -> C?
+    func get<L: LosslessStringConvertible>(_ key: String) async throws -> L?
     
     /// Set a record for `key`.
     ///
@@ -13,7 +13,7 @@ public protocol CacheDriver {
     /// - Parameter value: The value to set.
     /// - Parameter time: How long the cache record should live.
     ///   Defaults to nil, indicating the record has no expiry.
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws
     
     /// Determine if a record for the given key exists.
     ///
@@ -25,7 +25,7 @@ public protocol CacheDriver {
     ///
     /// - Parameter key: The key to delete.
     /// - Returns: The deleted record, if it existed.
-    func remove<C: CacheAllowed>(_ key: String) async throws -> C?
+    func remove<L: LosslessStringConvertible>(_ key: String) async throws -> L?
     
     /// Delete a record at `key`.
     ///

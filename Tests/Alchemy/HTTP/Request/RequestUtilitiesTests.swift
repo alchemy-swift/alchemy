@@ -26,10 +26,10 @@ final class RequestUtilitiesTests: XCTestCase {
             Parameter(key: "bar", value: "two"),
             Parameter(key: "baz", value: "three"),
         ]
-        XCTAssertEqual(request.parameter("foo"), "one")
-        XCTAssertEqual(request.parameter("bar"), "two")
-        XCTAssertEqual(request.parameter("baz"), "three")
-        XCTAssertEqual(request.parameter("foo"), Parameter(key: "foo", value: "one"))
+        XCTAssertEqual(try request.parameter("foo"), "one")
+        XCTAssertEqual(try request.parameter("bar"), "two")
+        XCTAssertEqual(try request.parameter("baz"), "three")
+        XCTAssertTrue(request.parameters.contains(Parameter(key: "foo", value: "one")))
     }
     
     func testBody() {

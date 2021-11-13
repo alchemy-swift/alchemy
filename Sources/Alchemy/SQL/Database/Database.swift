@@ -4,15 +4,15 @@ import Foundation
 /// injectable `Service` so you can register the default one
 /// via `Database.config(default: .postgres())`.
 public final class Database: Service {
-    /// The driver of this database.
-    let driver: DatabaseDriver
-    
     /// Any migrations associated with this database, whether applied
     /// yet or not.
     public var migrations: [Migration] = []
     
     /// Any seeders associated with this database.
     public var seeders: [Seeder] = []
+    
+    /// The driver for this database.
+    let driver: DatabaseDriver
     
     /// Create a database backed by the given driver.
     ///
@@ -44,6 +44,10 @@ public final class Database: Service {
     /// - Returns: The database rows returned by the query.
     public func query(_ sql: String, values: [SQLValue] = []) async throws -> [SQLRow] {
         try await driver.query(sql, values: values)
+    }
+    
+    public func raw(_ sql: String) async throws -> [SQLRow] {
+        try await driver.raw(sql)
     }
     
     /// Runs a transaction on the database, using the given closure.

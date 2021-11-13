@@ -7,13 +7,15 @@ extension Database {
     ///   - database: The name of the database to connect to.
     ///   - username: The username to authorize with.
     ///   - password: The password to authorize with.
+    ///   - enableSSL: Should the connection use SSL.
     /// - Returns: The configuration for connecting to this database.
-    public static func mysql(host: String, port: Int = 3306, database: String, username: String, password: String) -> Database {
+    public static func mysql(host: String, port: Int = 3306, database: String, username: String, password: String, enableSSL: Bool = false) -> Database {
         return mysql(config: DatabaseConfig(
             socket: .ip(host: host, port: port),
             database: database,
             username: username,
-            password: password
+            password: password,
+            enableSSL: enableSSL
         ))
     }
     

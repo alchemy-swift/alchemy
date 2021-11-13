@@ -71,6 +71,7 @@ extension Command {
         if Self.logStartAndFinish {
             Log.info("[Command] running \(commandName)")
         }
+        
         // By default, register start & shutdown to lifecycle
         registerToLifecycle()
     }
@@ -84,7 +85,8 @@ extension Command {
     /// Registers this command to the application lifecycle; useful
     /// for running the app with this command.
     func registerToLifecycle() {
-        let lifecycle = ServiceLifecycle.default
+        @Inject var lifecycle: ServiceLifecycle
+        
         lifecycle.register(
             label: Self.configuration.commandName ?? name(of: Self.self),
             start: .eventLoopFuture {

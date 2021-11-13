@@ -25,17 +25,24 @@ public struct Loop {
             return current
         }
         
-        Container.register(singleton: EventLoopGroup.self) { _ in
+        Container.default.register(singleton: EventLoopGroup.self) { _ in
             MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         }
         
-        lifecycle.registerShutdown(label: name(of: EventLoopGroup.self), .sync(group.syncShutdownGracefully))
+        lifecycle.registerShutdown(
+            label: name(of: EventLoopGroup.self),
+            .sync(group.syncShutdownGracefully))
     }
     
     /// Register mocks of `EventLoop` and `EventLoop` to the
     /// application container.
     static func mock() {
-        Container.register(singleton: EventLoopGroup.self) { _ in MultiThreadedEventLoopGroup(numberOfThreads: 1) }
-        Container.register(EventLoop.self) { _ in group.next() }
+        Container.register(singleton: EventLoopGroup.self) { _ in
+            MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        }
+        
+        Container.register(EventLoop.self) { _ in
+            group.next()
+        }
     }
 }

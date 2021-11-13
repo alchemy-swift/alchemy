@@ -2,7 +2,7 @@
 import XCTest
 
 extension MemoryCache {
-    public func assertSet<C: CacheAllowed & Equatable>(_ key: String, _ val: C? = nil) {
+    public func assertSet<L: LosslessStringConvertible & Equatable>(_ key: String, _ val: L? = nil) {
         XCTAssertTrue(has(key))
         if let val = val {
             XCTAssertNoThrow(try {

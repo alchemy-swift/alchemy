@@ -110,11 +110,11 @@ If you'd like to add a custom driver for cache, you can implement the `CacheDriv
 
 ```swift
 struct MemcachedCache: CacheDriver {
-    func get<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
+    func get<L: LosslessStringConvertible>(_ key: String) -> EventLoopFuture<C?> {
         ...
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> {
+    func set<L: LosslessStringConvertible>(_ key: String, value: C, for time: TimeAmount?) -> EventLoopFuture<Void> {
         ...
     }
 
@@ -122,7 +122,7 @@ struct MemcachedCache: CacheDriver {
         ...
     }
 
-    func remove<C: CacheAllowed>(_ key: String) -> EventLoopFuture<C?> {
+    func remove<L: LosslessStringConvertible>(_ key: String) -> EventLoopFuture<C?> {
         ...
     }
 

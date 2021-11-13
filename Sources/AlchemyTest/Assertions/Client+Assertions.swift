@@ -40,13 +40,13 @@ extension HTTPClient.Request {
         }
     }
     
-    public func hasQuery<S: StringInitializable & Equatable>(_ name: String, value: S) -> Bool {
+    public func hasQuery<L: LosslessStringConvertible & Equatable>(_ name: String, value: L) -> Bool {
         let components = URLComponents(string: url.absoluteString)
         return components?.queryItems?.contains(where: { item in
             guard
                 item.name == name,
                 let stringValue = item.value,
-                let itemValue = S(stringValue)
+                let itemValue = L(stringValue)
             else {
                 return false
             }

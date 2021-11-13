@@ -2,13 +2,18 @@ import Foundation
 import Rainbow
 import SwiftCLI
 
+/// Used to generate files related to an alchemy project.
 struct FileCreator {
-    static let shared = FileCreator()
+    static var shared = FileCreator(rootPath: "Sources/App/")
     
-    func create(fileName: String, contents: String, in directory: String, comment: String? = nil) throws {
+    /// The root path where files should be created, relative to the apps
+    /// working directory.
+    let rootPath: String
+    
+    func create(fileName: String, extension: String = "swift", contents: String, in directory: String, comment: String? = nil) throws {
         let migrationLocation = try folderPath(for: directory)
 
-        let filePath = "\(migrationLocation)/\(fileName).swift"
+        let filePath = "\(migrationLocation)/\(fileName).\(`extension`)"
         let destinationURL = URL(fileURLWithPath: filePath)
         try contents.write(to: destinationURL, atomically: true, encoding: .utf8)
         print("🧪 create \(filePath.green)")
@@ -17,13 +22,22 @@ struct FileCreator {
         }
     }
     
+    func fileExists(at path: String) -> Bool {
+        FileManager.default.fileExists(atPath: rootPath + path)
+    }
+    
     private func folderPath(for name: String) throws -> String {
-        let locations = try Task.capture(bash: "find Sources/App -type d -name '\(name)'").stdout.split(separator: "\n")
-        if let folder = locations.first {
-            return String(folder)
-        } else {
-            try FileManager.default.createDirectory(at: URL(fileURLWithPath: "Sources/App/\(name)"), withIntermediateDirectories: true)
-            return "Sources/App/\(name)"
+        let folder = rootPath + name
+        guard FileManager.default.fileExists(atPath: folder) else {
+            try FileManager.default.createDirectory(at: URL(fileURLWithPath: folder), withIntermediateDirectories: true)
+            return folder
         }
+        
+        return folder
+    }
+    
+    static func mock() {
+        shared = FileCreator(rootPath: NSTemporaryDirectory())
     }
 }
+

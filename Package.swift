@@ -25,7 +25,7 @@ let package = Package(
 //        .package(path: "../papyrus"),
         .package(url: "https://github.com/alchemy-swift/papyrus", from: "0.2.1"),
 //        .package(path: "../fusion"),
-        .package(url: "https://github.com/alchemy-swift/fusion", from: "0.2.0"),
+        .package(url: "https://github.com/alchemy-swift/fusion", from: "0.2.2"),
         .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
         .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),

@@ -14,19 +14,19 @@ final class RedisCache: CacheDriver {
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+    func get<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
         guard let value = try await redis.get(RedisKey(key), as: String.self).get() else {
             return nil
         }
         
-        return try C(value).unwrap(or: CacheError("Unable to cast cache item `\(key)` to \(C.self)."))
+        return try L(value).unwrap(or: CacheError("Unable to cast cache item `\(key)` to \(L.self)."))
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws {
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
         if let time = time {
-            try await redis.setex(RedisKey(key), to: value.stringValue, expirationInSeconds: time.seconds).get()
+            try await redis.setex(RedisKey(key), to: value.description, expirationInSeconds: time.seconds).get()
         } else {
-            try await redis.set(RedisKey(key), to: value.stringValue).get()
+            try await redis.set(RedisKey(key), to: value.description).get()
         }
     }
     
@@ -34,8 +34,8 @@ final class RedisCache: CacheDriver {
         try await redis.exists(RedisKey(key)).get() > 0
     }
     
-    func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
-        guard let value: C = try await get(key) else {
+    func remove<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
+        guard let value: L = try await get(key) else {
             return nil
         }
         

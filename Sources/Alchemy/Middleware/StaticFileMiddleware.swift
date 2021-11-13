@@ -16,6 +16,9 @@ public struct StaticFileMiddleware: Middleware {
     /// The directory from which static files will be served.
     private let directory: String
     
+    /// Extensions to search for if a file is not found.
+    private let extensions: [String]
+    
     /// The file IO helper for streaming files.
     private let fileIO = NonBlockingFileIO(threadPool: .default)
     
@@ -23,12 +26,18 @@ public struct StaticFileMiddleware: Middleware {
     private let bufferAllocator = ByteBufferAllocator()
     
     /// Creates a new middleware to serve static files from a given
-    /// directory. Directory defaults to "public/".
+    /// directory. Directory defaults to "Public/".
     ///
-    /// - Parameter directory: The directory to server static files
-    ///   from. Defaults to "Public/".
-    public init(from directory: String = "Public/") {
+    /// - Parameters:
+    ///   - directory: The directory to server static files from. Defaults to
+    ///     "Public/".
+    ///   - extensions: File extension fallbacks. When set, if a file is not
+    ///     found, the given extensions will be added to the file name and
+    ///     searched for. The first that exists will be served. Defaults
+    ///     to []. Example: ["html", "htm"].
+    public init(from directory: String = "Public/", extensions: [String] = []) {
         self.directory = directory.hasSuffix("/") ? directory : "\(directory)/"
+        self.extensions = extensions
     }
     
     // MARK: Middleware
@@ -39,64 +48,70 @@ public struct StaticFileMiddleware: Middleware {
             return try await next(request)
         }
         
-        let filePath = try directory + sanitizeFilePath(request.path)
-        
-        // See if there's a file at the given path
+        let initialFilePath = try directory + sanitizeFilePath(request.path)
+        var filePath = initialFilePath
         var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDirectory)
+        var exists = false
         
-        if exists && !isDirectory.boolValue {
-            let fileInfo = try FileManager.default.attributesOfItem(atPath: filePath)
-            guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
-                Log.error("[StaticFileMiddleware] attempted to access file at `\(filePath)` but it didn't have a size.")
-                throw HTTPError(.internalServerError)
-            }
+        // See if there's a file at any possible path
+        for possiblePath in [initialFilePath] + extensions.map({ "\(initialFilePath).\($0)" }) {
+            filePath = possiblePath
+            isDirectory = false
+            exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDirectory)
             
-            let fileHandle = try NIOFileHandle(path: filePath)
-            let response = Response { responseWriter in
-                // Set any relevant headers based off the file info.
-                var headers: HTTPHeaders = ["content-length": "\(fileSizeBytes)"]
-                if let ext = filePath.components(separatedBy: ".").last,
-                   let mediaType = ContentType(fileExtension: ext) {
-                    headers.add(name: "content-type", value: mediaType.value)
-                }
-                responseWriter.writeHead(status: .ok, headers)
-                
-                // Load the file in chunks, streaming it.
-                self.fileIO.readChunked(
-                    fileHandle: fileHandle,
-                    byteCount: fileSizeBytes,
-                    chunkSize: NonBlockingFileIO.defaultChunkSize,
-                    allocator: self.bufferAllocator,
-                    eventLoop: Loop.current,
-                    chunkHandler: { buffer in
-                        responseWriter.writeBody(buffer)
-                        return Loop.current.makeSucceededVoidFuture()
-                    }
-                )
-                .flatMapThrowing {
-                    try fileHandle.close()
-                }
-                .whenComplete { result in
-                    try? fileHandle.close()
-                    switch result {
-                    case .failure(let error):
-                        // Not a ton that can be done in the case of
-                        // an error, not sure what else can be done
-                        // besides logging and ending the request.
-                        Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
-                        responseWriter.writeEnd()
-                    case .success:
-                        responseWriter.writeEnd()
-                    }
-                }
+            if exists && !isDirectory.boolValue {
+                break
             }
-            
-            return response
-        } else {
-            // No file, continue to handlers.
+        }
+        
+        guard exists && !isDirectory.boolValue else {
             return try await next(request)
         }
+        
+        let fileInfo = try FileManager.default.attributesOfItem(atPath: filePath)
+        guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
+            Log.error("[StaticFileMiddleware] attempted to access file at `\(filePath)` but it didn't have a size.")
+            throw HTTPError(.internalServerError)
+        }
+        
+        let fileHandle = try NIOFileHandle(path: filePath)
+        let response = Response { responseWriter in
+            // Set any relevant headers based off the file info.
+            var headers: HTTPHeaders = ["content-length": "\(fileSizeBytes)"]
+            if let ext = filePath.components(separatedBy: ".").last,
+               let mediaType = ContentType(fileExtension: ext) {
+                headers.add(name: "content-type", value: mediaType.value)
+            }
+            responseWriter.writeHead(status: .ok, headers)
+            
+            // Load the file in chunks, streaming it.
+            self.fileIO.readChunked(
+                fileHandle: fileHandle,
+                byteCount: fileSizeBytes,
+                chunkSize: NonBlockingFileIO.defaultChunkSize,
+                allocator: self.bufferAllocator,
+                eventLoop: Loop.current,
+                chunkHandler: { buffer in
+                    responseWriter.writeBody(buffer)
+                    return Loop.current.makeSucceededVoidFuture()
+                }
+            )
+            .flatMapThrowing {
+                try fileHandle.close()
+            }
+            .whenComplete { result in
+                try? fileHandle.close()
+                switch result {
+                case .failure(let error):
+                    Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
+                    responseWriter.writeEnd()
+                case .success:
+                    responseWriter.writeEnd()
+                }
+            }
+        }
+        
+        return response
     }
     
     /// Sanitize a file path, returning the new sanitized path.

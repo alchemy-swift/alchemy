@@ -4,9 +4,9 @@ import AlchemyTest
 
 final class ApplicationSchedulerTests: TestCase<TestApp> {
     func testScheduleTask() {
-        Scheduler(isTesting: true).makeDefault()
+        Scheduler.register(Scheduler(isTesting: true))
         let exp = expectation(description: "")
-        app.schedule { exp.fulfill() }.daily()
+        Scheduler.default.run { exp.fulfill() }.daily()
         
         let loop = EmbeddedEventLoop()
         Scheduler.default.start(on: loop)

@@ -14,7 +14,7 @@ final class ModelPrimaryKeyTests: XCTestCase {
     }
     
     func testPk() {
-        XCTAssertEqual(try TestModel.pk(123).id, 123)
+        XCTAssertEqual(TestModel.pk(123).id, 123)
     }
 }
 

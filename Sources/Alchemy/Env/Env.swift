@@ -41,12 +41,12 @@ public struct Env: Equatable {
     /// - Parameter key: The name of the environment variable.
     /// - Returns: The variable converted to type `S`. `nil` if the
     ///   variable doesn't exist or it cannot be converted as `S`.
-    public func get<S: StringInitializable>(_ key: String, as: S.Type = S.self) -> S? {
+    public func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
         guard let val = values[key] else {
             return nil
         }
         
-        return S(val)
+        return L(val)
     }
     
     /// Returns any environment variables from `Env.current` as type
@@ -57,12 +57,12 @@ public struct Env: Equatable {
     /// - Returns: The variable converted to type `S`. `nil` if no fallback is
     ///   provided and the variable doesn't exist or cannot be converted as
     ///   `S`.
-    public static func get<S: StringInitializable>(_ key: String, as: S.Type = S.self) -> S? {
+    public static func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
         current.get(key)
     }
     
     /// Required for dynamic member lookup.
-    public static subscript<T: StringInitializable>(dynamicMember member: String) -> T? {
+    public static subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
         Env.get(member)
     }
     

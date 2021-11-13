@@ -69,19 +69,14 @@ extension Queue {
 
     /// Fake the queue with an in memory queue. Useful for testing.
     ///
-    /// - Parameter name: The name of the queue to fake. Defaults to
-    ///   `nil` which fakes the default queue.
+    /// - Parameter id: The identifier of the queue to fake. Defaults to
+    ///   `default`.
     /// - Returns: A `MemoryQueue` for verifying test expectations.
     @discardableResult
-    public static func fake(_ name: String? = nil) -> MemoryQueue {
+    public static func fake(_ identifier: Identifier = .default) -> MemoryQueue {
         let mock = MemoryQueue()
         let q = Queue(mock)
-        if let name = name {
-            config(name, q)
-        } else {
-            config(default: q)
-        }
-        
+        register(identifier, q)
         return mock
     }
 }

@@ -22,7 +22,7 @@ struct SeedDatabase: Command {
     // MARK: Command
     
     func start() async throws {
-        let db: Database = database.isEmpty ? .default : .named(database)
+        let db: Database = database.isEmpty ? .default : .resolve(.init(database))
         if name.isEmpty {
             try await db.seed()
         } else {

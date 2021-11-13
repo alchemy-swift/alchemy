@@ -1,4 +1,4 @@
-struct ColumnData: Codable {
+struct ColumnData: Codable, Equatable {
     let name: String
     let type: String
     let modifiers: [String]
@@ -36,7 +36,7 @@ struct ColumnData: Codable {
 
 extension Array where Element == ColumnData {
     static var defaultData: [ColumnData] = [
-        ColumnData(name: "id", type: "increments", modifiers: ["notNull"]),
+        ColumnData(name: "id", type: "increments", modifiers: ["primary"]),
         ColumnData(name: "name", type: "string", modifiers: ["notNull"]),
         ColumnData(name: "email", type: "string", modifiers: ["notNull", "unique"]),
         ColumnData(name: "password", type: "string", modifiers: ["notNull"]),

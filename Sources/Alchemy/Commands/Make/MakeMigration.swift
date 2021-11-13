@@ -17,11 +17,11 @@ struct MakeMigration: Command {
     private var columns: [ColumnData] = []
     
     init() {}
-    
-    init(name: String, table: String, columns: [ColumnData]) {
+    init(name: String, table: String,  columns: [ColumnData]) {
         self.name = name
         self.table = table
         self.columns = columns
+        self.fields = []
     }
     
     func start() throws {
@@ -42,14 +42,11 @@ struct MakeMigration: Command {
     }
     
     private func createMigration(columns: [ColumnData]) throws {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy_MM_dd_HH_mm_ss"
-        let fileName = "\(dateFormatter.string(from: Date()))\(name)"
         try FileCreator.shared.create(
-            fileName: fileName,
+            fileName: name,
             contents: migrationTemplate(name: name, columns: columns),
-            in: "Migrations",
-            comment: "remember to add migration to a Database.migrations!")
+            in: "Database/Migrations",
+            comment: "remember to add migration to your database config!")
     }
     
     private func migrationTemplate(name: String, columns: [ColumnData]) throws -> String {

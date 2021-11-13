@@ -91,6 +91,43 @@ public final class Response {
     }
 }
 
+extension Response {
+    func collect() async throws -> Response {
+        final class MockWriter: ResponseWriter {
+            var status: HTTPResponseStatus = .ok
+            var headers: HTTPHeaders = [:]
+            var body = ByteBuffer()
+            
+            var didFinish: (MockWriter) -> Void
+            
+            init(didFinish: @escaping (MockWriter) -> Void) {
+                self.didFinish = didFinish
+            }
+            
+            func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
+                self.status = status
+                self.headers = headers
+            }
+            
+            func writeBody(_ body: ByteBuffer) {
+                self.body.writeBytes(body.readableBytesView)
+            }
+            
+            func writeEnd() {
+                didFinish(self)
+            }
+        }
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let writer = MockWriter {
+                continuation.resume(returning: Response(status: $0.status, headers: $0.headers, body: HTTPBody(buffer: $0.body)))
+            }
+            
+            writer.write(response: self)
+        }
+    }
+}
+
 extension ResponseWriter {
     /// Writes a response to a remote peer with this `ResponseWriter`.
     ///

@@ -18,7 +18,7 @@ final class CacheDriverTests: TestCase<TestApp> {
     func testDatabaseCache() async throws {
         for test in allTests {
             Database.fake(migrations: [Cache.AddCacheMigration()])
-            Cache.config(default: .database)
+            Cache.register(.database)
             try await test()
         }
     }
@@ -32,8 +32,8 @@ final class CacheDriverTests: TestCase<TestApp> {
     
     func testRedisCache() async throws {
         for test in allTests {
-            Redis.config(default: .testing)
-            Cache.config(default: .redis)
+            Redis.register(.testing)
+            Cache.register(.redis)
             
             guard await Redis.default.checkAvailable() else {
                 throw XCTSkip()

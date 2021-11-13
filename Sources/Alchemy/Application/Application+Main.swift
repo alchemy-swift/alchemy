@@ -11,16 +11,23 @@ extension Application {
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
     public static func main() {
-        Env.boot()
-        
         do {
-            let app = Self()
-            app.bootServices()
-            try app.boot()
+            try Self().setup()
             Launch.main()
-            try ServiceLifecycle.default.startAndWait()
+            try Container.resolve(ServiceLifecycle.self).startAndWait()
         } catch {
             Launch.exit(withError: error)
         }
+    }
+    
+    /// Sets up this application for running.
+    func setup(testing: Bool = false) throws {
+        Env.boot()
+        bootServices(testing: testing)
+        services(container: .default)
+        schedule(schedule: .default)
+        try boot()
+        Launch.customCommands.append(contentsOf: commands)
+        Container.register(singleton: self)
     }
 }

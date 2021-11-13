@@ -31,11 +31,12 @@ struct RunQueue: Command {
     // MARK: Command
     
     func run() throws {
-        let queue: Queue = name.map { .named($0) } ?? .default
-        ServiceLifecycle.default
-            .registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
+        let queue: Queue = name.map { .resolve(.init($0)) } ?? .default
+        
+        @Inject var lifecycle: ServiceLifecycle
+        lifecycle.registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
         if schedule {
-            ServiceLifecycle.default.registerScheduler()
+            lifecycle.registerScheduler()
         }
 
         let schedulerText = schedule ? "scheduler and " : ""

@@ -29,19 +29,19 @@ final class DatabaseCache: CacheDriver {
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+    func get<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
         try await getItem(key: key)?.cast()
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws {
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
         let item = try await getItem(key: key)
         let expiration = time.map { Date().adding(time: $0) }
         if var item = item {
-            item.text = value.stringValue
+            item.text = value.description
             item.expiration = expiration ?? -1
             _ = try await item.save(db: db)
         } else {
-            _ = try await CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1).save(db: db)
+            _ = try await CacheItem(_key: key, text: value.description, expiration: expiration ?? -1).save(db: db)
         }
     }
     
@@ -49,9 +49,9 @@ final class DatabaseCache: CacheDriver {
         try await getItem(key: key)?.isValid ?? false
     }
     
-    func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
+    func remove<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
         if let item = try await getItem(key: key) {
-            let value: C = try item.cast()
+            let value: L = try item.cast()
             _ = try await item.delete()
             return item.isValid ? value : nil
         } else {
@@ -120,8 +120,8 @@ private struct CacheItem: Model {
         self.isValid ? self : nil
     }
     
-    func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
-        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self._key)` to \(C.self)."))
+    func cast<L: LosslessStringConvertible>(_ type: L.Type = L.self) throws -> L {
+        try L(text).unwrap(or: CacheError("Unable to cast cache item `\(_key)` to \(L.self)."))
     }
 }
 

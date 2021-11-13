@@ -2,13 +2,17 @@
 import Alchemy
 import AlchemyTest
 
-final class AlchemyCommandTests: TestCase<TestApp> {
+final class AlchemyCommandTests: TestCase<CommandApp> {
     func testCommandRegistration() {
-        app.registerCommand(TestCommand.self)
-        XCTAssertTrue(app.customCommands.contains(where: {
+        XCTAssertTrue(Launch.customCommands.contains {
             id(of: $0) == id(of: TestCommand.self)
-        }))
+        })
     }
+}
+
+struct CommandApp: Application {
+    var commands: [Command.Type] = [TestCommand.self]
+    func boot() throws {}
 }
 
 private struct TestCommand: Command {

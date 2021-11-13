@@ -8,7 +8,7 @@ final class RequestDecodingTests: XCTestCase {
         let head = HTTPRequestHead(version: .http1_1, method: .GET, uri: "localhost:3000/posts/1?done=true", headers: headers)
         let request = Request(head: head, bodyBuffer: nil)
         request.parameters = [Parameter(key: "post_id", value: "1")]
-        XCTAssertEqual(request.parameter("post_id"), "1")
+        XCTAssertEqual(request.parameter("post_id") as String?, "1")
         XCTAssertEqual(request.query("done"), "true")
         XCTAssertEqual(request.header("TestHeader"), "123")
         

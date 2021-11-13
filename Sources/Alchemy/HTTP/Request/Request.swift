@@ -26,9 +26,8 @@ public final class Request {
     /// Any information set by a middleware.
     var storage: [ObjectIdentifier: Any] = [:]
     
-    /// This initializer is necessary because the `bodyBuffer` is a
-    /// private property.
-    init(head: HTTPRequestHead, bodyBuffer: ByteBuffer?) {
+    /// Initialize a request with the given head and body.
+    init(head: HTTPRequestHead, bodyBuffer: ByteBuffer? = nil) {
         self.head = head
         self.bodyBuffer = bodyBuffer
     }

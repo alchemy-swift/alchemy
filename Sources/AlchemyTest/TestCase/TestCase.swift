@@ -7,10 +7,9 @@ open class TestCase<A: Application>: XCTestCase {
     open override func setUp() {
         super.setUp()
         app = A()
-        app.bootServices(testing: true)
         
         do {
-            try app.boot()
+            try app.setup(testing: true)
         } catch {
             fatalError("Error booting your app for testing: \(error)")
         }
@@ -25,6 +24,7 @@ open class TestCase<A: Application>: XCTestCase {
 
 extension Application {
     func shutdown() {
-        ServiceLifecycle.default.shutdown()
+        @Inject var lifecycle: ServiceLifecycle
+        lifecycle.shutdown()
     }
 }

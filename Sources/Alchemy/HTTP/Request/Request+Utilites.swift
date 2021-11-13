@@ -30,12 +30,20 @@ extension Request {
     /// Use this to fetch any parameters from the path.
     /// ```swift
     /// app.post("/users/:user_id") { request in
-    ///     let userID = try request.parameter("user_id")?.int()
+    ///     let userId: Int = try request.parameter("user_id")
     ///     ...
     /// }
     /// ```
-    public func parameter(_ key: String) -> Parameter? {
-        parameters.first(where: { $0.key == key })
+    public func parameter<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) throws -> L {
+        guard let parameterString: String = parameter(key) else {
+            throw ValidationError("expected parameter \(key)")
+        }
+        
+        guard let converted = L(parameterString) else {
+            throw ValidationError("parameter \(key) was \(parameterString) which couldn't be converted to \(name(of: L.self))")
+        }
+        
+        return converted
     }
     
     /// The body is a wrapper used to provide simple access to any

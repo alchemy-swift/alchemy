@@ -38,8 +38,8 @@ extension Model {
     ///
     /// - Parameter id: The primary key of this model.
     /// - Returns: An instance of `Self` with the given primary key.
-    public static func pk(_ id: Self.Identifier) throws -> Self {
-        var this = try Self(from: DummyDecoder())
+    public static func pk(_ id: Self.Identifier) -> Self {
+        var this = try! Self(from: DummyDecoder())
         this.id = id
         return this
     }

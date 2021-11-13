@@ -15,7 +15,7 @@ final class QueueDriverTests: TestCase<TestApp> {
     func testDatabaseQueue() async throws {
         for test in allTests {
             Database.fake(migrations: [Queue.AddJobsMigration()])
-            Queue.config(default: .database)
+            Queue.register(.database)
             try await test(#filePath, #line)
         }
     }
@@ -29,8 +29,8 @@ final class QueueDriverTests: TestCase<TestApp> {
     
     func testRedisQueue() async throws {
         for test in allTests {
-            Redis.config(default: .testing)
-            Queue.config(default: .redis)
+            Redis.register(.testing)
+            Queue.register(.redis)
             
             guard await Redis.default.checkAvailable() else {
                 throw XCTSkip()

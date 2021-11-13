@@ -1,12 +1,12 @@
 import AlchemyTest
 
-final class StringInitializableTests: XCTestCase {
-    func testValidUUID() async throws {
+final class UUIDLosslessStringConvertibleTests: XCTestCase {
+    func testValidUUID() {
         let uuid = UUID()
         XCTAssertEqual(UUID(uuid.uuidString), uuid)
     }
     
-    func testInvalidUUID() async throws {
+    func testInvalidUUID() {
         XCTAssertEqual(UUID("foo"), nil)
     }
 }

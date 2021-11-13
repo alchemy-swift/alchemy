@@ -14,23 +14,36 @@ extension Application {
         // Setup app lifecycle
         var lifecycleLogger = Log.logger
         lifecycleLogger.logLevel = lifecycleLogLevel
-
-        // Register all services
-        ServiceLifecycle(
+        Container.default.register(singleton: ServiceLifecycle(
             configuration: ServiceLifecycle.Configuration(
                 logger: lifecycleLogger,
-                installBacktrace: !testing)).makeDefault()
+                installBacktrace: !testing)))
+        
+        // Register all services
+        
         if testing {
             Loop.mock()
         } else {
             Loop.config()
         }
         
-        ServerConfiguration().makeDefault()
-        Router().makeDefault()
-        Scheduler().makeDefault()
-        NIOThreadPool(numberOfThreads: System.coreCount).makeDefault()
-        Client().makeDefault()
+        ServerConfiguration().registerDefault()
+        Router().registerDefault()
+        Scheduler().registerDefault()
+        NIOThreadPool(numberOfThreads: System.coreCount).registerDefault()
+        Client().registerDefault()
+        
+        if testing {
+            FileCreator.mock()
+        }
+        
+        // Set up any configurable services.
+        let types: [Any.Type] = [Database.self, Cache.self, Queue.self]
+        for type in types {
+            if let type = type as? AnyConfigurable.Type {
+                type.configureDefaults()
+            }
+        }
     }
 }
 
@@ -44,10 +57,8 @@ extension NIOThreadPool: Service {
     }
 }
 
-extension ServiceLifecycle: Service {}
-
 extension Service {
-    func makeDefault() {
-        Self.config(default: self)
+    fileprivate func registerDefault() {
+        Self.register(self)
     }
 }
