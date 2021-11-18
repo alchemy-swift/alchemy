@@ -5,10 +5,10 @@ extension Database {
     ///
     /// - Parameters:
     ///   - id: The identifier of the database to fake, defaults to `default`.
-    ///   - migrate: Whether migrations should be synchronously run
-    ///     before returning from this function. Defaults to `true`.
-    ///   - seed: Whether the database should be synchronously seeded
-    ///     before returning from this function. Defaults to `false`.
+    ///   - seeds: Any migrations to set on the database, they will be run
+    ///     before this function returns.
+    ///   - seeders: Any seeders to set on the database, they will be run before
+    ///     this function returns.
     public static func fake(_ id: Identifier = .default, migrations: [Migration] = [], seeders: [Seeder] = []) {
         let db = Database.sqlite
         db.migrations = migrations

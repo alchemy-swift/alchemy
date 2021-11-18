@@ -97,11 +97,7 @@ extension BasicAuthable {
     /// - Returns: A the authenticated `BasicAuthable`, if there was
     ///   one. Throws `error` if the model is not found, or the
     ///   password doesn't match.
-    public static func authenticate(
-        username: String,
-        password: String,
-        else error: Error = HTTPError(.unauthorized)
-    ) async throws -> Self {
+    public static func authenticate(username: String, password: String, else error: Error = HTTPError(.unauthorized)) async throws -> Self {
         let rows = try await query()
             .where(usernameKeyString == username)
             .get(["\(tableName).*", passwordKeyString])

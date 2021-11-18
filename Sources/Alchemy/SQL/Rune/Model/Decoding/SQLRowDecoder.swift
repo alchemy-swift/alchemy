@@ -23,15 +23,15 @@ struct SQLRowDecoder: ModelDecoder {
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
         KeyedDecodingContainer(KeyedContainer<Key>(row: row, keyMapping: keyMapping, jsonDecoder: jsonDecoder))
     }
-    
+
+    /// This is for arrays, which we don't support.
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        /// This is for arrays, which we don't support.
         throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
-    
+
+    /// This is for non-primitives that encode to a single value
+    /// and should be handled by `SQLValueDecoder`.
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        /// This is for non-primitives that encode to a single value
-        /// and should be handled by `SQLValueDecoder`.
         throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
 }
@@ -139,8 +139,7 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
             let field = try row.get(belongsToColumn)
             return try T(from: SQLValueDecoder(value: field.value, column: column))
         } else if type is AnyHas.Type {
-            // Special case the `AnyHas` to decode dummy data.
-            let column = "key"
+            let column = "key" // Special case the `AnyHas` to decode dummy data.
             return try T(from: SQLValueDecoder(value: .string(key.stringValue), column: column))
         } else if type is AnyModelEnum.Type {
             let field = try row.get(column)

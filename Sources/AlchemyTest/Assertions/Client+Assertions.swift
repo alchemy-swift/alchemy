@@ -34,7 +34,7 @@ extension HTTPClient.Request {
         }
         
         if let value = value {
-            return header.stringValue == value
+            return header == value
         } else {
             return true
         }

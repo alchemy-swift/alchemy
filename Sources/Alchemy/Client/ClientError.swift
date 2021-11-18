@@ -11,15 +11,12 @@ public struct ClientError: Error {
 }
 
 extension ClientError {
+    /// Logs in a separate task since the only way to load the request body is
+    /// asynchronously.
     func logDebug() {
-        // Seems like the only way to log the request body is asynchronously.
-        // Need to kick this off on a separate task.
         Task {
-            do {
-                Log.info(try await debugString())
-            } catch {
-                Log.warning("Error printing debug description for `ClientError` \(error).")
-            }
+            do { Log.info(try await debugString()) }
+            catch { Log.warning("Error printing debug description for `ClientError` \(error).") }
         }
     }
     
@@ -31,14 +28,14 @@ extension ClientError {
             *** Request ***
             URL: \(request.method.rawValue) \(request.url.absoluteString)
             Headers: [
-                \(request.headers.map { "\($0) \($1)" }.joined(separator: "\n    "))
+                \(request.headers.map { "\($0): \($1)" }.joined(separator: "\n    "))
             ]
             Body: \(try await request.bodyString() ?? "nil")
             
             *** Response ***
             Status: \(response.status.code) \(response.status.reasonPhrase)
             Headers: [
-                \(response.headers.map { "\($0) \($1)" }.joined(separator: "\n    "))
+                \(response.headers.map { "\($0): \($1)" }.joined(separator: "\n    "))
             ]
             Body: \(response.bodyString ?? "nil")
             """

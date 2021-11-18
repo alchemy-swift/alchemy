@@ -72,12 +72,8 @@ private struct _SingleValueEncoder<M: Model>: ModelEncoder {
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
 
-    func container<Key>(
-        keyedBy type: Key.Type
-    ) -> KeyedEncodingContainer<Key> where Key : CodingKey {
-        KeyedEncodingContainer(
-            _KeyedEncodingContainer<M, Key>(encoder: encoder, codingPath: codingPath)
-        )
+    func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key : CodingKey {
+        KeyedEncodingContainer(_KeyedEncodingContainer<M, Key>(encoder: encoder, codingPath: codingPath))
     }
     
     func unkeyedContainer() -> UnkeyedEncodingContainer {
@@ -188,13 +184,8 @@ private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingC
             let keyString = encoder.mappingStrategy.map(input: key.stringValue)
             encoder.readFields.append((column: keyString, value: theType))
         } else if value is AnyBelongsTo {
-            // Special case parent relationships to append
-            // `M.belongsToColumnSuffix` to the property name.
-            let keyString = encoder.mappingStrategy
-                .map(input: key.stringValue + "Id")
-            try value.encode(
-                to: _SingleValueEncoder<M>(column: keyString, encoder: encoder)
-            )
+            let keyString = encoder.mappingStrategy.map(input: key.stringValue + "Id")
+            try value.encode(to: _SingleValueEncoder<M>(column: keyString, encoder: encoder))
         } else {
             let keyString = encoder.mappingStrategy.map(input: key.stringValue)
             try value.encode(to: _SingleValueEncoder<M>(column: keyString, encoder: encoder))

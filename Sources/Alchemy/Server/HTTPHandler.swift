@@ -57,23 +57,19 @@ final class HTTPHandler: ChannelInboundHandler {
                 body = nil
             }
       
-            self.request = Request(
-                head: requestHead,
-                bodyBuffer: body
-            )
+            request = Request(head: requestHead, bodyBuffer: body)
         case .body(var newData):
             // Appends new data to the already reserved buffer
-            self.request?.bodyBuffer?.writeBuffer(&newData)
+            request?.bodyBuffer?.writeBuffer(&newData)
         case .end:
-            guard let request = request else { return }
+            guard let request = request else {
+                return
+            }
+            
             self.request = nil
             
             // Writes the response when done
-            writeResponse(
-                version: request.head.version,
-                getResponse: { await self.handler(request) },
-                to: context
-            )
+            writeResponse(version: request.head.version, getResponse: { await self.handler(request) }, to: context)
         }
     }
   
@@ -139,21 +135,27 @@ private struct HTTPResponseWriter: ResponseWriter {
     // MARK: ResponseWriter
     
     func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
+        print("head")
         let head = HTTPResponseHead(version: version, status: status, headers: headers)
+        context.write(handler.wrapOutboundOut(.head(head)), promise: nil)
         _ = context.eventLoop.submit {
-            self.context.write(self.handler.wrapOutboundOut(.head(head)), promise: nil)
+            context.write(handler.wrapOutboundOut(.head(head)), promise: nil)
         }
     }
     
     func writeBody(_ body: ByteBuffer) {
+        print("body")
+        context.writeAndFlush(handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
         _ = context.eventLoop.submit {
-            self.context.writeAndFlush(self.handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
+            context.writeAndFlush(handler.wrapOutboundOut(.body(IOData.byteBuffer(body))), promise: nil)
         }
     }
     
     func writeEnd() {
+        print("end")
+        context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
         _ = context.eventLoop.submit {
-            self.context.writeAndFlush(self.handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
+            context.writeAndFlush(handler.wrapOutboundOut(.end(nil)), promise: completionPromise)
         }
     }
 }

@@ -4,10 +4,7 @@ import NIO
 /// relationship are defined in the initializers inherited from
 /// `HasRelationship`.
 @propertyWrapper
-public final class HasOneRelationship<
-    From: Model,
-    To: ModelMaybeOptional
->: AnyHas, Codable, Relationship {
+public final class HasOneRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Codable, Relationship {
     /// Internal value for storing the `To` object of this
     /// relationship, when it is loaded.
     fileprivate var value: To?
@@ -28,7 +25,7 @@ public final class HasOneRelationship<
                 fatalError("Relationship of type `\(name(of: To.self))` was not loaded!")
             }
         }
-        set { self.value = newValue }
+        set { value = newValue }
     }
     
     // MARK: Overrides
@@ -42,7 +39,7 @@ public final class HasOneRelationship<
     }
     
     public func set(values: [To]) throws {
-        self.wrappedValue = try To.from(values.first)
+        wrappedValue = try To.from(values.first)
     }
     
     // MARK: Codable
@@ -51,7 +48,7 @@ public final class HasOneRelationship<
     
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
-            try self.value.encode(to: encoder)
+            try value.encode(to: encoder)
         }
     }
 }

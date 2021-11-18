@@ -87,6 +87,25 @@ final class ModelCrudTests: TestCase<TestApp> {
         let newPulled = try await TestModel.find(model.getID())
         XCTAssertEqual(model, newPulled)
     }
+    
+    func testSync() async throws {
+        let model = try await TestModel.seed()
+        _ = try await model.update { $0.foo = "bar" }
+        AssertNotEqual(model.foo, "bar")
+        AssertEqual(try await model.sync().foo, "bar")
+        
+        do {
+            let unsavedModel = TestModel(id: 12345, foo: "one", bar: false)
+            _ = try await unsavedModel.sync()
+            XCTFail("Syncing an unsaved model should throw")
+        } catch {}
+        
+        do {
+            let unsavedModel = TestModel(foo: "two", bar: true)
+            _ = try await unsavedModel.sync()
+            XCTFail("Syncing an unsaved model should throw")
+        } catch {}
+    }
 }
 
 private struct TestError: Error {}

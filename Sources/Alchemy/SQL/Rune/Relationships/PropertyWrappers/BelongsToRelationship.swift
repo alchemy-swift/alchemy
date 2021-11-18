@@ -18,17 +18,14 @@ import NIO
 /// }
 /// ```
 @propertyWrapper
-public final class BelongsToRelationship<
-    Child: Model,
-    Parent: ModelMaybeOptional
->: AnyBelongsTo, Codable, Relationship {
+public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: AnyBelongsTo, Relationship, Codable {
     public typealias From = Child
     public typealias To = Parent
     
     /// The identifier of this relationship's parent.
     public var id: Parent.Value.Identifier! {
         didSet {
-            self.value = nil
+            value = nil
         }
     }
     
@@ -48,8 +45,8 @@ public final class BelongsToRelationship<
             }
         }
         set {
-            self.id = newValue.id
-            self.value = newValue
+            id = newValue.id
+            value = newValue
         }
     }
     
@@ -66,8 +63,8 @@ public final class BelongsToRelationship<
     ///   belongs.
     public init(wrappedValue: Parent) {
         do {
-            self.value = try Parent.from(wrappedValue)
-            self.id = value?.id
+            value = try Parent.from(wrappedValue)
+            id = value?.id
         } catch {
             fatalError("Error initializing `BelongsTo`; expected a value but got nil. Perhaps this relationship should be optional?")
         }

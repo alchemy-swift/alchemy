@@ -10,9 +10,9 @@ import Foundation
 ///
 /// ```swift
 /// // Start with a Rune `Model`.
-/// struct MyToken: TokenAuthable {
+/// struct Token: TokenAuthable {
 ///     // `KeyPath` to the relation of the `User`.
-///     static var userKey: KeyPath<UserToken, BelongsTo<User>> = \.$user
+///     static var userKey = \Token.$user
 ///
 ///     var id: Int?
 ///     let value: String

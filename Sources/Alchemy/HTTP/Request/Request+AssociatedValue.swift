@@ -36,18 +36,20 @@ extension Request {
     /// - Throws: An `AssociatedValueError` if there isn't a value of
     ///   type `T` found associated with the request.
     /// - Returns: The value of type `T` from the request.
-    public func get<T>(_ type: T.Type = T.self) throws -> T {
-        let error = AssociatedValueError(message: "Couldn't find type `\(name(of: type))` on this request")
-        return try storage[ObjectIdentifier(T.self)]
-            .unwrap(as: type, or: error)
+    public func get<T>(_ type: T.Type = T.self, or error: Error = AssociatedValueError(message: "Couldn't find type `\(name(of: T.self))` on this request")) throws -> T {
+        try storage[ObjectIdentifier(T.self)].unwrap(as: type, or: error)
     }
 }
 
 /// Error thrown when the user tries to `.get` an assocaited value
 /// from an `Request` but one isn't set.
-struct AssociatedValueError: Error {
+public struct AssociatedValueError: Error {
     /// What went wrong.
-    let message: String
+    public let message: String
+    
+    public init(message: String) {
+        self.message = message
+    }
 }
 
 extension Optional {

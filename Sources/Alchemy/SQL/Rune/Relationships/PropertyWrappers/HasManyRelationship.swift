@@ -4,10 +4,7 @@ import NIO
 /// relationship. The details of this relationship are defined
 /// in the initializers inherited from `HasRelationship`.
 @propertyWrapper
-public final class HasManyRelationship<
-    From: Model,
-    To: ModelMaybeOptional
->: AnyHas, Codable, Relationship {
+public final class HasManyRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Relationship, Codable {
     /// Internal value for storing the `To` objects of this
     /// relationship, when they are loaded.
     fileprivate var value: [To]?
@@ -17,12 +14,13 @@ public final class HasManyRelationship<
     /// or set manually.
     public var wrappedValue: [To] {
         get {
-            guard let value = self.value else {
+            guard let value = value else {
                 fatalError("Relationship of type `\(name(of: To.self))` was not loaded!")
             }
+            
             return value
         }
-        set { self.value = newValue }
+        set { value = newValue }
     }
     
     /// The projected value of this property wrapper is itself. Used
@@ -41,7 +39,7 @@ public final class HasManyRelationship<
     }
     
     public func set(values: [To]) throws {
-        self.wrappedValue = try values.map { try To.from($0) }
+        wrappedValue = try values.map { try To.from($0) }
     }
     
     // MARK: Codable
@@ -50,7 +48,7 @@ public final class HasManyRelationship<
     
     public func encode(to encoder: Encoder) throws {
         if !(encoder is ModelEncoder) {
-            try self.value.encode(to: encoder)
+            try value.encode(to: encoder)
         }
     }
 }

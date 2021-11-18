@@ -6,14 +6,16 @@ struct HTTPUpgrade: ServerUpgrade {
     let versions: [HTTPVersion]
     
     func upgrade(channel: Channel) async throws {
-        if versions.contains(.http2) {
-            try await channel.configureHTTP2SecureUpgrade(
-                h2ChannelConfigurator: upgradeHttp2,
-                http1ChannelConfigurator: upgradeHttp1
-            ).get()
-        } else {
+        guard versions.contains(.http2) else {
             try await upgradeHttp1(channel: channel).get()
+            return
         }
+        
+        try await channel
+            .configureHTTP2SecureUpgrade(
+                h2ChannelConfigurator: upgradeHttp2,
+                http1ChannelConfigurator: upgradeHttp1)
+            .get()
     }
     
     private func upgradeHttp1(channel: Channel) -> EventLoopFuture<Void> {

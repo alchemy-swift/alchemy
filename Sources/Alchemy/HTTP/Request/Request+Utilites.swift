@@ -72,8 +72,10 @@ extension Request {
         let body = try body.unwrap(or: ValidationError("Expecting a request body."))
         do {
             return try body.decodeJSON(as: type, with: decoder)
-        } catch let DecodingError.keyNotFound(key, _) {
-            throw ValidationError("Missing field `\(key.stringValue)` from request body.")
+        } catch let DecodingError.keyNotFound(key, context) {
+            let path = context.codingPath.map(\.stringValue).joined(separator: ".")
+            let pathWithKey = path.isEmpty ? key.stringValue : "\(path).\(key.stringValue)"
+            throw ValidationError("Missing field `\(pathWithKey)` from request body.")
         } catch let DecodingError.typeMismatch(type, context) {
             let key = context.codingPath.last?.stringValue ?? "unknown"
             throw ValidationError("Request body field `\(key)` should be a `\(type)`.")

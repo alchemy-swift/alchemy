@@ -9,12 +9,6 @@ public protocol Service {
     func shutdown() throws
 }
 
-extension Inject where Service: Alchemy.Service {
-    convenience init(_ identifier: ServiceIdentifier<Service>) {
-        self.init(identifier as AnyHashable)
-    }
-}
-
 extension Service {
     /// An identifier, unique to your service.
     public typealias Identifier = ServiceIdentifier<Self>
@@ -24,11 +18,10 @@ extension Service {
     public func shutdown() throws {}
 }
 
-// 1. Generic service with identifier (Router, Scheduler, ThreadPool)
-// 2. Generic service with identifier & config (Database, Redis, Queue)
-
 extension Service {
-    public static var `default`: Self { resolve(.default) }
+    public static var `default`: Self {
+        resolve(.default)
+    }
     
     public static func register(_ singleton: Self) {
         register(.default, singleton)
@@ -51,5 +44,11 @@ extension Service {
     
     public static func resolve(_ identifier: Identifier = .default) -> Self {
         Container.resolve(Self.self, identifier: identifier)
+    }
+}
+
+extension Inject where Service: Alchemy.Service {
+    public convenience init(_ identifier: ServiceIdentifier<Service> = .default) {
+        self.init(identifier as AnyHashable)
     }
 }

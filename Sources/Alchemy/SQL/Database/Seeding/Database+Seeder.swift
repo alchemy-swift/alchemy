@@ -7,11 +7,11 @@ extension Database {
         }
     }
     
-    public func seed<S: Seeder>(with seeder: S) async throws {
+    public func seed(with seeder: Seeder) async throws {
         try await seeder.run()
     }
     
-    func seed(using seederNames: [String]) async throws {
+    func seed(names seederNames: [String]) async throws {
         let toRun = try seederNames.map { name in
             return try seeders
                 .first(where: {
@@ -19,7 +19,6 @@ extension Database {
                     $0.name.lowercased().droppingSuffix("seeder") == name.lowercased()
                 })
                 .unwrap(or: DatabaseError("Unable to find a seeder on this database named \(name) or \(name)Seeder."))
-            
         }
         
         for seeder in toRun {

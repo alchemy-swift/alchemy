@@ -9,13 +9,16 @@ extension Queue {
     ///   - eventLoop: The loop this worker will run on. Defaults to
     ///     your apps next available loop.
     public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, on eventLoop: EventLoop = Loop.group.next()) {
-        let loopId = ObjectIdentifier(eventLoop).debugDescription.dropLast().suffix(6)
-        Log.info("[Queue] starting worker \(loopId)")
+        Log.info("[Queue] starting worker \(eventLoop.queueId)")
+        _startWorker(for: channels, pollRate: pollRate, on: eventLoop)
+    }
+    
+    public func _startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, on eventLoop: EventLoop = Loop.group.next()) {
         eventLoop.wrapAsync { try await self.runNext(from: channels) }
             .whenComplete { _ in
                 // Run check again in the `pollRate`.
                 eventLoop.scheduleTask(in: pollRate) {
-                    self.startWorker(for: channels, pollRate: pollRate, on: eventLoop)
+                    self._startWorker(for: channels, pollRate: pollRate, on: eventLoop)
                 }
             }
     }
@@ -77,5 +80,11 @@ extension Queue {
             job?.finished(result: .failure(error))
             try await driver.complete(jobData, outcome: .failed)
         }
+    }
+}
+
+extension EventLoop {
+    var queueId: String {
+        String(ObjectIdentifier(self).debugDescription.dropLast().suffix(6))
     }
 }

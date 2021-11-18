@@ -12,7 +12,7 @@ struct SeedDatabase: Command {
     /// Whether specific seeders to run. If this is empty, all seeders
     /// on the database will be run.
     @Argument(help: "The specific seeders to run. If empty, all seeders will be run.")
-    var name: [String] = []
+    var names: [String] = []
     
     /// Whether specific seeders to run. If this is empty, all seeders
     /// on the database will be run.
@@ -23,10 +23,10 @@ struct SeedDatabase: Command {
     
     func start() async throws {
         let db: Database = database.isEmpty ? .default : .resolve(.init(database))
-        if name.isEmpty {
+        if names.isEmpty {
             try await db.seed()
         } else {
-            try await db.seed(using: name)
+            try await db.seed(names: names)
         }
     }
     
