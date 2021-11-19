@@ -10,8 +10,8 @@ extension Queue {
             }
         }
         
-        let queues: [Identifier: Queue]
-        let jobs: [JobType]
+        public let queues: [Identifier: Queue]
+        public let jobs: [JobType]
         
         public init(queues: [Queue.Identifier : Queue], jobs: [Queue.Config.JobType]) {
             self.queues = queues

@@ -1,9 +1,9 @@
 extension Database {
     public struct Config {
-        let databases: [Identifier: Database]
-        let migrations: [Migration]
-        let seeders: [Seeder]
-        let redis: [Redis.Identifier: Redis]
+        public let databases: [Identifier: Database]
+        public let migrations: [Migration]
+        public let seeders: [Seeder]
+        public let redis: [Redis.Identifier: Redis]
         
         public init(databases: [Database.Identifier : Database], migrations: [Migration], seeders: [Seeder], redis: [Redis.Identifier : Redis]) {
             self.databases = databases
