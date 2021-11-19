@@ -8,22 +8,22 @@ extension Queue {
     ///     queue for new work. Defaults to `Queue.defaultPollRate`.
     ///   - eventLoop: The loop this worker will run on. Defaults to
     ///     your apps next available loop.
-    public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, on eventLoop: EventLoop = Loop.group.next()) {
+    public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool = true, on eventLoop: EventLoop = Loop.group.next()) {
         Log.info("[Queue] starting worker \(eventLoop.queueId)")
-        _startWorker(for: channels, pollRate: pollRate, on: eventLoop)
+        _startWorker(for: channels, pollRate: pollRate, untilEmpty: untilEmpty, on: eventLoop)
     }
     
-    public func _startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, on eventLoop: EventLoop = Loop.group.next()) {
-        eventLoop.wrapAsync { try await self.runNext(from: channels) }
+    private func _startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool, on eventLoop: EventLoop = Loop.group.next()) {
+        eventLoop.wrapAsync { try await self.runNext(from: channels, untilEmpty: untilEmpty) }
             .whenComplete { _ in
                 // Run check again in the `pollRate`.
                 eventLoop.scheduleTask(in: pollRate) {
-                    self._startWorker(for: channels, pollRate: pollRate, on: eventLoop)
+                    self._startWorker(for: channels, pollRate: pollRate, untilEmpty: untilEmpty, on: eventLoop)
                 }
             }
     }
     
-    func runNext(from channels: [String]) async throws {
+    func runNext(from channels: [String], untilEmpty: Bool) async throws {
         do {
             guard let jobData = try await dequeue(from: channels) else {
                 return
@@ -31,7 +31,10 @@ extension Queue {
             
             Log.debug("[Queue] dequeued job \(jobData.jobName) from queue \(jobData.channel)")
             try await execute(jobData)
-            try await runNext(from: channels)
+            
+            if untilEmpty {
+                try await runNext(from: channels, untilEmpty: untilEmpty)
+            }
         } catch {
             Log.error("[Queue] error dequeueing job from `\(channels)`. \(error)")
             throw error
@@ -69,16 +72,19 @@ extension Queue {
         do {
             job = try JobDecoding.decode(jobData)
             try await job?.run()
-            job?.finished(result: .success(()))
             try await driver.complete(jobData, outcome: .success)
+            job?.finished(result: .success(()))
         } catch where jobData.canRetry {
             try await retry()
+            job?.failed(error: error)
         } catch where (error as? JobError) == JobError.unknownType {
-            // So that an old worker won't fail new jobs.
+            // So that an old worker won't fail new, unrecognized jobs.
             try await retry(ignoreAttempt: true)
+            job?.failed(error: error)
         } catch {
-            job?.finished(result: .failure(error))
             try await driver.complete(jobData, outcome: .failed)
+            job?.finished(result: .failure(error))
+            job?.failed(error: error)
         }
     }
 }

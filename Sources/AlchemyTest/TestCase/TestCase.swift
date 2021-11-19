@@ -17,13 +17,13 @@ open class TestCase<A: Application>: XCTestCase {
     
     open override func tearDown() {
         super.tearDown()
-        app.shutdown()
+        app.stop()
         JobDecoding.reset()
     }
 }
 
 extension Application {
-    func shutdown() {
+    public func stop() {
         @Inject var lifecycle: ServiceLifecycle
         lifecycle.shutdown()
     }

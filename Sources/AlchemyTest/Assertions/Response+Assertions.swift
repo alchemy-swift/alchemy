@@ -1,7 +1,16 @@
 import Alchemy
 import XCTest
 
-extension Response {
+public protocol ResponseAssertable {
+    var status: HTTPResponseStatus { get }
+    var headers: HTTPHeaders { get }
+    var body: HTTPBody? { get }
+}
+
+extension Response: ResponseAssertable {}
+extension ClientResponse: ResponseAssertable {}
+
+extension ResponseAssertable {
     // MARK: Status Assertions
     
     @discardableResult

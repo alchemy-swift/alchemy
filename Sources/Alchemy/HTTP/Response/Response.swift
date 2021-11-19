@@ -5,7 +5,7 @@ import NIOHTTP1
 /// response can be a failure or success case depending on the
 /// status code in the `head`.
 public final class Response {
-    public typealias WriteResponse = (ResponseWriter) -> Void
+    public typealias WriteResponse = (ResponseWriter) async throws -> Void
     
     /// The default `JSONEncoder` with which to encode JSON responses.
     public static var defaultJSONEncoder = JSONEncoder()
@@ -81,13 +81,13 @@ public final class Response {
     ///
     /// - Parameter writer: An abstraction around writing data to a
     ///   remote peer.
-    private func defaultWriterClosure(writer: ResponseWriter) {
-        writer.writeHead(status: status, headers)
+    private func defaultWriterClosure(writer: ResponseWriter) async throws {
+        try await writer.writeHead(status: status, headers)
         if let body = body {
-            writer.writeBody(body.buffer)
+            try await writer.writeBody(body.buffer)
         }
         
-        writer.writeEnd()
+        try await writer.writeEnd()
     }
 }
 
@@ -98,12 +98,6 @@ extension Response {
             var headers: HTTPHeaders = [:]
             var body = ByteBuffer()
             
-            var didFinish: (MockWriter) -> Void
-            
-            init(didFinish: @escaping (MockWriter) -> Void) {
-                self.didFinish = didFinish
-            }
-            
             func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) {
                 self.status = status
                 self.headers = headers
@@ -113,18 +107,12 @@ extension Response {
                 self.body.writeBytes(body.readableBytesView)
             }
             
-            func writeEnd() {
-                didFinish(self)
-            }
+            func writeEnd() async throws {}
         }
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            let writer = MockWriter {
-                continuation.resume(returning: Response(status: $0.status, headers: $0.headers, body: HTTPBody(buffer: $0.body)))
-            }
-            
-            writer.write(response: self)
-        }
+
+        let writer = MockWriter()
+        try await writer.write(response: self)
+        return Response(status: writer.status, headers: writer.headers, body: HTTPBody(buffer: writer.body))
     }
 }
 
@@ -132,7 +120,7 @@ extension ResponseWriter {
     /// Writes a response to a remote peer with this `ResponseWriter`.
     ///
     /// - Parameter response: The response to write.
-    func write(response: Response) {
-        response.writerClosure(self)
+    func write(response: Response) async throws {
+        try await response.writerClosure(self)
     }
 }

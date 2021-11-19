@@ -10,8 +10,6 @@ public struct Loop {
     /// The main `EventLoopGroup` of the Application.
     @Inject public static var group: EventLoopGroup
     
-    @Inject private static var lifecycle: ServiceLifecycle
-    
     /// Configure the Applications `EventLoopGroup` and `EventLoop`.
     static func config() {
         Container.register(EventLoop.self) { _ in
@@ -29,9 +27,8 @@ public struct Loop {
             MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         }
         
-        lifecycle.registerShutdown(
-            label: name(of: EventLoopGroup.self),
-            .sync(group.syncShutdownGracefully))
+        @Inject var lifecycle: ServiceLifecycle
+        lifecycle.registerShutdown(label: name(of: EventLoopGroup.self), .sync(group.syncShutdownGracefully))
     }
     
     /// Register mocks of `EventLoop` and `EventLoop` to the

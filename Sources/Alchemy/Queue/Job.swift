@@ -14,6 +14,8 @@ public protocol Job: Codable {
     /// Called when a job finishes, either successfully or with too
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
+    /// Called when a job fails, whether it can be retried or not.
+    func failed(error: Error)
     /// Run this Job.
     func run() async throws
 }
@@ -32,6 +34,8 @@ extension Job {
             Log.error("[Queue] Job '\(Self.name)' failed with error: \(error).")
         }
     }
+    
+    public func failed(error: Error) {}
 }
 
 public enum RecoveryStrategy: Equatable {

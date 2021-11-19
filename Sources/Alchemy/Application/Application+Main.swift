@@ -10,14 +10,32 @@ extension Application {
     /// Launch this application. By default it serves, see `Launch`
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
-    public static func main() {
-        do {
-            try Self().setup()
-            Launch.main()
-            try Container.resolve(ServiceLifecycle.self).startAndWait()
-        } catch {
-            Launch.exit(withError: error)
+    public static func main() throws {
+        let app = Self()
+        try app.setup()
+        app.start()
+        app.wait()
+    }
+    
+    public func start(_ args: String...) {
+        if args.isEmpty {
+            start()
+        } else {
+            start(args: args)
         }
+    }
+    
+    public func start(args: [String] = Array(CommandLine.arguments.dropFirst())) {
+        Launch.main(args.isEmpty ? nil : args)
+        Container.resolve(ServiceLifecycle.self).start { error in
+            if let error = error {
+                Launch.exit(withError: error)
+            }
+        }
+    }
+    
+    public func wait() {
+        Container.resolve(ServiceLifecycle.self).wait()
     }
     
     /// Sets up this application for running.

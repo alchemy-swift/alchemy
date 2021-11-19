@@ -46,8 +46,8 @@ public struct ClientResponse {
     
     // MARK: Headers
     
-    public var headers: [(String, String)] {
-        response.headers.map { ($0, $1) }
+    public var headers: HTTPHeaders {
+        response.headers
     }
     
     public func header(_ name: String) -> String? {
@@ -55,6 +55,12 @@ public struct ClientResponse {
     }
     
     // MARK: Body
+    
+    public var body: HTTPBody? {
+        response.body.map {
+            HTTPBody(buffer: $0, contentType: response.headers["content-type"].first.map { ContentType($0) })
+        }
+    }
     
     public var bodyData: Data? {
         response.body?.data()

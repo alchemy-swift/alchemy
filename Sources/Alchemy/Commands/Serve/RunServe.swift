@@ -39,6 +39,17 @@ final class RunServe: Command {
     @IgnoreDecoding
     private var server: Server?
     
+    init() {}
+    init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
+        self.host = host
+        self.port = port
+        self.unixSocket = nil
+        self.workers = workers
+        self.schedule = schedule
+        self.migrate = migrate
+        self.server = nil
+    }
+    
     // MARK: Command
 
     func run() throws {

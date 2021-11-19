@@ -82,33 +82,34 @@ public struct StaticFileMiddleware: Middleware {
                let mediaType = ContentType(fileExtension: ext) {
                 headers.add(name: "content-type", value: mediaType.value)
             }
-            responseWriter.writeHead(status: .ok, headers)
+            try await responseWriter.writeHead(status: .ok, headers)
             
             // Load the file in chunks, streaming it.
-            self.fileIO.readChunked(
+            try await fileIO.readChunked(
                 fileHandle: fileHandle,
                 byteCount: fileSizeBytes,
                 chunkSize: NonBlockingFileIO.defaultChunkSize,
                 allocator: self.bufferAllocator,
                 eventLoop: Loop.current,
                 chunkHandler: { buffer in
-                    responseWriter.writeBody(buffer)
-                    return Loop.current.makeSucceededVoidFuture()
+                    Loop.current.wrapAsync {
+                        try await responseWriter.writeBody(buffer)
+                    }
                 }
             )
-            .flatMapThrowing {
+            .flatMapThrowing { _ -> Void in
                 try fileHandle.close()
             }
-            .whenComplete { result in
-                try? fileHandle.close()
-                switch result {
-                case .failure(let error):
-                    Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
-                    responseWriter.writeEnd()
-                case .success:
-                    responseWriter.writeEnd()
+            .flatMapAlways { result -> EventLoopFuture<Void> in
+                return Loop.current.wrapAsync {
+                    if case .failure(let error) = result {
+                        Log.error("[StaticFileMiddleware] Encountered an error loading a static file: \(error)")
+                    }
+                    
+                    try await responseWriter.writeEnd()
                 }
             }
+            .get()
         }
         
         return response

@@ -13,15 +13,15 @@ public protocol ResponseWriter {
     /// - Parameters:
     ///   - status: The status code of the response.
     ///   - headers: Any headers of this response.
-    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders)
+    func writeHead(status: HTTPResponseStatus, _ headers: HTTPHeaders) async throws
     
     /// Write some body data to the remote peer. May be called 0 or
     /// more times.
     ///
     /// - Parameter body: The buffer of data to write.
-    func writeBody(_ body: ByteBuffer)
+    func writeBody(_ body: ByteBuffer) async throws
     
     /// Write the end of the response. Needs to be called once per
     /// response, when all data has been written.
-    func writeEnd()
+    func writeEnd() async throws
 }

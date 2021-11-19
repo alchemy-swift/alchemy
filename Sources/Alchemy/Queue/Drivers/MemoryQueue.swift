@@ -88,10 +88,10 @@ extension Array {
     /// - Returns: The first matching element, or nil if no elements
     ///   match.
     fileprivate mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
-        if let firstIndex = firstIndex(where: conditional) {
-            return remove(at: firstIndex)
-        } else {
+        guard let firstIndex = firstIndex(where: conditional) else {
             return nil
         }
+        
+        return remove(at: firstIndex)
     }
 }

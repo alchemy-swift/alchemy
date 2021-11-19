@@ -29,6 +29,8 @@ final class RequestUtilitiesTests: XCTestCase {
         XCTAssertEqual(try request.parameter("foo"), "one")
         XCTAssertEqual(try request.parameter("bar"), "two")
         XCTAssertEqual(try request.parameter("baz"), "three")
+        XCTAssertThrowsError(try request.parameter("fake", as: String.self))
+        XCTAssertThrowsError(try request.parameter("foo", as: Int.self))
         XCTAssertTrue(request.parameters.contains(Parameter(key: "foo", value: "one")))
     }
     

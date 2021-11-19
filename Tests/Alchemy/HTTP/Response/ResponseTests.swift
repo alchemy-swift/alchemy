@@ -18,7 +18,7 @@ final class ResponseTests: XCTestCase {
             .assertOk()
     }
     
-    func testResponseWrite() {
+    func testResponseWrite() async throws {
         let expHead = expectation(description: "write head")
         let expBody = expectation(description: "write body")
         let expEnd = expectation(description: "write end")
@@ -34,11 +34,11 @@ final class ResponseTests: XCTestCase {
             expEnd.fulfill()
         }
 
-        writer.write(response: Response(status: .ok, body: "foo"))
-        waitForExpectations(timeout: kMinTimeout)
+        try await writer.write(response: Response(status: .ok, body: "foo"))
+        await waitForExpectations(timeout: kMinTimeout)
     }
     
-    func testCustomWriteResponse() {
+    func testCustomWriteResponse() async throws {
         let expHead = expectation(description: "write head")
         let expBody = expectation(description: "write body")
         expBody.expectedFulfillmentCount = 2
@@ -61,14 +61,14 @@ final class ResponseTests: XCTestCase {
             expEnd.fulfill()
         }
 
-        writer.write(response: Response {
-            $0.writeHead(status: .created, ["foo": "one"])
-            $0.writeBody(ByteBuffer(string: "bar"))
-            $0.writeBody(ByteBuffer(string: "baz"))
-            $0.writeEnd()
+        try await writer.write(response: Response {
+            try await $0.writeHead(status: .created, ["foo": "one"])
+            try await $0.writeBody(ByteBuffer(string: "bar"))
+            try await $0.writeBody(ByteBuffer(string: "baz"))
+            try await $0.writeEnd()
         })
         
-        waitForExpectations(timeout: kMinTimeout)
+        await waitForExpectations(timeout: kMinTimeout)
     }
 }
 
