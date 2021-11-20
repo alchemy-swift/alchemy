@@ -10,7 +10,7 @@ struct Launch: ParsableCommand {
                 // Running
                 RunServe.self,
                 RunMigrate.self,
-                RunQueue.self,
+                RunWorker.self,
                 
                 // Database
                 SeedDatabase.self,

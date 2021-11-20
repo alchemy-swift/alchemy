@@ -1,11 +1,10 @@
 import ArgumentParser
 import Lifecycle
 
-/// Command to serve on launched. This is a subcommand of `Launch`.
-/// The app will route with the singleton `HTTPRouter`.
-struct RunQueue: Command {
+/// Command to run queue workers.
+struct RunWorker: Command {
     static var configuration: CommandConfiguration {
-        CommandConfiguration(commandName: "queue")
+        CommandConfiguration(commandName: "worker")
     }
     
     static var shutdownAfterRun: Bool = false
@@ -38,7 +37,7 @@ struct RunQueue: Command {
         if schedule {
             lifecycle.registerScheduler()
         }
-
+        
         let schedulerText = schedule ? "scheduler and " : ""
         Log.info("[Queue] started \(schedulerText)\(workers) workers.")
     }

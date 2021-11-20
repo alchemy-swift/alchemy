@@ -85,5 +85,5 @@ extension Request {
 }
 
 extension Response {
-    fileprivate static let `default` = Response(status: .ok, body: "bar")
+    static let `default` = Response(status: .ok, body: "bar")
 }

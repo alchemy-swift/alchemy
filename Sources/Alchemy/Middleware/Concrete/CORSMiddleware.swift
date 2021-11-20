@@ -60,15 +60,15 @@ public final class CORSMiddleware: Middleware {
         ///   header should be created.
         /// - Returns: Header string to be used in response for
         ///   allowed origin.
-        public func header(forRequest req: Request) -> String {
+        public func header(forOrigin origin: String) -> String {
             switch self {
-            case .none: return ""
-            case .originBased: return req.headers["Origin"].first ?? ""
-            case .all: return "*"
+            case .none:
+                return ""
+            case .originBased:
+                return origin
+            case .all:
+                return "*"
             case .any(let origins):
-                guard let origin = req.headers["Origin"].first else {
-                    return ""
-                }
                 return origins.contains(origin) ? origin : ""
             case .custom(let string):
                 return string
@@ -88,7 +88,7 @@ public final class CORSMiddleware: Middleware {
         /// - Allow Headers: `Accept`, `Authorization`,
         ///   `Content-Type`, `Origin`, `X-Requested-With`
         public static func `default`() -> Configuration {
-            return .init(
+            Configuration(
                 allowedOrigin: .originBased,
                 allowedMethods: [.GET, .POST, .PUT, .OPTIONS, .DELETE, .PATCH],
                 allowedHeaders: ["Accept", "Authorization", "Content-Type", "Origin", "X-Requested-With"]
@@ -167,7 +167,7 @@ public final class CORSMiddleware: Middleware {
     
     public func intercept(_ request: Request, next: Next) async throws -> Response {
         // Check if it's valid CORS request
-        guard request.headers["Origin"].first != nil else {
+        guard let origin = request.headers["Origin"].first else {
             return try await next(request)
         }
         
@@ -179,7 +179,7 @@ public final class CORSMiddleware: Middleware {
         // Modify response headers based on CORS settings
         response.headers.replaceOrAdd(
             name: "Access-Control-Allow-Origin",
-            value: self.configuration.allowedOrigin.header(forRequest: request)
+            value: self.configuration.allowedOrigin.header(forOrigin: origin)
         )
         response.headers.replaceOrAdd(
             name: "Access-Control-Allow-Headers",
@@ -209,10 +209,9 @@ public final class CORSMiddleware: Middleware {
     }
 }
 
-private extension Request {
+extension Request {
     /// Returns `true` if the request is a pre-flight CORS request.
-    var isPreflight: Bool {
-        return self.method.rawValue == "OPTIONS"
-            && self.headers["Access-Control-Request-Method"].first != nil
+    fileprivate var isPreflight: Bool {
+        method.rawValue == "OPTIONS" && headers["Access-Control-Request-Method"].first != nil
     }
 }

@@ -76,7 +76,12 @@ extension ResponseAssertable {
     
     @discardableResult
     public func assertHeader(_ header: String, value: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertTrue(headers[header].contains(value), file: file, line: line)
+        let values = headers[header]
+        XCTAssertFalse(values.isEmpty)
+        for v in values {
+            XCTAssertEqual(v, value, file: file, line: line)
+        }
+        
         return self
     }
     

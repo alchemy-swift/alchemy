@@ -9,9 +9,9 @@ final class HTTPHanderTests: XCTestCase {
         let app = TestApp()
         try app.setup()
         app.get("/foo", use: { _ in "hello" })
-        app.start("serve")
+        app.start("serve", "--port", "1234")
         defer { app.stop() }
-        try await Http.get("http://localhost:3000/foo")
+        try await Http.get("http://localhost:1234/foo")
             .assertBody("hello")
     }
 }
