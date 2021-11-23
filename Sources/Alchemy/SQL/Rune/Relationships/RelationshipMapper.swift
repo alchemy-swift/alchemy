@@ -11,23 +11,23 @@ public final class RelationshipMapper<M: Model> {
     }
     
     func getConfig<R: Relationship>(for relation: KeyPath<M, R>) -> RelationshipMapping<R.From, R.To.Value> {
-        if let rel = configs[relation] {
-            return rel as! RelationshipMapping<R.From, R.To.Value>
-        } else {
+        guard let rel = configs[relation] else {
             return R.defaultConfig()
         }
+        
+        return rel as! RelationshipMapping<R.From, R.To.Value>
     }
 }
 
 protocol AnyRelation {}
 
 /// Defines how a `Relationship` is mapped from it's `From` to `To`.
-public final class RelationshipMapping<From: Model, To: Model>: AnyRelation {
+public final class RelationshipMapping<From: Model, To: Model>: AnyRelation, Equatable {
     enum Kind {
         case has, belongs
     }
     
-    struct Through {
+    struct Through: Equatable {
         var table: String
         var fromKey: String
         var toKey: String
@@ -43,26 +43,22 @@ public final class RelationshipMapping<From: Model, To: Model>: AnyRelation {
     var toKey: String { toKeyOverride ?? toKeyAssumed }
     var type: Kind
     
-    var through: Through? {
-        didSet {
-            if oldValue != nil && through != nil {
-                fatalError("For now, only one through is allowed per relation.")
-            }
-        }
-    }
+    var through: Through?
 
     init(
         _ type: Kind,
         fromTable: String = From.tableName,
         fromKey: String = To.referenceKey,
         toTable: String = To.tableName,
-        toKey: String = From.referenceKey
+        toKey: String = From.referenceKey,
+        through: Through? = nil
     ) {
         self.type = type
         self.fromTable = fromTable
         self.fromKeyAssumed = fromKey
         self.toTable = toTable
         self.toKeyAssumed = toKey
+        self.through = through
     }
     
     @discardableResult
@@ -102,6 +98,17 @@ public final class RelationshipMapping<From: Model, To: Model>: AnyRelation {
         }
         through = Through(table: table, fromKey: _from, toKey: _to)
         return self
+    }
+    
+    public static func == (lhs: RelationshipMapping<From, To>, rhs: RelationshipMapping<From, To>) -> Bool {
+        lhs.fromTable == rhs.fromTable &&
+        lhs.fromKeyAssumed == rhs.fromKeyAssumed &&
+        lhs.fromKeyOverride == rhs.fromKeyOverride &&
+        lhs.toTable == rhs.toTable &&
+        lhs.toKeyAssumed == rhs.toKeyAssumed &&
+        lhs.toKeyOverride == rhs.toKeyOverride &&
+        lhs.type == rhs.type &&
+        lhs.through == rhs.through
     }
 }
 

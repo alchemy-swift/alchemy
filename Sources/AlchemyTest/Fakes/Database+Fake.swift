@@ -9,7 +9,8 @@ extension Database {
     ///     before this function returns.
     ///   - seeders: Any seeders to set on the database, they will be run before
     ///     this function returns.
-    public static func fake(_ id: Identifier = .default, migrations: [Migration] = [], seeders: [Seeder] = []) {
+    @discardableResult
+    public static func fake(_ id: Identifier = .default, migrations: [Migration] = [], seeders: [Seeder] = []) -> Database {
         let db = Database.sqlite
         db.migrations = migrations
         db.seeders = seeders
@@ -28,5 +29,6 @@ extension Database {
         }
         
         sem.wait()
+        return db
     }
 }

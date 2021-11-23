@@ -30,6 +30,9 @@ public protocol DatabaseDriver {
     /// - Returns: The database rows returned by the query.
     func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow]
     
+    /// Run a raw, not parametrized SQL string.
+    ///
+    /// - Returns: The rows returned by the query.
     func raw(_ sql: String) async throws -> [SQLRow]
     
     /// Runs a transaction on the database, using the given closure.

@@ -97,9 +97,9 @@ struct JobModel: Model {
         reserved = false
     }
     
-    func toJobData() -> JobData {
-        return JobData(
-            id: (try? getID()) ?? "N/A",
+    func toJobData() throws -> JobData {
+        JobData(
+            id: try getID(),
             json: json,
             jobName: jobName,
             channel: channel,

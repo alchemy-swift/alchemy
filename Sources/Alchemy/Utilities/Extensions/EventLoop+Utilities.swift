@@ -8,8 +8,4 @@ extension EventLoop {
         }
         return elp.futureResult
     }
-    
-    func executeAsync<T>(_ action: @escaping () async throws -> T) {
-        _ = flatSubmit { self.wrapAsync(action) }
-    }
 }

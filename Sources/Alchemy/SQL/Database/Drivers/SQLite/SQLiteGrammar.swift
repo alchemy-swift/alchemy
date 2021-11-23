@@ -49,4 +49,8 @@ final class SQLiteGrammar: Grammar {
             return super.columnConstraintString(for: constraint, on: column, of: type)
         }
     }
+    
+    override func jsonLiteral(for jsonString: String) -> String {
+        "'\(jsonString)'"
+    }
 }

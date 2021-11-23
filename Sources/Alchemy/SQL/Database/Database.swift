@@ -46,6 +46,9 @@ public final class Database: Service {
         try await driver.query(sql, values: values)
     }
     
+    /// Run a raw, not parametrized SQL string.
+    ///
+    /// - Returns: The rows returned by the query.
     public func raw(_ sql: String) async throws -> [SQLRow] {
         try await driver.raw(sql)
     }

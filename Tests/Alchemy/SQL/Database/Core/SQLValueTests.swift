@@ -63,4 +63,21 @@ final class SQLValueTests: XCTestCase {
         XCTAssertThrowsError(try SQLValue.string("").uuid())
         XCTAssertThrowsError(try SQLValue.int(1).uuid("foo"))
     }
+    
+    func testDescription() {
+        XCTAssertEqual(SQLValue.int(0).description, "SQLValue.int(0)")
+        XCTAssertEqual(SQLValue.double(1.23).description, "SQLValue.double(1.23)")
+        XCTAssertEqual(SQLValue.bool(true).description, "SQLValue.bool(true)")
+        XCTAssertEqual(SQLValue.string("foo").description, "SQLValue.string(`foo`)")
+        let date = Date()
+        XCTAssertEqual(SQLValue.date(date).description, "SQLValue.date(\(date))")
+        let jsonString = """
+        {"foo":"bar"}
+        """
+        let jsonData = jsonString.data(using: .utf8) ?? Data()
+        XCTAssertEqual(SQLValue.json(jsonData).description, "SQLValue.json(\(jsonString))")
+        let uuid = UUID()
+        XCTAssertEqual(SQLValue.uuid(uuid).description, "SQLValue.uuid(\(uuid.uuidString))")
+        XCTAssertEqual(SQLValue.null.description, "SQLValue.null")
+    }
 }
