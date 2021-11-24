@@ -106,6 +106,11 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
     }
     
     init(from sqlValue: SQLValue?) throws {
+        guard sqlValue != .null else {
+            id = nil
+            return
+        }
+        
         id = try sqlValue.map { try Parent.Value.Identifier.init(value: $0) }
     }
 }
