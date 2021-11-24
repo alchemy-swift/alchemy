@@ -76,7 +76,9 @@ final class SchedulerTests: TestCase<TestApp> {
         let exp = expectation(description: "")
         exp.isInverted = invertExpect
         return Schedule {
-            self.scheduler.addWork(schedule: $0, work: exp.fulfill)
+            self.scheduler.addWork(schedule: $0) {
+                exp.fulfill()
+            }
         }
     }
 }
