@@ -4,7 +4,7 @@ import Foundation
 import NIOHTTP1
 
 /// The contents of an HTTP request or response.
-public struct HTTPBody: ExpressibleByStringLiteral {
+public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()
     

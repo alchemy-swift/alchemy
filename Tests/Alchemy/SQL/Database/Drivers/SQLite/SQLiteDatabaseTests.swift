@@ -27,8 +27,9 @@ final class SQLiteDatabaseTests: TestCase<TestApp> {
     }
     
     func testConfigMemory() throws {
-        let driver = SQLiteDatabase(config: .memory)
-        XCTAssertEqual(driver.config, .memory)
+        let id = UUID().uuidString
+        let driver = SQLiteDatabase(config: .memory(identifier: id))
+        XCTAssertEqual(driver.config, .memory(identifier: id))
         try driver.shutdown()
     }
 }

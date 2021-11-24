@@ -18,12 +18,12 @@ public final class MemoryCache: CacheDriver {
             return nil
         }
         
-        if !item.isValid {
+        guard item.isValid else {
             self.data[key] = nil
             return nil
-        } else {
-            return item
         }
+        
+        return item
     }
     
     // MARK: Cache
@@ -51,15 +51,16 @@ public final class MemoryCache: CacheDriver {
     }
     
     public func increment(_ key: String, by amount: Int) throws -> Int {
-        if let existing = getItem(key) {
-            let currentVal: Int = try existing.cast()
-            let newVal = currentVal + amount
-            self.data[key]?.text = "\(newVal)"
-            return newVal
-        } else {
+        guard let existing = getItem(key) else {
             self.data[key] = .init(text: "\(amount)")
             return amount
         }
+        
+        
+        let currentVal: Int = try existing.cast()
+        let newVal = currentVal + amount
+        self.data[key]?.text = "\(newVal)"
+        return newVal
     }
     
     public func decrement(_ key: String, by amount: Int) throws -> Int {

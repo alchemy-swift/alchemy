@@ -11,7 +11,7 @@ final class SQLiteDatabase: DatabaseDriver {
         case memory(identifier: String = UUID().uuidString)
         case file(String)
         
-        static let memory = memory()
+        static var memory: Config { memory() }
     }
     
     /// Initialize with the given configuration. The configuration

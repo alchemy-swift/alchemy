@@ -95,7 +95,7 @@ extension Query {
         return try await database.transaction { conn in
             var toReturn: [SQLRow] = []
             for sql in statements {
-                toReturn = try await conn.query(sql.statement, values: sql.bindings)
+                toReturn.append(contentsOf: try await conn.query(sql.statement, values: sql.bindings))
             }
             
             return toReturn

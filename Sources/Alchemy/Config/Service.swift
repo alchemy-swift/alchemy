@@ -45,6 +45,10 @@ extension Service {
     public static func resolve(_ identifier: Identifier = .default) -> Self {
         Container.resolve(Self.self, identifier: identifier)
     }
+    
+    public static func resolveOptional(_ identifier: Identifier = .default) -> Self? {
+        Container.resolveOptional(Self.self, identifier: identifier)
+    }
 }
 
 extension Inject where Service: Alchemy.Service {

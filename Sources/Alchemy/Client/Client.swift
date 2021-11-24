@@ -5,14 +5,14 @@ public final class Client: RequestBuilder, Service {
     
     // MARK: - Testing
 
-    private var stubs: [String: ClientResponseStub]? = nil
+    private var stubs: [(String, ClientResponseStub)]? = nil
     var stubbedRequests: [HTTPClient.Request] = []
     
-    public func stub(_ stubs: [String: ClientResponseStub] = [:]) {
+    public func stub(_ stubs: [(String, ClientResponseStub)] = []) {
         self.stubs = stubs
     }
     
-    public static func stub(_ stubs: [String: ClientResponseStub] = [:]) {
+    public static func stub(_ stubs: [(String, ClientResponseStub)] = []) {
         Client.default.stub(stubs)
     }
     
@@ -51,12 +51,12 @@ public final class ClientRequestBuilder: RequestBuilder {
     private var headers: [(String, String)] = []
     private var createBody: (() throws -> ByteBuffer?)?
     
-    private let stubs: [String: ClientResponseStub]?
+    private let stubs: [(String, ClientResponseStub)]?
     private let didStub: ((HTTPClient.Request) -> Void)?
     
     public var builder: ClientRequestBuilder { self }
     
-    init(httpClient: HTTPClient, stubs: [String: ClientResponseStub]?, didStub: ((HTTPClient.Request) -> Void)? = nil) {
+    init(httpClient: HTTPClient, stubs: [(String, ClientResponseStub)]?, didStub: ((HTTPClient.Request) -> Void)? = nil) {
         self.httpClient = httpClient
         self.stubs = stubs
         self.didStub = didStub
@@ -89,16 +89,16 @@ public final class ClientRequestBuilder: RequestBuilder {
             tlsConfiguration: nil
         )
         
-        if stubs != nil {
-            didStub?(req)
-            return stubFor(req)
-        } else {
+        guard stubs != nil else {
             return ClientResponse(request: req, response: try await httpClient.execute(request: req).get())
         }
+        
+        didStub?(req)
+        return stubFor(req)
     }
     
     private func stubFor(_ req: HTTPClient.Request) -> ClientResponse {
-        for (pattern, stub) in stubs ?? [:] {
+        for (pattern, stub) in stubs ?? [] {
             if req.matchesFakePattern(pattern) {
                 return ClientResponse(
                     request: req,
@@ -134,7 +134,8 @@ public final class ClientRequestBuilder: RequestBuilder {
 extension HTTPClient.Request {
     fileprivate func matchesFakePattern(_ pattern: String) -> Bool {
         let wildcard = "*"
-        let cleanedPattern = pattern.droppingPrefix("https://").droppingPrefix("http://")
+        var cleanedPattern = pattern.droppingPrefix("https://").droppingPrefix("http://")
+        cleanedPattern = String(cleanedPattern.split(separator: "?")[0])
         if cleanedPattern == wildcard {
             return true
         } else if var host = url.host {
@@ -143,19 +144,20 @@ extension HTTPClient.Request {
             }
             
             let fullPath = host + url.path
-            for (hostChar, patternChar) in zip(fullPath, pattern) {
+            for (hostChar, patternChar) in zip(fullPath, cleanedPattern) {
                 if String(patternChar) == wildcard {
                     return true
                 } else if hostChar == patternChar {
                     continue
-                } else {
-                    return false
                 }
+                
+                print(hostChar, patternChar)
+                return false
             }
             
             return fullPath.count == pattern.count
-        } else {
-            return false
         }
+        
+        return false
     }
 }

@@ -84,7 +84,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: All the models matching the `where` clause.
     public static func allWhere(_ where: Query.Where, db: Database = .default) async throws -> [Self] {
-        try await Self.query(database: db).where(`where`).allModels()
+        try await Self.where(`where`, db: db).allModels()
     }
     
     /// Gets the first element that meets the given where value.
@@ -98,7 +98,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause.
     public static func unwrapFirstWhere(_ where: Query.Where, or error: Error, db: Database = .default) async throws -> Self {
-        try await Self.query(database: db).where(`where`).unwrapFirstModel(or: error)
+        try await Self.where(`where`, db: db).unwrapFirstModel(or: error)
     }
     
     /// Creates a query on the given model with the given where
@@ -163,8 +163,8 @@ extension Model {
         return copy
     }
     
-    public static func update(db: Database = .default, _ id: Identifier, with dict: [String: Any]?) async throws -> Self? {
-        try await Self.find(id)?.update(with: dict ?? [:])
+    public static func update(db: Database = .default, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
+        try await Self.find(id)?.update(with: dict)
     }
     
     public func update(db: Database = .default, with dict: [String: Any]) async throws -> Self {
@@ -184,11 +184,11 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database (an `id` being populated, for example).
     public func save(db: Database = .default) async throws -> Self {
-        if id != nil {
-            return try await update(db: db)
-        } else {
+        guard id != nil else {
             return try await insertReturn(db: db)
         }
+        
+        return try await update(db: db)
     }
     
     // MARK: - Delete

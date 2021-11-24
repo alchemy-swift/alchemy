@@ -33,11 +33,7 @@ public struct ClientResponse {
     func validateSuccessful() throws -> Self {
         try wrapDebug {
             guard isSuccessful else {
-                throw ClientError(
-                    message: "The response code was not successful",
-                    request: request,
-                    response: response
-                )
+                throw ClientError(message: "The response code was not successful", request: request, response: response)
             }
             
             return self

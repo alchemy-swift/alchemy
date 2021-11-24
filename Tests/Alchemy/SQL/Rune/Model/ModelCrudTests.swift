@@ -40,6 +40,19 @@ final class ModelCrudTests: TestCase<TestApp> {
         
         let newFirst = try await TestModel.first()
         XCTAssertEqual(newFirst, model)
+        
+        let unwrappedFirst = try await TestModel.unwrapFirstWhere("bar" == false, or: TestError())
+        XCTAssertEqual(unwrappedFirst, model)
+        
+        let allWhere = try await TestModel.allWhere("bar" == false)
+        XCTAssertEqual(allWhere, [model])
+        
+        do {
+            _ = try await TestModel.ensureNotExists("id" == model.id, else: TestError())
+            XCTFail("`ensureNotExists` should throw on a matching element.")
+        } catch {
+            // do nothing
+        }
     }
     
     func testRandom() async throws {
@@ -67,6 +80,20 @@ final class ModelCrudTests: TestCase<TestApp> {
         try await TestModel.deleteAll()
         let newCount = try await TestModel.all().count
         XCTAssertEqual(newCount, 0)
+        
+        let model = try await TestModel.seed()
+        try await TestModel.delete("foo" == model.foo)
+        AssertEqual(try await TestModel.all().count, 0)
+        
+        let modelNew = try await TestModel.seed()
+        try await TestModel.deleteAll(where: "foo" == modelNew.foo)
+        AssertEqual(try await TestModel.all().count, 0)
+    }
+    
+    func testDeleteAll() async throws {
+        let models = try await TestModel.seed(5)
+        try await models.deleteAll()
+        AssertEqual(try await TestModel.all().count, 0)
     }
     
     func testInsertReturn() async throws {
@@ -80,12 +107,18 @@ final class ModelCrudTests: TestCase<TestApp> {
     
     func testUpdate() async throws {
         var model = try await TestModel.seed()
+        let id = try model.getID()
         model.foo = "baz"
-        let pulled = try await TestModel.find(model.getID())
-        XCTAssertNotEqual(pulled, model)
+        AssertNotEqual(try await TestModel.find(id), model)
+        
         _ = try await model.save()
-        let newPulled = try await TestModel.find(model.getID())
-        XCTAssertEqual(model, newPulled)
+        AssertEqual(try await TestModel.find(id), model)
+        
+        _ = try await model.update(with: ["foo": "foo"])
+        AssertEqual(try await TestModel.find(id)?.foo, "foo")
+        
+        _ = try await TestModel.update(id, with: ["foo": "qux"])
+        AssertEqual(try await TestModel.find(id)?.foo, "qux")
     }
     
     func testSync() async throws {

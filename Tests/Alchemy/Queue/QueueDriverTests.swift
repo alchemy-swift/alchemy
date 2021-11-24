@@ -14,6 +14,29 @@ final class QueueDriverTests: TestCase<TestApp> {
         _testRetry,
     ]
     
+    func testConfig() {
+        let config = Queue.Config(queues: [.default: .memory, 1: .memory, 2: .memory], jobs: [.job(TestJob.self)])
+        Queue.configure(using: config)
+        XCTAssertNotNil(Queue.resolveOptional(.default))
+        XCTAssertNotNil(Queue.resolveOptional(1))
+        XCTAssertNotNil(Queue.resolveOptional(2))
+        XCTAssertTrue(app.registeredJobs.contains(where: { ObjectIdentifier($0) == ObjectIdentifier(TestJob.self) }))
+    }
+    
+    func testJobDecoding() {
+        let fakeData = JobData(id: UUID().uuidString, json: "", jobName: "foo", channel: "bar", recoveryStrategy: .none, retryBackoff: .zero, attempts: 0, backoffUntil: nil)
+        XCTAssertThrowsError(try JobDecoding.decode(fakeData))
+        
+        struct TestJob: Job {
+            let foo: String
+            func run() async throws {}
+        }
+        
+        JobDecoding.register(TestJob.self)
+        let invalidData = JobData(id: "foo", json: "bar", jobName: "TestJob", channel: "foo", recoveryStrategy: .none, retryBackoff: .zero, attempts: 0, backoffUntil: nil)
+        XCTAssertThrowsError(try JobDecoding.decode(invalidData))
+    }
+    
     func testDatabaseQueue() async throws {
         for test in allTests {
             Database.fake(migrations: [Queue.AddJobsMigration()])

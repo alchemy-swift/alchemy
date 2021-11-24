@@ -8,12 +8,21 @@ final class CacheDriverTests: TestCase<TestApp> {
     
     private lazy var allTests = [
         _testSet,
+        _testExpire,
         _testHas,
         _testRemove,
         _testDelete,
         _testIncrement,
         _testWipe,
     ]
+    
+    func testConfig() {
+        let config = Cache.Config(caches: [.default: .memory, 1: .memory, 2: .memory])
+        Cache.configure(using: config)
+        XCTAssertNotNil(Cache.resolveOptional(.default))
+        XCTAssertNotNil(Cache.resolveOptional(1))
+        XCTAssertNotNil(Cache.resolveOptional(2))
+    }
     
     func testDatabaseCache() async throws {
         for test in allTests {
@@ -48,6 +57,14 @@ final class CacheDriverTests: TestCase<TestApp> {
         AssertNil(try await cache.get("foo", as: String.self))
         try await cache.set("foo", value: "bar")
         AssertEqual(try await cache.get("foo"), "bar")
+        try await cache.set("foo", value: "baz")
+        AssertEqual(try await cache.get("foo"), "baz")
+    }
+    
+    private func _testExpire() async throws {
+        AssertNil(try await cache.get("foo", as: String.self))
+        try await cache.set("foo", value: "bar", for: .zero)
+        AssertNil(try await cache.get("foo", as: String.self))
     }
     
     private func _testHas() async throws {
@@ -60,6 +77,7 @@ final class CacheDriverTests: TestCase<TestApp> {
         try await cache.set("foo", value: "bar")
         AssertEqual(try await cache.remove("foo"), "bar")
         AssertFalse(try await cache.has("foo"))
+        AssertEqual(try await cache.remove("foo", as: String.self), nil)
     }
     
     private func _testDelete() async throws {

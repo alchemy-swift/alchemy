@@ -19,12 +19,12 @@ final class DatabaseCache: CacheDriver {
             return nil
         }
         
-        if item.isValid {
-            return item
-        } else {
-            _ = try await CacheItem.query(database: db).where("_key" == key).delete()
+        guard item.isValid else {
+            try await CacheItem.query(database: db).where("_key" == key).delete()
             return nil
         }
+        
+        return item
     }
     
     // MARK: Cache
@@ -50,13 +50,13 @@ final class DatabaseCache: CacheDriver {
     }
     
     func remove<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
-        if let item = try await getItem(key: key) {
-            let value: L = try item.cast()
-            _ = try await item.delete()
-            return item.isValid ? value : nil
-        } else {
+        guard let item = try await getItem(key: key) else {
             return nil
         }
+        
+        let value: L = try item.cast()
+        _ = try await item.delete()
+        return item.isValid ? value : nil
     }
     
     func delete(_ key: String) async throws {
@@ -114,10 +114,6 @@ private struct CacheItem: Model {
         }
         
         return expiration > Int(Date().timeIntervalSince1970)
-    }
-    
-    func validate() -> Self? {
-        self.isValid ? self : nil
     }
     
     func cast<L: LosslessStringConvertible>(_ type: L.Type = L.self) throws -> L {

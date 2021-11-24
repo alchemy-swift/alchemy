@@ -24,7 +24,10 @@ final class RedisCache: CacheDriver {
     
     func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
         if let time = time {
-            try await redis.setex(RedisKey(key), to: value.description, expirationInSeconds: time.seconds).get()
+            _ = try await redis.transaction { conn in
+                try await conn.set(RedisKey(key), to: value.description).get()
+                _ = try await conn.send(command: "EXPIRE", with: [.init(from: key), .init(from: time.seconds)]).get()
+            }
         } else {
             try await redis.set(RedisKey(key), to: value.description).get()
         }

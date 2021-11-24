@@ -1,7 +1,8 @@
-@testable import Alchemy
-import XCTest
+@testable
+import Alchemy
+import AlchemyTest
 
-final class SchedulerTests: XCTestCase {
+final class SchedulerTests: TestCase<TestApp> {
     private var scheduler = Scheduler(isTesting: true)
     private var loop = EmbeddedEventLoop()
     
@@ -9,6 +10,38 @@ final class SchedulerTests: XCTestCase {
         super.setUp()
         self.scheduler = Scheduler(isTesting: true)
         self.loop = EmbeddedEventLoop()
+    }
+    
+    func testScheduleTask() {
+        let exp = expectation(description: "")
+        scheduler.run { exp.fulfill() }.daily()
+        
+        let loop = EmbeddedEventLoop()
+        scheduler.start(on: loop)
+        loop.advanceTime(by: .hours(24))
+        
+        waitForExpectations(timeout: 0.1)
+    }
+    
+    func testScheduleJob() {
+        struct ScheduledJob: Job, Equatable {
+            func run() async throws {}
+        }
+        
+        let queue = Queue.fake()
+        let loop = EmbeddedEventLoop()
+        
+        scheduler.job(ScheduledJob()).daily()
+        scheduler.start(on: loop)
+        loop.advanceTime(by: .hours(24))
+        
+        let exp = expectation(description: "")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
+            queue.assertPushed(ScheduledJob.self)
+            exp.fulfill()
+        }
+        
+        waitForExpectations(timeout: 0.1)
     }
     
     func testNoRunWithoutStart() {
