@@ -27,7 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install sqlite
-      run: sudo apt-get install libsqlite3-dev
+      run: apt-get install libsqlite3-dev
     - name: Build
       run: swift build -v --enable-test-discovery
     - name: Run tests
