@@ -19,7 +19,7 @@ jobs:
   #   - name: Run tests
   #     run: swift test -v
   test-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         swift: [5.5]
