@@ -4,4 +4,8 @@ protocol AnyHas {}
 
 /// A type erased `BelongsToRelationship`. Used for special casing
 /// decoding behavior for `BelongsTo`s.
-protocol AnyBelongsTo {}
+protocol AnyBelongsTo {
+    var idValue: SQLValue? { get }
+    
+    init(from sqlValue: SQLValue?) throws
+}

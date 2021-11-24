@@ -25,8 +25,12 @@ public protocol SQLRow {
 }
 
 extension SQLRow {
-    public func decode<D: Decodable>(_ type: D.Type) throws -> D {
-        try D(from: SQLRowDecoder(row: self, keyMapping: .useDefaultKeys, jsonDecoder: JSONDecoder()))
+    public func decode<D: Decodable>(
+        _ type: D.Type,
+        keyMapping: DatabaseKeyMapping = .useDefaultKeys,
+        jsonDecoder: JSONDecoder = JSONDecoder()
+    ) throws -> D {
+        try D(from: SQLRowDecoder(row: self, keyMapping: keyMapping, jsonDecoder: jsonDecoder))
     }
     
     public func decode<M: Model>(_ type: M.Type) throws -> M {

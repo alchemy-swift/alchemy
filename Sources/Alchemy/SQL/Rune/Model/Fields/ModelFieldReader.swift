@@ -1,12 +1,12 @@
 import Foundation
 
 /// Used so `Relationship` types can know not to encode themselves to
-/// a `ModelEncoder`.
-protocol ModelEncoder: Encoder {}
+/// a `SQLEncoder`.
+protocol SQLEncoder: Encoder {}
 
 /// Used for turning any `Model` into an ordered dictionary of columns to
 /// `SQLValue`s based on its stored properties.
-final class ModelFieldReader<M: Model>: ModelEncoder {
+final class ModelFieldReader<M: Model>: SQLEncoder {
     /// Used for keeping track of the database fields pulled off the
     /// object encoded to this encoder.
     fileprivate var readFields: [(column: String, value: SQLValue)] = []
@@ -42,8 +42,7 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     }
 
     func container<Key>(keyedBy: Key.Type) -> KeyedEncodingContainer<Key> {
-        let container = _KeyedEncodingContainer<M, Key>(encoder: self, codingPath: codingPath)
-        return KeyedEncodingContainer(container)
+        KeyedEncodingContainer(_KeyedEncodingContainer<M, Key>(encoder: self, codingPath: codingPath))
     }
 
     func unkeyedContainer() -> UnkeyedEncodingContainer {
@@ -55,119 +54,6 @@ final class ModelFieldReader<M: Model>: ModelEncoder {
     }
 }
 
-/// Encoder helper for pulling out `SQLValues`s from any fields that encode to
-/// a `SingleValueEncodingContainer`.
-private struct _SingleValueEncoder<M: Model>: ModelEncoder {
-    /// The database column to which a value encoded here should map
-    /// to.
-    let column: String
-    
-    /// The `ModelFieldReader` that is being used to read the
-    /// stored properties of an object. Need to pass it around
-    /// so various containers can add to it's `readFields`.
-    let encoder: ModelFieldReader<M>
-    
-    // MARK: Encoder
-    
-    var codingPath: [CodingKey] = []
-    var userInfo: [CodingUserInfoKey : Any] = [:]
-
-    func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key : CodingKey {
-        KeyedEncodingContainer(_KeyedEncodingContainer<M, Key>(encoder: encoder, codingPath: codingPath))
-    }
-    
-    func unkeyedContainer() -> UnkeyedEncodingContainer {
-        fatalError("Arrays aren't supported by `Model`.")
-    }
-    
-    func singleValueContainer() -> SingleValueEncodingContainer {
-        _SingleValueEncodingContainer<M>(column: column, encoder: encoder)
-    }
-}
-
-private struct _SingleValueEncodingContainer<M: Model>: SingleValueEncodingContainer, ModelValueReader {
-    /// The database column to which a value encoded to this container
-    /// should map to.
-    let column: String
-    
-    /// The `ModelFieldReader` that is being used to read the
-    /// stored properties of an object. Need to pass it around
-    /// so various containers can add to it's `readFields`.
-    var encoder: ModelFieldReader<M>
-    
-    // MARK: SingleValueEncodingContainer
-    
-    var codingPath: [CodingKey] = []
-    
-    mutating func encodeNil() throws {
-        // Can't infer the type so not much we can do here.
-    }
-    
-    mutating func encode(_ value: Bool) throws {
-        encoder.readFields.append((column: column, value: .bool(value)))
-    }
-    
-    mutating func encode(_ value: String) throws {
-        encoder.readFields.append((column: column, value: .string(value)))
-    }
-    
-    mutating func encode(_ value: Double) throws {
-        encoder.readFields.append((column: column, value: .double(value)))
-    }
-    
-    mutating func encode(_ value: Float) throws {
-        encoder.readFields.append((column: column, value: .double(Double(value))))
-    }
-    
-    mutating func encode(_ value: Int) throws {
-        encoder.readFields.append((column: column, value: .int(value)))
-    }
-    
-    mutating func encode(_ value: Int8) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: Int16) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: Int32) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: Int64) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: UInt) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: UInt8) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: UInt16) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: UInt32) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode(_ value: UInt64) throws {
-        encoder.readFields.append((column: column, value: .int(Int(value))))
-    }
-    
-    mutating func encode<T>(_ value: T) throws where T : Encodable {
-        if let value = try databaseValue(of: value) {
-            encoder.readFields.append((column: column, value: value))
-        } else {
-            throw DatabaseCodingError("Error encoding type `\(type(of: T.self))` into single value container.")
-        }
-    }
-}
-
 private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingContainerProtocol, ModelValueReader {
     var encoder: ModelFieldReader<M>
 
@@ -176,25 +62,32 @@ private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingC
     var codingPath = [CodingKey]()
 
     mutating func encodeNil(forKey key: Key) throws {
-        print("Got nil for \(encoder.mappingStrategy.map(input: key.stringValue)).")
+        let keyString = encoder.mappingStrategy.map(input: key.stringValue)
+        encoder.readFields.append((keyString, SQLValue.null))
     }
 
     mutating func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
-        if let theType = try databaseValue(of: value) {
-            let keyString = encoder.mappingStrategy.map(input: key.stringValue)
-            encoder.readFields.append((column: keyString, value: theType))
-        } else if value is AnyBelongsTo {
+        guard !(value is AnyBelongsTo) else {
             let keyString = encoder.mappingStrategy.map(input: key.stringValue + "Id")
-            try value.encode(to: _SingleValueEncoder<M>(column: keyString, encoder: encoder))
-        } else {
-            let keyString = encoder.mappingStrategy.map(input: key.stringValue)
-            try value.encode(to: _SingleValueEncoder<M>(column: keyString, encoder: encoder))
+            if let idValue = (value as? AnyBelongsTo)?.idValue {
+                encoder.readFields.append((keyString, idValue))
+            }
+            
+            return
         }
+        
+        let keyString = encoder.mappingStrategy.map(input: key.stringValue)
+        guard let convertible = value as? SQLValueConvertible else {
+            // Assume anything else is JSON.
+            let jsonData = try M.jsonEncoder.encode(value)
+            encoder.readFields.append((column: keyString, value: .json(jsonData)))
+            return
+        }
+        
+        encoder.readFields.append((column: keyString, value: convertible.value))
     }
     
-    mutating func nestedContainer<NestedKey>(
-        keyedBy keyType: NestedKey.Type, forKey key: Key
-    ) -> KeyedEncodingContainer<NestedKey> where NestedKey: CodingKey {
+    mutating func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> where NestedKey: CodingKey {
         fatalError("Nested coding of `Model` not supported.")
     }
 
@@ -217,28 +110,4 @@ private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingC
 private protocol ModelValueReader {
     /// The `Model` type this field reader is reading from.
     associatedtype M: Model
-}
-
-extension ModelValueReader {
-    /// Returns a `SQLValue` for a `Model` value. If the value
-    /// isn't a supported `SQLValue`, it is encoded to `Data`
-    /// returned as `.json(Data)`. This is special cased to
-    /// return nil if the value is a Rune relationship.
-    ///
-    /// - Parameter value: The value to map to a `SQLValue`.
-    /// - Throws: An `EncodingError` if there is an issue encoding a
-    ///   value perceived to be JSON.
-    /// - Returns: A `SQLValue` representing `value` or `nil` if
-    ///   value is a Rune relationship.
-    fileprivate func databaseValue<E: Encodable>(of value: E) throws -> SQLValue? {
-        if let value = value as? SQLValueConvertible {
-            return value.value
-        } else if value is AnyBelongsTo || value is AnyHas {
-            return nil
-        } else {
-            // Assume anything else is JSON.
-            let jsonData = try M.jsonEncoder.encode(value)
-            return .json(jsonData)
-        }
-    }
 }

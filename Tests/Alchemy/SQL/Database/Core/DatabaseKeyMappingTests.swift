@@ -13,5 +13,7 @@ final class DatabaseKeyMappingTests: XCTestCase {
         XCTAssertEqual(snakeCase.map(input: "foo"), "foo")
         XCTAssertEqual(snakeCase.map(input: "fooBar"), "foo_bar")
         XCTAssertEqual(snakeCase.map(input: "AI"), "a_i")
+        XCTAssertEqual(snakeCase.map(input: "testJSON"), "test_json")
+        XCTAssertEqual(snakeCase.map(input: "testNumbers123"), "test_numbers123")
     }
 }

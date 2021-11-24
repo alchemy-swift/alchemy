@@ -18,21 +18,23 @@ extension Application {
         app.wait()
     }
     
-    public func start(_ args: String...) {
+    public func start(_ args: String..., didStart: @escaping (Error?) -> Void = defaultErrorHandler) {
         if args.isEmpty {
-            start()
+            start(didStart: didStart)
         } else {
-            start(args: args)
+            start(args: args, didStart: didStart)
         }
     }
     
-    public func start(args: [String] = Array(CommandLine.arguments.dropFirst())) {
-        Launch.main(args.isEmpty ? nil : args)
-        Container.resolve(ServiceLifecycle.self).start { error in
-            if let error = error {
-                Launch.exit(withError: error)
-            }
+    public static func defaultErrorHandler(error: Error?) {
+        if let error = error {
+            Launch.exit(withError: error)
         }
+    }
+    
+    public func start(args: [String] = Array(CommandLine.arguments.dropFirst()), didStart: @escaping (Error?) -> Void = defaultErrorHandler) {
+        Launch.main(args.isEmpty ? nil : args)
+        Container.resolve(ServiceLifecycle.self).start(didStart)
     }
     
     public func wait() {

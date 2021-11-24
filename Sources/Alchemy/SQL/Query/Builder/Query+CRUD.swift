@@ -52,17 +52,10 @@ extension Query {
 
     /// Find the total count of the rows that match the given query.
     ///
-    /// - Parameters:
-    ///   - column: What column to count. Defaults to `*`.
-    ///   - name: The alias that can be used for renaming the returned
-    ///     count.
+    /// - Parameter column: What column to count. Defaults to `*`.
     /// - Returns: The count returned by the database.
-    public func count(column: String = "*", as name: String? = nil) async throws -> Int {
-        var query = "COUNT(\(column))"
-        if let name = name {
-            query += " as \(name)"
-        }
-        let row = try await select([query]).first()
+    public func count(column: String = "*") async throws -> Int {
+        let row = try await select(["COUNT(\(column))"]).first()
             .unwrap(or: DatabaseError("a COUNT query didn't return any rows"))
         let column = try row.columns.first
             .unwrap(or: DatabaseError("a COUNT query didn't return any columns"))

@@ -17,6 +17,8 @@ final class SQLRowTests: XCTestCase {
     }
     
     func testModel() {
+        let date = Date()
+        let uuid = UUID()
         let row: SQLRow = StubDatabaseRow(data: [
             "id": SQLValue.null,
             "bool": false,
@@ -34,11 +36,16 @@ final class SQLRowTests: XCTestCase {
             "uint32": 0,
             "uint64": 0,
             "string_enum": "one",
+            "int_enum": 2,
+            "double_enum": 3.0,
             "nested": SQLValue.json("""
-                {"string":"foo"}
-                """.data(using: .utf8) ?? Data())
+                {"string":"foo","int":1}
+                """.data(using: .utf8) ?? Data()),
+            "date": SQLValue.date(date),
+            "uuid": SQLValue.uuid(uuid),
+            "belongs_to_id": 1
         ])
-        XCTAssertEqual(try row.decode(TestModel.self), TestModel())
+        XCTAssertEqual(try row.decode(EverythingModel.self), EverythingModel(date: date, uuid: uuid, belongsTo: .pk(1)))
     }
     
     func testSubscript() {
@@ -48,14 +55,21 @@ final class SQLRowTests: XCTestCase {
     }
 }
 
-private struct TestModel: Model, Equatable {
-    struct Nested: Codable, Equatable { let string: String }
+struct EverythingModel: Model, Equatable {
+    struct Nested: Codable, Equatable {
+        let string: String
+        let int: Int
+    }
     enum StringEnum: String, ModelEnum { case one }
+    enum IntEnum: Int, ModelEnum { case two = 2 }
+    enum DoubleEnum: Double, ModelEnum { case three = 3.0 }
     
     var id: Int?
     
     // Enum
     var stringEnum: StringEnum = .one
+    var intEnum: IntEnum = .two
+    var doubleEnum: DoubleEnum = .three
     
     // Keyed
     var bool: Bool = false
@@ -72,5 +86,19 @@ private struct TestModel: Model, Equatable {
     var uint16: UInt16 = 0
     var uint32: UInt32 = 0
     var uint64: UInt64 = 0
-    var nested: Nested = Nested(string: "foo")
+    var nested: Nested = Nested(string: "foo", int: 1)
+    var date: Date = Date()
+    var uuid: UUID = UUID()
+    
+    @HasMany var hasMany: [EverythingModel]
+    @HasOne var hasOne: EverythingModel
+    @HasOne var hasOneOptional: EverythingModel?
+    @BelongsTo var belongsTo: EverythingModel
+    @BelongsTo var belongsToOptional: EverythingModel?
+    
+    static var jsonEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
 }

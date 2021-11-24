@@ -1,3 +1,5 @@
+import Lifecycle
+
 /// The core type for an Alchemy application. Implement this & it's
 /// `boot` function, then add the `@main` attribute to mark it as
 /// the entrypoint for your application.
@@ -37,4 +39,10 @@ extension Application {
     public var commands: [Command.Type] { [] }
     public func services(container: Container) {}
     public func schedule(schedule: Scheduler) {}
+}
+
+extension Application {
+    var lifecycle: ServiceLifecycle {
+        Container.resolve(ServiceLifecycle.self)
+    }
 }

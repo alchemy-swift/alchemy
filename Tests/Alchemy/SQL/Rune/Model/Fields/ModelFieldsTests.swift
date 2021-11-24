@@ -5,36 +5,59 @@ final class ModelFieldsTests: XCTestCase {
     func testEncoding() throws {
         let uuid = UUID()
         let date = Date()
-        let json = DatabaseJSON(val1: "sample", val2: Date())
-        let model = TestModel(
-            string: "one",
-            int: 2,
-            uuid: uuid,
-            date: date,
+        let json = EverythingModel.Nested(string: "foo", int: 1)
+        let model = EverythingModel(
+            stringEnum: .one,
+            intEnum: .two,
+            doubleEnum: .three,
             bool: true,
-            double: 3.14159,
-            json: json,
-            stringEnum: .third,
-            intEnum: .two
+            string: "foo",
+            double: 1.23,
+            float: 2.0,
+            int: 1,
+            int8: 2,
+            int16: 3,
+            int32: 4,
+            int64: 5,
+            uint: 6,
+            uint8: 7,
+            uint16: 8,
+            uint32: 9,
+            uint64: 10,
+            nested: EverythingModel.Nested(string: "foo", int: 1),
+            date: date,
+            uuid: uuid,
+            belongsTo: .pk(1)
         )
         
-        let jsonData = try TestModel.jsonEncoder.encode(json)
-        let expectedFields: [String: SQLValue] = [
-            "string": .string("one"),
-            "int": .int(2),
-            "uuid": .uuid(uuid),
-            "date": .date(date),
-            "bool": .bool(true),
-            "double": .double(3.14159),
-            "json": .json(jsonData),
-            "string_enum": .string("third"),
-            "int_enum": .int(1),
-            "test_conversion_caps_test": .string(""),
-            "test_conversion123": .string("")
+        let jsonData = try EverythingModel.jsonEncoder.encode(json)
+        let expectedFields: [String: SQLValueConvertible] = [
+            "string_enum": "one",
+            "int_enum": 2,
+            "double_enum": 3.0,
+            "bool": true,
+            "string": "foo",
+            "double": 1.23,
+            "float": 2.0,
+            "int": 1,
+            "int8": 2,
+            "int16": 3,
+            "int32": 4,
+            "int64": 5,
+            "uint": 6,
+            "uint8": 7,
+            "uint16": 8,
+            "uint32": 9,
+            "uint64": 10,
+            "nested": SQLValue.json(jsonData),
+            "date": SQLValue.date(date),
+            "uuid": SQLValue.uuid(uuid),
+            "belongs_to_id": 1,
+            "belongs_to_optional_id": SQLValue.null,
         ]
         
-        XCTAssertEqual("test_models", TestModel.tableName)
-        XCTAssertEqual(expectedFields, try model.fields())
+        XCTAssertEqual("everything_models", EverythingModel.tableName)
+        XCTAssertEqual(expectedFields.mapValues(\.value), try model.fields())
     }
     
     func testKeyMapping() throws {
@@ -65,35 +88,6 @@ final class ModelFieldsTests: XCTestCase {
 private struct DatabaseJSON: Codable {
     var val1: String
     var val2: Date
-}
-
-private enum IntEnum: Int, ModelEnum {
-    case one, two, three
-}
-
-private enum StringEnum: String, ModelEnum {
-    case first, second, third
-}
-
-private struct TestModel: Model {
-    var id: Int?
-    var string: String
-    var int: Int
-    var uuid: UUID
-    var date: Date
-    var bool: Bool
-    var double: Double
-    var json: DatabaseJSON
-    var stringEnum: StringEnum
-    var intEnum: IntEnum
-    var testConversionCAPSTest: String = ""
-    var testConversion123: String = ""
-    
-    static var jsonEncoder: JSONEncoder = {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        return encoder
-    }()
 }
 
 private struct CustomKeyedModel: Model {

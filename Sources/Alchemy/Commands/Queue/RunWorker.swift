@@ -27,6 +27,14 @@ struct RunWorker: Command {
     /// work.
     @Flag var schedule: Bool = false
     
+    init() {}
+    init(name: String?, channels: String = Queue.defaultChannel, workers: Int = 1, schedule: Bool = false) {
+        self.name = name
+        self.channels = channels
+        self.workers = workers
+        self.schedule = schedule
+    }
+    
     // MARK: Command
     
     func run() throws {
@@ -62,16 +70,12 @@ extension ServiceLifecycle {
         for worker in 0..<count {
             register(
                 label: "Worker\(worker)",
-                start: .eventLoopFuture {
-                    Loop.group.next().submit { startWorker(on: queue, channels: channels) }
+                start: .sync {
+                    queue.startWorker(for: channels, on: Loop.group.next())
                 },
                 shutdown: .none
             )
         }
-    }
-    
-    private func startWorker(on queue: Queue, channels: [String]) {
-        queue.startWorker(for: channels)
     }
 }
 

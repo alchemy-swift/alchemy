@@ -18,6 +18,11 @@ struct RunMigrate: Command {
     @Flag(help: "Should migrations be rolled back")
     var rollback: Bool = false
     
+    init() {}
+    init(rollback: Bool) {
+        self.rollback = rollback
+    }
+    
     // MARK: Command
     
     func start() async throws {

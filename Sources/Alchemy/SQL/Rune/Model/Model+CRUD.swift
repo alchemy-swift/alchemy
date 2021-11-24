@@ -98,7 +98,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause.
     public static func unwrapFirstWhere(_ where: Query.Where, or error: Error, db: Database = .default) async throws -> Self {
-        try await Self.query(database: db).where(`where`).unwrapFirst(or: error)
+        try await Self.query(database: db).where(`where`).unwrapFirstModel(or: error)
     }
     
     /// Creates a query on the given model with the given where

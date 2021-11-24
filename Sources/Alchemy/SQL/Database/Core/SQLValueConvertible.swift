@@ -47,12 +47,52 @@ extension Int: SQLValueConvertible {
     public var value: SQLValue { .int(self) }
 }
 
+extension Int8: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension Int16: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension Int32: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension Int64: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension UInt: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension UInt8: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension UInt16: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension UInt32: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
+extension UInt64: SQLValueConvertible {
+    public var value: SQLValue { .int(Int(self)) }
+}
+
 extension Bool: SQLValueConvertible {
     public var value: SQLValue { .bool(self) }
 }
 
 extension Double: SQLValueConvertible {
     public var value: SQLValue { .double(self) }
+}
+
+extension Float: SQLValueConvertible {
+    public var value: SQLValue { .double(Double(self)) }
 }
 
 extension Date: SQLValueConvertible {

@@ -45,7 +45,7 @@ extension Model {
     }
 }
 
-private struct DummyDecoder: Decoder {
+struct DummyDecoder: Decoder {
     var codingPath: [CodingKey] = []
     
     var userInfo: [CodingUserInfoKey : Any] = [:]
@@ -138,6 +138,12 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
             return (type as! AnyModelEnum.Type).defaultCase as! T
         } else if type is AnyArray.Type {
             return [] as! T
+        } else if type is AnyBelongsTo.Type {
+            return try (type as! AnyBelongsTo.Type).init(from: nil) as! T
+        } else if type is UUID.Type {
+            return UUID() as! T
+        } else if type is Date.Type {
+            return Date() as! T
         }
         
         return try T(from: DummyDecoder())

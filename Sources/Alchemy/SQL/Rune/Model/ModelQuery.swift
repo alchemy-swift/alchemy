@@ -62,14 +62,14 @@ public class ModelQuery<M: Model>: Query {
         return try await evaluateEagerLoads(for: [(result.decode(M.self), result)]).first?.0
     }
     
-    /// Similary to `getFirst`. Gets the first result of a query, but
+    /// Similar to `firstModel`. Gets the first result of a query, but
     /// unwraps the element, throwing an error if it doesn't exist.
     ///
     /// - Parameter error: The error to throw should no element be
     ///   found. Defaults to `RuneError.notFound`.
     /// - Returns: The unwrapped first result of this query, or the
     ///   supplied error if no result was found.
-    public func unwrapFirst(or error: Error = RuneError.notFound) async throws -> M {
+    public func unwrapFirstModel(or error: Error = RuneError.notFound) async throws -> M {
         try await firstModel().unwrap(or: error)
     }
     

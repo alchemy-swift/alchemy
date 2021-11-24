@@ -7,7 +7,6 @@ final class LaunchTests: TestCase<TestApp> {
         let fileName = UUID().uuidString
         Launch.main(["make:job", fileName])
         try Container.resolve(ServiceLifecycle.self).startAndWait()
-        
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Jobs/\(fileName).swift"))
     }
 }

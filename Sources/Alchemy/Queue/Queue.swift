@@ -8,6 +8,10 @@ public final class Queue: Service {
     /// The default rate at which workers poll queues.
     public static let defaultPollRate: TimeAmount = .seconds(1)
     
+    /// The ids of any workers associated with this queue and running in this
+    /// process.
+    public var workers: [String] = []
+    
     /// The driver backing this queue.
     let driver: QueueDriver
     

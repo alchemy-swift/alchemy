@@ -1,4 +1,5 @@
 import NIOCore
+
 /// A service for scheduling recurring work, in lieu of a separate
 /// cron task running apart from your server.
 public final class Scheduler: Service {
@@ -6,9 +7,9 @@ public final class Scheduler: Service {
         let schedule: Schedule
         let work: () async throws -> Void
     }
-    
+
+    public private(set) var isStarted: Bool = false
     private var workItems: [WorkItem] = []
-    private var isStarted: Bool = false
     private let isTesting: Bool
     
     /// Initialize this Scheduler, potentially flagging it for testing. If

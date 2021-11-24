@@ -200,13 +200,13 @@ User.query()
     .firstModel() // EventLoopFuture<User?> with the first User over age 30.
 ```
 
-If you want to throw an error if no item is found, you would `.unwrapFirst(or error: Error)`.
+If you want to throw an error if no item is found, you would `.unwrapFirstModel(or error: Error)`.
 
 ```swift
 let userEmail = ...
 User.query()
     .where("email" == userEmail)
-    .unwrapFirst(or: HTTPError(.unauthorized))
+    .unwrapFirstModel(or: HTTPError(.unauthorized))
 ```
 
 ### Quick Lookups

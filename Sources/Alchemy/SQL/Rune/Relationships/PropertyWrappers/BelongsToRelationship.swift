@@ -23,11 +23,13 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
     public typealias To = Parent
     
     /// The identifier of this relationship's parent.
-    public var id: Parent.Value.Identifier! {
+    public var id: Parent.Value.Identifier? {
         didSet {
             value = nil
         }
     }
+    
+    var idValue: SQLValue? { id.value }
     
     /// The underlying relationship object, if there is one. Populated
     /// by eager loading.
@@ -83,7 +85,7 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
     // MARK: Codable
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is ModelEncoder) {
+        if !(encoder is SQLEncoder) {
             try value.encode(to: encoder)
         } else {
             // When encoding to the database, just encode the Parent's ID.
@@ -93,23 +95,23 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
     }
     
     public init(from decoder: Decoder) throws {
-        if !(decoder is ModelDecoder) {
-            let container = try decoder.singleValueContainer()
-            if container.decodeNil() {
-                id = nil
-            } else {
-                let parent = try Parent(from: decoder)
-                id = parent.id
-                value = parent
-            }
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            id = nil
         } else {
-            let container = try decoder.singleValueContainer()
-            if container.decodeNil() {
-                id = nil
-            } else {
-                // When decode from a database, just decode the Parent's ID.
-                id = try container.decode(Parent.Value.Identifier.self)
-            }
+            let parent = try Parent(from: decoder)
+            id = parent.id
+            value = parent
         }
+    }
+    
+    init(from sqlValue: SQLValue?) throws {
+        id = try sqlValue.map { try Parent.Value.Identifier.init(value: $0) }
+    }
+}
+
+extension BelongsToRelationship: Equatable {
+    public static func == (lhs: BelongsToRelationship<Child, Parent>, rhs: BelongsToRelationship<Child, Parent>) -> Bool {
+        lhs.id == rhs.id
     }
 }

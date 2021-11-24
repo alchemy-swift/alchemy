@@ -8,8 +8,10 @@ final class SQLiteDatabase: DatabaseDriver {
     let grammar: Grammar = SQLiteGrammar()
     
     enum Config: Equatable {
-        case memory
+        case memory(identifier: String = UUID().uuidString)
         case file(String)
+        
+        static let memory = memory()
     }
     
     /// Initialize with the given configuration. The configuration
@@ -22,8 +24,8 @@ final class SQLiteDatabase: DatabaseDriver {
         self.pool = EventLoopGroupConnectionPool(
             source: SQLiteConnectionSource(configuration: {
                 switch config {
-                case .memory:
-                    return SQLiteConfiguration(storage: .memory, enableForeignKeys: true)
+                case .memory(let id):
+                    return SQLiteConfiguration(storage: .memory(identifier: id), enableForeignKeys: true)
                 case .file(let path):
                     return SQLiteConfiguration(storage: .file(path: path), enableForeignKeys: true)
                 }

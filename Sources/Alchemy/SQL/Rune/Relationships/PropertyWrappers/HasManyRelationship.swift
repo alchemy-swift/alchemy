@@ -47,9 +47,15 @@ public final class HasManyRelationship<From: Model, To: ModelMaybeOptional>: Any
     public init(from decoder: Decoder) throws {}
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is ModelEncoder) {
+        if !(encoder is SQLEncoder) {
             try value.encode(to: encoder)
         }
+    }
+}
+
+extension HasManyRelationship: Equatable where To: Equatable {
+    public static func == (lhs: HasManyRelationship<From, To>, rhs: HasManyRelationship<From, To>) -> Bool {
+        lhs.value == rhs.value
     }
 }
 

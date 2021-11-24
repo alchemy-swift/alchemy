@@ -14,6 +14,9 @@ public final class Database: Service {
     /// The driver for this database.
     let driver: DatabaseDriver
     
+    /// Indicates whether migrations were run on this database, by this process.
+    var didRunMigrations: Bool = false
+    
     /// Create a database backed by the given driver.
     ///
     /// - Parameter driver: The driver.

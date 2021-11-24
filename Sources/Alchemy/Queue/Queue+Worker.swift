@@ -9,7 +9,9 @@ extension Queue {
     ///   - eventLoop: The loop this worker will run on. Defaults to
     ///     your apps next available loop.
     public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool = true, on eventLoop: EventLoop = Loop.group.next()) {
-        Log.info("[Queue] starting worker \(eventLoop.queueId)")
+        let worker = eventLoop.queueId
+        Log.info("[Queue] starting worker \(worker)")
+        workers.append(worker)
         _startWorker(for: channels, pollRate: pollRate, untilEmpty: untilEmpty, on: eventLoop)
     }
     

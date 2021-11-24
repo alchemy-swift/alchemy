@@ -1,15 +1,11 @@
 import Foundation
 
-/// Used so `Relationship` types can know not to encode themselves to
-/// a `ModelEncoder`.
-protocol ModelDecoder: Decoder {}
-
 /// Decoder for decoding `Model` types from an `SQLRow`.
 /// Properties of the `Decodable` type are matched to
 /// columns with matching names (either the same
 /// name or a specific name mapping based on
 /// the supplied `keyMapping`).
-struct SQLRowDecoder: ModelDecoder {
+struct SQLRowDecoder: SQLDecoder {
     /// The row that will be decoded out of.
     let row: SQLRow
     let keyMapping: DatabaseKeyMapping
@@ -21,16 +17,13 @@ struct SQLRowDecoder: ModelDecoder {
     var userInfo: [CodingUserInfoKey : Any] = [:]
     
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
-        KeyedDecodingContainer(KeyedContainer<Key>(row: row, keyMapping: keyMapping, jsonDecoder: jsonDecoder))
+        KeyedDecodingContainer(KeyedContainer<Key>(row: row, decoder: self, keyMapping: keyMapping, jsonDecoder: jsonDecoder))
     }
 
-    /// This is for arrays, which we don't support.
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
         throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
 
-    /// This is for non-primitives that encode to a single value
-    /// and should be handled by `SQLValueDecoder`.
     func singleValueContainer() throws -> SingleValueDecodingContainer {
         throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
     }
@@ -41,6 +34,7 @@ struct SQLRowDecoder: ModelDecoder {
 private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     /// The row to decode from.
     let row: SQLRow
+    let decoder: SQLRowDecoder
     let keyMapping: DatabaseKeyMapping
     let jsonDecoder: JSONDecoder
     
@@ -135,24 +129,22 @@ private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
         } else if type == Date.self {
             return try row.get(column).date(column) as! T
         } else if type is AnyBelongsTo.Type {
+            // need relationship mapping
             let belongsToColumn = string(for: key, includeIdSuffix: true)
-            let field = try row.get(belongsToColumn)
-            return try T(from: SQLValueDecoder(value: field.value, column: column))
+            let value = row.columns.contains(belongsToColumn) ? try row.get(belongsToColumn) : nil
+            return try (type as! AnyBelongsTo.Type).init(from: value) as! T
         } else if type is AnyHas.Type {
-            let column = "key" // Special case the `AnyHas` to decode dummy data.
-            return try T(from: SQLValueDecoder(value: .string(key.stringValue), column: column))
+            return try T(from: decoder)
         } else if type is AnyModelEnum.Type {
             let field = try row.get(column)
-            return try T(from: SQLValueDecoder(value: field.value, column: column))
-        } else {
-            let field = try row.get(column)
-            return try jsonDecoder.decode(T.self, from: field.json(column))
+            return try (type as! AnyModelEnum.Type).init(from: field) as! T
         }
+        
+        let field = try row.get(column)
+        return try jsonDecoder.decode(T.self, from: field.json(column))
     }
     
-    func nestedContainer<NestedKey>(
-        keyedBy type: NestedKey.Type, forKey key: Key
-    ) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
+    func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
         throw DatabaseCodingError("Nested decoding isn't supported.")
     }
     

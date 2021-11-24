@@ -19,6 +19,7 @@ extension Database {
         }
         
         try await upMigrations(migrationsToRun, batch: currentBatch + 1)
+        didRunMigrations = true
     }
     
     /// Rolls back the latest migration batch.
