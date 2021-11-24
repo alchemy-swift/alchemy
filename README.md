@@ -131,7 +131,7 @@ app.get("/xml") { req -> Response in
     return Response(
         status: .accepted,
         headers: ["Some-Header": "value"],
-        body: HTTPBody(data: xmlData, mimeType: .xml)
+        body: HTTPBody(data: xmlData, contentType: .xml)
     )
 }
 ```

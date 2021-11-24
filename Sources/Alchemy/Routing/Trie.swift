@@ -15,7 +15,7 @@ final class Trie<Value> {
     /// - Returns: A tuple containing the object and any parsed path
     ///   parameters. `nil` if the object isn't in this node or its
     ///   children.
-    func search(path: [String]) -> (value: Value, parameters: [PathParameter])? {
+    func search(path: [String]) -> (value: Value, parameters: [Parameter])? {
         if let first = path.first {
             let newPath = Array(path.dropFirst())
             if let matchingChild = children[first] {
@@ -27,7 +27,7 @@ final class Trie<Value> {
                     continue
                 }
                 
-                val.parameters.insert(PathParameter(parameter: wildcard, stringValue: first), at: 0)
+                val.parameters.insert(Parameter(key: wildcard, value: first), at: 0)
                 return val
             }
             

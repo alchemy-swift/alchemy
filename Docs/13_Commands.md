@@ -126,7 +126,7 @@ For example, the `make:model` command makes it easy to generate a model with the
 $ swift run Server make:model Todo id:increments:primary name:string is_done:bool user_id:bigint:references.users.id --migration --controller
 🧪 create Sources/App/Models/Todo.swift
 🧪 create Sources/App/Migrations/2021_09_24_11_07_02CreateTodos.swift
-          └─ remember to add migration to a Database.migrations!
+          └─ remember to add migration to your database config!
 🧪 create Sources/App/Controllers/TodoController.swift
 ```
 

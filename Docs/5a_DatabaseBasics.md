@@ -49,31 +49,31 @@ database.rawQuery("select * from users where email=?;", values: [.string(email)]
 
 ### Handling Query Responses
 
-Every query returns a future with an array of `DatabaseRow`s that you can use to parse out data. You can access all their columns with `allColumns` or try to get the value of a column with `.getField(column: String) throws -> DatabaseField`.
+Every query returns a future with an array of `SQLRow`s that you can use to parse out data. You can access all their columns with `allColumns` or try to get the value of a column with `.get(String) throws -> SQLValue`.
 
 ```swift
 dataBase.rawQuery("select * from users;")
-    .mapEach { (row: DatabaseRow) in
-        print("Got a user with columns: \(row.allColumns.join(", "))")
-        let email = try! row.getField(column: "email").string()
+    .mapEach { (row: SQLRow) in
+        print("Got a user with columns: \(row.columns.join(", "))")
+        let email = try! row.get("email").string()
         print("The email of this user was: \(email)")
     }
 ```
 
-Note that `DatabaseField` is made up of a `column: String` and a `value: DatabaseValue`. It contains functions for casting the value to a specific Swift data type, such as `.string()` above.
+Note that `SQLValue` contains functions for casting the value to a specific Swift data type, such as `.string()` above.
 
 ```swift
-let field: DatabaseField = ...
+let value: SQLValue = ...
 
-let uuid: UUID = try field.uuid()
-let string: String = try field.string()
-let int: Int = try field.int()
-let bool: Bool = try field.bool()
-let double: Double = try field.double()
-let json: Data = try field.json()
+let uuid: UUID = try value.uuid()
+let string: String = try value.string()
+let int: Int = try value.int()
+let bool: Bool = try value.bool()
+let double: Double = try value.double()
+let json: Data = try value.json()
 ```
 
-These functions will throw if the value at the given column isn't convertible to that type.
+These functions will throw if the value isn't convertible to that type.
 
 ### Transactions
 

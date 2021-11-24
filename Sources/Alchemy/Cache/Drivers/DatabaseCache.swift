@@ -19,29 +19,29 @@ final class DatabaseCache: CacheDriver {
             return nil
         }
         
-        if item.isValid {
-            return item
-        } else {
-            _ = try await CacheItem.query(database: db).where("_key" == key).delete()
+        guard item.isValid else {
+            try await CacheItem.query(database: db).where("_key" == key).delete()
             return nil
         }
+        
+        return item
     }
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+    func get<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
         try await getItem(key: key)?.cast()
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws {
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
         let item = try await getItem(key: key)
         let expiration = time.map { Date().adding(time: $0) }
         if var item = item {
-            item.text = value.stringValue
+            item.text = value.description
             item.expiration = expiration ?? -1
             _ = try await item.save(db: db)
         } else {
-            _ = try await CacheItem(_key: key, text: value.stringValue, expiration: expiration ?? -1).save(db: db)
+            _ = try await CacheItem(_key: key, text: value.description, expiration: expiration ?? -1).save(db: db)
         }
     }
     
@@ -49,14 +49,14 @@ final class DatabaseCache: CacheDriver {
         try await getItem(key: key)?.isValid ?? false
     }
     
-    func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
-        if let item = try await getItem(key: key) {
-            let value: C = try item.cast()
-            _ = try await item.delete()
-            return item.isValid ? value : nil
-        } else {
+    func remove<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
+        guard let item = try await getItem(key: key) else {
             return nil
         }
+        
+        let value: L = try item.cast()
+        _ = try await item.delete()
+        return item.isValid ? value : nil
     }
     
     func delete(_ key: String) async throws {
@@ -68,10 +68,10 @@ final class DatabaseCache: CacheDriver {
             let newVal = try item.cast() + amount
             _ = try await item.update { $0.text = "\(newVal)" }
             return newVal
-        } else {
-            _ = try await CacheItem(_key: key, text: "\(amount)").save(db: db)
-            return amount
         }
+        
+        _ = try await CacheItem(_key: key, text: "\(amount)").save(db: db)
+        return amount
     }
     
     func decrement(_ key: String, by amount: Int) async throws -> Int {
@@ -92,6 +92,11 @@ extension Cache {
     public static func database(_ database: Database = .default) -> Cache {
         Cache(DatabaseCache(database))
     }
+    
+    /// Create a cache backed by the default SQL database.
+    public static var database: Cache {
+        .database(.default)
+    }
 }
 
 /// Model for storing cache data
@@ -111,12 +116,8 @@ private struct CacheItem: Model {
         return expiration > Int(Date().timeIntervalSince1970)
     }
     
-    func validate() -> Self? {
-        self.isValid ? self : nil
-    }
-    
-    func cast<C: CacheAllowed>(_ type: C.Type = C.self) throws -> C {
-        try C(self.text).unwrap(or: CacheError("Unable to cast cache item `\(self._key)` to \(C.self)."))
+    func cast<L: LosslessStringConvertible>(_ type: L.Type = L.self) throws -> L {
+        try L(text).unwrap(or: CacheError("Unable to cast cache item `\(_key)` to \(L.self)."))
     }
 }
 

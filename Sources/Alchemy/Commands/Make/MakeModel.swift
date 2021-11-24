@@ -5,7 +5,7 @@ import Papyrus
 typealias Flag = ArgumentParser.Flag
 typealias Option = ArgumentParser.Option
 
-struct MakeModel: Command {
+final class MakeModel: Command {
     static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:model",
@@ -28,14 +28,28 @@ struct MakeModel: Command {
     @Flag(name: .shortAndLong, help: "Also make a migration file for this model.") var migration: Bool = false
     @Flag(name: .shortAndLong, help: "Also make a controller with CRUD operations for this model.") var controller: Bool = false
     
+    private var columns: [ColumnData] = []
+    
+    init() {}
+    init(name: String, columns: [ColumnData] = [], migration: Bool = false, controller: Bool = false) {
+        self.name = name
+        self.columns = columns
+        self.fields = []
+        self.migration = migration
+        self.controller = controller
+    }
+    
     func start() throws {
         guard !name.contains(":") else {
-            throw CommandError(message: "Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
+            throw CommandError("Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
         }
         
         // Initialize rows
-        var columns = try fields.map(ColumnData.init)
-        if columns.isEmpty { columns = .defaultData }
+        if columns.isEmpty && fields.isEmpty {
+            columns = .defaultData
+        } else if columns.isEmpty {
+            columns = try fields.map(ColumnData.init)
+        }
         
         // Create files
         try createModel(columns: columns)
@@ -96,11 +110,8 @@ private extension ColumnData {
             swiftType += "?"
         }
         
-        if name == "id" {
-            return "var \(name.snakeCaseToCamelCase()): \(swiftType)"
-        } else {
-            return "let \(name.snakeCaseToCamelCase()): \(swiftType)"
-        }
+        let declaration = name == "id" ? "var" : "let"
+        return "\(declaration) \(name.snakeCaseToCamelCase()): \(swiftType)"
     }
 }
 

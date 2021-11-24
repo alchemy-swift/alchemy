@@ -2,7 +2,7 @@ import Foundation
 import RediStack
 
 /// A Redis based driver for `Cache`.
-final class RedisCacheDriver: CacheDriver {
+final class RedisCache: CacheDriver {
     private let redis: Redis
     
     /// Initialize this cache with a Redis client.
@@ -14,19 +14,22 @@ final class RedisCacheDriver: CacheDriver {
     
     // MARK: Cache
     
-    func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+    func get<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
         guard let value = try await redis.get(RedisKey(key), as: String.self).get() else {
             return nil
         }
         
-        return try C(value).unwrap(or: CacheError("Unable to cast cache item `\(key)` to \(C.self)."))
+        return try L(value).unwrap(or: CacheError("Unable to cast cache item `\(key)` to \(L.self)."))
     }
     
-    func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount?) async throws {
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
         if let time = time {
-            try await redis.setex(RedisKey(key), to: value.stringValue, expirationInSeconds: time.seconds).get()
+            _ = try await redis.transaction { conn in
+                try await conn.set(RedisKey(key), to: value.description).get()
+                _ = try await conn.send(command: "EXPIRE", with: [.init(from: key), .init(from: time.seconds)]).get()
+            }
         } else {
-            try await redis.set(RedisKey(key), to: value.stringValue).get()
+            try await redis.set(RedisKey(key), to: value.description).get()
         }
     }
     
@@ -34,8 +37,8 @@ final class RedisCacheDriver: CacheDriver {
         try await redis.exists(RedisKey(key)).get() > 0
     }
     
-    func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
-        guard let value: C = try await get(key) else {
+    func remove<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
+        guard let value: L = try await get(key) else {
             return nil
         }
         
@@ -60,13 +63,18 @@ final class RedisCacheDriver: CacheDriver {
     }
 }
 
-public extension Cache {
+extension Cache {
     /// Create a cache backed by Redis.
     ///
     /// - Parameter redis: The redis instance to drive your cache
     ///   with. Defaults to your default `Redis` configuration.
     /// - Returns: A cache.
-    static func redis(_ redis: Redis = Redis.default) -> Cache {
-        Cache(RedisCacheDriver(redis))
+    public static func redis(_ redis: Redis = Redis.default) -> Cache {
+        Cache(RedisCache(redis))
+    }
+    
+    /// A cache backed by the default Redis instance.
+    public static var redis: Cache {
+        .redis(.default)
     }
 }

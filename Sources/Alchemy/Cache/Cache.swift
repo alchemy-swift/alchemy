@@ -16,9 +16,11 @@ public final class Cache: Service {
     
     /// Get the value for `key`.
     ///
-    /// - Parameter key: The key of the cache record.
+    /// - Parameters:
+    ///   - key: The key of the cache record.
+    ///   - type: The type to coerce fetched key to for return.
     /// - Returns: The value for the key, if it exists.
-    public func get<C: CacheAllowed>(_ key: String) async throws -> C? {
+    public func get<L: LosslessStringConvertible>(_ key: String, as type: L.Type = L.self) async throws -> L? {
         try await driver.get(key)
     }
     
@@ -28,7 +30,7 @@ public final class Cache: Service {
     /// - Parameter value: The value to set.
     /// - Parameter time: How long the cache record should live.
     ///   Defaults to nil, indicating the record has no expiry.
-    public func set<C: CacheAllowed>(_ key: String, value: C, for time: TimeAmount? = nil) async throws {
+    public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount? = nil) async throws {
         try await driver.set(key, value: value, for: time)
     }
     
@@ -42,9 +44,11 @@ public final class Cache: Service {
     
     /// Delete and return a record at `key`.
     ///
-    /// - Parameter key: The key to delete.
+    /// - Parameters:
+    ///   - key: The key to delete.
+    ///   - type: The type to coerce the removed key to for return.
     /// - Returns: The deleted record, if it existed.
-    public func remove<C: CacheAllowed>(_ key: String) async throws -> C? {
+    public func remove<L: LosslessStringConvertible>(_ key: String, as type: L.Type = L.self) async throws -> L? {
         try await driver.remove(key)
     }
     

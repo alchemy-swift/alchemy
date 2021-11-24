@@ -15,8 +15,8 @@ extension Application {
     ///   this router.
     /// - Returns: This router for chaining.
     @discardableResult
-    public func controller(_ controller: Controller) -> Self {
-        controller.route(self)
+    public func controller(_ controllers: Controller...) -> Self {
+        controllers.forEach { $0.route(self) }
         return self
     }
 }

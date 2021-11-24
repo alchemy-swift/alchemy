@@ -30,7 +30,7 @@ struct MakeController: Command {
 
         struct \(name): Controller {
             func route(_ app: Application) {
-                app.get("/index", handler: index)
+                app.get("/index", use: index)
             }
             
             private func index(req: Request) -> String {
@@ -50,11 +50,11 @@ struct MakeController: Command {
         struct \(name)Controller: Controller {
             func route(_ app: Application) {
                 app
-                    .get("/\(resourcePath)", handler: index)
-                    .post("/\(resourcePath)", handler: create)
-                    .get("/\(resourcePath)/:id", handler: show)
-                    .patch("/\(resourcePath)", handler: update)
-                    .delete("/\(resourcePath)/:id", handler: delete)
+                    .get("/\(resourcePath)", use: index)
+                    .post("/\(resourcePath)", use: create)
+                    .get("/\(resourcePath)/:id", use: show)
+                    .patch("/\(resourcePath)", use: update)
+                    .delete("/\(resourcePath)/:id", use: delete)
             }
             
             private func index(req: Request) async throws -> [\(name)] {
@@ -62,7 +62,7 @@ struct MakeController: Command {
             }
             
             private func create(req: Request) async throws -> \(name) {
-                try await req.decodeBody(as: \(name).self).insert()
+                try await req.decodeBodyJSON(as: \(name).self).insertReturn()
             }
             
             private func show(req: Request) async throws -> \(name) {
@@ -70,7 +70,7 @@ struct MakeController: Command {
             }
             
             private func update(req: Request) async throws -> \(name) {
-                try await \(name).update(req.parameter("id"), with: req.bodyDict())
+                try await \(name).update(req.parameter("id"), with: req.decodeBodyDict() ?? [:])
                     .unwrap(or: HTTPError(.notFound))
             }
             

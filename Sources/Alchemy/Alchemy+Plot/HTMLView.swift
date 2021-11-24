@@ -42,6 +42,6 @@ extension HTMLView {
     // MARK: ResponseConvertible
     
     public func convert() -> Response {
-        Response(status: .ok, body: HTTPBody(text: content.render(), mimeType: .html))
+        Response(status: .ok, body: HTTPBody(text: content.render(), contentType: .html))
     }
 }

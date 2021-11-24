@@ -1,5 +1,7 @@
 /// The env variable for an env path override.
 private let kEnvVariable = "APP_ENV"
+/// The default `.env` file location
+private let kEnvDefault = "env"
 
 /// Handles any environment info of your application. Loads any
 /// environment variables from the file a `.env` or `.{APP_ENV}`
@@ -19,13 +21,18 @@ private let kEnvVariable = "APP_ENV"
 /// ```
 @dynamicMemberLookup
 public struct Env: Equatable {
-    /// The default env file path (will be prefixed by a .).
-    static var defaultLocation = "env"
+    /// The current environment containing all variables loaded from
+    /// the environment file.
+    public static var current = Env(name: kEnvDefault)
     
     /// The environment file location of this application. Additional
     /// env variables are pulled from the file at '.{name}'. This
-    /// defaults to `env` or `APP_ENV` if that is set.
+    /// defaults to `env`, `APP_ENV`, or `-e` / `--env` command
+    /// line arguments.
     public let name: String
+    
+    /// All environment variables available to the application.
+    public var values: [String: String] = [:]
     
     /// Returns any environment variables loaded from the environment
     /// file as type `T: EnvAllowed`. Supports `String`, `Int`,
@@ -34,31 +41,49 @@ public struct Env: Equatable {
     /// - Parameter key: The name of the environment variable.
     /// - Returns: The variable converted to type `S`. `nil` if the
     ///   variable doesn't exist or it cannot be converted as `S`.
-    public func get<S: StringInitializable>(_ key: String) -> S? {
-        if let val = getenv(key) {
-            let stringValue = String(validatingUTF8: val)
-            return stringValue.map { S($0) } ?? nil
+    public func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
+        guard let val = values[key] else {
+            return nil
         }
-        return nil
+        
+        return L(val)
+    }
+    
+    /// Returns any environment variables from `Env.current` as type
+    /// `T: StringInitializable`. Supports `String`, `Int`,
+    /// `Double`, `Bool`, and `UUID`.
+    ///
+    /// - Parameter key: The name of the environment variable.
+    /// - Returns: The variable converted to type `S`. `nil` if no fallback is
+    ///   provided and the variable doesn't exist or cannot be converted as
+    ///   `S`.
+    public static func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
+        current.get(key)
     }
     
     /// Required for dynamic member lookup.
-    public static subscript<T: StringInitializable>(dynamicMember member: String) -> T? {
-        return Env.current.get(member)
+    public static subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
+        Env.get(member)
     }
     
-    /// All environment variables available to the program.
-    public var all: [String: String] {
-        return ProcessInfo.processInfo.environment
+    /// Boots the environment with the given arguments. Loads additional
+    /// environment variables from a `.env` file.
+    ///
+    /// - Parameter args: The command line args of the program. -e or --env will
+    ///   indicate a custom envfile location.
+    static func boot(args: [String] = CommandLine.arguments, processEnv: [String: String] = ProcessInfo.processInfo.environment) {
+        var name = kEnvDefault
+        if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
+            name = value
+        } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
+            name = value
+        } else if let envName = processEnv[kEnvVariable] {
+            name = envName
+        }
+        
+        let envfileValues = Env.loadDotEnvFile(path: "\(name)")
+        current = Env(name: name, values: envfileValues.merging(processEnv) { _, new in new })
     }
-    
-    /// The current environment containing all variables loaded from
-    /// the environment file.
-    public static var current: Env = {
-        let appEnvPath = ProcessInfo.processInfo.environment[kEnvVariable] ?? defaultLocation
-        Env.loadDotEnvFile(path: ".\(appEnvPath)")
-        return Env(name: appEnvPath)
-    }()
 }
 
 extension Env {
@@ -67,18 +92,21 @@ extension Env {
     ///
     /// - Parameter path: The path of the file from which to load the
     ///   variables.
-    private static func loadDotEnvFile(path: String) {
-        let absolutePath = path.starts(with: "/") ? path : self.getAbsolutePath(relativePath: "/\(path)")
+    private static func loadDotEnvFile(path: String) -> [String: String] {
+        let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/.\(path)")
         
         guard let pathString = absolutePath else {
-            return Log.info("[Environment] no environment file found at '\(path)'")
+            Log.info("[Environment] no environment file found at '\(path)'")
+            return [:]
         }
         
-        guard let contents = try? NSString(contentsOfFile: pathString, encoding: String.Encoding.utf8.rawValue) else {
-            return Log.info("[Environment] unable to load contents of file at '\(pathString)'")
+        guard let contents = try? String(contentsOfFile: pathString, encoding: .utf8) else {
+            Log.info("[Environment] unable to load contents of file at '\(pathString)'")
+            return [:]
         }
         
-        let lines = String(describing: contents).split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
+        var values: [String: String] = [:]
+        let lines = contents.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
         for line in lines {
             // ignore comments
             if line[line.startIndex] == "#" {
@@ -92,11 +120,6 @@ extension Env {
 
             // extract key and value which are separated by an equals sign
             let parts = line.split(separator: "=", maxSplits: 1).map(String.init)
-
-            guard parts.count > 0 else {
-                continue
-            }
-            
             let key = parts[0].trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines)
             let val = parts[safe: 1]?.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines)
             guard var value = val else {
@@ -107,10 +130,12 @@ extension Env {
             if value[value.startIndex] == "\"" && value[value.index(before: value.endIndex)] == "\"" {
                 value.remove(at: value.startIndex)
                 value.remove(at: value.index(before: value.endIndex))
-                value = value.replacingOccurrences(of:"\\\"", with: "\"")
             }
-            setenv(key, value, 1)
+            
+            values[key] = value
         }
+        
+        return values
     }
 
     /// Determines the absolute path of the given argument relative to
@@ -121,9 +146,15 @@ extension Env {
     /// - Returns: The absolute path of the `relativePath`, if it
     ///   exists.
     private static func getAbsolutePath(relativePath: String) -> String? {
+        warnIfUsingDerivedData()
+        
         let fileManager = FileManager.default
-        let currentPath = fileManager.currentDirectoryPath
-        if currentPath.contains("/Library/Developer/Xcode/DerivedData") {
+        let filePath = fileManager.currentDirectoryPath + relativePath
+        return fileManager.fileExists(atPath: filePath) ? filePath : nil
+    }
+    
+    static func warnIfUsingDerivedData(_ directory: String = FileManager.default.currentDirectoryPath) {
+        if directory.contains("/DerivedData") {
             Log.warning("""
                 **WARNING**
 
@@ -131,12 +162,6 @@ extension Env {
 
                 This takes ~9 seconds to fix. Here's how: https://github.com/alchemy-swift/alchemy/blob/main/Docs/1_Configuration.md#setting-a-custom-working-directory.
                 """)
-        }
-        let filePath = currentPath + relativePath
-        if fileManager.fileExists(atPath: filePath) {
-            return filePath
-        } else {
-            return nil
         }
     }
 }

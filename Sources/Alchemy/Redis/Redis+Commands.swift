@@ -106,24 +106,24 @@ extension Redis: RedisClient {
     ///
     /// - Returns: The result of finishing the transaction.
     public func transaction(_ action: @escaping (Redis) async throws -> Void) async throws -> RESPValue {
-        try await driver.leaseConnection { conn in
-            _ = try await conn.send(command: "MULTI").get()
+        try await driver.transaction { conn in
+            _ = try await conn.getClient().send(command: "MULTI").get()
             try await action(Redis(driver: conn))
-            return try await conn.send(command: "EXEC").get()
+            return try await conn.getClient().send(command: "EXEC").get()
         }
     }
 }
 
 extension RedisConnection: RedisDriver {
-    func getClient() -> RedisClient {
+    public func getClient() -> RedisClient {
         self
     }
     
-    func shutdown() throws {
+    public func shutdown() throws {
         try close().wait()
     }
     
-    func leaseConnection<T>(_ transaction: @escaping (RedisConnection) async throws -> T) async throws -> T {
+    public func transaction<T>(_ transaction: @escaping (RedisDriver) async throws -> T) async throws -> T {
         try await transaction(self)
     }
 }

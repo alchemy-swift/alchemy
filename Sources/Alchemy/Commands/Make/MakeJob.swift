@@ -9,6 +9,11 @@ struct MakeJob: Command {
     
     @Argument var name: String
     
+    init() {}
+    init(name: String) {
+        self.name = name
+    }
+    
     func start() throws {
         try FileCreator.shared.create(fileName: name, contents: jobTemplate(), in: "Jobs")
     }

@@ -3,9 +3,9 @@ import NIO
 public typealias JobID = String
 public typealias JSONString = String
 
-/// Represents a persisted Job, contains the serialized Job as well
-/// as some additional info for `Queue`s & `QueueWorker`s.
-public struct JobData: Codable {
+/// Represents a persisted Job, contains the serialized Job as well as some
+/// additional info for `Queue`s.
+public struct JobData: Codable, Equatable {
     /// The unique id of this job, by default this is a UUID string.
     public let id: JobID
     /// The serialized Job this persists.
@@ -18,15 +18,14 @@ public struct JobData: Codable {
     public let recoveryStrategy: RecoveryStrategy
     /// How long should be waited before retrying a Job after a
     /// failure.
-    public let backoffSeconds: Int
+    public let backoff: TimeAmount
     /// Don't run this again until this time.
     public var backoffUntil: Date?
     /// The number of attempts this Job has been attempted.
     public var attempts: Int
-    
     /// Can this job be retried.
     public var canRetry: Bool {
-        self.attempts <= self.recoveryStrategy.maximumRetries
+        attempts <= recoveryStrategy.maximumRetries
     }
     
     /// Indicates if this job is currently in backoff, and should not
@@ -47,12 +46,17 @@ public struct JobData: Codable {
     ///   - channel: The name of the queue the `job` belongs on.
     /// - Throws: If the `job` is unable to be serialized to a String.
     public init<J: Job>(_ job: J, id: String = UUID().uuidString, channel: String) throws {
+        // If the Job hasn't been registered, register it.
+        if !JobDecoding.isRegistered(J.self) {
+            JobDecoding.register(J.self)
+        }
+        
         self.id = id
         self.jobName = J.name
         self.channel = channel
         self.recoveryStrategy = job.recoveryStrategy
         self.attempts = 0
-        self.backoffSeconds = job.retryBackoff.seconds
+        self.backoff = job.retryBackoff
         self.backoffUntil = nil
         do {
             self.json = try job.jsonString()
@@ -81,7 +85,7 @@ public struct JobData: Codable {
         self.jobName = jobName
         self.channel = channel
         self.recoveryStrategy = recoveryStrategy
-        self.backoffSeconds = retryBackoff.seconds
+        self.backoff = retryBackoff
         self.attempts = attempts
         self.backoffUntil = backoffUntil
     }
@@ -89,6 +93,6 @@ public struct JobData: Codable {
     /// The next date this job can be attempted. `nil` if the job can
     /// be retried immediately.
     func nextRetryDate() -> Date? {
-        return backoffSeconds > 0 ? Date().addingTimeInterval(TimeInterval(backoffSeconds)) : nil
+        return backoff.seconds > 0 ? Date().addingTimeInterval(TimeInterval(backoff.seconds)) : nil
     }
 }

@@ -3,50 +3,62 @@ import Lifecycle
 
 extension Application {
     /// Register core services to `Container.default`.
-    func bootServices() {
+    ///
+    /// - Parameter testing: If `true`, default services will be configured in a
+    ///   manner appropriate for tests.
+    func bootServices(testing: Bool = false) {
+        if testing {
+            Container.default = Container()
+        }
+        
         // Setup app lifecycle
         var lifecycleLogger = Log.logger
         lifecycleLogger.logLevel = lifecycleLogLevel
-        ServiceLifecycle.config(
-            default: ServiceLifecycle(
-                configuration: ServiceLifecycle.Configuration(
-                    logger: lifecycleLogger,
-                    installBacktrace: true
-                )))
-        
-        Loop.config()
+        Container.default.register(singleton: ServiceLifecycle(
+            configuration: ServiceLifecycle.Configuration(
+                logger: lifecycleLogger,
+                installBacktrace: !testing)))
         
         // Register all services
-        ApplicationConfiguration.config(default: ApplicationConfiguration())
-        Router.config(default: Router())
-        Scheduler.config(default: Scheduler())
-        NIOThreadPool.config(default: NIOThreadPool(numberOfThreads: System.coreCount))
-        HTTPClient.config(default: HTTPClient(eventLoopGroupProvider: .shared(Loop.group)))
         
-        // Start threadpool
-        NIOThreadPool.default.start()
-    }
-    
-    /// Mocks many common services. Can be called in the `setUp()`
-    /// function of test cases.
-    public func mockServices() {
-        Container.default = Container()
-        ServiceLifecycle.config(default: ServiceLifecycle())
-        Router.config(default: Router())
-        Loop.mock()
-    }
-}
-
-extension HTTPClient: Service {
-    public func shutdown() throws {
-        try syncShutdown()
+        if testing {
+            Loop.mock()
+        } else {
+            Loop.config()
+        }
+        
+        ServerConfiguration().registerDefault()
+        Router().registerDefault()
+        Scheduler().registerDefault()
+        NIOThreadPool(numberOfThreads: System.coreCount).registerDefault()
+        Client().registerDefault()
+        
+        if testing {
+            FileCreator.mock()
+        }
+        
+        // Set up any configurable services.
+        let types: [Any.Type] = [Database.self, Cache.self, Queue.self]
+        for type in types {
+            if let type = type as? AnyConfigurable.Type {
+                type.configureDefaults()
+            }
+        }
     }
 }
 
 extension NIOThreadPool: Service {
+    public func startup() {
+        start()
+    }
+    
     public func shutdown() throws {
         try syncShutdownGracefully()
     }
 }
 
-extension ServiceLifecycle: Service {}
+extension Service {
+    fileprivate func registerDefault() {
+        Self.register(self)
+    }
+}

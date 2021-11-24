@@ -19,6 +19,7 @@ extension Database {
         }
         
         try await upMigrations(migrationsToRun, batch: currentBatch + 1)
+        didRunMigrations = true
     }
     
     /// Rolls back the latest migration batch.
@@ -45,7 +46,16 @@ extension Database {
     ///
     /// - Returns: The migrations that are applied to this database.
     private func getMigrations() async throws -> [AlchemyMigration] {
-        let count = try await query().from("information_schema.tables").where("table_name" == AlchemyMigration.tableName).count()
+        let count: Int
+        if driver is PostgresDatabase || driver is MySQLDatabase {
+            count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.tableName).count()
+        } else {
+            count = try await table("sqlite_master")
+                .where("type" == "table")
+                .where(Query.Where(type: .value(key: "name", op: .notLike, value: .string("sqlite_%")), boolean: .and))
+                .count()
+        }
+        
         if count == 0 {
             Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
             let statements = AlchemyMigration.Migration().upStatements(for: driver.grammar)
@@ -87,7 +97,7 @@ extension Database {
     /// - Parameter statements: The statements to consecutively run.
     private func runStatements(statements: [SQL]) async throws {
         for statement in statements {
-            _ = try await rawQuery(statement.query, values: statement.bindings)
+            _ = try await query(statement.statement, values: statement.bindings)
         }
     }
 }

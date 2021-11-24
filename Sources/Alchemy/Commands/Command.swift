@@ -41,6 +41,10 @@ import ArgumentParser
 /// $ swift run MyApp sync --id 2 --dry
 /// ```
 public protocol Command: ParsableCommand {
+    /// The name of this command. Run it in the command line by passing this
+    /// name as an argument. Defaults to the type name.
+    static var name: String { get }
+    
     /// When running the app with this command, should the app
     /// shut down after the command `start()` is finished.
     /// Defaults to `true`.
@@ -69,24 +73,26 @@ extension Command {
 
     public func run() throws {
         if Self.logStartAndFinish {
-            Log.info("[Command] running \(commandName)")
+            Log.info("[Command] running \(Self.name)")
         }
+        
         // By default, register start & shutdown to lifecycle
         registerToLifecycle()
     }
     
     public func shutdown() {
         if Self.logStartAndFinish {
-            Log.info("[Command] finished \(commandName)")
+            Log.info("[Command] finished \(Self.name)")
         }
     }
 
     /// Registers this command to the application lifecycle; useful
     /// for running the app with this command.
     func registerToLifecycle() {
-        let lifecycle = ServiceLifecycle.default
+        @Inject var lifecycle: ServiceLifecycle
+        
         lifecycle.register(
-            label: Self.configuration.commandName ?? name(of: Self.self),
+            label: Self.configuration.commandName ?? Alchemy.name(of: Self.self),
             start: .eventLoopFuture {
                 Loop.group.next().wrapAsync { try await start() }
                     .map {
@@ -101,7 +107,11 @@ extension Command {
         )
     }
     
-    private var commandName: String {
-        name(of: Self.self)
+    public static var name: String {
+        Alchemy.name(of: Self.self)
+    }
+    
+    public static var configuration: CommandConfiguration {
+        CommandConfiguration(commandName: name)
     }
 }

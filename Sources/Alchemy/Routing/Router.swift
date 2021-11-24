@@ -10,27 +10,21 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// An `Router` responds to HTTP requests from the client.
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
-public final class Router: RequestHandler, Service {
+public final class Router: Service {
     /// A route handler. Takes a request and returns a response.
     public typealias Handler = (Request) async throws -> ResponseConvertible
     
     /// A handler for returning a response after an error is
     /// encountered while initially handling the request.
-    public typealias ErrorHandler = (Request, Error) async -> Response
+    public typealias ErrorHandler = (Request, Error) async throws -> ResponseConvertible
     
     private typealias HTTPHandler = (Request) async -> Response
 
     /// The default response for when there is an error along the
     /// routing chain that does not conform to
     /// `ResponseConvertible`.
-    var internalErrorHandler: ErrorHandler = { _, err in
-        Log.error("[Server] encountered internal error: \(err).")
-        return Response(
-            status: .internalServerError,
-            body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
-        )
-    }
-
+    var internalErrorHandler: ErrorHandler = Router.uncaughtErrorHandler
+    
     /// The response for when no handler is found for a Request.
     var notFoundHandler: Handler = { _ in
         Response(
@@ -93,7 +87,7 @@ public final class Router: RequestHandler, Service {
 
         // Find a matching handler
         if let match = trie.search(path: request.path.tokenized(with: request.method)) {
-            request.pathParameters = match.parameters
+            request.parameters = match.parameters
             handler = match.value
         }
         
@@ -115,22 +109,36 @@ public final class Router: RequestHandler, Service {
             do {
                 return try await handler(req).convert()
             } catch {
-                if let error = error as? ResponseConvertible {
-                    do {
-                        return try await error.convert()
-                    } catch {
-                        return await self.internalErrorHandler(req, error)
+                do {
+                    if let error = error as? ResponseConvertible {
+                        do {
+                            return try await error.convert()
+                        } catch {
+                            return try await self.internalErrorHandler(req, error).convert()
+                        }
                     }
+                    
+                    return try await self.internalErrorHandler(req, error).convert()
+                } catch {
+                    return Router.uncaughtErrorHandler(req: req, error: error)
                 }
-                
-                return await self.internalErrorHandler(req, error)
             }
         }
+    }
+    
+    /// The default error handler if an error is encountered while handline a
+    /// request.
+    private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
+        Log.error("[Server] encountered internal error: \(error).")
+        return Response(
+            status: .internalServerError,
+            body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
+        )
     }
 }
 
 private extension String {
     func tokenized(with method: HTTPMethod) -> [String] {
-        split(separator: "/").map(String.init) + [method.rawValue]
+        split(separator: "/").map(String.init).filter { !$0.isEmpty } + [method.rawValue]
     }
 }

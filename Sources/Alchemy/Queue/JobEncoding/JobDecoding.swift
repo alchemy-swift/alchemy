@@ -1,5 +1,7 @@
 /// Storage for `Job` decoding behavior.
 struct JobDecoding {
+    @Locked static var registeredJobs: [Job.Type] = []
+    
     /// Stored decoding behavior for jobs.
     @Locked private static var decoders: [String: (JobData) throws -> Job] = [:]
     
@@ -7,7 +9,8 @@ struct JobDecoding {
     ///
     /// - Parameter type: A job type.
     static func register<J: Job>(_ type: J.Type) {
-        self.decoders[J.name] = { try J(jsonString: $0.json) }
+        decoders[J.name] = { try J(jsonString: $0.json) }
+        registeredJobs.append(type)
     }
     
     /// Indicates if the given type is already registered.
@@ -35,5 +38,10 @@ struct JobDecoding {
             Log.error("[Queue] error decoding job named \(jobData.jobName). Error was: \(error).")
             throw error
         }
+    }
+    
+    static func reset() {
+        decoders = [:]
+        registeredJobs = []
     }
 }

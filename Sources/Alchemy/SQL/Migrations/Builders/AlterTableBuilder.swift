@@ -17,12 +17,12 @@ extension AlterTableBuilder {
     ///
     /// - Parameter column: The name of the column to drop.
     public func drop(column: String) {
-        self.dropColumns.append(column)
+        dropColumns.append(column)
     }
     
     /// Drop the `created_at` and `updated_at` columns.
     public func dropTimestamps() {
-        self.dropColumns.append(contentsOf: ["created_at", "updated_at"])
+        dropColumns.append(contentsOf: ["created_at", "updated_at"])
     }
     
     /// Rename a column.
@@ -31,13 +31,13 @@ extension AlterTableBuilder {
     ///   - column: The name of the column to rename.
     ///   - to: The new name for the column.
     public func rename(column: String, to: String) {
-        self.renameColumns.append((from: column, to: to))
+        renameColumns.append((from: column, to: to))
     }
     
     /// Drop an index.
     ///
     /// - Parameter index: The name of the index to drop.
     public func drop(index: String) {
-        self.dropIndexes.append(index)
+        dropIndexes.append(index)
     }
 }

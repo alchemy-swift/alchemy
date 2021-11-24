@@ -10,8 +10,6 @@ public struct Loop {
     /// The main `EventLoopGroup` of the Application.
     @Inject public static var group: EventLoopGroup
     
-    @Inject private static var lifecycle: ServiceLifecycle
-    
     /// Configure the Applications `EventLoopGroup` and `EventLoop`.
     static func config() {
         Container.register(EventLoop.self) { _ in
@@ -21,21 +19,27 @@ public struct Loop {
                 // return a random one for now.
                 return Loop.group.next()
             }
-
+            
             return current
         }
         
-        Container.register(singleton: EventLoopGroup.self) { _ in
+        Container.default.register(singleton: EventLoopGroup.self) { _ in
             MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         }
         
+        @Inject var lifecycle: ServiceLifecycle
         lifecycle.registerShutdown(label: name(of: EventLoopGroup.self), .sync(group.syncShutdownGracefully))
     }
     
     /// Register mocks of `EventLoop` and `EventLoop` to the
     /// application container.
     static func mock() {
-        Container.register(EventLoop.self) { _ in EmbeddedEventLoop() }
-        Container.register(singleton: EventLoopGroup.self) { _ in MultiThreadedEventLoopGroup(numberOfThreads: 1) }
+        Container.register(singleton: EventLoopGroup.self) { _ in
+            MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        }
+        
+        Container.register(EventLoop.self) { _ in
+            group.next()
+        }
     }
 }

@@ -16,7 +16,7 @@ import NIOHTTP1
 ///     throw HTTPError(.notImplemented, "This endpoint isn't implemented yet")
 /// }
 /// ```
-public struct HTTPError: Error, ResponseConvertible {
+public struct HTTPError: Error {
     /// The status code of this error.
     public let status: HTTPResponseStatus
     /// An optional message to include in a
@@ -33,9 +33,9 @@ public struct HTTPError: Error, ResponseConvertible {
         self.status = status
         self.message = message
     }
-    
-    // MARK: ResponseConvertible
-    
+}
+
+extension HTTPError: ResponseConvertible {
     public func convert() throws -> Response {
         Response(
             status: status,

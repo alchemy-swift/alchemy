@@ -23,7 +23,7 @@ import NIO
 /// // `user_id` parameter
 /// struct FindUserMiddleware: Middleware {
 ///     func intercept(_ request: Request, next: Next) async throws -> Response {
-///         let userId = request.pathComponent(for: "user_id")
+///         let userId = request.parameter(for: "user_id")
 ///         let user = try await User.find(userId)
 ///         // Set some data on the request for access in subsequent
 ///         // Middleware or request handlers. See `HTTPRequst.set`

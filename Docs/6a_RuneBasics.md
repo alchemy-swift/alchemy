@@ -10,7 +10,7 @@
         + [JSON](#json)
         + [Custom JSON Encoders](#custom-json-encoders)
         + [Custom JSON Decoders](#custom-json-decoders)
-- [Decoding from `DatabaseRow`](#decoding-from-databaserow)
+- [Decoding from `SQLRow`](#decoding-from-sqlrow)
 - [Model Querying](#model-querying)
     * [All Models](#all-models)
     * [First Model](#first-model)
@@ -147,9 +147,9 @@ struct Todo: Model {
 }
 ```
 
-## Decoding from `DatabaseRow`
+## Decoding from `SQLRow`
 
-`Model`s may be "decoded" from a `DatabaseRow` that was the result of a raw query or query builder query. The `Model`'s properties will be mapped to their relevant columns, factoring in any custom `keyMappingStrategy`. This will throw an error if there is an issue while decoding, such as a missing column.
+`Model`s may be "decoded" from a `SQLRow` that was the result of a raw query or query builder query. The `Model`'s properties will be mapped to their relevant columns, factoring in any custom `keyMappingStrategy`. This will throw an error if there is an issue while decoding, such as a missing column.
 
 ```swift
 struct User: Model {
@@ -168,7 +168,7 @@ database.rawQuery("select * from users")
     }
 ```
 
-**Note**: For the most part, if you are using Rune you won't need to call `DatabaseRow.decode(_ type:)` because the typed ORM queries described in the next section decode it for you.
+**Note**: For the most part, if you are using Rune you won't need to call `SQLRow.decode(_ type:)` because the typed ORM queries described in the next section decode it for you.
 
 ## Model Querying
 
@@ -200,13 +200,13 @@ User.query()
     .firstModel() // EventLoopFuture<User?> with the first User over age 30.
 ```
 
-If you want to throw an error if no item is found, you would `.unwrapFirst(or error: Error)`.
+If you want to throw an error if no item is found, you would `.unwrapFirstModel(or error: Error)`.
 
 ```swift
 let userEmail = ...
 User.query()
     .where("email" == userEmail)
-    .unwrapFirst(or: HTTPError(.unauthorized))
+    .unwrapFirstModel(or: HTTPError(.unauthorized))
 ```
 
 ### Quick Lookups
