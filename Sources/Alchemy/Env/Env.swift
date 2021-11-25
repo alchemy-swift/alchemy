@@ -1,7 +1,9 @@
 /// The env variable for an env path override.
 private let kEnvVariable = "APP_ENV"
 /// The default `.env` file location
-private let kEnvDefault = "env"
+private let kEnvDefault = "dev"
+/// The default `.env` file location for tests
+private let kEnvDefaultTest = "test"
 
 /// Handles any environment info of your application. Loads any
 /// environment variables from the file a `.env` or `.{APP_ENV}`
@@ -20,10 +22,16 @@ private let kEnvDefault = "env"
 /// let otherVariable: Int? = Env.OTHER_KEY
 /// ```
 @dynamicMemberLookup
-public struct Env: Equatable {
+public struct Env: Equatable, ExpressibleByStringLiteral {
     /// The current environment containing all variables loaded from
     /// the environment file.
-    public static var current = Env(name: kEnvDefault)
+    public internal(set) static var current = Env(name: kEnvDefault)
+    
+    public static let test: Env = Env(name: kEnvDefaultTest)
+    public static let dev: Env = Env(name: kEnvDefault)
+    public static let prod: Env = "prod"
+    
+    private static var didManuallyLoadDotEnv = false
     
     /// The environment file location of this application. Additional
     /// env variables are pulled from the file at '.{name}'. This
@@ -32,7 +40,20 @@ public struct Env: Equatable {
     public let name: String
     
     /// All environment variables available to the application.
-    public var values: [String: String] = [:]
+    public var dotEnvVariables: [String: String] = [:]
+    
+    /// All environment variables available to the application.
+    public var processVariables: [String: String] = [:]
+    
+    public init(stringLiteral value: String) {
+        self.init(name: value)
+    }
+    
+    init(name: String, dotEnvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
+        self.name = name
+        self.dotEnvVariables = dotEnvVariables
+        self.processVariables = processVariables
+    }
     
     /// Returns any environment variables loaded from the environment
     /// file as type `T: EnvAllowed`. Supports `String`, `Int`,
@@ -42,7 +63,7 @@ public struct Env: Equatable {
     /// - Returns: The variable converted to type `S`. `nil` if the
     ///   variable doesn't exist or it cannot be converted as `S`.
     public func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
-        guard let val = values[key] else {
+        guard let val = processVariables[key] ?? dotEnvVariables[key] else {
             return nil
         }
         
@@ -72,7 +93,12 @@ public struct Env: Equatable {
     /// - Parameter args: The command line args of the program. -e or --env will
     ///   indicate a custom envfile location.
     static func boot(args: [String] = CommandLine.arguments, processEnv: [String: String] = ProcessInfo.processInfo.environment) {
-        var name = kEnvDefault
+        loadEnv(args: args, processEnv: processEnv)
+        loadDotEnv()
+    }
+    
+    static func loadEnv(args: [String] = CommandLine.arguments, processEnv: [String: String] = ProcessInfo.processInfo.environment) {
+        var name = isRunningTests ? kEnvDefaultTest : kEnvDefault
         if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
             name = value
         } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
@@ -81,8 +107,43 @@ public struct Env: Equatable {
             name = envName
         }
         
-        let envfileValues = Env.loadDotEnvFile(path: "\(name)")
-        current = Env(name: name, values: envfileValues.merging(processEnv) { _, new in new })
+        current = Env(name: name, processVariables: processEnv)
+    }
+    
+    public static func loadDotEnv(_ paths: String...) {
+        guard paths.isEmpty else {
+            for path in paths {
+                guard let values = loadDotEnvFile(path: path) else {
+                    continue
+                }
+                
+                for (key, value) in values {
+                    current.dotEnvVariables[key] = value
+                }
+            }
+            
+            didManuallyLoadDotEnv = true
+            return
+        }
+        
+        guard !didManuallyLoadDotEnv else {
+            return
+        }
+        
+        let defaultPath = ".env"
+        var overridePath: String? = nil
+        if current.name != kEnvDefault {
+            overridePath = ".env.\(current.name)"
+        }
+        
+        if let overridePath = overridePath, let values = loadDotEnvFile(path: overridePath) {
+            current.dotEnvVariables = values
+        } else if let values = loadDotEnvFile(path: defaultPath) {
+            current.dotEnvVariables = values
+        } else {
+            let overrideLocation = overridePath.map { "`\($0)` or " } ?? ""
+            Log.info("[Environment] no env file found at \(overrideLocation)`\(defaultPath)`.")
+        }
     }
 }
 
@@ -92,12 +153,11 @@ extension Env {
     ///
     /// - Parameter path: The path of the file from which to load the
     ///   variables.
-    private static func loadDotEnvFile(path: String) -> [String: String] {
+    private static func loadDotEnvFile(path: String) -> [String: String]? {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/.\(path)")
         
         guard let pathString = absolutePath else {
-            Log.info("[Environment] no environment file found at '\(path)'")
-            return [:]
+            return nil
         }
         
         guard let contents = try? String(contentsOfFile: pathString, encoding: .utf8) else {
@@ -162,6 +222,14 @@ extension Env {
 
                 This takes ~9 seconds to fix. Here's how: https://github.com/alchemy-swift/alchemy/blob/main/Docs/1_Configuration.md#setting-a-custom-working-directory.
                 """)
+        }
+    }
+}
+
+extension Env {
+    public static var isRunningTests: Bool {
+        CommandLine.arguments.contains {
+            $0.contains("xctest")
         }
     }
 }

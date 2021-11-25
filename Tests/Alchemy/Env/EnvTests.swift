@@ -13,13 +13,17 @@ final class EnvTests: TestCase<TestApp> {
         QUOTES="three"
         """
     
+    func testIsRunningTests() {
+        XCTAssertTrue(Env.isRunningTests)
+    }
+    
     func testEnvLookup() {
-        let env = Env(name: "test", values: ["foo": "bar"])
+        let env = Env(name: "test", dotEnvVariables: ["foo": "bar"])
         XCTAssertEqual(env.get("foo"), "bar")
     }
     
     func testStaticLookup() {
-        Env.current = Env(name: "test", values: [
+        Env.current = Env(name: "test", dotEnvVariables: [
             "foo": "one",
             "bar": "two",
         ])
@@ -50,7 +54,7 @@ final class EnvTests: TestCase<TestApp> {
     
     func testLoadEnvFile() {
         let path = createTempFile(".env-fake-\(UUID().uuidString)", contents: sampleEnvFile)
-        Env.boot(args: ["-e", path])
+        Env.loadDotEnv(path)
         XCTAssertEqual(Env.FOO, "1")
         XCTAssertEqual(Env.BAR, "two")
         XCTAssertEqual(Env.get("TEST", as: String.self), nil)
