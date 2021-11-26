@@ -227,7 +227,15 @@ extension Env {
 }
 
 extension Env {
-    public static var isRunningTests: Bool {
+    public static var isProd: Bool {
+        current == .prod
+    }
+    
+    public static var isTest: Bool {
+        current == .test
+    }
+    
+    fileprivate static var isRunningTests: Bool {
         CommandLine.arguments.contains {
             $0.contains("xctest")
         }
