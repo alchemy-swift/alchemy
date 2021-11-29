@@ -54,11 +54,10 @@ public protocol Command: ParsableCommand {
     /// worker or running the server.
     static var shutdownAfterRun: Bool { get }
     
-    /// Should the start and finish of this command be logged.
-    /// Defaults to true.
+    /// Should the start and finish of this command be logged. Defaults to true.
     static var logStartAndFinish: Bool { get }
     
-    /// Start the command. Your command's main logic should be here.
+    /// Run the command. Your command's main logic should be here.
     func start() async throws
     
     /// An optional function to run when your command receives a
@@ -70,31 +69,30 @@ public protocol Command: ParsableCommand {
 extension Command {
     public static var shutdownAfterRun: Bool { true }
     public static var logStartAndFinish: Bool { true }
-
+    
+    /// Registers this command with the application lifecycle.
     public func run() throws {
-        if Self.logStartAndFinish {
-            Log.info("[Command] running \(Self.name)")
-        }
-        
-        // By default, register start & shutdown to lifecycle
-        registerToLifecycle()
+        registerWithLifecycle()
     }
     
-    public func shutdown() {
-        if Self.logStartAndFinish {
-            Log.info("[Command] finished \(Self.name)")
-        }
-    }
+    public func shutdown() {}
 
     /// Registers this command to the application lifecycle; useful
     /// for running the app with this command.
-    func registerToLifecycle() {
+    func registerWithLifecycle() {
         @Inject var lifecycle: ServiceLifecycle
         
         lifecycle.register(
             label: Self.configuration.commandName ?? Alchemy.name(of: Self.self),
             start: .eventLoopFuture {
-                Loop.group.next().wrapAsync { try await start() }
+                Loop.group.next()
+                    .wrapAsync {
+                        if Self.logStartAndFinish {
+                            Log.info("[Command] running \(Self.name)")
+                        }
+                        
+                        try await start()
+                    }
                     .map {
                         if Self.shutdownAfterRun {
                             lifecycle.shutdown()
@@ -102,7 +100,14 @@ extension Command {
                     }
             },
             shutdown: .eventLoopFuture {
-                Loop.group.next().wrapAsync { try await shutdown() }
+                Loop.group.next()
+                    .wrapAsync {
+                        if Self.logStartAndFinish {
+                            Log.info("[Command] finished \(Self.name)")
+                        }
+                        
+                        try await shutdown()
+                    }
             }
         )
     }

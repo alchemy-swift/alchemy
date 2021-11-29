@@ -69,34 +69,3 @@ extension Request {
         }
     }
 }
-
-/**
- * Goals
- * 1. From Request
- *   a. Decode application/json
- *   b. Decode application/x-www-form-urlencoded
- *   c. Decode multipart/form-data
- *     i. max body size; else 413
- *     ii. investigate streaming
- * 2. For Client
- *   a. Encode application/json
- *   b. Encode application/x-www-form-urlencoded
- *   c. Encode multipart/form-data
- *   d. Encode text/html
- * 3. Custom
- *   a. Custom content encoder / decoder to allow for something like XML.
- *   b. 415 if unsupported decoding
- */
-
-extension Request {
-    // A single `content` variable that decodes based on the request type.
-    var content: [String]
-    
-    // A separate `File` variable that contains any file, perhaps with a name
-    // from a multipart request.
-    var file: File?
-}
-
-struct File {
-    
-}

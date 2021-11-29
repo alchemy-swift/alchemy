@@ -7,13 +7,11 @@ import NIOHTTP1
 public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
     /// The default decoder for decoding JSON from `HTTPBody`s.
     public static var defaultJSONDecoder = JSONDecoder()
-    
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()
     
     /// The binary data in this body.
     public let buffer: ByteBuffer
-    
     /// The content type of the data stored in this body. Used to set the
     /// `content-type` header when sending back a response.
     public let contentType: ContentType?

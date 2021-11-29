@@ -9,9 +9,9 @@ final class QueryCrudTests: TestCase<TestApp> {
     }
     
     func testFind() async throws {
-        AssertTrue(try await db.table("test_models").find("foo", equals: .string("bar")) == nil)
+        AssertTrue(try await db.table("test_models").findRow("foo", equals: .string("bar")) == nil)
         try await TestModel(foo: "bar", bar: false).insert()
-        AssertTrue(try await db.table("test_models").find("foo", equals: .string("bar")) != nil)
+        AssertTrue(try await db.table("test_models").findRow("foo", equals: .string("bar")) != nil)
     }
     
     func testCount() async throws {

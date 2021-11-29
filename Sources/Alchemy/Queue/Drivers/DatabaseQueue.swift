@@ -28,7 +28,7 @@ final class DatabaseQueue: QueueDriver {
                 .orderBy(column: "queued_at")
                 .limit(1)
                 .lock(for: .update, option: .skipLocked)
-                .firstModel()
+                .first()
             
             return try await job?.update(db: conn) {
                 $0.reserved = true

@@ -14,7 +14,7 @@ final class DatabaseCache: CacheDriver {
     
     /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) async throws -> CacheItem? {
-        let item = try await CacheItem.query(database: db).where("_key" == key).firstModel()
+        let item = try await CacheItem.query(database: db).where("_key" == key).first()
         guard let item = item else {
             return nil
         }

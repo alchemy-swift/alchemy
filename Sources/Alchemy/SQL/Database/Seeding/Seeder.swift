@@ -21,7 +21,7 @@ extension Seedable where Self: Model {
             rows.append(try await generate())
         }
         
-        return try await rows.insertAll()
+        return try await rows.insertReturnAll()
     }
 }
 

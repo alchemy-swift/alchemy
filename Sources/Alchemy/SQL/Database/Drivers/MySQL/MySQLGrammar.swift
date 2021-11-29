@@ -3,7 +3,7 @@ import NIO
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
 final class MySQLGrammar: Grammar {
-    override func compileInsertAndReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+    override func compileInsertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
         return values.flatMap {
             return [
                 compileInsert(table, values: [$0]),

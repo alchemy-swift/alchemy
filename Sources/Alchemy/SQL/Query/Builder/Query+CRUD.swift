@@ -6,7 +6,7 @@ extension Query {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
-    public func get(_ columns: [String]? = nil) async throws -> [SQLRow] {
+    public func getRows(_ columns: [String]? = nil) async throws -> [SQLRow] {
         if let columns = columns {
             self.columns = columns
         }
@@ -33,8 +33,8 @@ extension Query {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The first row in the database, if it exists.
-    public func first(_ columns: [String]? = nil) async throws -> SQLRow? {
-        try await limit(1).get(columns).first
+    public func firstRow(_ columns: [String]? = nil) async throws -> SQLRow? {
+        try await limit(1).getRows(columns).first
     }
 
     /// Run a select query that looks for a single row matching the
@@ -45,9 +45,9 @@ extension Query {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The row from the database, if it exists.
-    public func find(_ column: String, equals value: SQLValue, columns: [String]? = nil) async throws -> SQLRow? {
+    public func findRow(_ column: String, equals value: SQLValue, columns: [String]? = nil) async throws -> SQLRow? {
         wheres.append(column == value)
-        return try await limit(1).get(columns).first
+        return try await limit(1).getRows(columns).first
     }
 
     /// Find the total count of the rows that match the given query.
@@ -55,7 +55,7 @@ extension Query {
     /// - Parameter column: What column to count. Defaults to `*`.
     /// - Returns: The count returned by the database.
     public func count(column: String = "*") async throws -> Int {
-        let row = try await select(["COUNT(\(column))"]).first()
+        let row = try await select(["COUNT(\(column))"]).firstRow()
             .unwrap(or: DatabaseError("a COUNT query didn't return any rows"))
         let column = try row.columns.first
             .unwrap(or: DatabaseError("a COUNT query didn't return any columns"))
@@ -81,8 +81,8 @@ extension Query {
         return
     }
     
-    public func insertAndReturn(_ values: [String: SQLValueConvertible]) async throws -> [SQLRow] {
-        try await insertAndReturn([values])
+    public func insertReturn(_ values: [String: SQLValueConvertible]) async throws -> [SQLRow] {
+        try await insertReturn([values])
     }
     
     /// Perform an insert and return the inserted records.
@@ -90,8 +90,8 @@ extension Query {
     /// - Parameter values: An array of dictionaries containing the values to be
     ///   inserted.
     /// - Returns: The inserted rows.
-    public func insertAndReturn(_ values: [[String: SQLValueConvertible]]) async throws -> [SQLRow] {
-        let statements = database.grammar.compileInsertAndReturn(table, values: values)
+    public func insertReturn(_ values: [[String: SQLValueConvertible]]) async throws -> [SQLRow] {
+        let statements = database.grammar.compileInsertReturn(table, values: values)
         return try await database.transaction { conn in
             var toReturn: [SQLRow] = []
             for sql in statements {

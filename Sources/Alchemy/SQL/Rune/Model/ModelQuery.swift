@@ -42,20 +42,20 @@ public class ModelQuery<M: Model>: Query {
     /// Gets all models matching this query from the database.
     ///
     /// - Returns: All models matching this query.
-    public func allModels() async throws -> [M] {
-        try await _allModels().map(\.model)
+    public func get() async throws -> [M] {
+        try await _get().map(\.model)
     }
     
-    private func _allModels(columns: [String]? = ["\(M.tableName).*"]) async throws -> [ModelRow] {
-        let initialResults = try await get(columns).map { (try $0.decode(M.self), $0) }
+    private func _get(columns: [String]? = ["\(M.tableName).*"]) async throws -> [ModelRow] {
+        let initialResults = try await getRows(columns).map { (try $0.decode(M.self), $0) }
         return try await evaluateEagerLoads(for: initialResults)
     }
     
     /// Get the first model matching this query from the database.
     ///
     /// - Returns: The first model matching this query if one exists.
-    public func firstModel() async throws -> M? {
-        guard let result = try await first() else {
+    public func first() async throws -> M? {
+        guard let result = try await firstRow() else {
             return nil
         }
         
@@ -69,8 +69,8 @@ public class ModelQuery<M: Model>: Query {
     ///   found. Defaults to `RuneError.notFound`.
     /// - Returns: The unwrapped first result of this query, or the
     ///   supplied error if no result was found.
-    public func unwrapFirstModel(or error: Error = RuneError.notFound) async throws -> M {
-        try await firstModel().unwrap(or: error)
+    public func unwrapFirst(or error: Error = RuneError.notFound) async throws -> M {
+        try await first().unwrap(or: error)
     }
     
     /// Eager loads (loads a related `Model`) a `Relationship` on this
@@ -141,7 +141,7 @@ public class ModelQuery<M: Model>: Query {
             let allRows = fromResults.map(\.1)
             let query = try nested(config.load(allRows, database: Database(driver: self.database)))
             let toResults = try await query
-                ._allModels(columns: ["\(R.To.Value.tableName).*", toJoinKey])
+                ._get(columns: ["\(R.To.Value.tableName).*", toJoinKey])
                 .map { (try R.To.from($0), $1) }
             
             // Key the results by the join key value

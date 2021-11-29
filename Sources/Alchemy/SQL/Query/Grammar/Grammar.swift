@@ -124,7 +124,7 @@ open class Grammar {
         return SQL("insert into \(table) (\(columnsJoined)) values \(placeholders.joined(separator: ", "))", bindings: parameters)
     }
     
-    open func compileInsertAndReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
+    open func compileInsertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
         let insert = compileInsert(table, values: values)
         return [SQL("\(insert.statement) returning *", bindings: insert.bindings)]
     }

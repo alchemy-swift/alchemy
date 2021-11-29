@@ -12,7 +12,7 @@ final class ModelQueryTests: TestCase<TestApp> {
     func testWith() async throws {
         try await TestParent.seed()
         let child = try await TestModel.seed()
-        let fetchedChild = try await TestModel.query().with(\.$testParent).firstModel()
+        let fetchedChild = try await TestModel.query().with(\.$testParent).first()
         XCTAssertEqual(fetchedChild, child)
     }
 }

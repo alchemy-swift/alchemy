@@ -67,7 +67,7 @@ final class RunServe: Command {
             )
         }
         
-        registerToLifecycle()
+        registerWithLifecycle()
         
         if schedule {
             lifecycle.registerScheduler()
