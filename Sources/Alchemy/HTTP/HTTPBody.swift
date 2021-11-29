@@ -5,8 +5,10 @@ import NIOHTTP1
 
 /// The contents of an HTTP request or response.
 public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
-    /// The default decoder for decoding JSON from `HTTPBody`s.
+    /// The default decoder for decoding JSON from an `HTTPBody`.
     public static var defaultJSONDecoder = JSONDecoder()
+    /// The default encoder for encoding JSON to an `HTTPBody`.
+    public static var defaultJSONEncoder = JSONEncoder()
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()
     
@@ -58,7 +60,7 @@ public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
     ///   - encoder: A customer encoder to encoder the JSON with.
     ///     Defaults to `Response.defaultJSONEncoder`.
     /// - Throws: Any error thrown during encoding.
-    public init<E: Encodable>(json: E, encoder: JSONEncoder = Response.defaultJSONEncoder) throws {
+    public init<E: Encodable>(json: E, encoder: JSONEncoder = HTTPBody.defaultJSONEncoder) throws {
         let data = try encoder.encode(json)
         self.init(data: data, contentType: .json)
     }

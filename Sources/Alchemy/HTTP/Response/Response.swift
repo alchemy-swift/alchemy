@@ -7,18 +7,11 @@ import NIOHTTP1
 public final class Response {
     public typealias WriteResponse = (ResponseWriter) async throws -> Void
     
-    /// The default `JSONEncoder` with which to encode JSON responses.
-    public static var defaultJSONEncoder = JSONEncoder()
-    
     /// The success or failure status response code.
     public var status: HTTPResponseStatus
-    
     /// The HTTP headers.
     public var headers: HTTPHeaders
-
-    /// The body which contains any data you want to send back to the
-    /// client This can be HTML, an image or JSON among many other
-    /// data types.
+    /// The body of this response.
     public let body: HTTPBody?
     
     /// This will be called when this `Response` writes data to a
