@@ -15,10 +15,10 @@ extension Request {
         if authString.starts(with: "Basic ") {
             authString.removeFirst(6)
             
-            guard let base64Data = Data(base64Encoded: authString),
-                let authString = String(data: base64Data, encoding: .utf8) else
-            {
-                // Or maybe we should throw error?
+            guard
+                let base64Data = Data(base64Encoded: authString),
+                let authString = String(data: base64Data, encoding: .utf8)
+            else {
                 return nil
             }
 
@@ -29,9 +29,7 @@ extension Request {
             let components = authString.components(separatedBy: ":")
             let username = components[0]
             let password = components.dropFirst().joined()
-            return .basic(
-                HTTPAuth.Basic(username: username, password: password)
-            )
+            return .basic(HTTPAuth.Basic(username: username, password: password))
         } else if authString.starts(with: "Bearer ") {
             authString.removeFirst(7)
             return .bearer(HTTPAuth.Bearer(token: authString))

@@ -25,15 +25,15 @@ public struct Parameter: Equatable {
     ///   is not convertible to a `UUID`.
     /// - Returns: The decoded `UUID`.
     public func uuid() throws -> UUID {
-        try UUID(uuidString: self.value)
-            .unwrap(or: DecodingError("Unable to decode UUID for '\(self.key)'. Value was '\(self.value)'."))
+        try UUID(uuidString: value)
+            .unwrap(or: DecodingError("Unable to decode UUID for '\(key)'. Value was '\(value)'."))
     }
 
     /// Returns the `String` value of this parameter.
     ///
     /// - Returns: the value of this parameter.
     public func string() -> String {
-        self.value
+        value
     }
     
     /// Decodes an `Int` from this parameter's value or throws if the
@@ -43,7 +43,7 @@ public struct Parameter: Equatable {
     ///   is not convertible to a `Int`.
     /// - Returns: the decoded `Int`.
     public func int() throws -> Int {
-        try Int(self.value)
-            .unwrap(or: DecodingError("Unable to decode Int for '\(self.key)'. Value was '\(self.value)'."))
+        try Int(value)
+            .unwrap(or: DecodingError("Unable to decode Int for '\(key)'. Value was '\(value)'."))
     }
 }

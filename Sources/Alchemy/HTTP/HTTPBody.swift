@@ -5,6 +5,9 @@ import NIOHTTP1
 
 /// The contents of an HTTP request or response.
 public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
+    /// The default decoder for decoding JSON from `HTTPBody`s.
+    public static var defaultJSONDecoder = JSONDecoder()
+    
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()
     
@@ -106,10 +109,7 @@ extension HTTPBody {
     ///     `Request.defaultJSONEncoder`.
     /// - Throws: Any errors encountered during decoding.
     /// - Returns: The decoded object of type `type`.
-    public func decodeJSON<D: Decodable>(
-        as type: D.Type = D.self,
-        with decoder: JSONDecoder = Request.defaultJSONDecoder
-    ) throws -> D {
+    public func decodeJSON<D: Decodable>(as type: D.Type = D.self, with decoder: JSONDecoder = HTTPBody.defaultJSONDecoder) throws -> D {
         return try decoder.decode(type, from: data())
     }
 }

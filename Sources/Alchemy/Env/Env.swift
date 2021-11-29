@@ -1,9 +1,5 @@
 /// The env variable for an env path override.
 private let kEnvVariable = "APP_ENV"
-/// The default `.env` file location
-private let kEnvDefault = "dev"
-/// The default `.env` file location for tests
-private let kEnvDefaultTest = "test"
 
 /// Handles any environment info of your application. Loads any
 /// environment variables from the file a `.env` or `.{APP_ENV}`
@@ -23,13 +19,13 @@ private let kEnvDefaultTest = "test"
 /// ```
 @dynamicMemberLookup
 public struct Env: Equatable, ExpressibleByStringLiteral {
+    public static let test: Env = "test"
+    public static let dev: Env = "dev"
+    public static let prod: Env = "prod"
+    
     /// The current environment containing all variables loaded from
     /// the environment file.
-    public internal(set) static var current = Env(name: kEnvDefault)
-    
-    public static let test: Env = Env(name: kEnvDefaultTest)
-    public static let dev: Env = Env(name: kEnvDefault)
-    public static let prod: Env = "prod"
+    public internal(set) static var current: Env = Env.isRunningTests ? .test : .dev
     
     private static var didManuallyLoadDotEnv = false
     
@@ -98,16 +94,17 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
     }
     
     static func loadEnv(args: [String] = CommandLine.arguments, processEnv: [String: String] = ProcessInfo.processInfo.environment) {
-        var name = isRunningTests ? kEnvDefaultTest : kEnvDefault
+        var env: Env = isRunningTests ? .test : .dev
         if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
-            name = value
+            env = Env(name: value)
         } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
-            name = value
-        } else if let envName = processEnv[kEnvVariable] {
-            name = envName
+            env = Env(name: value)
+        } else if let value = processEnv[kEnvVariable] {
+            env = Env(name: value)
         }
         
-        current = Env(name: name, processVariables: processEnv)
+        env.processVariables = processEnv
+        current = env
     }
     
     public static func loadDotEnv(_ paths: String...) {
@@ -132,7 +129,7 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
         
         let defaultPath = ".env"
         var overridePath: String? = nil
-        if current.name != kEnvDefault {
+        if current != .dev {
             overridePath = ".env.\(current.name)"
         }
         
@@ -144,6 +141,10 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
             let overrideLocation = overridePath.map { "`\($0)` or " } ?? ""
             Log.info("[Environment] no env file found at \(overrideLocation)`\(defaultPath)`.")
         }
+    }
+    
+    public static func == (lhs: Env, rhs: Env) -> Bool {
+        lhs.name == rhs.name
     }
 }
 
@@ -228,11 +229,11 @@ extension Env {
 
 extension Env {
     public static var isProd: Bool {
-        current == .prod
+        current.name == Env.prod.name
     }
     
     public static var isTest: Bool {
-        current == .test
+        current.name == Env.test.name
     }
     
     fileprivate static var isRunningTests: Bool {

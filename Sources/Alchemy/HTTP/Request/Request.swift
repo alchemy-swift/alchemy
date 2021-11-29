@@ -2,33 +2,25 @@ import Foundation
 import NIO
 import NIOHTTP1
 
-/// A simplified Request type as you'll come across in many web
-/// frameworks
+/// A type that represents inbound requests to your application.
 public final class Request {
-    /// The default JSONDecoder with which to decode HTTP request
-    /// bodies.
-    public static var defaultJSONDecoder = JSONDecoder()
-    
-    /// The head contains all request "metadata" like the URI and
-    /// request method.
-    ///
-    /// The headers are also found in the head, and they are often
-    /// used to describe the body as well.
+    /// The head of this request. Contains the request headers, method, URI, and
+    /// HTTP version.
     public let head: HTTPRequestHead
-    
-    /// Any parameters inside the path.
+    /// Any parameters parsed from this request's path.
     public var parameters: [Parameter] = []
+    /// The remote address where this request came from.
+    public var remoteAddress: SocketAddress?
     
-    /// The bodyBuffer is internal because the HTTPBody API is exposed
-    /// for easier access.
+    /// The buffer representing the body of this request.
     var bodyBuffer: ByteBuffer?
-    
-    /// Any information set by a middleware.
+    /// Storage for values associated with this request.
     var storage: [ObjectIdentifier: Any] = [:]
     
-    /// Initialize a request with the given head and body.
-    init(head: HTTPRequestHead, bodyBuffer: ByteBuffer? = nil) {
+    /// Initialize a request with the given head, body, and remote address.
+    init(head: HTTPRequestHead, bodyBuffer: ByteBuffer? = nil, remoteAddress: SocketAddress?) {
         self.head = head
         self.bodyBuffer = bodyBuffer
+        self.remoteAddress = remoteAddress
     }
 }

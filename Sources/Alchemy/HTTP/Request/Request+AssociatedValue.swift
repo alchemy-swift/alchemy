@@ -3,28 +3,26 @@ extension Request {
     /// objects with middleware.
     ///
     /// Usage:
-    /// ```swift
-    /// struct ExampleMiddleware: Middleware {
-    ///     func intercept(_ request: Request, next: Next) async throws -> Response {
-    ///         let someData: SomeData = ...
-    ///         return try await next(request.set(someData))
-    ///     }
-    /// }
     ///
-    /// app
-    ///     .use(ExampleMiddleware())
-    ///     .on(.GET, at: "/example") { request in
-    ///         let theData = try request.get(SomeData.self)
+    ///     struct ExampleMiddleware: Middleware {
+    ///         func intercept(_ request: Request, next: Next) async throws -> Response {
+    ///             let someData: SomeData = ...
+    ///             return try await next(request.set(someData))
+    ///         }
     ///     }
     ///
-    /// ```
+    ///     app
+    ///         .use(ExampleMiddleware())
+    ///         .on(.GET, at: "/example") { request in
+    ///             let theData = try request.get(SomeData.self)
+    ///         }
     ///
     /// - Parameter value: The value to set.
-    /// - Returns: `self`, with the new value set internally for
-    ///   access with `self.get(Value.self)`.
+    /// - Returns: This reqeust, with the new value set internally for access
+    ///   with `get(Value.self)`.
     @discardableResult
     public func set<T>(_ value: T) -> Self {
-        storage[ObjectIdentifier(T.self)] = value
+        storage[id(of: T.self)] = value
         return self
     }
     
@@ -37,7 +35,7 @@ extension Request {
     ///   type `T` found associated with the request.
     /// - Returns: The value of type `T` from the request.
     public func get<T>(_ type: T.Type = T.self, or error: Error = AssociatedValueError(message: "Couldn't find type `\(name(of: T.self))` on this request")) throws -> T {
-        try storage[ObjectIdentifier(T.self)].unwrap(as: type, or: error)
+        try storage[id(of: T.self)].unwrap(as: type, or: error)
     }
 }
 

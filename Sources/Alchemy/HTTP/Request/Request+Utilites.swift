@@ -1,29 +1,14 @@
 extension Request {
     /// The HTTPMethod of the request.
-    public var method: HTTPMethod {
-        head.method
-    }
-    
+    public var method: HTTPMethod { head.method }
     /// Any headers associated with the request.
-    public var headers: HTTPHeaders {
-        head.headers
-    }
-    
+    public var headers: HTTPHeaders { head.headers }
     /// The url components of this request.
-    public var components: URLComponents? {
-        URLComponents(string: head.uri)
-    }
-    
+    public var components: URLComponents? { URLComponents(string: head.uri) }
     /// The path of the request. Does not include the query string.
-    public var path: String {
-        components?.path ?? ""
-    }
-    
-    /// Any query items parsed from the URL. These are not percent
-    /// encoded.
-    public var queryItems: [URLQueryItem] {
-        components?.queryItems ?? []
-    }
+    public var path: String { components?.path ?? "" }
+    /// Any query items parsed from the URL. These are not percent encoded.
+    public var queryItems: [URLQueryItem] { components?.queryItems ?? [] }
     
     /// Returns the first parameter for the given key, if there is one.
     ///
@@ -83,4 +68,35 @@ extension Request {
             throw ValidationError("Invalid request body.")
         }
     }
+}
+
+/**
+ * Goals
+ * 1. From Request
+ *   a. Decode application/json
+ *   b. Decode application/x-www-form-urlencoded
+ *   c. Decode multipart/form-data
+ *     i. max body size; else 413
+ *     ii. investigate streaming
+ * 2. For Client
+ *   a. Encode application/json
+ *   b. Encode application/x-www-form-urlencoded
+ *   c. Encode multipart/form-data
+ *   d. Encode text/html
+ * 3. Custom
+ *   a. Custom content encoder / decoder to allow for something like XML.
+ *   b. 415 if unsupported decoding
+ */
+
+extension Request {
+    // A single `content` variable that decodes based on the request type.
+    var content: [String]
+    
+    // A separate `File` variable that contains any file, perhaps with a name
+    // from a multipart request.
+    var file: File?
+}
+
+struct File {
+    
 }

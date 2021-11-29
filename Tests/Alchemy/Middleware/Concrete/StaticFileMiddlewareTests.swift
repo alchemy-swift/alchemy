@@ -76,11 +76,11 @@ final class StaticFileMiddlewareTests: TestCase<TestApp> {
 
 extension Request {
     static func get(_ uri: String) -> Request {
-        Request(head: .init(version: .http1_1, method: .GET, uri: uri))
+        Request(head: .init(version: .http1_1, method: .GET, uri: uri), remoteAddress: nil)
     }
     
     static func post(_ uri: String) -> Request {
-        Request(head: .init(version: .http1_1, method: .POST, uri: uri))
+        Request(head: .init(version: .http1_1, method: .POST, uri: uri), remoteAddress: nil)
     }
 }
 

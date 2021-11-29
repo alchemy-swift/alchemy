@@ -39,7 +39,8 @@ public final class TestRequestBuilder: RequestBuilder {
                     uri: path + queryString(for: path),
                     headers: HTTPHeaders(headers.map { ($0, $1) })
                 ),
-                bodyBuffer: try createBody?()))
+                bodyBuffer: try createBody?(),
+                remoteAddress: nil))
     }
     
     private func queryString(for path: String) -> String {

@@ -14,7 +14,7 @@ final class EnvTests: TestCase<TestApp> {
         """
     
     func testIsRunningTests() {
-        XCTAssertTrue(Env.isRunningTests)
+        XCTAssertTrue(Env.isTest)
     }
     
     func testEnvLookup() {

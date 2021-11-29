@@ -10,6 +10,6 @@ extension Request {
         headers: HTTPHeaders = HTTPHeaders(),
         body: ByteBuffer? = nil
     ) -> Request {
-        Request(head: HTTPRequestHead(version: version, method: method, uri: uri, headers: headers), bodyBuffer: body)
+        Request(head: HTTPRequestHead(version: version, method: method, uri: uri, headers: headers), bodyBuffer: body, remoteAddress: nil)
     }
 }

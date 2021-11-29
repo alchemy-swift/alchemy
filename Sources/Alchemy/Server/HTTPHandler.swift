@@ -56,7 +56,7 @@ final class HTTPHandler: ChannelInboundHandler {
                 body = nil
             }
       
-            request = Request(head: requestHead, bodyBuffer: body)
+            request = Request(head: requestHead, bodyBuffer: body, remoteAddress: context.remoteAddress)
         case .body(var newData):
             // Appends new data to the already reserved buffer
             request?.bodyBuffer?.writeBuffer(&newData)
