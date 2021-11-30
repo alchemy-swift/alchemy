@@ -35,8 +35,8 @@ final class RequestUtilitiesTests: XCTestCase {
     }
     
     func testBody() {
-        XCTAssertNil(Request.fixture(body: nil).body)
-        XCTAssertNotNil(Request.fixture(body: ByteBuffer()).body)
+        XCTAssertNil(Request.fixture(body: nil).content)
+        XCTAssertNotNil(Request.fixture(body: ByteBuffer()).content)
     }
     
     func testDecodeBodyDict() {

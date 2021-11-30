@@ -131,7 +131,7 @@ extension Router: HBRouter {
         return request.eventLoop
             .wrapAsync { await self.handle(request: req) }
             .map { res in
-                let body: HBResponseBody = res.body.map { .byteBuffer($0.buffer) } ?? .empty
+                let body: HBResponseBody = res.content.map { .byteBuffer($0.buffer) } ?? .empty
                 return HBResponse(status: res.status, headers: res.headers, body: body)
             }
     }

@@ -9,8 +9,10 @@ extension ContentDecoder where Self == FormDataDecoder {
 }
 
 extension FormDataEncoder: ContentEncoder {
+    static var boundary: () -> String = { "AlchemyFormBoundary" + .randomAlphaNumberic(15) }
+    
     public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
-        let boundary: String = "---AlchemyFormBoundary" + .randomAlphaNumberic(15)
+        let boundary = FormDataEncoder.boundary()
         return Content(string: try encode(value, boundary: boundary), contentType: .multipart(boundary: boundary))
     }
 }

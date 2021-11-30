@@ -98,7 +98,8 @@ extension Content {
         try JSONSerialization.jsonObject(with: data(), options: []) as? [String: Any]
     }
     
-    /// Decodes the content as a decodable, based on it's content type.
+    /// Decodes the content as a decodable, based on it's content type or with
+    /// the given content decoder.
     ///
     /// - Parameters:
     ///   - type: The Decodable type to which the body should be decoded.
@@ -106,7 +107,24 @@ extension Content {
     ///     `Content.defaultDecoder`.
     /// - Throws: Any errors encountered during decoding.
     /// - Returns: The decoded object of type `type`.
-    public func decode<D: Decodable>(as type: D.Type = D.self, with decoder: ContentDecoder = Content.defaultDecoder) throws -> D {
-        try decoder.decodeContent(type, from: self)
+    public func decode<D: Decodable>(as type: D.Type = D.self, with decoder: ContentDecoder? = nil) throws -> D {
+        guard let decoder = decoder else {
+            guard let contentType = contentType else {
+                return try decode(as: type, with: Content.defaultDecoder)
+            }
+            
+            switch contentType {
+            case .json:
+                return try decode(as: type, with: .json)
+            case .urlEncoded:
+                return try decode(as: type, with: .url)
+            case .multipart(boundary: "ignore"):
+                return try decode(as: type, with: .multipart)
+            default:
+                throw HTTPError(.notAcceptable)
+            }
+        }
+        
+        return try decoder.decodeContent(type, from: self)
     }
 }
