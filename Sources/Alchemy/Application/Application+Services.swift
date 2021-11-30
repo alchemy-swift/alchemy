@@ -9,6 +9,7 @@ extension Application {
     func bootServices(testing: Bool = false) {
         if testing {
             Container.default = Container()
+            Log.logger.logLevel = .notice
         }
         
         // Setup app lifecycle
@@ -27,7 +28,6 @@ extension Application {
             Loop.config()
         }
         
-        ServerConfiguration().registerDefault()
         Router().registerDefault()
         Scheduler().registerDefault()
         NIOThreadPool(numberOfThreads: System.coreCount).registerDefault()

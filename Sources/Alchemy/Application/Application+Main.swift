@@ -1,3 +1,4 @@
+import Hummingbird
 import Lifecycle
 import LifecycleNIOCompat
 
@@ -10,10 +11,13 @@ extension Application {
     /// Launch this application. By default it serves, see `Launch`
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
-    public static func main() {
+    public static func main() throws {
         let app = Self()
-        do { try app.setup() }
-        catch { Launch.exit(withError: error) }
+        do {
+            try app.setup()
+        } catch {
+            Launch.exit(withError: error)
+        }
         app.start()
         app.wait()
     }

@@ -12,13 +12,13 @@ public protocol ResponseConvertible {
 // MARK: Convenient `ResponseConvertible` Conformances.
 
 extension Response: ResponseConvertible {
-    public func convert() async throws -> Response {
+    public func convert() -> Response {
         self
     }
 }
 
 extension String: ResponseConvertible {
-    public func convert() async throws -> Response {
+    public func convert() -> Response {
         Response(status: .ok, body: HTTPBody(text: self))
     }
 }
