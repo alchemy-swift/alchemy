@@ -4,7 +4,7 @@ import XCTest
 public protocol ResponseAssertable {
     var status: HTTPResponseStatus { get }
     var headers: HTTPHeaders { get }
-    var body: HTTPBody? { get }
+    var body: Content? { get }
 }
 
 extension Response: ResponseAssertable {}
@@ -105,7 +105,7 @@ extension ResponseAssertable {
             return self
         }
 
-        guard let decoded = body.decodeString() else {
+        guard let decoded = body.string() else {
             XCTFail("Request body was not a String.", file: file, line: line)
             return self
         }
@@ -121,8 +121,8 @@ extension ResponseAssertable {
             return self
         }
         
-        XCTAssertNoThrow(try body.decodeJSON(as: D.self), file: file, line: line)
-        guard let decoded = try? body.decodeJSON(as: D.self) else {
+        XCTAssertNoThrow(try body.decode(as: D.self), file: file, line: line)
+        guard let decoded = try? body.decode(as: D.self) else {
             return self
         }
         
@@ -150,7 +150,7 @@ extension ResponseAssertable {
     @discardableResult
     public func assertEmpty(file: StaticString = #filePath, line: UInt = #line) -> Self {
         if body != nil {
-            XCTFail("The response body was not empty \(body?.decodeString() ?? "nil")", file: file, line: line)
+            XCTFail("The response body was not empty \(body?.string() ?? "nil")", file: file, line: line)
         }
         
         return self

@@ -33,12 +33,12 @@ extension Request {
     
     /// The body is a wrapper used to provide simple access to any
     /// body data, such as JSON.
-    public var body: HTTPBody? {
+    public var body: Content? {
         guard let bodyBuffer = bodyBuffer else {
             return nil
         }
         
-        return HTTPBody(buffer: bodyBuffer)
+        return Content(buffer: bodyBuffer)
     }
     
     /// A dictionary with the contents of this Request's body.
@@ -56,7 +56,7 @@ extension Request {
     public func decodeBodyJSON<T: Decodable>(as type: T.Type = T.self, with decoder: JSONDecoder = JSONDecoder()) throws -> T {
         let body = try body.unwrap(or: ValidationError("Expecting a request body."))
         do {
-            return try body.decodeJSON(as: type, with: decoder)
+            return try body.decode(as: type, with: decoder)
         } catch let DecodingError.keyNotFound(key, context) {
             let path = context.codingPath.map(\.stringValue).joined(separator: ".")
             let pathWithKey = path.isEmpty ? key.stringValue : "\(path).\(key.stringValue)"

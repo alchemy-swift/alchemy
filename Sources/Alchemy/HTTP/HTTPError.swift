@@ -39,7 +39,7 @@ extension HTTPError: ResponseConvertible {
     public func convert() throws -> Response {
         Response(
             status: status,
-            body: try message.map { try HTTPBody(json: ["message": $0]) }
+            body: try message.map { try Content(value: ["message": $0]) }
         )
     }
 }

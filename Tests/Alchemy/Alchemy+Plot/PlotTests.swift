@@ -7,7 +7,7 @@ final class PlotTests: XCTestCase {
         let res = home.convert()
         XCTAssertEqual(res.status, .ok)
         XCTAssertEqual(res.body?.contentType, .html)
-        XCTAssertEqual(res.body?.decodeString(), home.content.render())
+        XCTAssertEqual(res.body?.string(), home.content.render())
     }
     
     func testHTMLConversion() {
@@ -15,7 +15,7 @@ final class PlotTests: XCTestCase {
         let res = html.convert()
         XCTAssertEqual(res.status, .ok)
         XCTAssertEqual(res.body?.contentType, .html)
-        XCTAssertEqual(res.body?.decodeString(), html.render())
+        XCTAssertEqual(res.body?.string(), html.render())
     }
     
     func testXMLConversion() {
@@ -23,7 +23,7 @@ final class PlotTests: XCTestCase {
         let res = xml.convert()
         XCTAssertEqual(res.status, .ok)
         XCTAssertEqual(res.body?.contentType, .xml)
-        XCTAssertEqual(res.body?.decodeString(), xml.render())
+        XCTAssertEqual(res.body?.string(), xml.render())
     }
 }
 

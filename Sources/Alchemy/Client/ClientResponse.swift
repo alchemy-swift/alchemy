@@ -52,9 +52,9 @@ public struct ClientResponse {
     
     // MARK: Body
     
-    public var body: HTTPBody? {
+    public var body: Content? {
         response.body.map {
-            HTTPBody(buffer: $0, contentType: response.headers["content-type"].first.map { ContentType($0) })
+            Content(buffer: $0, contentType: response.headers["content-type"].first.map { ContentType($0) })
         }
     }
     

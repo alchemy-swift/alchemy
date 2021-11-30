@@ -12,7 +12,7 @@ public final class Response {
     /// The HTTP headers.
     public var headers: HTTPHeaders
     /// The body of this response.
-    public let body: HTTPBody?
+    public let body: Content?
     
     /// This will be called when this `Response` writes data to a
     /// remote peer.
@@ -34,7 +34,7 @@ public final class Response {
     ///     to empty headers.
     ///   - body: The body of this response. See `HTTPBody` for
     ///     initializing with various data. Defaults to nil.
-    public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: HTTPBody? = nil) {
+    public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: Content? = nil) {
         var headers = headers
         headers.replaceOrAdd(name: "content-length", value: String(body?.buffer.writerIndex ?? 0))
         body?.contentType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
@@ -105,7 +105,7 @@ extension Response {
 
         let writer = MockWriter()
         try await writer.write(response: self)
-        return Response(status: writer.status, headers: writer.headers, body: HTTPBody(buffer: writer.body))
+        return Response(status: writer.status, headers: writer.headers, body: Content(buffer: writer.body))
     }
 }
 

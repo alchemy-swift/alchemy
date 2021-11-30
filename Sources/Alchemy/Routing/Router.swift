@@ -29,7 +29,7 @@ public final class Router: Service {
     var notFoundHandler: Handler = { _ in
         Response(
             status: .notFound,
-            body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
+            body: Content(string: HTTPResponseStatus.notFound.reasonPhrase)
         )
     }
     
@@ -132,7 +132,7 @@ public final class Router: Service {
         Log.error("[Server] encountered internal error: \(error).")
         return Response(
             status: .internalServerError,
-            body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
+            body: Content(string: HTTPResponseStatus.internalServerError.reasonPhrase)
         )
     }
 }

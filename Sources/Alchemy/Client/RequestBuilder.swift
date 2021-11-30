@@ -63,7 +63,7 @@ extension RequestBuilder {
     }
     
     public func withContentType(_ contentType: ContentType) -> Builder {
-        withHeader("Content-Type", value: contentType.value)
+        withHeader("Content-Type", value: contentType.string)
     }
     
     // MARK: - Body

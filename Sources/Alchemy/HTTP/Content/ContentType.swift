@@ -6,12 +6,29 @@ public struct ContentType: Equatable {
     /// The value of this content type, appropriate for `Content-Type`
     /// headers.
     public var value: String
+    /// Any parameters to go along with the content type value.
+    public var parameters: [String: String] = [:]
+    /// The entire string for the Content-Type header.
+    public var string: String {
+        ([value] + parameters.map { "\($0)=\($1)" }).joined(separator: "; ")
+    }
     
     /// Create with a string.
     ///
     /// - Parameter value: The string of the content type.
     public init(_ value: String) {
-        self.value = value
+        let components = value.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+        self.value = components.first!
+        components[1...]
+            .compactMap { (string: String) -> (String, String)? in
+                let split = string.components(separatedBy: "=")
+                guard let first = split[safe: 0], let second = split[safe: 1] else {
+                    return nil
+                }
+                
+                return (first, second)
+            }
+            .forEach { parameters[$0] = $1 }
     }
     
     // MARK: Common content types
@@ -80,8 +97,15 @@ public struct ContentType: Equatable {
     public static let zip =            ContentType("application/zip")
     /// application/x-www-form-urlencoded
     public static let urlEncoded =     ContentType("application/x-www-form-urlencoded")
-    /// application/zip
-    public static let multipart =      ContentType("multipart/form-data")
+    
+    /// multipart/form-data
+    public static func multipart(boundary: String) -> ContentType {
+        ContentType("multipart/form-data; boundary=\(boundary)")
+    }
+    
+    public static func == (lhs: ContentType, rhs: ContentType) -> Bool {
+        lhs.value == rhs.value
+    }
 }
 
 // Map of file extensions

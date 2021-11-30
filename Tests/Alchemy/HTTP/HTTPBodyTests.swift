@@ -2,8 +2,8 @@ import AlchemyTest
 
 final class HTTPBodyTests: XCTestCase {
     func testStringLiteral() throws {
-        let body: HTTPBody = "foo"
+        let body: Content = "foo"
         XCTAssertEqual(body.contentType, .plainText)
-        XCTAssertEqual(body.decodeString(), "foo")
+        XCTAssertEqual(body.string(), "foo")
     }
 }

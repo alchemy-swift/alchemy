@@ -4,11 +4,11 @@ import Foundation
 import NIOHTTP1
 
 /// The contents of an HTTP request or response.
-public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
-    /// The default decoder for decoding JSON from an `HTTPBody`.
-    public static var defaultJSONDecoder = JSONDecoder()
-    /// The default encoder for encoding JSON to an `HTTPBody`.
-    public static var defaultJSONEncoder = JSONEncoder()
+public struct Content: ExpressibleByStringLiteral, Equatable {
+    /// The default decoder for reading content from an incoming request.
+    public static var defaultDecoder: ContentDecoder = .json
+    /// The default encoder for writing content to an outgoing response.
+    public static var defaultEncoder: ContentEncoder = .json
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()
     
@@ -28,15 +28,14 @@ public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
         self.contentType = contentType
     }
      
-    /// Creates a new body containing the text with content type
-    /// `text/plain`.
+    /// Creates a new body containing the text of the given string.
     ///
-    /// - Parameter text: The string contents of the body.
+    /// - Parameter string: The string contents of the body.
     /// - Parameter contentType: The media type of this text. Defaults to
     ///   `.plainText` ("text/plain").
-    public init(text: String, contentType: ContentType = .plainText) {
-        var buffer = HTTPBody.allocator.buffer(capacity: text.utf8.count)
-        buffer.writeString(text)
+    public init(string: String, contentType: ContentType = .plainText) {
+        var buffer = Content.allocator.buffer(capacity: string.utf8.count)
+        buffer.writeString(string)
         self.buffer = buffer
         self.contentType = contentType
     }
@@ -47,33 +46,32 @@ public struct HTTPBody: ExpressibleByStringLiteral, Equatable {
     ///   - data: The data in the body.
     ///   - contentType: The content type of the body.
     public init(data: Data, contentType: ContentType? = nil) {
-        var buffer = HTTPBody.allocator.buffer(capacity: data.count)
+        var buffer = Content.allocator.buffer(capacity: data.count)
         buffer.writeBytes(data)
         self.buffer = buffer
         self.contentType = contentType
     }
   
-    /// Creates a body with a JSON object.
+    /// Creates a body with an encodable value.
     ///
     /// - Parameters:
-    ///   - json: The object to encode into the body.
-    ///   - encoder: A customer encoder to encoder the JSON with.
-    ///     Defaults to `Response.defaultJSONEncoder`.
+    ///   - value: The object to encode into the body.
+    ///   - encoder: A customer encoder to encoder the value with. Defaults to
+    ///     `Content.defaultEncoder`.
     /// - Throws: Any error thrown during encoding.
-    public init<E: Encodable>(json: E, encoder: JSONEncoder = HTTPBody.defaultJSONEncoder) throws {
-        let data = try encoder.encode(json)
-        self.init(data: data, contentType: .json)
+    public init<E: Encodable>(value: E, encoder: ContentEncoder = Content.defaultEncoder) throws {
+        self = try encoder.encodeContent(value)
     }
 
     /// Create a body via a string literal.
     ///
     /// - Parameter value: The string literal contents of the body.
     public init(stringLiteral value: String) {
-        self.init(text: value)
+        self.init(string: value)
     }
 }
 
-extension HTTPBody {
+extension Content {
     /// The contents of this body.
     public func data() -> Data {
         return buffer.withUnsafeReadableBytes { buffer -> Data in
@@ -87,7 +85,7 @@ extension HTTPBody {
     /// - Parameter encoding: The `String.Encoding` value to decode
     ///   with. Defaults to `.utf8`.
     /// - Returns: The string decoded from the contents of this body.
-    public func decodeString(with encoding: String.Encoding = .utf8) -> String? {
+    public func string(with encoding: String.Encoding = .utf8) -> String? {
         String(data: data(), encoding: encoding)
     }
     
@@ -100,16 +98,15 @@ extension HTTPBody {
         try JSONSerialization.jsonObject(with: data(), options: []) as? [String: Any]
     }
     
-    /// Decodes the body as JSON into the provided Decodable type.
+    /// Decodes the content as a decodable, based on it's content type.
     ///
     /// - Parameters:
-    ///   - type: The Decodable type to which the body should be
-    ///     decoded.
-    ///   - decoder: The Decoder with which to decode. Defaults to
-    ///     `Request.defaultJSONEncoder`.
+    ///   - type: The Decodable type to which the body should be decoded.
+    ///   - decoder: The decoder with which to decode. Defaults to
+    ///     `Content.defaultDecoder`.
     /// - Throws: Any errors encountered during decoding.
     /// - Returns: The decoded object of type `type`.
-    public func decodeJSON<D: Decodable>(as type: D.Type = D.self, with decoder: JSONDecoder = HTTPBody.defaultJSONDecoder) throws -> D {
-        return try decoder.decode(type, from: data())
+    public func decode<D: Decodable>(as type: D.Type = D.self, with decoder: ContentDecoder = Content.defaultDecoder) throws -> D {
+        try decoder.decodeContent(type, from: self)
     }
 }
