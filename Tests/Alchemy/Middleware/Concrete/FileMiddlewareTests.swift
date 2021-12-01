@@ -2,18 +2,18 @@
 import Alchemy
 import AlchemyTest
 
-final class StaticFileMiddlewareTests: TestCase<TestApp> {
-    var middleware: StaticFileMiddleware!
+final class FileMiddlewareTests: TestCase<TestApp> {
+    var middleware: FileMiddleware!
     var fileName = UUID().uuidString
     
     override func setUp() {
         super.setUp()
-        middleware = StaticFileMiddleware(from: FileCreator.shared.rootPath + "Public", extensions: ["html"])
+        middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public", extensions: ["html"])
         fileName = UUID().uuidString
     }
     
     func testDirectorySanitize() async throws {
-        middleware = StaticFileMiddleware(from: FileCreator.shared.rootPath + "Public/", extensions: ["html"])
+        middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public/", extensions: ["html"])
         try FileCreator.shared.create(fileName: fileName, extension: "html", contents: "foo;bar;baz", in: "Public")
         
         try await middleware

@@ -41,8 +41,3 @@ public struct Storage: Service {
         try await create(directoryUrl.appendingPathComponent(file.name).path, contents: file.contents)
     }
 }
-
-enum StorageError: Error {
-    case invalidUrl
-    case fileDoesntExist
-}

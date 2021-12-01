@@ -9,11 +9,23 @@ final class StorageTests: TestCase<TestApp> {
         _testCreate,
         _testDelete,
         _testPut,
-        _testPathing
+        _testPathing,
+        _testFileStore,
+        _testInvalidURL,
     ]
     
+    func testConfig() {
+        let config = Storage.Config(stores: [.default: .local, 1: .local, 2: .local])
+        Storage.configure(using: config)
+        XCTAssertNotNil(Storage.resolveOptional(.default))
+        XCTAssertNotNil(Storage.resolveOptional(1))
+        XCTAssertNotNil(Storage.resolveOptional(2))
+    }
+    
     func testLocal() async throws {
-        Storage.register(.local(root: NSTemporaryDirectory() + UUID().uuidString))
+        let root = NSTemporaryDirectory() + UUID().uuidString
+        Storage.register(.local(root: root))
+        XCTAssertEqual(root, Store.root)
         for test in allTests {
             filePath = UUID().uuidString + ".txt"
             try await test()
@@ -61,10 +73,17 @@ final class StorageTests: TestCase<TestApp> {
         try await Store.delete("foo/bar/baz/\(filePath)")
         AssertFalse(try await Store.exists("foo/bar/baz/\(filePath)"))
     }
-}
-
-extension ByteBuffer: ExpressibleByStringLiteral {
-    public init(stringLiteral value: StringLiteralType) {
-        self.init(string: value)
+    
+    func _testFileStore() async throws {
+        try await File(name: filePath, contents: "bar").store()
+        AssertTrue(try await Store.exists(filePath))
+    }
+    
+    func _testInvalidURL() async throws {
+        do {
+            let store: Storage = .local(root: "\\")
+            _ = try await store.exists("foo")
+            XCTFail("Should throw an error")
+        } catch {}
     }
 }

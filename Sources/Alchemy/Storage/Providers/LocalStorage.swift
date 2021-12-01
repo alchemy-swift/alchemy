@@ -1,10 +1,25 @@
 import NIOCore
 
+extension Storage {
+    /// Create a storage disk backed by the local filesystem at the given root
+    /// directory.
+    public static func local(root: String = "Public/") -> Storage {
+        Storage(provider: LocalStorage(root: root))
+    }
+    
+    /// Create a storage disk backed by the local filesystem in the "Public/"
+    /// directory.
+    public static var local: Storage {
+        .local()
+    }
+}
+
 struct LocalStorage: StorageProvider {
     /// The file IO helper for streaming files.
     private let fileIO = NonBlockingFileIO(threadPool: .default)
     /// Used for allocating buffers when pulling out file data.
     private let bufferAllocator = ByteBufferAllocator()
+    
     var root: String
     
     // MARK: - StorageProvider
@@ -106,19 +121,5 @@ struct LocalStorage: StorageProvider {
         }
         
         return url
-    }
-}
-
-extension Storage {
-    /// Create a storage disk backed by the local filesystem at the given root
-    /// directory.
-    public static func local(root: String = "Public/") -> Storage {
-        Storage(provider: LocalStorage(root: "Public/"))
-    }
-    
-    /// Create a storage disk backed by the local filesystem in the "Public/"
-    /// directory.
-    public static var local: Storage {
-        .local()
     }
 }
