@@ -38,7 +38,7 @@ extension Request {
             return nil
         }
         
-        return Content(buffer: bodyBuffer)
+        return .buffer(bodyBuffer, type: headers["content-type"].first.map { ContentType($0) })
     }
     
     /// A dictionary with the contents of this Request's body.

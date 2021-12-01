@@ -13,17 +13,17 @@ extension FormDataEncoder: ContentEncoder {
     
     public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
         let boundary = FormDataEncoder.boundary()
-        return Content(string: try encode(value, boundary: boundary), contentType: .multipart(boundary: boundary))
+        return .string(try encode(value, boundary: boundary), type: .multipart(boundary: boundary))
     }
 }
 
 extension FormDataDecoder: ContentDecoder {
     public func decodeContent<D>(_ type: D.Type, from content: Content) throws -> D where D: Decodable {
-        guard let boundary = content.contentType?.parameters["boundary"] else {
+        guard let boundary = content.type?.parameters["boundary"] else {
             throw HTTPError(.notAcceptable, message: "Attempted to decode multipart/form-data but couldn't find a `boundary` in the `Content-Type` header.")
         }
         
-        return try decode(type, from: content.string() ?? "", boundary: boundary)
+        return try decode(type, from: content.buffer, boundary: boundary)
     }
 }
 

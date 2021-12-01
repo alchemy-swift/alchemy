@@ -9,47 +9,50 @@ public struct Content: ExpressibleByStringLiteral, Equatable {
     public static var defaultDecoder: ContentDecoder = .json
     /// The default encoder for writing content to an outgoing response.
     public static var defaultEncoder: ContentEncoder = .json
-    /// Used to create new ByteBuffers.
-    private static let allocator = ByteBufferAllocator()
     
     /// The binary data in this body.
     public let buffer: ByteBuffer
     /// The content type of the data stored in this body. Used to set the
     /// `content-type` header when sending back a response.
-    public let contentType: ContentType?
+    public let type: ContentType?
+    
+    /// Manages any files associated with this content.
+    var _files = ContentFiles()
+}
+
+extension Content {
+    /// Used to create new ByteBuffers.
+    private static let allocator = ByteBufferAllocator()
     
     /// Creates a new body from a binary `NIO.ByteBuffer`.
     ///
     /// - Parameters:
     ///    - buffer: The buffer holding the data in the body.
-    ///    - contentType: The content type of data in the body.
-    public init(buffer: ByteBuffer, contentType: ContentType? = nil) {
-        self.buffer = buffer
-        self.contentType = contentType
+    ///    - type: The content type of data in the body.
+    public static func buffer(_ buffer: ByteBuffer, type: ContentType? = nil) -> Content {
+        Content(buffer: buffer, type: type)
     }
-     
+    
     /// Creates a new body containing the text of the given string.
     ///
     /// - Parameter string: The string contents of the body.
-    /// - Parameter contentType: The media type of this text. Defaults to
+    /// - Parameter type: The media type of this text. Defaults to
     ///   `.plainText` ("text/plain").
-    public init(string: String, contentType: ContentType = .plainText) {
+    public static func string(_ string: String, type: ContentType = .plainText) -> Content {
         var buffer = Content.allocator.buffer(capacity: string.utf8.count)
         buffer.writeString(string)
-        self.buffer = buffer
-        self.contentType = contentType
+        return Content(buffer: buffer, type: type)
     }
     
     /// Creates a new body from a binary `Foundation.Data`.
     ///
     /// - Parameters:
     ///   - data: The data in the body.
-    ///   - contentType: The content type of the body.
-    public init(data: Data, contentType: ContentType? = nil) {
+    ///   - type: The content type of the body.
+    public static func data(_ data: Data, type: ContentType? = nil) -> Content {
         var buffer = Content.allocator.buffer(capacity: data.count)
         buffer.writeBytes(data)
-        self.buffer = buffer
-        self.contentType = contentType
+        return Content(buffer: buffer, type: type)
     }
   
     /// Creates a body with an encodable value.
@@ -59,15 +62,15 @@ public struct Content: ExpressibleByStringLiteral, Equatable {
     ///   - encoder: A customer encoder to encoder the value with. Defaults to
     ///     `Content.defaultEncoder`.
     /// - Throws: Any error thrown during encoding.
-    public init<E: Encodable>(value: E, encoder: ContentEncoder = Content.defaultEncoder) throws {
-        self = try encoder.encodeContent(value)
+    public static func encodable<E: Encodable>(_ value: E, encoder: ContentEncoder = Content.defaultEncoder) throws -> Content {
+        try encoder.encodeContent(value)
     }
 
     /// Create a body via a string literal.
     ///
     /// - Parameter value: The string literal contents of the body.
     public init(stringLiteral value: String) {
-        self.init(string: value)
+        self = .string(value)
     }
 }
 
@@ -109,7 +112,7 @@ extension Content {
     /// - Returns: The decoded object of type `type`.
     public func decode<D: Decodable>(as type: D.Type = D.self, with decoder: ContentDecoder? = nil) throws -> D {
         guard let decoder = decoder else {
-            guard let contentType = contentType else {
+            guard let contentType = self.type else {
                 return try decode(as: type, with: Content.defaultDecoder)
             }
             
@@ -118,7 +121,7 @@ extension Content {
                 return try decode(as: type, with: .json)
             case .urlEncoded:
                 return try decode(as: type, with: .url)
-            case .multipart(boundary: "ignore"):
+            case .multipart(boundary: ""):
                 return try decode(as: type, with: .multipart)
             default:
                 throw HTTPError(.notAcceptable)

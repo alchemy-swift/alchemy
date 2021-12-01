@@ -38,7 +38,13 @@ extension Application {
         }
         
         // Set up any configurable services.
-        let types: [Any.Type] = [Database.self, Cache.self, Queue.self]
+        let types: [Any.Type] = [
+            Database.self,
+            Cache.self,
+            Queue.self,
+            Storage.self
+        ]
+        
         for type in types {
             if let type = type as? AnyConfigurable.Type {
                 type.configureDefaults()

@@ -37,7 +37,7 @@ public final class Response {
     public init(status: HTTPResponseStatus, headers: HTTPHeaders = HTTPHeaders(), body: Content? = nil) {
         var headers = headers
         headers.replaceOrAdd(name: "content-length", value: String(body?.buffer.writerIndex ?? 0))
-        body?.contentType.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
+        body?.type.map { headers.replaceOrAdd(name: "content-type", value: $0.value) }
         
         self.status = status
         self.headers = headers
@@ -105,7 +105,7 @@ extension Response {
 
         let writer = MockWriter()
         try await writer.write(response: self)
-        return Response(status: writer.status, headers: writer.headers, body: Content(buffer: writer.body))
+        return Response(status: writer.status, headers: writer.headers, body: .buffer(writer.body))
     }
 }
 

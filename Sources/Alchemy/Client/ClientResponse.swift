@@ -54,7 +54,7 @@ public struct ClientResponse {
     
     public var content: Content? {
         response.body.map {
-            Content(buffer: $0, contentType: response.headers["content-type"].first.map { ContentType($0) })
+            Content(buffer: $0, type: response.headers["content-type"].first.map { ContentType($0) })
         }
     }
     

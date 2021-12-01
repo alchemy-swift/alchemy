@@ -107,6 +107,6 @@ public extension Queue {
     
     /// A queue backed by the default Redis connection.
     static var redis: Queue {
-        .redis(.default)
+        .redis()
     }
 }

@@ -1,9 +1,14 @@
 // The default configured Client
 public var Http: Client {
-    Container.resolve(Client.self)
+    .resolve(.default)
 }
 
 // The default configured Database
 public var DB: Database {
-    Container.resolve(Database.self)
+    .resolve(.default)
+}
+
+// The default configured Storage
+public var Store: Storage {
+    .resolve(.default)
 }

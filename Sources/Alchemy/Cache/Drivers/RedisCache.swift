@@ -75,6 +75,6 @@ extension Cache {
     
     /// A cache backed by the default Redis instance.
     public static var redis: Cache {
-        .redis(.default)
+        .redis()
     }
 }

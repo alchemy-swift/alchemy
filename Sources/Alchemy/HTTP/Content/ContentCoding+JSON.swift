@@ -10,7 +10,7 @@ extension ContentDecoder where Self == JSONDecoder {
 
 extension JSONEncoder: ContentEncoder {
     public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
-        Content(data: try encode(value), contentType: .json)
+        .data(try encode(value), type: .json)
     }
 }
 

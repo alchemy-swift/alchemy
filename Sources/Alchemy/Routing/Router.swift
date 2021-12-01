@@ -27,10 +27,7 @@ public final class Router: Service {
     
     /// The response for when no handler is found for a Request.
     var notFoundHandler: Handler = { _ in
-        Response(
-            status: .notFound,
-            body: Content(string: HTTPResponseStatus.notFound.reasonPhrase)
-        )
+        Response(status: .notFound, body: .string(HTTPResponseStatus.notFound.reasonPhrase))
     }
     
     /// `Middleware` that will intercept all requests through this
@@ -130,10 +127,7 @@ public final class Router: Service {
     /// request.
     private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
         Log.error("[Server] encountered internal error: \(error).")
-        return Response(
-            status: .internalServerError,
-            body: Content(string: HTTPResponseStatus.internalServerError.reasonPhrase)
-        )
+        return Response(status: .internalServerError, body: .string(HTTPResponseStatus.internalServerError.reasonPhrase))
     }
 }
 

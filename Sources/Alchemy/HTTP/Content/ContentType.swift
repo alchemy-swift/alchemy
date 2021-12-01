@@ -97,6 +97,8 @@ public struct ContentType: Equatable {
     public static let zip =            ContentType("application/zip")
     /// application/x-www-form-urlencoded
     public static let urlEncoded =     ContentType("application/x-www-form-urlencoded")
+    /// multipart/form-data
+    public static let multipart =      ContentType("multipart/form-data")
     
     /// multipart/form-data
     public static func multipart(boundary: String) -> ContentType {

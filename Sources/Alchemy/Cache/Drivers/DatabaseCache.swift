@@ -95,7 +95,7 @@ extension Cache {
     
     /// Create a cache backed by the default SQL database.
     public static var database: Cache {
-        .database(.default)
+        .database()
     }
 }
 

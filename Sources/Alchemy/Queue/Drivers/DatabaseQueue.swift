@@ -62,7 +62,7 @@ public extension Queue {
     
     /// A queue backed by the default SQL database.
     static var database: Queue {
-        .database(.default)
+        .database()
     }
 }
 

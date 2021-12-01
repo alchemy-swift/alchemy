@@ -21,7 +21,7 @@ public extension Application {
     ) -> Self where Res: Codable {
         on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
             let result = try await handler(request, try Req(from: request))
-            return Response(status: .ok, body: try Content(value: result, encoder: endpoint.jsonEncoder))
+            return Response(status: .ok, body: try .encodable(result, encoder: endpoint.jsonEncoder))
         }
     }
     
@@ -41,7 +41,7 @@ public extension Application {
     ) -> Self {
         on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
             let result = try await handler(request)
-            return Response(status: .ok, body: try Content(value: result, encoder: endpoint.jsonEncoder))
+            return Response(status: .ok, body: try .encodable(result, encoder: endpoint.jsonEncoder))
         }
     }
     
