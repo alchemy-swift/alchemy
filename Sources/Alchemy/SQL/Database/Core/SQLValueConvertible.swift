@@ -6,12 +6,12 @@ public protocol SQLValueConvertible: SQLConvertible {
 
 extension SQLValueConvertible {
     public var sql: SQL {
-        (self as? SQL) ?? SQL(sqlValueLiteral)
+        (self as? SQL) ?? SQL(sqlLiteral)
     }
     
     /// A string appropriate for representing this value in a non-parameterized
     /// query.
-    public var sqlValueLiteral: String {
+    public var sqlLiteral: String {
         switch self.value {
         case .int(let value):
             return "\(value)"

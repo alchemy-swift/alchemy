@@ -4,7 +4,7 @@ import XCTest
 public protocol ResponseAssertable {
     var status: HTTPResponseStatus { get }
     var headers: HTTPHeaders { get }
-    var content: Content? { get }
+    var body: Content? { get }
 }
 
 extension Response: ResponseAssertable {}
@@ -100,7 +100,7 @@ extension ResponseAssertable {
     
     @discardableResult
     public func assertBody(_ string: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        guard let body = self.content else {
+        guard let body = self.body else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
@@ -116,7 +116,7 @@ extension ResponseAssertable {
     
     @discardableResult
     public func assertJson<D: Decodable & Equatable>(_ value: D, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        guard let body = self.content else {
+        guard let body = self.body else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
@@ -133,7 +133,7 @@ extension ResponseAssertable {
     // Convert to anything? String, Int, Bool, Double, Array, Object...
     @discardableResult
     public func assertJson(_ value: [String: Any], file: StaticString = #filePath, line: UInt = #line) -> Self {
-        guard let body = self.content else {
+        guard let body = self.body else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
@@ -149,8 +149,8 @@ extension ResponseAssertable {
     
     @discardableResult
     public func assertEmpty(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        if content != nil {
-            XCTFail("The response body was not empty \(content?.string() ?? "nil")", file: file, line: line)
+        if body != nil {
+            XCTFail("The response body was not empty \(body?.string() ?? "nil")", file: file, line: line)
         }
         
         return self

@@ -33,14 +33,3 @@ extension HTTPHeaders {
         return ContentDisposition(value: value, name: directives["name"], filename: directives["filename"])
     }
 }
-
-
-extension String {
-    var trimmingQuotes: String {
-        trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-    }
-    
-    var trimmingForwardSlash: String {
-        trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-    }
-}

@@ -12,7 +12,7 @@ final class RequestUtilitiesTests: XCTestCase {
     }
     
     func testQueryItems() {
-        XCTAssertEqual(Request.fixture(uri: "/path").queryItems, [])
+        XCTAssertEqual(Request.fixture(uri: "/path").queryItems, nil)
         XCTAssertEqual(Request.fixture(uri: "/path?foo=1&bar=2").queryItems, [
             URLQueryItem(name: "foo", value: "1"),
             URLQueryItem(name: "bar", value: "2")

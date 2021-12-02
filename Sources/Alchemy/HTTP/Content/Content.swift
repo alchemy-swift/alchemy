@@ -20,6 +20,36 @@ public struct Content: ExpressibleByStringLiteral, Equatable {
     var _files = ContentFiles()
 }
 
+struct Request2 {
+    let head: HTTPRequestHead
+    let body: ByteContent
+    let remoteAddress: SocketAddress?
+    var parameters: [Parameter]
+}
+
+/// A collection of bytes that is either a complete buffer or being streamed.
+public enum ByteContent {
+    case buffer(ByteBuffer)
+    case stream(ByteStream)
+}
+
+public protocol ByteStream {
+    func write(_ buffer: ByteBuffer)
+    func read(handler: @escaping (ByteBuffer) async throws -> Void) async throws
+}
+
+/*
+ Stream
+ 1. Write
+   i. outgoing response
+   ii. outgoing Client.request
+   iii. file write
+ 2. Read
+   i. incoming request
+   ii. incoming Client.response
+   iii. file read
+ */
+
 extension Content {
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()

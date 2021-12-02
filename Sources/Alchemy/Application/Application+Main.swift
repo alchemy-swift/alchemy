@@ -11,7 +11,7 @@ extension Application {
     /// Launch this application. By default it serves, see `Launch`
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
-    public static func main() throws {
+    public static func main() {
         let app = Self()
         do {
             try app.setup()

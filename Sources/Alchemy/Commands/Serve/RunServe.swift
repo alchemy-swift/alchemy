@@ -113,26 +113,15 @@ final class RunServe: Command {
 }
 
 extension Router: HBRouter {
-    public func add(_ path: String, method: HTTPMethod, responder: HBResponder) {
-        // ignore
-    }
-    
     public func respond(to request: HBRequest) -> EventLoopFuture<HBResponse> {
-        let req = Request(
-            head: .init(
-                version: request.version,
-                method: request.method,
-                uri: request.uri.string
-            ),
-            bodyBuffer: request.body.buffer,
-            remoteAddress: request.remoteAddress
-        )
-        
+        let req = Request(hbRequest: request)
         return request.eventLoop
             .wrapAsync { await self.handle(request: req) }
             .map { res in
-                let body: HBResponseBody = res.content.map { .byteBuffer($0.buffer) } ?? .empty
+                let body: HBResponseBody = res.body.map { .byteBuffer($0.buffer) } ?? .empty
                 return HBResponse(status: res.status, headers: res.headers, body: body)
             }
     }
+    
+    public func add(_ path: String, method: HTTPMethod, responder: HBResponder) { /* using custom router funcs */ }
 }

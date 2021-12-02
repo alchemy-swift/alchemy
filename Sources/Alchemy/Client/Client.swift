@@ -1,12 +1,27 @@
 import AsyncHTTPClient
 
 public final class Client: RequestBuilder, Service {
-    private let httpClient = HTTPClient(eventLoopGroupProvider: .shared(Loop.group))
-    
-    // MARK: - Testing
+    public typealias Res = ClientResponse
 
-    private var stubs: [(String, ClientResponseStub)]? = nil
-    var stubbedRequests: [HTTPClient.Request] = []
+    private let httpClient: HTTPClient
+    private var stubs: [(String, ClientResponseStub)]?
+    private(set) var stubbedRequests: [HTTPClient.Request]
+    
+    init() {
+        self.httpClient = HTTPClient(eventLoopGroupProvider: .shared(Loop.group))
+        self.stubs = nil
+        self.stubbedRequests = []
+    }
+    
+    public var builder: ClientRequestBuilder {
+        ClientRequestBuilder(httpClient: httpClient, stubs: stubs) { [weak self] in
+            self?.stubbedRequests.append($0)
+        }
+    }
+    
+    public func shutdown() throws {
+        try httpClient.syncShutdown()
+    }
     
     public func stub(_ stubs: [(String, ClientResponseStub)] = []) {
         self.stubs = stubs
@@ -14,22 +29,6 @@ public final class Client: RequestBuilder, Service {
     
     public static func stub(_ stubs: [(String, ClientResponseStub)] = []) {
         Client.default.stub(stubs)
-    }
-    
-    // MARK: - RequestBuilder
-    
-    public typealias Res = ClientResponse
-    
-    public var builder: ClientRequestBuilder {
-        ClientRequestBuilder(httpClient: httpClient, stubs: stubs) { [weak self] request in
-            self?.stubbedRequests.append(request)
-        }
-    }
-    
-    // MARK: - Service
-    
-    public func shutdown() throws {
-        try httpClient.syncShutdown()
     }
 }
 
@@ -50,7 +49,6 @@ public final class ClientRequestBuilder: RequestBuilder {
     private var queries: [String: String] = [:]
     private var headers: [(String, String)] = []
     private var createBody: (() throws -> ByteBuffer?)?
-    
     private let stubs: [(String, ClientResponseStub)]?
     private let didStub: ((HTTPClient.Request) -> Void)?
     
@@ -98,27 +96,14 @@ public final class ClientRequestBuilder: RequestBuilder {
     }
     
     private func stubFor(_ req: HTTPClient.Request) -> ClientResponse {
-        for (pattern, stub) in stubs ?? [] {
-            if req.matchesFakePattern(pattern) {
-                return ClientResponse(
-                    request: req,
-                    response: HTTPClient.Response(
-                        host: req.host,
-                        status: stub.status,
-                        version: .http1_1,
-                        headers: stub.headers,
-                        body: stub.body))
-            }
+        let stubs = stubs ?? []
+        for (pattern, stub) in stubs where req.matchesFakePattern(pattern) {
+            let res = HTTPClient.Response(host: req.host, status: stub.status, version: .http1_1, headers: stub.headers, body: stub.body)
+            return ClientResponse(request: req, response: res)
         }
         
-        return ClientResponse(
-            request: req,
-            response: HTTPClient.Response(
-                host: req.host,
-                status: .ok,
-                version: .http1_1,
-                headers: [:],
-                body: nil))
+        let res = HTTPClient.Response(host: req.host, status: .ok, version: .http1_1, headers: [:], body: nil)
+        return ClientResponse(request: req, response: res)
     }
     
     private func queryString(for path: String) -> String {

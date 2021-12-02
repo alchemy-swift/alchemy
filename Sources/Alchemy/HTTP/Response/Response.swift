@@ -12,7 +12,7 @@ public final class Response {
     /// The HTTP headers.
     public var headers: HTTPHeaders
     /// The body of this response.
-    public let content: Content?
+    public let body: Content?
     
     /// This will be called when this `Response` writes data to a
     /// remote peer.
@@ -41,7 +41,7 @@ public final class Response {
         
         self.status = status
         self.headers = headers
-        self.content = body
+        self.body = body
     }
     
     /// Initialize this response with a closure that will be called,
@@ -66,7 +66,7 @@ public final class Response {
     public init(_ writeResponse: @escaping WriteResponse) {
         self.status = .ok
         self.headers = HTTPHeaders()
-        self.content = nil
+        self.body = nil
         self._writerClosure = writeResponse
     }
     
@@ -76,7 +76,7 @@ public final class Response {
     ///   remote peer.
     private func defaultWriterClosure(writer: ResponseWriter) async throws {
         try await writer.writeHead(status: status, headers)
-        if let body = content {
+        if let body = body {
             try await writer.writeBody(body.buffer)
         }
         

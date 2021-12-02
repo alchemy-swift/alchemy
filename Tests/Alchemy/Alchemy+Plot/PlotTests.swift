@@ -6,24 +6,24 @@ final class PlotTests: XCTestCase {
         let home = HomeView(title: "Welcome", favoriteAnimals: ["Kiwi", "Dolphin"])
         let res = home.convert()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.content?.type, .html)
-        XCTAssertEqual(res.content?.string(), home.content.render())
+        XCTAssertEqual(res.body?.type, .html)
+        XCTAssertEqual(res.body?.string(), home.content.render())
     }
     
     func testHTMLConversion() {
         let html = HomeView(title: "Welcome", favoriteAnimals: ["Kiwi", "Dolphin"]).content
         let res = html.convert()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.content?.type, .html)
-        XCTAssertEqual(res.content?.string(), html.render())
+        XCTAssertEqual(res.body?.type, .html)
+        XCTAssertEqual(res.body?.string(), html.render())
     }
     
     func testXMLConversion() {
         let xml = XML(.attribute(named: "attribute"), .element(named: "element"))
         let res = xml.convert()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.content?.type, .xml)
-        XCTAssertEqual(res.content?.string(), xml.render())
+        XCTAssertEqual(res.body?.type, .xml)
+        XCTAssertEqual(res.body?.string(), xml.render())
     }
 }
 

@@ -1,4 +1,7 @@
-@testable import Alchemy
+@testable
+import Alchemy
+import NIOCore
+import Hummingbird
 
 extension TestCase: RequestBuilder {
     public typealias Res = Response
@@ -51,4 +54,20 @@ public final class TestRequestBuilder: RequestBuilder {
         let questionMark = path.contains("?") ? "&" : "?"
         return questionMark + queries.map { "\($0)=\($1.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? "")" }.joined(separator: "&")
     }
+}
+
+extension Request {
+    /// Initialize a request with the given head, body, and remote address.
+    public convenience init(head: HTTPRequestHead, bodyBuffer: ByteBuffer? = nil, remoteAddress: SocketAddress?) {
+        let dummyApp = HBApplication()
+        let context = DummyContext()
+        let req = HBRequest(head: head, body: .byteBuffer(bodyBuffer), application: dummyApp, context: context)
+        self.init(hbRequest: req)
+    }
+}
+
+struct DummyContext: HBRequestContext {
+    let eventLoop: EventLoop = EmbeddedEventLoop()
+    let allocator: ByteBufferAllocator = .init()
+    let remoteAddress: SocketAddress? = nil
 }

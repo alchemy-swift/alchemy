@@ -61,10 +61,10 @@ extension CreateColumnBuilder {
         // Janky, but MySQL requires parentheses around text (but not
         // varchar...) literals.
         if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
-            return self.adding(constraint: .default("(\(val.sqlValueLiteral))"))
+            return self.adding(constraint: .default("(\(val.sqlLiteral))"))
         }
         
-        return self.adding(constraint: .default(val.sqlValueLiteral))
+        return self.adding(constraint: .default(val.sqlLiteral))
     }
     
     /// Define this column as not nullable.

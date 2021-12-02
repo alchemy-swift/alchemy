@@ -31,8 +31,8 @@ final class ClientResponseTests: XCTestCase {
         """
         let jsonData = jsonString.data(using: .utf8) ?? Data()
         let body = ByteBuffer(string: jsonString)
-        XCTAssertEqual(ClientResponse(response: .with(body: body)).content, Content(buffer: body, type: nil))
-        XCTAssertEqual(ClientResponse(response: .with(headers: ["content-type": "application/json"], body: body)).content, Content(buffer: body, type: .json))
+        XCTAssertEqual(ClientResponse(response: .with(body: body)).body, Content(buffer: body, type: nil))
+        XCTAssertEqual(ClientResponse(response: .with(headers: ["content-type": "application/json"], body: body)).body, Content(buffer: body, type: .json))
         XCTAssertEqual(ClientResponse(response: .with(body: body)).bodyData, jsonData)
         XCTAssertEqual(ClientResponse(response: .with(body: body)).bodyString, jsonString)
         XCTAssertEqual(try ClientResponse(response: .with(body: body)).decodeJSON(), SampleJson())

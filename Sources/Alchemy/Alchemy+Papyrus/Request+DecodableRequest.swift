@@ -6,7 +6,7 @@ extension Request: DecodableRequest {
     }
     
     public func query(_ key: String) -> String? {
-        queryItems.filter ({ $0.name == key }).first?.value
+        queryItems?.filter ({ $0.name == key }).first?.value
     }
     
     public func parameter(_ key: String) -> String? {
