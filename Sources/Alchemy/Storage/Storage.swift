@@ -13,8 +13,8 @@ public struct Storage: Service {
     ///  - contents: the binary contents of the file.
     /// - Returns: The newly created file.
     @discardableResult
-    public func create(_ filepath: String, contents: ByteBuffer) async throws -> File {
-        try await provider.create(filepath, contents: contents)
+    public func create(_ filepath: String, content: ByteContent) async throws -> File {
+        try await provider.create(filepath, content: content)
     }
     
     /// Returns whether a file with the given path exists.
@@ -34,10 +34,10 @@ public struct Storage: Service {
     
     public func put(_ file: File, in directory: String? = nil) async throws {
         guard let directory = directory, let directoryUrl = URL(string: directory) else {
-            try await create(file.name, contents: file.contents)
+            try await create(file.name, content: file.content)
             return
         }
         
-        try await create(directoryUrl.appendingPathComponent(file.name).path, contents: file.contents)
+        try await create(directoryUrl.appendingPathComponent(file.name).path, content: file.content)
     }
 }

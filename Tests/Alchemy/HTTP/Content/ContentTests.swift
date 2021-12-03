@@ -9,43 +9,37 @@ final class ContentTests: XCTestCase {
         FormDataEncoder.boundary = { Fixtures.multipartBoundary }
     }
     
-    func testStringLiteral() throws {
-        let content: Content = "foo"
-        XCTAssertEqual(content.type, .plainText)
-        XCTAssertEqual(content.string(), "foo")
-    }
-    
     func testJSONEncode() throws {
-        let content: Content = try .encodable(Fixtures.object, encoder: .json)
-        XCTAssertEqual(content.type, .json)
-        XCTAssertEqual(content.string(), Fixtures.jsonString)
+        let res = try Response().withValue(Fixtures.object, encoder: .json)
+        XCTAssertEqual(res.headers.contentType, .json)
+        XCTAssertEqual(res.body?.string(), Fixtures.jsonString)
     }
     
     func testJSONDecode() throws {
-        let content: Content = .string(Fixtures.jsonString, type: .json)
-        XCTAssertEqual(try content.decode(), Fixtures.object)
+        let res = Response().withString(Fixtures.jsonString, type: .json)
+        XCTAssertEqual(try res.decode(), Fixtures.object)
     }
     
     func testURLEncode() throws {
-        let content: Content = try .encodable(Fixtures.object, encoder: .url)
-        XCTAssertEqual(content.type, .urlEncoded)
-        XCTAssertTrue(content.string() == Fixtures.urlString || content.string() == Fixtures.urlStringAlternate)
+        let res = try Response().withValue(Fixtures.object, encoder: .url)
+        XCTAssertEqual(res.headers.contentType, .urlEncoded)
+        XCTAssertTrue(res.body?.string() == Fixtures.urlString || res.body?.string() == Fixtures.urlStringAlternate)
     }
     
     func testURLDecode() throws {
-        let content: Content = .string(Fixtures.urlString, type: .urlEncoded)
-        XCTAssertEqual(try content.decode(), Fixtures.object)
+        let res = Response().withString(Fixtures.urlString, type: .urlEncoded)
+        XCTAssertEqual(try res.decode(), Fixtures.object)
     }
     
     func testMultipartEncode() throws {
-        let content: Content = try .encodable(Fixtures.object, encoder: .multipart)
-        XCTAssertEqual(content.type, .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(content.string(), Fixtures.multipartString)
+        let res = try Response().withValue(Fixtures.object, encoder: .multipart)
+        XCTAssertEqual(res.headers.contentType, .multipart(boundary: Fixtures.multipartBoundary))
+        XCTAssertEqual(res.body?.string(), Fixtures.multipartString)
     }
     
     func testMultipartDecode() throws {
-        let content: Content = .string(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(try content.decode(), Fixtures.object)
+        let res = Response().withString(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
+        XCTAssertEqual(try res.decode(), Fixtures.object)
     }
 }
 

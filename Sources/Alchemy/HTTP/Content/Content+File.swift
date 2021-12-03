@@ -1,17 +1,14 @@
 import MultipartKit
 
-final class ContentFiles: Equatable {
+// Should move this to extension.
+final class ContentFiles {
     /// Any files attached to this content, keyed by their multipart name
     /// (separate from filename). Only populated if this content is
     /// associated with a multipart request containing files.
     var files: [String: File]? = nil
-    
-    static func == (lhs: ContentFiles, rhs: ContentFiles) -> Bool {
-        lhs.files == rhs.files
-    }
 }
 
-extension Content {
+extension Request {
     func file(_ name: String) throws -> File? {
         try files()[name]
     }
@@ -27,11 +24,15 @@ extension Content {
     }
     
     func loadFiles() throws -> [String: File] {
-        guard type == .multipart else {
+        guard let buffer = buffer else {
             return [:]
         }
         
-        guard let boundary = type?.parameters["boundary"] else {
+        guard headers.contentType == .multipart else {
+            return [:]
+        }
+        
+        guard let boundary = headers.contentType?.parameters["boundary"] else {
             throw HTTPError(.notAcceptable)
         }
         
@@ -58,7 +59,7 @@ extension Content {
                 let name = disposition.name,
                 let filename = disposition.filename
             else { continue }
-            files[name] = File(name: filename, contents: part.body)
+            files[name] = File(name: filename, size: part.body.writerIndex, content: .buffer(part.body))
         }
         
         return files

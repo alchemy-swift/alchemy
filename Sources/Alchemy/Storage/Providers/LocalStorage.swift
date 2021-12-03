@@ -34,63 +34,49 @@ struct LocalStorage: StorageProvider {
         }
         
         let url = try url(for: filepath)
-        let fileHandle = try NIOFileHandle(path: url.path)
-        
         let fileInfo = try FileManager.default.attributesOfItem(atPath: url.path)
         guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
             Log.error("[Storage] attempted to access file at `\(url.path)` but it didn't have a size.")
             throw HTTPError(.internalServerError)
         }
         
-        // Set any relevant headers based off the file info.
-        var headers: HTTPHeaders = ["content-length": "\(fileSizeBytes)"]
-        if let mediaType = ContentType(fileExtension: url.pathExtension) {
-            headers.add(name: "content-type", value: mediaType.value)
-        }
-        
-        var buffer = ByteBuffer()
-        
-        // Load the file in chunks, streaming it.
-        try await fileIO.readChunked(
-            fileHandle: fileHandle,
-            byteCount: fileSizeBytes,
-            chunkSize: NonBlockingFileIO.defaultChunkSize,
-            allocator: bufferAllocator,
-            eventLoop: Loop.current,
-            chunkHandler: {
-                var chunk = $0
-                return Loop.current.submit {
-                    buffer.writeBuffer(&chunk)
-                }
-            }
-        )
-        .flatMapThrowing { _ -> Void in
-            try fileHandle.close()
-        }
-        .flatMapAlways { result -> EventLoopFuture<Void> in
-            return Loop.current.wrapAsync {
-                if case .failure(let error) = result {
-                    Log.error("[Storage] Encountered an error loading a file: \(error)")
-                }
-            }
-        }
-        .get()
-        
-        return File(name: url.lastPathComponent, contents: buffer)
+        return File(
+            name: url.lastPathComponent,
+            size: fileSizeBytes,
+            content: .stream { write in
+                // Load the file in chunks, streaming it.
+                let fileHandle = try NIOFileHandle(path: url.path)
+                defer { try? fileHandle.close() }
+                try await fileIO.readChunked(
+                    fileHandle: fileHandle,
+                    byteCount: fileSizeBytes,
+                    chunkSize: NonBlockingFileIO.defaultChunkSize,
+                    allocator: bufferAllocator,
+                    eventLoop: Loop.current,
+                    chunkHandler: { chunk in
+                        Loop.current.asyncSubmit { try await write(chunk) }
+                    }
+                ).get()
+            })
     }
     
-    func create(_ filepath: String, contents: ByteBuffer) async throws -> File {
+    func create(_ filepath: String, content: ByteContent) async throws -> File {
         let url = try url(for: filepath)
-        let fileHandle = try NIOFileHandle(path: url.path, mode: .write, flags: .allowFileCreation())
-        do {
-            try await fileIO.write(fileHandle: fileHandle, buffer: contents, eventLoop: Loop.current).get()
-        } catch {
-            try fileHandle.close()
-            throw error
+        guard try await !exists(filepath) else {
+            throw StorageError.fileAlreadyExists
         }
         
-        try fileHandle.close()
-        return File(name: filepath, contents: contents)
+        let fileHandle = try NIOFileHandle(path: url.path, mode: .write, flags: .allowFileCreation())
+        defer { try? fileHandle.close() }
+
+        // Stream and write
+        var offset: Int64 = 0
+        try await content.stream.read { buffer in
+            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop.current).get()
+            offset += Int64(buffer.writerIndex)
+        }
+        
+        return try await get(filepath)
     }
     
     func exists(_ filepath: String) async throws -> Bool {

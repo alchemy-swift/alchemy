@@ -64,7 +64,7 @@ struct RedisQueue: QueueDriver {
     private func monitorBackoffs() {
         let loop = Loop.group.next()
         loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
-            loop.wrapAsync {
+            loop.asyncSubmit {
                 let result = try await redis
                     // Get and remove backoffs that can be rerun.
                     .transaction { conn in

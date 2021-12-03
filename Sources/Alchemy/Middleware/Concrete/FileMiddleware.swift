@@ -1,22 +1,17 @@
 /// Middleware for serving static files from a given directory.
 ///
 /// Usage:
-/// ```swift
-/// /// Will server static files from the 'public' directory of
-/// /// your project.
-/// app.useAll(StaticFileMiddleware(from: "public"))
-/// ```
-/// Now your router will serve the files that are in the `Public`
-/// directory.
+///
+///     app.useAll(StaticFileMiddleware(from: "resources"))
+///
+/// Now your app will serve the files that are in the `resources` directory.
 public struct FileMiddleware: Middleware {
-    /// Extensions to search for if a file is not found.
-    private let extensions: [String]
-    
     /// The storage for getting files.
     private let storage: Storage
+    /// Additional extensions to try if a file with the exact name isn't found.
+    private let extensions: [String]
     
-    /// Creates a new middleware to serve static files from a given
-    /// directory. Directory defaults to "Public/".
+    /// Creates a new middleware to serve static files from a given directory.
     ///
     /// - Parameters:
     ///   - directory: The directory to server static files from. Defaults to
@@ -52,7 +47,7 @@ public struct FileMiddleware: Middleware {
         }
         
         // See if there's a file at any possible extension
-        let allPossiblePaths = [sanitizedPath] + extensions.map({ "\(sanitizedPath).\($0)" })
+        let allPossiblePaths = [sanitizedPath] + extensions.map { sanitizedPath + ".\($0)" }
         for possiblePath in allPossiblePaths {
             if try await storage.exists(possiblePath) {
                 return try await storage.get(possiblePath).response

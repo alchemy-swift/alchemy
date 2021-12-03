@@ -6,7 +6,7 @@ final class PlotTests: XCTestCase {
         let home = HomeView(title: "Welcome", favoriteAnimals: ["Kiwi", "Dolphin"])
         let res = home.convert()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.body?.type, .html)
+        XCTAssertEqual(res.headers.contentType, .html)
         XCTAssertEqual(res.body?.string(), home.content.render())
     }
     
@@ -14,7 +14,7 @@ final class PlotTests: XCTestCase {
         let html = HomeView(title: "Welcome", favoriteAnimals: ["Kiwi", "Dolphin"]).content
         let res = html.convert()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.body?.type, .html)
+        XCTAssertEqual(res.headers.contentType, .html)
         XCTAssertEqual(res.body?.string(), html.render())
     }
     
@@ -22,7 +22,7 @@ final class PlotTests: XCTestCase {
         let xml = XML(.attribute(named: "attribute"), .element(named: "element"))
         let res = xml.convert()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.body?.type, .xml)
+        XCTAssertEqual(res.headers.contentType, .xml)
         XCTAssertEqual(res.body?.string(), xml.render())
     }
 }

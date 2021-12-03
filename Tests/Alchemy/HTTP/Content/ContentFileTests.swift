@@ -4,18 +4,18 @@ import AlchemyTest
 
 final class ContentFileTests: XCTestCase {
     func testMultipart() throws {
-        let content: Content = .string(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(try content.files().count, 2)
-        XCTAssertNil(try content.file("foo"))
-        XCTAssertNil(try content.file("text"))
-        let file1 = try content.file("file1")
+        let request: Request = .string(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
+        XCTAssertEqual(try request.files().count, 2)
+        XCTAssertNil(try request.file("foo"))
+        XCTAssertNil(try request.file("text"))
+        let file1 = try request.file("file1")
         XCTAssertNotNil(file1)
-        XCTAssertEqual(file1?.contents.string(), "Content of a.txt.\r\n")
+        XCTAssertEqual(file1?.content.string(), "Content of a.txt.\r\n")
         XCTAssertEqual(file1?.name, "a.txt")
-        let file2 = try content.file("file2")
+        let file2 = try request.file("file2")
         XCTAssertNotNil(file2)
         XCTAssertEqual(file2?.name, "a.html")
-        XCTAssertEqual(file2?.contents.string(), "<!DOCTYPE html><title>Content of a.html.</title>\r\n")
+        XCTAssertEqual(file2?.content.string(), "<!DOCTYPE html><title>Content of a.html.</title>\r\n")
     }
 }
 

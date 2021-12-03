@@ -3,7 +3,7 @@ import AsyncHTTPClient
 public final class Client: RequestBuilder, Service {
     public typealias Res = ClientResponse
 
-    private let httpClient: HTTPClient
+    public let httpClient: HTTPClient
     private var stubs: [(String, ClientResponseStub)]?
     private(set) var stubbedRequests: [HTTPClient.Request]
     
@@ -47,7 +47,7 @@ public struct ClientResponseStub {
 public final class ClientRequestBuilder: RequestBuilder {
     private let httpClient: HTTPClient
     private var queries: [String: String] = [:]
-    private var headers: [(String, String)] = []
+    private var headers: HTTPHeaders = [:]
     private var createBody: (() throws -> ByteBuffer?)?
     private let stubs: [(String, ClientResponseStub)]?
     private let didStub: ((HTTPClient.Request) -> Void)?
@@ -61,7 +61,7 @@ public final class ClientRequestBuilder: RequestBuilder {
     }
 
     public func withHeader(_ header: String, value: String) -> ClientRequestBuilder {
-        headers.append((header, value))
+        headers.add(name: header, value: value)
         return self
     }
     
@@ -76,26 +76,20 @@ public final class ClientRequestBuilder: RequestBuilder {
     }
     
     public func request(_ method: HTTPMethod, _ host: String) async throws -> ClientResponse {
-        let buffer = try createBody?()
-        let body = buffer.map { HTTPClient.Body.byteBuffer($0) }
-        let headers = HTTPHeaders(headers)
-        let req = try HTTPClient.Request(
-            url: host + queryString(for: host),
-            method: method,
-            headers: headers,
-            body: body,
-            tlsConfiguration: nil
-        )
+        let body = try createBody?().map { HTTPClient.Body.byteBuffer($0) }
+        let url = host + queryString(for: host)
+        let req = try HTTPClient.Request(url: url, method: method, headers: headers, body: body, tlsConfiguration: nil)
         
         guard stubs != nil else {
-            return ClientResponse(request: req, response: try await httpClient.execute(request: req).get())
+            let res = try await httpClient.execute(request: req).get()
+            return ClientResponse(request: req, response: res)
         }
         
-        didStub?(req)
         return stubFor(req)
     }
     
     private func stubFor(_ req: HTTPClient.Request) -> ClientResponse {
+        didStub?(req)
         let stubs = stubs ?? []
         for (pattern, stub) in stubs where req.matchesFakePattern(pattern) {
             let res = HTTPClient.Response(host: req.host, status: stub.status, version: .http1_1, headers: stub.headers, body: stub.body)

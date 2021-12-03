@@ -51,7 +51,7 @@ public final class Scheduler: Service {
         }
         
         loop.flatScheduleTask(in: delay) {
-            loop.wrapAsync {
+            loop.asyncSubmit {
                 // Schedule next and run
                 if !self.isTesting {
                     self.schedule(schedule: schedule, task: task, on: loop)

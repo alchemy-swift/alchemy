@@ -71,7 +71,7 @@ extension ByteBuffer {
     fileprivate var jsonString: String? {
         var copy = self
         if
-            let data = copy.readData(length: copy.writerIndex),
+            let data = copy.readData(length: copy.readableBytes),
             let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
             let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
         {

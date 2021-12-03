@@ -37,9 +37,7 @@ public struct HTTPError: Error {
 
 extension HTTPError: ResponseConvertible {
     public func convert() throws -> Response {
-        Response(
-            status: status,
-            body: try message.map { try .encodable(["message": $0]) }
-        )
+        try Response(status: status)
+            .withValue(["message": message ?? status.reasonPhrase])
     }
 }

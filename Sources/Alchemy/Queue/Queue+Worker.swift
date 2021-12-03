@@ -16,7 +16,7 @@ extension Queue {
     }
     
     private func _startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool, on eventLoop: EventLoop = Loop.group.next()) {
-        eventLoop.wrapAsync { try await self.runNext(from: channels, untilEmpty: untilEmpty) }
+        eventLoop.asyncSubmit { try await self.runNext(from: channels, untilEmpty: untilEmpty) }
             .whenComplete { _ in
                 // Run check again in the `pollRate`.
                 eventLoop.scheduleTask(in: pollRate) {

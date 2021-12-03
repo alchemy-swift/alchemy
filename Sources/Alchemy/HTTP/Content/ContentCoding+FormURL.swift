@@ -10,12 +10,12 @@ extension ContentDecoder where Self == URLEncodedFormDecoder {
 
 extension URLEncodedFormEncoder: ContentEncoder {
     public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
-        .string(try encode(value), type: .urlEncoded)
+        Content(buffer: ByteBuffer(string: try encode(value)), type: .urlEncoded)
     }
 }
 
 extension URLEncodedFormDecoder: ContentDecoder {
     public func decodeContent<D>(_ type: D.Type, from content: Content) throws -> D where D: Decodable {
-        try decode(type, from: content.string() ?? "")
+        try decode(type, from: content.buffer.string() ?? "")
     }
 }

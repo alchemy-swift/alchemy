@@ -13,7 +13,7 @@ extension FormDataEncoder: ContentEncoder {
     
     public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
         let boundary = FormDataEncoder.boundary()
-        return .string(try encode(value, boundary: boundary), type: .multipart(boundary: boundary))
+        return Content(buffer: ByteBuffer(string: try encode(value, boundary: boundary)), type: .multipart(boundary: boundary))
     }
 }
 

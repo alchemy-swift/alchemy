@@ -57,7 +57,7 @@ final class RunServe: Command {
                 label: "Migrate",
                 start: .eventLoopFuture {
                     Loop.group.next()
-                        .wrapAsync(Database.default.migrate)
+                        .asyncSubmit(Database.default.migrate)
                 },
                 shutdown: .none
             )
@@ -114,14 +114,29 @@ final class RunServe: Command {
 
 extension Router: HBRouter {
     public func respond(to request: HBRequest) -> EventLoopFuture<HBResponse> {
-        let req = Request(hbRequest: request)
-        return request.eventLoop
-            .wrapAsync { await self.handle(request: req) }
-            .map { res in
-                let body: HBResponseBody = res.body.map { .byteBuffer($0.buffer) } ?? .empty
-                return HBResponse(status: res.status, headers: res.headers, body: body)
-            }
+        request.eventLoop
+            .asyncSubmit { await self.handle(request: Request(hbRequest: request)) }
+            .map { HBResponse(status: $0.status, headers: $0.headers, body: $0.hbResponseBody) }
     }
     
     public func add(_ path: String, method: HTTPMethod, responder: HBResponder) { /* using custom router funcs */ }
+}
+
+extension Response {
+    var hbResponseBody: HBResponseBody {
+        switch body {
+        case .buffer(let buffer):
+            return .byteBuffer(buffer)
+        case .stream(let stream):
+            return .stream(stream)
+        case .none:
+            return .empty
+        }
+    }
+}
+
+extension ByteStream: HBResponseBodyStreamer {
+    public func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+        eventLoop.asyncSubmit { try await readNext().map { .byteBuffer($0) } ?? .end }
+    }
 }

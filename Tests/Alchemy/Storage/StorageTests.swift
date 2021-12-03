@@ -38,11 +38,11 @@ final class StorageTests: TestCase<TestApp> {
             _ = try await Store.get(filePath)
             XCTFail("Should throw an error")
         } catch {}
-        try await Store.create(filePath, contents: "1;2;3")
+        try await Store.create(filePath, content: "1;2;3")
         AssertTrue(try await Store.exists(filePath))
         let file = try await Store.get(filePath)
         AssertEqual(file.name, filePath)
-        AssertEqual(file.contents, "1;2;3")
+        AssertEqual(try await file.content.collect(), "1;2;3")
     }
     
     func _testDelete() async throws {
@@ -50,13 +50,13 @@ final class StorageTests: TestCase<TestApp> {
             try await Store.delete(filePath)
             XCTFail("Should throw an error")
         } catch {}
-        try await Store.create(filePath, contents: "123")
+        try await Store.create(filePath, content: "123")
         try await Store.delete(filePath)
         AssertFalse(try await Store.exists(filePath))
     }
     
     func _testPut() async throws {
-        let file = File(name: filePath, contents: "foo")
+        let file = File(name: filePath, size: 3, content: "foo")
         try await Store.put(file)
         AssertTrue(try await Store.exists(filePath))
         try await Store.put(file, in: "foo/bar")
@@ -64,18 +64,18 @@ final class StorageTests: TestCase<TestApp> {
     }
     
     func _testPathing() async throws {
-        try await Store.create("foo/bar/baz/\(filePath)", contents: "foo")
+        try await Store.create("foo/bar/baz/\(filePath)", content: "foo")
         AssertFalse(try await Store.exists(filePath))
         AssertTrue(try await Store.exists("foo/bar/baz/\(filePath)"))
         let file = try await Store.get("foo/bar/baz/\(filePath)")
         AssertEqual(file.name, filePath)
-        AssertEqual(file.contents, "foo")
+        AssertEqual(try await file.content.collect(), "foo")
         try await Store.delete("foo/bar/baz/\(filePath)")
         AssertFalse(try await Store.exists("foo/bar/baz/\(filePath)"))
     }
     
     func _testFileStore() async throws {
-        try await File(name: filePath, contents: "bar").store()
+        try await File(name: filePath, size: 3, content: "bar").store()
         AssertTrue(try await Store.exists(filePath))
     }
     

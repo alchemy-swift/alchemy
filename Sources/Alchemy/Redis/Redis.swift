@@ -116,7 +116,7 @@ private final class ConnectionPool: RedisDriver {
     func transaction<T>(_ transaction: @escaping (RedisDriver) async throws -> T) async throws -> T {
         let pool = getPool()
         return try await pool.leaseConnection { conn in
-            pool.eventLoop.wrapAsync { try await transaction(conn) }
+            pool.eventLoop.asyncSubmit { try await transaction(conn) }
         }.get()
     }
 

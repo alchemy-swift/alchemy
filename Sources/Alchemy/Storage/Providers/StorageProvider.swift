@@ -9,7 +9,7 @@ public protocol StorageProvider {
     ///  - contents: the binary contents of the file.
     /// - Returns: The newly created file.
     @discardableResult
-    func create(_ filepath: String, contents: ByteBuffer) async throws -> File
+    func create(_ filepath: String, content: ByteContent) async throws -> File
     
     /// Returns whether a file with the given path exists.
     func exists(_ filepath: String) async throws -> Bool

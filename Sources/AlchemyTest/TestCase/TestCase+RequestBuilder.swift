@@ -64,6 +64,16 @@ extension Request {
         let req = HBRequest(head: head, body: .byteBuffer(bodyBuffer), application: dummyApp, context: context)
         self.init(hbRequest: req)
     }
+    
+    public static func string(_ body: String, type: ContentType) -> Request {
+        let dummyApp = HBApplication()
+        let context = DummyContext()
+        var headers = HTTPHeaders()
+        headers.contentType = type
+        let head = HTTPRequestHead(version: .http1_1, method: .GET, uri: "foo", headers: headers)
+        let req = HBRequest(head: head, body: .byteBuffer(ByteBuffer(string: body)), application: dummyApp, context: context)
+        return Request(hbRequest: req)
+    }
 }
 
 struct DummyContext: HBRequestContext {

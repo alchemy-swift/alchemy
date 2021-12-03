@@ -6,13 +6,13 @@ let kMinTimeout: TimeInterval = 0.01
 
 final class RouterTests: TestCase<TestApp> {
     func testResponseConvertibleHandlers() async throws {
-        app.get("/string") { _ -> ResponseConvertible in "one" }
-        app.post("/string") { _ -> ResponseConvertible in "two" }
-        app.put("/string") { _ -> ResponseConvertible in "three" }
-        app.patch("/string") { _ -> ResponseConvertible in "four" }
-        app.delete("/string") { _ -> ResponseConvertible in "five" }
-        app.options("/string") { _ -> ResponseConvertible in "six" }
-        app.head("/string") { _ -> ResponseConvertible in "seven" }
+        app.get("/string") { _ in "one" }
+        app.post("/string") { _ in "two" }
+        app.put("/string") { _ in "three" }
+        app.patch("/string") { _ in "four" }
+        app.delete("/string") { _ in "five" }
+        app.options("/string") { _ in "six" }
+        app.head("/string") { _ in "seven" }
         
         try await get("/string").assertBody("one").assertOk()
         try await post("/string").assertBody("two").assertOk()

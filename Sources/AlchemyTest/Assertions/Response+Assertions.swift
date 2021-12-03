@@ -1,10 +1,10 @@
 import Alchemy
 import XCTest
 
-public protocol ResponseAssertable {
+public protocol ResponseAssertable: ContentConvertible {
     var status: HTTPResponseStatus { get }
     var headers: HTTPHeaders { get }
-    var body: Content? { get }
+    var body: ByteContent? { get }
 }
 
 extension Response: ResponseAssertable {}
@@ -77,7 +77,7 @@ extension ResponseAssertable {
     @discardableResult
     public func assertHeader(_ header: String, value: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
         let values = headers[header]
-        XCTAssertFalse(values.isEmpty)
+        XCTAssertFalse(values.isEmpty, file: file, line: line)
         for v in values {
             XCTAssertEqual(v, value, file: file, line: line)
         }
@@ -116,13 +116,13 @@ extension ResponseAssertable {
     
     @discardableResult
     public func assertJson<D: Decodable & Equatable>(_ value: D, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        guard let body = self.body else {
+        guard body != nil else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
         
-        XCTAssertNoThrow(try body.decode(as: D.self), file: file, line: line)
-        guard let decoded = try? body.decode(as: D.self) else {
+        XCTAssertNoThrow(try self.decode(as: D.self), file: file, line: line)
+        guard let decoded = try? self.decode(as: D.self) else {
             return self
         }
         

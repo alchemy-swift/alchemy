@@ -3,8 +3,7 @@ import Foundation
 /// An HTTP content type. It has a `value: String` appropriate for
 /// putting into `Content-Type` headers.
 public struct ContentType: Equatable {
-    /// The value of this content type, appropriate for `Content-Type`
-    /// headers.
+    /// Just value of this content type.
     public var value: String
     /// Any parameters to go along with the content type value.
     public var parameters: [String: String] = [:]

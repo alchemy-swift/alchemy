@@ -52,10 +52,8 @@ public struct ClientResponse {
     
     // MARK: Body
     
-    public var body: Content? {
-        response.body.map {
-            Content(buffer: $0, type: response.headers["content-type"].first.map { ContentType($0) })
-        }
+    public var body: ByteContent? {
+        response.body.map { .buffer($0) }
     }
     
     public var bodyData: Data? {

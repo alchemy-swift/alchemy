@@ -24,18 +24,20 @@ public final class Request {
     /// Any query items parsed from the URL. These are not percent encoded.
     public var queryItems: [URLQueryItem]? { urlComponents.queryItems }
     /// The underlying hummingbird request
-    public let hbRequest: HBRequest
+    public var hbRequest: HBRequest
     /// Parameters parsed from the path.
     public var parameters: [Parameter]
     /// Storage for values associated with this request.
     public var storage: [ObjectIdentifier: Any]
     /// The url components of this request.
     public var urlComponents: URLComponents
+    /// Manages any files associated with this content.
+    var _files = ContentFiles()
     
-    init(hbRequest: HBRequest) {
+    init(hbRequest: HBRequest, parameters: [Parameter] = [], storage: [ObjectIdentifier: Any] = [:]) {
         self.hbRequest = hbRequest
-        self.parameters = []
-        self.storage = [:]
+        self.parameters = parameters
+        self.storage = storage
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
     }
     
@@ -63,30 +65,23 @@ public final class Request {
 
 extension HBRequest {
     fileprivate var byteBuffer: ByteBuffer? { body.buffer }
-    fileprivate var byteStream: ByteStream? { body.stream.map { HBStreamProxy(streamer: $0, loop: eventLoop) } }
+    fileprivate var byteStream: ByteStream? { body.stream?.byteStream(eventLoop) }
     fileprivate var byteContent: ByteContent? {
         switch body {
         case .byteBuffer(let bytes):
             return bytes.map { .buffer($0) }
         case .stream(let streamer):
-            return .stream(HBStreamProxy(streamer: streamer, loop: eventLoop))
+            return .stream(streamer.byteStream(eventLoop))
         }
     }
 }
 
-private struct HBStreamProxy: ByteStream {
-    let streamer: HBStreamerProtocol
-    let loop: EventLoop
-    
-    func write(_ buffer: ByteBuffer) {
-        preconditionFailure("Shouldn't write to an incoming stream.")
-    }
-    
-    func read(handler: @escaping (ByteBuffer) async throws -> Void) async throws {
-        try await streamer
-            .consumeAll(on: loop) { buffer in
-                loop.wrapAsync { try await handler(buffer) }
-            }
-            .get()
+extension HBStreamerProtocol {
+    func byteStream(_ loop: EventLoop) -> ByteStream {
+        return .new { reader in
+            try await self.consumeAll(on: loop) { buffer in
+                loop.asyncSubmit { try await reader(buffer) }
+            }.get()
+        }
     }
 }
