@@ -8,7 +8,7 @@ public protocol ResponseAssertable: ContentConvertible {
 }
 
 extension Response: ResponseAssertable {}
-extension ClientResponse: ResponseAssertable {}
+extension Client.Response: ResponseAssertable {}
 
 extension ResponseAssertable {
     // MARK: Status Assertions

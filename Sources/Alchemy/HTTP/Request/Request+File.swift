@@ -24,6 +24,13 @@ extension Request {
     }
     
     func loadFiles() throws -> [String: File] {
+        /// If stream, don't know all files until as stream goes.
+        /// Will need to hook into stream and process files as they come in.
+        ///
+        ///     for file in req.fileStream {
+        ///         print("got a file!")
+        ///     }
+        ///
         guard let buffer = buffer else {
             return [:]
         }

@@ -4,9 +4,9 @@ final class PapyrusRequestTests: TestCase<TestApp> {
     let api = SampleAPI()
     
     func testRequest() async throws {
-        Client.stub()
+        Http.stub()
         _ = try await api.createTest.request(SampleAPI.CreateTestReq(foo: "one", bar: "two", baz: "three"))
-        Client.default.assertSent {
+        Http.assertSent {
             $0.hasMethod(.POST) &&
             $0.hasPath("/create") &&
             $0.hasHeader("foo", value: "one") &&
@@ -16,24 +16,24 @@ final class PapyrusRequestTests: TestCase<TestApp> {
     }
     
     func testResponse() async throws {
-        Client.stub([
-            ("localhost:3000/get", ClientResponseStub(body: ByteBuffer(string: "\"testing\"")))
+        Http.stub([
+            ("localhost:3000/get", .stub(body: "\"testing\""))
         ])
         let response = try await api.getTest.request().response
         XCTAssertEqual(response, "testing")
-        Client.default.assertSent(1) {
+        Http.assertSent(1) {
             $0.hasMethod(.GET) &&
             $0.hasPath("/get")
         }
     }
     
     func testUrlEncode() async throws {
-        Client.stub()
+        Http.stub()
         _ = try await api.urlEncode.request(SampleAPI.UrlEncodeReq())
-        Client.default.assertSent(1) {
-            try $0.hasMethod(.PUT) &&
-                $0.hasPath("/url") &&
-                $0.hasBody(string: "foo=one")
+        Http.assertSent(1) {
+            $0.hasMethod(.PUT) &&
+            $0.hasPath("/url") &&
+            $0.hasBody(string: "foo=one")
         }
     }
 }

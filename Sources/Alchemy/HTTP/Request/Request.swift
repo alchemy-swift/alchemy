@@ -8,9 +8,9 @@ public final class Request {
     /// The request body.
     public var body: ByteContent? { hbRequest.byteContent }
     /// The byte buffer of this request's body, if there is one.
-    public var buffer: ByteBuffer? { hbRequest.byteBuffer }
+    public var buffer: ByteBuffer? { body?.buffer }
     /// The stream of this request's body, if there is one.
-    public var stream: ByteStream? { hbRequest.byteStream }
+    public var stream: ByteStream? { body?.stream }
     /// The remote address where this request came from.
     public var remoteAddress: SocketAddress? { hbRequest.remoteAddress }
     /// The event loop this request is being handled on.
@@ -64,8 +64,6 @@ public final class Request {
 }
 
 extension HBRequest {
-    fileprivate var byteBuffer: ByteBuffer? { body.buffer }
-    fileprivate var byteStream: ByteStream? { body.stream?.byteStream(eventLoop) }
     fileprivate var byteContent: ByteContent? {
         switch body {
         case .byteBuffer(let bytes):

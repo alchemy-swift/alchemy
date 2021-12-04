@@ -9,7 +9,7 @@ extension Client {
     
     public func assertSent(
         _ count: Int? = nil,
-        validate: ((HTTPClient.Request) throws -> Bool)? = nil,
+        validate: ((Client.Request) -> Bool)? = nil,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
@@ -19,15 +19,17 @@ extension Client {
         }
         
         if let validate = validate {
-            XCTAssertTrue(try stubbedRequests.reduce(false) {
-                let validation = try validate($1)
-                return $0 || validation
-            }, file: file, line: line)
+            var foundMatch = false
+            for request in stubbedRequests where !foundMatch {
+                foundMatch = validate(request)
+            }
+            
+            AssertTrue(foundMatch, file: file, line: line)
         }
     }
 }
 
-extension HTTPClient.Request {
+extension Client.Request {
     public func hasHeader(_ name: String, value: String? = nil) -> Bool {
         guard let header = headers.first(name: name) else {
             return false
@@ -63,19 +65,8 @@ extension HTTPClient.Request {
         self.method == method
     }
     
-    public func hasBody(string: String) throws -> Bool {
-        var byteBuffer: ByteBuffer? = nil
-        try self.body?.stream(.init(closure: { data in
-            switch data {
-            case .byteBuffer(let buffer):
-                byteBuffer = buffer
-                return EmbeddedEventLoop().future()
-            case .fileRegion:
-                return EmbeddedEventLoop().future()
-            }
-        })).wait()
-        
-        if let byteBuffer = byteBuffer, let bodyString = byteBuffer.string() {
+    public func hasBody(string: String) -> Bool {
+        if let byteBuffer = body?.buffer, let bodyString = byteBuffer.string() {
             return bodyString == string
         } else {
             return false

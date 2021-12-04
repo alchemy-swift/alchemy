@@ -1,14 +1,7 @@
 import AsyncHTTPClient
 
-public struct ClientResponse {
-    public let request: HTTPClient.Request
-    public let response: HTTPClient.Response
-    
+extension Client.Response {
     // MARK: Status Information
-    
-    public var status: HTTPResponseStatus {
-        response.status
-    }
     
     public var isOk: Bool {
         status == .ok
@@ -33,7 +26,7 @@ public struct ClientResponse {
     func validateSuccessful() throws -> Self {
         try wrapDebug {
             guard isSuccessful else {
-                throw ClientError(message: "The response code was not successful", request: request, response: response)
+                throw ClientError(message: "The response code was not successful", request: request, response: self)
             }
             
             return self
@@ -42,26 +35,18 @@ public struct ClientResponse {
     
     // MARK: Headers
     
-    public var headers: HTTPHeaders {
-        response.headers
-    }
-    
     public func header(_ name: String) -> String? {
-        response.headers.first(name: name)
+        headers.first(name: name)
     }
     
     // MARK: Body
     
-    public var body: ByteContent? {
-        response.body.map { .buffer($0) }
-    }
-    
     public var bodyData: Data? {
-        response.body?.data()
+        body?.data()
     }
     
     public var bodyString: String? {
-        response.body?.string()
+        body?.string()
     }
     
     public func decodeJSON<D: Decodable>(_ type: D.Type = D.self, using jsonDecoder: JSONDecoder = JSONDecoder()) throws -> D {
@@ -70,7 +55,7 @@ public struct ClientResponse {
                 throw ClientError(
                     message: "The response had no body to decode JSON from.",
                     request: request,
-                    response: response
+                    response: self
                 )
             }
 
@@ -80,14 +65,12 @@ public struct ClientResponse {
                 throw ClientError(
                     message: "Error decoding `\(D.self)` from a `ClientResponse`. \(error)",
                     request: request,
-                    response: response
+                    response: self
                 )
             }
         }
     }
-}
-
-extension ClientResponse {
+    
     func wrapDebug<T>(_ closure: () throws -> T) throws -> T {
         do {
             return try closure()
@@ -97,17 +80,5 @@ extension ClientResponse {
         } catch {
             throw error
         }
-    }
-}
-
-extension ByteBuffer {
-    func data() -> Data? {
-        var copy = self
-        return copy.readData(length: writerIndex)
-    }
-    
-    func string() -> String? {
-        var copy = self
-        return copy.readString(length: writerIndex)
     }
 }

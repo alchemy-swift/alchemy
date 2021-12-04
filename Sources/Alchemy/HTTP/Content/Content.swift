@@ -26,6 +26,15 @@ public enum ByteContent: ExpressibleByStringLiteral {
         }
     }
     
+    var length: Int? {
+        switch self {
+        case .stream:
+            return nil
+        case .buffer(let buffer):
+            return buffer.writerIndex
+        }
+    }
+    
     public init(stringLiteral value: StringLiteralType) {
         self = .buffer(ByteBuffer(string: value))
     }
@@ -114,9 +123,10 @@ extension Response {
     /// Used to create new ByteBuffers.
     private static let allocator = ByteBufferAllocator()
     
-    public func withBody(_ byteContent: ByteContent, type: ContentType? = nil) -> Response {
+    public func withBody(_ byteContent: ByteContent, type: ContentType? = nil, length: Int? = nil) -> Response {
         body = byteContent
         headers.contentType = type
+        headers.contentLength = length
         return self
     }
     
@@ -126,8 +136,7 @@ extension Response {
     ///    - buffer: The buffer holding the data in the body.
     ///    - type: The content type of data in the body.
     public func withBuffer(_ buffer: ByteBuffer, type: ContentType? = nil) -> Response {
-        headers.contentLength = buffer.writerIndex
-        return withBody(.buffer(buffer), type: type)
+        withBody(.buffer(buffer), type: type, length: buffer.writerIndex)
     }
     
     /// Creates a new body containing the text of the given string.
@@ -151,14 +160,12 @@ extension Response {
         buffer.writeBytes(data)
         return withBuffer(buffer, type: type)
     }
-  
-    /// Creates a body with an encodable value.
+    
+    /// Creates a new body from an `Encodable`.
     ///
     /// - Parameters:
-    ///   - value: The object to encode into the body.
-    ///   - encoder: A customer encoder to encoder the value with. Defaults to
-    ///     `Content.defaultEncoder`.
-    /// - Throws: Any error thrown during encoding.
+    ///   - data: The data in the body.
+    ///   - type: The content type of the body.
     public func withValue<E: Encodable>(_ value: E, encoder: ContentEncoder = Content.defaultEncoder) throws -> Response {
         let content = try encoder.encodeContent(value)
         return withBuffer(content.buffer, type: content.type)
@@ -195,8 +202,12 @@ extension ByteContent {
         .buffer(ByteBuffer(data: data))
     }
     
-    public func value<E: Encodable>(_ value: E, encoder: ContentEncoder = Content.defaultEncoder) throws -> ByteContent {
+    public static func value<E: Encodable>(_ value: E, encoder: ContentEncoder = Content.defaultEncoder) throws -> ByteContent {
         .buffer(try encoder.encodeContent(value).buffer)
+    }
+    
+    public static func jsonDict(_ dict: [String: Any?]) throws -> ByteContent {
+        .buffer(ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)))
     }
     
     /// Decodes the body as a JSON dictionary.
@@ -240,8 +251,8 @@ extension ContentConvertible {
             switch contentType {
             case .json:
                 return try decode(as: type, with: .json)
-            case .urlEncoded:
-                return try decode(as: type, with: .url)
+            case .urlForm:
+                return try decode(as: type, with: .urlForm)
             case .multipart(boundary: ""):
                 return try decode(as: type, with: .multipart)
             default:

@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTest
 
-final class ContentFileTests: XCTestCase {
+final class RequestFileTests: XCTestCase {
     func testMultipart() throws {
         let request: Request = .string(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
         XCTAssertEqual(try request.files().count, 2)

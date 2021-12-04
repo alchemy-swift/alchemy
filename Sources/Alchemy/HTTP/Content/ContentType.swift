@@ -11,6 +11,10 @@ public struct ContentType: Equatable {
     public var string: String {
         ([value] + parameters.map { "\($0)=\($1)" }).joined(separator: "; ")
     }
+    /// A file extension that matches this content type, if one exists.
+    public var fileExtension: String? {
+        ContentType.fileExtensionMapping.first { _, value in value == self }?.key
+    }
     
     /// Create with a string.
     ///
@@ -28,6 +32,33 @@ public struct ContentType: Equatable {
                 return (first, second)
             }
             .forEach { parameters[$0] = $1 }
+    }
+    
+    /// Creates based off of a known file extension that can be mapped
+    /// to an appropriate `Content-Type` header value. Returns nil if
+    /// no content type is known.
+    ///
+    /// The `.` in front of the file extension is optional.
+    ///
+    /// Usage:
+    /// ```swift
+    /// let mt = ContentType(fileExtension: "html")!
+    /// print(mt.value) // "text/html"
+    /// ```
+    ///
+    /// - Parameter fileExtension: The file extension to look up a
+    ///   content type for.
+    public init?(fileExtension: String) {
+        var noDot = fileExtension
+        if noDot.hasPrefix(".") {
+            noDot = String(noDot.dropFirst())
+        }
+        
+        guard let type = ContentType.fileExtensionMapping[noDot] else {
+            return nil
+        }
+        
+        self = type
     }
     
     // MARK: Common content types
@@ -95,47 +126,13 @@ public struct ContentType: Equatable {
     /// application/zip
     public static let zip =            ContentType("application/zip")
     /// application/x-www-form-urlencoded
-    public static let urlEncoded =     ContentType("application/x-www-form-urlencoded")
+    public static let urlForm =     ContentType("application/x-www-form-urlencoded")
     /// multipart/form-data
     public static let multipart =      ContentType("multipart/form-data")
     
     /// multipart/form-data
     public static func multipart(boundary: String) -> ContentType {
         ContentType("multipart/form-data; boundary=\(boundary)")
-    }
-    
-    public static func == (lhs: ContentType, rhs: ContentType) -> Bool {
-        lhs.value == rhs.value
-    }
-}
-
-// Map of file extensions
-extension ContentType {
-    /// Creates based off of a known file extension that can be mapped
-    /// to an appropriate `Content-Type` header value. Returns nil if
-    /// no content type is known.
-    ///
-    /// The `.` in front of the file extension is optional.
-    ///
-    /// Usage:
-    /// ```swift
-    /// let mt = ContentType(fileExtension: "html")!
-    /// print(mt.value) // "text/html"
-    /// ```
-    ///
-    /// - Parameter fileExtension: The file extension to look up a
-    ///   content type for.
-    public init?(fileExtension: String) {
-        var noDot = fileExtension
-        if noDot.hasPrefix(".") {
-            noDot = String(noDot.dropFirst())
-        }
-        
-        guard let type = ContentType.fileExtensionMapping[noDot] else {
-            return nil
-        }
-        
-        self = type
     }
     
     /// A non exhaustive mapping of file extensions to known content
@@ -214,4 +211,10 @@ extension ContentType {
         "zip":    ContentType("application/zip"),
         "7z":     ContentType("application/x-7z-compressed"),
     ]
+    
+    // MARK: - Equatable
+    
+    public static func == (lhs: ContentType, rhs: ContentType) -> Bool {
+        lhs.value == rhs.value
+    }
 }

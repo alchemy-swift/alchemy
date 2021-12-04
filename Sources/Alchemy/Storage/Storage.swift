@@ -41,3 +41,9 @@ public struct Storage: Service {
         try await create(directoryUrl.appendingPathComponent(file.name).path, content: file.content)
     }
 }
+
+extension File {
+    public func store(in directory: String? = nil, in storage: Storage = .default) async throws {
+        try await storage.put(self, in: directory)
+    }
+}

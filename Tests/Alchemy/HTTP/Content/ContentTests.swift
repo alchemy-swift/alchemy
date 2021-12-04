@@ -21,13 +21,13 @@ final class ContentTests: XCTestCase {
     }
     
     func testURLEncode() throws {
-        let res = try Response().withValue(Fixtures.object, encoder: .url)
-        XCTAssertEqual(res.headers.contentType, .urlEncoded)
+        let res = try Response().withValue(Fixtures.object, encoder: .urlForm)
+        XCTAssertEqual(res.headers.contentType, .urlForm)
         XCTAssertTrue(res.body?.string() == Fixtures.urlString || res.body?.string() == Fixtures.urlStringAlternate)
     }
     
     func testURLDecode() throws {
-        let res = Response().withString(Fixtures.urlString, type: .urlEncoded)
+        let res = Response().withString(Fixtures.urlString, type: .urlForm)
         XCTAssertEqual(try res.decode(), Fixtures.object)
     }
     

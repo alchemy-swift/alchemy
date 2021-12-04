@@ -1,16 +1,16 @@
 import HummingbirdFoundation
 
 extension ContentEncoder where Self == URLEncodedFormEncoder {
-    public static var url: URLEncodedFormEncoder { URLEncodedFormEncoder() }
+    public static var urlForm: URLEncodedFormEncoder { URLEncodedFormEncoder() }
 }
 
 extension ContentDecoder where Self == URLEncodedFormDecoder {
-    public static var url: URLEncodedFormDecoder { URLEncodedFormDecoder() }
+    public static var urlForm: URLEncodedFormDecoder { URLEncodedFormDecoder() }
 }
 
 extension URLEncodedFormEncoder: ContentEncoder {
     public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
-        Content(buffer: ByteBuffer(string: try encode(value)), type: .urlEncoded)
+        Content(buffer: ByteBuffer(string: try encode(value)), type: .urlForm)
     }
 }
 
