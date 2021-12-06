@@ -8,7 +8,7 @@ public enum ByteContent: ExpressibleByStringLiteral {
     case buffer(ByteBuffer)
     case stream(ByteStream)
     
-    var buffer: ByteBuffer {
+    public var buffer: ByteBuffer {
         switch self {
         case .stream:
             preconditionFailure("Can't synchronously access data from streaming body, try `collect()` instead.")
@@ -17,7 +17,7 @@ public enum ByteContent: ExpressibleByStringLiteral {
         }
     }
     
-    var stream: ByteStream {
+    public var stream: ByteStream {
         switch self {
         case .stream(let stream):
             return stream
@@ -26,7 +26,7 @@ public enum ByteContent: ExpressibleByStringLiteral {
         }
     }
     
-    var length: Int? {
+    public var length: Int? {
         switch self {
         case .stream:
             return nil
@@ -50,12 +50,21 @@ public enum ByteContent: ExpressibleByStringLiteral {
                 var chunk = buffer
                 collection.writeBuffer(&chunk)
             }
+            
             return collection
         }
     }
     
     public static func stream(_ stream: @escaping ByteStreamClosure) -> ByteContent {
-        return .stream(ByteStream(write: stream, readChunk: nil))
+        return .stream(.new(stream))
+    }
+}
+
+extension Client.Response {
+    @discardableResult
+    mutating func collect() async throws -> Client.Response {
+        self.body = (try await body?.collect()).map { .buffer($0) }
+        return self
     }
 }
 
@@ -91,31 +100,14 @@ public typealias ByteStreamClosure = (@escaping ByteStream.Writer) async throws 
 public struct ByteStream {
     public typealias Writer = (ByteBuffer) async throws -> Void
     
-    let write: ByteStreamClosure?
+    private let write: ByteStreamClosure?
     
     public func read(_ handler: @escaping (ByteBuffer) async throws -> Void) async throws {
         try await write?(handler)
     }
     
     public static func new(_ stream: @escaping ByteStreamClosure) -> ByteStream {
-        self.init(write: stream, readChunk: nil)
-    }
-    
-    /// Need this since hummingbird streaming puts the responsibility of
-    /// initiating sending the next chunk on the consumer, not the
-    /// producer. Therefore there needs to be a way to send a
-    /// chunk without sending the next one after the first
-    /// is read.
-    public typealias Read = () async throws -> ByteBuffer?
-    
-    let readChunk: Read?
-    
-    func readNext() async throws -> ByteBuffer? {
-        return try await self.readChunk?()
-    }
-    
-    public static func chunkReadable(_ stream: @escaping Read) -> ByteStream {
-        self.init(write: nil, readChunk: stream)
+        self.init(write: stream)
     }
 }
 

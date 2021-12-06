@@ -14,13 +14,11 @@ final class RequestDecodingTests: XCTestCase {
     }
     
     func testJsonDecoding() throws {
-        let headers: HTTPHeaders = ["TestHeader":"123"]
-        let head = HTTPRequestHead(version: .http1_1, method: .GET, uri: "localhost:3000/posts/1?key=value", headers: headers)
-        let request = Request(head: head, bodyBuffer: ByteBuffer(string: """
+        let request: Request = .fixture(uri: "localhost:3000/posts/1?key=value", body: .string("""
             {
                 "key": "value"
             }
-            """), remoteAddress: nil)
+            """))
         
         struct JsonSample: Codable, Equatable {
             var key = "value"

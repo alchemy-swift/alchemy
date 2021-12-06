@@ -4,7 +4,9 @@ import AlchemyTest
 
 final class RequestFileTests: XCTestCase {
     func testMultipart() throws {
-        let request: Request = .string(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
+        var headers: HTTPHeaders = [:]
+        headers.contentType = .multipart(boundary: Fixtures.multipartBoundary)
+        let request: Request = .fixture(headers: headers, body: .string(Fixtures.multipartString))
         XCTAssertEqual(try request.files().count, 2)
         XCTAssertNil(try request.file("foo"))
         XCTAssertNil(try request.file("text"))

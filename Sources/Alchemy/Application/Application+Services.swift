@@ -1,5 +1,6 @@
 import Fusion
 import Lifecycle
+import Logging
 
 extension Application {
     /// Register core services to `Container.default`.
@@ -12,12 +13,13 @@ extension Application {
             Log.logger.logLevel = .notice
         }
         
+        Env.boot()
+        Container.register(singleton: self)
+        
         // Setup app lifecycle
-        var lifecycleLogger = Log.logger
-        lifecycleLogger.logLevel = lifecycleLogLevel
         Container.default.register(singleton: ServiceLifecycle(
             configuration: ServiceLifecycle.Configuration(
-                logger: lifecycleLogger,
+                logger: Log.logger.withLevel(.notice),
                 installBacktrace: !testing)))
         
         // Register all services
@@ -66,5 +68,13 @@ extension NIOThreadPool: Service {
 extension Service {
     fileprivate func registerDefault() {
         Self.register(self)
+    }
+}
+
+extension Logger {
+    fileprivate func withLevel(_ level: Logger.Level) -> Logger {
+        var copy = self
+        copy.logLevel = level
+        return copy
     }
 }

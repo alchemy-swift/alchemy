@@ -15,7 +15,7 @@ extension ClientError {
     /// asynchronously.
     func logDebug() {
         Task {
-            do { Log.info(try await debugString()) }
+            do { Log.notice(try await debugString()) }
             catch { Log.warning("Error printing debug description for `ClientError` \(error).") }
         }
     }

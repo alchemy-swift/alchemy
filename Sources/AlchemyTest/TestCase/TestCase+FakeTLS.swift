@@ -2,16 +2,14 @@ extension TestCase {
     /// Creates a fake certificate chain and private key in a temporary
     /// directory. Useful for faking TLS configurations in tests.
     ///
-    /// ```swift
-    /// final class MyAppTests: TestCase<MyApp> {
-    ///     func testConfigureTLS() {
-    ///         XCTAssertNil(app.tlsConfig)
-    ///         let (key, cert) = app.generateFakeTLSCertificate()
-    ///         try app.useHTTPS(key: key, cert: cert)
-    ///         XCTAssertNotNil(app.tlsConfig)
+    ///     final class MyAppTests: TestCase<MyApp> {
+    ///         func testConfigureTLS() {
+    ///             XCTAssertNil(app.tlsConfig)
+    ///             let (key, cert) = app.generateFakeTLSCertificate()
+    ///             try app.useHTTPS(key: key, cert: cert)
+    ///             XCTAssertNotNil(app.tlsConfig)
+    ///         }
     ///     }
-    /// }
-    /// ```
     ///
     /// - Returns: Paths to the fake key and certificate chain, respectively.
     public func generateFakeTLSCertificate() -> (keyPath: String, certPath: String) {

@@ -3,56 +3,74 @@ import Lifecycle
 import LifecycleNIOCompat
 
 extension Application {
-    /// Lifecycle logs quite a bit by default, this quiets it's `info`
-    /// level logs. To output messages lower than `notice`, you may
-    /// override this property to `.info` or lower.
-    public var lifecycleLogLevel: Logger.Level { .notice }
+    /// The current application for easy access.
+    public static var current: Self { Container.resolve(Self.self) }
+    /// The application's lifecycle.
+    public var lifecycle: ServiceLifecycle { Container.resolve(ServiceLifecycle.self) }
+    /// The underlying hummingbird application.
+    public var _application: HBApplication { Container.resolve(HBApplication.self) }
     
     /// Launch this application. By default it serves, see `Launch`
     /// for subcommands and options. Call this in the `main.swift`
     /// of your project.
-    public static func main() {
+    public static func main() throws {
         let app = Self()
-        do {
-            try app.setup()
-        } catch {
-            Launch.exit(withError: error)
-        }
-        app.start()
+        try app.setup()
+        try app.start()
         app.wait()
     }
     
-    public func start(_ args: String..., didStart: @escaping (Error?) -> Void = defaultErrorHandler) {
-        if args.isEmpty {
-            start(didStart: didStart)
-        } else {
-            start(args: args, didStart: didStart)
-        }
-    }
-    
-    public static func defaultErrorHandler(error: Error?) {
-        if let error = error {
-            Launch.exit(withError: error)
-        }
-    }
-    
-    public func start(args: [String] = Array(CommandLine.arguments.dropFirst()), didStart: @escaping (Error?) -> Void = defaultErrorHandler) {
-        Launch.main(args.isEmpty ? nil : args)
-        Container.resolve(ServiceLifecycle.self).start(didStart)
-    }
-    
-    public func wait() {
-        Container.resolve(ServiceLifecycle.self).wait()
-    }
-    
     /// Sets up this application for running.
-    func setup(testing: Bool = false) throws {
-        Env.boot()
+    public func setup(testing: Bool = Env.isRunningTests) throws {
         bootServices(testing: testing)
+        try boot()
         services(container: .default)
         schedule(schedule: .default)
-        try boot()
+    }
+    
+    /// Starts the application with the given arguments.
+    public func start(_ args: String...) throws {
+        try start(args: args)
+    }
+    
+    /// Blocks until the application receives a shutdown signal.
+    public func wait() {
+        lifecycle.wait()
+    }
+    
+    /// Stops your application from running.
+    public func stop() throws {
+        var shutdownError: Error? = nil
+        let semaphore = DispatchSemaphore(value: 0)
+        lifecycle.shutdown {
+            shutdownError = $0
+            semaphore.signal()
+        }
+        
+        semaphore.wait()
+        if let shutdownError = shutdownError {
+            throw shutdownError
+        }
+    }
+    
+    public func start(args: [String]) throws {
+        // When running tests, don't use the command line args as the default;
+        // they are irrelevant to running the app and may contain a bunch of
+        // options that will cause `ParsableCommand` parsing to fail.
+        let fallbackArgs = Env.isRunningTests ? [] : Array(CommandLine.arguments.dropFirst())
         Launch.customCommands.append(contentsOf: commands)
-        Container.register(singleton: self)
+        Launch.main(args.isEmpty ? fallbackArgs : args)
+        
+        var startupError: Error? = nil
+        let semaphore = DispatchSemaphore(value: 0)
+        lifecycle.start {
+            startupError = $0
+            semaphore.signal()
+        }
+        
+        semaphore.wait()
+        if let startupError = startupError {
+            throw startupError
+        }
     }
 }

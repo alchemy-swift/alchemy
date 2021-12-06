@@ -128,15 +128,94 @@ extension Response {
         case .buffer(let buffer):
             return .byteBuffer(buffer)
         case .stream(let stream):
-            return .stream(stream)
+            let proxy = HBStreamerProxy(stream: stream, eventLoop: Loop.current)
+            return .stream(proxy)
         case .none:
             return .empty
         }
     }
 }
 
-extension ByteStream: HBResponseBodyStreamer {
-    public func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
-        eventLoop.asyncSubmit { try await readNext().map { .byteBuffer($0) } ?? .end }
+// Streams can be written to and read.
+// Streams can be written to all at once or one at a time.
+// Streams can be read all at once or one at a time.
+final class Stream<Element>: AsyncSequence {
+    private let eventLoop: EventLoop
+    private var readPromise: EventLoopPromise<Void>
+    private var writePromise: EventLoopPromise<Element>
+    private let onFirstRead: ((Stream<Element>) -> Void)?
+    private var didFirstRead: Bool
+    
+    init(eventLoop: EventLoop, onFirstRead: ((Stream<Element>) -> Void)? = nil) {
+        self.eventLoop = eventLoop
+        self.readPromise = eventLoop.makePromise(of: Void.self)
+        self.writePromise = eventLoop.makePromise(of: Element.self)
+        self.onFirstRead = onFirstRead
+        self.didFirstRead = false
+    }
+    
+    func _write(_ chunk: Element) -> EventLoopFuture<Void> {
+        // Write the next one.
+        writePromise.succeed(chunk)
+        defer { writePromise = eventLoop.makePromise(of: Element.self) }
+        // Wait until its read.
+        return readPromise.futureResult
+    }
+    
+    func _read(on eventLoop: EventLoop) -> EventLoopFuture<Element> {
+        eventLoop
+            .submit {
+                if !self.didFirstRead {
+                    self.didFirstRead = true
+                    self.onFirstRead?(self)
+                }
+            }
+            .flatMap {
+                // Notify it's read.
+                defer {
+                    self.readPromise.succeed(())
+                    self.readPromise = eventLoop.makePromise(of: Void.self)
+                }
+                
+                // Read the next one.
+                return self.writePromise.futureResult
+            }
+    }
+    
+    // MARK: - AsycIterator
+    
+    struct AsyncIterator: AsyncIteratorProtocol {
+        let stream: Stream
+        let eventLoop: EventLoop
+        
+        mutating func next() async throws -> Element? {
+            try await stream._read(on: eventLoop).get()
+        }
+    }
+    
+    __consuming func makeAsyncIterator() -> AsyncIterator {
+        AsyncIterator(stream: self, eventLoop: eventLoop)
+    }
+}
+
+final class HBStreamerProxy: HBResponseBodyStreamer {
+    let stream: ByteStream
+    let streamer: Stream<HBStreamerOutput>
+    
+    init(stream: ByteStream, eventLoop: EventLoop) {
+        self.stream = stream
+        self.streamer = Stream<HBStreamerOutput>(eventLoop: eventLoop) { streamer in
+            Task {
+                try await stream.read { buffer in
+                    try await streamer._write(.byteBuffer(buffer)).get()
+                }
+                
+                try await streamer._write(.end).get()
+            }
+        }
+    }
+    
+    func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+        streamer._read(on: eventLoop)
     }
 }

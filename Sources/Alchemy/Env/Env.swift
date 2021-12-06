@@ -237,9 +237,9 @@ extension Env {
         current.name == Env.test.name
     }
     
-    fileprivate static var isRunningTests: Bool {
-        CommandLine.arguments.contains {
-            $0.contains("xctest")
-        }
+    /// Whether the current program is running in a test suite. This is not the
+    /// same as `isTest` which returns whether the current env is `Env.test`
+    public static var isRunningTests: Bool {
+        CommandLine.arguments.contains { $0.contains("xctest") }
     }
 }

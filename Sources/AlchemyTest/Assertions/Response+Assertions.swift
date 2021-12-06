@@ -115,6 +115,17 @@ extension ResponseAssertable {
     }
     
     @discardableResult
+    public func assertStream(_ assertChunk: @escaping (ByteBuffer) -> Void, file: StaticString = #filePath, line: UInt = #line) async throws -> Self {
+        guard let body = self.body else {
+            XCTFail("Request body was nil.", file: file, line: line)
+            return self
+        }
+        
+        try await body.stream.read(assertChunk)
+        return self
+    }
+    
+    @discardableResult
     public func assertJson<D: Decodable & Equatable>(_ value: D, file: StaticString = #filePath, line: UInt = #line) -> Self {
         guard body != nil else {
             XCTFail("Request body was nil.", file: file, line: line)

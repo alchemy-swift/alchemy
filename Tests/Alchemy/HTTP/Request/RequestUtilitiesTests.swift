@@ -36,7 +36,7 @@ final class RequestUtilitiesTests: XCTestCase {
     
     func testBody() {
         XCTAssertNil(Request.fixture(body: nil).body)
-        XCTAssertNotNil(Request.fixture(body: ByteBuffer()).body)
+        XCTAssertNotNil(Request.fixture(body: .empty).body)
     }
     
     func testDecodeBodyDict() {
@@ -56,14 +56,14 @@ final class RequestUtilitiesTests: XCTestCase {
     }
 }
 
-extension ByteBuffer {
-    static var empty: ByteBuffer {
-        ByteBuffer()
+extension ByteContent {
+    fileprivate static var empty: ByteContent {
+        .buffer(ByteBuffer())
     }
     
-    static var json: ByteBuffer {
-        ByteBuffer(string: """
-        {"foo":"bar"}
-        """)
+    fileprivate static var json: ByteContent {
+        .string("""
+            {"foo":"bar"}
+            """)
     }
 }

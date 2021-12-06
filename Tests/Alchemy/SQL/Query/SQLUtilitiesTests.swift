@@ -8,7 +8,7 @@ final class SQLUtilitiesTests: XCTestCase {
             SQL("where foo = ?", bindings: [.int(1)]),
             SQL("bar"),
             SQL("where baz = ?", bindings: [.string("two")])
-        ].joined(), SQL("where foo = ? bar where baz = ?", bindings: [.int(1), .string("two")]))
+        ].joinedSQL(), SQL("where foo = ? bar where baz = ?", bindings: [.int(1), .string("two")]))
     }
     
     func testDropLeadingBoolean() {

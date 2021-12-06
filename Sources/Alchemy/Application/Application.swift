@@ -19,8 +19,8 @@ public protocol Application {
     /// Any custom commands provided by your application.
     var commands: [Command.Type] { get }
     
-    /// Called before any launch command is run. Called after any
-    /// environment and services are loaded.
+    /// Setup your application here. Called after the environment
+    /// and services are loaded.
     func boot() throws
     
     /// Register your custom services to the application's service container
@@ -39,10 +39,4 @@ extension Application {
     public var commands: [Command.Type] { [] }
     public func services(container: Container) {}
     public func schedule(schedule: Scheduler) {}
-}
-
-extension Application {
-    var lifecycle: ServiceLifecycle {
-        Container.resolve(ServiceLifecycle.self)
-    }
 }

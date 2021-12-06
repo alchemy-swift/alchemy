@@ -113,9 +113,11 @@ extension ClientProvider {
     public func withBaseUrl(_ url: String) -> Builder {
         with {
             var newComponents = URLComponents(string: url)
-            let newQueryItems = newComponents?.queryItems ?? []
-            let oldQueryItems = $0.urlComponents.queryItems ?? []
-            newComponents?.queryItems = newQueryItems + oldQueryItems
+            if let oldQueryItems = $0.urlComponents.queryItems {
+                let newQueryItems = newComponents?.queryItems ?? []
+                newComponents?.queryItems = newQueryItems + oldQueryItems
+            }
+            
             $0.urlComponents = newComponents ?? URLComponents()
         }
     }

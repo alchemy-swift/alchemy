@@ -14,6 +14,11 @@ final class QueueDriverTests: TestCase<TestApp> {
         _testRetry,
     ]
     
+    override func tearDown() {
+        super.tearDown()
+        JobDecoding.reset()
+    }
+    
     func testConfig() {
         let config = Queue.Config(queues: [.default: .memory, 1: .memory, 2: .memory], jobs: [.job(TestJob.self)])
         Queue.configure(using: config)

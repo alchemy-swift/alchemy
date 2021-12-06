@@ -42,11 +42,13 @@ extension Client {
         let components = try endpoint.httpComponents(dto: request)
         var request = withHeaders(components.headers)
         
-        switch components.contentEncoding {
-        case .json:
-            request = try request.withJSON(components.body, encoder: endpoint.jsonEncoder)
-        case .url:
-            request = try request.withForm(components.body)
+        if let body = components.body {
+            switch components.contentEncoding {
+            case .json:
+                request = try request.withJSON(body, encoder: endpoint.jsonEncoder)
+            case .url:
+                request = try request.withForm(body)
+            }
         }
         
         let clientResponse = try await request

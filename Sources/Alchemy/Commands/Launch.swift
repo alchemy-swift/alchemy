@@ -3,6 +3,8 @@ import Lifecycle
 
 /// Command to launch a given application.
 struct Launch: ParsableCommand {
+    @Locked
+    static var customCommands: [Command.Type] = []
     static var configuration: CommandConfiguration {
         CommandConfiguration(
             abstract: "Run an Alchemy app.",
@@ -27,12 +29,9 @@ struct Launch: ParsableCommand {
         )
     }
     
-    @Locked static var customCommands: [Command.Type] = []
-    
     /// The environment file to load. Defaults to `env`.
     ///
-    /// This is a bit hacky since the env is actually parsed and set
-    /// in App.main, but this adds the validation for it being
-    /// entered properly.
+    /// This is a bit hacky since the env is actually parsed and set in Env,
+    /// but this adds the validation for it being entered properly.
     @Option(name: .shortAndLong) var env: String = "env"
 }

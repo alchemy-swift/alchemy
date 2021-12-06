@@ -26,26 +26,31 @@ public final class Client: ClientProvider, Service {
         public var body: ByteContent? = nil
         /// The url of this request.
         public var url: URL { urlComponents.url ?? URL(string: "/")! }
+        
         /// The underlying `AsyncHTTPClient.HTTPClient.Request`.
-        public var _request: HTTPClient.Request {
+        fileprivate var _request: HTTPClient.Request {
             get throws {
                 guard let url = urlComponents.url else { throw HTTPClientError.invalidURL }
-                return try HTTPClient.Request(url: url, method: method, headers: headers, body: {
-                    switch body {
+                let body: HTTPClient.Body? = {
+                    switch self.body {
                     case .buffer(let buffer):
                         return .byteBuffer(buffer)
                     case .stream(let stream):
-                        return .stream(length: headers.contentLength, { writer in
-                            return Loop.current.asyncSubmit {
-                                try await stream.write?({
+                        func writeStream(writer: HTTPClient.Body.StreamWriter) -> EventLoopFuture<Void> {
+                            Loop.current.asyncSubmit {
+                                try await stream.read {
                                     try await writer.write(.byteBuffer($0)).get()
-                                })
+                                }
                             }
-                        })
+                        }
+                        
+                        return .stream(length: headers.contentLength, writeStream)
                     case .none:
                         return nil
                     }
-                }())
+                }()
+                
+                return try HTTPClient.Request(url: url, method: method, headers: headers, body: body)
             }
         }
     }
@@ -64,23 +69,29 @@ public final class Client: ClientProvider, Service {
         /// Reponse HTTP headers.
         public let headers: HTTPHeaders
         /// Response body.
-        public let body: ByteContent?
+        public var body: ByteContent?
         
         /// Create a stubbed response with the given info. It will be returned
         /// for any incoming request that matches the stub pattern.
-        public static func stub(_ status: HTTPResponseStatus = .ok, version: HTTPVersion = .http1_1, headers: HTTPHeaders = [:], body: ByteContent? = nil) -> Client.Response {
+        public static func stub(
+            _ status: HTTPResponseStatus = .ok,
+            version: HTTPVersion = .http1_1,
+            headers: HTTPHeaders = [:],
+            body: ByteContent? = nil
+        ) -> Client.Response {
             Client.Response(request: .init(), host: "", status: status, version: version, headers: headers, body: body)
         }
     }
     
-    /// Helper for building HTTPRequests.
+    /// Helper for building http requests.
     public final class Builder: RequestBuilder {
         /// A request made with this builder returns a `Client.Response`.
         public typealias Res = Response
-        /// The request being build.
-        public var partialRequest: Request = .init()
+        
         /// Build using this builder.
         public var builder: Builder { self }
+        /// The request being built.
+        public var partialRequest: Request = .init()
         
         private let execute: (Request, HTTPClient.Configuration?) async throws -> Client.Response
         private var configOverride: HTTPClient.Configuration? = nil
@@ -89,7 +100,7 @@ public final class Client: ClientProvider, Service {
             self.execute = execute
         }
         
-        /// Execute the build request using the backing client.
+        /// Execute the built request using the backing client.
         ///
         /// - Returns: The resulting response.
         public func execute() async throws -> Response {
@@ -112,11 +123,13 @@ public final class Client: ClientProvider, Service {
     
     /// A request made with this builder returns a `Client.Response`.
     public typealias Res = Response
+    
     /// The underlying `AsyncHTTPClient.HTTPClient` used for making requests.
     public var httpClient: HTTPClient
     /// The builder to defer to when building requests.
     public var builder: Builder { Builder(execute: execute) }
     
+    private var stubWildcard: Character = "*"
     private var stubs: [(pattern: String, response: Response)]?
     private(set) var stubbedRequests: [Client.Request]
     
@@ -147,53 +160,46 @@ public final class Client: ClientProvider, Service {
     ///     request
     /// - Returns: The request's response.
     func execute(req: Request, config: HTTPClient.Configuration?) async throws -> Response {
-        if stubs != nil {
+        guard stubs == nil else {
             return stubFor(req)
-        } else {
-            let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
-            let httpClientOverride = config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
-            defer { try? httpClientOverride?.syncShutdown() }
-            
-            let client = httpClientOverride ?? httpClient
-            let res = try await client.execute(request: req._request, deadline: deadline).get()
-            return Client.Response(request: req, host: res.host, status: res.status, version: res.version, headers: res.headers, body: res.body.map { .buffer($0) })
         }
+        
+        let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
+        let httpClientOverride = config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
+        defer { try? httpClientOverride?.syncShutdown() }
+        
+        let client = httpClientOverride ?? httpClient
+        let res = try await client.execute(request: req._request, deadline: deadline).get()
+        return Client.Response(request: req, host: res.host, status: res.status, version: res.version, headers: res.headers, body: res.body.map { .buffer($0) })
     }
     
     private func stubFor(_ req: Request) -> Response {
         stubbedRequests.append(req)
-        let match = stubs?.first(where: { pattern, _ in doesPatternMatch(pattern, request: req) })
+        let match = stubs?.first { pattern, _ in doesPattern(pattern, match: req) }
         var stub: Client.Response = match?.response ?? .stub()
         stub.request = req
         stub.host = req.url.host ?? ""
         return stub
     }
     
-    private func doesPatternMatch(_ pattern: String, request: Request) -> Bool {
-        let wildcard = "*"
-        var cleanedPattern = pattern.droppingPrefix("https://").droppingPrefix("http://")
-        cleanedPattern = String(cleanedPattern.split(separator: "?")[0])
-        if cleanedPattern == wildcard {
-            return true
-        } else if var host = request.url.host {
-            if let port = request.url.port {
-                host += ":\(port)"
-            }
-            
-            let fullPath = host + request.url.path
-            for (hostChar, patternChar) in zip(fullPath, cleanedPattern) {
-                if String(patternChar) == wildcard {
-                    return true
-                } else if hostChar == patternChar {
-                    continue
-                }
-                
-                return false
-            }
-            
-            return fullPath.count == pattern.count
+    private func doesPattern(_ pattern: String, match request: Request) -> Bool {
+        let requestUrl = [
+            request.url.host,
+            request.url.port.map { ":\($0)" },
+            request.url.path,
+        ]
+            .compactMap { $0 }
+            .joined()
+        
+        let patternUrl = pattern
+            .droppingPrefix("https://")
+            .droppingPrefix("http://")
+        
+        for (hostChar, patternChar) in zip(requestUrl, patternUrl) {
+            guard patternChar != stubWildcard else { return true }
+            guard hostChar == patternChar else { return false }
         }
         
-        return false
+        return requestUrl.count == patternUrl.count
     }
 }
