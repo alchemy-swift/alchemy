@@ -2,7 +2,7 @@ import NIO
 import RediStack
 
 /// A queue that persists jobs to a Redis instance.
-struct RedisQueue: QueueDriver {
+struct RedisQueue: QueueProvider {
     /// The underlying redis connection.
     private let redis: Redis
     /// All job data.
@@ -102,7 +102,7 @@ public extension Queue {
     ///   Defaults to your default redis connection.
     /// - Returns: The configured queue.
     static func redis(_ redis: Redis = Redis.default) -> Queue {
-        Queue(RedisQueue(redis: redis))
+        Queue(provider: RedisQueue(redis: redis))
     }
     
     /// A queue backed by the default Redis connection.

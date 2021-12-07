@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol CacheDriver {
+public protocol CacheProvider {
     /// Get the value for `key`.
     ///
     /// - Parameter key: The key of the cache record.

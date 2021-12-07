@@ -6,7 +6,7 @@ extension Database {
     @discardableResult
     public static func stub(_ id: Identifier = .default) -> StubDatabase {
         let stub = StubDatabase()
-        register(id, Database(driver: stub))
+        register(id, Database(provider: stub))
         return stub
     }
 }

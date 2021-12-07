@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTest
 
-final class QueueDriverTests: TestCase<TestApp> {
+final class QueueTests: TestCase<TestApp> {
     private var queue: Queue {
         Queue.default
     }

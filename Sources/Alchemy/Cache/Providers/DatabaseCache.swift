@@ -1,8 +1,8 @@
 import Foundation
 import NIO
 
-/// A SQL based driver for `Cache`.
-final class DatabaseCache: CacheDriver {
+/// A SQL based provider for `Cache`.
+final class DatabaseCache: CacheProvider {
     private let db: Database
     
     /// Initialize this cache with a Database.
@@ -83,18 +83,18 @@ final class DatabaseCache: CacheDriver {
     }
 }
 
-extension Cache {
+extension Store {
     /// Create a cache backed by an SQL database.
     ///
     /// - Parameter database: The database to drive your cache with.
     ///   Defaults to your default `Database`.
     /// - Returns: A cache.
-    public static func database(_ database: Database = .default) -> Cache {
-        Cache(DatabaseCache(database))
+    public static func database(_ database: Database = .default) -> Store {
+        Store(provider: DatabaseCache(database))
     }
     
     /// Create a cache backed by the default SQL database.
-    public static var database: Cache {
+    public static var database: Store {
         .database()
     }
 }
@@ -121,7 +121,7 @@ private struct CacheItem: Model {
     }
 }
 
-extension Cache {
+extension Store {
     /// Migration for adding a cache table to your database. Don't
     /// forget to apply this to your database before using a
     /// database backed cache.

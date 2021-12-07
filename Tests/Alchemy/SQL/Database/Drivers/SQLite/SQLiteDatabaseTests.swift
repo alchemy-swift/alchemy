@@ -5,14 +5,14 @@ import AlchemyTest
 final class SQLiteDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
         let memory = Database.memory
-        guard memory.driver as? Alchemy.SQLiteDatabase != nil else {
-            XCTFail("The database driver should be SQLite.")
+        guard memory.provider as? Alchemy.SQLiteDatabase != nil else {
+            XCTFail("The database provider should be SQLite.")
             return
         }
         
         let path = Database.sqlite(path: "foo")
-        guard path.driver as? Alchemy.SQLiteDatabase != nil else {
-            XCTFail("The database driver should be SQLite.")
+        guard path.provider as? Alchemy.SQLiteDatabase != nil else {
+            XCTFail("The database provider should be SQLite.")
             return
         }
         
@@ -21,15 +21,15 @@ final class SQLiteDatabaseTests: TestCase<TestApp> {
     }
     
     func testConfigPath() throws {
-        let driver = SQLiteDatabase(config: .file("foo"))
-        XCTAssertEqual(driver.config, .file("foo"))
-        try driver.shutdown()
+        let provider = SQLiteDatabase(config: .file("foo"))
+        XCTAssertEqual(provider.config, .file("foo"))
+        try provider.shutdown()
     }
     
     func testConfigMemory() throws {
         let id = UUID().uuidString
-        let driver = SQLiteDatabase(config: .memory(identifier: id))
-        XCTAssertEqual(driver.config, .memory(identifier: id))
-        try driver.shutdown()
+        let provider = SQLiteDatabase(config: .memory(identifier: id))
+        XCTAssertEqual(provider.config, .memory(identifier: id))
+        try provider.shutdown()
     }
 }

@@ -1,8 +1,9 @@
-public protocol StorageProvider {
+public protocol FilesystemProvider {
     /// The root directory for storing and fetching files.
     var root: String { get }
     
-    /// Create a file in this storage.
+    /// Create a file in this filesystem.
+    ///
     /// - Parameters:
     ///  - filename: The name of the file, including extension, to create.
     ///  - directory: The directory to put the file in. If nil, goes in root.

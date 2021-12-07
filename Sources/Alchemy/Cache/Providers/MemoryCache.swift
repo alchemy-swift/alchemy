@@ -1,7 +1,7 @@
 import Foundation
 
-/// An in memory driver for `Cache` for testing.
-public final class MemoryCache: CacheDriver {
+/// An in memory provider for `Cache` for testing.
+public final class MemoryCache: CacheProvider {
     var data: [String: MemoryCacheItem] = [:]
     
     /// Create this cache populated with the given data.
@@ -101,19 +101,19 @@ public struct MemoryCacheItem {
     }
 }
 
-extension Cache {
+extension Store {
     /// Create a cache backed by an in memory dictionary. Useful for
     /// tests.
     ///
     /// - Parameter data: Any data to initialize your cache with.
     ///   Defaults to an empty dict.
     /// - Returns: A memory backed cache.
-    public static func memory(_ data: [String: MemoryCacheItem] = [:]) -> Cache {
-        Cache(MemoryCache(data))
+    public static func memory(_ data: [String: MemoryCacheItem] = [:]) -> Store {
+        Store(provider: MemoryCache(data))
     }
     
     /// A cache backed by an in memory dictionary. Useful for tests.
-    public static var memory: Cache {
+    public static var memory: Store {
         .memory()
     }
     
@@ -126,9 +126,9 @@ extension Cache {
     /// - Returns: A `MemoryCache` for verifying test expectations.
     @discardableResult
     public static func fake(_ identifier: Identifier = .default, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
-        let driver = MemoryCache(data)
-        let cache = Cache(driver)
+        let provider = MemoryCache(data)
+        let cache = Store(provider: provider)
         register(identifier, cache)
-        return driver
+        return provider
     }
 }

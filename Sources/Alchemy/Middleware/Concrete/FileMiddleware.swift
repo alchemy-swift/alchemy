@@ -2,12 +2,12 @@
 ///
 /// Usage:
 ///
-///     app.useAll(StaticFileMiddleware(from: "resources"))
+///     app.useAll(FileMiddleware(from: "resources"))
 ///
 /// Now your app will serve the files that are in the `resources` directory.
 public struct FileMiddleware: Middleware {
-    /// The storage for getting files.
-    private let storage: Storage
+    /// The filesystem for getting files.
+    private let filesystem: Filesystem
     /// Additional extensions to try if a file with the exact name isn't found.
     private let extensions: [String]
     
@@ -21,7 +21,7 @@ public struct FileMiddleware: Middleware {
     ///     searched for. The first that exists will be served. Defaults
     ///     to []. Example: ["html", "htm"].
     public init(from directory: String = "Public/", extensions: [String] = []) {
-        self.storage = .local(root: directory)
+        self.filesystem = .local(root: directory)
         self.extensions = extensions
     }
     
@@ -49,8 +49,8 @@ public struct FileMiddleware: Middleware {
         // See if there's a file at any possible extension
         let allPossiblePaths = [sanitizedPath] + extensions.map { sanitizedPath + ".\($0)" }
         for possiblePath in allPossiblePaths {
-            if try await storage.exists(possiblePath) {
-                return try await storage.get(possiblePath).response
+            if try await filesystem.exists(possiblePath) {
+                return try await filesystem.get(possiblePath).response()
             }
         }
         

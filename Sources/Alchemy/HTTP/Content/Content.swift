@@ -22,7 +22,7 @@ public enum ByteContent: ExpressibleByStringLiteral {
         case .stream(let stream):
             return stream
         case .buffer(let buffer):
-            return .new { try await $0(buffer) }
+            return .new { try await $0.write(buffer) }
         }
     }
     
@@ -46,7 +46,7 @@ public enum ByteContent: ExpressibleByStringLiteral {
             return byteBuffer
         case .stream(let byteStream):
             var collection = ByteBuffer()
-            try await byteStream.read { buffer in
+            try await byteStream.readAll { buffer in
                 var chunk = buffer
                 collection.writeBuffer(&chunk)
             }
@@ -55,8 +55,8 @@ public enum ByteContent: ExpressibleByStringLiteral {
         }
     }
     
-    public static func stream(_ stream: @escaping ByteStreamClosure) -> ByteContent {
-        return .stream(.new(stream))
+    public static func stream(_ stream: @escaping ByteStream.Closure) -> ByteContent {
+        return .stream(.new(startStream: stream))
     }
 }
 
@@ -84,30 +84,106 @@ extension Request {
     }
 }
 
-/*
- Stream
- 1. Write
-   i. outgoing response
-   ii. outgoing Client.request
-   iii. file write
- 2. Read
-   i. incoming request
-   ii. incoming Client.response
-   iii. file read
- */
-/// A stream of bytes. When this closure completes; the stream is finished.
-public typealias ByteStreamClosure = (@escaping ByteStream.Writer) async throws -> Void
-public struct ByteStream {
-    public typealias Writer = (ByteBuffer) async throws -> Void
-    
-    private let write: ByteStreamClosure?
-    
-    public func read(_ handler: @escaping (ByteBuffer) async throws -> Void) async throws {
-        try await write?(handler)
+public typealias ByteStream = Stream<ByteBuffer>
+
+// Streams can be written to and read.
+// Streams can be written to all at once or one at a time.
+// Streams can be read all at once or one at a time.
+public final class Stream<Element>: AsyncSequence {
+    public struct Writer {
+        fileprivate let stream: Stream<Element>
+        
+        func write(_ chunk: Element) async throws {
+            try await stream._write(chunk: chunk).get()
+        }
     }
     
-    public static func new(_ stream: @escaping ByteStreamClosure) -> ByteStream {
-        self.init(write: stream)
+    public typealias Closure = (Writer) async throws -> Void
+    
+    private let eventLoop: EventLoop
+    private var readPromise: EventLoopPromise<Void>
+    private var writePromise: EventLoopPromise<Element?>
+    private let onFirstRead: ((Stream<Element>) -> Void)?
+    private var didFirstRead: Bool
+    
+    init(eventLoop: EventLoop, onFirstRead: ((Stream<Element>) -> Void)? = nil) {
+        self.eventLoop = eventLoop
+        self.readPromise = eventLoop.makePromise(of: Void.self)
+        self.writePromise = eventLoop.makePromise(of: Element?.self)
+        self.onFirstRead = onFirstRead
+        self.didFirstRead = false
+    }
+    
+    func _write(chunk: Element?) -> EventLoopFuture<Void> {
+        writePromise.succeed(chunk)
+        // Wait until the chunk is read.
+        return readPromise.futureResult
+            .map {
+                if chunk != nil {
+                    self.writePromise = self.eventLoop.makePromise(of: Element?.self)
+                }
+            }
+    }
+    
+    func _write(error: Error) {
+        writePromise.fail(error)
+        readPromise.fail(error)
+    }
+    
+    func _read(on eventLoop: EventLoop) -> EventLoopFuture<Element?> {
+        return eventLoop
+            .submit {
+                if !self.didFirstRead {
+                    self.didFirstRead = true
+                    self.onFirstRead?(self)
+                }
+            }
+            .flatMap {
+                // Wait until a chunk is written.
+                self.writePromise.futureResult
+                    .map { chunk in
+                        let old = self.readPromise
+                        if chunk != nil {
+                            self.readPromise = eventLoop.makePromise(of: Void.self)
+                        }
+                        old.succeed(())
+                        return chunk
+                    }
+            }
+    }
+    
+    public func readAll(chunkHandler: (Element) async throws -> Void) async throws {
+        for try await chunk in self {
+            try await chunkHandler(chunk)
+        }
+    }
+    
+    public static func new(startStream: @escaping Closure) -> Stream<Element> {
+        Stream<Element>(eventLoop: Loop.current) { stream in
+            Task {
+                do {
+                    try await startStream(Writer(stream: stream))
+                    try await stream._write(chunk: nil).get()
+                } catch {
+                    stream._write(error: error)
+                }
+            }
+        }
+    }
+    
+    // MARK: - AsycIterator
+    
+    public struct AsyncIterator: AsyncIteratorProtocol {
+        let stream: Stream
+        let eventLoop: EventLoop
+        
+        mutating public func next() async throws -> Element? {
+            try await stream._read(on: eventLoop).get()
+        }
+    }
+    
+    __consuming public func makeAsyncIterator() -> AsyncIterator {
+        AsyncIterator(stream: self, eventLoop: eventLoop)
     }
 }
 
@@ -212,15 +288,16 @@ extension ByteContent {
     }
 }
 
-extension Request: ContentConvertible {}
-extension Response: ContentConvertible {}
+extension Request: HasContent {}
+extension Response: HasContent {}
 
-public protocol ContentConvertible {
+/// A type, likely an HTTP request or response, that has body content.
+public protocol HasContent {
     var headers: HTTPHeaders { get }
     var body: ByteContent? { get }
 }
 
-extension ContentConvertible {
+extension HasContent {
     /// Decodes the content as a decodable, based on it's content type or with
     /// the given content decoder.
     ///

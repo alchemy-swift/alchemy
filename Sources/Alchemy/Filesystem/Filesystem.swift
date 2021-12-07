@@ -1,10 +1,15 @@
 import Foundation
 
-public struct Storage: Service {
-    let provider: StorageProvider
+/// An abstraction around local or remote file storage.
+public struct Filesystem: Service {
+    private let provider: FilesystemProvider
     
     /// The root directory for storing and fetching files.
     public var root: String { provider.root }
+
+    init(provider: FilesystemProvider) {
+        self.provider = provider
+    }
     
     /// Create a file in this storage.
     /// - Parameters:
@@ -43,7 +48,7 @@ public struct Storage: Service {
 }
 
 extension File {
-    public func store(in directory: String? = nil, in storage: Storage = .default) async throws {
-        try await storage.put(self, in: directory)
+    public func store(in directory: String? = nil, in filesystem: Filesystem = .default) async throws {
+        try await filesystem.put(self, in: directory)
     }
 }

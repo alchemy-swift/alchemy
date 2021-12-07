@@ -1,11 +1,23 @@
 extension HTTPHeaders {
-    struct ContentDisposition {
-        let value: String
-        let name: String?
-        let filename: String?
+    public struct ContentDisposition {
+        public struct Value: ExpressibleByStringLiteral {
+            public let string: String
+            
+            public init(stringLiteral value: StringLiteralType) {
+                self.string = value
+            }
+            
+            public static let inline: Value = "inline"
+            public static let attachment: Value = "attachment"
+            public static let formData: Value = "form-data"
+        }
+        
+        public var value: Value
+        public var name: String?
+        public var filename: String?
     }
     
-    var contentDisposition: ContentDisposition? {
+    public var contentDisposition: ContentDisposition? {
         get {
             guard let disposition = self["Content-Disposition"].first else {
                 return nil
@@ -14,7 +26,7 @@ extension HTTPHeaders {
             let components = disposition.components(separatedBy: ";")
                 .map { $0.trimmingCharacters(in: .whitespaces) }
             
-            guard let value = components.first else {
+            guard let valueString = components.first else {
                 return nil
             }
             
@@ -31,12 +43,13 @@ extension HTTPHeaders {
                 }
                 .forEach { directives[$0] = $1 }
             
+            let value = ContentDisposition.Value(stringLiteral: valueString)
             return ContentDisposition(value: value, name: directives["name"], filename: directives["filename"])
         }
         set {
             if let disposition = newValue {
                 let value = [
-                    disposition.value,
+                    disposition.value.string,
                     disposition.name.map { "name=\($0)" },
                     disposition.filename.map { "filename=\($0)" },
                 ]

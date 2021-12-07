@@ -140,7 +140,7 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
             Log.info("[Environment] loaded env from `\(defaultPath)`.")
             current.dotEnvVariables = values
         } else {
-            Log.info("[Environment] no env file found.")
+            Log.info("[Environment] no dotenv file found.")
         }
     }
     
@@ -223,7 +223,7 @@ extension Env {
                 Your project is running in Xcode's `DerivedData` data directory. We _highly_ recommend setting a custom working directory, otherwise `.env` and `Public/` files won't be accessible.
 
                 This takes ~9 seconds to fix. Here's how: https://github.com/alchemy-swift/alchemy/blob/main/Docs/1_Configuration.md#setting-a-custom-working-directory.
-                """)
+                """.yellow)
         }
     }
 }

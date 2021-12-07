@@ -8,13 +8,13 @@
     + [Checking for item existence](#checking-for-item-existence)
     + [Incrementing and Decrementing items](#incrementing-and-decrementing-items)
   * [Removing Items from the Cache](#removing-items-from-the-cache)
-- [Adding a Custom Cache Driver](#adding-a-custom-cache-driver)
+- [Adding a Custom Cache Provider](#adding-a-custom-cache-provider)
 
 You'll often want to cache the results of expensive or long running operations to save CPU time and respond to future requests faster. Alchemy provides a `Cache` type for easily interacting with common caching backends.
 
 ## Configuration
 
-Cache conforms to `Service` and can be configured like other Alchemy services with the `config` function. Out of the box, drivers are provided for Redis and SQL based caches as well as an in memory mock cache.
+Cache conforms to `Service` and can be configured like other Alchemy services with the `config` function. Out of the box, providers are provided for Redis and SQL based caches as well as an in memory mock cache.
 
 ```swift
 Cache.config(default: .redis())
@@ -104,12 +104,12 @@ If you'd like to clear all data from a cache, you may use wipe.
 cache.wipe()
 ```
 
-## Adding a Custom Cache Driver
+## Adding a Custom Cache Provider
 
-If you'd like to add a custom driver for cache, you can implement the `CacheDriver` protocol.
+If you'd like to add a custom provider for cache, you can implement the `CacheProvider` protocol.
 
 ```swift
-struct MemcachedCache: CacheDriver {
+struct MemcachedCache: CacheProvider {
     func get<L: LosslessStringConvertible>(_ key: String) -> EventLoopFuture<C?> {
         ...
     }

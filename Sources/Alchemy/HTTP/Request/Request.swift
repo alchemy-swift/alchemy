@@ -78,7 +78,7 @@ extension HBStreamerProtocol {
     func byteStream(_ loop: EventLoop) -> ByteStream {
         return .new { reader in
             try await self.consumeAll(on: loop) { buffer in
-                loop.asyncSubmit { try await reader(buffer) }
+                return loop.asyncSubmit { try await reader.write(buffer) }
             }.get()
         }
     }

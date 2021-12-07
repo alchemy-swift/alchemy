@@ -1,7 +1,7 @@
 import NIOCore
 import RediStack
 
-public final class StubRedis: RedisDriver {
+public final class StubRedis: RedisProvider {
     private var isShutdown = false
     
     var stubs: [String: RESPValue] = [:]
@@ -10,13 +10,13 @@ public final class StubRedis: RedisDriver {
         stubs[command] = response
     }
     
-    // MARK: RedisDriver
+    // MARK: RedisProvider
     
     public func getClient() -> RedisClient {
         self
     }
     
-    public func transaction<T>(_ transaction: @escaping (RedisDriver) async throws -> T) async throws -> T {
+    public func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
         try await transaction(self)
     }
     

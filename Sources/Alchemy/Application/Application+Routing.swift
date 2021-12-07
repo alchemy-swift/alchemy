@@ -155,7 +155,7 @@ extension Application {
         on(method, at: path, use: { req -> Response in
             let value = try await handler(req)
             if let convertible = value as? ResponseConvertible {
-                return try await convertible.convert()
+                return try await convertible.response()
             } else {
                 return try value.convert()
             }

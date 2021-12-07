@@ -1,24 +1,24 @@
 /// Represents any type that can be converted into a response & is
 /// thus returnable from a request handler.
 public protocol ResponseConvertible {
-    /// Takes the response and turns it into a `Response`.
+    /// Takes the type and turns it into a `Response`.
     ///
     /// - Throws: Any error that might occur when this is turned into
     ///   a `Response`.
     /// - Returns: A `Response` to respond to a `Request` with.
-    func convert() async throws -> Response
+    func response() async throws -> Response
 }
 
 // MARK: Convenient `ResponseConvertible` Conformances.
 
 extension Response: ResponseConvertible {
-    public func convert() -> Response {
+    public func response() -> Response {
         self
     }
 }
 
 extension String: ResponseConvertible {
-    public func convert() -> Response {
+    public func response() -> Response {
         Response(status: .ok).withString(self)
     }
 }

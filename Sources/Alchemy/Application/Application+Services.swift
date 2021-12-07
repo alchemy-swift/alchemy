@@ -42,9 +42,9 @@ extension Application {
         // Set up any configurable services.
         let types: [Any.Type] = [
             Database.self,
-            Cache.self,
+            Store.self,
             Queue.self,
-            Storage.self
+            Filesystem.self
         ]
         
         for type in types {

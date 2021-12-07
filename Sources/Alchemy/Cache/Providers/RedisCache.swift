@@ -1,8 +1,8 @@
 import Foundation
 import RediStack
 
-/// A Redis based driver for `Cache`.
-final class RedisCache: CacheDriver {
+/// A Redis based provider for `Cache`.
+final class RedisCache: CacheProvider {
     private let redis: Redis
     
     /// Initialize this cache with a Redis client.
@@ -63,18 +63,18 @@ final class RedisCache: CacheDriver {
     }
 }
 
-extension Cache {
+extension Store {
     /// Create a cache backed by Redis.
     ///
     /// - Parameter redis: The redis instance to drive your cache
     ///   with. Defaults to your default `Redis` configuration.
     /// - Returns: A cache.
-    public static func redis(_ redis: Redis = Redis.default) -> Cache {
-        Cache(RedisCache(redis))
+    public static func redis(_ redis: Redis = Redis.default) -> Store {
+        Store(provider: RedisCache(redis))
     }
     
     /// A cache backed by the default Redis instance.
-    public static var redis: Cache {
+    public static var redis: Store {
         .redis()
     }
 }

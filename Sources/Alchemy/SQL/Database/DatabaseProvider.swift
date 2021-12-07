@@ -2,7 +2,7 @@
 /// with. Currently, the only two implementations are
 /// `PostgresDatabase` and `MySQLDatabase`. The QueryBuilder and Rune
 /// ORM are built on top of this abstraction.
-public protocol DatabaseDriver {
+public protocol DatabaseProvider {
     /// Functions around compiling SQL statments for this database's
     /// SQL dialect when using the QueryBuilder or Rune.
     var grammar: Grammar { get }
@@ -11,15 +11,14 @@ public protocol DatabaseDriver {
     /// helps protect against SQL injection.
     ///
     /// Usage:
-    /// ```swift
-    /// // No bindings
-    /// let rows = try await db.query("SELECT * FROM users where id = 1")
-    /// print("Got \(rows.count) users.")
     ///
-    /// // Bindings, to protect against SQL injection.
-    /// let rows = db.query("SELECT * FROM users where id = ?", values = [.int(1)])
-    /// print("Got \(rows.count) users.")
-    /// ```
+    ///     // No bindings
+    ///     let rows = try await db.query("SELECT * FROM users where id = 1")
+    ///     print("Got \(rows.count) users.")
+    ///
+    ///     // Bindings, to protect against SQL injection.
+    ///     let rows = try await db.query("SELECT * FROM users where id = ?", values = [.int(1)])
+    ///     print("Got \(rows.count) users.")
     ///
     /// - Parameters:
     ///   - sql: The SQL string with '?'s denoting variables that
@@ -42,7 +41,7 @@ public protocol DatabaseDriver {
     ///
     /// - Parameter action: The action to run atomically.
     /// - Returns: The return value of the transaction.
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T
+    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T
     
     /// Called when the database connection will shut down.
     func shutdown() throws

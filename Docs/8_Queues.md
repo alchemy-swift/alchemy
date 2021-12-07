@@ -9,7 +9,7 @@
 
 Often your app will have long running operations, such as sending emails or reading files, that take too long to run during a client request. To help with this, Alchemy makes it easy to create queued jobs that can be persisted and run in the background. Your requests will stay lightning fast and important long running operations will never be lost if your server restarts or re-deploys.
 
-Configure your queues with the `Queue` class. Out of the box, Alchemy provides drivers for queues backed by Redis and SQL as well as an in-memory mock queue.
+Configure your queues with the `Queue` class. Out of the box, Alchemy provides providers for queues backed by Redis and SQL as well as an in-memory mock queue.
 
 ## Configuring Queues
 

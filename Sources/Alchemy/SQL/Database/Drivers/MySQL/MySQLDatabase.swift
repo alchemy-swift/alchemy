@@ -1,7 +1,7 @@
 import MySQLKit
 import NIO
 
-final class MySQLDatabase: DatabaseDriver {
+final class MySQLDatabase: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
@@ -51,7 +51,7 @@ final class MySQLDatabase: DatabaseDriver {
         try await withConnection { try await $0.raw(sql) }
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await withConnection {
             _ = try await $0.raw("START TRANSACTION;")
             let val = try await action($0)
@@ -72,7 +72,7 @@ final class MySQLDatabase: DatabaseDriver {
 }
 
 /// A database to send through on transactions.
-private struct MySQLConnectionDatabase: DatabaseDriver {
+private struct MySQLConnectionDatabase: DatabaseProvider {
     let conn: MySQLConnection
     let grammar: Grammar
     
@@ -84,7 +84,7 @@ private struct MySQLConnectionDatabase: DatabaseDriver {
         try await conn.simpleQuery(sql).get().map(MySQLDatabaseRow.init)
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await action(self)
     }
     

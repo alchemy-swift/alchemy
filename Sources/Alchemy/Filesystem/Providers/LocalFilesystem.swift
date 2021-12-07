@@ -1,20 +1,20 @@
 import NIOCore
 
-extension Storage {
-    /// Create a storage disk backed by the local filesystem at the given root
+extension Filesystem {
+    /// Create a filesystem backed by the local filesystem at the given root
     /// directory.
-    public static func local(root: String = "Public/") -> Storage {
-        Storage(provider: LocalStorage(root: root))
+    public static func local(root: String = "Public/") -> Filesystem {
+        Filesystem(provider: LocalFilesystem(root: root))
     }
     
-    /// Create a storage disk backed by the local filesystem in the "Public/"
+    /// Create a filesystem backed by the local filesystem in the "Public/"
     /// directory.
-    public static var local: Storage {
+    public static var local: Filesystem {
         .local()
     }
 }
 
-struct LocalStorage: StorageProvider {
+struct LocalFilesystem: FilesystemProvider {
     /// The file IO helper for streaming files.
     private let fileIO = NonBlockingFileIO(threadPool: .default)
     /// Used for allocating buffers when pulling out file data.
@@ -22,7 +22,7 @@ struct LocalStorage: StorageProvider {
     
     var root: String
     
-    // MARK: - StorageProvider
+    // MARK: - FilesystemProvider
     
     init(root: String) {
         self.root = root
@@ -30,7 +30,7 @@ struct LocalStorage: StorageProvider {
     
     func get(_ filepath: String) async throws -> File {
         guard try await exists(filepath) else {
-            throw StorageError.fileDoesntExist
+            throw FileError.fileDoesntExist
         }
         
         let url = try url(for: filepath)
@@ -43,7 +43,7 @@ struct LocalStorage: StorageProvider {
         return File(
             name: url.lastPathComponent,
             size: fileSizeBytes,
-            content: .stream { write in
+            content: .stream { writer in
                 // Load the file in chunks, streaming it.
                 let fileHandle = try NIOFileHandle(path: url.path)
                 defer { try? fileHandle.close() }
@@ -54,7 +54,7 @@ struct LocalStorage: StorageProvider {
                     allocator: bufferAllocator,
                     eventLoop: Loop.current,
                     chunkHandler: { chunk in
-                        Loop.current.asyncSubmit { try await write(chunk) }
+                        Loop.current.asyncSubmit { try await writer.write(chunk) }
                     }
                 ).get()
             })
@@ -63,7 +63,7 @@ struct LocalStorage: StorageProvider {
     func create(_ filepath: String, content: ByteContent) async throws -> File {
         let url = try url(for: filepath)
         guard try await !exists(filepath) else {
-            throw StorageError.fileAlreadyExists
+            throw FileError.filenameAlreadyExists
         }
         
         let fileHandle = try NIOFileHandle(path: url.path, mode: .write, flags: .allowFileCreation())
@@ -71,7 +71,7 @@ struct LocalStorage: StorageProvider {
 
         // Stream and write
         var offset: Int64 = 0
-        try await content.stream.read { buffer in
+        try await content.stream.readAll { buffer in
             try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop.current).get()
             offset += Int64(buffer.writerIndex)
         }
@@ -87,7 +87,7 @@ struct LocalStorage: StorageProvider {
     
     func delete(_ filepath: String) async throws {
         guard try await exists(filepath) else {
-            throw StorageError.fileDoesntExist
+            throw FileError.fileDoesntExist
         }
         
         try FileManager.default.removeItem(atPath: url(for: filepath).path)
@@ -95,7 +95,7 @@ struct LocalStorage: StorageProvider {
     
     private func url(for filepath: String, createDirectories: Bool = true) throws -> URL {
         guard let rootUrl = URL(string: root) else {
-            throw StorageError.invalidUrl
+            throw FileError.invalidFileUrl
         }
         
         let url = rootUrl.appendingPathComponent(filepath.trimmingForwardSlash)

@@ -11,17 +11,17 @@ public final class Database: Service {
     /// Any seeders associated with this database.
     public var seeders: [Seeder] = []
     
-    /// The driver for this database.
-    let driver: DatabaseDriver
+    /// The provider of this database.
+    let provider: DatabaseProvider
     
     /// Indicates whether migrations were run on this database, by this process.
     var didRunMigrations: Bool = false
     
-    /// Create a database backed by the given driver.
+    /// Create a database backed by the given provider.
     ///
-    /// - Parameter driver: The driver.
-    public init(driver: DatabaseDriver) {
-        self.driver = driver
+    /// - Parameter provider: The provider.
+    public init(provider: DatabaseProvider) {
+        self.provider = provider
     }
     
     /// Run a parameterized query on the database. Parameterization
@@ -46,14 +46,14 @@ public final class Database: Service {
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
     public func query(_ sql: String, values: [SQLValue] = []) async throws -> [SQLRow] {
-        try await driver.query(sql, values: values)
+        try await provider.query(sql, values: values)
     }
     
     /// Run a raw, not parametrized SQL string.
     ///
     /// - Returns: The rows returned by the query.
     public func raw(_ sql: String) async throws -> [SQLRow] {
-        try await driver.raw(sql)
+        try await provider.raw(sql)
     }
     
     /// Runs a transaction on the database, using the given closure.
@@ -64,13 +64,13 @@ public final class Database: Service {
     /// - Parameter action: The action to run atomically.
     /// - Returns: The return value of the transaction.
     public func transaction<T>(_ action: @escaping (Database) async throws -> T) async throws -> T {
-        try await driver.transaction { try await action(Database(driver: $0)) }
+        try await provider.transaction { try await action(Database(provider: $0)) }
     }
     
     /// Called when the database connection will shut down.
     ///
     /// - Throws: Any error that occurred when shutting down.
     public func shutdown() throws {
-        try driver.shutdown()
+        try provider.shutdown()
     }
 }

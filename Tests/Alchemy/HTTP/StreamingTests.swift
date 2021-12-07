@@ -1,14 +1,18 @@
 @testable
 import Alchemy
 import AlchemyTest
+import NIOCore
 
 final class StreamingTests: TestCase<TestApp> {
-    func testClientRequestStream() async throws {
+    
+    // MARK: - Client
+    
+    func testClientResponseStream() async throws {
         Http.stub([
-            ("*", .stub(body: .stream { write in
-                try await write("foo")
-                try await write("bar")
-                try await write("baz")
+            ("*", .stub(body: .stream {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
             }))
         ])
         
@@ -18,12 +22,19 @@ final class StreamingTests: TestCase<TestApp> {
             .assertBody("foobarbaz")
     }
     
+    func testClientRequestStream() async throws {
+        try await Http
+            .withAttachment("fileFoo", file: try await Storage.get("foo"))
+            .withAttachment("fileBar", file: try await Storage.get("bar"))
+            .post("foo")
+    }
+    
     func testServerResponseStream() async throws {
         app.get("/stream") { _ in
-            Response { write in
-                try await write("foo")
-                try await write("bar")
-                try await write("baz")
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
             }
         }
         
@@ -35,25 +46,30 @@ final class StreamingTests: TestCase<TestApp> {
     
     func testEndToEndStream() async throws {
         app.get("/stream") { _ in
-            Response { write in
-                try await write("foo")
-                try await write("bar")
-                try await write("baz")
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
             }
         }
         
         try app.start()
-        
+        var expected = ["foo", "bar", "baz"]
         try await Http.get("http://localhost:3000/stream")
-            .assertStream { buffer in
-                XCTAssertEqual(buffer.string(), "foo")
+            .assertStream {
+                XCTAssertEqual($0.string(), expected.removeFirst())
             }
             .assertOk()
-            .assertBody("foobarbaz")
     }
     
     func testFileRequest() {
-        
+        app.get("/stream") { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
     }
     
     func testFileResponse() {

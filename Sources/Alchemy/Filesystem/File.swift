@@ -1,7 +1,8 @@
 import MultipartKit
+import Papyrus
 
 /// Represents a file with a name and binary contents.
-public struct File: Codable {
+public struct File: Codable, ResponseConvertible {
     // The name of the file, including the extension.
     public var name: String
     // The size of the file, in bytes.
@@ -12,11 +13,6 @@ public struct File: Codable {
     public var `extension`: String { name.components(separatedBy: ".")[safe: 1] ?? "" }
     /// The content type of this file, based on it's extension.
     public var contentType: ContentType? { ContentType(fileExtension: `extension`) }
-    /// A response containing this file.
-    public var response: Response {
-        Response(status: .ok)
-            .withBody(content, type: contentType, length: size)
-    }
     
     public init(name: String, size: Int, content: ByteContent) {
         self.name = name
@@ -29,6 +25,18 @@ public struct File: Codable {
         var copy = self
         copy.name = name
         return copy
+    }
+    
+    // MARK: - ResponseConvertible
+    
+    public func response() async throws -> Response {
+        Response(status: .ok, headers: ["content-disposition":"inline; filename=\"\(name)\""])
+            .withBody(content, type: contentType, length: size)
+    }
+    
+    public func download() async throws -> Response {
+        Response(status: .ok, headers: ["content-disposition":"attachment; filename=\"\(name)\""])
+            .withBody(content, type: contentType, length: size)
     }
     
     // MARK: - Decodable

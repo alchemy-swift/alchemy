@@ -105,18 +105,18 @@ public final class Router: Service {
     private func cleanHandler(_ handler: @escaping Handler) -> (Request) async -> Response {
         return { req in
             do {
-                return try await handler(req).convert()
+                return try await handler(req).response()
             } catch {
                 do {
                     if let error = error as? ResponseConvertible {
                         do {
-                            return try await error.convert()
+                            return try await error.response()
                         } catch {
-                            return try await self.internalErrorHandler(req, error).convert()
+                            return try await self.internalErrorHandler(req, error).response()
                         }
                     }
                     
-                    return try await self.internalErrorHandler(req, error).convert()
+                    return try await self.internalErrorHandler(req, error).response()
                 } catch {
                     return Router.uncaughtErrorHandler(req: req, error: error)
                 }

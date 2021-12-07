@@ -1,7 +1,7 @@
 import Foundation
 
 /// A queue that persists jobs to a database.
-final class DatabaseQueue: QueueDriver {
+final class DatabaseQueue: QueueProvider {
     /// The database backing this queue.
     private let database: Database
     
@@ -57,7 +57,7 @@ public extension Queue {
     ///   Defaults to your default database.
     /// - Returns: The configured queue.
     static func database(_ database: Database = .default) -> Queue {
-        Queue(DatabaseQueue(database: database))
+        Queue(provider: DatabaseQueue(database: database))
     }
     
     /// A queue backed by the default SQL database.

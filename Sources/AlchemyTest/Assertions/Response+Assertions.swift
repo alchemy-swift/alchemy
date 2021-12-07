@@ -1,7 +1,7 @@
 import Alchemy
 import XCTest
 
-public protocol ResponseAssertable: ContentConvertible {
+public protocol ResponseAssertable: HasContent {
     var status: HTTPResponseStatus { get }
     var headers: HTTPHeaders { get }
     var body: ByteContent? { get }
@@ -121,7 +121,7 @@ extension ResponseAssertable {
             return self
         }
         
-        try await body.stream.read(assertChunk)
+        try await body.stream.readAll(chunkHandler: assertChunk)
         return self
     }
     

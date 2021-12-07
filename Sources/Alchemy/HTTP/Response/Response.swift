@@ -54,7 +54,7 @@ public final class Response {
     ///
     /// - Parameter writer: A closure take a `ResponseWriter` and
     ///   using it to write response data to a remote peer.
-    public init(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], stream: @escaping ByteStreamClosure) {
+    public init(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], stream: @escaping ByteStream.Closure) {
         self.status = .ok
         self.headers = HTTPHeaders()
         self.body = .stream(stream)

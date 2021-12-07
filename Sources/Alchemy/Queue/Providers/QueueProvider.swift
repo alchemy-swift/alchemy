@@ -1,8 +1,7 @@
 import NIO
 
-/// Conform to this protocol to implement a custom driver for the
-/// `Queue` class.
-public protocol QueueDriver {
+/// Conform to this protocol to implement a custom queue provider.
+public protocol QueueProvider {
     /// Enqueue a job.
     func enqueue(_ job: JobData) async throws
     

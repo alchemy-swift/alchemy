@@ -11,11 +11,11 @@ extension Redis: RedisClient {
     }
     
     public func logging(to logger: Logger) -> RedisClient {
-        driver.getClient().logging(to: logger)
+        provider.getClient().logging(to: logger)
     }
     
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
-        driver.getClient()
+        provider.getClient()
             .send(command: command, with: arguments).hop(to: Loop.current)
     }
     
@@ -25,7 +25,7 @@ extension Redis: RedisClient {
         onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
         onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
     ) -> EventLoopFuture<Void> {
-        driver.getClient()
+        provider.getClient()
             .subscribe(
                 to: channels,
                 messageReceiver: receiver,
@@ -40,7 +40,7 @@ extension Redis: RedisClient {
         onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
         onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
     ) -> EventLoopFuture<Void> {
-        driver.getClient()
+        provider.getClient()
             .psubscribe(
                 to: patterns,
                 messageReceiver: receiver,
@@ -50,11 +50,11 @@ extension Redis: RedisClient {
     }
     
     public func unsubscribe(from channels: [RedisChannelName]) -> EventLoopFuture<Void> {
-        driver.getClient().unsubscribe(from: channels)
+        provider.getClient().unsubscribe(from: channels)
     }
     
     public func punsubscribe(from patterns: [String]) -> EventLoopFuture<Void> {
-        driver.getClient().punsubscribe(from: patterns)
+        provider.getClient().punsubscribe(from: patterns)
     }
 
     // MARK: - Alchemy sugar
@@ -106,15 +106,15 @@ extension Redis: RedisClient {
     ///
     /// - Returns: The result of finishing the transaction.
     public func transaction(_ action: @escaping (Redis) async throws -> Void) async throws -> RESPValue {
-        try await driver.transaction { conn in
+        try await provider.transaction { conn in
             _ = try await conn.getClient().send(command: "MULTI").get()
-            try await action(Redis(driver: conn))
+            try await action(Redis(provider: conn))
             return try await conn.getClient().send(command: "EXEC").get()
         }
     }
 }
 
-extension RedisConnection: RedisDriver {
+extension RedisConnection: RedisProvider {
     public func getClient() -> RedisClient {
         self
     }
@@ -123,7 +123,7 @@ extension RedisConnection: RedisDriver {
         try close().wait()
     }
     
-    public func transaction<T>(_ transaction: @escaping (RedisDriver) async throws -> T) async throws -> T {
+    public func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
         try await transaction(self)
     }
 }

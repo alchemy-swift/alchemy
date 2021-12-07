@@ -9,13 +9,17 @@ final class ContentFiles {
 }
 
 extension Request {
-    func file(_ name: String) throws -> File? {
-        try files()[name]
+    public func file(_ name: String) async throws -> File? {
+        try await files()[name]
     }
     
-    func files() throws -> [String: File] {
+    /// Access any file parts of this request. Returns an empty dict if this
+    /// request has content other than multipart.
+    ///
+    /// Async since we maybe need to wait until streaming is finished.
+    public func files() async throws -> [String: File] {
         guard let alreadyLoaded = _files.files else {
-            let loadedFiles = try loadFiles()
+            let loadedFiles = try await loadFiles()
             _files.files = loadedFiles
             return loadedFiles
         }
@@ -23,7 +27,7 @@ extension Request {
         return alreadyLoaded
     }
     
-    func loadFiles() throws -> [String: File] {
+    func loadFiles() async throws -> [String: File] {
         /// If stream, don't know all files until as stream goes.
         /// Will need to hook into stream and process files as they come in.
         ///
@@ -31,10 +35,6 @@ extension Request {
         ///         print("got a file!")
         ///     }
         ///
-        guard let buffer = buffer else {
-            return [:]
-        }
-        
         guard headers.contentType == .multipart else {
             return [:]
         }
@@ -43,13 +43,31 @@ extension Request {
             throw HTTPError(.notAcceptable)
         }
         
+        guard let stream = stream else {
+            return [:]
+        }
+        
+        /// As stream comes in, parse each piece. When a new file shows up,
+        /// send it along to the file stream.
+        
         let parser = MultipartParser(boundary: boundary)
         var parts: [MultipartPart] = []
         var headers: HTTPHeaders = .init()
         var body: ByteBuffer = ByteBuffer()
 
-        parser.onHeader = { headers.replaceOrAdd(name: $0, value: $1) }
-        parser.onBody = { body.writeBuffer(&$0) }
+        parser.onHeader = {
+            headers.replaceOrAdd(name: $0, value: $1)
+        }
+
+        let maxFileSize = 4 * 1024 * 1024
+        
+        parser.onBody = {
+            body.writeBuffer(&$0)
+            if body.readableBytes > maxFileSize {
+                
+            }
+        }
+        
         parser.onPartComplete = {
             let part = MultipartPart(headers: headers, body: body)
             headers = [:]
@@ -57,7 +75,9 @@ extension Request {
             parts.append(part)
         }
 
-        try parser.execute(buffer)
+        for try await chunk in stream {
+            try parser.execute(chunk)
+        }
         
         var files: [String: File] = [:]
         for part in parts {

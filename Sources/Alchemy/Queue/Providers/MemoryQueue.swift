@@ -3,7 +3,7 @@ import NIO
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
-public final class MemoryQueue: QueueDriver {
+public final class MemoryQueue: QueueProvider {
     var jobs: [JobID: JobData] = [:]
     var pending: [String: [JobID]] = [:]
     var reserved: [String: [JobID]] = [:]
@@ -64,7 +64,7 @@ public final class MemoryQueue: QueueDriver {
 extension Queue {
     /// An in memory queue.
     public static var memory: Queue {
-        Queue(MemoryQueue())
+        Queue(provider: MemoryQueue())
     }
 
     /// Fake the queue with an in memory queue. Useful for testing.
@@ -75,7 +75,7 @@ extension Queue {
     @discardableResult
     public static func fake(_ identifier: Identifier = .default) -> MemoryQueue {
         let mock = MemoryQueue()
-        let q = Queue(mock)
+        let q = Queue(provider: mock)
         register(identifier, q)
         return mock
     }

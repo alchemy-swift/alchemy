@@ -53,7 +53,7 @@ extension Queue {
             return nil
         }
         
-        if let job = try await driver.dequeue(from: channel) {
+        if let job = try await provider.dequeue(from: channel) {
             return job
         } else {
             return try await dequeue(from: Array(channels.dropFirst()))
@@ -67,14 +67,14 @@ extension Queue {
         func retry(ignoreAttempt: Bool = false) async throws {
             if ignoreAttempt { jobData.attempts -= 1 }
             jobData.backoffUntil = jobData.nextRetryDate()
-            try await driver.complete(jobData, outcome: .retry)
+            try await provider.complete(jobData, outcome: .retry)
         }
         
         var job: Job?
         do {
             job = try JobDecoding.decode(jobData)
             try await job?.run()
-            try await driver.complete(jobData, outcome: .success)
+            try await provider.complete(jobData, outcome: .success)
             job?.finished(result: .success(()))
         } catch where jobData.canRetry {
             try await retry()
@@ -84,7 +84,7 @@ extension Queue {
             try await retry(ignoreAttempt: true)
             job?.failed(error: error)
         } catch {
-            try await driver.complete(jobData, outcome: .failed)
+            try await provider.complete(jobData, outcome: .failed)
             job?.finished(result: .failure(error))
             job?.failed(error: error)
         }

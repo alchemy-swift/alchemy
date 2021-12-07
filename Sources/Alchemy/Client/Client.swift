@@ -1,6 +1,6 @@
 import AsyncHTTPClient
 import NIOCore
-import Foundation
+import NIOHTTP1
 
 /// A convenient client for making http requests from your app. Backed by
 /// `AsyncHTTPClient`.
@@ -26,6 +26,8 @@ public final class Client: ClientProvider, Service {
         public var body: ByteContent? = nil
         /// The url of this request.
         public var url: URL { urlComponents.url ?? URL(string: "/")! }
+        /// Remote host, resolved from `URL`.
+        public var host: String { urlComponents.url?.host ?? "" }
         
         /// The underlying `AsyncHTTPClient.HTTPClient.Request`.
         fileprivate var _request: HTTPClient.Request {
@@ -38,7 +40,7 @@ public final class Client: ClientProvider, Service {
                     case .stream(let stream):
                         func writeStream(writer: HTTPClient.Body.StreamWriter) -> EventLoopFuture<Void> {
                             Loop.current.asyncSubmit {
-                                try await stream.read {
+                                try await stream.readAll {
                                     try await writer.write(.byteBuffer($0)).get()
                                 }
                             }
@@ -167,10 +169,14 @@ public final class Client: ClientProvider, Service {
         let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
         let httpClientOverride = config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
         defer { try? httpClientOverride?.syncShutdown() }
-        
-        let client = httpClientOverride ?? httpClient
-        let res = try await client.execute(request: req._request, deadline: deadline).get()
-        return Client.Response(request: req, host: res.host, status: res.status, version: res.version, headers: res.headers, body: res.body.map { .buffer($0) })
+        let promise = Loop.group.next().makePromise(of: Response.self)
+        _ = (httpClientOverride ?? httpClient)
+            .execute(
+                request: try req._request,
+                delegate: ResponseDelegate(request: req, promise: promise),
+                deadline: deadline,
+                logger: Log.logger)
+        return try await promise.futureResult.get()
     }
     
     private func stubFor(_ req: Request) -> Response {
@@ -201,5 +207,85 @@ public final class Client: ClientProvider, Service {
         }
         
         return requestUrl.count == patternUrl.count
+    }
+}
+
+public class ResponseDelegate: HTTPClientResponseDelegate {
+    public typealias Response = Void
+
+    enum State {
+        case idle
+        case head(HTTPResponseHead)
+        case body(HTTPResponseHead, ByteBuffer)
+        case stream(HTTPResponseHead, ByteStream)
+        case error(Error)
+    }
+
+    private let request: Client.Request
+    private let responsePromise: EventLoopPromise<Client.Response>
+    private var state = State.idle
+
+    public init(request: Client.Request, promise: EventLoopPromise<Client.Response>) {
+        self.request = request
+        self.responsePromise = promise
+    }
+
+    public func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
+        switch self.state {
+        case .idle:
+            self.state = .head(head)
+            return task.eventLoop.makeSucceededFuture(())
+        case .head:
+            preconditionFailure("head already set")
+        case .body:
+            preconditionFailure("no head received before body")
+        case .stream:
+            preconditionFailure("no head received before body")
+        case .error:
+            return task.eventLoop.makeSucceededFuture(())
+        }
+    }
+
+    public func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ part: ByteBuffer) -> EventLoopFuture<Void> {
+        switch self.state {
+        case .idle:
+            preconditionFailure("no head received before body")
+        case .head(let head):
+            self.state = .body(head, part)
+            return task.eventLoop.makeSucceededFuture(())
+        case .body(let head, let body):
+            let stream = Stream<ByteBuffer>(eventLoop: task.eventLoop)
+            let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .stream(stream))
+            self.responsePromise.succeed(response)
+            self.state = .stream(head, stream)
+            
+            // Write the previous part, followed by this part, to the stream.
+            return stream._write(chunk: body).flatMap { stream._write(chunk: part) }
+        case .stream(_, let stream):
+            return stream._write(chunk: part)
+        case .error:
+            return task.eventLoop.makeSucceededFuture(())
+        }
+    }
+
+    public func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
+        self.state = .error(error)
+    }
+
+    public func didFinishRequest(task: HTTPClient.Task<Response>) throws {
+        switch self.state {
+        case .idle:
+            preconditionFailure("no head received before end")
+        case .head(let head):
+            let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: nil)
+            responsePromise.succeed(response)
+        case .body(let head, let body):
+            let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .buffer(body))
+            responsePromise.succeed(response)
+        case .stream(_, let stream):
+            _ = stream._write(chunk: nil)
+        case .error(let error):
+            throw error
+        }
     }
 }
