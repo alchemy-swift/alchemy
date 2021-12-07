@@ -7,7 +7,7 @@ public struct Filesystem: Service {
     /// The root directory for storing and fetching files.
     public var root: String { provider.root }
 
-    init(provider: FilesystemProvider) {
+    public init(provider: FilesystemProvider) {
         self.provider = provider
     }
     
