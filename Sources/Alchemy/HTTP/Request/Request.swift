@@ -29,7 +29,6 @@ public final class Request {
     public var extensions: HBExtensions<Request>
     /// The url components of this request.
     public var urlComponents: URLComponents
-    
     /// Parameters parsed from the path.
     public var parameters: [Parameter] {
         get { extensions.get(\.parameters) }

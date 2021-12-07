@@ -60,6 +60,14 @@ public enum ByteContent: ExpressibleByStringLiteral {
     }
 }
 
+extension File {
+    @discardableResult
+    mutating func collect() async throws -> File {
+        self.content = .buffer(try await content.collect())
+        return self
+    }
+}
+
 extension Client.Response {
     @discardableResult
     mutating func collect() async throws -> Client.Response {
@@ -85,10 +93,6 @@ extension Request {
 }
 
 public typealias ByteStream = Stream<ByteBuffer>
-
-// Streams can be written to and read.
-// Streams can be written to all at once or one at a time.
-// Streams can be read all at once or one at a time.
 public final class Stream<Element>: AsyncSequence {
     public struct Writer {
         fileprivate let stream: Stream<Element>

@@ -68,7 +68,11 @@ extension ClientProvider {
     // MARK: - Body
     
     public func withBody(_ content: ByteContent, type: ContentType? = nil, length: Int? = nil) -> Builder {
-        with {
+        guard builder.partialRequest.body == nil else {
+            preconditionFailure("A request body should only be set once.")
+        }
+        
+        return with {
             $0.body = content
             $0.headers.contentType = type
             $0.headers.contentLength = length ?? content.length
@@ -93,19 +97,25 @@ extension ClientProvider {
     }
     
     public func withForm(_ dict: [String: Any?]) throws -> Builder {
-        withBody(try .jsonDict(dict), type: .json)
+        withBody(try .jsonDict(dict), type: .urlForm)
     }
     
     public func withForm<E: Encodable>(_ form: E, encoder: URLEncodedFormEncoder = URLEncodedFormEncoder()) throws -> Builder {
         try withBody(form, encoder: encoder)
     }
     
-    public func withAttachment(_ name: String, file: File, encoder: FormDataEncoder = FormDataEncoder()) throws -> Builder {
-        try withBody([name: file], encoder: encoder)
+    public func withAttachment(_ name: String, file: File, encoder: FormDataEncoder = FormDataEncoder()) async throws -> Builder {
+        var copy = file
+        return try withBody([name: await copy.collect()], encoder: encoder)
     }
     
-    public func withAttachments(_ files: [String: File], encoder: FormDataEncoder = FormDataEncoder()) throws -> Builder {
-        try withBody(files, encoder: encoder)
+    public func withAttachments(_ files: [String: File], encoder: FormDataEncoder = FormDataEncoder()) async throws -> Builder {
+        var collectedFiles: [String: File] = [:]
+        for (name, var file) in files {
+            collectedFiles[name] = try await file.collect()
+        }
+        
+        return try withBody(files, encoder: encoder)
     }
     
     // MARK: Methods

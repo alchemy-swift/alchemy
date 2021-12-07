@@ -8,7 +8,7 @@ public struct File: Codable, ResponseConvertible {
     // The size of the file, in bytes.
     public let size: Int
     // The binary contents of the file.
-    public let content: ByteContent
+    public var content: ByteContent
     /// The path extension of this file.
     public var `extension`: String { name.components(separatedBy: ".")[safe: 1] ?? "" }
     /// The content type of this file, based on it's extension.
