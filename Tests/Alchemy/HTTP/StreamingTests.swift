@@ -22,13 +22,6 @@ final class StreamingTests: TestCase<TestApp> {
             .assertBody("foobarbaz")
     }
     
-    func testClientRequestStream() async throws {
-        try await Http
-            .withAttachment("fileFoo", file: try await Storage.get("foo"))
-            .withAttachment("fileBar", file: try await Storage.get("bar"))
-            .post("foo")
-    }
-    
     func testServerResponseStream() async throws {
         app.get("/stream") { _ in
             Response {

@@ -1,4 +1,9 @@
 extension Request {
+    private var associatedValues: [ObjectIdentifier: Any]? {
+        get { extensions.get(\.associatedValues) }
+        set { extensions.set(\.associatedValues, value: newValue) }
+    }
+    
     /// Sets a value associated with this request. Useful for setting
     /// objects with middleware.
     ///
@@ -22,7 +27,12 @@ extension Request {
     ///   with `get(Value.self)`.
     @discardableResult
     public func set<T>(_ value: T) -> Self {
-        storage[id(of: T.self)] = value
+        if associatedValues != nil {
+            associatedValues?[id(of: T.self)] = value
+        } else {
+            associatedValues = [id(of: T.self): value]
+        }
+        
         return self
     }
     
@@ -35,7 +45,7 @@ extension Request {
     ///   type `T` found associated with the request.
     /// - Returns: The value of type `T` from the request.
     public func get<T>(_ type: T.Type = T.self, or error: Error = AssociatedValueError(message: "Couldn't find type `\(name(of: T.self))` on this request")) throws -> T {
-        try storage[id(of: T.self)].unwrap(as: type, or: error)
+        try (associatedValues?[id(of: T.self)]).unwrap(as: type, or: error)
     }
 }
 

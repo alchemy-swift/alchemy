@@ -1,5 +1,6 @@
 import NIO
 import NIOHTTP1
+import Hummingbird
 
 /// The escape character for escaping path parameters.
 ///
@@ -82,9 +83,11 @@ public final class Router: Service {
     ///   matching handler.
     func handle(request: Request) async -> Response {
         var handler = cleanHandler(notFoundHandler)
-
-        // Find a matching handler
-        if let match = trie.search(path: request.path.tokenized(with: request.method)) {
+        
+        @Inject var hbApp: HBApplication
+        if let length = request.headers.contentLength, length > hbApp.configuration.maxUploadSize {
+            handler = cleanHandler { _ in throw HTTPError(.payloadTooLarge) }
+        } else if let match = trie.search(path: request.path.tokenized(with: request.method)) {
             request.parameters = match.parameters
             handler = match.value
         }

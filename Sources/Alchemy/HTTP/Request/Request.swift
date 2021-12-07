@@ -25,20 +25,22 @@ public final class Request {
     public var queryItems: [URLQueryItem]? { urlComponents.queryItems }
     /// The underlying hummingbird request
     public var hbRequest: HBRequest
-    /// Parameters parsed from the path.
-    public var parameters: [Parameter]
-    /// Storage for values associated with this request.
-    public var storage: [ObjectIdentifier: Any]
+    /// Allows for extending storage on this type.
+    public var extensions: HBExtensions<Request>
     /// The url components of this request.
     public var urlComponents: URLComponents
-    /// Manages any files associated with this content.
-    var _files = ContentFiles()
     
-    init(hbRequest: HBRequest, parameters: [Parameter] = [], storage: [ObjectIdentifier: Any] = [:]) {
+    /// Parameters parsed from the path.
+    public var parameters: [Parameter] {
+        get { extensions.get(\.parameters) }
+        set { extensions.set(\.parameters, value: newValue) }
+    }
+    
+    init(hbRequest: HBRequest, parameters: [Parameter] = []) {
         self.hbRequest = hbRequest
-        self.parameters = parameters
-        self.storage = storage
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
+        self.extensions = HBExtensions()
+        self.parameters = parameters
     }
     
     /// Returns the first parameter for the given key, if there is one.

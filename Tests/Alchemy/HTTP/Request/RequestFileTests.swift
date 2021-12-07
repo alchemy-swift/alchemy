@@ -3,18 +3,18 @@ import Alchemy
 import AlchemyTest
 
 final class RequestFileTests: XCTestCase {
-    func testMultipart() throws {
+    func testMultipart() async throws {
         var headers: HTTPHeaders = [:]
         headers.contentType = .multipart(boundary: Fixtures.multipartBoundary)
         let request: Request = .fixture(headers: headers, body: .string(Fixtures.multipartString))
-        XCTAssertEqual(try request.files().count, 2)
-        XCTAssertNil(try request.file("foo"))
-        XCTAssertNil(try request.file("text"))
-        let file1 = try request.file("file1")
+        AssertEqual(try await request.files().count, 2)
+        AssertNil(try await request.file("foo"))
+        AssertNil(try await request.file("text"))
+        let file1 = try await request.file("file1")
         XCTAssertNotNil(file1)
         XCTAssertEqual(file1?.content.string(), "Content of a.txt.\r\n")
         XCTAssertEqual(file1?.name, "a.txt")
-        let file2 = try request.file("file2")
+        let file2 = try await request.file("file2")
         XCTAssertNotNil(file2)
         XCTAssertEqual(file2?.name, "a.html")
         XCTAssertEqual(file2?.content.string(), "<!DOCTYPE html><title>Content of a.html.</title>\r\n")

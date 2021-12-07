@@ -106,6 +106,11 @@ public final class Stream<Element>: AsyncSequence {
     private let onFirstRead: ((Stream<Element>) -> Void)?
     private var didFirstRead: Bool
     
+    deinit {
+        readPromise.succeed(())
+        writePromise.succeed(nil)
+    }
+    
     init(eventLoop: EventLoop, onFirstRead: ((Stream<Element>) -> Void)? = nil) {
         self.eventLoop = eventLoop
         self.readPromise = eventLoop.makePromise(of: Void.self)

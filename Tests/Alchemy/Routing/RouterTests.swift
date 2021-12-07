@@ -156,13 +156,13 @@ final class RouterTests: TestCase<TestApp> {
 private struct TestError: Error {}
 
 private struct TestConvertibleError: Error, ResponseConvertible {
-    func convert() async throws -> Response {
+    func response() async throws -> Response {
         Response(status: .badGateway, body: nil)
     }
 }
 
 private struct TestThrowingConvertibleError: Error, ResponseConvertible {
-    func convert() async throws -> Response {
+    func response() async throws -> Response {
         throw TestError()
     }
 }
