@@ -35,7 +35,7 @@ public protocol Application {
 // No-op defaults
 extension Application {
     public var commands: [Command.Type] { [] }
-    public var configuration: HBApplication.Configuration { HBApplication.Configuration() }
+    public var configuration: HBApplication.Configuration { HBApplication.Configuration(logLevel: .notice) }
     public func services(container: Container) {}
     public func schedule(schedule: Scheduler) {}
 }

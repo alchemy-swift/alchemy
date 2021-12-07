@@ -16,6 +16,10 @@ extension Application {
         Env.boot()
         Container.register(singleton: self)
         
+        // Register as Self & Application
+        Container.default.register(singleton: Application.self) { _ in self }
+        Container.register(singleton: self)
+        
         // Setup app lifecycle
         Container.default.register(singleton: ServiceLifecycle(
             configuration: ServiceLifecycle.Configuration(

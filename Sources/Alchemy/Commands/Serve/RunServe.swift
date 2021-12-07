@@ -51,6 +51,7 @@ final class RunServe: Command {
 
     func run() throws {
         @Inject var lifecycle: ServiceLifecycle
+        @Inject var app: Application
         
         if migrate {
             lifecycle.register(
@@ -63,11 +64,11 @@ final class RunServe: Command {
             )
         }
         
-        let config: HBApplication.Configuration
+        var config = app.configuration
         if let unixSocket = unixSocket {
-            config = .init(address: .unixDomainSocket(path: unixSocket), logLevel: .notice)
+            config = config.with(address: .unixDomainSocket(path: unixSocket))
         } else {
-            config = .init(address: .hostname(host, port: port), logLevel: .notice)
+            config = config.with(address: .hostname(host, port: port))
         }
         
         let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(Loop.group))
