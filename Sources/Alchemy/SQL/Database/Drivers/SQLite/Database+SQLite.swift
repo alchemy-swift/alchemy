@@ -13,12 +13,8 @@ extension Database {
     }
     
     /// An in memory SQLite database configuration.
-    public static var sqlite: Database {
-        .memory
-    }
+    public static var sqlite: Database { .memory }
     
     /// An in memory SQLite database configuration.
-    public static var memory: Database {
-        Database(provider: SQLiteDatabase(config: .memory))
-    }
+    public static var memory: Database { Database(provider: SQLiteDatabase(config: .memory)) }
 }

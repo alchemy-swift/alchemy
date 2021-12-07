@@ -48,7 +48,7 @@ final class MiddlewareTests: TestCase<TestApp> {
             expect.fulfill()
         })
 
-        app.group(middleware: mw) {
+        app.group(mw) {
             $0.post("/foo") { _ in 1 }
         }
         .get("/foo") { _ in 2 }
