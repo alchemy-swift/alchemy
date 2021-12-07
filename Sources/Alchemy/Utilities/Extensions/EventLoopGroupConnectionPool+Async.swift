@@ -8,7 +8,7 @@ extension EventLoopGroupConnectionPool {
         _ closure: @escaping (Source.Connection) async throws -> Result
     ) async throws -> Result {
         try await withConnection(logger: logger, on: eventLoop) { connection in
-            connection.eventLoop.wrapAsync { try await closure(connection) }
+            connection.eventLoop.asyncSubmit { try await closure(connection) }
         }.get()
     }
 }

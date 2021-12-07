@@ -134,12 +134,13 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
         }
         
         if let overridePath = overridePath, let values = loadDotEnvFile(path: overridePath) {
+            Log.info("[Environment] loaded env from `\(overridePath)`.")
             current.dotEnvVariables = values
         } else if let values = loadDotEnvFile(path: defaultPath) {
+            Log.info("[Environment] loaded env from `\(defaultPath)`.")
             current.dotEnvVariables = values
         } else {
-            let overrideLocation = overridePath.map { "`\($0)` or " } ?? ""
-            Log.info("[Environment] no env file found at \(overrideLocation)`\(defaultPath)`.")
+            Log.info("[Environment] no dotenv file found.")
         }
     }
     
@@ -222,7 +223,7 @@ extension Env {
                 Your project is running in Xcode's `DerivedData` data directory. We _highly_ recommend setting a custom working directory, otherwise `.env` and `Public/` files won't be accessible.
 
                 This takes ~9 seconds to fix. Here's how: https://github.com/alchemy-swift/alchemy/blob/main/Docs/1_Configuration.md#setting-a-custom-working-directory.
-                """)
+                """.yellow)
         }
     }
 }
@@ -236,9 +237,9 @@ extension Env {
         current.name == Env.test.name
     }
     
-    fileprivate static var isRunningTests: Bool {
-        CommandLine.arguments.contains {
-            $0.contains("xctest")
-        }
+    /// Whether the current program is running in a test suite. This is not the
+    /// same as `isTest` which returns whether the current env is `Env.test`
+    public static var isRunningTests: Bool {
+        CommandLine.arguments.contains { $0.contains("xctest") }
     }
 }

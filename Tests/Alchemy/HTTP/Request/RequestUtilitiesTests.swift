@@ -12,7 +12,7 @@ final class RequestUtilitiesTests: XCTestCase {
     }
     
     func testQueryItems() {
-        XCTAssertEqual(Request.fixture(uri: "/path").queryItems, [])
+        XCTAssertEqual(Request.fixture(uri: "/path").queryItems, nil)
         XCTAssertEqual(Request.fixture(uri: "/path?foo=1&bar=2").queryItems, [
             URLQueryItem(name: "foo", value: "1"),
             URLQueryItem(name: "bar", value: "2")
@@ -36,7 +36,7 @@ final class RequestUtilitiesTests: XCTestCase {
     
     func testBody() {
         XCTAssertNil(Request.fixture(body: nil).body)
-        XCTAssertNotNil(Request.fixture(body: ByteBuffer()).body)
+        XCTAssertNotNil(Request.fixture(body: .empty).body)
     }
     
     func testDecodeBodyDict() {
@@ -56,14 +56,14 @@ final class RequestUtilitiesTests: XCTestCase {
     }
 }
 
-extension ByteBuffer {
-    static var empty: ByteBuffer {
-        ByteBuffer()
+extension ByteContent {
+    fileprivate static var empty: ByteContent {
+        .buffer(ByteBuffer())
     }
     
-    static var json: ByteBuffer {
-        ByteBuffer(string: """
-        {"foo":"bar"}
-        """)
+    fileprivate static var json: ByteContent {
+        .string("""
+            {"foo":"bar"}
+            """)
     }
 }

@@ -1,4 +1,4 @@
-public final class StubDatabase: DatabaseDriver {
+public final class StubDatabase: DatabaseProvider {
     private var isShutdown = false
     private var stubs: [[SQLRow]] = []
     
@@ -22,7 +22,7 @@ public final class StubDatabase: DatabaseDriver {
         try await query(sql, values: [])
     }
     
-    public func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await action(self)
     }
     

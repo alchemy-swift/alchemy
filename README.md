@@ -404,7 +404,7 @@ redis.transaction { redisConn in
 
 ## Queues
 
-Alchemy offers `Queue` as a unified API around various queue backends. Queues allow your application to dispatch or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis` and relational databases are supported, but you can easily write your own driver by conforming to the `QueueDriver` protocol. 
+Alchemy offers `Queue` as a unified API around various queue backends. Queues allow your application to dispatch or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis` and relational databases are supported, but you can easily write your own provider by conforming to the `QueueProvider` protocol. 
 
 To get started, configure the default `Queue` and `dispatch()` a `Job`. You can add any `Codable` fields to `Job`, such as a database `Model`, and they will be stored and decoded when it's time to run the job.
 

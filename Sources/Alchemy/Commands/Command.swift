@@ -86,7 +86,7 @@ extension Command {
             label: Self.configuration.commandName ?? Alchemy.name(of: Self.self),
             start: .eventLoopFuture {
                 Loop.group.next()
-                    .wrapAsync {
+                    .asyncSubmit {
                         if Self.logStartAndFinish {
                             Log.info("[Command] running \(Self.name)")
                         }
@@ -101,7 +101,7 @@ extension Command {
             },
             shutdown: .eventLoopFuture {
                 Loop.group.next()
-                    .wrapAsync {
+                    .asyncSubmit {
                         if Self.logStartAndFinish {
                             Log.info("[Command] finished \(Self.name)")
                         }

@@ -43,12 +43,12 @@ final class MiddlewareTests: TestCase<TestApp> {
     func testGroupMiddleware() async throws {
         let expect = expectation(description: "The middleware should be called once.")
         let mw = TestMiddleware(req: { request in
-            XCTAssertEqual(request.head.uri, "/foo")
-            XCTAssertEqual(request.head.method, .POST)
+            XCTAssertEqual(request.path, "/foo")
+            XCTAssertEqual(request.method, .POST)
             expect.fulfill()
         })
 
-        app.group(middleware: mw) {
+        app.group(mw) {
             $0.post("/foo") { _ in 1 }
         }
         .get("/foo") { _ in 2 }

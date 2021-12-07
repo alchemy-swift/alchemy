@@ -1,7 +1,7 @@
 import NIO
 
 /// Queue lets you run queued jobs to be processed in the background.
-/// Jobs are persisted by the given `QueueDriver`.
+/// Jobs are persisted by the given `QueueProvider`.
 public final class Queue: Service {
     /// The default channel to dispatch jobs on for all queues.
     public static let defaultChannel = "default"
@@ -12,14 +12,14 @@ public final class Queue: Service {
     /// process.
     public var workers: [String] = []
     
-    /// The driver backing this queue.
-    let driver: QueueDriver
+    /// The provider backing this queue.
+    let provider: QueueProvider
     
-    /// Initialize a queue backed by the given driver.
+    /// Initialize a queue backed by the given provider.
     ///
-    /// - Parameter driver: A queue driver to back this queue with.
-    public init(_ driver: QueueDriver) {
-        self.driver = driver
+    /// - Parameter provider: A queue provider to back this queue with.
+    public init(provider: QueueProvider) {
+        self.provider = provider
     }
     
     /// Enqueues a generic `Job` to this queue on the given channel.
@@ -29,7 +29,7 @@ public final class Queue: Service {
     ///   - channel: The channel on which to enqueue the job. Defaults
     ///     to `Queue.defaultChannel`.
     public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) async throws {
-        try await driver.enqueue(JobData(job, channel: channel))
+        try await provider.enqueue(JobData(job, channel: channel))
     }
 }
 

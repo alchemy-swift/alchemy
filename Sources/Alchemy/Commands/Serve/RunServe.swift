@@ -4,6 +4,7 @@ import NIOSSL
 import NIOHTTP1
 import NIOHTTP2
 import Lifecycle
+import Hummingbird
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
@@ -36,9 +37,6 @@ final class RunServe: Command {
     /// Should migrations be run before booting. Defaults to `false`.
     @Flag var migrate: Bool = false
     
-    @IgnoreDecoding
-    private var server: Server?
-    
     init() {}
     init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
         self.host = host
@@ -47,7 +45,6 @@ final class RunServe: Command {
         self.workers = workers
         self.schedule = schedule
         self.migrate = migrate
-        self.server = nil
     }
     
     // MARK: Command
@@ -59,13 +56,23 @@ final class RunServe: Command {
             lifecycle.register(
                 label: "Migrate",
                 start: .eventLoopFuture {
-                    Loop.group.next().wrapAsync {
-                        try await Database.default.migrate()
-                    }
+                    Loop.group.next()
+                        .asyncSubmit(Database.default.migrate)
                 },
                 shutdown: .none
             )
         }
+        
+        let config: HBApplication.Configuration
+        if let unixSocket = unixSocket {
+            config = .init(address: .unixDomainSocket(path: unixSocket), logLevel: .notice)
+        } else {
+            config = .init(address: .hostname(host, port: port), logLevel: .notice)
+        }
+        
+        let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(Loop.group))
+        server.router = Router.default
+        Container.register(singleton: server)
         
         registerWithLifecycle()
         
@@ -78,31 +85,66 @@ final class RunServe: Command {
         }
     }
     
-    func start() async throws {
-        let server = Server()
-        if let unixSocket = unixSocket {
-            try await server.listen(on: .unix(path: unixSocket))
-        } else {
-            try await server.listen(on: .ip(host: host, port: port))
-        }
+    func start() throws {
+        @Inject var server: HBApplication
         
-        self.server = server
+        try server.start()
+        if let unixSocket = unixSocket {
+            Log.info("[Server] listening on \(unixSocket).")
+        } else {
+            Log.info("[Server] listening on \(host):\(port).")
+        }
     }
     
-    func shutdown() async throws {
-        try await server?.shutdown()
+    func shutdown() throws {
+        @Inject var server: HBApplication
+        
+        let promise = server.eventLoopGroup.next().makePromise(of: Void.self)
+        server.lifecycle.shutdown { error in
+            if let error = error {
+                promise.fail(error)
+            } else {
+                promise.succeed(())
+            }
+        }
+        
+        try promise.futureResult.wait()
     }
 }
 
-@propertyWrapper
-private struct IgnoreDecoding<T>: Decodable {
-    var wrappedValue: T?
-    
-    init(from decoder: Decoder) throws {
-        wrappedValue = nil
+extension Router: HBRouter {
+    public func respond(to request: HBRequest) -> EventLoopFuture<HBResponse> {
+        request.eventLoop
+            .asyncSubmit { await self.handle(request: Request(hbRequest: request)) }
+            .map { HBResponse(status: $0.status, headers: $0.headers, body: $0.hbResponseBody) }
     }
     
-    init() {
-        wrappedValue = nil
+    public func add(_ path: String, method: HTTPMethod, responder: HBResponder) { /* using custom router funcs */ }
+}
+
+extension Response {
+    var hbResponseBody: HBResponseBody {
+        switch body {
+        case .buffer(let buffer):
+            return .byteBuffer(buffer)
+        case .stream(let stream):
+            return .stream(HBStreamProxy(stream: stream))
+        case .none:
+            return .empty
+        }
+    }
+}
+
+private struct HBStreamProxy: HBResponseBodyStreamer {
+    let stream: ByteStream
+    
+    func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+        stream._read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
+    }
+}
+
+extension HBHTTPError: ResponseConvertible {
+    public func response() -> Response {
+        Response(status: status, headers: headers, body: body.map { .string($0) })
     }
 }

@@ -7,8 +7,8 @@ final class SQLValueConvertibleTests: XCTestCase {
         {"foo":"bar"}
         """
         let jsonData = jsonString.data(using: .utf8) ?? Data()
-        XCTAssertEqual(SQLValue.json(jsonData).sqlValueLiteral, "'\(jsonString)'")
-        XCTAssertEqual(SQLValue.null.sqlValueLiteral, "NULL")
+        XCTAssertEqual(SQLValue.json(jsonData).sqlLiteral, "'\(jsonString)'")
+        XCTAssertEqual(SQLValue.null.sqlLiteral, "NULL")
     }
     
     func testSQL() {

@@ -1,14 +1,14 @@
 import Alchemy
 import XCTest
 
-public protocol ResponseAssertable {
+public protocol ResponseAssertable: HasContent {
     var status: HTTPResponseStatus { get }
     var headers: HTTPHeaders { get }
-    var body: HTTPBody? { get }
+    var body: ByteContent? { get }
 }
 
 extension Response: ResponseAssertable {}
-extension ClientResponse: ResponseAssertable {}
+extension Client.Response: ResponseAssertable {}
 
 extension ResponseAssertable {
     // MARK: Status Assertions
@@ -77,7 +77,7 @@ extension ResponseAssertable {
     @discardableResult
     public func assertHeader(_ header: String, value: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
         let values = headers[header]
-        XCTAssertFalse(values.isEmpty)
+        XCTAssertFalse(values.isEmpty, file: file, line: line)
         for v in values {
             XCTAssertEqual(v, value, file: file, line: line)
         }
@@ -105,7 +105,7 @@ extension ResponseAssertable {
             return self
         }
 
-        guard let decoded = body.decodeString() else {
+        guard let decoded = body.string() else {
             XCTFail("Request body was not a String.", file: file, line: line)
             return self
         }
@@ -115,14 +115,25 @@ extension ResponseAssertable {
     }
     
     @discardableResult
-    public func assertJson<D: Decodable & Equatable>(_ value: D, file: StaticString = #filePath, line: UInt = #line) -> Self {
+    public func assertStream(_ assertChunk: @escaping (ByteBuffer) -> Void, file: StaticString = #filePath, line: UInt = #line) async throws -> Self {
         guard let body = self.body else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
         
-        XCTAssertNoThrow(try body.decodeJSON(as: D.self), file: file, line: line)
-        guard let decoded = try? body.decodeJSON(as: D.self) else {
+        try await body.stream.readAll(chunkHandler: assertChunk)
+        return self
+    }
+    
+    @discardableResult
+    public func assertJson<D: Decodable & Equatable>(_ value: D, file: StaticString = #filePath, line: UInt = #line) -> Self {
+        guard body != nil else {
+            XCTFail("Request body was nil.", file: file, line: line)
+            return self
+        }
+        
+        XCTAssertNoThrow(try self.decode(as: D.self), file: file, line: line)
+        guard let decoded = try? self.decode(as: D.self) else {
             return self
         }
         
@@ -150,7 +161,7 @@ extension ResponseAssertable {
     @discardableResult
     public func assertEmpty(file: StaticString = #filePath, line: UInt = #line) -> Self {
         if body != nil {
-            XCTFail("The response body was not empty \(body?.decodeString() ?? "nil")", file: file, line: line)
+            XCTFail("The response body was not empty \(body?.string() ?? "nil")", file: file, line: line)
         }
         
         return self

@@ -1,13 +1,15 @@
 import Plot
 
 extension HTML: ResponseConvertible {
-    public func convert() -> Response {
-        Response(status: .ok, body: HTTPBody(text: render(), contentType: .html))
+    public func response() -> Response {
+        Response(status: .ok)
+            .withString(render(), type: .html)
     }
 }
 
 extension XML: ResponseConvertible {
-    public func convert() -> Response {
-        Response(status: .ok, body: HTTPBody(text: render(), contentType: .xml))
+    public func response() -> Response {
+        Response(status: .ok)
+            .withString(render(), type: .xml)
     }
 }

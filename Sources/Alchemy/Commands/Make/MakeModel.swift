@@ -28,7 +28,8 @@ final class MakeModel: Command {
     @Flag(name: .shortAndLong, help: "Also make a migration file for this model.") var migration: Bool = false
     @Flag(name: .shortAndLong, help: "Also make a controller with CRUD operations for this model.") var controller: Bool = false
     
-    private var columns: [ColumnData] = []
+    @IgnoreDecoding
+    private var columns: [ColumnData]?
     
     init() {}
     init(name: String, columns: [ColumnData] = [], migration: Bool = false, controller: Bool = false) {
@@ -45,20 +46,20 @@ final class MakeModel: Command {
         }
         
         // Initialize rows
-        if columns.isEmpty && fields.isEmpty {
+        if (columns ?? []).isEmpty && fields.isEmpty {
             columns = .defaultData
-        } else if columns.isEmpty {
+        } else if (columns ?? []).isEmpty {
             columns = try fields.map(ColumnData.init)
         }
         
         // Create files
-        try createModel(columns: columns)
+        try createModel(columns: columns ?? [])
         
         if migration {
             try MakeMigration(
                 name: "Create\(name.pluralized)",
                 table: name.camelCaseToSnakeCase().pluralized,
-                columns: columns
+                columns: columns ?? []
             ).start()
         }
         

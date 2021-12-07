@@ -1,4 +1,5 @@
 import NIOHTTP1
+import Papyrus
 
 extension Application {
     /// A basic route handler closure. Most types you'll need conform
@@ -150,10 +151,15 @@ extension Application {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on<E: Encodable>(
-        _ method: HTTPMethod, at path: String = "", use handler: @escaping EncodableHandler<E>
-    ) -> Self {
-        on(method, at: path, use: { try await handler($0).convert() })
+    public func on<E: Encodable>(_ method: HTTPMethod, at path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
+        on(method, at: path, use: { req -> Response in
+            let value = try await handler(req)
+            if let convertible = value as? ResponseConvertible {
+                return try await convertible.response()
+            } else {
+                return try value.convert()
+            }
+        })
     }
     
     /// `GET` wrapper of `Application.on(method:path:handler:)`.

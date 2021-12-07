@@ -2,7 +2,7 @@ import Foundation
 import NIO
 
 public class Query: Equatable {
-    let database: DatabaseDriver
+    let database: DatabaseProvider
     var table: String
 
     var columns: [String] = ["*"]
@@ -17,7 +17,7 @@ public class Query: Equatable {
     var havings: [Where] = []
     var orders: [Order] = []
 
-    public init(database: DatabaseDriver, table: String) {
+    public init(database: DatabaseProvider, table: String) {
         self.database = database
         self.table = table
     }

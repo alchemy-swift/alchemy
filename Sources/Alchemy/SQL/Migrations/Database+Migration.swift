@@ -47,7 +47,7 @@ extension Database {
     /// - Returns: The migrations that are applied to this database.
     private func getMigrations() async throws -> [AlchemyMigration] {
         let count: Int
-        if driver is PostgresDatabase || driver is MySQLDatabase {
+        if provider is PostgresDatabase || provider is MySQLDatabase {
             count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.tableName).count()
         } else {
             count = try await table("sqlite_master")
@@ -58,7 +58,7 @@ extension Database {
         
         if count == 0 {
             Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
-            let statements = AlchemyMigration.Migration().upStatements(for: driver.grammar)
+            let statements = AlchemyMigration.Migration().upStatements(for: provider.grammar)
             try await runStatements(statements: statements)
         }
         
@@ -71,7 +71,7 @@ extension Database {
     ///   database.
     private func downMigrations(_ migrations: [Migration]) async throws {
         for m in migrations.sorted(by: { $0.name > $1.name }) {
-            let statements = m.downStatements(for: driver.grammar)
+            let statements = m.downStatements(for: provider.grammar)
             try await runStatements(statements: statements)
             try await AlchemyMigration.query(database: self).where("name" == m.name).delete()
         }
@@ -86,7 +86,7 @@ extension Database {
     ///     database.
     private func upMigrations(_ migrations: [Migration], batch: Int) async throws {
         for m in migrations {
-            let statements = m.upStatements(for: driver.grammar)
+            let statements = m.upStatements(for: provider.grammar)
             try await runStatements(statements: statements)
             _ = try await AlchemyMigration(name: m.name, batch: batch, runAt: Date()).save(db: self)
         }

@@ -11,11 +11,11 @@ Alchemy handles dependency injection using [Fusion](https://github.com/alchemy-s
 
 Most Alchemy services conform to the `Service` protocol, which you can use to configure and access various connections.
 
-For example, you likely want to use an SQL database in your app. You can use the `Service` methods to set up a default database driver. You'll probably want to do this in your `Application.boot`.
+For example, you likely want to use an SQL database in your app. You can use the `Service` methods to set up a default database provider. You'll probably want to do this in your `Application.boot`.
 
 ### Registering Defaults
 
-Services typically have static driver functions to your configure defaults. In this case, the `.postgres()` function helps create a PostgreSQL database driver. 
+Services typically have static provider functions to your configure defaults. In this case, the `.postgres()` function helps create a PostgreSQL database provider. 
 
 ```swift
 Database.config(

@@ -24,6 +24,6 @@ extension Database {
     /// - Parameter config: The raw configuration to connect with.
     /// - Returns: The configured database.
     public static func mysql(config: DatabaseConfig) -> Database {
-        Database(driver: MySQLDatabase(config: config))
+        Database(provider: MySQLDatabase(config: config))
     }
 }

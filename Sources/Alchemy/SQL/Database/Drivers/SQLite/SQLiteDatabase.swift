@@ -1,6 +1,6 @@
 import SQLiteKit
 
-final class SQLiteDatabase: DatabaseDriver {
+final class SQLiteDatabase: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
@@ -44,7 +44,7 @@ final class SQLiteDatabase: DatabaseDriver {
         try await withConnection { try await $0.raw(sql) }
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await withConnection { conn in
             _ = try await conn.raw("BEGIN;")
             let val = try await action(conn)
@@ -57,14 +57,14 @@ final class SQLiteDatabase: DatabaseDriver {
         try pool.syncShutdownGracefully()
     }
     
-    private func withConnection<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
             try await action(SQLiteConnectionDatabase(conn: $0, grammar: self.grammar))
         }
     }
 }
 
-private struct SQLiteConnectionDatabase: DatabaseDriver {
+private struct SQLiteConnectionDatabase: DatabaseProvider {
     let conn: SQLiteConnection
     let grammar: Grammar
     
@@ -76,7 +76,7 @@ private struct SQLiteConnectionDatabase: DatabaseDriver {
         try await conn.query(sql).get().map(SQLiteDatabaseRow.init)
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await action(self)
     }
     

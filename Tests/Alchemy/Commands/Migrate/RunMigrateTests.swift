@@ -13,7 +13,7 @@ final class RunMigrateTests: TestCase<TestApp> {
         XCTAssertTrue(MigrationA.didUp)
         XCTAssertFalse(MigrationA.didDown)
         
-        app.start("migrate", "--rollback")
+        try app.start("migrate", "--rollback")
         app.wait()
         
         XCTAssertTrue(MigrationA.didDown)

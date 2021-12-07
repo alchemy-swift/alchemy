@@ -3,7 +3,8 @@ import Alchemy
 import AlchemyTest
 
 final class AlchemyCommandTests: TestCase<CommandApp> {
-    func testCommandRegistration() {
+    func testCommandRegistration() throws {
+        try app.start()
         XCTAssertTrue(Launch.customCommands.contains {
             id(of: $0) == id(of: TestCommand.self)
         })

@@ -15,8 +15,8 @@ public struct ValidationError: Error {
 
 // Provide a custom response for when `ValidationError`s are thrown.
 extension ValidationError: ResponseConvertible {
-    public func convert() throws -> Response {
-        let body = try HTTPBody(json: ["validation_error": message])
-        return Response(status: .badRequest, body: body)
+    public func response() throws -> Response {
+        try Response(status: .badRequest)
+            .withValue(["validation_error": message])
     }
 }

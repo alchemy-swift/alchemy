@@ -3,16 +3,16 @@ import RediStack
 
 /// A client for interfacing with a Redis instance.
 public struct Redis: Service {
-    let driver: RedisDriver
+    let provider: RedisProvider
     
-    public init(driver: RedisDriver) {
-        self.driver = driver
+    public init(provider: RedisProvider) {
+        self.provider = provider
     }
     
     /// Shuts down this `Redis` client, closing it's associated
     /// connection pools.
     public func shutdown() throws {
-        try driver.shutdown()
+        try provider.shutdown()
     }
     
     /// A single redis connection
@@ -76,13 +76,13 @@ public struct Redis: Service {
     ///   - config: The configuration of the pool backing this `Redis`
     ///     client.
     public static func configuration(_ config: RedisConnectionPool.Configuration) -> Redis {
-        return Redis(driver: ConnectionPool(config: config))
+        return Redis(provider: ConnectionPool(config: config))
     }
 }
 
-/// Under the hood driver for `Redis`. Used so either connection pools
+/// Under the hood provider for `Redis`. Used so either connection pools
 /// or connections can be injected into `Redis` for accessing redis.
-public protocol RedisDriver {
+public protocol RedisProvider {
     /// Get a redis client for running commands.
     func getClient() -> RedisClient
     
@@ -94,11 +94,11 @@ public protocol RedisDriver {
     /// - Parameter transaction: An asynchronous transaction to run on
     ///   the connection.
     /// - Returns: The resulting value of the transaction.
-    func transaction<T>(_ transaction: @escaping (RedisDriver) async throws -> T) async throws -> T
+    func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T
 }
 
-/// A connection pool is a redis driver with a pool per `EventLoop`.
-private final class ConnectionPool: RedisDriver {
+/// A connection pool is a redis provider with a pool per `EventLoop`.
+private final class ConnectionPool: RedisProvider {
     /// Map of `EventLoop` identifiers to respective connection pools.
     @Locked private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
     
@@ -113,10 +113,10 @@ private final class ConnectionPool: RedisDriver {
         getPool()
     }
 
-    func transaction<T>(_ transaction: @escaping (RedisDriver) async throws -> T) async throws -> T {
+    func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
         let pool = getPool()
         return try await pool.leaseConnection { conn in
-            pool.eventLoop.wrapAsync { try await transaction(conn) }
+            pool.eventLoop.asyncSubmit { try await transaction(conn) }
         }.get()
     }
 

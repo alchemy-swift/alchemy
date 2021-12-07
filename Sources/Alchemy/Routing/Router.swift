@@ -1,5 +1,6 @@
 import NIO
 import NIOHTTP1
+import Hummingbird
 
 /// The escape character for escaping path parameters.
 ///
@@ -27,10 +28,8 @@ public final class Router: Service {
     
     /// The response for when no handler is found for a Request.
     var notFoundHandler: Handler = { _ in
-        Response(
-            status: .notFound,
-            body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
-        )
+        Response(status: .notFound)
+            .withString(HTTPResponseStatus.notFound.reasonPhrase)
     }
     
     /// `Middleware` that will intercept all requests through this
@@ -84,9 +83,11 @@ public final class Router: Service {
     ///   matching handler.
     func handle(request: Request) async -> Response {
         var handler = cleanHandler(notFoundHandler)
-
-        // Find a matching handler
-        if let match = trie.search(path: request.path.tokenized(with: request.method)) {
+        
+        @Inject var hbApp: HBApplication
+        if let length = request.headers.contentLength, length > hbApp.configuration.maxUploadSize {
+            handler = cleanHandler { _ in throw HTTPError(.payloadTooLarge) }
+        } else if let match = trie.search(path: request.path.tokenized(with: request.method)) {
             request.parameters = match.parameters
             handler = match.value
         }
@@ -107,18 +108,18 @@ public final class Router: Service {
     private func cleanHandler(_ handler: @escaping Handler) -> (Request) async -> Response {
         return { req in
             do {
-                return try await handler(req).convert()
+                return try await handler(req).response()
             } catch {
                 do {
                     if let error = error as? ResponseConvertible {
                         do {
-                            return try await error.convert()
+                            return try await error.response()
                         } catch {
-                            return try await self.internalErrorHandler(req, error).convert()
+                            return try await self.internalErrorHandler(req, error).response()
                         }
                     }
                     
-                    return try await self.internalErrorHandler(req, error).convert()
+                    return try await self.internalErrorHandler(req, error).response()
                 } catch {
                     return Router.uncaughtErrorHandler(req: req, error: error)
                 }
@@ -130,10 +131,8 @@ public final class Router: Service {
     /// request.
     private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
         Log.error("[Server] encountered internal error: \(error).")
-        return Response(
-            status: .internalServerError,
-            body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
-        )
+        return Response(status: .internalServerError)
+            .withString(HTTPResponseStatus.internalServerError.reasonPhrase)
     }
 }
 

@@ -8,7 +8,7 @@ public extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
     static func query(database: Database = .default) -> ModelQuery<Self> {
-        ModelQuery<Self>(database: database.driver, table: Self.tableName)
+        ModelQuery<Self>(database: database.provider, table: Self.tableName)
     }
 }
 
@@ -139,7 +139,7 @@ public class ModelQuery<M: Model>: Query {
             
             // Load the matching `To` rows
             let allRows = fromResults.map(\.1)
-            let query = try nested(config.load(allRows, database: Database(driver: self.database)))
+            let query = try nested(config.load(allRows, database: Database(provider: self.database)))
             let toResults = try await query
                 ._get(columns: ["\(R.To.Value.tableName).*", toJoinKey])
                 .map { (try R.To.from($0), $1) }

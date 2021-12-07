@@ -41,7 +41,8 @@ public protocol HTMLView: ResponseConvertible {
 extension HTMLView {
     // MARK: ResponseConvertible
     
-    public func convert() -> Response {
-        Response(status: .ok, body: HTTPBody(text: content.render(), contentType: .html))
+    public func response() -> Response {
+        Response(status: .ok)
+            .withString(content.render(), type: .html)
     }
 }

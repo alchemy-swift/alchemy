@@ -14,7 +14,8 @@ struct MakeMigration: Command {
     
     @Option(name: .shortAndLong) var table: String
     
-    private var columns: [ColumnData] = []
+    @IgnoreDecoding
+    private var columns: [ColumnData]?
     
     init() {}
     init(name: String, table: String,  columns: [ColumnData]) {
@@ -29,7 +30,7 @@ struct MakeMigration: Command {
             throw CommandError("Invalid migration name `\(name)`. Perhaps you forgot to pass a name?")
         }
         
-        var migrationColumns: [ColumnData] = columns
+        var migrationColumns: [ColumnData] = columns ?? []
         
         // Initialize rows
         if migrationColumns.isEmpty {

@@ -31,7 +31,7 @@ open class Grammar {
             compileLimit(limit),
             compileOffset(offset),
             compileLock(lock)
-        ].compactMap { $0 }.joined()
+        ].compactMap { $0 }.joinedSQL()
     }
 
     open func compileJoins(_ joins: [Query.Join]) -> SQL? {
@@ -65,7 +65,7 @@ open class Grammar {
         }
         
         let conjunction = isJoin ? "on" : "where"
-        let sql = wheres.joined().droppingLeadingBoolean()
+        let sql = wheres.joinedSQL().droppingLeadingBoolean()
         return SQL("\(conjunction) \(sql.statement)", bindings: sql.bindings)
     }
 
@@ -82,7 +82,7 @@ open class Grammar {
             return nil
         }
         
-        let sql = havings.joined().droppingLeadingBoolean()
+        let sql = havings.joinedSQL().droppingLeadingBoolean()
         return SQL("having \(sql.statement)", bindings: sql.bindings)
     }
 
@@ -376,7 +376,7 @@ extension Query.Where: SQLConvertible {
         case .column(let first, let op, let second):
             return SQL("\(boolean) \(first) \(op) \(second)")
         case .nested(let wheres):
-            let nestedSQL = wheres.joined().droppingLeadingBoolean()
+            let nestedSQL = wheres.joinedSQL().droppingLeadingBoolean()
             return SQL("\(boolean) (\(nestedSQL.statement))", bindings: nestedSQL.bindings)
         case .in(let key, let values, let type):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")

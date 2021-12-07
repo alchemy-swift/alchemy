@@ -7,7 +7,7 @@ final class SeederTests: TestCase<TestApp> {
         try await SeedModel.seed()
         AssertEqual(try await SeedModel.all().count, 1)
         
-        try await SeedModel.seed(1000)
-        AssertEqual(try await SeedModel.all().count, 1001)
+        try await SeedModel.seed(10)
+        AssertEqual(try await SeedModel.all().count, 11)
     }
 }

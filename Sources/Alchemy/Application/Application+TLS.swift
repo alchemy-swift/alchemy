@@ -1,14 +1,9 @@
 import NIOSSL
 import NIOHTTP1
+import HummingbirdTLS
+import Hummingbird
 
 extension Application {
-    /// Any tls configuration for this application. TLS can be configured using
-    /// `Application.useHTTPS(...)` or `Application.useHTTP2(...)`.
-    public var tlsConfig: TLSConfiguration? {
-        @Inject var config: ServerConfiguration
-        return config.tlsConfig
-    }
-    
     /// Use HTTPS when serving.
     ///
     /// - Parameters:
@@ -16,14 +11,14 @@ extension Application {
     ///   - cert: The path of the cert.
     /// - Throws: Any errors encountered when accessing the certs.
     public func useHTTPS(key: String, cert: String) throws {
-        useHTTPS(tlsConfig: try .makeServerConfiguration(key: key, cert: cert))
+        try useHTTPS(tlsConfig: .makeServerConfiguration(key: key, cert: cert))
     }
     
     /// Use HTTPS when serving.
     ///
     /// - Parameter tlsConfig: A raw NIO `TLSConfiguration` to use.
-    public func useHTTPS(tlsConfig: TLSConfiguration) {
-        @Inject var config: ServerConfiguration
-        config.tlsConfig = tlsConfig
+    public func useHTTPS(tlsConfig: TLSConfiguration) throws {
+        @Inject var app: HBApplication
+        try app.server.addTLS(tlsConfiguration: tlsConfig)
     }
 }

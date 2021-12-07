@@ -6,7 +6,7 @@ import MySQLKit
 
 /// A concrete `Database` for connecting to and querying a PostgreSQL
 /// database.
-final class PostgresDatabase: DatabaseDriver {
+final class PostgresDatabase: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
@@ -56,7 +56,7 @@ final class PostgresDatabase: DatabaseDriver {
         try await withConnection { try await $0.raw(sql) }
     }
     
-    func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await withConnection { conn in
             _ = try await conn.query("START TRANSACTION;", values: [])
             let val = try await action(conn)
@@ -69,16 +69,16 @@ final class PostgresDatabase: DatabaseDriver {
         try pool.syncShutdownGracefully()
     }
     
-    private func withConnection<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
             try await action($0)
         }
     }
 }
 
-/// A database driver that is wrapped around a single connection to with which
+/// A database provider that is wrapped around a single connection to with which
 /// to send transactions.
-extension PostgresConnection: DatabaseDriver {
+extension PostgresConnection: DatabaseProvider {
     public var grammar: Grammar { PostgresGrammar() }
     
     public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
@@ -90,7 +90,7 @@ extension PostgresConnection: DatabaseDriver {
         try await simpleQuery(sql).get().map(PostgresDatabaseRow.init)
     }
     
-    public func transaction<T>(_ action: @escaping (DatabaseDriver) async throws -> T) async throws -> T {
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await action(self)
     }
     

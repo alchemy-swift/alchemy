@@ -4,26 +4,26 @@ import XCTest
 final class PlotTests: XCTestCase {
     func testHTMLView() {
         let home = HomeView(title: "Welcome", favoriteAnimals: ["Kiwi", "Dolphin"])
-        let res = home.convert()
+        let res = home.response()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.body?.contentType, .html)
-        XCTAssertEqual(res.body?.decodeString(), home.content.render())
+        XCTAssertEqual(res.headers.contentType, .html)
+        XCTAssertEqual(res.body?.string(), home.content.render())
     }
     
     func testHTMLConversion() {
         let html = HomeView(title: "Welcome", favoriteAnimals: ["Kiwi", "Dolphin"]).content
-        let res = html.convert()
+        let res = html.response()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.body?.contentType, .html)
-        XCTAssertEqual(res.body?.decodeString(), html.render())
+        XCTAssertEqual(res.headers.contentType, .html)
+        XCTAssertEqual(res.body?.string(), html.render())
     }
     
     func testXMLConversion() {
         let xml = XML(.attribute(named: "attribute"), .element(named: "element"))
-        let res = xml.convert()
+        let res = xml.response()
         XCTAssertEqual(res.status, .ok)
-        XCTAssertEqual(res.body?.contentType, .xml)
-        XCTAssertEqual(res.body?.decodeString(), xml.render())
+        XCTAssertEqual(res.headers.contentType, .xml)
+        XCTAssertEqual(res.body?.string(), xml.render())
     }
 }
 

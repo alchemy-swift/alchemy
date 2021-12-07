@@ -1,5 +1,5 @@
 extension Array where Element: SQLConvertible {
-    public func joined() -> SQL {
+    public func joinedSQL() -> SQL {
         let statements = map(\.sql)
         return SQL(statements.map(\.statement).joined(separator: " "), bindings: statements.flatMap(\.bindings))
     }

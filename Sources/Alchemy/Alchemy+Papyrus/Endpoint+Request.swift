@@ -11,7 +11,7 @@ extension Endpoint {
     ///   - dto: An instance of the request DTO; `Endpoint.Request`.
     ///   - client: The client to request with. Defaults to `Client.default`.
     /// - Returns: A raw `ClientResponse` and decoded `Response`.
-    public func request(_ dto: Request, with client: Client = .default) async throws -> (clientResponse: ClientResponse, response: Response) {
+    public func request(_ dto: Request, with client: Client = .default) async throws -> (clientResponse: Client.Response, response: Response) {
         try await client.request(endpoint: self, request: dto)
     }
 }
@@ -23,7 +23,7 @@ extension Endpoint where Request == Empty {
     /// - Parameter client: The client to request with. Defaults to
     ///   `Client.default`.
     /// - Returns: A raw `ClientResponse` and decoded `Response`.
-    public func request(with client: Client = .default) async throws -> (clientResponse: ClientResponse, response: Response) {
+    public func request(with client: Client = .default) async throws -> (clientResponse: Client.Response, response: Response) {
         try await client.request(endpoint: self, request: Empty.value)
     }
 }
@@ -38,22 +38,21 @@ extension Client {
     fileprivate func request<Request: RequestConvertible, Response: Codable>(
         endpoint: Endpoint<Request, Response>,
         request: Request
-    ) async throws -> (clientResponse: ClientResponse, response: Response) {
+    ) async throws -> (clientResponse: Client.Response, response: Response) {
         let components = try endpoint.httpComponents(dto: request)
         var request = withHeaders(components.headers)
         
-        switch components.contentEncoding {
-        case .json:
-            request = request
-                .withJSON(components.body, encoder: endpoint.jsonEncoder)
-        case .url:
-            request = request
-                .withBody(try components.urlParams()?.data(using: .utf8))
-                .withContentType(.urlEncoded)
+        if let body = components.body {
+            switch components.contentEncoding {
+            case .json:
+                request = try request.withJSON(body, encoder: endpoint.jsonEncoder)
+            case .url:
+                request = try request.withForm(body)
+            }
         }
         
         let clientResponse = try await request
-            .request(HTTPMethod(rawValue: components.method), endpoint.baseURL + components.fullPath)
+            .request(HTTPMethod(rawValue: components.method), uri: endpoint.baseURL + components.fullPath)
             .validateSuccessful()
         
         if Response.self == Empty.self {
