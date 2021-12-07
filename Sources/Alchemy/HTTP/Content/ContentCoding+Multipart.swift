@@ -11,19 +11,19 @@ extension ContentDecoder where Self == FormDataDecoder {
 extension FormDataEncoder: ContentEncoder {
     static var boundary: () -> String = { "AlchemyFormBoundary" + .randomAlphaNumberic(15) }
     
-    public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
+    public func encodeContent<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
         let boundary = FormDataEncoder.boundary()
-        return Content(buffer: ByteBuffer(string: try encode(value, boundary: boundary)), type: .multipart(boundary: boundary))
+        return (buffer: ByteBuffer(string: try encode(value, boundary: boundary)), contentType: .multipart(boundary: boundary))
     }
 }
 
 extension FormDataDecoder: ContentDecoder {
-    public func decodeContent<D>(_ type: D.Type, from content: Content) throws -> D where D: Decodable {
-        guard let boundary = content.type?.parameters["boundary"] else {
+    public func decodeContent<D>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D where D : Decodable {
+        guard let boundary = contentType?.parameters["boundary"] else {
             throw HTTPError(.notAcceptable, message: "Attempted to decode multipart/form-data but couldn't find a `boundary` in the `Content-Type` header.")
         }
         
-        return try decode(type, from: content.buffer, boundary: boundary)
+        return try decode(type, from: buffer, boundary: boundary)
     }
 }
 

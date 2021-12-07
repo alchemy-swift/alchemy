@@ -9,13 +9,13 @@ extension ContentDecoder where Self == URLEncodedFormDecoder {
 }
 
 extension URLEncodedFormEncoder: ContentEncoder {
-    public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
-        Content(buffer: ByteBuffer(string: try encode(value)), type: .urlForm)
+    public func encodeContent<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
+        return (buffer: ByteBuffer(string: try encode(value)), contentType: .urlForm)
     }
 }
 
 extension URLEncodedFormDecoder: ContentDecoder {
-    public func decodeContent<D>(_ type: D.Type, from content: Content) throws -> D where D: Decodable {
-        try decode(type, from: content.buffer.string() ?? "")
+    public func decodeContent<D>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D where D : Decodable {
+        try decode(type, from: buffer.string() ?? "")
     }
 }

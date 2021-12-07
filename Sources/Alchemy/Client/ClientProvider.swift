@@ -84,8 +84,8 @@ extension ClientProvider {
     }
     
     public func withBody<E: Encodable>(_ value: E, encoder: ContentEncoder = .json) throws -> Builder {
-        let content = try encoder.encodeContent(value)
-        return withBody(.buffer(content.buffer), type: content.type)
+        let (buffer, type) = try encoder.encodeContent(value)
+        return withBody(.buffer(buffer), type: type)
     }
     
     public func withJSON(_ dict: [String: Any?]) throws -> Builder {

@@ -9,13 +9,13 @@ extension ContentDecoder where Self == JSONDecoder {
 }
 
 extension JSONEncoder: ContentEncoder {
-    public func encodeContent<E>(_ value: E) throws -> Content where E: Encodable {
-        Content(buffer: ByteBuffer(data: try encode(value)), type: .json)
+    public func encodeContent<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
+        (buffer: ByteBuffer(data: try encode(value)), contentType: .json)
     }
 }
 
 extension JSONDecoder: ContentDecoder {
-    public func decodeContent<D>(_ type: D.Type, from content: Content) throws -> D where D: Decodable {
-        try decode(type, from: content.buffer.data() ?? Data())
+    public func decodeContent<D>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D where D : Decodable {
+        try decode(type, from: buffer.data() ?? Data())
     }
 }

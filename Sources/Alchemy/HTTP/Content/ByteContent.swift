@@ -5,6 +5,11 @@ import NIOHTTP1
 
 /// A collection of bytes that is either a single buffer or a stream of buffers.
 public enum ByteContent: ExpressibleByStringLiteral {
+    /// The default decoder for reading content from an incoming request.
+    public static var defaultDecoder: ContentDecoder = .json
+    /// The default encoder for writing content to an outgoing response.
+    public static var defaultEncoder: ContentEncoder = .json
+    
     case buffer(ByteBuffer)
     case stream(ByteStream)
     
@@ -243,9 +248,9 @@ extension Response {
     /// - Parameters:
     ///   - data: The data in the body.
     ///   - type: The content type of the body.
-    public func withValue<E: Encodable>(_ value: E, encoder: ContentEncoder = Content.defaultEncoder) throws -> Response {
-        let content = try encoder.encodeContent(value)
-        return withBuffer(content.buffer, type: content.type)
+    public func withValue<E: Encodable>(_ value: E, encoder: ContentEncoder = ByteContent.defaultEncoder) throws -> Response {
+        let (buffer, type) = try encoder.encodeContent(value)
+        return withBuffer(buffer, type: type)
     }
 }
 
@@ -279,7 +284,7 @@ extension ByteContent {
         .buffer(ByteBuffer(data: data))
     }
     
-    public static func value<E: Encodable>(_ value: E, encoder: ContentEncoder = Content.defaultEncoder) throws -> ByteContent {
+    public static func value<E: Encodable>(_ value: E, encoder: ContentEncoder = ByteContent.defaultEncoder) throws -> ByteContent {
         .buffer(try encoder.encodeContent(value).buffer)
     }
     
@@ -323,7 +328,7 @@ extension HasContent {
         
         guard let decoder = decoder else {
             guard let contentType = self.headers.contentType else {
-                return try decode(as: type, with: Content.defaultDecoder)
+                return try decode(as: type, with: ByteContent.defaultDecoder)
             }
             
             switch contentType {
@@ -338,7 +343,6 @@ extension HasContent {
             }
         }
         
-        let content = Content(buffer: buffer, type: headers.contentType)
-        return try decoder.decodeContent(type, from: content)
+        return try decoder.decodeContent(type, from: buffer, contentType: headers.contentType)
     }
 }
