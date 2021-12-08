@@ -156,7 +156,7 @@ extension Env {
     /// - Parameter path: The path of the file from which to load the
     ///   variables.
     private static func loadDotEnvFile(path: String) -> [String: String]? {
-        let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/.\(path)")
+        let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
         
         guard let pathString = absolutePath else {
             return nil
