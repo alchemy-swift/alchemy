@@ -50,6 +50,11 @@ final class StreamingTests: TestCase<TestApp> {
         var expected = ["foo", "bar", "baz"]
         try await Http.get("http://localhost:3000/stream")
             .assertStream {
+                guard expected.first != nil else {
+                    XCTFail("There were too many stream elements.")
+                    return
+                }
+                
                 XCTAssertEqual($0.string(), expected.removeFirst())
             }
             .assertOk()
@@ -63,13 +68,5 @@ final class StreamingTests: TestCase<TestApp> {
                 try await $0.write("baz")
             }
         }
-    }
-    
-    func testFileResponse() {
-        
-    }
-    
-    func testFileEndToEnd() {
-        
     }
 }

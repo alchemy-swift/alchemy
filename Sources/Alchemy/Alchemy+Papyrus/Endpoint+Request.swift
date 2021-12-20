@@ -51,7 +51,7 @@ extension Client {
             }
         }
         
-        let clientResponse = try await request
+        var clientResponse = try await request
             .request(HTTPMethod(rawValue: components.method), uri: endpoint.baseURL + components.fullPath)
             .validateSuccessful()
         
@@ -59,6 +59,6 @@ extension Client {
             return (clientResponse, Empty.value as! Response)
         }
         
-        return (clientResponse, try clientResponse.decodeJSON(Response.self, using: endpoint.jsonDecoder))
+        return (clientResponse, try await clientResponse.collect().decode(Response.self, using: endpoint.jsonDecoder))
     }
 }

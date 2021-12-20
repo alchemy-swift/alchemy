@@ -75,7 +75,7 @@ extension File {
 
 extension Client.Response {
     @discardableResult
-    mutating func collect() async throws -> Client.Response {
+    public mutating func collect() async throws -> Client.Response {
         self.body = (try await body?.collect()).map { .buffer($0) }
         return self
     }
@@ -83,7 +83,7 @@ extension Client.Response {
 
 extension Response {
     @discardableResult
-    func collect() async throws -> Response {
+    public func collect() async throws -> Response {
         self.body = (try await body?.collect()).map { .buffer($0) }
         return self
     }
@@ -91,7 +91,7 @@ extension Response {
 
 extension Request {
     @discardableResult
-    func collect() async throws -> Request {
+    public func collect() async throws -> Request {
         self.hbRequest.body = .byteBuffer(try await body?.collect())
         return self
     }

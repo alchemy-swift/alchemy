@@ -192,7 +192,7 @@ You can sort results of a query by using the `orderBy` method.
 
 ```swift
 Query.from("users")
-  .orderBy(column: "first_name", direction: .asc)
+  .orderBy("first_name", direction: .asc)
   .get()
 ```
 
@@ -200,8 +200,8 @@ If you need to sort by multiple columns, you can add `orderBy` as many times as 
 
 ```swift
 Query.from("users")
-  .orderBy(column: "first_name", direction: .asc)
-  .orderBy(column: "last_name", direction: .desc)
+  .orderBy("first_name", direction: .asc)
+  .orderBy("last_name", direction: .desc)
   .get()
 ```
 

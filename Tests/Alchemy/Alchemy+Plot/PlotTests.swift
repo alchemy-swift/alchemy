@@ -1,4 +1,5 @@
 @testable import Alchemy
+import Plot
 import XCTest
 
 final class PlotTests: XCTestCase {

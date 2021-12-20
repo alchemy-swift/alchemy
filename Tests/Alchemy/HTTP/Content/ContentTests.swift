@@ -1,75 +1,93 @@
 @testable
 import Alchemy
 import AlchemyTest
-import MultipartKit
 
 final class ContentTests: XCTestCase {
-    override class func setUp() {
+    var content: Content = Content(value: "foo")
+    
+    override func setUp() {
         super.setUp()
-        FormDataEncoder.boundary = { Fixtures.multipartBoundary }
+        content = Content(dict: [
+            "string": "string",
+            "int": 0,
+            "bool": true,
+            "double": 1.23,
+            "array": [
+                1,
+                2,
+                3
+            ],
+            "dict": [
+                "one": "one",
+                "two": "two",
+                "three": "three",
+                "four": nil
+            ],
+            "jsonArray": [
+                ["foo": "bar"],
+                ["foo": "baz"],
+                ["foo": "tiz"],
+            ]
+        ])
     }
     
-    func testJSONEncode() throws {
-        let res = try Response().withValue(Fixtures.object, encoder: .json)
-        XCTAssertEqual(res.headers.contentType, .json)
-        XCTAssertEqual(res.body?.string(), Fixtures.jsonString)
+    func testAccess() {
+        AssertTrue(content["foo"] == nil)
+        AssertEqual(content["string"].string, "string")
+        AssertTrue(content.dict.four == nil)
+        AssertEqual(content["int"].int, 0)
+        AssertEqual(content["bool"].bool, true)
+        AssertEqual(content["double"].double, 1.23)
+        AssertEqual(content["array"].string, nil)
+        AssertEqual(content["array"].array?.count, 3)
+        AssertEqual(content["array"][0].string, nil)
+        AssertEqual(content["array"][0].int, 1)
+        AssertEqual(content["array"][1].int, 2)
+        AssertEqual(content["array"][2].int, 3)
+        AssertEqual(content["dict"]["one"].string, "one")
+        AssertEqual(content["dict"]["two"].string, "two")
+        AssertEqual(content["dict"]["three"].string, "three")
+        AssertEqual(content["dict"].dictionary?.string, [
+            "one": "one",
+            "two": "two",
+            "three": "three",
+            "four": nil
+        ])
     }
     
-    func testJSONDecode() throws {
-        let res = Response().withString(Fixtures.jsonString, type: .json)
-        XCTAssertEqual(try res.decode(), Fixtures.object)
+    func testFlatten() {
+        AssertEqual(content["dict"][*].string.sorted(), ["one", "three", "two", nil])
+        AssertEqual(content["jsonArray"][*]["foo"].string, ["bar", "baz", "tiz"])
     }
     
-    func testURLEncode() throws {
-        let res = try Response().withValue(Fixtures.object, encoder: .urlForm)
-        XCTAssertEqual(res.headers.contentType, .urlForm)
-        XCTAssertTrue(res.body?.string() == Fixtures.urlString || res.body?.string() == Fixtures.urlStringAlternate)
-    }
-    
-    func testURLDecode() throws {
-        let res = Response().withString(Fixtures.urlString, type: .urlForm)
-        XCTAssertEqual(try res.decode(), Fixtures.object)
-    }
-    
-    func testMultipartEncode() throws {
-        let res = try Response().withValue(Fixtures.object, encoder: .multipart)
-        XCTAssertEqual(res.headers.contentType, .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(res.body?.string(), Fixtures.multipartString)
-    }
-    
-    func testMultipartDecode() throws {
-        let res = Response().withString(Fixtures.multipartString, type: .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(try res.decode(), Fixtures.object)
+    func testDecode() throws {
+        struct DecodableType: Codable, Equatable {
+            let one: String
+            let two: String
+            let three: String
+        }
+        
+        struct ArrayType: Codable, Equatable {
+            let foo: String
+        }
+        
+        let expectedStruct = DecodableType(one: "one", two: "two", three: "three")
+        AssertEqual(try content["dict"].decode(DecodableType.self), expectedStruct)
+        AssertEqual(try content["array"].decode([Int].self), [1, 2, 3])
+        AssertEqual(try content["array"].decode([Int8].self), [1, 2, 3])
+        let expectedArray = [ArrayType(foo: "bar"), ArrayType(foo: "baz"), ArrayType(foo: "tiz")]
+        AssertEqual(try content.jsonArray.decode([ArrayType].self), expectedArray)
     }
 }
 
-private struct Fixtures {
-    struct Test: Codable, Equatable {
-        var foo = "foo"
-        var bar = "bar"
+extension Optional: Comparable where Wrapped == String {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+        if let lhs = lhs, let rhs = rhs {
+            return lhs < rhs
+        } else if rhs == nil {
+            return true
+        } else {
+            return false
+        }
     }
-    
-    static let jsonString = """
-        {"foo":"foo","bar":"bar"}
-        """
-    
-    static let urlString = "foo=foo&bar=bar"
-    static let urlStringAlternate = "bar=bar&foo=foo"
-    
-    static let multipartBoundary = "foo123"
-    
-    static let multipartString = """
-        --foo123\r
-        Content-Disposition: form-data; name=\"foo\"\r
-        \r
-        foo\r
-        --foo123\r
-        Content-Disposition: form-data; name=\"bar\"\r
-        \r
-        bar\r
-        --foo123--\r
-        
-        """
-    
-    static let object = Test()
 }

@@ -32,11 +32,11 @@ final class ClientResponseTests: XCTestCase {
         let jsonData = jsonString.data(using: .utf8) ?? Data()
         let body = ByteContent.string(jsonString)
         XCTAssertEqual(Client.Response(body: body).body?.buffer, body.buffer)
-        XCTAssertEqual(Client.Response(body: body).bodyData, jsonData)
-        XCTAssertEqual(Client.Response(body: body).bodyString, jsonString)
-        XCTAssertEqual(try Client.Response(body: body).decodeJSON(), SampleJson())
-        XCTAssertThrowsError(try Client.Response().decodeJSON(SampleJson.self))
-        XCTAssertThrowsError(try Client.Response(body: body).decodeJSON(String.self))
+        XCTAssertEqual(Client.Response(body: body).data, jsonData)
+        XCTAssertEqual(Client.Response(body: body).string, jsonString)
+        XCTAssertEqual(try Client.Response(body: body).decode(), SampleJson())
+        XCTAssertThrowsError(try Client.Response().decode(SampleJson.self))
+        XCTAssertThrowsError(try Client.Response(body: body).decode(String.self))
     }
 }
 

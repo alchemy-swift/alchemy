@@ -31,6 +31,3 @@
 @_exported import enum NIOHTTP1.HTTPMethod
 @_exported import struct NIOHTTP1.HTTPVersion
 @_exported import enum NIOHTTP1.HTTPResponseStatus
-
-// Plot
-@_exported import Plot

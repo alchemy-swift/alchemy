@@ -10,8 +10,8 @@ final class QueryOrderTests: TestCase<TestApp> {
     
     func testOrderBy() {
         let query = Database.table("foo")
-            .orderBy(column: "bar")
-            .orderBy(column: "baz", direction: .desc)
+            .orderBy("bar")
+            .orderBy("baz", direction: .desc)
         XCTAssertEqual(query.orders, [
             Query.Order(column: "bar", direction: .asc),
             Query.Order(column: "baz", direction: .desc),

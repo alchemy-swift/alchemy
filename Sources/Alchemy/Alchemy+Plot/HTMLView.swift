@@ -1,4 +1,4 @@
-import Foundation
+import Plot
 
 /// A protocol for defining HTML views to return to a client.
 ///

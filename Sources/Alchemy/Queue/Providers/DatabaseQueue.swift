@@ -25,7 +25,7 @@ final class DatabaseQueue: QueueProvider {
                 .where("reserved" != true)
                 .where("channel" == channel)
                 .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
-                .orderBy(column: "queued_at")
+                .orderBy("queued_at")
                 .limit(1)
                 .lock(for: .update, option: .skipLocked)
                 .first()

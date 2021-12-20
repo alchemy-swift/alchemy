@@ -83,6 +83,7 @@ extension Queue {
             // So that an old worker won't fail new, unrecognized jobs.
             try await retry(ignoreAttempt: true)
             job?.failed(error: error)
+            throw error
         } catch {
             try await provider.complete(jobData, outcome: .failed)
             job?.finished(result: .failure(error))

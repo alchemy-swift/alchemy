@@ -15,12 +15,9 @@ public extension Application {
     ///     instance of the endpoint's response type.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
-    func on<Req, Res>(
-        _ endpoint: Endpoint<Req, Res>,
-        use handler: @escaping (Request, Req) async throws -> Res
-    ) -> Self where Res: Codable {
+    func on<Req, Res>(_ endpoint: Endpoint<Req, Res>, use handler: @escaping (Request, Req) async throws -> Res) -> Self where Res: Codable {
         on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
-            let result = try await handler(request, try Req(from: request))
+            let result = try await handler(request, try Req(from: request.collect()))
             return try Response(status: .ok)
                 .withValue(result, encoder: endpoint.jsonEncoder)
         }
@@ -36,10 +33,7 @@ public extension Application {
     ///     instance of the endpoint's response type.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
-    func on<Res>(
-        _ endpoint: Endpoint<Empty, Res>,
-        use handler: @escaping (Request) async throws -> Res
-    ) -> Self {
+    func on<Res>(_ endpoint: Endpoint<Empty, Res>, use handler: @escaping (Request) async throws -> Res) -> Self {
         on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
             let result = try await handler(request)
             return try Response(status: .ok)
@@ -56,12 +50,9 @@ public extension Application {
     ///     match this endpoint's path. This handler returns Void.
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
-    func on<Req>(
-        _ endpoint: Endpoint<Req, Empty>,
-        use handler: @escaping (Request, Req) async throws -> Void
-    ) -> Self {
+    func on<Req>(_ endpoint: Endpoint<Req, Empty>, use handler: @escaping (Request, Req) async throws -> Void) -> Self {
         on(endpoint.nioMethod, at: endpoint.path) { request -> Response in
-            try await handler(request, Req(from: request))
+            try await handler(request, Req(from: request.collect()))
             return Response(status: .ok, body: nil)
         }
     }

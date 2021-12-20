@@ -34,7 +34,7 @@ extension Query {
     ///     or `.desc`). Defaults to `.asc`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orderBy(column: String, direction: Order.Direction = .asc) -> Self {
+    public func orderBy(_ column: String, direction: Order.Direction = .asc) -> Self {
         orderBy(Order(column: column, direction: direction))
     }
 }

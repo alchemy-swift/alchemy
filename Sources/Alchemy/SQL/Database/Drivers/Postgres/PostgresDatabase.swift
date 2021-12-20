@@ -58,10 +58,17 @@ final class PostgresDatabase: DatabaseProvider {
     
     func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await withConnection { conn in
-            _ = try await conn.query("START TRANSACTION;", values: [])
-            let val = try await action(conn)
-            _ = try await conn.query("COMMIT;", values: [])
-            return val
+            _ = try await conn.raw("START TRANSACTION;")
+            do {
+                let val = try await action(conn)
+                _ = try await conn.raw("COMMIT;")
+                return val
+            } catch {
+                Log.error("Postgres transaction failed with error \(error). Rolling back.")
+                _ = try await conn.raw("ROLLBACK;")
+                _ = try await conn.raw("COMMIT;")
+                throw error
+            }
         }
     }
     

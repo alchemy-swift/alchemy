@@ -7,7 +7,7 @@ import NIOHTTP1
 ///
 /// The `Http` alias can be used to access your app's default client.
 ///
-///     Http.get("https://swift.org")
+///     let response = try await Http.get("https://swift.org")
 ///
 /// See `ClientProvider` for the request builder interface.
 public final class Client: ClientProvider, Service {
@@ -210,8 +210,9 @@ public final class Client: ClientProvider, Service {
     }
 }
 
-public class ResponseDelegate: HTTPClientResponseDelegate {
-    public typealias Response = Void
+/// Converts an AsyncHTTPClient response into a `Client.Response`.
+private class ResponseDelegate: HTTPClientResponseDelegate {
+    typealias Response = Void
 
     enum State {
         case idle
@@ -225,12 +226,12 @@ public class ResponseDelegate: HTTPClientResponseDelegate {
     private let responsePromise: EventLoopPromise<Client.Response>
     private var state = State.idle
 
-    public init(request: Client.Request, promise: EventLoopPromise<Client.Response>) {
+    init(request: Client.Request, promise: EventLoopPromise<Client.Response>) {
         self.request = request
         self.responsePromise = promise
     }
 
-    public func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
+    func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
         switch self.state {
         case .idle:
             self.state = .head(head)
@@ -246,7 +247,7 @@ public class ResponseDelegate: HTTPClientResponseDelegate {
         }
     }
 
-    public func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ part: ByteBuffer) -> EventLoopFuture<Void> {
+    func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ part: ByteBuffer) -> EventLoopFuture<Void> {
         switch self.state {
         case .idle:
             preconditionFailure("no head received before body")
@@ -268,11 +269,11 @@ public class ResponseDelegate: HTTPClientResponseDelegate {
         }
     }
 
-    public func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
+    func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
         self.state = .error(error)
     }
 
-    public func didFinishRequest(task: HTTPClient.Task<Response>) throws {
+    func didFinishRequest(task: HTTPClient.Task<Response>) throws {
         switch self.state {
         case .idle:
             preconditionFailure("no head received before end")
