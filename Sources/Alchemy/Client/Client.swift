@@ -170,13 +170,12 @@ public final class Client: ClientProvider, Service {
         let httpClientOverride = config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
         defer { try? httpClientOverride?.syncShutdown() }
         let promise = Loop.group.next().makePromise(of: Response.self)
-        _ = try await (httpClientOverride ?? httpClient)
+        _ = (httpClientOverride ?? httpClient)
             .execute(
                 request: try req._request,
                 delegate: ResponseDelegate(request: req, promise: promise),
                 deadline: deadline,
                 logger: Log.logger)
-//        return Response(request: req, host: resp.host, status: resp.status, version: resp.version, headers: resp.headers, body: resp.body.map { .buffer($0) })
         return try await promise.futureResult.get()
     }
     
@@ -255,32 +254,18 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
             preconditionFailure("no head received before body")
         case .head(let head):
             self.state = .body(head, part)
-            let prefix = part.string()?.prefix(10) ?? "n/a"
-            let suffix = part.string()?.suffix(10) ?? "n/a"
-            print("received \(count): \(prefix)...\(suffix)")
-            count += 1
             return task.eventLoop.makeSucceededFuture(())
         case .body(let head, let body):
-            let stream = Stream<ByteBuffer>(eventLoop: task.eventLoop)
+            let stream = ByteStream(eventLoop: task.eventLoop)
             let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .stream(stream))
             self.responsePromise.succeed(response)
             self.state = .stream(head, stream)
-            
-            let prefix = part.string()?.prefix(10) ?? "n/a"
-            let suffix = part.string()?.suffix(10) ?? "n/a"
-            print("received \(count): \(prefix)...\(suffix)")
-            count += 1
+
             // Write the previous part, followed by this part, to the stream.
             return stream._write(chunk: body).flatMap { stream._write(chunk: part) }
-                .map { print("done body") }
         case .stream(_, let stream):
-            let prefix = part.string()?.prefix(10) ?? "n/a"
-            let suffix = part.string()?.suffix(10) ?? "n/a"
-            print("received \(count): \(prefix)...\(suffix)")
-            count += 1
-            return stream._write(chunk: part).map { print("done stream") }
+            return stream._write(chunk: part)
         case .error:
-            print("done error")
             return task.eventLoop.makeSucceededFuture(())
         }
     }
@@ -298,14 +283,11 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
             responsePromise.succeed(response)
         case .body(let head, let body):
             let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .buffer(body))
-            print("received \(count): nil...nil")
             responsePromise.succeed(response)
         case .stream(_, let stream):
             _ = stream._write(chunk: nil)
-            print("received \(count): nil...nil")
         case .error(let error):
             responsePromise.fail(error)
         }
-        print("done entire request")
     }
 }

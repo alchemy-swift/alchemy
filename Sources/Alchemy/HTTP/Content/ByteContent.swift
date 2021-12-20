@@ -52,15 +52,7 @@ public enum ByteContent: ExpressibleByStringLiteral {
             return byteBuffer
         case .stream(let byteStream):
             var collection = ByteBuffer()
-            var count = 0
             try await byteStream.readAll { buffer in
-                let prefix = buffer.string()?.prefix(10) ?? "nil"
-                let suffix = buffer.string()?.suffix(10) ?? "nil"
-                if suffix == "nil" {
-                    print("wat \(buffer.readableBytes) \(buffer.string())")
-                }
-                print("chunk \(count): \(prefix)...\(suffix)")
-                count += 1
                 var chunk = buffer
                 collection.writeBuffer(&chunk)
             }
@@ -106,12 +98,10 @@ extension Request {
     }
 }
 
-public typealias ByteStream = Stream<ByteBuffer>
-public final class Stream<Element>: AsyncSequence {
-    let streamer = HBByteBufferStreamer(eventLoop: <#T##EventLoop#>, maxSize: <#T##Int#>, maxStreamingBufferSize: <#T##Int?#>)
-    
+public final class ByteStream: AsyncSequence {
+    public typealias Element = ByteBuffer
     public struct Writer {
-        fileprivate let stream: Stream<Element>
+        fileprivate let stream: ByteStream
         
         func write(_ chunk: Element) async throws {
             try await stream._write(chunk: chunk).get()
@@ -121,88 +111,68 @@ public final class Stream<Element>: AsyncSequence {
     public typealias Closure = (Writer) async throws -> Void
     
     private let eventLoop: EventLoop
-    private var readPromise: EventLoopPromise<Void>
-    private var writePromise: EventLoopPromise<Element?>
-    private let onFirstRead: ((Stream<Element>) -> Void)?
+    private let onFirstRead: ((ByteStream) -> Void)?
     private var didFirstRead: Bool
     
-    private let _streamer: HBByteBufferStreamer
+    private var _streamer: HBByteBufferStreamer!
     
-    deinit {
-        readPromise.succeed(())
-        writePromise.succeed(nil)
-    }
-    
-    init(eventLoop: EventLoop, onFirstRead: ((Stream<Element>) -> Void)? = nil) {
-        self._streamer = .init(eventLoop: eventLoop, maxSize: 5 * 1024 * 1024, maxStreamingBufferSize: nil)
+    init(eventLoop: EventLoop, onFirstRead: ((ByteStream) -> Void)? = nil) {
         self.eventLoop = eventLoop
-        self.readPromise = eventLoop.makePromise(of: Void.self)
-        self.writePromise = eventLoop.makePromise(of: Element?.self)
         self.onFirstRead = onFirstRead
         self.didFirstRead = false
     }
     
-    var count = 0
-    func _write(chunk: Element?) -> EventLoopFuture<Void> {
-        _streamer.feed(.)
-        
-        if let thing = chunk as? ByteBuffer {
-            let prefix = thing.string()?.prefix(10) ?? "nil"
-            let suffix = thing.string()?.suffix(10) ?? "nil"
-            print("write \(count): \(prefix)...\(suffix)")
-            count += 1
+    private func createStreamerIfNotExists() -> EventLoopFuture<Void> {
+        eventLoop.submit {
+            if self._streamer == nil {
+                self._streamer = .init(eventLoop: self.eventLoop, maxSize: 5 * 1024 * 1024, maxStreamingBufferSize: nil)
+            }
         }
-        writePromise.succeed(chunk)
-        // Wait until the chunk is read.
-        return readPromise.futureResult
-            .map {
-                if chunk != nil {
-                    self.writePromise = self.eventLoop.makePromise(of: Element?.self)
+    }
+    
+    func _write(chunk: Element?) -> EventLoopFuture<Void> {
+        createStreamerIfNotExists()
+            .flatMap {
+                if let chunk = chunk {
+                    return self._streamer.feed(buffer: chunk)
+                } else {
+                    self._streamer.feed(.end)
+                    return self.eventLoop.makeSucceededVoidFuture()
                 }
-                print("write is done")
             }
     }
     
     func _write(error: Error) {
-        writePromise.fail(error)
-        readPromise.fail(error)
+        _ = createStreamerIfNotExists().map { self._streamer.feed(.error(error)) }
     }
     
-    func _read(on eventLoop: EventLoop) -> EventLoopFuture<Element?> {
-        return eventLoop
-            .submit {
+    func _read(on eventLoop: EventLoop) -> EventLoopFuture<ByteBuffer?> {
+        createStreamerIfNotExists()
+            .flatMap {
                 if !self.didFirstRead {
                     self.didFirstRead = true
                     self.onFirstRead?(self)
                 }
-            }
-            .flatMap {
-                print("hook into write")
-                // Wait until a chunk is written.
-                return self.writePromise.futureResult
-                    .map { chunk in
-                        let old = self.readPromise
-                        if chunk != nil {
-                            self.readPromise = eventLoop.makePromise(of: Void.self)
-                        }
-                        old.succeed(())
-                        print("read is done")
-                        return chunk
+                
+                return self._streamer.consume(on: eventLoop).map { output in
+                    switch output {
+                    case .byteBuffer(let buffer):
+                        return buffer
+                    case .end:
+                        return nil
                     }
+                }
             }
     }
     
     public func readAll(chunkHandler: (Element) async throws -> Void) async throws {
-        print("start read all")
         for try await chunk in self {
             try await chunkHandler(chunk)
         }
-        
-        print("done with stream")
     }
     
-    public static func new(startStream: @escaping Closure) -> Stream<Element> {
-        Stream<Element>(eventLoop: Loop.current) { stream in
+    public static func new(startStream: @escaping Closure) -> ByteStream {
+        ByteStream(eventLoop: Loop.current) { stream in
             Task {
                 do {
                     try await startStream(Writer(stream: stream))
@@ -217,7 +187,7 @@ public final class Stream<Element>: AsyncSequence {
     // MARK: - AsycIterator
     
     public struct AsyncIterator: AsyncIteratorProtocol {
-        let stream: Stream
+        let stream: ByteStream
         let eventLoop: EventLoop
         
         mutating public func next() async throws -> Element? {
