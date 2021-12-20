@@ -2,6 +2,7 @@ import AsyncHTTPClient
 import NIO
 import Foundation
 import NIOHTTP1
+import HummingbirdCore
 
 /// A collection of bytes that is either a single buffer or a stream of buffers.
 public enum ByteContent: ExpressibleByStringLiteral {
@@ -51,7 +52,15 @@ public enum ByteContent: ExpressibleByStringLiteral {
             return byteBuffer
         case .stream(let byteStream):
             var collection = ByteBuffer()
+            var count = 0
             try await byteStream.readAll { buffer in
+                let prefix = buffer.string()?.prefix(10) ?? "nil"
+                let suffix = buffer.string()?.suffix(10) ?? "nil"
+                if suffix == "nil" {
+                    print("wat \(buffer.readableBytes) \(buffer.string())")
+                }
+                print("chunk \(count): \(prefix)...\(suffix)")
+                count += 1
                 var chunk = buffer
                 collection.writeBuffer(&chunk)
             }
@@ -99,6 +108,8 @@ extension Request {
 
 public typealias ByteStream = Stream<ByteBuffer>
 public final class Stream<Element>: AsyncSequence {
+    let streamer = HBByteBufferStreamer(eventLoop: <#T##EventLoop#>, maxSize: <#T##Int#>, maxStreamingBufferSize: <#T##Int?#>)
+    
     public struct Writer {
         fileprivate let stream: Stream<Element>
         
@@ -115,12 +126,15 @@ public final class Stream<Element>: AsyncSequence {
     private let onFirstRead: ((Stream<Element>) -> Void)?
     private var didFirstRead: Bool
     
+    private let _streamer: HBByteBufferStreamer
+    
     deinit {
         readPromise.succeed(())
         writePromise.succeed(nil)
     }
     
     init(eventLoop: EventLoop, onFirstRead: ((Stream<Element>) -> Void)? = nil) {
+        self._streamer = .init(eventLoop: eventLoop, maxSize: 5 * 1024 * 1024, maxStreamingBufferSize: nil)
         self.eventLoop = eventLoop
         self.readPromise = eventLoop.makePromise(of: Void.self)
         self.writePromise = eventLoop.makePromise(of: Element?.self)
@@ -128,7 +142,16 @@ public final class Stream<Element>: AsyncSequence {
         self.didFirstRead = false
     }
     
+    var count = 0
     func _write(chunk: Element?) -> EventLoopFuture<Void> {
+        _streamer.feed(.)
+        
+        if let thing = chunk as? ByteBuffer {
+            let prefix = thing.string()?.prefix(10) ?? "nil"
+            let suffix = thing.string()?.suffix(10) ?? "nil"
+            print("write \(count): \(prefix)...\(suffix)")
+            count += 1
+        }
         writePromise.succeed(chunk)
         // Wait until the chunk is read.
         return readPromise.futureResult
@@ -136,6 +159,7 @@ public final class Stream<Element>: AsyncSequence {
                 if chunk != nil {
                     self.writePromise = self.eventLoop.makePromise(of: Element?.self)
                 }
+                print("write is done")
             }
     }
     
@@ -153,23 +177,28 @@ public final class Stream<Element>: AsyncSequence {
                 }
             }
             .flatMap {
+                print("hook into write")
                 // Wait until a chunk is written.
-                self.writePromise.futureResult
+                return self.writePromise.futureResult
                     .map { chunk in
                         let old = self.readPromise
                         if chunk != nil {
                             self.readPromise = eventLoop.makePromise(of: Void.self)
                         }
                         old.succeed(())
+                        print("read is done")
                         return chunk
                     }
             }
     }
     
     public func readAll(chunkHandler: (Element) async throws -> Void) async throws {
+        print("start read all")
         for try await chunk in self {
             try await chunkHandler(chunk)
         }
+        
+        print("done with stream")
     }
     
     public static func new(startStream: @escaping Closure) -> Stream<Element> {
