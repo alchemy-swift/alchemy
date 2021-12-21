@@ -38,7 +38,7 @@ extension Queue {
                 try await runNext(from: channels, untilEmpty: untilEmpty)
             }
         } catch {
-            Log.error("[Queue] error running job from `\(channels)`. \(error)")
+            Log.error("[Queue] error running job \(name(of: Self.self)) from `\(channels)`. \(error)")
             throw error
         }
     }
