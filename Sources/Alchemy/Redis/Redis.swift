@@ -1,4 +1,5 @@
 import NIO
+import NIOConcurrencyHelpers
 import RediStack
 
 /// A client for interfacing with a Redis instance.
@@ -100,7 +101,8 @@ public protocol RedisProvider {
 /// A connection pool is a redis provider with a pool per `EventLoop`.
 private final class ConnectionPool: RedisProvider {
     /// Map of `EventLoop` identifiers to respective connection pools.
-    @Locked private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
+    private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
+    private var poolLock = Lock()
     
     /// The configuration to create pools with.
     private var config: RedisConnectionPool.Configuration
@@ -121,10 +123,12 @@ private final class ConnectionPool: RedisProvider {
     }
 
     func shutdown() throws {
-        try poolStorage.values.forEach {
-            let promise: EventLoopPromise<Void> = $0.eventLoop.makePromise()
-            $0.close(promise: promise)
-            try promise.futureResult.wait()
+        try poolLock.withLock {
+            try poolStorage.values.forEach {
+                let promise: EventLoopPromise<Void> = $0.eventLoop.makePromise()
+                $0.close(promise: promise)
+                try promise.futureResult.wait()
+            }
         }
     }
 
@@ -135,12 +139,14 @@ private final class ConnectionPool: RedisProvider {
     private func getPool() -> RedisConnectionPool {
         let loop = Loop.current
         let key = ObjectIdentifier(loop)
-        if let pool = self.poolStorage[key] {
-            return pool
-        } else {
-            let newPool = RedisConnectionPool(configuration: self.config, boundEventLoop: loop)
-            self.poolStorage[key] = newPool
-            return newPool
+        return poolLock.withLock {
+            if let pool = self.poolStorage[key] {
+                return pool
+            } else {
+                let newPool = RedisConnectionPool(configuration: self.config, boundEventLoop: loop)
+                self.poolStorage[key] = newPool
+                return newPool
+            }
         }
     }
 }

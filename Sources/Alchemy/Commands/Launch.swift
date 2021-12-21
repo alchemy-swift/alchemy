@@ -3,7 +3,6 @@ import Lifecycle
 
 /// Command to launch a given application.
 struct Launch: ParsableCommand {
-    @Locked
     static var customCommands: [Command.Type] = []
     static var configuration: CommandConfiguration {
         CommandConfiguration(
