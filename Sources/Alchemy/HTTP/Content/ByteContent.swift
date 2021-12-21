@@ -114,7 +114,7 @@ public final class ByteStream: AsyncSequence {
     private let onFirstRead: ((ByteStream) -> Void)?
     private var didFirstRead: Bool
     
-    private var _streamer: HBByteBufferStreamer!
+    private var _streamer: HBByteBufferStreamer?
     
     init(eventLoop: EventLoop, onFirstRead: ((ByteStream) -> Void)? = nil) {
         self.eventLoop = eventLoop
@@ -122,11 +122,15 @@ public final class ByteStream: AsyncSequence {
         self.didFirstRead = false
     }
     
-    private func createStreamerIfNotExists() -> EventLoopFuture<Void> {
+    private func createStreamerIfNotExists() -> EventLoopFuture<HBByteBufferStreamer> {
         eventLoop.submit {
-            if self._streamer == nil {
-                self._streamer = .init(eventLoop: self.eventLoop, maxSize: 5 * 1024 * 1024, maxStreamingBufferSize: nil)
+            guard let _streamer = self._streamer else {
+                let created = HBByteBufferStreamer(eventLoop: self.eventLoop, maxSize: 5 * 1024 * 1024, maxStreamingBufferSize: nil)
+                self._streamer = created
+                return created
             }
+
+            return _streamer
         }
     }
     
@@ -134,16 +138,16 @@ public final class ByteStream: AsyncSequence {
         createStreamerIfNotExists()
             .flatMap {
                 if let chunk = chunk {
-                    return self._streamer.feed(buffer: chunk)
+                    return $0.feed(buffer: chunk)
                 } else {
-                    self._streamer.feed(.end)
+                    $0.feed(.end)
                     return self.eventLoop.makeSucceededVoidFuture()
                 }
             }
     }
     
     func _write(error: Error) {
-        _ = createStreamerIfNotExists().map { self._streamer.feed(.error(error)) }
+        _ = createStreamerIfNotExists().map { $0.feed(.error(error)) }
     }
     
     func _read(on eventLoop: EventLoop) -> EventLoopFuture<ByteBuffer?> {
@@ -154,7 +158,7 @@ public final class ByteStream: AsyncSequence {
                     self.onFirstRead?(self)
                 }
                 
-                return self._streamer.consume(on: eventLoop).map { output in
+                return $0.consume(on: eventLoop).map { output in
                     switch output {
                     case .byteBuffer(let buffer):
                         return buffer
