@@ -64,7 +64,7 @@ final class PostgresDatabase: DatabaseProvider {
                 _ = try await conn.raw("COMMIT;")
                 return val
             } catch {
-                Log.error("Postgres transaction failed with error \(error). Rolling back.")
+                Log.error("[Database] postgres transaction failed with error \(error). Rolling back.")
                 _ = try await conn.raw("ROLLBACK;")
                 _ = try await conn.raw("COMMIT;")
                 throw error
