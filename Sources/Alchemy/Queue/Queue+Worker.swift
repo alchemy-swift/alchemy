@@ -31,14 +31,14 @@ extension Queue {
                 return
             }
             
-            Log.debug("[Queue] dequeued job \(jobData.jobName) from queue \(jobData.channel)")
+            Log.info("[Queue] dequeued job \(jobData.jobName) from queue \(jobData.channel)")
             try await execute(jobData)
             
             if untilEmpty {
                 try await runNext(from: channels, untilEmpty: untilEmpty)
             }
         } catch {
-            Log.error("[Queue] error dequeueing job from `\(channels)`. \(error)")
+            Log.error("[Queue] error running job from `\(channels)`. \(error)")
             throw error
         }
     }
