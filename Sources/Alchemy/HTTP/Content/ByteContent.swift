@@ -125,7 +125,8 @@ public final class ByteStream: AsyncSequence {
     private func createStreamerIfNotExists() -> EventLoopFuture<HBByteBufferStreamer> {
         eventLoop.submit {
             guard let _streamer = self._streamer else {
-                let created = HBByteBufferStreamer(eventLoop: self.eventLoop, maxSize: 5 * 1024 * 1024, maxStreamingBufferSize: nil)
+                /// Don't give a max size to the underlying streamer; that will be handled elsewhere.
+                let created = HBByteBufferStreamer(eventLoop: self.eventLoop, maxSize: .max, maxStreamingBufferSize: nil)
                 self._streamer = created
                 return created
             }
