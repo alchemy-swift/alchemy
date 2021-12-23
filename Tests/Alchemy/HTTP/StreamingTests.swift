@@ -31,7 +31,7 @@ final class StreamingTests: TestCase<TestApp> {
             }
         }
         
-        try await get("/stream")
+        try await Test.get("/stream")
             .collect()
             .assertOk()
             .assertBody("foobarbaz")

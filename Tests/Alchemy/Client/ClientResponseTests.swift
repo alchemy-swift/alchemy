@@ -42,6 +42,6 @@ final class ClientResponseTests: XCTestCase {
 
 extension Client.Response {
     fileprivate init(_ status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], body: ByteContent? = nil) {
-        self.init(request: .init(), host: "https://example.com", status: status, version: .http1_1, headers: headers, body: body)
+        self.init(request: Client.Request(url: ""), host: "https://example.com", status: status, version: .http1_1, headers: headers, body: body)
     }
 }

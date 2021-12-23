@@ -2,9 +2,9 @@ import AlchemyTest
 
 final class ApplicationControllerTests: TestCase<TestApp> {
     func testController() async throws {
-        try await get("/test").assertNotFound()
+        try await Test.get("/test").assertNotFound()
         app.controller(TestController())
-        try await get("/test").assertOk()
+        try await Test.get("/test").assertOk()
     }
 }
 

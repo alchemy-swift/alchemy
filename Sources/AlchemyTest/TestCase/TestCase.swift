@@ -8,53 +8,40 @@ import XCTest
 /// after each test.
 ///
 /// You may also use this class to build & send mock http requests to your app.
-open class TestCase<A: Application>: XCTestCase, ClientProvider {
-    /// Helper for building requests to test your application's routing.
+open class TestCase<A: Application>: XCTestCase {
     public final class Builder: RequestBuilder {
-        /// A request made with this builder returns a `Response`.
-        public typealias Res = Response
-        
-        /// Build using this builder.
-        public var builder: Builder { self }
-        /// The request being built.
-        public var partialRequest: Client.Request = .init()
+        public var urlComponents = URLComponents()
+        public var method: HTTPMethod = .GET
+        public var headers: HTTPHeaders = [:]
+        public var body: ByteContent? = nil
         private var version: HTTPVersion = .http1_1
         private var remoteAddress: SocketAddress? = nil
         
         /// Set the http version of the mock request.
-        public func withHttpVersion(_ version: HTTPVersion) -> Builder {
-            self.version = version
-            return self
+        public func withHttpVersion(_ version: HTTPVersion) -> Self {
+            with { $0.version = version }
         }
         
         /// Set the remote address of the mock request.
-        public func withRemoteAddress(_ address: SocketAddress) -> Builder {
-            self.remoteAddress = address
-            return self
+        public func withRemoteAddress(_ address: SocketAddress) -> Self {
+            with { $0.remoteAddress = address }
         }
         
-        /// Send the built request to your application's router.
-        ///
-        /// - Returns: The resulting response.
         public func execute() async throws -> Response {
-            let request: Request = .fixture(
-                remoteAddress: remoteAddress,
-                version: version,
-                method: partialRequest.method,
-                uri: partialRequest.urlComponents.path,
-                headers: partialRequest.headers,
-                body: partialRequest.body)
-            return await Router.default.handle(request: request)
+            await Router.default.handle(
+                request: .fixture(
+                    remoteAddress: remoteAddress,
+                    version: version,
+                    method: method,
+                    uri: urlComponents.path,
+                    headers: headers,
+                    body: body))
         }
     }
     
-    /// A request made with this builder returns a `Response`.
-    public typealias Res = Response
-    
     /// An instance of your app, reset and configured before each test.
     public var app = A()
-    /// The builder to defer to when building requests.
-    public var builder: Builder { Builder() }
+    public var Test: Builder { Builder() }
     
     open override func setUpWithError() throws {
         try super.setUpWithError()

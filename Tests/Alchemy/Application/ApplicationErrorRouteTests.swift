@@ -2,12 +2,12 @@ import AlchemyTest
 
 final class ApplicationErrorRouteTests: TestCase<TestApp> {
     func testCustomNotFound() async throws {
-        try await get("/not_found").assertBody(HTTPResponseStatus.notFound.reasonPhrase).assertNotFound()
+        try await Test.get("/not_found").assertBody(HTTPResponseStatus.notFound.reasonPhrase).assertNotFound()
         app.notFound { _ in
             "Hello, world!"
         }
         
-        try await get("/not_found").assertBody("Hello, world!").assertOk()
+        try await Test.get("/not_found").assertBody("Hello, world!").assertOk()
     }
     
     func testCustomInternalError() async throws {
@@ -18,13 +18,13 @@ final class ApplicationErrorRouteTests: TestCase<TestApp> {
         }
         
         let status = HTTPResponseStatus.internalServerError
-        try await get("/error").assertBody(status.reasonPhrase).assertStatus(status)
+        try await Test.get("/error").assertBody(status.reasonPhrase).assertStatus(status)
         
         app.internalError { _, _ in
             "Nothing to see here."
         }
         
-        try await get("/error").assertBody("Nothing to see here.").assertOk()
+        try await Test.get("/error").assertBody("Nothing to see here.").assertOk()
     }
     
     func testThrowingCustomInternalError() async throws {
@@ -39,6 +39,6 @@ final class ApplicationErrorRouteTests: TestCase<TestApp> {
         }
         
         let status = HTTPResponseStatus.internalServerError
-        try await get("/error").assertBody(status.reasonPhrase).assertStatus(.internalServerError)
+        try await Test.get("/error").assertBody(status.reasonPhrase).assertStatus(.internalServerError)
     }
 }

@@ -2,9 +2,9 @@
 import AsyncHTTPClient
 import XCTest
 
-extension Client {
+extension Client.Builder {
     public func assertNothingSent(file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssert(stubbedRequests.isEmpty, file: file, line: line)
+        XCTAssert(client.stubbedRequests.isEmpty, file: file, line: line)
     }
     
     public func assertSent(
@@ -13,14 +13,14 @@ extension Client {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        XCTAssertFalse(stubbedRequests.isEmpty, file: file, line: line)
+        XCTAssertFalse(client.stubbedRequests.isEmpty, file: file, line: line)
         if let count = count {
-            XCTAssertEqual(stubbedRequests.count, count, file: file, line: line)
+            XCTAssertEqual(client.stubbedRequests.count, count, file: file, line: line)
         }
         
         if let validate = validate {
             var foundMatch = false
-            for request in stubbedRequests where !foundMatch {
+            for request in client.stubbedRequests where !foundMatch {
                 foundMatch = validate(request)
             }
             

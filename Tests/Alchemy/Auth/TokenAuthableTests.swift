@@ -13,15 +13,15 @@ final class TokenAuthableTests: TestCase<TestApp> {
         let auth = try await AuthModel(email: "test@withapollo.com", password: Bcrypt.hash("password")).insertReturn()
         let token = try await TokenModel(authModel: auth).insertReturn()
         
-        try await get("/user")
+        try await Test.get("/user")
             .assertUnauthorized()
         
-        try await withBearerAuth(token.value.uuidString)
+        try await Test.withBearerAuth(token.value.uuidString)
             .get("/user")
             .assertOk()
             .assertJson(token.value)
         
-        try await withBearerAuth(UUID().uuidString)
+        try await Test.withBearerAuth(UUID().uuidString)
             .get("/user")
             .assertUnauthorized()
     }

@@ -40,7 +40,7 @@ extension Client {
         request: Request
     ) async throws -> (clientResponse: Client.Response, response: Response) {
         let components = try endpoint.httpComponents(dto: request)
-        var request = withHeaders(components.headers)
+        var request = builder().withHeaders(components.headers)
         
         if let body = components.body {
             switch components.contentEncoding {

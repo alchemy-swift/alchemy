@@ -1,4 +1,5 @@
 import AsyncHTTPClient
+import Hummingbird
 import NIOCore
 import NIOHTTP1
 
@@ -10,12 +11,10 @@ import NIOHTTP1
 ///     let response = try await Http.get("https://swift.org")
 ///
 /// See `ClientProvider` for the request builder interface.
-public final class Client: ClientProvider, Service {
+public final class Client: Service {
     /// A type for making http requests with a `Client`. Supports static or
     /// streamed content.
     public struct Request {
-        /// How long until this request times out.
-        public var timeout: TimeAmount? = nil
         /// The url components.
         public var urlComponents: URLComponents = URLComponents()
         /// The request method.
@@ -28,6 +27,20 @@ public final class Client: ClientProvider, Service {
         public var url: URL { urlComponents.url ?? URL(string: "/")! }
         /// Remote host, resolved from `URL`.
         public var host: String { urlComponents.url?.host ?? "" }
+        /// How long until this request times out.
+        public var timeout: TimeAmount? = nil
+        /// Custom config override when making this request.
+        public var config: HTTPClient.Configuration? = nil
+        /// Allows for extending storage on this type.
+        public var extensions = HBExtensions<Self>()
+        
+        public init(url: String = "", method: HTTPMethod = .GET, headers: HTTPHeaders = [:], body: ByteContent? = nil, timeout: TimeAmount? = nil) {
+            self.urlComponents = URLComponents(string: url) ?? URLComponents()
+            self.method = method
+            self.headers = headers
+            self.body = body
+            self.timeout = timeout
+        }
         
         /// The underlying `AsyncHTTPClient.HTTPClient.Request`.
         fileprivate var _request: HTTPClient.Request {
@@ -59,7 +72,7 @@ public final class Client: ClientProvider, Service {
     
     /// The response type of a request made with client. Supports static or
     /// streamed content.
-    public struct Response {
+    public struct Response: ResponseInspector {
         /// The request that resulted in this response
         public var request: Client.Request
         /// Remote host of the request.
@@ -72,6 +85,8 @@ public final class Client: ClientProvider, Service {
         public let headers: HTTPHeaders
         /// Response body.
         public var body: ByteContent?
+        /// Allows for extending storage on this type.
+        public var extensions = HBExtensions<Self>()
         
         /// Create a stubbed response with the given info. It will be returned
         /// for any incoming request that matches the stub pattern.
@@ -81,56 +96,48 @@ public final class Client: ClientProvider, Service {
             headers: HTTPHeaders = [:],
             body: ByteContent? = nil
         ) -> Client.Response {
-            Client.Response(request: .init(), host: "", status: status, version: version, headers: headers, body: body)
+            Client.Response(request: Request(url: ""), host: "", status: status, version: version, headers: headers, body: body)
         }
     }
     
-    /// Helper for building http requests.
-    public final class Builder: RequestBuilder {
-        /// A request made with this builder returns a `Client.Response`.
-        public typealias Res = Response
+    public struct Builder: RequestBuilder {
+        public var client: Client
+        public var urlComponents: URLComponents { get { request.urlComponents } set { request.urlComponents = newValue} }
+        public var method: HTTPMethod { get { request.method } set { request.method = newValue} }
+        public var headers: HTTPHeaders { get { request.headers } set { request.headers = newValue} }
+        public var body: ByteContent? { get { request.body } set { request.body = newValue} }
+        private var request: Client.Request
         
-        /// Build using this builder.
-        public var builder: Builder { self }
-        /// The request being built.
-        public var partialRequest: Request = .init()
-        
-        private let execute: (Request, HTTPClient.Configuration?) async throws -> Client.Response
-        private var configOverride: HTTPClient.Configuration? = nil
-        
-        fileprivate init(execute: @escaping (Request, HTTPClient.Configuration?) async throws -> Client.Response) {
-            self.execute = execute
+        init(client: Client) {
+            self.client = client
+            self.request = Request()
         }
         
-        /// Execute the built request using the backing client.
-        ///
-        /// - Returns: The resulting response.
-        public func execute() async throws -> Response {
-            try await execute(partialRequest, configOverride)
+        public func execute() async throws -> Client.Response {
+            try await client.execute(req: request)
         }
         
         /// Sets an `HTTPClient.Configuration` for this request only. See the
         /// `swift-server/async-http-client` package for configuration
         /// options.
         public func withClientConfig(_ config: HTTPClient.Configuration) -> Builder {
-            self.configOverride = config
-            return self
+            with { $0.request.config = config }
         }
-        
+
         /// Timeout if the request doesn't finish in the given time amount.
         public func withTimeout(_ timeout: TimeAmount) -> Builder {
-            with { $0.timeout = timeout }
+            with { $0.request.timeout = timeout }
+        }
+        
+        /// Stub this client, causing it to respond to all incoming requests with a
+        /// stub matching the request url or a default `200` stub.
+        public func stub(_ stubs: [(String, Client.Response)] = []) {
+            self.client.stubs = stubs
         }
     }
     
-    /// A request made with this builder returns a `Client.Response`.
-    public typealias Res = Response
-    
     /// The underlying `AsyncHTTPClient.HTTPClient` used for making requests.
     public var httpClient: HTTPClient
-    /// The builder to defer to when building requests.
-    public var builder: Builder { Builder(execute: execute) }
-    
     private var stubWildcard: Character = "*"
     private var stubs: [(pattern: String, response: Response)]?
     private(set) var stubbedRequests: [Client.Request]
@@ -141,6 +148,10 @@ public final class Client: ClientProvider, Service {
         self.httpClient = httpClient
         self.stubs = nil
         self.stubbedRequests = []
+    }
+    
+    public func builder() -> Builder {
+        Builder(client: self)
     }
     
     /// Shut down the underlying http client.
@@ -161,13 +172,13 @@ public final class Client: ClientProvider, Service {
     ///   - config: A custom configuration for the client that will execute the
     ///     request
     /// - Returns: The request's response.
-    func execute(req: Request, config: HTTPClient.Configuration?) async throws -> Response {
+    private func execute(req: Request) async throws -> Response {
         guard stubs == nil else {
             return stubFor(req)
         }
         
         let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
-        let httpClientOverride = config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
+        let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
         defer { try? httpClientOverride?.syncShutdown() }
         let promise = Loop.group.next().makePromise(of: Response.self)
         _ = (httpClientOverride ?? httpClient)

@@ -3,51 +3,58 @@ import Alchemy
 import AlchemyTest
 
 final class ContentTests: XCTestCase {
-    var content: Content = Content(value: "foo")
+    var content: Content2!
     
     override func setUp() {
         super.setUp()
-        content = Content(dict: [
-            "string": "string",
-            "int": 0,
-            "bool": true,
-            "double": 1.23,
-            "array": [
-                1,
-                2,
-                3
-            ],
-            "dict": [
-                "one": "one",
-                "two": "two",
-                "three": "three",
-                "four": nil
-            ],
-            "jsonArray": [
-                ["foo": "bar"],
-                ["foo": "baz"],
-                ["foo": "tiz"],
-            ]
-        ])
+        let data = """
+            {
+                "string": "string",
+                "int": 0,
+                "bool": true,
+                "double": 1.23,
+                "array": [
+                    1,
+                    2,
+                    3
+                ],
+                "dict": {
+                    "one": "one",
+                    "two": "two",
+                    "three": "three",
+                    "four": null
+                },
+                "jsonArray": [
+                    {"foo": "bar"},
+                    {"foo": "baz"},
+                    {"foo": "tiz"},
+                ]
+            }
+            """.data(using: .utf8)!
+        content = try! JSONDecoder().decode(Content2.self, from: data)
     }
     
-    func testAccess() {
-        AssertTrue(content["foo"] == nil)
-        AssertEqual(content["string"].string, "string")
-        AssertTrue(content.dict.four == nil)
-        AssertEqual(content["int"].int, 0)
-        AssertEqual(content["bool"].bool, true)
-        AssertEqual(content["double"].double, 1.23)
-        AssertEqual(content["array"].string, nil)
-        AssertEqual(content["array"].array?.count, 3)
-        AssertEqual(content["array"][0].string, nil)
-        AssertEqual(content["array"][0].int, 1)
-        AssertEqual(content["array"][1].int, 2)
-        AssertEqual(content["array"][2].int, 3)
-        AssertEqual(content["dict"]["one"].string, "one")
-        AssertEqual(content["dict"]["two"].string, "two")
-        AssertEqual(content["dict"]["three"].string, "three")
-        AssertEqual(content["dict"].dictionary?.string, [
+    func testAccess() throws {
+        AssertFalse(content["foo"].exists)
+        AssertEqual(try content["string"].string, "string")
+        AssertTrue(content.dict.exists)
+        AssertEqual(try content["int"].int, 0)
+        AssertEqual(try content["bool"].bool, true)
+        AssertEqual(try content["double"].double, 1.23)
+        XCTAssertThrowsError(try content["array"].string)
+        AssertEqual(try content["array"].decode([Int].self).count, 3)
+        AssertEqual(try content["array"].array[0].int, 1)
+        XCTAssertThrowsError(try content["array"][0].string)
+        AssertEqual(try content["array"][0].int, 1)
+        AssertEqual(try content["array"][1].int, 2)
+        AssertEqual(try content["array"][2].int, 3)
+        AssertEqual(try content["dict"]["one"].string, "one")
+        AssertEqual(try content["dict"]["two"].string, "two")
+        AssertEqual(try content["dict"]["three"].string, "three")
+        AssertFalse(try content.dict.three.isNull)
+        AssertTrue(content.dict.four.exists)
+        AssertTrue(try content.dict.four.isNull)
+        AssertTrue(try content["dict"] == [
             "one": "one",
             "two": "two",
             "three": "three",
