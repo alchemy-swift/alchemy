@@ -26,7 +26,7 @@ public final class Request: RequestInspector {
     /// The underlying hummingbird request
     public var hbRequest: HBRequest
     /// Allows for extending storage on this type.
-    public var extensions: HBExtensions<Request>
+    public var extensions: Extensions<Request>
     /// The url components of this request.
     public let urlComponents: URLComponents
     /// Parameters parsed from the path.
@@ -38,7 +38,7 @@ public final class Request: RequestInspector {
     init(hbRequest: HBRequest, parameters: [Parameter] = []) {
         self.hbRequest = hbRequest
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
-        self.extensions = HBExtensions()
+        self.extensions = Extensions()
         self.parameters = parameters
     }
     

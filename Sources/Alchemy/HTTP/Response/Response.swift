@@ -13,7 +13,7 @@ public final class Response: ResponseBuilder {
     /// The body of this response.
     public var body: ByteContent?
     /// Allows for extending storage on this type.
-    public var extensions: HBExtensions<Response>
+    public var extensions: Extensions<Response>
     
     /// Creates a new response using a status code, headers and body. If the
     /// body is of type `.buffer()` or `nil`, the `Content-Length` header
@@ -27,7 +27,7 @@ public final class Response: ResponseBuilder {
         self.status = status
         self.headers = headers
         self.body = body
-        self.extensions = HBExtensions()
+        self.extensions = Extensions()
         
         switch body {
         case .buffer(let buffer):
@@ -62,6 +62,6 @@ public final class Response: ResponseBuilder {
         self.status = .ok
         self.headers = HTTPHeaders()
         self.body = .stream(stream)
-        self.extensions = HBExtensions()
+        self.extensions = Extensions()
     }
 }

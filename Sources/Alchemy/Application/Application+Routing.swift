@@ -157,7 +157,7 @@ extension Application {
             if let convertible = value as? ResponseConvertible {
                 return try await convertible.response()
             } else {
-                return try value.convert()
+                return try value.response()
             }
         })
     }

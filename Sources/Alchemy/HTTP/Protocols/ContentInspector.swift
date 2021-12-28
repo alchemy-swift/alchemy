@@ -1,13 +1,42 @@
 import Hummingbird
 import MultipartKit
 
-public protocol ContentInspector {
+public protocol ContentInspector: Extendable {
     var headers: HTTPHeaders { get }
     var body: ByteContent? { get }
-    var extensions: HBExtensions<Self> { get set }
 }
 
 extension ContentInspector {
+    
+    // MARK: Files
+    
+    /// Get any attached file with the given name from this request.
+    public func file(_ name: String) async throws -> File? {
+        files()[name]
+    }
+    
+    /// Any files attached to this content, keyed by their multipart name
+    /// (separate from filename). Only populated if this content is
+    /// associated with a multipart request containing files.
+    ///
+    /// Async since the request may need to finish streaming before we get the
+    /// files.
+    public func files() -> [String: File] {
+        guard !content().allKeys.isEmpty else {
+            return [:]
+        }
+        
+        let content = content()
+        let files = Set(content.allKeys).compactMap { key -> (String, File)? in
+            guard let file = content[key].value?.file else {
+                return nil
+            }
+            
+            return (key, file)
+        }
+        
+        return Dictionary(uniqueKeysWithValues: files)
+    }
     
     // MARK: Partial Content
     
@@ -28,15 +57,26 @@ extension ContentInspector {
     }
     
     func content() -> Content {
-        guard let body = body else {
-            return Content(error: ContentError.emptyBody)
+        if let content = _content {
+            return content
+        } else {
+            guard let body = body else {
+                return Content(error: ContentError.emptyBody)
+            }
+            
+            guard let decoder = preferredDecoder() else {
+                return Content(error: ContentError.unknownContentType(headers.contentType))
+            }
+            
+            let content = decoder.content(from: body.buffer, contentType: headers.contentType)
+            _content = content
+            return content
         }
-        
-        guard let decoder = preferredDecoder() else {
-            return Content(error: ContentError.unknownContentType(headers.contentType))
-        }
-        
-        return decoder.content(from: body.buffer, contentType: headers.contentType)
+    }
+    
+    private var _content: Content? {
+        get { extensions.get(\._content) }
+        nonmutating set { extensions.set(\._content, value: newValue) }
     }
     
     // MARK: Content
@@ -108,78 +148,6 @@ extension ContentInspector {
         } catch {
             throw ValidationError("Invalid request body.")
         }
-    }
-    
-    // MARK: Files
-    
-    private var _files: [String: File]? {
-        get { extensions.get(\._files) }
-        set { extensions.set(\._files, value: newValue) }
-    }
-    
-    /// Get any attached file with the given name from this request.
-    public mutating func file(_ name: String) async throws -> File? {
-        try await files()[name]
-    }
-    
-    /// Any files attached to this content, keyed by their multipart name
-    /// (separate from filename). Only populated if this content is
-    /// associated with a multipart request containing files.
-    ///
-    /// Async since the request may need to finish streaming before we get the
-    /// files.
-    public mutating func files() async throws -> [String: File] {
-        guard let alreadyLoaded = _files else {
-            return try await loadFiles()
-        }
-        
-        return alreadyLoaded
-    }
-    
-    /// Currently loads all files into memory. Should store files larger than
-    /// some size into a temp directory.
-    private mutating func loadFiles() async throws -> [String: File] {
-        guard headers.contentType == .multipart else {
-            return [:]
-        }
-        
-        guard let boundary = headers.contentType?.parameters["boundary"] else {
-            throw HTTPError(.notAcceptable)
-        }
-        
-        guard let stream = body?.stream else {
-            return [:]
-        }
-        
-        let parser = MultipartParser(boundary: boundary)
-        var parts: [MultipartPart] = []
-        var headers: HTTPHeaders = .init()
-        var body: ByteBuffer = ByteBuffer()
-
-        parser.onHeader = { headers.replaceOrAdd(name: $0, value: $1) }
-        parser.onBody = { body.writeBuffer(&$0) }
-        parser.onPartComplete = {
-            parts.append(MultipartPart(headers: headers, body: body))
-            headers = [:]
-            body = ByteBuffer()
-        }
-
-        for try await chunk in stream {
-            try parser.execute(chunk)
-        }
-        
-        var files: [String: File] = [:]
-        for part in parts {
-            guard
-                let disposition = part.headers.contentDisposition,
-                let name = disposition.name,
-                let filename = disposition.filename
-            else { continue }
-            files[name] = File(name: filename, size: part.body.writerIndex, content: .buffer(part.body))
-        }
-        
-        _files = files
-        return files
     }
 }
 
