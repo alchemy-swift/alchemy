@@ -66,8 +66,8 @@ extension Client.Request {
     }
     
     public func hasBody(string: String) -> Bool {
-        if let byteBuffer = body?.buffer, let bodyString = byteBuffer.string() {
-            return bodyString == string
+        if let buffer = body?.buffer {
+            return buffer.string == string
         } else {
             return false
         }

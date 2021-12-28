@@ -2,6 +2,7 @@ import NIOCore
 
 public protocol ContentDecoder {
     func decodeContent<D: Decodable>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D
+    func content(from buffer: ByteBuffer, contentType: ContentType?) -> Content
 }
 
 public protocol ContentEncoder {

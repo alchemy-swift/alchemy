@@ -87,7 +87,7 @@ extension ByteContent {
         if Env.LOG_FULL_CLIENT_ERRORS ?? false {
             switch self {
             case .buffer(let buffer):
-                return buffer.string() ?? "N/A"
+                return buffer.string
             case .stream:
                 return "<stream>"
             }

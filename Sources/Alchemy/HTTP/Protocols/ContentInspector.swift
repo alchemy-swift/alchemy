@@ -7,199 +7,11 @@ public protocol ContentInspector {
     var extensions: HBExtensions<Self> { get set }
 }
 
-// The content of an HTTP message.
-@dynamicMemberLookup
-public struct Content2: Decodable, Buildable {
-    enum PathItem {
-        case field(String)
-        case index(Int)
-    }
-    
-    struct GenericCodingKey: CodingKey {
-        let stringValue: String
-        let intValue: Int?
-        
-        init(stringValue: String) {
-            self.stringValue = stringValue
-            self.intValue = Int(stringValue)
-        }
-        
-        init(intValue: Int) {
-            self.intValue = intValue
-            self.stringValue = String(intValue)
-        }
-    }
-    
-    enum State {
-        case decoder(Decoder)
-        case error(Error)
-    }
-    
-    enum DecodeState {
-        case initial(Decoder)
-        case keyed(KeyedDecodingContainer<GenericCodingKey>, key: String)
-        case unkeyed(UnkeyedDecodingContainer, index: Int)
-        
-        func decode<D: Decodable>(_ type: D.Type = D.self, at path: [PathItem]) throws -> D {
-            switch self {
-            case .initial(let decoder):
-                return try decodeInitial(decoder: decoder, at: path)
-                
-            case .keyed(let container, let key):
-                return try decodeKeyed(container: container, key: key, at: path)
-                
-            case .unkeyed(let container, let index):
-                return try decodeUnkeyed(container: container, index: index, at: path)
-            }
-        }
-        
-        private func decodeInitial<T: Decodable>(decoder: Decoder, at path: [PathItem]) throws -> T {
-            guard let first = path.first else {
-                return try decoder.singleValueContainer().decode(T.self)
-            }
-            
-            switch first {
-            case .index(let index):
-                let container = try decoder.unkeyedContainer()
-                return try DecodeState.unkeyed(container, index: index).decode(at: path.removingFirst())
-            case .field(let field):
-                let container = try decoder.container(keyedBy: GenericCodingKey.self)
-                return try DecodeState.keyed(container, key: field).decode(at: path.removingFirst())
-            }
-        }
-        
-        private func decodeKeyed<T: Decodable>(container: KeyedDecodingContainer<GenericCodingKey>, key: String, at path: [PathItem]) throws -> T {
-            guard let first = path.first else {
-                return try container.decode(T.self, forKey: GenericCodingKey(stringValue: key))
-            }
-            
-            switch first {
-            case .index(let index):
-                let container = try container.nestedUnkeyedContainer(forKey: GenericCodingKey(stringValue: key))
-                return try DecodeState.unkeyed(container, index: index).decode(at: path.removingFirst())
-            case .field(let field):
-                let container = try container.nestedContainer(keyedBy: GenericCodingKey.self, forKey: GenericCodingKey(stringValue: key))
-                return try DecodeState.keyed(container, key: field).decode(at: path.removingFirst())
-            }
-        }
-        
-        private func decodeUnkeyed<T: Decodable>(container: UnkeyedDecodingContainer, index: Int, at path: [PathItem]) throws -> T {
-            guard index < container.count ?? 0 else {
-                throw DecodingError.valueNotFound(T.self, .init(codingPath: [], debugDescription: "Index out of bounds. Array had \(container.count ?? 0) elements and index was \(index)."))
-            }
-            
-            // Move to index.
-            var containerCopy = container
-            for _ in 0..<index { _ = try containerCopy.decode(Empty.self) }
-            
-            guard let first = path.first else {
-                return try containerCopy.decode(T.self)
-            }
-            
-            switch first {
-            case .index(let index):
-                let container = try containerCopy.nestedUnkeyedContainer()
-                return try DecodeState.unkeyed(container, index: index).decode(at: path.removingFirst())
-            case .field(let field):
-                let container = try containerCopy.nestedContainer(keyedBy: GenericCodingKey.self)
-                return try DecodeState.keyed(container, key: field).decode(at: path.removingFirst())
-            }
-        }
-    }
-    
-    // MARK: Values
-    
-    public var string: String { get throws { try decode() } }
-    public var int: Int { get throws { try decode() } }
-    public var bool: Bool { get throws { try decode() } }
-    public var double: Double { get throws { try decode() } }
-    public var exists: Bool { (try? decode(Empty.self)) != nil }
-    public var isNull: Bool { get throws { try self == nil } }
-    
-    // MARK: Array
-    public var array: [Content2] {
-        get throws {
-            (try decode([Empty].self))
-                .enumerated()
-                .map { index, _ in with(.index(index)) }
-        }
-    }
-    
-    let state: State
-    var path: [PathItem]
-    
-    init(state: State, path: [PathItem] = []) {
-        self.state = state
-        self.path = path
-    }
-    
-    func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
-        switch state {
-        case .decoder(let decoder):
-            return try DecodeState.initial(decoder).decode(at: path)
-        case .error(let error):
-            throw error
-        }
-    }
-    
-    public init(from decoder: Decoder) throws {
-        self.state = .decoder(decoder)
-        self.path = []
-    }
-    
-    public subscript(dynamicMember member: String) -> Content2 {
-        if let int = Int(member) {
-            return self[int]
-        } else {
-            return self[member]
-        }
-    }
-    
-    public subscript(operator: (Content, Content) -> Void) -> [Content2] {
-        flatten()
-    }
-    
-    public subscript(index: Int) -> Content2 {
-        with(.index(index))
-    }
-    
-    public subscript(field: String) -> Content2 {
-        with(.field(field))
-    }
-    
-    public func flatten() -> [Content2] {
-        array
-    }
-    
-    fileprivate func with(_ item: PathItem) -> Content2 {
-        with { $0.path.append(item) }
-    }
-    
-    /// Flatten operator.
-    static func *(lhs: Content2, rhs: Content2) {}
-    
-    static var nilBodyError: DecodingError {
-        DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Content had no body."))
-    }
-    
-    static func unknownContentType(type: ContentType) -> DecodingError {
-        DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "No decoders available for Content-Type: `\(type.value)`."))
-    }
-    
-    static func ==(lhs: Content2, rhs: Void?) throws -> Bool {
-        try lhs.decode(Optional<Empty>.self) == nil
-    }
-    
-    static func ==<E: Decodable & Equatable>(lhs: Content2, rhs: E) throws -> Bool {
-        try lhs.decode(E.self) == rhs
-    }
-}
-
 extension ContentInspector {
     
     // MARK: Partial Content
     
-    public subscript(dynamicMember member: String) -> Content2 {
+    public subscript(dynamicMember member: String) -> Content {
         if let int = Int(member) {
             return self[int]
         } else {
@@ -207,28 +19,24 @@ extension ContentInspector {
         }
     }
     
-    public subscript(index: Int) -> Content2 {
-        content().with(.index(index))
+    public subscript(index: Int) -> Content {
+        content()[index]
     }
     
-    public subscript(field: String) -> Content2 {
-        content().with(.field(field))
+    public subscript(field: String) -> Content {
+        content()[field]
     }
     
-    func content() -> Content2 {
+    func content() -> Content {
         guard let body = body else {
-            return Content2(state: .error(Content2.nilBodyError))
+            return Content(error: ContentError.emptyBody)
         }
         
         guard let decoder = preferredDecoder() else {
-            return Content2(state: .error(Content2.unknownContentType(type: headers.contentType ?? ContentType("<missing>"))))
+            return Content(error: ContentError.unknownContentType(headers.contentType))
         }
         
-        do {
-            return try decoder.decodeContent(Content2.self, from: body.buffer, contentType: headers.contentType)
-        } catch {
-            return Content2(state: .error(error))
-        }
+        return decoder.content(from: body.buffer, contentType: headers.contentType)
     }
     
     // MARK: Content

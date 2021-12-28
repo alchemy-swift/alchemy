@@ -55,7 +55,7 @@ final class StreamingTests: TestCase<TestApp> {
                     return
                 }
                 
-                XCTAssertEqual($0.string(), expected.removeFirst())
+                XCTAssertEqual($0.string, expected.removeFirst())
             }
             .assertOk()
     }
