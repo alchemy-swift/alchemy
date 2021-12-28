@@ -1,5 +1,5 @@
 // The default configured Client
-public var Http: Client { .resolve(.default) }
+public var Http: Client.Builder { Client.resolve(.default).builder() }
 
 // The default configured Database
 public var DB: Database { .resolve(.default) }

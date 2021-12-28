@@ -25,6 +25,49 @@ extension FormDataDecoder: ContentDecoder {
         
         return try decode(type, from: buffer, boundary: boundary)
     }
+    
+    public func content(from buffer: ByteBuffer, contentType: ContentType?) -> Content {
+        guard contentType == .multipart else {
+            return Content(error: ContentError.unknownContentType(contentType))
+        }
+        
+        guard let boundary = contentType?.parameters["boundary"] else {
+            return Content(error: ContentError.unknownContentType(contentType))
+        }
+        
+        let parser = MultipartParser(boundary: boundary)
+        var parts: [MultipartPart] = []
+        var headers: HTTPHeaders = .init()
+        var body: ByteBuffer = ByteBuffer()
+
+        parser.onHeader = { headers.replaceOrAdd(name: $0, value: $1) }
+        parser.onBody = { body.writeBuffer(&$0) }
+        parser.onPartComplete = {
+            parts.append(MultipartPart(headers: headers, body: body))
+            headers = [:]
+            body = ByteBuffer()
+        }
+        
+        do {
+            try parser.execute(buffer)
+            let dict = Dictionary(uniqueKeysWithValues: parts.compactMap { part in part.name.map { ($0, part) } })
+            return Content(root: .dict(dict.mapValues { .value($0) }))
+        } catch {
+            return Content(error: error)
+        }
+    }
+}
+
+extension MultipartPart: ContentValue {
+    public var string: String? { body.string }
+    public var int: Int? { Int(body.string) }
+    public var bool: Bool? { Bool(body.string) }
+    public var double: Double? { Double(body.string) }
+    
+    public var file: File? {
+        guard let disposition = headers.contentDisposition, let filename = disposition.filename else { return nil }
+        return File(name: filename, size: body.writerIndex, content: .buffer(body))
+    }
 }
 
 extension String {

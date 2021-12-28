@@ -7,10 +7,10 @@ final class CORSMiddlewareTests: TestCase<TestApp> {
         let cors = CORSMiddleware()
         app.useAll(cors)
         
-        try await get("/hello")
+        try await Test.get("/hello")
             .assertHeaderMissing("Access-Control-Allow-Origin")
         
-        try await withHeader("Origin", value: "https://foo.example")
+        try await Test.withHeader("Origin", value: "https://foo.example")
             .get("/hello")
             .assertHeader("Access-Control-Allow-Origin", value: "https://foo.example")
             .assertHeader("Access-Control-Allow-Headers", value: "Accept, Authorization, Content-Type, Origin, X-Requested-With")
@@ -31,10 +31,10 @@ final class CORSMiddlewareTests: TestCase<TestApp> {
         ))
         app.useAll(cors)
         
-        try await get("/hello")
+        try await Test.get("/hello")
             .assertHeaderMissing("Access-Control-Allow-Origin")
         
-        try await withHeader("Origin", value: "https://foo.example")
+        try await Test.withHeader("Origin", value: "https://foo.example")
             .get("/hello")
             .assertHeader("Access-Control-Allow-Origin", value: "https://foo.example")
             .assertHeader("Access-Control-Allow-Headers", value: "foo, bar")
@@ -48,10 +48,10 @@ final class CORSMiddlewareTests: TestCase<TestApp> {
         let cors = CORSMiddleware()
         app.useAll(cors)
         
-        try await options("/hello")
+        try await Test.options("/hello")
             .assertHeaderMissing("Access-Control-Allow-Origin")
         
-        try await withHeader("Origin", value: "https://foo.example")
+        try await Test.withHeader("Origin", value: "https://foo.example")
             .withHeader("Access-Control-Request-Method", value: "PUT")
             .options("/hello")
             .assertOk()

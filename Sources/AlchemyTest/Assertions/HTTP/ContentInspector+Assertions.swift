@@ -1,77 +1,6 @@
 import Alchemy
-import XCTest
 
-public protocol ResponseAssertable: HasContent {
-    var status: HTTPResponseStatus { get }
-    var headers: HTTPHeaders { get }
-    var body: ByteContent? { get }
-}
-
-extension Response: ResponseAssertable {}
-extension Client.Response: ResponseAssertable {}
-
-extension ResponseAssertable {
-    // MARK: Status Assertions
-    
-    @discardableResult
-    public func assertCreated(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(status, .created, file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertForbidden(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(status, .forbidden, file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertNotFound(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(status, .notFound, file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertOk(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(status, .ok, file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertRedirect(to uri: String? = nil, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertTrue((300...399).contains(status.code), file: file, line: line)
-        
-        if let uri = uri {
-            assertLocation(uri, file: file, line: line)
-        }
-        
-        return self
-    }
-    
-    @discardableResult
-    public func assertStatus(_ status: HTTPResponseStatus, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(self.status, status, file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertStatus(_ code: UInt, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(status.code, code, file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertSuccessful(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertTrue((200...299).contains(status.code), file: file, line: line)
-        return self
-    }
-    
-    @discardableResult
-    public func assertUnauthorized(file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssertEqual(status, .unauthorized, file: file, line: line)
-        return self
-    }
-    
+extension ContentInspector {
     // MARK: Header Assertions
     
     @discardableResult
@@ -132,8 +61,8 @@ extension ResponseAssertable {
             return self
         }
         
-        XCTAssertNoThrow(try self.decode(as: D.self), file: file, line: line)
-        guard let decoded = try? self.decode(as: D.self) else {
+        XCTAssertNoThrow(try decode(as: D.self), file: file, line: line)
+        guard let decoded = try? decode(as: D.self) else {
             return self
         }
         

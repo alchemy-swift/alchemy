@@ -4,7 +4,7 @@ import NIOHTTP1
 import Hummingbird
 
 /// A type that represents inbound requests to your application.
-public final class Request {
+public final class Request: RequestInspector {
     /// The request body.
     public var body: ByteContent? { hbRequest.byteContent }
     /// The byte buffer of this request's body, if there is one.
@@ -26,9 +26,9 @@ public final class Request {
     /// The underlying hummingbird request
     public var hbRequest: HBRequest
     /// Allows for extending storage on this type.
-    public var extensions: HBExtensions<Request>
+    public var extensions: Extensions<Request>
     /// The url components of this request.
-    public var urlComponents: URLComponents
+    public let urlComponents: URLComponents
     /// Parameters parsed from the path.
     public var parameters: [Parameter] {
         get { extensions.get(\.parameters) }
@@ -38,7 +38,7 @@ public final class Request {
     init(hbRequest: HBRequest, parameters: [Parameter] = []) {
         self.hbRequest = hbRequest
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
-        self.extensions = HBExtensions()
+        self.extensions = Extensions()
         self.parameters = parameters
     }
     

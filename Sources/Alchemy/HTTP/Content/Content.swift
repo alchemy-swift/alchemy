@@ -1,142 +1,226 @@
 import Foundation
 
-/*
- Decoding individual fields from response / request bodies.
- 1. Have a protocol `HasContent` for `Req/Res` & `Client.Req/Client.Res`.
- 2. Have a cache for the decoded dictionary in extensions.
- 3. Allow for single field access.
- 4. For setting, have protocol `HasContentSettable` for `Res & Client.Req`
- */
+public protocol ContentValue {
+    var string: String? { get }
+    var bool: Bool? { get }
+    var double: Double? { get }
+    var int: Int? { get }
+    var file: File? { get }
+}
 
-/// A value inside HTTP content
+struct AnyContentValue: ContentValue {
+    let value: Any
+    
+    var string: String? { value as? String }
+    var bool: Bool? { value as? Bool }
+    var int: Int? { value as? Int }
+    var double: Double? { value as? Double }
+    var file: File? { nil }
+}
+
+/// Utility making it easy to set or modify http content
 @dynamicMemberLookup
-enum Content {
-    enum Query {
+public final class Content: Buildable {
+    public enum Node {
+        case array([Node])
+        case dict([String: Node])
+        case value(ContentValue)
+        case null
+        
+        static func dict(_ dict: [String: Any]) -> Node {
+            .dict(dict.mapValues(Node.any))
+        }
+        
+        static func array(_ array: [Any]) -> Node {
+            .array(array.map(Node.any))
+        }
+        
+        static func any(_ value: Any) -> Node {
+            if let array = value as? [Any] {
+                return .array(array)
+            } else if let dict = value as? [String: Any] {
+                return .dict(dict)
+            } else if case Optional<Any>.none = value {
+                return .null
+            } else {
+                return .value(AnyContentValue(value: value))
+            }
+        }
+    }
+    
+    enum Operator {
         case field(String)
         case index(Int)
+        case flatten
+    }
+    
+    enum State {
+        case node(Node)
+        case error(Error)
+    }
+    
+    let state: State
+    // The path taken to get here.
+    let path: [Operator]
+    
+    var error: Error? {
+        guard case .error(let error) = state else { return nil }
+        return error
+    }
+    
+    var node: Node? {
+        guard case .node(let node) = state else { return nil }
+        return node
+    }
+    
+    var value: ContentValue? {
+        guard let node = node, case .value(let value) = node else {
+            return nil
+        }
         
-        func apply(to content: Content) -> Content {
-            switch self {
-            case .field(let name):
-                guard case .dict(let dict) = content else {
-                    return .null
-                }
-                
-                return (dict[name] ?? .null) ?? .null
-            case .index(let index):
-                guard case .array(let array) = content else {
-                    return .null
-                }
-                
-                return array[index] ?? .null
-            }
-        }
+        return value
     }
     
-    case array([Content?])
-    case dict([String: Content?])
-    case value(Encodable)
-    case file(File)
-    case null
-    
-    var string: String? { convertValue() }
-    var int: Int? { convertValue() }
-    var bool: Bool? { convertValue() }
-    var double: Double? { convertValue() }
-    var array: [Content?]? { convertValue() }
-    var dictionary: [String: Content?]? { convertValue() }
+    var string: String { get throws { try unwrap(convertValue().string) } }
+    var int: Int { get throws { try unwrap(convertValue().int) } }
+    var bool: Bool { get throws { try unwrap(convertValue().bool) } }
+    var double: Double { get throws { try unwrap(convertValue().double) } }
+    var file: File { get throws { try unwrap(convertValue().file) } }
+    var array: [Content] { get throws { try convertArray() } }
+    var exists: Bool { (try? decode(Empty.self)) != nil }
     var isNull: Bool { self == nil }
-    
-    init(dict: [String: Encodable?]) {
-        self = .dict(dict.mapValues(Content.init))
+
+    init(root: Node, path: [Operator] = []) {
+        self.state = .node(root)
+        self.path = path
     }
     
-    init(array: [Encodable?]) {
-        self = .array(array.map(Content.init))
-    }
-    
-    init(value: Encodable?) {
-        switch value {
-        case .some(let value):
-            if let array = value as? [Encodable?] {
-                self = Content(array: array)
-            } else if let dict = value as? [String: Encodable?] {
-                self = Content(dict: dict)
-            } else {
-                self = .value(value)
-            }
-        case .none:
-            self = .null
-        }
+    init(error: Error, path: [Operator] = []) {
+        self.state = .error(error)
+        self.path = path
     }
     
     // MARK: - Subscripts
     
     subscript(index: Int) -> Content {
-        Query.index(index).apply(to: self)
+        let newPath = path + [.index(index)]
+        switch state {
+        case .node(let node):
+            guard case .array(let array) = node else {
+                return Content(error: ContentError.notArray, path: newPath)
+            }
+            
+            return Content(root: array[index], path: newPath)
+        case .error(let error):
+            return Content(error: error, path: newPath)
+        }
     }
     
     subscript(field: String) -> Content {
-        Query.field(field).apply(to: self)
+        let newPath = path + [.field(field)]
+        switch state {
+        case .node(let node):
+            guard case .dict(let dict) = node else {
+                return Content(error: ContentError.notDictionary, path: newPath)
+            }
+            
+            return Content(root: dict[field] ?? .null, path: newPath)
+        case .error(let error):
+            return Content(error: error, path: newPath)
+        }
     }
     
     public subscript(dynamicMember member: String) -> Content {
         self[member]
     }
     
-    subscript(operator: (Content, Content) -> Void) -> [Content?] {
-        flatten()
+    subscript(operator: (Content, Content) -> Void) -> [Content] {
+        let newPath = path + [.flatten]
+        switch state {
+        case .node(let node):
+            switch node {
+            case .null, .value:
+                return [Content(error: ContentError.cantFlatten, path: newPath)]
+            case .dict(let dict):
+                return Array(dict.values).map { Content(root: $0, path: newPath) }
+            case .array(let array):
+                return array
+                    .flatMap { content -> [Node] in
+                        if case .array(let array) = content {
+                            return array
+                        } else if case .dict = content {
+                            return [content]
+                        } else {
+                            return [.null]
+                        }
+                    }
+                    .map { Content(root: $0, path: newPath) }
+            }
+        case .error(let error):
+            return [Content(error: error, path: newPath)]
+        }
     }
     
     static func *(lhs: Content, rhs: Content) {}
     
     static func ==(lhs: Content, rhs: Void?) -> Bool {
-        if case .null = lhs {
-            return true
-        } else {
+        switch lhs.state {
+        case .node(let node):
+            if case .null = node {
+                return true
+            } else {
+                return false
+            }
+        case .error:
             return false
         }
     }
     
-    private func convertValue<T>() -> T? {
-        switch self {
-        case .array(let array):
-            return array as? T
-        case .dict(let dict):
-            return dict as? T
-        case .value(let value):
-            return value as? T
-        case .file(let file):
-            return file as? T
-        case .null:
-            return nil
+    private func convertArray() throws -> [Content] {
+        switch state {
+        case .node(let node):
+            guard case .array(let array) = node else {
+                throw ContentError.typeMismatch
+            }
+            
+            return array.enumerated().map { Content(root: $1, path: path + [.index($0)]) }
+        case .error(let error):
+            throw error
         }
     }
     
-    func flatten() -> [Content?] {
-        switch self {
-        case .null, .value, .file:
-            return []
-        case .dict(let dict):
-            return Array(dict.values)
-        case .array(let array):
-            return array
-                .compactMap { content -> [Content?]? in
-                    if case .array(let array) = content {
-                        return array
-                    } else if case .dict = content {
-                        return content.map { [$0] }
-                    } else {
-                        return nil
-                    }
-                }
-                .flatMap { $0 }
+    private func convertValue() throws -> ContentValue {
+        switch state {
+        case .node(let node):
+            guard case .value(let val) = node else {
+                throw ContentError.typeMismatch
+            }
+            
+            return val
+        case .error(let error):
+            throw error
         }
+    }
+    
+    private func unwrap<T>(_ value: T?) throws -> T {
+        try value.unwrap(or: ContentError.typeMismatch)
     }
     
     func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
         try D(from: GenericDecoder(delegate: self))
     }
+}
+
+enum ContentError: Error {
+    case unknownContentType(ContentType?)
+    case emptyBody
+    case cantFlatten
+    case notDictionary
+    case notArray
+    case doesntExist
+    case wasNull
+    case typeMismatch
+    case notSupported(String)
 }
 
 extension Content: DecoderDelegate {
@@ -170,239 +254,98 @@ extension Content: DecoderDelegate {
         return value == nil
     }
     
-    func contains(key: CodingKey) -> Bool {
-        dictionary?.keys.contains(key.stringValue) ?? false
+    var allKeys: [String] {
+        guard case .node(let node) = state, case .dict(let dict) = node else {
+            return []
+        }
+        
+        return Array(dict.keys)
     }
     
-    func nested(for key: CodingKey) -> DecoderDelegate {
+    func contains(key: CodingKey) -> Bool {
+        guard case .node(let node) = state, case .dict(let dict) = node else {
+            return false
+        }
+        
+        return dict.keys.contains(key.stringValue)
+    }
+    
+    func map(for key: CodingKey) -> DecoderDelegate {
         self[key.stringValue]
     }
     
     func array(for key: CodingKey?) throws -> [DecoderDelegate] {
         let val = key.map { self[$0.stringValue] } ?? self
-        guard let array = val.array else {
-            throw DecodingError.dataCorrupted(.init(codingPath: [key].compactMap { $0 }, debugDescription: "Expected to find an array."))
-        }
-        
-        return array.map { $0 ?? .null }
+        return try val.array.map { $0 }
     }
 }
 
-protocol DecoderDelegate {
-    // Values
-    func decodeString(for key: CodingKey?) throws -> String
-    func decodeDouble(for key: CodingKey?) throws -> Double
-    func decodeInt(for key: CodingKey?) throws -> Int
-    func decodeBool(for key: CodingKey?) throws -> Bool
-    func decodeNil(for key: CodingKey?) -> Bool
+extension Array where Element == Content {
+    var string: [String] { get throws { try map { try $0.string } } }
+    var int: [Int] { get throws { try map { try $0.int } } }
+    var bool: [Bool] { get throws { try map { try $0.bool } } }
+    var double: [Double] { get throws { try map { try $0.double } } }
     
-    // Contains
-    func contains(key: CodingKey) -> Bool
-    
-    // Array / Nested
-    func nested(for key: CodingKey) throws -> DecoderDelegate
-    func array(for key: CodingKey?) throws -> [DecoderDelegate]
-}
-
-extension DecoderDelegate {
-    func _decode<T: Decodable>(_ type: T.Type = T.self, for key: CodingKey? = nil) throws -> T {
-        var value: Any? = nil
-        
-        if T.self is Int.Type {
-            value = try decodeInt(for: key)
-        } else if T.self is String.Type {
-            value = try decodeString(for: key)
-        } else if T.self is Bool.Type {
-            value = try decodeBool(for: key)
-        } else if T.self is Double.Type {
-            value = try decodeDouble(for: key)
-        } else if T.self is Float.Type {
-            value = Float(try decodeDouble(for: key))
-        } else if T.self is Int8.Type {
-            value = Int8(try decodeInt(for: key))
-        } else if T.self is Int16.Type {
-            value = Int16(try decodeInt(for: key))
-        } else if T.self is Int32.Type {
-            value = Int32(try decodeInt(for: key))
-        } else if T.self is Int64.Type {
-            value = Int64(try decodeInt(for: key))
-        } else if T.self is UInt.Type {
-            value = UInt(try decodeInt(for: key))
-        } else if T.self is UInt8.Type {
-            value = UInt8(try decodeInt(for: key))
-        } else if T.self is UInt16.Type {
-            value = UInt16(try decodeInt(for: key))
-        } else if T.self is UInt32.Type {
-            value = UInt32(try decodeInt(for: key))
-        } else if T.self is UInt64.Type {
-            value = UInt64(try decodeInt(for: key))
-        } else {
-            return try T(from: GenericDecoder(delegate: self))
-        }
-        
-        guard let t = value as? T else {
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(
-                    codingPath: [key].compactMap { $0 },
-                    debugDescription: "Unable to decode value of type \(T.self)."))
-        }
-        
-        return t
-    }
-}
-
-struct GenericDecoder: Decoder {
-    var delegate: DecoderDelegate
-    var codingPath: [CodingKey] = []
-    var userInfo: [CodingUserInfoKey : Any] = [:]
-    
-    func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
-        KeyedDecodingContainer(Keyed(delegate: delegate))
+    subscript(field: String) -> [Content] {
+        return map { $0[field] }
     }
     
-    func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        Unkeyed(delegate: try delegate.array(for: nil))
-    }
-    
-    func singleValueContainer() throws -> SingleValueDecodingContainer {
-        Single(delegate: delegate)
-    }
-}
-
-extension GenericDecoder {
-    struct Keyed<Key: CodingKey>: KeyedDecodingContainerProtocol {
-        let delegate: DecoderDelegate
-        let codingPath: [CodingKey] = []
-        let allKeys: [Key] = []
-        
-        func contains(_ key: Key) -> Bool {
-            delegate.contains(key: key)
-        }
-        
-        func decodeNil(forKey key: Key) throws -> Bool {
-            delegate.decodeNil(for: key)
-        }
-        
-        func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
-            try delegate._decode(type, for: key)
-        }
-        
-        func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-            KeyedDecodingContainer(Keyed<NestedKey>(delegate: try delegate.nested(for: key)))
-        }
-        
-        func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-            Unkeyed(delegate: try delegate.array(for: key))
-        }
-        
-        func superDecoder() throws -> Decoder { fatalError() }
-        func superDecoder(forKey key: Key) throws -> Decoder { fatalError() }
-    }
-    
-    struct Unkeyed: UnkeyedDecodingContainer {
-        let delegate: [DecoderDelegate]
-        let codingPath: [CodingKey] = []
-        var count: Int? { delegate.count }
-        var isAtEnd: Bool { currentIndex == count }
-        var currentIndex: Int = 0
-        
-        mutating func decodeNil() throws -> Bool {
-            defer { currentIndex += 1 }
-            return delegate[currentIndex].decodeNil(for: nil)
-        }
-        
-        mutating func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-            defer { currentIndex += 1 }
-            return try delegate[currentIndex]._decode(type)
-        }
-        
-        mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
-            defer { currentIndex += 1 }
-            return Unkeyed(delegate: try delegate[currentIndex].array(for: nil))
-        }
-        
-        mutating func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-            defer { currentIndex += 1 }
-            return KeyedDecodingContainer(Keyed(delegate: delegate[currentIndex]))
-        }
-        
-        func superDecoder() throws -> Decoder { fatalError() }
-    }
-    
-    struct Single: SingleValueDecodingContainer {
-        let delegate: DecoderDelegate
-        let codingPath: [CodingKey] = []
-        
-        func decodeNil() -> Bool {
-            delegate.decodeNil(for: nil)
-        }
-        
-        func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-            try delegate._decode(type)
-        }
-    }
-}
-
-extension Array where Element == Optional<Content> {
-    var string: [String?] { map { $0?.string } }
-    var int: [Int?] { map { $0?.int } }
-    var bool: [Bool?] { map { $0?.bool } }
-    var double: [Double?] { map { $0?.double } }
-    
-    subscript(field: String) -> [Content?] {
-        return map { content -> Content? in
-            content.map { Content.Query.field(field).apply(to: $0) }
-        }
-    }
-    
-    subscript(dynamicMember member: String) -> [Content?] {
+    subscript(dynamicMember member: String) -> [Content] {
         self[member]
     }
+    
+    func decode<D: Decodable>(_ type: D.Type = D.self) throws -> [D] {
+        try map { try D(from: GenericDecoder(delegate: $0)) }
+    }
 }
 
-extension Dictionary where Value == Optional<Content> {
-    var string: [Key: String?] { mapValues { $0?.string } }
-    var int: [Key: Int?] { mapValues { $0?.int } }
-    var bool: [Key: Bool?] { mapValues { $0?.bool } }
-    var double: [Key: Double?] { mapValues { $0?.double } }
-}
-
-extension Content {
-    var description: String {
-        createString(value: self)
+extension Content: CustomStringConvertible {
+    public var description: String {
+        switch state {
+        case .error(let error):
+            return "Content(error: \(error)"
+        case .node(let node):
+            return createString(root: node)
+        }
     }
     
-    func createString(value: Content?, tabs: String = "") -> String {
+    private func createString(root: Node?, tabs: String = "") -> String {
         var string = ""
         var tabs = tabs
-        switch value {
+        switch root {
         case .array(let array):
             tabs += "\t"
             if array.isEmpty {
                 string.append("[]")
             } else {
                 string.append("[\n")
-                for (index, item) in array.enumerated() {
+                for (index, node) in array.enumerated() {
                     let comma = index == array.count - 1 ? "" : ","
-                    string.append(tabs + createString(value: item, tabs: tabs) + "\(comma)\n")
+                    string.append(tabs + createString(root: node, tabs: tabs) + "\(comma)\n")
                 }
                 tabs = String(tabs.dropLast(1))
                 string.append("\(tabs)]")
             }
         case .value(let value):
-            if let value = value as? String {
-                string.append("\"\(value)\"")
+            if let file = value.file {
+                string.append("<\(file.name)>")
+            } else if let bool = value.bool {
+                string.append("\(bool)")
+            } else if let int = value.int {
+                string.append("\(int)")
+            } else if let double = value.double {
+                string.append("\(double)")
+            } else if let stringVal = value.string {
+                string.append("\"\(stringVal)\"")
             } else {
                 string.append("\(value)")
             }
-        case .file(let file):
-            string.append("<\(file.name)>")
         case .dict(let dict):
             tabs += "\t"
             string.append("{\n")
-            for (index, (key, item)) in dict.enumerated() {
+            for (index, (key, node)) in dict.enumerated() {
                 let comma = index == dict.count - 1 ? "" : ","
-                string.append(tabs + "\"\(key)\": " + createString(value: item, tabs: tabs) + "\(comma)\n")
+                string.append(tabs + "\"\(key)\": " + createString(root: node, tabs: tabs) + "\(comma)\n")
             }
             tabs = String(tabs.dropLast(1))
             string.append("\(tabs)}")
@@ -413,9 +356,3 @@ extension Content {
         return string
     }
 }
-
-// Multipart // dict
-// URL Form // dict
-// JSON // dict
-
-// Nesting JSON, URLForm, not multipart?

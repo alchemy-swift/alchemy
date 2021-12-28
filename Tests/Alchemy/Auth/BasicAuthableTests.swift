@@ -9,18 +9,18 @@ final class BasicAuthableTests: TestCase<TestApp> {
         
         try await AuthModel(email: "test@withapollo.com", password: Bcrypt.hash("password")).insert()
         
-        try await get("/user")
+        try await Test.get("/user")
             .assertUnauthorized()
         
-        try await withBasicAuth(username: "test@withapollo.com", password: "password")
+        try await Test.withBasicAuth(username: "test@withapollo.com", password: "password")
             .get("/user")
             .assertOk()
         
-        try await withBasicAuth(username: "test@withapollo.com", password: "foo")
+        try await Test.withBasicAuth(username: "test@withapollo.com", password: "foo")
             .get("/user")
             .assertUnauthorized()
         
-        try await withBasicAuth(username: "josh@withapollo.com", password: "password")
+        try await Test.withBasicAuth(username: "josh@withapollo.com", password: "password")
             .get("/user")
             .assertUnauthorized()
     }

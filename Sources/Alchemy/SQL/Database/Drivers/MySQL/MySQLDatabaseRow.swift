@@ -69,7 +69,7 @@ extension MySQLData {
         case .float, .decimal, .double:
             return double.map { .double($0) } ?? .null
         case .json:
-            guard let data = self.buffer?.data() else {
+            guard let data = self.buffer?.data else {
                 return .null
             }
             

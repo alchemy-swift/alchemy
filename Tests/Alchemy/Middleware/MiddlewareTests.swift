@@ -11,7 +11,7 @@ final class MiddlewareTests: TestCase<TestApp> {
             .use(mw2)
             .post("/foo") { _ in }
 
-        _ = try await get("/foo")
+        _ = try await Test.get("/foo")
 
         wait(for: [expect], timeout: kMinTimeout)
     }
@@ -35,7 +35,7 @@ final class MiddlewareTests: TestCase<TestApp> {
             .use(mw2)
             .get("/foo") { _ in }
 
-        _ = try await get("/foo")
+        _ = try await Test.get("/foo")
 
         wait(for: [globalFulfill, mw1Fulfill, mw2Fulfill], timeout: kMinTimeout)
     }
@@ -53,8 +53,8 @@ final class MiddlewareTests: TestCase<TestApp> {
         }
         .get("/foo") { _ in 2 }
 
-        try await get("/foo").assertOk().assertBody("2")
-        try await post("/foo").assertOk().assertBody("1")
+        try await Test.get("/foo").assertOk().assertBody("2")
+        try await Test.post("/foo").assertOk().assertBody("1")
         wait(for: [expect], timeout: kMinTimeout)
     }
 
@@ -96,7 +96,7 @@ final class MiddlewareTests: TestCase<TestApp> {
         }
 
         app.use(mw1, mw2, mw3).get("/foo") { _ in }
-        _ = try await get("/foo")
+        _ = try await Test.get("/foo")
 
         wait(for: [mw1Req, mw1Res, mw2Req, mw2Res, mw3Req, mw3Res], timeout: kMinTimeout)
     }

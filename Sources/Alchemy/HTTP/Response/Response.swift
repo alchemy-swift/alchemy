@@ -1,16 +1,19 @@
+import Hummingbird
 import NIO
 import NIOHTTP1
 
 /// A type representing the response from an HTTP endpoint. This
 /// response can be a failure or success case depending on the
 /// status code in the `head`.
-public final class Response {
+public final class Response: ResponseBuilder {
     /// The success or failure status response code.
     public var status: HTTPResponseStatus
     /// The HTTP headers.
     public var headers: HTTPHeaders
     /// The body of this response.
     public var body: ByteContent?
+    /// Allows for extending storage on this type.
+    public var extensions: Extensions<Response>
     
     /// Creates a new response using a status code, headers and body. If the
     /// body is of type `.buffer()` or `nil`, the `Content-Length` header
@@ -24,6 +27,7 @@ public final class Response {
         self.status = status
         self.headers = headers
         self.body = body
+        self.extensions = Extensions()
         
         switch body {
         case .buffer(let buffer):
@@ -58,5 +62,6 @@ public final class Response {
         self.status = .ok
         self.headers = HTTPHeaders()
         self.body = .stream(stream)
+        self.extensions = Extensions()
     }
 }

@@ -8,7 +8,7 @@ final class PapyrusRoutingTests: TestCase<TestApp> {
             return "foo"
         }
         
-        let res = try await post("/test")
+        let res = try await Test.post("/test")
         res.assertSuccessful()
         res.assertJson("foo")
     }
@@ -18,7 +18,7 @@ final class PapyrusRoutingTests: TestCase<TestApp> {
             return "foo"
         }
         
-        let res = try await get("/test")
+        let res = try await Test.get("/test")
         res.assertSuccessful()
         res.assertJson("foo")
     }
@@ -28,7 +28,7 @@ final class PapyrusRoutingTests: TestCase<TestApp> {
             return
         }
         
-        let res = try await patch("/test")
+        let res = try await Test.patch("/test")
         res.assertSuccessful()
         res.assertEmpty()
     }
@@ -38,7 +38,7 @@ final class PapyrusRoutingTests: TestCase<TestApp> {
             return
         }
         
-        let res = try await delete("/test")
+        let res = try await Test.delete("/test")
         res.assertSuccessful()
         res.assertEmpty()
     }

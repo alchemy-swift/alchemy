@@ -28,7 +28,7 @@ extension String: ResponseConvertible {
 // implementation here (and a special case router
 // `.on` specifically for `Encodable`) types.
 extension Encodable {
-    public func convert() throws -> Response {
+    public func response() throws -> Response {
         try Response(status: .ok).withValue(self)
     }
 }

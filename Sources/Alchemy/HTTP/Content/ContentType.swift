@@ -3,11 +3,11 @@ import Foundation
 /// An HTTP content type. It has a `value: String` appropriate for
 /// putting into `Content-Type` headers.
 public struct ContentType: Equatable {
-    /// Just value of this content type.
+    /// The name of this content type
     public var value: String
     /// Any parameters to go along with the content type value.
     public var parameters: [String: String] = [:]
-    /// The entire string for the Content-Type header.
+    /// The entire string for the Content-Type header including name and parameters.
     public var string: String {
         ([value] + parameters.map { "\($0)=\($1)" }).joined(separator: "; ")
     }
