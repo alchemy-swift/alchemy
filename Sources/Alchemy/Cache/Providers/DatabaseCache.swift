@@ -83,18 +83,18 @@ final class DatabaseCache: CacheProvider {
     }
 }
 
-extension Store {
+extension Cache {
     /// Create a cache backed by an SQL database.
     ///
     /// - Parameter database: The database to drive your cache with.
     ///   Defaults to your default `Database`.
     /// - Returns: A cache.
-    public static func database(_ database: Database = .default) -> Store {
-        Store(provider: DatabaseCache(database))
+    public static func database(_ database: Database = .default) -> Cache {
+        Cache(provider: DatabaseCache(database))
     }
     
     /// Create a cache backed by the default SQL database.
-    public static var database: Store {
+    public static var database: Cache {
         .database()
     }
 }
@@ -121,7 +121,7 @@ private struct CacheItem: Model {
     }
 }
 
-extension Store {
+extension Cache {
     /// Migration for adding a cache table to your database. Don't
     /// forget to apply this to your database before using a
     /// database backed cache.

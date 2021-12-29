@@ -101,19 +101,19 @@ public struct MemoryCacheItem {
     }
 }
 
-extension Store {
+extension Cache {
     /// Create a cache backed by an in memory dictionary. Useful for
     /// tests.
     ///
     /// - Parameter data: Any data to initialize your cache with.
     ///   Defaults to an empty dict.
     /// - Returns: A memory backed cache.
-    public static func memory(_ data: [String: MemoryCacheItem] = [:]) -> Store {
-        Store(provider: MemoryCache(data))
+    public static func memory(_ data: [String: MemoryCacheItem] = [:]) -> Cache {
+        Cache(provider: MemoryCache(data))
     }
     
     /// A cache backed by an in memory dictionary. Useful for tests.
-    public static var memory: Store {
+    public static var memory: Cache {
         .memory()
     }
     
@@ -127,7 +127,7 @@ extension Store {
     @discardableResult
     public static func fake(_ identifier: Identifier = .default, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
         let provider = MemoryCache(data)
-        let cache = Store(provider: provider)
+        let cache = Cache(provider: provider)
         register(identifier, cache)
         return provider
     }

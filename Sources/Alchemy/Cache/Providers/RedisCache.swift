@@ -63,18 +63,18 @@ final class RedisCache: CacheProvider {
     }
 }
 
-extension Store {
+extension Cache {
     /// Create a cache backed by Redis.
     ///
     /// - Parameter redis: The redis instance to drive your cache
     ///   with. Defaults to your default `Redis` configuration.
     /// - Returns: A cache.
-    public static func redis(_ redis: Redis = Redis.default) -> Store {
-        Store(provider: RedisCache(redis))
+    public static func redis(_ redis: Redis = Redis.default) -> Cache {
+        Cache(provider: RedisCache(redis))
     }
     
     /// A cache backed by the default Redis instance.
-    public static var redis: Store {
+    public static var redis: Cache {
         .redis()
     }
 }

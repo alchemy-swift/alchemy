@@ -12,7 +12,7 @@ public protocol Configurable: AnyConfigurable {
 public struct ConfigurableServices {
     private static var configurableTypes: [Any.Type] = [
         Database.self,
-        Store.self,
+        Cache.self,
         Queue.self,
         Filesystem.self
     ]

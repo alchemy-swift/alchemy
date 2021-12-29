@@ -7,7 +7,7 @@ public var DB: Database { .resolve(.default) }
 // The default configured Filesystem
 public var Storage: Filesystem { .resolve(.default) }
 
-// Your apps default cache.
-public var Cache: Store { .resolve(.default) }
+// Your app's default Cache.
+public var Stash: Cache { .resolve(.default) }
 
 // TODO: Redis after async
