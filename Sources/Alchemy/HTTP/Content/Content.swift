@@ -63,6 +63,15 @@ public final class Content: Buildable {
     // The path taken to get here.
     let path: [Operator]
     
+    public var string: String { get throws { try unwrap(convertValue().string) } }
+    public var int: Int { get throws { try unwrap(convertValue().int) } }
+    public var bool: Bool { get throws { try unwrap(convertValue().bool) } }
+    public var double: Double { get throws { try unwrap(convertValue().double) } }
+    public var file: File { get throws { try unwrap(convertValue().file) } }
+    public var array: [Content] { get throws { try convertArray() } }
+    public var exists: Bool { (try? decode(Empty.self)) != nil }
+    public var isNull: Bool { self == nil }
+    
     var error: Error? {
         guard case .error(let error) = state else { return nil }
         return error
@@ -74,21 +83,9 @@ public final class Content: Buildable {
     }
     
     var value: ContentValue? {
-        guard let node = node, case .value(let value) = node else {
-            return nil
-        }
-        
+        guard let node = node, case .value(let value) = node else { return nil }
         return value
     }
-    
-    var string: String { get throws { try unwrap(convertValue().string) } }
-    var int: Int { get throws { try unwrap(convertValue().int) } }
-    var bool: Bool { get throws { try unwrap(convertValue().bool) } }
-    var double: Double { get throws { try unwrap(convertValue().double) } }
-    var file: File { get throws { try unwrap(convertValue().file) } }
-    var array: [Content] { get throws { try convertArray() } }
-    var exists: Bool { (try? decode(Empty.self)) != nil }
-    var isNull: Bool { self == nil }
 
     init(root: Node, path: [Operator] = []) {
         self.state = .node(root)

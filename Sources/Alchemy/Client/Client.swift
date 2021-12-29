@@ -71,7 +71,7 @@ public final class Client: Service {
     
     /// The response type of a request made with client. Supports static or
     /// streamed content.
-    public struct Response: ResponseInspector {
+    public struct Response: ResponseInspector, ResponseConvertible {
         /// The request that resulted in this response
         public var request: Client.Request
         /// Remote host of the request.
@@ -96,6 +96,10 @@ public final class Client: Service {
             body: ByteContent? = nil
         ) -> Client.Response {
             Client.Response(request: Request(url: ""), host: "", status: status, version: version, headers: headers, body: body)
+        }
+        
+        public func response() async throws -> Alchemy.Response {
+            Alchemy.Response(status: status, headers: headers, body: body)
         }
     }
     

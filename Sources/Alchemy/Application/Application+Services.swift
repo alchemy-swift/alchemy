@@ -42,20 +42,9 @@ extension Application {
         if testing {
             FileCreator.mock()
         }
-        
+
         // Set up any configurable services.
-        let types: [Any.Type] = [
-            Database.self,
-            Store.self,
-            Queue.self,
-            Filesystem.self
-        ]
-        
-        for type in types {
-            if let type = type as? AnyConfigurable.Type {
-                type.configureDefaults()
-            }
-        }
+        ConfigurableServices.configureDefaults()
     }
 }
 

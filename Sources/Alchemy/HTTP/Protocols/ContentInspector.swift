@@ -11,7 +11,7 @@ extension ContentInspector {
     // MARK: Files
     
     /// Get any attached file with the given name from this request.
-    public func file(_ name: String) async throws -> File? {
+    public func file(_ name: String) -> File? {
         files()[name]
     }
     
