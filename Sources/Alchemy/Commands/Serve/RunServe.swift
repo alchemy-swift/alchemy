@@ -116,7 +116,7 @@ final class RunServe: Command {
 extension Router: HBRouter {
     public func respond(to request: HBRequest) -> EventLoopFuture<HBResponse> {
         request.eventLoop
-            .asyncSubmit { try await self.handle(request: Request(hbRequest: request)).collect() }
+            .asyncSubmit { await self.handle(request: Request(hbRequest: request)) }
             .map { HBResponse(status: $0.status, headers: $0.headers, body: $0.hbResponseBody) }
     }
     

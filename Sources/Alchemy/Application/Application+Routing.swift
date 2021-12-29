@@ -16,51 +16,51 @@ extension Application {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String = "", use handler: @escaping Handler) -> Self {
-        Router.default.add(handler: handler, for: method, path: path)
+    public func on(_ method: HTTPMethod, at path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        Router.default.add(handler: handler, for: method, path: path, options: options)
         return self
     }
     
     /// `GET` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func get(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.GET, at: path, use: handler)
+    public func get(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.GET, at: path, options: options, use: handler)
     }
     
     /// `POST` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func post(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.POST, at: path, use: handler)
+    public func post(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.POST, at: path, options: options, use: handler)
     }
     
     /// `PUT` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func put(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.PUT, at: path, use: handler)
+    public func put(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.PUT, at: path, options: options, use: handler)
     }
     
     /// `PATCH` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func patch(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.PATCH, at: path, use: handler)
+    public func patch(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.PATCH, at: path, options: options, use: handler)
     }
     
     /// `DELETE` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func delete(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.DELETE, at: path, use: handler)
+    public func delete(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.DELETE, at: path, options: options, use: handler)
     }
     
     /// `OPTIONS` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func options(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.OPTIONS, at: path, use: handler)
+    public func options(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.OPTIONS, at: path, options: options, use: handler)
     }
     
     /// `HEAD` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func head(_ path: String = "", use handler: @escaping Handler) -> Self {
-        on(.HEAD, at: path, use: handler)
+    public func head(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
+        on(.HEAD, at: path, options: options, use: handler)
     }
 }
 
@@ -87,8 +87,8 @@ extension Application {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(method, at: path) { request -> Response in
+    public func on(_ method: HTTPMethod, at path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(method, at: path, options: options) { request -> Response in
             try await handler(request)
             return Response(status: .ok, body: nil)
         }
@@ -96,44 +96,44 @@ extension Application {
     
     /// `GET` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func get(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.GET, at: path, use: handler)
+    public func get(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.GET, at: path, options: options, use: handler)
     }
     
     /// `POST` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func post(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.POST, at: path, use: handler)
+    public func post(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.POST, at: path, options: options, use: handler)
     }
     
     /// `PUT` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func put(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.PUT, at: path, use: handler)
+    public func put(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.PUT, at: path, options: options, use: handler)
     }
     
     /// `PATCH` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func patch(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.PATCH, at: path, use: handler)
+    public func patch(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.PATCH, at: path, options: options, use: handler)
     }
     
     /// `DELETE` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func delete(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.DELETE, at: path, use: handler)
+    public func delete(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.DELETE, at: path, options: options, use: handler)
     }
     
     /// `OPTIONS` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func options(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.OPTIONS, at: path, use: handler)
+    public func options(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.OPTIONS, at: path, options: options, use: handler)
     }
     
     /// `HEAD` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func head(_ path: String = "", use handler: @escaping VoidHandler) -> Self {
-        on(.HEAD, at: path, use: handler)
+    public func head(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping VoidHandler) -> Self {
+        on(.HEAD, at: path, options: options, use: handler)
     }
 
     // MARK: - E: Encodable
@@ -151,8 +151,8 @@ extension Application {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on<E: Encodable>(_ method: HTTPMethod, at path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        on(method, at: path, use: { req -> Response in
+    public func on<E: Encodable>(_ method: HTTPMethod, at path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        on(method, at: path, options: options, use: { req -> Response in
             let value = try await handler(req)
             if let convertible = value as? ResponseConvertible {
                 return try await convertible.response()
@@ -164,44 +164,44 @@ extension Application {
     
     /// `GET` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func get<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.GET, at: path, use: handler)
+    public func get<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.GET, at: path, options: options, use: handler)
     }
     
     /// `POST` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func post<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.POST, at: path, use: handler)
+    public func post<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.POST, at: path, options: options, use: handler)
     }
     
     /// `PUT` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func put<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.PUT, at: path, use: handler)
+    public func put<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.PUT, at: path, options: options, use: handler)
     }
     
     /// `PATCH` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func patch<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.PATCH, at: path, use: handler)
+    public func patch<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.PATCH, at: path, options: options, use: handler)
     }
     
     /// `DELETE` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func delete<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.DELETE, at: path, use: handler)
+    public func delete<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.DELETE, at: path, options: options, use: handler)
     }
     
     /// `OPTIONS` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func options<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.OPTIONS, at: path, use: handler)
+    public func options<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.OPTIONS, at: path, options: options, use: handler)
     }
     
     /// `HEAD` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
-    public func head<E: Encodable>(_ path: String = "", use handler: @escaping EncodableHandler<E>) -> Self {
-        self.on(.HEAD, at: path, use: handler)
+    public func head<E: Encodable>(_ path: String = "", options: Router.RouteOptions = [], use handler: @escaping EncodableHandler<E>) -> Self {
+        self.on(.HEAD, at: path, options: options, use: handler)
     }
 }
 

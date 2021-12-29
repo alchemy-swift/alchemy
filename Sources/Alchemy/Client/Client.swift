@@ -28,6 +28,9 @@ public final class Client: Service {
         public var host: String { urlComponents.url?.host ?? "" }
         /// How long until this request times out.
         public var timeout: TimeAmount? = nil
+        /// Whether to stream the response. If false, the response body will be
+        /// fully accumulated before returning.
+        public var streamResponse: Bool = false
         /// Custom config override when making this request.
         public var config: HTTPClient.Configuration? = nil
         /// Allows for extending storage on this type.
@@ -132,6 +135,11 @@ public final class Client: Service {
             with { $0.request.timeout = timeout }
         }
         
+        /// Allow the response to be streamed.
+        public func streamResponse() -> Builder {
+            with { $0.request.streamResponse = true }
+        }
+        
         /// Stub this client, causing it to respond to all incoming requests with a
         /// stub matching the request url or a default `200` stub.
         public func stub(_ stubs: [(String, Client.Response)] = []) {
@@ -184,12 +192,9 @@ public final class Client: Service {
         let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
         defer { try? httpClientOverride?.syncShutdown() }
         let promise = Loop.group.next().makePromise(of: Response.self)
-        _ = (httpClientOverride ?? httpClient)
-            .execute(
-                request: try req._request,
-                delegate: ResponseDelegate(request: req, promise: promise),
-                deadline: deadline,
-                logger: Log.logger)
+        let delegate = ResponseDelegate(request: req, promise: promise, allowStreaming: req.streamResponse)
+        let client = httpClientOverride ?? httpClient
+        _ = client.execute(request: try req._request, delegate: delegate, deadline: deadline, logger: Log.logger)
         return try await promise.futureResult.get()
     }
     
@@ -238,11 +243,13 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
 
     private let request: Client.Request
     private let responsePromise: EventLoopPromise<Client.Response>
+    private let allowStreaming: Bool
     private var state = State.idle
 
-    init(request: Client.Request, promise: EventLoopPromise<Client.Response>) {
+    init(request: Client.Request, promise: EventLoopPromise<Client.Response>, allowStreaming: Bool) {
         self.request = request
         self.responsePromise = promise
+        self.allowStreaming = allowStreaming
     }
 
     func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
@@ -261,7 +268,6 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
         }
     }
 
-    var count = 0
     func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ part: ByteBuffer) -> EventLoopFuture<Void> {
         switch self.state {
         case .idle:
@@ -269,14 +275,27 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
         case .head(let head):
             self.state = .body(head, part)
             return task.eventLoop.makeSucceededFuture(())
-        case .body(let head, let body):
-            let stream = ByteStream(eventLoop: task.eventLoop)
-            let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .stream(stream))
-            self.responsePromise.succeed(response)
-            self.state = .stream(head, stream)
-
-            // Write the previous part, followed by this part, to the stream.
-            return stream._write(chunk: body).flatMap { stream._write(chunk: part) }
+        case .body(let head, var body):
+            if allowStreaming {
+                let stream = ByteStream(eventLoop: task.eventLoop)
+                let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .stream(stream))
+                self.responsePromise.succeed(response)
+                self.state = .stream(head, stream)
+                
+                // Write the previous part, followed by this part, to the stream.
+                return stream._write(chunk: body)
+                    .flatMap { stream._write(chunk: part) }
+            } else {
+                // The compiler can't prove that `self.state` is dead here (and it kinda isn't, there's
+                // a cross-module call in the way) so we need to drop the original reference to `body` in
+                // `self.state` or we'll get a CoW. To fix that we temporarily set the state to `.idle` (which
+                // has no associated data). We'll fix it at the bottom of this block.
+                self.state = .idle
+                var part = part
+                body.writeBuffer(&part)
+                self.state = .body(head, body)
+                return task.eventLoop.makeSucceededVoidFuture()
+            }
         case .stream(_, let stream):
             return stream._write(chunk: part)
         case .error:

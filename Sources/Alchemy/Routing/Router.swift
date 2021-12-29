@@ -12,6 +12,21 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
 public final class Router: Service {
+    public struct RouteOptions: OptionSet {
+        public let rawValue: Int
+        
+        public init(rawValue: Int) {
+            self.rawValue = rawValue
+        }
+
+        public static let stream = RouteOptions(rawValue: 1 << 0)
+    }
+    
+    private struct HandlerEntry {
+        let options: RouteOptions
+        let handler: (Request) async -> Response
+    }
+    
     /// A route handler. Takes a request and returns a response.
     public typealias Handler = (Request) async throws -> ResponseConvertible
     
@@ -19,8 +34,6 @@ public final class Router: Service {
     /// encountered while initially handling the request.
     public typealias ErrorHandler = (Request, Error) async throws -> ResponseConvertible
     
-    private typealias HTTPHandler = (Request) async -> Response
-
     /// The default response for when there is an error along the
     /// routing chain that does not conform to
     /// `ResponseConvertible`.
@@ -44,7 +57,7 @@ public final class Router: Service {
     var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
-    private let trie = Trie<HTTPHandler>()
+    private let trie = Trie<HandlerEntry>()
     
     /// Creates a new router.
     init() {}
@@ -57,12 +70,11 @@ public final class Router: Service {
     ///     given method and path.
     ///   - method: The method of a request this handler expects.
     ///   - path: The path of a requst this handler can handle.
-    func add(handler: @escaping Handler, for method: HTTPMethod, path: String) {
+    func add(handler: @escaping Handler, for method: HTTPMethod, path: String, options: RouteOptions) {
         let splitPath = pathPrefixes + path.tokenized(with: method)
         let middlewareClosures = middlewares.reversed().map(Middleware.intercept)
-        trie.insert(path: splitPath) {
+        let entry = HandlerEntry(options: options) {
             var next = self.cleanHandler(handler)
-            
             for middleware in middlewareClosures {
                 let oldNext = next
                 next = self.cleanHandler { try await middleware($0, oldNext) }
@@ -70,6 +82,8 @@ public final class Router: Service {
             
             return await next($0)
         }
+        
+        trie.insert(path: splitPath, value: entry)
     }
     
     /// Handles a request. If the request has any dynamic path
@@ -83,17 +97,23 @@ public final class Router: Service {
     ///   matching handler.
     func handle(request: Request) async -> Response {
         var handler = cleanHandler(notFoundHandler)
-        
+        var additionalMiddlewares = Array(globalMiddlewares.reversed())
         @Inject var hbApp: HBApplication
+        
         if let length = request.headers.contentLength, length > hbApp.configuration.maxUploadSize {
             handler = cleanHandler { _ in throw HTTPError(.payloadTooLarge) }
         } else if let match = trie.search(path: request.path.tokenized(with: request.method)) {
             request.parameters = match.parameters
-            handler = match.value
+            handler = match.value.handler
+            
+            // Collate the request if streaming isn't specified.
+            if !match.value.options.contains(.stream) {
+                additionalMiddlewares.append(AccumulateMiddleware())
+            }
         }
         
         // Apply global middlewares
-        for middleware in globalMiddlewares.reversed() {
+        for middleware in additionalMiddlewares {
             let lastHandler = handler
             handler = cleanHandler {
                 try await middleware.intercept($0, next: lastHandler)
@@ -127,7 +147,7 @@ public final class Router: Service {
         }
     }
     
-    /// The default error handler if an error is encountered while handline a
+    /// The default error handler if an error is encountered while handling a
     /// request.
     private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
         Log.error("[Server] encountered internal error: \(error).")
@@ -136,8 +156,14 @@ public final class Router: Service {
     }
 }
 
-private extension String {
-    func tokenized(with method: HTTPMethod) -> [String] {
+extension String {
+    fileprivate func tokenized(with method: HTTPMethod) -> [String] {
         split(separator: "/").map(String.init).filter { !$0.isEmpty } + [method.rawValue]
+    }
+}
+
+private struct AccumulateMiddleware: Middleware {
+    func intercept(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
+        try await next(request.collect())
     }
 }

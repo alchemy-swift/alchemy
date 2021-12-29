@@ -38,7 +38,7 @@ final class StreamingTests: TestCase<TestApp> {
     }
     
     func testEndToEndStream() async throws {
-        app.get("/stream") { _ in
+        app.get("/stream", options: .stream) { _ in
             Response {
                 try await $0.write("foo")
                 try await $0.write("bar")
@@ -48,7 +48,9 @@ final class StreamingTests: TestCase<TestApp> {
         
         try app.start()
         var expected = ["foo", "bar", "baz"]
-        try await Http.get("http://localhost:3000/stream")
+        try await Http
+            .streamResponse()
+            .get("http://localhost:3000/stream")
             .assertStream {
                 guard expected.first != nil else {
                     XCTFail("There were too many stream elements.")
