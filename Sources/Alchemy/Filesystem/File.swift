@@ -12,7 +12,7 @@ public struct File: Codable, ResponseConvertible {
     /// The path extension of this file.
     public var `extension`: String { name.components(separatedBy: ".")[safe: 1] ?? "" }
     /// The content type of this file, based on it's extension.
-    public var contentType: ContentType? { ContentType(fileExtension: `extension`) }
+    public var contentType: ContentType { ContentType(fileExtension: `extension`) ?? .octetStream }
     
     public init(name: String, size: Int, content: ByteContent) {
         self.name = name

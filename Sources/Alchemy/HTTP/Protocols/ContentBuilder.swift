@@ -23,7 +23,7 @@ extension ContentBuilder {
         return withHeader("Authorization", value: "Basic \(basicAuthString)")
     }
     
-    public func withBearerAuth(_ token: String) -> Self {
+    public func withToken(_ token: String) -> Self {
         withHeader("Authorization", value: "Bearer \(token)")
     }
     
@@ -49,6 +49,10 @@ extension ContentBuilder {
         withBody(.data(data))
     }
     
+    public func withBody(_ buffer: ByteBuffer) -> Self {
+        withBody(.buffer(buffer))
+    }
+    
     public func withBody<E: Encodable>(_ value: E, encoder: ContentEncoder = .json) throws -> Self {
         let (buffer, type) = try encoder.encodeContent(value)
         return withBody(.buffer(buffer), type: type)
@@ -70,12 +74,17 @@ extension ContentBuilder {
         try withBody(form, encoder: encoder)
     }
     
-    public func withAttachment(_ name: String, file: File, encoder: FormDataEncoder = FormDataEncoder()) async throws -> Self {
+    public func attach(_ name: String, contents: ByteBuffer, filename: String? = nil, encoder: FormDataEncoder = FormDataEncoder()) async throws -> Self {
+        let file = File(name: filename ?? name, size: contents.writerIndex, content: .buffer(contents))
+        return try withBody([name: file], encoder: encoder)
+    }
+    
+    public func attach(_ name: String, file: File, encoder: FormDataEncoder = FormDataEncoder()) async throws -> Self {
         var copy = file
         return try withBody([name: await copy.collect()], encoder: encoder)
     }
     
-    public func withAttachments(_ files: [String: File], encoder: FormDataEncoder = FormDataEncoder()) async throws -> Self {
+    public func attach(_ files: [String: File], encoder: FormDataEncoder = FormDataEncoder()) async throws -> Self {
         var collectedFiles: [String: File] = [:]
         for (name, var file) in files {
             collectedFiles[name] = try await file.collect()

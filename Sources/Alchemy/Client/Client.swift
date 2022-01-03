@@ -141,7 +141,7 @@ public final class Client: Service {
         }
         
         /// Allow the response to be streamed.
-        public func streamResponse() -> Builder {
+        public func withStream() -> Builder {
             with { $0.request.streamResponse = true }
         }
         

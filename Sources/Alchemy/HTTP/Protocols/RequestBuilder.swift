@@ -14,9 +14,9 @@ extension RequestBuilder {
     
     // MARK: Queries
     
-    public func withQuery(_ name: String, value: String?) -> Self {
+    public func withQuery(_ name: String, value: CustomStringConvertible?) -> Self {
         with { request in
-            let newItem = URLQueryItem(name: name, value: value)
+            let newItem = URLQueryItem(name: name, value: value?.description)
             if let existing = request.urlComponents.queryItems {
                 request.urlComponents.queryItems = existing + [newItem]
             } else {
@@ -25,7 +25,7 @@ extension RequestBuilder {
         }
     }
     
-    public func withQueries(_ dict: [String: String]) -> Self {
+    public func withQueries(_ dict: [String: CustomStringConvertible]) -> Self {
         dict.reduce(self) { $0.withQuery($1.key, value: $1.value) }
     }
     
