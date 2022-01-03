@@ -9,7 +9,7 @@ final class QueryOrderTests: TestCase<TestApp> {
     }
     
     func testOrderBy() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .orderBy("bar")
             .orderBy("baz", direction: .desc)
         XCTAssertEqual(query.orders, [

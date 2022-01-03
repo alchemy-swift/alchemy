@@ -8,32 +8,25 @@ final class MySQLDatabase: DatabaseProvider {
     
     var grammar: Grammar = MySQLGrammar()
 
-    /// Initialize with the given configuration. The configuration
-    /// will be connected to when a query is run.
-    ///
-    /// - Parameter config: The info needed to connect to the
-    ///   database.
-    init(config: DatabaseConfig) {
-        self.pool = EventLoopGroupConnectionPool(
+    init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
+        pool = EventLoopGroupConnectionPool(
             source: MySQLConnectionSource(configuration: {
-                switch config.socket {
+                switch socket {
                 case .ip(let host, let port):
-                    var tlsConfig = config.enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
-                    tlsConfig?.certificateVerification = .none
                     return MySQLConfiguration(
                         hostname: host,
                         port: port,
-                        username: config.username,
-                        password: config.password,
-                        database: config.database,
-                        tlsConfiguration: tlsConfig
+                        username: username,
+                        password: password,
+                        database: database,
+                        tlsConfiguration: tlsConfiguration
                     )
                 case .unix(let name):
                     return MySQLConfiguration(
                         unixDomainSocketPath: name,
-                        username: config.username,
-                        password: config.password,
-                        database: config.database
+                        username: username,
+                        password: password,
+                        database: database
                     )
                 }
             }()),

@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTest
+import NIOSSL
 
 final class MySQLDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
@@ -21,8 +22,7 @@ final class MySQLDatabaseTests: TestCase<TestApp> {
     
     func testConfigIp() throws {
         let socket: Socket = .ip(host: "::1", port: 1234)
-        let config = DatabaseConfig(socket: socket, database: "foo", username: "bar", password: "baz")
-        let provider = MySQLDatabase(config: config)
+        let provider = MySQLDatabase(socket: socket, database: "foo", username: "bar", password: "baz")
         XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "::1")
         XCTAssertEqual(try provider.pool.source.configuration.address().port, 1234)
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")
@@ -34,8 +34,8 @@ final class MySQLDatabaseTests: TestCase<TestApp> {
     
     func testConfigSSL() throws {
         let socket: Socket = .ip(host: "::1", port: 1234)
-        let config = DatabaseConfig(socket: socket, database: "foo", username: "bar", password: "baz", enableSSL: true)
-        let provider = MySQLDatabase(config: config)
+        let tlsConfig = TLSConfiguration.makeClientConfiguration()
+        let provider = MySQLDatabase(socket: socket, database: "foo", username: "bar", password: "baz", tlsConfiguration: tlsConfig)
         XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "::1")
         XCTAssertEqual(try provider.pool.source.configuration.address().port, 1234)
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")
@@ -47,8 +47,7 @@ final class MySQLDatabaseTests: TestCase<TestApp> {
     
     func testConfigPath() throws {
         let socket: Socket = .unix(path: "/test")
-        let config = DatabaseConfig(socket: socket, database: "foo", username: "bar", password: "baz")
-        let provider = MySQLDatabase(config: config)
+        let provider = MySQLDatabase(socket: socket, database: "foo", username: "bar", password: "baz")
         XCTAssertEqual(try provider.pool.source.configuration.address().pathname, "/test")
         XCTAssertEqual(try provider.pool.source.configuration.address().port, nil)
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")

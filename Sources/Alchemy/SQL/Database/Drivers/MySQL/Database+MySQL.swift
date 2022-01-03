@@ -1,5 +1,7 @@
+import NIOSSL
+
 extension Database {
-    /// Creates a MySQL database configuration.
+    /// Creates a PostgreSQL database configuration.
     ///
     /// - Parameters:
     ///   - host: The host the database is running on.
@@ -10,20 +12,13 @@ extension Database {
     ///   - enableSSL: Should the connection use SSL.
     /// - Returns: The configuration for connecting to this database.
     public static func mysql(host: String, port: Int = 3306, database: String, username: String, password: String, enableSSL: Bool = false) -> Database {
-        return mysql(config: DatabaseConfig(
-            socket: .ip(host: host, port: port),
-            database: database,
-            username: username,
-            password: password,
-            enableSSL: enableSSL
-        ))
+        var tlsConfig = enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
+        tlsConfig?.certificateVerification = .none
+        return mysql(socket: .ip(host: host, port: port), database: database, username: username, password: password, tlsConfiguration: tlsConfig)
     }
     
-    /// Create a MySQL database configuration.
-    ///
-    /// - Parameter config: The raw configuration to connect with.
-    /// - Returns: The configured database.
-    public static func mysql(config: DatabaseConfig) -> Database {
-        Database(provider: MySQLDatabase(config: config))
+    /// Create a PostgreSQL database configuration.
+    public static func mysql(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) -> Database {
+        Database(provider: MySQLDatabase(socket: socket, database: database, username: username, password: password, tlsConfiguration: tlsConfiguration))
     }
 }

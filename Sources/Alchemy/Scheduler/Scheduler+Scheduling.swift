@@ -8,7 +8,7 @@ extension Scheduler {
     ///   - queue: The queue to schedule it on.
     ///   - channel: The queue channel to schedule it on.
     /// - Returns: A builder for customizing the scheduling frequency.
-    public func job(_ job: @escaping @autoclosure () -> Job, queue: Queue = .default, channel: String = Queue.defaultChannel) -> Schedule {
+    public func job(_ job: @escaping @autoclosure () -> Job, queue: Queue = Q, channel: String = Queue.defaultChannel) -> Schedule {
         Schedule { [weak self] schedule in
             self?.addWork(schedule: schedule) {
                 do {

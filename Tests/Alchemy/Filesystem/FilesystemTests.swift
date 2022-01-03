@@ -16,15 +16,15 @@ final class FilesystemTests: TestCase<TestApp> {
     
     func testConfig() {
         let config = Filesystem.Config(disks: [.default: .local, 1: .local, 2: .local])
-        Filesystem.configure(using: config)
-        XCTAssertNotNil(Filesystem.resolveOptional(.default))
-        XCTAssertNotNil(Filesystem.resolveOptional(1))
-        XCTAssertNotNil(Filesystem.resolveOptional(2))
+        Filesystem.configure(with: config)
+        XCTAssertNotNil(Container.resolve(Filesystem.self, identifier: Filesystem.Identifier.default))
+        XCTAssertNotNil(Container.resolve(Filesystem.self, identifier: 1))
+        XCTAssertNotNil(Container.resolve(Filesystem.self, identifier: 2))
     }
     
     func testLocal() async throws {
         let root = NSTemporaryDirectory() + UUID().uuidString
-        Filesystem.register(.local(root: root))
+        Filesystem.bind(.local(root: root))
         XCTAssertEqual(root, Storage.root)
         for test in allTests {
             filePath = UUID().uuidString + ".txt"

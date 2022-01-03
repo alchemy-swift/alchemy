@@ -38,7 +38,7 @@ struct RunWorker: Command {
     // MARK: Command
     
     func run() throws {
-        let queue: Queue = name.map { .resolve(.init($0)) } ?? .default
+        let queue: Queue = name.map { .id(.init(hashable: $0)) } ?? Q
         
         @Inject var lifecycle: ServiceLifecycle
         lifecycle.registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
@@ -54,9 +54,11 @@ struct RunWorker: Command {
 }
 
 extension ServiceLifecycle {
+    private var scheduler: Scheduler { Container.resolveAssert() }
+    
     /// Start the scheduler when the app starts.
     func registerScheduler() {
-        register(label: "Scheduler", start: .sync { Scheduler.default.start() }, shutdown: .none)
+        register(label: "Scheduler", start: .sync { scheduler.start() }, shutdown: .none)
     }
     
     /// Start queue workers when the app starts.

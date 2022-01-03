@@ -33,31 +33,5 @@ extension Database {
     public func from(_ table: String, as alias: String? = nil) -> Query {
         self.table(table, as: alias)
     }
-    
-    /// Shortcut for running a query with the given table on
-    /// `Database.default`.
-    ///
-    /// - Parameter table: The table to run the query on.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public static func table(_ table: String, as alias: String? = nil) -> Query {
-        Database.default.table(table, as: alias)
-    }
-
-    /// Shortcut for running a query with the given table on
-    /// `Database.default`.
-    ///
-    /// An alias for `table(_ table: String)` to be used when running
-    /// a `select` query that also lets you alias the table name.
-    ///
-    /// - Parameters:
-    ///   - table: The table to select data from.
-    ///   - alias: An alias to use in place of table name. Defaults to
-    ///     `nil`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public static func from(_ table: String, as alias: String? = nil) -> Query {
-        Database.table(table, as: alias)
-    }
 }
 

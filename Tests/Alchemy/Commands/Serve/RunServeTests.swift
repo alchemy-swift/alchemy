@@ -17,9 +17,9 @@ final class RunServeTests: TestCase<TestApp> {
         try await Http.get("http://127.0.0.1:1234/foo")
             .assertBody("hello")
         
-        XCTAssertEqual(Queue.default.workers.count, 0)
-        XCTAssertFalse(Scheduler.default.isStarted)
-        XCTAssertFalse(Database.default.didRunMigrations)
+        XCTAssertEqual(Q.workers.count, 0)
+        XCTAssertFalse(app.scheduler.isStarted)
+        XCTAssertFalse(DB.didRunMigrations)
     }
     
     func testServeWithSideEffects() async throws {
@@ -30,8 +30,8 @@ final class RunServeTests: TestCase<TestApp> {
         try await Http.get("http://127.0.0.1:1234/foo")
             .assertBody("hello")
         
-        XCTAssertEqual(Queue.default.workers.count, 2)
-        XCTAssertTrue(Scheduler.default.isStarted)
-        XCTAssertTrue(Database.default.didRunMigrations)
+        XCTAssertEqual(Q.workers.count, 2)
+        XCTAssertTrue(app.scheduler.isStarted)
+        XCTAssertTrue(DB.didRunMigrations)
     }
 }

@@ -7,7 +7,7 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func notFound(use handler: @escaping Handler) -> Self {
-        Router.default.notFoundHandler = handler
+        router.notFoundHandler = handler
         return self
     }
     
@@ -19,7 +19,7 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func internalError(use handler: @escaping Router.ErrorHandler) -> Self {
-        Router.default.internalErrorHandler = handler
+        router.internalErrorHandler = handler
         return self
     }
 }

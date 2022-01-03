@@ -12,7 +12,7 @@ public final class StubRedis: RedisProvider {
     
     // MARK: RedisProvider
     
-    public func getClient() -> RedisClient {
+    public func getClient() -> RediStack.RedisClient {
         self
     }
     
@@ -25,7 +25,7 @@ public final class StubRedis: RedisProvider {
     }
 }
 
-extension StubRedis: RedisClient {
+extension StubRedis: RediStack.RedisClient {
     public var eventLoop: EventLoop { Loop.current }
     
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
@@ -66,7 +66,7 @@ extension StubRedis: RedisClient {
         eventLoop.future(error: RedisError(reason: "pub/sub stubbing isn't supported, yet"))
     }
 
-    public func logging(to logger: Logger) -> RedisClient {
+    public func logging(to logger: Logger) -> RediStack.RedisClient {
         self
     }
 }

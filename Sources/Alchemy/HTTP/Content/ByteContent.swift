@@ -114,7 +114,7 @@ public final class ByteStream: AsyncSequence {
     private let onFirstRead: ((ByteStream) -> Void)?
     private var didFirstRead: Bool
     
-    private var _streamer: HBByteBufferStreamer?
+    var _streamer: HBByteBufferStreamer?
     
     init(eventLoop: EventLoop, onFirstRead: ((ByteStream) -> Void)? = nil) {
         self.eventLoop = eventLoop

@@ -9,7 +9,7 @@ final class DatabaseQueue: QueueProvider {
     ///
     /// - Parameters:
     ///   - database: The database.
-    init(database: Database = .default) {
+    init(database: Database = DB) {
         self.database = database
     }
     
@@ -56,7 +56,7 @@ public extension Queue {
     /// - Parameter database: A database to drive this queue with.
     ///   Defaults to your default database.
     /// - Returns: The configured queue.
-    static func database(_ database: Database = .default) -> Queue {
+    static func database(_ database: Database = DB) -> Queue {
         Queue(provider: DatabaseQueue(database: database))
     }
     

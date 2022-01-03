@@ -13,7 +13,7 @@ final class DatabaseSeederTests: TestCase<TestApp> {
         AssertEqual(try await SeedModel.all().count, 10)
         AssertEqual(try await OtherSeedModel.all().count, 0)
         
-        try await Database.default.seed(with: OtherSeeder())
+        try await DB.seed(with: OtherSeeder())
         AssertEqual(try await OtherSeedModel.all().count, 999)
     }
     
@@ -23,17 +23,17 @@ final class DatabaseSeederTests: TestCase<TestApp> {
                 SeedModel.Migrate(),
                 OtherSeedModel.Migrate()])
         
-        Database.default.seeders = [
+        DB.seeders = [
             TestSeeder(),
             OtherSeeder()
         ]
         
-        try await Database.default.seed(names: ["otherseeder"])
+        try await DB.seed(names: ["otherseeder"])
         AssertEqual(try await SeedModel.all().count, 0)
         AssertEqual(try await OtherSeedModel.all().count, 999)
         
         do {
-            try await Database.default.seed(names: ["foo"])
+            try await DB.seed(names: ["foo"])
             XCTFail("Unknown seeder name should throw")
         } catch {}
     }

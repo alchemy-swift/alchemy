@@ -1,8 +1,6 @@
 extension Database {
     /// Fake the database with an in memory SQLite database.
     ///
-    ////// - Parameter name:
-    ///
     /// - Parameters:
     ///   - id: The identifier of the database to fake, defaults to `default`.
     ///   - seeds: Any migrations to set on the database, they will be run
@@ -14,7 +12,7 @@ extension Database {
         let db = Database.sqlite
         db.migrations = migrations
         db.seeders = seeders
-        register(id, db)
+        bind(id, db)
         
         let sem = DispatchSemaphore(value: 0)
         Task {
@@ -30,5 +28,39 @@ extension Database {
         
         sem.wait()
         return db
+    }
+    
+    /// Synchronously migrates the database, useful for setting up the database
+    /// before test cases.
+    public func syncMigrate() {
+        let sem = DispatchSemaphore(value: 0)
+        Task {
+            do {
+                if !migrations.isEmpty { try await migrate() }
+            } catch {
+                Log.error("Error migrating test database: \(error)")
+            }
+            
+            sem.signal()
+        }
+        
+        sem.wait()
+    }
+    
+    /// Synchronously seeds the database, useful for setting up the database
+    /// before test cases.
+    public func syncSeed() {
+        let sem = DispatchSemaphore(value: 0)
+        Task {
+            do {
+                if !seeders.isEmpty { try await seed() }
+            } catch {
+                Log.error("Error seeding test database: \(error)")
+            }
+            
+            sem.signal()
+        }
+        
+        sem.wait()
     }
 }

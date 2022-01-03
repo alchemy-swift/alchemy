@@ -28,7 +28,7 @@ open class TestCase<A: Application>: XCTestCase {
         }
         
         public func execute() async throws -> Response {
-            await Router.default.handle(
+            await A.current.router.handle(
                 request: .fixture(
                     remoteAddress: remoteAddress,
                     version: version,

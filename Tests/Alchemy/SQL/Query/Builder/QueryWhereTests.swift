@@ -9,14 +9,14 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhere() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .where("foo" == 1)
             .orWhere("bar" == 2)
         XCTAssertEqual(query.wheres, [_andWhere(), _orWhere(key: "bar", value: 2)])
     }
     
     func testNestedWhere() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .where { $0.where("foo" == 1).orWhere("bar" == 2) }
             .orWhere { $0.where("baz" == 3).orWhere("fiz" == 4) }
         XCTAssertEqual(query.wheres, [
@@ -32,7 +32,7 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhereIn() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .where(key: "foo", in: [1])
             .orWhere(key: "bar", in: [2])
         XCTAssertEqual(query.wheres, [
@@ -42,7 +42,7 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhereNotIn() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .whereNot(key: "foo", in: [1])
             .orWhereNot(key: "bar", in: [2])
         XCTAssertEqual(query.wheres, [
@@ -52,7 +52,7 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhereRaw() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .whereRaw(sql: "foo", bindings: [1])
             .orWhereRaw(sql: "bar", bindings: [2])
         XCTAssertEqual(query.wheres, [
@@ -62,7 +62,7 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhereColumn() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .whereColumn(first: "foo", op: .equals, second: "bar")
             .orWhereColumn(first: "baz", op: .like, second: "fiz")
         XCTAssertEqual(query.wheres, [
@@ -72,7 +72,7 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhereNull() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .whereNull(key: "foo")
             .orWhereNull(key: "bar")
         XCTAssertEqual(query.wheres, [
@@ -82,7 +82,7 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     func testWhereNotNull() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .whereNotNull(key: "foo")
             .orWhereNotNull(key: "bar")
         XCTAssertEqual(query.wheres, [

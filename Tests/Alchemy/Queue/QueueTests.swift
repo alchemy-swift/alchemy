@@ -3,10 +3,6 @@ import Alchemy
 import AlchemyTest
 
 final class QueueTests: TestCase<TestApp> {
-    private var queue: Queue {
-        Queue.default
-    }
-    
     private lazy var allTests = [
         _testEnqueue,
         _testWorker,
@@ -21,10 +17,10 @@ final class QueueTests: TestCase<TestApp> {
     
     func testConfig() {
         let config = Queue.Config(queues: [.default: .memory, 1: .memory, 2: .memory], jobs: [.job(TestJob.self)])
-        Queue.configure(using: config)
-        XCTAssertNotNil(Queue.resolveOptional(.default))
-        XCTAssertNotNil(Queue.resolveOptional(1))
-        XCTAssertNotNil(Queue.resolveOptional(2))
+        Queue.configure(with: config)
+        XCTAssertNotNil(Container.resolve(Queue.self, identifier: Queue.Identifier.default))
+        XCTAssertNotNil(Container.resolve(Queue.self, identifier: 1))
+        XCTAssertNotNil(Container.resolve(Queue.self, identifier: 2))
         XCTAssertTrue(app.registeredJobs.contains(where: { ObjectIdentifier($0) == ObjectIdentifier(TestJob.self) }))
     }
     
@@ -45,7 +41,7 @@ final class QueueTests: TestCase<TestApp> {
     func testDatabaseQueue() async throws {
         for test in allTests {
             Database.fake(migrations: [Queue.AddJobsMigration()])
-            Queue.register(.database)
+            Queue.bind(.database)
             try await test(#filePath, #line)
         }
     }
@@ -59,21 +55,21 @@ final class QueueTests: TestCase<TestApp> {
     
     func testRedisQueue() async throws {
         for test in allTests {
-            Redis.register(.testing)
-            Queue.register(.redis)
+            RedisClient.bind(.testing)
+            Queue.bind(.redis)
             
-            guard await Redis.default.checkAvailable() else {
+            guard await Redis.checkAvailable() else {
                 throw XCTSkip()
             }
             
             try await test(#filePath, #line)
-            _ = try await Redis.default.send(command: "FLUSHDB").get()
+            _ = try await Redis.send(command: "FLUSHDB").get()
         }
     }
     
     private func _testEnqueue(file: StaticString = #filePath, line: UInt = #line) async throws {
         try await TestJob(foo: "bar").dispatch()
-        guard let jobData = try await queue.dequeue(from: ["default"]) else {
+        guard let jobData = try await Q.dequeue(from: ["default"]) else {
             XCTFail("Failed to dequeue a job.", file: file, line: line)
             return
         }
@@ -100,7 +96,7 @@ final class QueueTests: TestCase<TestApp> {
         }
         
         let loop = EmbeddedEventLoop()
-        queue.startWorker(on: loop)
+        Q.startWorker(on: loop)
         loop.advanceTime(by: .seconds(5))
         await waitForExpectations(timeout: kMinTimeout)
     }
@@ -114,11 +110,11 @@ final class QueueTests: TestCase<TestApp> {
         }
         
         let loop = EmbeddedEventLoop()
-        queue.startWorker(on: loop)
+        Q.startWorker(on: loop)
         loop.advanceTime(by: .seconds(5))
         
         wait(for: [exp], timeout: kMinTimeout)
-        AssertNil(try await queue.dequeue(from: ["default"]))
+        AssertNil(try await Q.dequeue(from: ["default"]))
     }
     
     private func _testRetry(file: StaticString = #filePath, line: UInt = #line) async throws {
@@ -130,12 +126,12 @@ final class QueueTests: TestCase<TestApp> {
         }
         
         let loop = EmbeddedEventLoop()
-        queue.startWorker(untilEmpty: false, on: loop)
+        Q.startWorker(untilEmpty: false, on: loop)
         loop.advanceTime(by: .seconds(5))
         
         wait(for: [exp], timeout: kMinTimeout)
         
-        guard let jobData = try await queue.dequeue(from: ["default"]) else {
+        guard let jobData = try await Q.dequeue(from: ["default"]) else {
             XCTFail("Failed to dequeue a job.", file: file, line: line)
             return
         }

@@ -127,8 +127,7 @@ extension Cache {
     @discardableResult
     public static func fake(_ identifier: Identifier = .default, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
         let provider = MemoryCache(data)
-        let cache = Cache(provider: provider)
-        register(identifier, cache)
+        bind(identifier, Cache(provider: provider))
         return provider
     }
 }

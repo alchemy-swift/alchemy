@@ -8,7 +8,7 @@ final class DatabaseCache: CacheProvider {
     /// Initialize this cache with a Database.
     ///
     /// - Parameter db: The database to cache with.
-    init(_ db: Database = .default) {
+    init(_ db: Database = DB) {
         self.db = db
     }
     
@@ -89,7 +89,7 @@ extension Cache {
     /// - Parameter database: The database to drive your cache with.
     ///   Defaults to your default `Database`.
     /// - Returns: A cache.
-    public static func database(_ database: Database = .default) -> Cache {
+    public static func database(_ database: Database = DB) -> Cache {
         Cache(provider: DatabaseCache(database))
     }
     

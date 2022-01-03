@@ -13,13 +13,13 @@ final class QueryGroupingTests: TestCase<TestApp> {
     }
     
     func testGroupBy() {
-        XCTAssertEqual(Database.table("foo").groupBy("bar").groups, ["bar"])
-        XCTAssertEqual(Database.table("foo").groupBy("bar").groupBy("baz").groups, ["bar", "baz"])
+        XCTAssertEqual(DB.table("foo").groupBy("bar").groups, ["bar"])
+        XCTAssertEqual(DB.table("foo").groupBy("bar").groupBy("baz").groups, ["bar", "baz"])
     }
     
     func testHaving() {
         let orWhere = Query.Where(type: sampleWhere.type, boolean: .or)
-        let query = Database.table("foo")
+        let query = DB.table("foo")
             .having(sampleWhere)
             .orHaving(orWhere)
             .having(key: "bar", op: .like, value: "baz", boolean: .or)

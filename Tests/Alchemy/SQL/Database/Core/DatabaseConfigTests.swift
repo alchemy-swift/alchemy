@@ -1,15 +1,6 @@
 import AlchemyTest
 
 final class DatabaseConfigTests: TestCase<TestApp> {
-    func testInit() {
-        let socket = Socket.ip(host: "http://localhost", port: 1234)
-        let config = DatabaseConfig(socket: socket, database: "foo", username: "bar", password: "baz")
-        XCTAssertEqual(config.socket, socket)
-        XCTAssertEqual(config.database, "foo")
-        XCTAssertEqual(config.username, "bar")
-        XCTAssertEqual(config.password, "baz")
-    }
-    
     func testConfig() {
         let config = Database.Config(
             databases: [
@@ -24,15 +15,15 @@ final class DatabaseConfigTests: TestCase<TestApp> {
                 1: .testing,
                 2: .testing
             ])
-        Database.configure(using: config)
-        XCTAssertNotNil(Database.resolveOptional(.default))
-        XCTAssertNotNil(Database.resolveOptional(1))
-        XCTAssertNotNil(Database.resolveOptional(2))
-        XCTAssertNotNil(Redis.resolveOptional(.default))
-        XCTAssertNotNil(Redis.resolveOptional(1))
-        XCTAssertNotNil(Redis.resolveOptional(2))
-        XCTAssertEqual(Database.default.migrations.count, 1)
-        XCTAssertEqual(Database.default.seeders.count, 1)
+        Database.configure(with: config)
+        XCTAssertNotNil(Container.resolve(Database.self, identifier: Database.Identifier.default))
+        XCTAssertNotNil(Container.resolve(Database.self, identifier: 1))
+        XCTAssertNotNil(Container.resolve(Database.self, identifier: 2))
+        XCTAssertNotNil(Container.resolve(RedisClient.self, identifier: RedisClient.Identifier.default))
+        XCTAssertNotNil(Container.resolve(RedisClient.self, identifier: 1))
+        XCTAssertNotNil(Container.resolve(RedisClient.self, identifier: 2))
+        XCTAssertEqual(DB.migrations.count, 1)
+        XCTAssertEqual(DB.seeders.count, 1)
     }
 }
 

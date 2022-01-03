@@ -4,11 +4,15 @@ import LifecycleNIOCompat
 
 extension Application {
     /// The current application for easy access.
-    public static var current: Self { Container.resolve(Self.self) }
+    public static var current: Self { Container.resolveAssert() }
     /// The application's lifecycle.
-    public var lifecycle: ServiceLifecycle { Container.resolve(ServiceLifecycle.self) }
+    public var lifecycle: ServiceLifecycle { Container.resolveAssert() }
     /// The underlying hummingbird application.
-    public var _application: HBApplication { Container.resolve(HBApplication.self) }
+    public var _application: HBApplication { Container.resolveAssert() }
+    /// The underlying router.
+    var router: Router { Container.resolveAssert() }
+    /// The underlying scheduler.
+    var scheduler: Scheduler { Container.resolveAssert() }
     
     /// Setup and launch this application. By default it serves, see `Launch`
     /// for subcommands and options. Call this in the `main.swift`
@@ -24,8 +28,8 @@ extension Application {
     public func setup(testing: Bool = Env.isRunningTests) throws {
         bootServices(testing: testing)
         try boot()
-        services(container: .default)
-        schedule(schedule: .default)
+        services(container: .main)
+        schedule(schedule: Container.resolveAssert())
     }
     
     /// Starts the application with the given arguments.

@@ -9,12 +9,10 @@ final class DatabaseQueryTests: TestCase<TestApp> {
     }
     
     func testTable() {
-        XCTAssertEqual(Database.from("foo").table, "foo")
-        XCTAssertEqual(Database.default.from("foo").table, "foo")
+        XCTAssertEqual(DB.from("foo").table, "foo")
     }
     
     func testAlias() {
-        XCTAssertEqual(Database.from("foo", as: "bar").table, "foo as bar")
-        XCTAssertEqual(Database.default.from("foo", as: "bar").table, "foo as bar")
+        XCTAssertEqual(DB.from("foo", as: "bar").table, "foo as bar")
     }
 }

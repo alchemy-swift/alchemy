@@ -29,7 +29,7 @@ final class SQLiteDatabase: DatabaseProvider {
                 case .file(let path):
                     return SQLiteConfiguration(storage: .file(path: path), enableForeignKeys: true)
                 }
-            }(), threadPool: .default),
+            }(), threadPool: Thread.pool),
             on: Loop.group
         )
     }

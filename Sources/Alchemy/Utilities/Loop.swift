@@ -12,7 +12,7 @@ public struct Loop {
     
     /// Configure the Applications `EventLoopGroup` and `EventLoop`.
     static func config() {
-        Container.register(EventLoop.self) { _ in
+        Container.bind(to: EventLoop.self) { _ -> EventLoop in
             guard let current = MultiThreadedEventLoopGroup.currentEventLoop else {
                 // With async/await there is no guarantee that you'll
                 // be running on an event loop. When one is needed,
@@ -23,7 +23,7 @@ public struct Loop {
             return current
         }
         
-        Container.default.register(singleton: EventLoopGroup.self) { _ in
+        Container.main.bind(.singleton, to: EventLoopGroup.self) { _ in
             MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         }
         
@@ -34,11 +34,11 @@ public struct Loop {
     /// Register mocks of `EventLoop` and `EventLoop` to the
     /// application container.
     static func mock() {
-        Container.register(singleton: EventLoopGroup.self) { _ in
+        Container.bind(.singleton, to: EventLoopGroup.self) { _ in
             MultiThreadedEventLoopGroup(numberOfThreads: 1)
         }
         
-        Container.register(EventLoop.self) { _ in
+        Container.bind(to: EventLoop.self) { _ in
             group.next()
         }
     }

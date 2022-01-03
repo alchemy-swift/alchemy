@@ -9,19 +9,19 @@ extension Application {
     ///   manner appropriate for tests.
     func bootServices(testing: Bool = false) {
         if testing {
-            Container.default = Container()
+            Container.main = Container()
             Log.logger.logLevel = .notice
         }
         
         Env.boot()
-        Container.register(singleton: self)
+        Container.bind(value: Env.current)
         
         // Register as Self & Application
-        Container.default.register(singleton: Application.self) { _ in self }
-        Container.register(singleton: self)
+        Container.bind(.singleton, to: Application.self, value: self)
+        Container.bind(.singleton, value: self)
         
         // Setup app lifecycle
-        Container.default.register(singleton: ServiceLifecycle(
+        Container.bind(.singleton, value: ServiceLifecycle(
             configuration: ServiceLifecycle.Configuration(
                 logger: Log.logger.withLevel(.notice),
                 installBacktrace: !testing)))
@@ -34,10 +34,18 @@ extension Application {
             Loop.config()
         }
         
-        Router().registerDefault()
-        Scheduler().registerDefault()
-        NIOThreadPool(numberOfThreads: System.coreCount).registerDefault()
-        Client().registerDefault()
+        Container.bind(.singleton, value: Router())
+        Container.bind(.singleton, value: Scheduler())
+        Container.bind(.singleton) { container -> NIOThreadPool in
+            let threadPool = NIOThreadPool(numberOfThreads: System.coreCount)
+            threadPool.start()
+            container
+                .resolve(ServiceLifecycle.self)?
+                .registerShutdown(label: "\(name(of: NIOThreadPool.self))", .sync(threadPool.syncShutdownGracefully))
+            return threadPool
+        }
+        
+        Client.bind(Client())
         
         if testing {
             FileCreator.mock()
@@ -45,22 +53,6 @@ extension Application {
 
         // Set up any configurable services.
         ConfigurableServices.configureDefaults()
-    }
-}
-
-extension NIOThreadPool: Service {
-    public func startup() {
-        start()
-    }
-    
-    public func shutdown() throws {
-        try syncShutdownGracefully()
-    }
-}
-
-extension Service {
-    fileprivate func registerDefault() {
-        Self.register(self)
     }
 }
 

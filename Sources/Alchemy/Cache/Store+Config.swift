@@ -7,7 +7,7 @@ extension Cache {
         }
     }
 
-    public static func configure(using config: Config) {
-        config.caches.forEach(Cache.register)
+    public static func configure(with config: Config) {
+        config.caches.forEach { Cache.bind($0, $1) }
     }
 }

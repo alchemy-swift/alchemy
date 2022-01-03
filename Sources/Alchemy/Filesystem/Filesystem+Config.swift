@@ -7,7 +7,7 @@ extension Filesystem {
         }
     }
 
-    public static func configure(using config: Config) {
-        config.disks.forEach(Filesystem.register)
+    public static func configure(with config: Config) {
+        config.disks.forEach { Filesystem.bind($0, $1) }
     }
 }

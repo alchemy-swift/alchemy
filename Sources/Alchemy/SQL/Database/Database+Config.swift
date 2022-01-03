@@ -3,9 +3,9 @@ extension Database {
         public let databases: [Identifier: Database]
         public let migrations: [Migration]
         public let seeders: [Seeder]
-        public let redis: [Redis.Identifier: Redis]
+        public let redis: [RedisClient.Identifier: RedisClient]
         
-        public init(databases: [Database.Identifier : Database], migrations: [Migration], seeders: [Seeder], redis: [Redis.Identifier : Redis]) {
+        public init(databases: [Database.Identifier: Database], migrations: [Migration], seeders: [Seeder], redis: [RedisClient.Identifier: RedisClient]) {
             self.databases = databases
             self.migrations = migrations
             self.seeders = seeders
@@ -13,13 +13,13 @@ extension Database {
         }
     }
 
-    public static func configure(using config: Config) {
+    public static func configure(with config: Config) {
         config.databases.forEach { id, db in
             db.migrations = config.migrations
             db.seeders = config.seeders
-            Database.register(id, db)
+            Database.bind(id, db)
         }
         
-        config.redis.forEach(Redis.register)
+        config.redis.forEach { RedisClient.bind($0, $1) }
     }
 }

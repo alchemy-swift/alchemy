@@ -9,10 +9,7 @@ import Hummingbird
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
 final class RunServe: Command {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(commandName: "serve")
-    }
-    
+    static let configuration = CommandConfiguration(commandName: "serve")
     static var shutdownAfterRun: Bool = false
     static var logStartAndFinish: Bool = false
     
@@ -58,7 +55,7 @@ final class RunServe: Command {
                 label: "Migrate",
                 start: .eventLoopFuture {
                     Loop.group.next()
-                        .asyncSubmit(Database.default.migrate)
+                        .asyncSubmit(DB.migrate)
                 },
                 shutdown: .none
             )
@@ -72,8 +69,8 @@ final class RunServe: Command {
         }
         
         let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(Loop.group))
-        server.router = Router.default
-        Container.register(singleton: server)
+        server.router = app.router
+        Container.bind(.singleton, value: server)
         
         registerWithLifecycle()
         
@@ -82,7 +79,7 @@ final class RunServe: Command {
         }
         
         if workers > 0 {
-            lifecycle.registerWorkers(workers, on: .default)
+            lifecycle.registerWorkers(workers, on: Q)
         }
     }
     
@@ -129,18 +126,16 @@ extension Response {
         case .buffer(let buffer):
             return .byteBuffer(buffer)
         case .stream(let stream):
-            return .stream(HBStreamProxy(stream: stream))
+            return .stream(stream)
         case .none:
             return .empty
         }
     }
 }
 
-private struct HBStreamProxy: HBResponseBodyStreamer {
-    let stream: ByteStream
-    
-    func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
-        stream._read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
+extension ByteStream: HBResponseBodyStreamer {
+    public func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+        _read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
     }
 }
 

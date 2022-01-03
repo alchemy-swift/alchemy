@@ -4,6 +4,11 @@ import Foundation
 /// injectable `Service` so you can register the default one
 /// via `Database.config(default: .postgres())`.
 public final class Database: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     /// Any migrations associated with this database, whether applied
     /// yet or not.
     public var migrations: [Migration] = []

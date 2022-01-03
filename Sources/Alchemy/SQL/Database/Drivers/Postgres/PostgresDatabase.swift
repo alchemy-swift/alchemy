@@ -13,32 +13,25 @@ final class PostgresDatabase: DatabaseProvider {
 
     let grammar: Grammar = PostgresGrammar()
     
-    /// Initialize with the given configuration. The configuration
-    /// will be connected to when a query is run.
-    ///
-    /// - Parameter config: the info needed to connect to the
-    ///   database.
-    init(config: DatabaseConfig) {
+    init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
         pool = EventLoopGroupConnectionPool(
             source: PostgresConnectionSource(configuration: {
-                switch config.socket {
+                switch socket {
                 case .ip(let host, let port):
-                    var tlsConfig = config.enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
-                    tlsConfig?.certificateVerification = .none
                     return PostgresConfiguration(
                         hostname: host,
                         port: port,
-                        username: config.username,
-                        password: config.password,
-                        database: config.database,
-                        tlsConfiguration: tlsConfig
+                        username: username,
+                        password: password,
+                        database: database,
+                        tlsConfiguration: tlsConfiguration
                     )
                 case .unix(let name):
                     return PostgresConfiguration(
                         unixDomainSocketPath: name,
-                        username: config.username,
-                        password: config.password,
-                        database: config.database
+                        username: username,
+                        password: password,
+                        database: database
                     )
                 }
             }()),

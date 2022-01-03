@@ -9,8 +9,13 @@ import NIOHTTP1
 ///
 ///     let response = try await Http.get("https://swift.org")
 ///
-/// See `ClientProvider` for the request builder interface.
+/// See `Client.Builder` for the request builder interface.
 public final class Client: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     /// A type for making http requests with a `Client`. Supports static or
     /// streamed content.
     public struct Request {
@@ -191,10 +196,11 @@ public final class Client: Service {
         let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
         let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
         defer { try? httpClientOverride?.syncShutdown() }
+        let _request = try req._request
         let promise = Loop.group.next().makePromise(of: Response.self)
         let delegate = ResponseDelegate(request: req, promise: promise, allowStreaming: req.streamResponse)
         let client = httpClientOverride ?? httpClient
-        _ = client.execute(request: try req._request, delegate: delegate, deadline: deadline, logger: Log.logger)
+        _ = client.execute(request: _request, delegate: delegate, deadline: deadline, logger: Log.logger)
         return try await promise.futureResult.get()
     }
     
@@ -241,8 +247,8 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
         case error(Error)
     }
 
-    private let request: Client.Request
     private let responsePromise: EventLoopPromise<Client.Response>
+    private let request: Client.Request
     private let allowStreaming: Bool
     private var state = State.idle
 
@@ -305,6 +311,7 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
 
     func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
         self.state = .error(error)
+        responsePromise.fail(error)
     }
 
     func didFinishRequest(task: HTTPClient.Task<Response>) throws {
@@ -319,8 +326,8 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
             responsePromise.succeed(response)
         case .stream(_, let stream):
             _ = stream._write(chunk: nil)
-        case .error(let error):
-            responsePromise.fail(error)
+        case .error:
+            break
         }
     }
 }

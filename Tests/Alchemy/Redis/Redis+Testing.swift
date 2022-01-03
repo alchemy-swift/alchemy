@@ -1,8 +1,8 @@
 import Alchemy
 import RediStack
 
-extension Redis {
-    static var testing: Redis {
+extension Alchemy.RedisClient {
+    static var testing: Alchemy.RedisClient {
         .configuration(RedisConnectionPool.Configuration(
             initialServerConnectionAddresses: [
                 try! .makeAddressResolvingHost("localhost", port: 6379)

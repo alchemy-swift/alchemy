@@ -28,7 +28,7 @@ struct SeedDatabase: Command {
     // MARK: Command
     
     func start() async throws {
-        let db: Database = database.map { .resolve(.init($0)) } ?? .default
+        let db: Database = database.map { .id(.init(hashable: $0)) } ?? DB
         guard seeders.isEmpty else {
             try await db.seed(names: seeders)
             return

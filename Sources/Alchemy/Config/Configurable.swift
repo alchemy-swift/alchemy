@@ -3,7 +3,7 @@ public protocol Configurable: AnyConfigurable {
     associatedtype Config
     
     static var config: Config { get }
-    static func configure(using config: Config)
+    static func configure(with config: Config)
 }
 
 /// Register services that the user may provide configurations for here.
@@ -37,6 +37,6 @@ public protocol AnyConfigurable {
 
 extension Configurable {
     public static func configureDefaults() {
-        configure(using: Self.config)
+        configure(with: Self.config)
     }
 }

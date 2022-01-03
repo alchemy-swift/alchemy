@@ -3,6 +3,11 @@ import NIO
 /// Queue lets you run queued jobs to be processed in the background.
 /// Jobs are persisted by the given `QueueProvider`.
 public final class Queue: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     /// The default channel to dispatch jobs on for all queues.
     public static let defaultChannel = "default"
     /// The default rate at which workers poll queues.
@@ -39,7 +44,7 @@ extension Job {
     /// - Parameters:
     ///   - queue: The queue to dispatch on.
     ///   - channel: The name of the channel to dispatch on.
-    public func dispatch(on queue: Queue = .default, channel: String = Queue.defaultChannel) async throws {
+    public func dispatch(on queue: Queue = Q, channel: String = Queue.defaultChannel) async throws {
         try await queue.enqueue(self, channel: channel)
     }
 }

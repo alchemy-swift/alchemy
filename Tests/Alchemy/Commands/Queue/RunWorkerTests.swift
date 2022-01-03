@@ -13,8 +13,8 @@ final class RunWorkerTests: TestCase<TestApp> {
         
         try RunWorker(name: nil, workers: 5, schedule: false).run()
         app.lifecycle.start { _ in
-            XCTAssertEqual(Queue.default.workers.count, 5)
-            XCTAssertFalse(Scheduler.default.isStarted)
+            XCTAssertEqual(Q.workers.count, 5)
+            XCTAssertFalse(self.app.scheduler.isStarted)
             exp.fulfill()
         }
         
@@ -27,9 +27,9 @@ final class RunWorkerTests: TestCase<TestApp> {
         try RunWorker(name: "a", workers: 5, schedule: false).run()
         
         app.lifecycle.start { _ in
-            XCTAssertEqual(Queue.default.workers.count, 0)
-            XCTAssertEqual(Queue.resolve("a").workers.count, 5)
-            XCTAssertFalse(Scheduler.default.isStarted)
+            XCTAssertEqual(Q.workers.count, 0)
+            XCTAssertEqual(Q("a").workers.count, 5)
+            XCTAssertFalse(self.app.scheduler.isStarted)
             exp.fulfill()
         }
         
@@ -38,7 +38,7 @@ final class RunWorkerTests: TestCase<TestApp> {
     
     func testRunCLI() async throws {
         try app.start("worker", "--workers", "3", "--schedule")
-        XCTAssertEqual(Queue.default.workers.count, 3)
-        XCTAssertTrue(Scheduler.default.isStarted)
+        XCTAssertEqual(Q.workers.count, 3)
+        XCTAssertTrue(app.scheduler.isStarted)
     }
 }

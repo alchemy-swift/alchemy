@@ -2,7 +2,7 @@ import NIOCore
 
 /// A service for scheduling recurring work, in lieu of a separate
 /// cron task running apart from your server.
-public final class Scheduler: Service {
+public final class Scheduler {
     private struct WorkItem {
         let schedule: Schedule
         let work: () async throws -> Void

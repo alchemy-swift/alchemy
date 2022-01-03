@@ -3,6 +3,11 @@ import Foundation
 /// A type for accessing a persistant cache. Supported providers are
 /// `RedisCache`, `DatabaseCache`, and `MemoryCache`.
 public final class Cache: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     private let provider: CacheProvider
     
     /// Initializer this cache with a provider. Prefer static functions

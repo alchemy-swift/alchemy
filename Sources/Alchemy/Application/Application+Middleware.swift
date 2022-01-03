@@ -10,7 +10,7 @@ extension Application {
     /// - Returns: This Application for chaining.
     @discardableResult
     public func useAll(_ middlewares: Middleware...) -> Self {
-        Router.default.globalMiddlewares.append(contentsOf: middlewares)
+        router.globalMiddlewares.append(contentsOf: middlewares)
         return self
     }
     
@@ -22,7 +22,7 @@ extension Application {
     /// - Returns: This Application for chaining.
     @discardableResult
     public func useAll(_ middleware: @escaping MiddlewareClosure) -> Self {
-        Router.default.globalMiddlewares.append(AnonymousMiddleware(action: middleware))
+        router.globalMiddlewares.append(AnonymousMiddleware(action: middleware))
         return self
     }
     
@@ -33,7 +33,7 @@ extension Application {
     /// - Returns: This application for chaining.
     @discardableResult
     public func use(_ middlewares: Middleware...) -> Self {
-        Router.default.middlewares.append(contentsOf: middlewares)
+        router.middlewares.append(contentsOf: middlewares)
         return self
     }
     
@@ -44,7 +44,7 @@ extension Application {
     /// - Returns: This application for chaining.
     @discardableResult
     public func use(_ middleware: @escaping MiddlewareClosure) -> Self {
-        Router.default.middlewares.append(AnonymousMiddleware(action: middleware))
+        router.middlewares.append(AnonymousMiddleware(action: middleware))
         return self
     }
     
@@ -61,9 +61,9 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func group(_ middlewares: Middleware..., configure: (Application) -> Void) -> Self {
-        Router.default.middlewares.append(contentsOf: middlewares)
+        router.middlewares.append(contentsOf: middlewares)
         configure(self)
-        _ = Router.default.middlewares.popLast()
+        _ = router.middlewares.popLast()
         return self
     }
     
@@ -80,9 +80,9 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func group(middleware: @escaping MiddlewareClosure, configure: (Application) -> Void) -> Self {
-        Router.default.middlewares.append(AnonymousMiddleware(action: middleware))
+        router.middlewares.append(AnonymousMiddleware(action: middleware))
         configure(self)
-        _ = Router.default.middlewares.popLast()
+        _ = router.middlewares.popLast()
         return self
     }
 }

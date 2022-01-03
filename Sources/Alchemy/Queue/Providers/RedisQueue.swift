@@ -4,7 +4,7 @@ import RediStack
 /// A queue that persists jobs to a Redis instance.
 struct RedisQueue: QueueProvider {
     /// The underlying redis connection.
-    private let redis: Redis
+    private let redis: RedisClient
     /// All job data.
     private let dataKey = RedisKey("jobs:data")
     /// All processing jobs.
@@ -15,7 +15,7 @@ struct RedisQueue: QueueProvider {
     /// Initialize with a Redis instance to persist jobs to.
     ///
     /// - Parameter redis: The Redis instance.
-    init(redis: Redis = .default) {
+    init(redis: RedisClient = Redis) {
         self.redis = redis
         monitorBackoffs()
     }
@@ -101,7 +101,7 @@ public extension Queue {
     /// - Parameter redis: A redis connection to drive this queue.
     ///   Defaults to your default redis connection.
     /// - Returns: The configured queue.
-    static func redis(_ redis: Redis = Redis.default) -> Queue {
+    static func redis(_ redis: RedisClient = Redis) -> Queue {
         Queue(provider: RedisQueue(redis: redis))
     }
     

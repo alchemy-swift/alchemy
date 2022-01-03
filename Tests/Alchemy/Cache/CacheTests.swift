@@ -14,16 +14,16 @@ final class CacheTests: TestCase<TestApp> {
     
     func testConfig() {
         let config = Cache.Config(caches: [.default: .memory, 1: .memory, 2: .memory])
-        Cache.configure(using: config)
-        XCTAssertNotNil(Cache.resolveOptional(.default))
-        XCTAssertNotNil(Cache.resolveOptional(1))
-        XCTAssertNotNil(Cache.resolveOptional(2))
+        Cache.configure(with: config)
+        XCTAssertNotNil(Container.resolve(Cache.self, identifier: Cache.Identifier.default))
+        XCTAssertNotNil(Container.resolve(Cache.self, identifier: 1))
+        XCTAssertNotNil(Container.resolve(Cache.self, identifier: 2))
     }
     
     func testDatabaseCache() async throws {
         for test in allTests {
             Database.fake(migrations: [Cache.AddCacheMigration()])
-            Cache.register(.database)
+            Cache.bind(.database)
             try await test()
         }
     }
@@ -37,10 +37,10 @@ final class CacheTests: TestCase<TestApp> {
     
     func testRedisCache() async throws {
         for test in allTests {
-            Redis.register(.testing)
-            Cache.register(.redis)
+            RedisClient.bind(.testing)
+            Cache.bind(.redis)
             
-            guard await Redis.default.checkAvailable() else {
+            guard await RedisClient.default.checkAvailable() else {
                 throw XCTSkip()
             }
             

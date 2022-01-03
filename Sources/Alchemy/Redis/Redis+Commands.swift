@@ -2,15 +2,15 @@ import NIO
 import RediStack
 
 /// RedisClient conformance. See `RedisClient` for docs.
-extension Redis: RedisClient {
+extension RedisClient: RediStack.RedisClient {
     
-    // MARK: RedisClient
+    // MARK: RediStack.RedisClient
     
     public var eventLoop: EventLoop {
         Loop.current
     }
     
-    public func logging(to logger: Logger) -> RedisClient {
+    public func logging(to logger: Logger) -> RediStack.RedisClient {
         provider.getClient().logging(to: logger)
     }
     
@@ -105,17 +105,17 @@ extension Redis: RedisClient {
     /// "MULTI" ... "EXEC".
     ///
     /// - Returns: The result of finishing the transaction.
-    public func transaction(_ action: @escaping (Redis) async throws -> Void) async throws -> RESPValue {
+    public func transaction(_ action: @escaping (RedisClient) async throws -> Void) async throws -> RESPValue {
         try await provider.transaction { conn in
             _ = try await conn.getClient().send(command: "MULTI").get()
-            try await action(Redis(provider: conn))
+            try await action(RedisClient(provider: conn))
             return try await conn.getClient().send(command: "EXEC").get()
         }
     }
 }
 
 extension RedisConnection: RedisProvider {
-    public func getClient() -> RedisClient {
+    public func getClient() -> RediStack.RedisClient {
         self
     }
     

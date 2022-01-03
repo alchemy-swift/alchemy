@@ -2,6 +2,11 @@ import Foundation
 
 /// An abstraction around local or remote file storage.
 public struct Filesystem: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     private let provider: FilesystemProvider
     
     /// The root directory for storing and fetching files.
@@ -48,7 +53,7 @@ public struct Filesystem: Service {
 }
 
 extension File {
-    public func store(in directory: String? = nil, in filesystem: Filesystem = .default) async throws {
+    public func store(in directory: String? = nil, in filesystem: Filesystem = Storage) async throws {
         try await filesystem.put(self, in: directory)
     }
 }

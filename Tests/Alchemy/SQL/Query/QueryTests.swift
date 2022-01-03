@@ -9,7 +9,7 @@ final class QueryTests: TestCase<TestApp> {
     }
     
     func testStartsEmpty() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
         XCTAssertEqual(query.table, "foo")
         XCTAssertEqual(query.columns, ["*"])
         XCTAssertEqual(query.isDistinct, false)
@@ -24,7 +24,7 @@ final class QueryTests: TestCase<TestApp> {
     }
     
     func testEquality() {
-        XCTAssertEqual(Database.table("foo"), Database.table("foo"))
-        XCTAssertNotEqual(Database.table("foo"), Database.table("bar"))
+        XCTAssertEqual(DB.table("foo"), DB.table("foo"))
+        XCTAssertNotEqual(DB.table("foo"), DB.table("bar"))
     }
 }

@@ -3,12 +3,12 @@ import RediStack
 
 /// A Redis based provider for `Cache`.
 final class RedisCache: CacheProvider {
-    private let redis: Redis
+    private let redis: RedisClient
     
     /// Initialize this cache with a Redis client.
     ///
     /// - Parameter redis: The client to cache with.
-    init(_ redis: Redis = .default) {
+    init(_ redis: RedisClient = Redis) {
         self.redis = redis
     }
     
@@ -69,7 +69,7 @@ extension Cache {
     /// - Parameter redis: The redis instance to drive your cache
     ///   with. Defaults to your default `Redis` configuration.
     /// - Returns: A cache.
-    public static func redis(_ redis: Redis = Redis.default) -> Cache {
+    public static func redis(_ redis: RedisClient = Redis) -> Cache {
         Cache(provider: RedisCache(redis))
     }
     

@@ -75,8 +75,7 @@ extension Queue {
     @discardableResult
     public static func fake(_ identifier: Identifier = .default) -> MemoryQueue {
         let mock = MemoryQueue()
-        let q = Queue(provider: mock)
-        register(identifier, q)
+        bind(identifier, Queue(provider: mock))
         return mock
     }
 }

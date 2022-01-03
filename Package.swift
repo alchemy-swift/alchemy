@@ -21,7 +21,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/multipart-kit", from: "4.5.1"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
         .package(url: "https://github.com/alchemy-swift/papyrus", from: "0.2.1"),
-        .package(url: "https://github.com/alchemy-swift/fusion", from: "0.2.2"),
+        .package(url: "https://github.com/alchemy-swift/fusion", from: "0.3.0"),
         .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
         .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),

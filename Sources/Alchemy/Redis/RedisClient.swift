@@ -3,15 +3,19 @@ import NIOConcurrencyHelpers
 import RediStack
 
 /// A client for interfacing with a Redis instance.
-public struct Redis: Service {
+public struct RedisClient: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     let provider: RedisProvider
     
     public init(provider: RedisProvider) {
         self.provider = provider
     }
     
-    /// Shuts down this `Redis` client, closing it's associated
-    /// connection pools.
+    /// Shuts down this client, closing it's associated connection pools.
     public func shutdown() throws {
         try provider.shutdown()
     }
@@ -23,7 +27,7 @@ public struct Redis: Service {
         password: String? = nil,
         database: Int? = nil,
         poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
-    ) -> Redis {
+    ) -> RedisClient {
         return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize)
     }
     
@@ -45,7 +49,7 @@ public struct Redis: Service {
         password: String? = nil,
         database: Int? = nil,
         poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
-    ) -> Redis {
+    ) -> RedisClient {
         return .configuration(
             RedisConnectionPool.Configuration(
                 initialServerConnectionAddresses: sockets.map {
@@ -76,8 +80,8 @@ public struct Redis: Service {
     /// - Parameters:
     ///   - config: The configuration of the pool backing this `Redis`
     ///     client.
-    public static func configuration(_ config: RedisConnectionPool.Configuration) -> Redis {
-        return Redis(provider: ConnectionPool(config: config))
+    public static func configuration(_ config: RedisConnectionPool.Configuration) -> RedisClient {
+        return RedisClient(provider: ConnectionPool(config: config))
     }
 }
 
@@ -85,7 +89,7 @@ public struct Redis: Service {
 /// or connections can be injected into `Redis` for accessing redis.
 public protocol RedisProvider {
     /// Get a redis client for running commands.
-    func getClient() -> RedisClient
+    func getClient() -> RediStack.RedisClient
     
     /// Shut down.
     func shutdown() throws
@@ -111,7 +115,7 @@ private final class ConnectionPool: RedisProvider {
         self.config = config
     }
 
-    func getClient() -> RedisClient {
+    func getClient() -> RediStack.RedisClient {
         getPool()
     }
 

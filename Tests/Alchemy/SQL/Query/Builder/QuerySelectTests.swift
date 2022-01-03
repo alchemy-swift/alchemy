@@ -9,7 +9,7 @@ final class QuerySelectTests: TestCase<TestApp> {
     }
     
     func testStartsEmpty() {
-        let query = Database.table("foo")
+        let query = DB.table("foo")
         XCTAssertEqual(query.table, "foo")
         XCTAssertEqual(query.columns, ["*"])
         XCTAssertEqual(query.isDistinct, false)
@@ -24,13 +24,13 @@ final class QuerySelectTests: TestCase<TestApp> {
     }
     
     func testSelect() {
-        let specific = Database.table("foo").select(["bar", "baz"])
+        let specific = DB.table("foo").select(["bar", "baz"])
         XCTAssertEqual(specific.columns, ["bar", "baz"])
-        let all = Database.table("foo").select()
+        let all = DB.table("foo").select()
         XCTAssertEqual(all.columns, ["*"])
     }
     
     func testDistinct() {
-        XCTAssertEqual(Database.table("foo").distinct().isDistinct, true)
+        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
     }
 }

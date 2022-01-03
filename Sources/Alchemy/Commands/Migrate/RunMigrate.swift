@@ -27,9 +27,9 @@ struct RunMigrate: Command {
     
     func start() async throws {
         if rollback {
-            try await Database.default.rollbackMigrations()
+            try await DB.rollbackMigrations()
         } else {
-            try await Database.default.migrate()
+            try await DB.migrate()
         }
     }
     

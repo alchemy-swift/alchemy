@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTest
 
-final class AlchemyCommandTests: TestCase<CommandApp> {
+final class ApplicationCommandTests: TestCase<CommandApp> {
     func testCommandRegistration() throws {
         try app.start()
         XCTAssertTrue(Launch.customCommands.contains {

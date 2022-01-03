@@ -9,10 +9,10 @@ final class QueryLockTests: TestCase<TestApp> {
     }
     
     func testLock() {
-        XCTAssertNil(Database.table("foo").lock)
-        XCTAssertEqual(Database.table("foo").lock(for: .update).lock, Query.Lock(strength: .update, option: nil))
-        XCTAssertEqual(Database.table("foo").lock(for: .share).lock, Query.Lock(strength: .share, option: nil))
-        XCTAssertEqual(Database.table("foo").lock(for: .update, option: .noWait).lock, Query.Lock(strength: .update, option: .noWait))
-        XCTAssertEqual(Database.table("foo").lock(for: .update, option: .skipLocked).lock, Query.Lock(strength: .update, option: .skipLocked))
+        XCTAssertNil(DB.table("foo").lock)
+        XCTAssertEqual(DB.table("foo").lock(for: .update).lock, Query.Lock(strength: .update, option: nil))
+        XCTAssertEqual(DB.table("foo").lock(for: .share).lock, Query.Lock(strength: .share, option: nil))
+        XCTAssertEqual(DB.table("foo").lock(for: .update, option: .noWait).lock, Query.Lock(strength: .update, option: .noWait))
+        XCTAssertEqual(DB.table("foo").lock(for: .update, option: .skipLocked).lock, Query.Lock(strength: .update, option: .skipLocked))
     }
 }

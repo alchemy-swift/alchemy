@@ -7,7 +7,7 @@ public extension Model {
     /// - Parameter database: The database to run the query on.
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
-    static func query(database: Database = .default) -> ModelQuery<Self> {
+    static func query(database: Database = DB) -> ModelQuery<Self> {
         ModelQuery<Self>(database: database.provider, table: Self.tableName)
     }
 }

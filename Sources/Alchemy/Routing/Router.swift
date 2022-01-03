@@ -11,7 +11,7 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// An `Router` responds to HTTP requests from the client.
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
-public final class Router: Service {
+public final class Router {
     public struct RouteOptions: OptionSet {
         public let rawValue: Int
         
@@ -98,9 +98,9 @@ public final class Router: Service {
     func handle(request: Request) async -> Response {
         var handler = cleanHandler(notFoundHandler)
         var additionalMiddlewares = Array(globalMiddlewares.reversed())
-        @Inject var hbApp: HBApplication
+        let hbApp: HBApplication? = Container.resolve()
         
-        if let length = request.headers.contentLength, length > hbApp.configuration.maxUploadSize {
+        if let length = request.headers.contentLength, length > hbApp?.configuration.maxUploadSize ?? .max {
             handler = cleanHandler { _ in throw HTTPError(.payloadTooLarge) }
         } else if let match = trie.search(path: request.path.tokenized(with: request.method)) {
             request.parameters = match.parameters

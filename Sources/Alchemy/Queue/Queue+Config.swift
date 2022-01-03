@@ -19,7 +19,7 @@ extension Queue {
         }
     }
 
-    public static func configure(using config: Config) {
-        config.queues.forEach(Queue.register)
+    public static func configure(with config: Config) {
+        config.queues.forEach { Queue.bind($0, $1) }
     }
 }

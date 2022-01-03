@@ -10,7 +10,7 @@ extension Model {
     /// - Parameter db: The database to load models from. Defaults to
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
-    public static func all(db: Database = .default) async throws -> [Self] {
+    public static func all(db: Database = DB) async throws -> [Self] {
         try await Self.query(database: db).get()
     }
     
@@ -21,7 +21,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ id: Self.Identifier, db: Database = .default) async throws -> Self? {
+    public static func find(_ id: Self.Identifier, db: Database = DB) async throws -> Self? {
         try await Self.firstWhere("id" == id, db: db)
     }
     
@@ -32,7 +32,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ where: Query.Where, db: Database = .default) async throws -> Self? {
+    public static func find(_ where: Query.Where, db: Database = DB) async throws -> Self? {
         try await Self.firstWhere(`where`, db: db)
     }
     
@@ -45,7 +45,7 @@ extension Model {
     ///   - id: The id of the model to delete.
     ///   - error: An error to throw if the model doesn't exist.
     /// - Returns: A matching model.
-    public static func find(db: Database = .default, _ id: Self.Identifier, or error: Error) async throws -> Self {
+    public static func find(db: Database = DB, _ id: Self.Identifier, or error: Error) async throws -> Self {
         try await Self.firstWhere("id" == id, db: db).unwrap(or: error)
     }
     
@@ -54,7 +54,7 @@ extension Model {
     /// - Parameters: db: The database to search the model for.
     ///   Defaults to `Database.default`.
     /// - Returns: The first model, if one exists.
-    public static func first(db: Database = .default) async throws -> Self? {
+    public static func first(db: Database = DB) async throws -> Self? {
         try await Self.query().first()
     }
     
@@ -72,7 +72,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause, if
     ///   one exists.
-    public static func firstWhere(_ where: Query.Where, db: Database = .default) async throws -> Self? {
+    public static func firstWhere(_ where: Query.Where, db: Database = DB) async throws -> Self? {
         try await Self.query(database: db).where(`where`).first()
     }
     
@@ -83,7 +83,7 @@ extension Model {
     ///     clause.
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: All the models matching the `where` clause.
-    public static func allWhere(_ where: Query.Where, db: Database = .default) async throws -> [Self] {
+    public static func allWhere(_ where: Query.Where, db: Database = DB) async throws -> [Self] {
         try await Self.where(`where`, db: db).get()
     }
     
@@ -97,7 +97,7 @@ extension Model {
     ///   - error: The error to throw if there are no results.
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause.
-    public static func unwrapFirstWhere(_ where: Query.Where, or error: Error, db: Database = .default) async throws -> Self {
+    public static func unwrapFirstWhere(_ where: Query.Where, or error: Error, db: Database = DB) async throws -> Self {
         try await Self.where(`where`, db: db).unwrapFirst(or: error)
     }
     
@@ -109,7 +109,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A query on the `Model`'s table that matches the
     ///   given where clause.
-    public static func `where`(_ where: Query.Where, db: Database = .default) -> ModelQuery<Self> {
+    public static func `where`(_ where: Query.Where, db: Database = DB) -> ModelQuery<Self> {
         Self.query(database: db).where(`where`)
     }
     
@@ -119,7 +119,7 @@ extension Model {
     ///
     /// - Parameter db: The database to insert this model to. Defaults
     ///   to `Database.default`.
-    public func insert(db: Database = .default) async throws {
+    public func insert(db: Database = DB) async throws {
         try await Self.query(database: db).insert(fields())
     }
     
@@ -130,7 +130,7 @@ extension Model {
     /// - Returns: An updated version of this model, reflecting any
     ///   changes that may have occurred saving this object to the
     ///   database. (an `id` being populated, for example).
-    public func insertReturn(db: Database = .default) async throws -> Self {
+    public func insertReturn(db: Database = DB) async throws -> Self {
         try await Self.query(database: db)
             .insertReturn(try fields())
             .first
@@ -148,7 +148,7 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database.
     @discardableResult
-    public func update(db: Database = .default) async throws -> Self {
+    public func update(db: Database = DB) async throws -> Self {
         let id = try getID()
         let fields = try fields()
         try await Self.query(database: db).where("id" == id).update(values: fields)
@@ -156,7 +156,7 @@ extension Model {
     }
     
     @discardableResult
-    public func update(db: Database = .default, updateClosure: (inout Self) -> Void) async throws -> Self {
+    public func update(db: Database = DB, updateClosure: (inout Self) -> Void) async throws -> Self {
         let id = try self.getID()
         var copy = self
         updateClosure(&copy)
@@ -166,12 +166,12 @@ extension Model {
     }
     
     @discardableResult
-    public static func update(db: Database = .default, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
+    public static func update(db: Database = DB, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
         try await Self.find(id)?.update(with: dict)
     }
     
     @discardableResult
-    public func update(db: Database = .default, with dict: [String: Any]) async throws -> Self {
+    public func update(db: Database = DB, with dict: [String: Any]) async throws -> Self {
         let updateValues = dict.compactMapValues { $0 as? SQLValueConvertible }
         try await Self.query().where("id" == id).update(values: updateValues)
         return try await sync()
@@ -188,7 +188,7 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database (an `id` being populated, for example).
     @discardableResult
-    public func save(db: Database = .default) async throws -> Self {
+    public func save(db: Database = DB) async throws -> Self {
         guard id != nil else {
             return try await insertReturn(db: db)
         }
@@ -204,7 +204,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
-    public static func delete(_ where: Query.Where, db: Database = .default) async throws {
+    public static func delete(_ where: Query.Where, db: Database = DB) async throws {
         try await query().where(`where`).delete()
     }
     
@@ -214,7 +214,7 @@ extension Model {
     ///   - db: The database to delete the model from. Defaults to
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
-    public static func delete(db: Database = .default, _ id: Self.Identifier) async throws {
+    public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
         try await query().where("id" == id).delete()
     }
     
@@ -225,7 +225,7 @@ extension Model {
     ///     to `Database.default`.
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
-    public static func deleteAll(db: Database = .default, where: Query.Where? = nil) async throws {
+    public static func deleteAll(db: Database = DB, where: Query.Where? = nil) async throws {
         var query = Self.query(database: db)
         if let clause = `where` { query = query.where(clause) }
         try await query.delete()
@@ -236,7 +236,7 @@ extension Model {
     ///
     /// - Parameter db: The database to remove this model from.
     ///   Defaults to `Database.default`.
-    public func delete(db: Database = .default) async throws {
+    public func delete(db: Database = DB) async throws {
         try await Self.query(database: db).where("id" == id).delete()
     }
     
@@ -249,7 +249,7 @@ extension Model {
     /// - Parameter db: The database to load from. Defaults to
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
-    public func sync(db: Database = .default, query: ((ModelQuery<Self>) -> ModelQuery<Self>) = { $0 }) async throws -> Self {
+    public func sync(db: Database = DB, query: ((ModelQuery<Self>) -> ModelQuery<Self>) = { $0 }) async throws -> Self {
         try await query(Self.query(database: db).where("id" == id))
             .first()
             .unwrap(or: RuneError.syncErrorNoMatch(table: Self.tableName, id: id))
@@ -268,7 +268,7 @@ extension Model {
     ///   - error: The error that will be thrown, should a query with
     ///     the where clause find a result.
     ///   - db: The database to query. Defaults to `Database.default`.
-    public static func ensureNotExists(_ where: Query.Where, else error: Error, db: Database = .default) async throws {
+    public static func ensureNotExists(_ where: Query.Where, else error: Error, db: Database = DB) async throws {
         try await Self.query(database: db).where(`where`).firstRow()
             .map { _ in throw error }
     }
@@ -284,7 +284,7 @@ extension Array where Element: Model {
     ///   Defaults to `Database.default`.
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
-    public func insertAll(db: Database = .default) async throws {
+    public func insertAll(db: Database = DB) async throws {
         try await Element.query(database: db)
             .insert(try self.map { try $0.fields().mapValues { $0 } })
     }
@@ -295,7 +295,7 @@ extension Array where Element: Model {
     ///   Defaults to `Database.default`.
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
-    public func insertReturnAll(db: Database = .default) async throws -> Self {
+    public func insertReturnAll(db: Database = DB) async throws -> Self {
         try await Element.query(database: db)
             .insertReturn(try self.map { try $0.fields().mapValues { $0 } })
             .map { try $0.decode(Element.self) }
@@ -307,7 +307,7 @@ extension Array where Element: Model {
     ///
     /// - Parameter db: The database to delete from. Defaults to
     ///   `Database.default`.
-    public func deleteAll(db: Database = .default) async throws {
+    public func deleteAll(db: Database = DB) async throws {
         _ = try await Element.query(database: db)
             .where(key: "id", in: self.compactMap { $0.id })
             .delete()
