@@ -64,7 +64,7 @@ let package = Package(
             dependencies: ["AlchemyTest"],
             path: "Tests/Alchemy"),
         .testTarget(
-            name: "AlchemyTestUtilsTests",
+            name: "AlchemyTestTests",
             dependencies: ["AlchemyTest"],
             path: "Tests/AlchemyTest"),
     ]
