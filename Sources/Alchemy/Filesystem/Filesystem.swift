@@ -53,7 +53,7 @@ public struct Filesystem: Service {
 }
 
 extension File {
-    public func store(in directory: String? = nil, in filesystem: Filesystem = Storage) async throws {
+    public func store(in directory: String? = nil, on filesystem: Filesystem = Storage) async throws {
         try await filesystem.put(self, in: directory)
     }
 }

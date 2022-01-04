@@ -13,12 +13,16 @@ public final class Request: RequestInspector {
     public var stream: ByteStream? { body?.stream }
     /// The remote address where this request came from.
     public var remoteAddress: SocketAddress? { hbRequest.remoteAddress }
+    /// The remote address where this request came from.
+    public var ip: String { remoteAddress?.ipAddress ?? "" }
     /// The event loop this request is being handled on.
     public var loop: EventLoop { hbRequest.eventLoop }
     /// The HTTPMethod of the request.
     public var method: HTTPMethod { hbRequest.method }
     /// Any headers associated with the request.
     public var headers: HTTPHeaders { hbRequest.headers }
+    /// The complete url of the request.
+    public var url: URL { urlComponents.url ?? URL(fileURLWithPath: "") }
     /// The path of the request. Does not include the query string.
     public var path: String { urlComponents.path }
     /// Any query items parsed from the URL. These are not percent encoded.

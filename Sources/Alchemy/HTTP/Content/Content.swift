@@ -79,7 +79,7 @@ public final class Content: Buildable {
     public var exists: Bool { (try? decode(Empty.self)) != nil }
     public var isNull: Bool { self == nil }
     
-    var error: Error? {
+    public var error: Error? {
         guard case .error(let error) = state else { return nil }
         return error
     }
@@ -210,7 +210,7 @@ public final class Content: Buildable {
         try value.unwrap(or: ContentError.typeMismatch)
     }
     
-    func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
+    public func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
         try D(from: GenericDecoder(delegate: self))
     }
 }

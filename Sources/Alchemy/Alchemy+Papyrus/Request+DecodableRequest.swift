@@ -1,4 +1,5 @@
 import Papyrus
+import Foundation
 
 extension Request: DecodableRequest {
     public func header(_ key: String) -> String? {
@@ -16,7 +17,7 @@ extension Request: DecodableRequest {
     public func decodeContent<T>(type: Papyrus.ContentEncoding) throws -> T where T : Decodable {
         switch type {
         case .json:
-            return try decodeBodyJSON(as: T.self)
+            return try decode(T.self, with: JSONDecoder())
         case .url:
             throw HTTPError(.unsupportedMediaType)
         }

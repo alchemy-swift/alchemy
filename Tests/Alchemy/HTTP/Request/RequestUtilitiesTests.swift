@@ -39,20 +39,14 @@ final class RequestUtilitiesTests: XCTestCase {
         XCTAssertNotNil(Request.fixture(body: .empty).body)
     }
     
-    func testDecodeBodyDict() {
-        XCTAssertNil(try Request.fixture(body: nil).decodeBodyDict())
-        XCTAssertThrowsError(try Request.fixture(body: .empty).decodeBodyDict())
-        XCTAssertEqual(try Request.fixture(body: .json).decodeBodyDict() as? [String: String], ["foo": "bar"])
-    }
-    
     func testDecodeBodyJSON() {
         struct ExpectedJSON: Codable, Equatable {
             var foo = "bar"
         }
         
-        XCTAssertThrowsError(try Request.fixture(body: nil).decodeBodyJSON(as: ExpectedJSON.self))
-        XCTAssertThrowsError(try Request.fixture(body: .empty).decodeBodyJSON(as: ExpectedJSON.self))
-        XCTAssertEqual(try Request.fixture(body: .json).decodeBodyJSON(), ExpectedJSON())
+        XCTAssertThrowsError(try Request.fixture(body: nil).decode(ExpectedJSON.self))
+        XCTAssertThrowsError(try Request.fixture(body: .empty).decode(ExpectedJSON.self))
+        XCTAssertEqual(try Request.fixture(body: .json).decode(), ExpectedJSON())
     }
 }
 

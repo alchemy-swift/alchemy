@@ -61,8 +61,8 @@ extension ContentInspector {
             return self
         }
         
-        XCTAssertNoThrow(try decode(as: D.self), file: file, line: line)
-        guard let decoded = try? decode(as: D.self) else {
+        XCTAssertNoThrow(try decode(D.self), file: file, line: line)
+        guard let decoded = try? decode(D.self) else {
             return self
         }
         

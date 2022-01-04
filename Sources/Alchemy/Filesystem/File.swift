@@ -10,14 +10,16 @@ public struct File: Codable, ResponseConvertible {
     // The binary contents of the file.
     public var content: ByteContent
     /// The path extension of this file.
-    public var `extension`: String { name.components(separatedBy: ".")[safe: 1] ?? "" }
+    public var `extension`: String { name.components(separatedBy: ".").last ?? "" }
     /// The content type of this file, based on it's extension.
-    public var contentType: ContentType { ContentType(fileExtension: `extension`) ?? .octetStream }
+    public let contentType: ContentType
     
-    public init(name: String, size: Int, content: ByteContent) {
+    public init(name: String, contentType: ContentType? = nil, size: Int, content: ByteContent) {
         self.name = name
         self.size = size
         self.content = content
+        let _extension = name.components(separatedBy: ".").last ?? ""
+        self.contentType = contentType ?? ContentType(fileExtension: _extension) ?? .octetStream
     }
     
     /// Returns a copy of this file with a new name.
@@ -50,6 +52,8 @@ public struct File: Codable, ResponseConvertible {
         self.name = try container.decode(String.self, forKey: .name)
         self.size = try container.decode(Int.self, forKey: .size)
         self.content = .data(try container.decode(Data.self, forKey: .content))
+        let _extension = name.components(separatedBy: ".").last ?? ""
+        self.contentType = ContentType(fileExtension: _extension) ?? .octetStream
     }
     
     // MARK: - Encodable
@@ -82,6 +86,6 @@ extension File: MultipartPartConvertible {
         }
 
         // If there is no filename in the content disposition included (technically not required via RFC 7578) set to a random UUID.
-        self.init(name: (fileName ?? UUID().uuidString) + fileExtension, size: fileSize, content: .buffer(multipart.body))
+        self.init(name: (fileName ?? UUID().uuidString) + fileExtension, contentType: multipart.headers.contentType, size: fileSize, content: .buffer(multipart.body))
     }
 }
