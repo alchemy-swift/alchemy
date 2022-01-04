@@ -8,13 +8,13 @@ final class StreamingTests: TestCase<TestApp> {
     // MARK: - Client
     
     func testClientResponseStream() async throws {
-        Http.stub([
-            ("*", .stub(body: .stream {
-                try await $0.write("foo")
-                try await $0.write("bar")
-                try await $0.write("baz")
-            }))
-        ])
+        let streamResponse: Client.Response = .stub(body: .stream {
+            try await $0.write("foo")
+            try await $0.write("bar")
+            try await $0.write("baz")
+        })
+        
+        Http.stub(["example.com/*": streamResponse])
         
         var res = try await Http.get("https://example.com/foo")
         try await res.collect()
@@ -49,7 +49,7 @@ final class StreamingTests: TestCase<TestApp> {
         try app.start()
         var expected = ["foo", "bar", "baz"]
         try await Http
-            .streamResponse()
+            .withStream()
             .get("http://localhost:3000/stream")
             .assertStream {
                 guard expected.first != nil else {

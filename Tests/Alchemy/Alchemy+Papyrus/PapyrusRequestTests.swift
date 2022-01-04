@@ -17,7 +17,7 @@ final class PapyrusRequestTests: TestCase<TestApp> {
     
     func testResponse() async throws {
         Http.stub([
-            ("localhost:3000/get", .stub(body: "\"testing\""))
+            "localhost:3000/get": .stub(body: "\"testing\"")
         ])
         let response = try await api.getTest.request().response
         XCTAssertEqual(response, "testing")

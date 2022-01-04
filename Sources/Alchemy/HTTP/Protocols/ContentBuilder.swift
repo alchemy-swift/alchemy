@@ -59,7 +59,7 @@ extension ContentBuilder {
     }
     
     public func withJSON(_ dict: [String: Any?]) throws -> Self {
-        withBody(try .jsonDict(dict), type: .json)
+        withBody(try .json(dict), type: .json)
     }
     
     public func withJSON<E: Encodable>(_ json: E, encoder: JSONEncoder = JSONEncoder()) throws -> Self {
@@ -67,7 +67,7 @@ extension ContentBuilder {
     }
     
     public func withForm(_ dict: [String: Any?]) throws -> Self {
-        withBody(try .jsonDict(dict), type: .urlForm)
+        withBody(try .json(dict), type: .urlForm)
     }
     
     public func withForm<E: Encodable>(_ form: E, encoder: URLEncodedFormEncoder = URLEncodedFormEncoder()) throws -> Self {

@@ -4,24 +4,26 @@ import XCTest
 
 extension Client.Builder {
     public func assertNothingSent(file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssert(client.stubbedRequests.isEmpty, file: file, line: line)
+        let stubbedRequests = client.stubs?.stubbedRequests ?? []
+        XCTAssert(stubbedRequests.isEmpty, file: file, line: line)
     }
     
     public func assertSent(
         _ count: Int? = nil,
-        validate: ((Client.Request) -> Bool)? = nil,
+        validate: ((Client.Request) throws -> Bool)? = nil,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        XCTAssertFalse(client.stubbedRequests.isEmpty, file: file, line: line)
+        let stubbedRequests = client.stubs?.stubbedRequests ?? []
+        XCTAssertFalse(stubbedRequests.isEmpty, file: file, line: line)
         if let count = count {
-            XCTAssertEqual(client.stubbedRequests.count, count, file: file, line: line)
+            XCTAssertEqual(client.stubs?.stubbedRequests.count, count, file: file, line: line)
         }
         
         if let validate = validate {
             var foundMatch = false
-            for request in client.stubbedRequests where !foundMatch {
-                foundMatch = validate(request)
+            for request in stubbedRequests where !foundMatch {
+                XCTAssertNoThrow(foundMatch = try validate(request))
             }
             
             AssertTrue(foundMatch, file: file, line: line)

@@ -30,7 +30,9 @@ public final class Client: Service {
         /// The url of this request.
         public var url: URL { urlComponents.url ?? URL(string: "/")! }
         /// Remote host, resolved from `URL`.
-        public var host: String { urlComponents.url?.host ?? "" }
+        public var host: String { urlComponents.host ?? "" }
+        /// The path of this request.
+        public var path: String { urlComponents.path }
         /// How long until this request times out.
         public var timeout: TimeAmount? = nil
         /// Whether to stream the response. If false, the response body will be
@@ -106,6 +108,8 @@ public final class Client: Service {
             Client.Response(request: Request(url: ""), host: "", status: status, version: version, headers: headers, body: body)
         }
         
+        // MARK: ResponseConvertible
+        
         public func response() async throws -> Alchemy.Response {
             Alchemy.Response(status: status, headers: headers, body: body)
         }
@@ -145,25 +149,88 @@ public final class Client: Service {
             with { $0.request.streamResponse = true }
         }
         
-        /// Stub this client, causing it to respond to all incoming requests with a
-        /// stub matching the request url or a default `200` stub.
-        public func stub(_ stubs: [(String, Client.Response)] = []) {
+        /// Stub this builder's client, causing it to respond to all incoming
+        /// requests with a stub matching the request url or a default `200`
+        /// stub.
+        public func stub(_ stubs: Stubs = [:]) {
             self.client.stubs = stubs
+        }
+        
+        /// Stub this builder's client, causing it to respond to all incoming
+        /// requests using the provided handler.
+        public func stub(_ handler: @escaping Stubs.Handler) {
+            self.client.stubs = Stubs(handler: handler)
+        }
+    }
+    
+    /// Represents stubbed responses for a client.
+    public final class Stubs: ExpressibleByDictionaryLiteral {
+        public typealias Handler = (Client.Request) -> Client.Response
+        private typealias Patterns = [(pattern: String, response: Client.Response)]
+        
+        private enum Kind {
+            case patterns(Patterns)
+            case handler(Handler)
+        }
+        
+        private static let wildcard: Character = "*"
+        private let kind: Kind
+        private(set) var stubbedRequests: [Client.Request] = []
+        
+        init(handler: @escaping Handler) {
+            self.kind = .handler(handler)
+        }
+        
+        public init(dictionaryLiteral elements: (String, Client.Response)...) {
+            self.kind = .patterns(elements)
+        }
+        
+        func response(for req: Request) -> Response {
+            stubbedRequests.append(req)
+            
+            switch kind {
+            case .patterns(let patterns):
+                let match = patterns.first { pattern, _ in doesPattern(pattern, match: req) }
+                var stub: Client.Response = match?.response ?? .stub()
+                stub.request = req
+                stub.host = req.url.host ?? ""
+                return stub
+            case .handler(let handler):
+                return handler(req)
+            }
+        }
+        
+        private func doesPattern(_ pattern: String, match request: Request) -> Bool {
+            let requestUrl = [
+                request.url.host,
+                request.url.port.map { ":\($0)" },
+                request.url.path,
+            ]
+                .compactMap { $0 }
+                .joined()
+            
+            let patternUrl = pattern
+                .droppingPrefix("https://")
+                .droppingPrefix("http://")
+            
+            for (hostChar, patternChar) in zip(requestUrl, patternUrl) {
+                guard patternChar != Stubs.wildcard else { return true }
+                guard hostChar == patternChar else { return false }
+            }
+            
+            return requestUrl.count == patternUrl.count
         }
     }
     
     /// The underlying `AsyncHTTPClient.HTTPClient` used for making requests.
     public var httpClient: HTTPClient
-    private var stubWildcard: Character = "*"
-    private var stubs: [(pattern: String, response: Response)]?
-    private(set) var stubbedRequests: [Client.Request]
+    var stubs: Stubs?
     
     /// Create a client backed by the given `AsyncHTTPClient` client. Defaults
     /// to a client using the default config and app `EventLoopGroup`.
     public init(httpClient: HTTPClient = HTTPClient(eventLoopGroupProvider: .shared(Loop.group))) {
         self.httpClient = httpClient
         self.stubs = nil
-        self.stubbedRequests = []
     }
     
     public func builder() -> Builder {
@@ -177,8 +244,14 @@ public final class Client: Service {
     
     /// Stub this client, causing it to respond to all incoming requests with a
     /// stub matching the request url or a default `200` stub.
-    public func stub(_ stubs: [(String, Client.Response)] = []) {
+    public func stub(_ stubs: Stubs = [:]) {
         self.stubs = stubs
+    }
+    
+    /// Stub this client, causing it to respond to all incoming requests using
+    /// the provided handler.
+    public func stub(_ handler: @escaping Stubs.Handler) {
+        self.stubs = Stubs(handler: handler)
     }
     
     /// Execute a request.
@@ -189,49 +262,19 @@ public final class Client: Service {
     ///     request
     /// - Returns: The request's response.
     private func execute(req: Request) async throws -> Response {
-        guard stubs == nil else {
-            return stubFor(req)
+        if let stubs = stubs {
+            return stubs.response(for: req)
+        } else {
+            let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
+            let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
+            defer { try? httpClientOverride?.syncShutdown() }
+            let _request = try req._request
+            let promise = Loop.group.next().makePromise(of: Response.self)
+            let delegate = ResponseDelegate(request: req, promise: promise, allowStreaming: req.streamResponse)
+            let client = httpClientOverride ?? httpClient
+            _ = client.execute(request: _request, delegate: delegate, deadline: deadline, logger: Log.logger)
+            return try await promise.futureResult.get()
         }
-        
-        let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
-        let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
-        defer { try? httpClientOverride?.syncShutdown() }
-        let _request = try req._request
-        let promise = Loop.group.next().makePromise(of: Response.self)
-        let delegate = ResponseDelegate(request: req, promise: promise, allowStreaming: req.streamResponse)
-        let client = httpClientOverride ?? httpClient
-        _ = client.execute(request: _request, delegate: delegate, deadline: deadline, logger: Log.logger)
-        return try await promise.futureResult.get()
-    }
-    
-    private func stubFor(_ req: Request) -> Response {
-        stubbedRequests.append(req)
-        let match = stubs?.first { pattern, _ in doesPattern(pattern, match: req) }
-        var stub: Client.Response = match?.response ?? .stub()
-        stub.request = req
-        stub.host = req.url.host ?? ""
-        return stub
-    }
-    
-    private func doesPattern(_ pattern: String, match request: Request) -> Bool {
-        let requestUrl = [
-            request.url.host,
-            request.url.port.map { ":\($0)" },
-            request.url.path,
-        ]
-            .compactMap { $0 }
-            .joined()
-        
-        let patternUrl = pattern
-            .droppingPrefix("https://")
-            .droppingPrefix("http://")
-        
-        for (hostChar, patternChar) in zip(requestUrl, patternUrl) {
-            guard patternChar != stubWildcard else { return true }
-            guard hostChar == patternChar else { return false }
-        }
-        
-        return requestUrl.count == patternUrl.count
     }
 }
 

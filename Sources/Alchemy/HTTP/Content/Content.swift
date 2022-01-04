@@ -63,12 +63,19 @@ public final class Content: Buildable {
     // The path taken to get here.
     let path: [Operator]
     
-    public var string: String { get throws { try unwrap(convertValue().string) } }
-    public var int: Int { get throws { try unwrap(convertValue().int) } }
-    public var bool: Bool { get throws { try unwrap(convertValue().bool) } }
-    public var double: Double { get throws { try unwrap(convertValue().double) } }
-    public var file: File { get throws { try unwrap(convertValue().file) } }
-    public var array: [Content] { get throws { try convertArray() } }
+    public var string: String? { try? stringThrowing }
+    public var stringThrowing: String { get throws { try unwrap(convertValue().string) } }
+    public var int: Int? { try? intThrowing }
+    public var intThrowing: Int { get throws { try unwrap(convertValue().int) } }
+    public var bool: Bool? { try? boolThrowing }
+    public var boolThrowing: Bool { get throws { try unwrap(convertValue().bool) } }
+    public var double: Double? { try? doubleThrowing }
+    public var doubleThrowing: Double { get throws { try unwrap(convertValue().double) } }
+    public var file: File? { try? fileThrowing }
+    public var fileThrowing: File { get throws { try unwrap(convertValue().file) } }
+    public var array: [Content]? { try? convertArray() }
+    public var arrayThrowing: [Content] { get throws { try convertArray() } }
+    
     public var exists: Bool { (try? decode(Empty.self)) != nil }
     public var isNull: Bool { self == nil }
     
@@ -273,15 +280,19 @@ extension Content: DecoderDelegate {
     
     func array(for key: CodingKey?) throws -> [DecoderDelegate] {
         let val = key.map { self[$0.stringValue] } ?? self
-        return try val.array.map { $0 }
+        return try val.arrayThrowing.map { $0 }
     }
 }
 
 extension Array where Element == Content {
-    var string: [String] { get throws { try map { try $0.string } } }
-    var int: [Int] { get throws { try map { try $0.int } } }
-    var bool: [Bool] { get throws { try map { try $0.bool } } }
-    var double: [Double] { get throws { try map { try $0.double } } }
+    var string: [String]? { try? stringThrowing }
+    var stringThrowing: [String] { get throws { try map { try $0.stringThrowing } } }
+    var int: [Int]? { try? intThrowing }
+    var intThrowing: [Int] { get throws { try map { try $0.intThrowing } } }
+    var bool: [Bool]? { try? boolThrowing }
+    var boolThrowing: [Bool] { get throws { try map { try $0.boolThrowing } } }
+    var double: [Double]? { try? doubleThrowing }
+    var doubleThrowing: [Double] { get throws { try map { try $0.doubleThrowing } } }
     
     subscript(field: String) -> [Content] {
         return map { $0[field] }

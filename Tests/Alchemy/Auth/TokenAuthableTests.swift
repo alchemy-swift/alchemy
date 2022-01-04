@@ -16,12 +16,12 @@ final class TokenAuthableTests: TestCase<TestApp> {
         try await Test.get("/user")
             .assertUnauthorized()
         
-        try await Test.withBearerAuth(token.value.uuidString)
+        try await Test.withToken(token.value.uuidString)
             .get("/user")
             .assertOk()
             .assertJson(token.value)
         
-        try await Test.withBearerAuth(UUID().uuidString)
+        try await Test.withToken(UUID().uuidString)
             .get("/user")
             .assertUnauthorized()
     }

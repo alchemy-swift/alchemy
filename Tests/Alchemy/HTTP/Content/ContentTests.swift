@@ -50,24 +50,24 @@ final class ContentTests: XCTestCase {
     
     func _testAccess(content: Content, allowsNull: Bool) throws {
         AssertTrue(content["foo"] == nil)
-        AssertEqual(try content["string"].string, "string")
+        AssertEqual(try content["string"].stringThrowing, "string")
         AssertEqual(try content["string"].decode(String.self), "string")
-        AssertEqual(try content["int"].int, 0)
-        AssertEqual(try content["bool"].bool, true)
-        AssertEqual(try content["double"].double, 1.23)
+        AssertEqual(try content["int"].intThrowing, 0)
+        AssertEqual(try content["bool"].boolThrowing, true)
+        AssertEqual(try content["double"].doubleThrowing, 1.23)
     }
     
     func _testNestedAccess(content: Content, allowsNull: Bool) throws {
         AssertTrue(content.object.four.isNull)
-        XCTAssertThrowsError(try content["array"].string)
-        AssertEqual(try content["array"].array.count, 3)
-        XCTAssertThrowsError(try content["array"][0].array)
-        AssertEqual(try content["array"][0].int, 1)
-        AssertEqual(try content["array"][1].int, 2)
-        AssertEqual(try content["array"][2].int, 3)
-        AssertEqual(try content["object"]["one"].string, "one")
-        AssertEqual(try content["object"]["two"].string, "two")
-        AssertEqual(try content["object"]["three"].string, "three")
+        XCTAssertThrowsError(try content["array"].stringThrowing)
+        AssertEqual(try content["array"].arrayThrowing.count, 3)
+        XCTAssertThrowsError(try content["array"][0].arrayThrowing)
+        AssertEqual(try content["array"][0].intThrowing, 1)
+        AssertEqual(try content["array"][1].intThrowing, 2)
+        AssertEqual(try content["array"][2].intThrowing, 3)
+        AssertEqual(try content["object"]["one"].stringThrowing, "one")
+        AssertEqual(try content["object"]["two"].stringThrowing, "two")
+        AssertEqual(try content["object"]["three"].stringThrowing, "three")
     }
     
     func _testEnumAccess(content: Content, allowsNull: Bool) throws {
@@ -83,7 +83,7 @@ final class ContentTests: XCTestCase {
     }
     
     func _testMultipart(content: Content) throws {
-        let file = try content["file"].file
+        let file = try content["file"].fileThrowing
         AssertEqual(file.name, "a.txt")
         AssertEqual(file.content.buffer.string, "Content of a.txt.\n")
     }
@@ -144,7 +144,7 @@ final class ContentTests: XCTestCase {
             let foo: String
         }
         
-        AssertEqual(try content["objectArray"][*]["foo"].string, ["bar", "baz", "tiz"])
+        AssertEqual(try content["objectArray"][*]["foo"].stringThrowing, ["bar", "baz", "tiz"])
         let expectedArray = [ArrayType(foo: "bar"), ArrayType(foo: "baz"), ArrayType(foo: "tiz")]
         AssertEqual(try content.objectArray.decode([ArrayType].self), expectedArray)
     }

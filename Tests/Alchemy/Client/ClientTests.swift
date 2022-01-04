@@ -5,9 +5,9 @@ import AlchemyTest
 final class ClientTests: TestCase<TestApp> {
     func testQueries() async throws {
         Http.stub([
-            ("localhost/foo", .stub(.unauthorized)),
-            ("localhost/*", .stub(.ok)),
-            ("*", .stub(.ok)),
+            "localhost/foo": .stub(.unauthorized),
+            "localhost/*": .stub(.ok),
+            "*": .stub(.ok),
         ])
         try await Http.withQueries(["foo":"bar"]).get("https://localhost/baz")
             .assertOk()

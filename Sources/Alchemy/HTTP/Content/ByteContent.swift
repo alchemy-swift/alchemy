@@ -292,7 +292,7 @@ extension ByteContent {
         .buffer(try encoder.encodeContent(value).buffer)
     }
     
-    public static func jsonDict(_ dict: [String: Any?]) throws -> ByteContent {
+    public static func json(_ dict: [String: Any?]) throws -> ByteContent {
         .buffer(ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)))
     }
     
