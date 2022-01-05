@@ -57,6 +57,27 @@ final class MiddlewareTests: TestCase<TestApp> {
         try await Test.post("/foo").assertOk().assertBody("1")
         wait(for: [expect], timeout: kMinTimeout)
     }
+    
+    func testGroupMiddlewareRemoved() async throws {
+        let exp1 = expectationInverted(description: "")
+        let exp2 = expectation(description: "")
+        let mw = TestMiddleware(req: { request in
+            XCTAssertEqual(request.path, "/foo")
+            XCTAssertEqual(request.method, .POST)
+            exp1.fulfill()
+        })
+
+        app.group(mw) {
+            $0.get("/foo") { _ in 1 }
+        }
+        .get("/bar") { _ -> Int in
+            exp2.fulfill()
+            return 2
+        }
+
+        try await Test.get("/bar").assertOk()
+        await waitForExpectations(timeout: kMinTimeout)
+    }
 
     func testMiddlewareOrder() async throws {
         var stack = [Int]()

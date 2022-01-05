@@ -37,6 +37,17 @@ extension Application {
         return self
     }
     
+    /// Adds middleware that will intercept before all subsequent
+    /// handlers.
+    ///
+    /// - Parameter middlewares: The middlewares.
+    /// - Returns: This application for chaining.
+    @discardableResult
+    public func use(_ middlewares: [Middleware]) -> Self {
+        router.middlewares.append(contentsOf: middlewares)
+        return self
+    }
+    
     /// Adds a middleware that will intercept before all subsequent handlers.
     ///
     /// - Parameter middlewares: The middleware closure which will intercept
@@ -61,10 +72,10 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func group(_ middlewares: Middleware..., configure: (Application) -> Void) -> Self {
-        router.middlewares.append(contentsOf: middlewares)
-        configure(self)
-        _ = router.middlewares.popLast()
-        return self
+        snapshotMiddleware {
+            $0.use(middlewares)
+            configure(self)
+        }
     }
     
     /// Groups a set of endpoints by a middleware. This middleware
@@ -80,9 +91,22 @@ extension Application {
     /// - Returns: This application for chaining handlers.
     @discardableResult
     public func group(middleware: @escaping MiddlewareClosure, configure: (Application) -> Void) -> Self {
-        router.middlewares.append(AnonymousMiddleware(action: middleware))
-        configure(self)
-        _ = router.middlewares.popLast()
+        snapshotMiddleware {
+            $0.use(AnonymousMiddleware(action: middleware))
+            configure($0)
+        }
+    }
+}
+
+extension Application {
+    /// Runs the action on this application. When the closure is finished, this
+    /// reverts the router middleware stack back to what it was before running
+    /// the action.
+    @discardableResult
+    func snapshotMiddleware(_ action: (Application) -> Void) -> Self {
+        let middlewaresBefore = router.middlewares.count
+        action(self)
+        router.middlewares = Array(router.middlewares.prefix(middlewaresBefore))
         return self
     }
 }
