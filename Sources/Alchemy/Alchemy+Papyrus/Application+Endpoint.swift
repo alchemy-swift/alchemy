@@ -1,6 +1,15 @@
 import Foundation
 import Papyrus
 import NIO
+import NIOHTTP1
+
+extension RawResponse: ResponseConvertible {
+    public func response() async throws -> Response {
+        var headers: HTTPHeaders = [:]
+        headers.add(contentsOf: self.headers.map { $0 })
+        return Response(status: .ok, headers: headers, body: body.map { .data($0) })
+    }
+}
 
 public extension Application {
     /// Registers a `Papyrus.Endpoint`. When an incoming request
@@ -16,10 +25,10 @@ public extension Application {
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
     func on<Req, Res>(_ endpoint: Endpoint<Req, Res>, options: Router.RouteOptions = [], use handler: @escaping (Request, Req) async throws -> Res) -> Self where Res: Codable {
-        on(endpoint.nioMethod, at: endpoint.path, options: options) { request -> Response in
-            let result = try await handler(request, try Req(from: request))
-            return try Response(status: .ok)
-                .withValue(result, encoder: endpoint.jsonEncoder)
+        on(endpoint.nioMethod, at: endpoint.path, options: options) { request -> RawResponse in
+            let input = try endpoint.decodeRequest(method: request.method.rawValue, path: request.path, headers: request.headerDict, parameters: request.parameterDict, query: request.urlComponents.query ?? "", body: request.body?.data())
+            let output = try await handler(request, input)
+            return try endpoint.rawResponse(with: output)
         }
     }
     
@@ -34,10 +43,9 @@ public extension Application {
     /// - Returns: `self`, for chaining more requests.
     @discardableResult
     func on<Res>(_ endpoint: Endpoint<Empty, Res>, options: Router.RouteOptions = [], use handler: @escaping (Request) async throws -> Res) -> Self {
-        on(endpoint.nioMethod, at: endpoint.path, options: options) { request -> Response in
-            let result = try await handler(request)
-            return try Response(status: .ok)
-                .withValue(result, encoder: endpoint.jsonEncoder)
+        on(endpoint.nioMethod, at: endpoint.path, options: options) { request -> RawResponse in
+            let output = try await handler(request)
+            return try endpoint.rawResponse(with: output)
         }
     }
     
@@ -52,8 +60,9 @@ public extension Application {
     @discardableResult
     func on<Req>(_ endpoint: Endpoint<Req, Empty>, options: Router.RouteOptions = [], use handler: @escaping (Request, Req) async throws -> Void) -> Self {
         on(endpoint.nioMethod, at: endpoint.path, options: options) { request -> Response in
-            try await handler(request, Req(from: request))
-            return Response(status: .ok, body: nil)
+            let input = try endpoint.decodeRequest(method: request.method.rawValue, path: request.path, headers: request.headerDict, parameters: request.parameterDict, query: request.urlComponents.query ?? "", body: request.body?.data())
+            try await handler(request, input)
+            return Response()
         }
     }
     
@@ -69,8 +78,22 @@ public extension Application {
     func on(_ endpoint: Endpoint<Empty, Empty>, options: Router.RouteOptions = [], use handler: @escaping (Request) async throws -> Void) -> Self {
         on(endpoint.nioMethod, at: endpoint.path, options: options) { request -> Response in
             try await handler(request)
-            return Response(status: .ok, body: nil)
+            return Response()
         }
+    }
+}
+
+extension Request {
+    fileprivate var parameterDict: [String: String] {
+        var dict: [String: String] = [:]
+        for param in parameters { dict[param.key] = param.value }
+        return dict
+    }
+    
+    fileprivate var headerDict: [String: String] {
+        var dict: [String: String] = [:]
+        for header in headers { dict[header.name] = header.value }
+        return dict
     }
 }
 

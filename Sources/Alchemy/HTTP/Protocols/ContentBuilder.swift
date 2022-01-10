@@ -45,11 +45,11 @@ extension ContentBuilder {
         }
     }
     
-    public func withBody(_ data: Data) -> Self {
+    public func withBody(data: Data) -> Self {
         withBody(.data(data))
     }
     
-    public func withBody(_ buffer: ByteBuffer) -> Self {
+    public func withBody(buffer: ByteBuffer) -> Self {
         withBody(.buffer(buffer))
     }
     

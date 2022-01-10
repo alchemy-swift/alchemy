@@ -1,4 +1,5 @@
 import Foundation
+import Papyrus
 
 public protocol ContentValue {
     var string: String? { get }

@@ -1,7 +1,8 @@
 import AlchemyTest
+import Papyrus
 
 final class PapyrusRoutingTests: TestCase<TestApp> {
-    let api = TestAPI()
+    private let api = TestAPI()
     
     func testTypedReqTypedRes() async throws {
         app.on(api.createTest) { request, content in
@@ -44,14 +45,12 @@ final class PapyrusRoutingTests: TestCase<TestApp> {
     }
 }
 
-final class TestAPI: EndpointGroup {
-    var baseURL: String = "localhost:3000"
-    
-    @POST("/test")   var createTest: Endpoint<CreateTestReq, String>
-    @GET("/test")    var getTest: Endpoint<Empty, String>
-    @PATCH("/test")  var updateTests: Endpoint<UpdateTestsReq, Empty>
-    @DELETE("/test") var deleteTests: Endpoint<Empty, Empty>
+private final class TestAPI: API {
+    @POST("/test")   var createTest = Endpoint<CreateTestReq, String>()
+    @GET("/test")    var getTest = Endpoint<Empty, String>()
+    @PATCH("/test")  var updateTests = Endpoint<UpdateTestsReq, Empty>()
+    @DELETE("/test") var deleteTests = Endpoint<Empty, Empty>()
 }
 
-struct CreateTestReq: RequestComponents {}
-struct UpdateTestsReq: RequestComponents {}
+private struct CreateTestReq: EndpointRequest {}
+private struct UpdateTestsReq: EndpointRequest {}

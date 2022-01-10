@@ -24,7 +24,7 @@ extension Endpoint where Request == Empty {
     ///   `Client.default`.
     /// - Returns: A raw `ClientResponse` and decoded `Response`.
     public func request(with client: Client = .default) async throws -> (clientResponse: Client.Response, response: Response) {
-        try await client.request(endpoint: self, request: Empty.value)
+        try await client.request(endpoint: self, request: .value)
     }
 }
 
@@ -35,30 +35,29 @@ extension Client {
     ///   - endpoint: The Endpoint to request.
     ///   - request: An instance of the Endpoint's Request.
     /// - Returns: A raw `ClientResponse` and decoded `Response`.
-    fileprivate func request<Request: RequestConvertible, Response: Codable>(
+    fileprivate func request<Request: EndpointRequest, Response: EndpointResponse>(
         endpoint: Endpoint<Request, Response>,
         request: Request
     ) async throws -> (clientResponse: Client.Response, response: Response) {
-        let components = try endpoint.httpComponents(dto: request)
-        var request = builder().withHeaders(components.headers)
-        
-        if let body = components.body {
-            switch components.contentEncoding {
-            case .json:
-                request = try request.withJSON(body, encoder: endpoint.jsonEncoder)
-            case .url:
-                request = try request.withForm(body)
-            }
+        let rawRequest = try endpoint.rawRequest(with: request)
+        var builder = builder()
+        if let body = rawRequest.body {
+            builder = builder.withBody(data: body)
         }
         
-        var clientResponse = try await request
-            .request(HTTPMethod(rawValue: components.method), uri: endpoint.baseURL + components.fullPath)
-            .validateSuccessful()
+        builder = builder.withHeaders(rawRequest.headers)
         
-        if Response.self == Empty.self {
+        let method = HTTPMethod(rawValue: rawRequest.method)
+        let fullUrl = try rawRequest.fullURL(base: endpoint.baseURL)
+        let clientResponse = try await builder.request(method, uri: fullUrl).validateSuccessful()
+        
+        guard Response.self != Empty.self else {
             return (clientResponse, Empty.value as! Response)
         }
-        
-        return (clientResponse, try await clientResponse.collect().decode(Response.self, using: endpoint.jsonDecoder))
+
+        var dict: [String: String] = [:]
+        clientResponse.headers.forEach { dict[$0] = $1 }
+        let response = try endpoint.decodeResponse(headers: dict, body: clientResponse.data)
+        return (clientResponse, response)
     }
 }

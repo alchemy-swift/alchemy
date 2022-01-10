@@ -1,11 +1,12 @@
 import AlchemyTest
+import Papyrus
 
 final class PapyrusRequestTests: TestCase<TestApp> {
-    let api = SampleAPI()
+    private let api = Provider<SampleAPI>(baseURL: "http://localhost:3000", keyMapping: .useDefaultKeys)
     
     func testRequest() async throws {
         Http.stub()
-        _ = try await api.createTest.request(SampleAPI.CreateTestReq(foo: "one", bar: "two", baz: "three"))
+        _ = try await api.createTest.request(CreateTestReq(foo: "one", bar: "two", baz: "three"))
         Http.assertSent {
             $0.hasMethod(.POST) &&
             $0.hasPath("/create") &&
@@ -29,7 +30,7 @@ final class PapyrusRequestTests: TestCase<TestApp> {
     
     func testUrlEncode() async throws {
         Http.stub()
-        _ = try await api.urlEncode.request(SampleAPI.UrlEncodeReq())
+        _ = try await api.urlEncode.request(UrlEncodeReq())
         Http.assertSent(1) {
             $0.hasMethod(.PUT) &&
             $0.hasPath("/url") &&
@@ -38,29 +39,35 @@ final class PapyrusRequestTests: TestCase<TestApp> {
     }
 }
 
-final class SampleAPI: EndpointGroup {
-    var baseURL: String = "http://localhost:3000"
-    
+private struct Provider<Service: API>: APIProvider {
+    let baseURL: String
+    let keyMapping: KeyMapping
+}
+
+private final class SampleAPI: API {
     @POST("/create")
-    var createTest: Endpoint<CreateTestReq, Empty>
-    struct CreateTestReq: RequestComponents {
-        @Papyrus.Header var foo: String
-        @Papyrus.Header var bar: String
-        @URLQuery var baz: String
-    }
+    var createTest = Endpoint<CreateTestReq, Empty>()
     
     @GET("/get")
-    var getTest: Endpoint<Empty, String>
+    var getTest = Endpoint<Empty, String>()
     
+    @URLForm
     @PUT("/url")
-    var urlEncode: Endpoint<UrlEncodeReq, Empty>
-    struct UrlEncodeReq: RequestComponents {
-        static var contentEncoding: ContentEncoding = .url
-        
-        struct Content: Codable {
-            var foo = "one"
-        }
-        
-        @Body var body = Content()
-    }
+    var urlEncode = Endpoint<UrlEncodeReq, Empty>()
 }
+
+private struct CreateTestReq: EndpointRequest {
+    @Header var foo: String
+    @Header var bar: String
+    @RequestQuery var baz: String
+}
+
+private struct UrlEncodeReq: EndpointRequest {
+    struct Content: Codable {
+        var foo = "one"
+    }
+    
+    @Body var body = Content()
+}
+
+extension String: EndpointResponse {}

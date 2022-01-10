@@ -2,7 +2,6 @@
 
 // Alchemy related
 @_exported import Fusion
-@_exported import Papyrus
 
 // Argument Parser
 @_exported import ArgumentParser
