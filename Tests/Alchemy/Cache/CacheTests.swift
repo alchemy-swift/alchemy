@@ -12,6 +12,13 @@ final class CacheTests: TestCase<TestApp> {
         _testWipe,
     ]
     
+    override func tearDownWithError() throws {
+        // Redis seems to throw on shutdown if it could never connect in the
+        // first place. While this shouldn't be necessary, it is a stopgap
+        // for throwing an error when shutting down unconnected redis.
+        try? app.stop()
+    }
+    
     func testConfig() {
         let config = Cache.Config(caches: [.default: .memory, 1: .memory, 2: .memory])
         Cache.configure(with: config)
@@ -40,7 +47,7 @@ final class CacheTests: TestCase<TestApp> {
             RedisClient.bind(.testing)
             Cache.bind(.redis)
             
-            guard await RedisClient.default.checkAvailable() else {
+            guard await Redis.checkAvailable() else {
                 throw XCTSkip()
             }
             

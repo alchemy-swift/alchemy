@@ -10,8 +10,11 @@ final class QueueTests: TestCase<TestApp> {
         _testRetry,
     ]
     
-    override func tearDown() {
-        super.tearDown()
+    override func tearDownWithError() throws {
+        // Redis seems to throw on shutdown if it could never connect in the
+        // first place. While this shouldn't be necessary, it is a stopgap
+        // for throwing an error when shutting down unconnected redis.
+        try? app.stop()
         JobDecoding.reset()
     }
     
