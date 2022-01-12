@@ -18,7 +18,7 @@ final class ApplicationControllerTests: TestCase<TestApp> {
         ])
         app.controller(controller)
         try await Test.get("/middleware").assertOk()
-        await waitForExpectations(timeout: kMinTimeout)
+        wait(for: [exp1, exp2, exp3], timeout: kMinTimeout)
     }
     
     func testControllerMiddlewareRemoved() async throws {
@@ -40,7 +40,7 @@ final class ApplicationControllerTests: TestCase<TestApp> {
             }
         
         try await Test.get("/outside").assertOk()
-        await waitForExpectations(timeout: kMinTimeout)
+        wait(for: [exp1, exp2, exp3, exp4], timeout: kMinTimeout)
     }
 }
 

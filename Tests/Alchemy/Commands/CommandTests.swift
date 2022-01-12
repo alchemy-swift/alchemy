@@ -20,6 +20,6 @@ final class CommandTests: TestCase<TestApp> {
         @Inject var lifecycle: ServiceLifecycle
         try lifecycle.startAndWait()
         
-        await waitForExpectations(timeout: kMinTimeout)
+        wait(for: [exp], timeout: kMinTimeout)
     }
 }

@@ -76,7 +76,7 @@ final class MiddlewareTests: TestCase<TestApp> {
         }
 
         try await Test.get("/bar").assertOk()
-        await waitForExpectations(timeout: kMinTimeout)
+        wait(for: [exp1, exp2], timeout: kMinTimeout)
     }
 
     func testMiddlewareOrder() async throws {

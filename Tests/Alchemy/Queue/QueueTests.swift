@@ -98,7 +98,7 @@ final class QueueTests: TestCase<TestApp> {
         let loop = EmbeddedEventLoop()
         Q.startWorker(on: loop)
         loop.advanceTime(by: .seconds(5))
-        await waitForExpectations(timeout: kMinTimeout)
+        wait(for: [exp], timeout: kMinTimeout)
     }
     
     private func _testFailure(file: StaticString = #filePath, line: UInt = #line) async throws {
