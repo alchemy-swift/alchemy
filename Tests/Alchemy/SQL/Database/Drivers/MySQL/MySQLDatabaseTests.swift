@@ -5,7 +5,7 @@ import NIOSSL
 
 final class MySQLDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
-        let db = Database.mysql(host: "localhost", database: "foo", username: "bar", password: "baz")
+        let db = Database.mysql(host: "::1", database: "foo", username: "bar", password: "baz")
         guard let provider = db.provider as? Alchemy.MySQLDatabase else {
             XCTFail("The database provider should be MySQL.")
             return

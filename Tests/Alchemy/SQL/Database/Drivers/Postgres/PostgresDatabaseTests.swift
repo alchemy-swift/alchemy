@@ -5,7 +5,7 @@ import NIOSSL
 
 final class PostgresDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
-        let db = Database.postgres(host: "localhost", database: "foo", username: "bar", password: "baz")
+        let db = Database.postgres(host: "::1", database: "foo", username: "bar", password: "baz")
         guard let provider = db.provider as? Alchemy.PostgresDatabase else {
             XCTFail("The database provider should be PostgreSQL.")
             return
