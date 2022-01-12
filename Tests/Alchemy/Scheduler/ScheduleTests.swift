@@ -14,49 +14,41 @@ final class ScheduleTests: XCTestCase {
     }
     
     func testScheduleSecondly() {
-        Schedule("* * * * * * *", test: self).secondly()
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("* * * * * * *").secondly()
     }
     
     func testScheduleMinutely() {
-        Schedule("0 * * * * * *", test: self).minutely()
-        Schedule("1 * * * * * *", test: self).minutely(sec: 1)
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 * * * * * *").minutely()
+        Schedule("1 * * * * * *").minutely(sec: 1)
     }
     
     func testScheduleHourly() {
-        Schedule("0 0 * * * * *", test: self).hourly()
-        Schedule("1 2 * * * * *", test: self).hourly(min: 2, sec: 1)
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 0 * * * * *").hourly()
+        Schedule("1 2 * * * * *").hourly(min: 2, sec: 1)
     }
     
     func testScheduleDaily() {
-        Schedule("0 0 0 * * * *", test: self).daily()
-        Schedule("1 2 3 * * * *", test: self).daily(hr: 3, min: 2, sec: 1)
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 0 0 * * * *").daily()
+        Schedule("1 2 3 * * * *").daily(hr: 3, min: 2, sec: 1)
     }
     
     func testScheduleWeekly() {
-        Schedule("0 0 0 * * 0 *", test: self).weekly()
-        Schedule("1 2 3 * * 4 *", test: self).weekly(day: .thu, hr: 3, min: 2, sec: 1)
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 0 0 * * 0 *").weekly()
+        Schedule("1 2 3 * * 4 *").weekly(day: .thu, hr: 3, min: 2, sec: 1)
     }
     
     func testScheduleMonthly() {
-        Schedule("0 0 0 1 * * *", test: self).monthly()
-        Schedule("1 2 3 4 * * *", test: self).monthly(day: 4, hr: 3, min: 2, sec: 1)
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 0 0 1 * * *").monthly()
+        Schedule("1 2 3 4 * * *").monthly(day: 4, hr: 3, min: 2, sec: 1)
     }
     
     func testScheduleYearly() {
-        Schedule("0 0 0 1 1 * *", test: self).yearly()
-        Schedule("1 2 3 4 5 * *", test: self).yearly(month: .may, day: 4, hr: 3, min: 2, sec: 1)
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 0 0 1 1 * *").yearly()
+        Schedule("1 2 3 4 5 * *").yearly(month: .may, day: 4, hr: 3, min: 2, sec: 1)
     }
     
     func testCustomSchedule() {
-        Schedule("0 0 22 * * 1-5 *", test: self).expression("0 0 22 * * 1-5 *")
-        waitForExpectations(timeout: kMinTimeout)
+        Schedule("0 0 22 * * 1-5 *").expression("0 0 22 * * 1-5 *")
     }
     
     func testNext() {
@@ -83,11 +75,7 @@ final class ScheduleTests: XCTestCase {
 }
 
 extension Schedule {
-    fileprivate convenience init(_ expectedExpression: String, test: XCTestCase) {
-        let exp = test.expectation(description: "")
-        self.init {
-            XCTAssertEqual($0.cronExpression, expectedExpression)
-            exp.fulfill()
-        }
+    fileprivate convenience init(_ expectedExpression: String) {
+        self.init { XCTAssertEqual($0.cronExpression, expectedExpression) }
     }
 }

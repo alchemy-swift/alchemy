@@ -3,16 +3,16 @@ import AlchemyTest
 final class CommandTests: TestCase<TestApp> {
     func testCommandRuns() async throws {
         struct TestCommand: Command {
-            static var didRun: (() -> Void)? = nil
+            static var action: (() async -> Void)? = nil
             
             func start() async throws {
-                TestCommand.didRun?()
+                await TestCommand.action?()
             }
         }
         
-        let exp = expectation(description: "")
-        TestCommand.didRun = {
-            exp.fulfill()
+        let expect = Expect()
+        TestCommand.action = {
+            await expect.signalOne()
         }
         
         try TestCommand().run()
@@ -20,6 +20,6 @@ final class CommandTests: TestCase<TestApp> {
         @Inject var lifecycle: ServiceLifecycle
         try lifecycle.startAndWait()
         
-        wait(for: [exp], timeout: kMinTimeout)
+        AssertTrue(await expect.one)
     }
 }

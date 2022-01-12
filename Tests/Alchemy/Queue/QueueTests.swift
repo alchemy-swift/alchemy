@@ -90,46 +90,46 @@ final class QueueTests: TestCase<TestApp> {
     private func _testWorker(file: StaticString = #filePath, line: UInt = #line) async throws {
         try await ConfirmableJob().dispatch()
         
-        let exp = expectation(description: "")
+        let sema = DispatchSemaphore(value: 0)
         ConfirmableJob.didRun = {
-            exp.fulfill()
+            sema.signal()
         }
         
         let loop = EmbeddedEventLoop()
         Q.startWorker(on: loop)
         loop.advanceTime(by: .seconds(5))
-        wait(for: [exp], timeout: kMinTimeout)
+        sema.wait()
     }
     
     private func _testFailure(file: StaticString = #filePath, line: UInt = #line) async throws {
         try await FailureJob().dispatch()
         
-        let exp = expectation(description: "")
+        let sema = DispatchSemaphore(value: 0)
         FailureJob.didFinish = {
-            exp.fulfill()
+            sema.signal()
         }
         
         let loop = EmbeddedEventLoop()
         Q.startWorker(on: loop)
         loop.advanceTime(by: .seconds(5))
         
-        wait(for: [exp], timeout: kMinTimeout)
+        sema.wait()
         AssertNil(try await Q.dequeue(from: ["default"]))
     }
     
     private func _testRetry(file: StaticString = #filePath, line: UInt = #line) async throws {
         try await TestJob(foo: "bar").dispatch()
         
-        let exp = expectation(description: "")
+        let sema = DispatchSemaphore(value: 0)
         TestJob.didFail = {
-            exp.fulfill()
+            sema.signal()
         }
         
         let loop = EmbeddedEventLoop()
         Q.startWorker(untilEmpty: false, on: loop)
         loop.advanceTime(by: .seconds(5))
         
-        wait(for: [exp], timeout: kMinTimeout)
+        sema.wait()
         
         guard let jobData = try await Q.dequeue(from: ["default"]) else {
             XCTFail("Failed to dequeue a job.", file: file, line: line)

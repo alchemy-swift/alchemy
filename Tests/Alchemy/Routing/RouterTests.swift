@@ -71,20 +71,19 @@ final class RouterTests: TestCase<TestApp> {
     }
 
     func testPathParametersMatch() async throws {
-        let expect = expectation(description: "The handler should be called.")
-
+        let expect = Expect()
         let uuidString = UUID().uuidString
-        app.get("/v1/some_path/:uuid/:user_id") { request -> ResponseConvertible in
+        app.get("/v1/some_path/:uuid/:user_id") { request async -> ResponseConvertible in
             XCTAssertEqual(request.parameters, [
                 Parameter(key: "uuid", value: uuidString),
                 Parameter(key: "user_id", value: "123"),
             ])
-            expect.fulfill()
+            await expect.signalOne()
             return "foo"
         }
         
         try await Test.get("/v1/some_path/\(uuidString)/123").assertBody("foo").assertOk()
-        wait(for: [expect], timeout: kMinTimeout)
+        AssertTrue(await expect.one)
     }
 
     func testMultipleRequests() async throws {
@@ -93,8 +92,8 @@ final class RouterTests: TestCase<TestApp> {
         try await Test.get("/foo").assertOk().assertBody("2")
     }
 
-    func testInvalidPath() {
-        // What happens if a user registers an invalid path string?
+    func testInvalidPath() throws {
+        throw XCTSkip()
     }
 
     func testForwardSlashIssues() async throws {
