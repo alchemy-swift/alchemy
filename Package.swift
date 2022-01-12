@@ -11,10 +11,10 @@ let package = Package(
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "0.15.0"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "0.13.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "0.15.3"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "0.13.3"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.3.0")),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
         .package(url: "https://github.com/vapor/postgres-kit", from: "2.4.0"),
         .package(url: "https://github.com/vapor/mysql-kit", from: "4.3.0"),
         .package(url: "https://github.com/vapor/sqlite-kit", from: "4.0.0"),

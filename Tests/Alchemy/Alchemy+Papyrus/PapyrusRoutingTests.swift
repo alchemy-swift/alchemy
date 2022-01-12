@@ -2,7 +2,7 @@ import AlchemyTest
 import Papyrus
 
 final class PapyrusRoutingTests: TestCase<TestApp> {
-    private let api = TestAPI()
+    private let api = TestAPI(baseURL: "https://localhost:3000")
     
     func testTypedReqTypedRes() async throws {
         app.on(api.createTest) { request, content in
@@ -45,7 +45,8 @@ final class PapyrusRoutingTests: TestCase<TestApp> {
     }
 }
 
-private final class TestAPI: API {
+private struct TestAPI: API {
+    let baseURL: String
     @POST("/test")   var createTest = Endpoint<CreateTestReq, String>()
     @GET("/test")    var getTest = Endpoint<Empty, String>()
     @PATCH("/test")  var updateTests = Endpoint<UpdateTestsReq, Empty>()
