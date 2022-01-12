@@ -28,7 +28,8 @@ final class ResponseTests: XCTestCase {
     func testJSONEncode() throws {
         let res = try Response().withValue(Fixtures.object, encoder: .json)
         XCTAssertEqual(res.headers.contentType, .json)
-        XCTAssertEqual(res.body?.string(), Fixtures.jsonString)
+        // Linux doesn't guarantee json coding order.
+        XCTAssertTrue(res.body?.string() == Fixtures.jsonString || res.body?.string() == Fixtures.altJsonString)
     }
     
     func testJSONDecode() throws {
@@ -66,6 +67,10 @@ private struct Fixtures {
     }
     
     static let jsonString = """
+        {"foo":"foo","bar":"bar"}
+        """
+    
+    static let altJsonString = """
         {"foo":"foo","bar":"bar"}
         """
     
