@@ -5,13 +5,13 @@ import NIOSSL
 
 final class PostgresDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
-        let db = Database.postgres(host: "::1", database: "foo", username: "bar", password: "baz")
+        let db = Database.postgres(host: "127.0.0.1", database: "foo", username: "bar", password: "baz")
         guard let provider = db.provider as? Alchemy.PostgresDatabase else {
             XCTFail("The database provider should be PostgreSQL.")
             return
         }
         
-        XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "::1")
+        XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "127.0.0.1")
         XCTAssertEqual(try provider.pool.source.configuration.address().port, 5432)
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")
         XCTAssertEqual(provider.pool.source.configuration.username, "bar")
@@ -21,9 +21,9 @@ final class PostgresDatabaseTests: TestCase<TestApp> {
     }
     
     func testConfigIp() throws {
-        let socket: Socket = .ip(host: "::1", port: 1234)
+        let socket: Socket = .ip(host: "127.0.0.1", port: 1234)
         let provider = PostgresDatabase(socket: socket, database: "foo", username: "bar", password: "baz")
-        XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "::1")
+        XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "127.0.0.1")
         XCTAssertEqual(try provider.pool.source.configuration.address().port, 1234)
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")
         XCTAssertEqual(provider.pool.source.configuration.username, "bar")
@@ -33,10 +33,10 @@ final class PostgresDatabaseTests: TestCase<TestApp> {
     }
     
     func testConfigSSL() throws {
-        let socket: Socket = .ip(host: "::1", port: 1234)
+        let socket: Socket = .ip(host: "127.0.0.1", port: 1234)
         let tlsConfig = TLSConfiguration.makeClientConfiguration()
         let provider = PostgresDatabase(socket: socket, database: "foo", username: "bar", password: "baz", tlsConfiguration: tlsConfig)
-        XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "::1")
+        XCTAssertEqual(try provider.pool.source.configuration.address().ipAddress, "127.0.0.1")
         XCTAssertEqual(try provider.pool.source.configuration.address().port, 1234)
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")
         XCTAssertEqual(provider.pool.source.configuration.username, "bar")
