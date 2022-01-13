@@ -48,7 +48,7 @@ extension Client {
         builder = builder.withHeaders(rawRequest.headers)
         
         let method = HTTPMethod(rawValue: rawRequest.method)
-        let fullUrl = try rawRequest.fullURL(base: endpoint.baseURL)
+        let fullUrl = try rawRequest.fullURL()
         let clientResponse = try await builder.request(method, uri: fullUrl).validateSuccessful()
         
         guard Response.self != Empty.self else {
