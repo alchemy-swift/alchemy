@@ -71,7 +71,7 @@ private struct Fixtures {
         """
     
     static let altJsonString = """
-        {"foo":"foo","bar":"bar"}
+        {"bar":"bar","foo":"foo"}
         """
     
     static let urlString = "foo=foo&bar=bar"
