@@ -9,11 +9,13 @@ struct MakeView: Command {
     
     @Argument var name: String
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try FileCreator.shared.create(fileName: name, contents: viewTemplate(), in: "Views")
-            return .new()
-        }
+    init() {}
+    init(name: String) {
+        self.name = name
+    }
+    
+    func start() throws {
+        try FileCreator.shared.create(fileName: name, contents: viewTemplate(), in: "Views")
     }
     
     private func viewTemplate() -> String {

@@ -1,4 +1,4 @@
-import Foundation
+import Plot
 
 /// A protocol for defining HTML views to return to a client.
 ///
@@ -41,8 +41,8 @@ public protocol HTMLView: ResponseConvertible {
 extension HTMLView {
     // MARK: ResponseConvertible
     
-    public func convert() throws -> EventLoopFuture<Response> {
-        let body = HTTPBody(text: self.content.render(), mimeType: .html)
-        return .new(Response(status: .ok, body: body))
+    public func response() -> Response {
+        Response(status: .ok)
+            .withString(content.render(), type: .html)
     }
 }

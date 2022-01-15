@@ -1,10 +1,12 @@
-<p align="center"><img src="https://user-images.githubusercontent.com/6025554/132588005-5f8a6a94-ec15-4cab-9be9-1e90e86d374f.png" width="400"></a></p>
+<p align="center"><a href="https://www.alchemyswift.com/"><img src="https://user-images.githubusercontent.com/6025554/132588005-5f8a6a94-ec15-4cab-9be9-1e90e86d374f.png" width="400"></a></p>
 
 <p align="center">
-<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.4-orange.svg" alt="Swift Version"></a>
+<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.5-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/alchemy-swift/alchemy/releases"><img src="https://img.shields.io/github/release/alchemy-swift/alchemy.svg" alt="Latest Release"></a>
 <a href="https://github.com/alchemy-swift/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/alchemy-swift/alchemy.svg" alt="License"></a>
 </p>
+
+> __Now fully `async/await`!__
 
 Welcome to Alchemy, an elegant, batteries included backend framework for Swift. You can use it to build a production ready backend for your next mobile app, cloud project or website.
 
@@ -23,13 +25,13 @@ struct App: Application {
 
 Alchemy provides you with Swifty APIs for everything you need to build production-ready backends. It makes writing your backend in Swift a breeze by easing typical tasks, such as:
 
-- [Simple, fast routing engine](Docs/3a_RoutingBasics.md).
-- [Powerful dependency injection container](Docs/2_Fusion.md).
-- Expressive, Swifty [database ORM](Docs/6a_RuneBasics.md).
-- Database agnostic [query builder](Docs/5b_DatabaseQueryBuilder.md) and [schema migrations](Docs/5c_DatabaseMigrations.md).
-- [Robust job queues backed by Redis or SQL](Docs/8_Queues.md).
+- [Simple, fast routing engine](https://www.alchemyswift.com/essentials/routing).
+- [Powerful dependency injection container](https://www.alchemyswift.com/getting-started/services).
+- Expressive, Swifty [database ORM](https://www.alchemyswift.com/rune-orm/rune).
+- Database agnostic [query builder](https://www.alchemyswift.com/database/query-builder) and [schema migrations](https://www.alchemyswift.com/database/migrations).
+- [Robust job queues backed by Redis or SQL](https://www.alchemyswift.com/digging-deeper/queues).
 - First class support for [Plot](https://github.com/JohnSundell/Plot), a typesafe HTML DSL.
-- [Supporting libraries to share typesafe backend APIs with Swift frontends](Docs/4_Papyrus.md).
+- [Supporting libraries to share typesafe backend APIs with Swift frontends](https://www.alchemyswift.com/supporting-libraries/papyrus).
 
 ## Why Alchemy?
 
@@ -47,46 +49,27 @@ With Routing, an ORM, advanced Redis & SQL support, Authentication, Queues, Cron
 
 APIs focus on simple syntax with lots of baked in convention so you can build much more with less code. This doesn't mean you can't customize; there's always an escape hatch to configure things your own way.
 
-**3. Ease of Use** 
+**3. Rapid Development**
 
-A fully documented codebase organized in a single repo make it easy to get building, extending and contributing.
+Alchemy is designed to help you take apps from idea to implementation as swiftly as possible.
 
-**4. Keep it Swifty** 
+**4. Interoperability**
 
-Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs.
+Alchemy is built on top of the lightweight, [blazingly](https://web-frameworks-benchmark.netlify.app/result?l=swift) fast [Hummingbird](https://github.com/hummingbird-project/hummingbird) framework. It is fully compatible with existing `swift-nio` and `vapor` components like [stripe-kit](https://github.com/vapor-community/stripe-kit), [soto](https://github.com/soto-project/soto) or [jwt-kit](https://github.com/vapor/jwt-kit) so that you can easily integrate with all existing Swift on the Server work.
+
+**5. Keep it Swifty** 
+
+Swift is built to write concice, safe and elegant code. Alchemy leverages it's best parts to help you write great code faster and obviate entire classes of backend bugs. With v0.4.0 and above, it's API is completely `async/await` meaning you have access to all Swift's cutting edge concurrency features.
 
 # Get Started
 
-The Alchemy CLI is installable with [Mint](https://github.com/yonaskolb/Mint).
-
-```shell
-mint install alchemy-swift/alchemy-cli
-```
-
-## Create a New App
-
-Creating an app with the CLI lets you pick between a backend or fullstack project. 
-
-1. `alchemy new MyNewProject`
-2. `cd MyNewProject` (if you selected fullstack, `MyNewProject/Backend`)
-3. `swift run`
-4. view your brand new app at http://localhost:3000
-
-## Swift Package Manager
-
-You can also add Alchemy to your project manually with the [Swift Package Manager](https://github.com/apple/swift-package-manager).
-
-```swift
-.package(url: "https://github.com/alchemy-swift/alchemy", .upToNextMinor(from: "0.3.0"))
-```
-
-Until `1.0.0` is released, minor version changes might be breaking, so you may want to use `upToNextMinor`.
+To get started check out the extensive docs starting with [Setup](https://www.alchemyswift.com/getting-started/setup).
 
 # Usage
 
-You can view example apps in the [alchemy-examples repo](https://github.com/alchemy-swift/alchemy-examples).
-
 The [Docs](Docs#docs) provide a step by step walkthrough of everything Alchemy has to offer. They also touch on essential core backend concepts for developers new to server side development. Below are some of the core pieces.
+
+If you'd prefer to dive into some code, check out the example apps in the [alchemy-examples repo](https://github.com/alchemy-swift/alchemy-examples).
 
 ## Basics & Routing
 
@@ -98,18 +81,32 @@ Routing is done with action functions `get()`, `post()`, `delete()`, etc on the 
 @main
 struct App: Application {
     func boot() {
-        post("/say_hello") { req -> String in
-            let name = req.query(for: "name")!
-            return "Hello, \(name)!"
+        post("/hello") { req in
+            "Hello, \(req.query("name")!)!"
+        }
+
+        // handlers can be async supported
+        get("/download") { req in
+            // Fetch an image from another site.
+            try await Http.get("https://example.com/image.jpg")
         }
     }
+}
+```
+
+Route handlers can also be async using Swift's new concurrency features.
+
+```swift
+get("/download") { req in
+    // Fetch an image from another site.
+    try await Http.get("https://example.com/image.jpg")
 }
 ```
 
 Route handlers will automatically convert returned `Codable` types to JSON. You can also return a `Response` if you'd like full control over the returned content & it's encoding.
 
 ```swift
-struct Todo {
+struct Todo: Codable {
     let name: String
     let isComplete: Bool
     let created: Date
@@ -130,8 +127,8 @@ app.get("/xml") { req -> Response in
             """.data(using: .utf8)!
     return Response(
         status: .accepted,
-        headers: ["Some-Header": "value"],
-        body: HTTPBody(data: xmlData, mimeType: .xml)
+        headers: ["Content-Type": "application/xml"],
+        body: .data(xmlData)
     )
 }
 ```
@@ -147,9 +144,9 @@ struct TodoController: Controller {
             .patch("/todo/:id", updateTodo)
     }
     
-    func getAllTodos(req: Request) -> [Todo] { ... }
-    func createTodo(req: Request) -> Todo { ... }
-    func updateTodo(req: Request) -> Todo { ... }
+    func getAllTodos(req: Request) async throws -> [Todo] { ... }
+    func createTodo(req: Request) async throws -> Todo { ... }
+    func updateTodo(req: Request) async throws -> Todo { ... }
 }
 
 // Register the controller
@@ -183,87 +180,35 @@ let dbUsername: String = Env.DB_USER
 let dbPass: String = Env.DB_PASS
 ```
 
-Choose what env file your app uses by setting APP_ENV, your program will load it's environment from the file at `.{APP_ENV} `.
-
-## Services & DI
-
-Alchemy makes DI a breeze to keep your services pluggable and swappable in tests. Most services in Alchemy conform to `Service`, a protocol built on top of [Fusion](https://github.com/alchemy-swift/fusion), which you can use to set sensible default configurations for your services.
-
-You can use `Service.config(default: ...)` to configure the default instance of a service for the app. `Service.configure("key", ...)` lets you configure another, named instance. To keep you writing less code, most functions that interact with a `Service` will default to running on your `Service`'s default configuration.
-
-```swift
-// Set the default database for the app.
-Database.config(
-    default: .postgres(
-        host: "localhost",
-        database: "alchemy",
-        username: "user",
-        password: "password"
-    )
-)
-
-// Set the database identified by the "mysql" key.
-Database.config("mysql",  .mysql(host: "localhost", database: "alchemy"))
-
-// Get's all `User`s from the default Database (postgres).
-Todo.all()
-
-// Get's all `User`s from the "mysql" database.
-Todo.all(db: .named("mysql"))
-```
-
-In this way, you can easily configure as many `Database`s as you need while having Alchemy use the Postgres one by default. When it comes time for testing, injecting a mock service is easy.
-
-```swift
-final class MyTests: XCTestCase {
-    func setup() {
-        Queue.configure(default: .mock())
-    }
-}
-```
-
-Since Service wraps [Fusion](https://github.com/alchemy-swift/fusion), you can also access default and named configurations via the @Inject property wrapper. A variety of services can be set up and accessed this way including `Database`, `Redis`, `Router`, `Queue`, `Cache`, `HTTPClient`, `Scheduler`, `NIOThreadPool`, and `ServiceLifecycle`.
-
-```swift
-@Inject          var postgres: Database
-@Inject("mysql") var mysql: Database
-@Inject          var redis: Redis
-
-postgres.rawQuery("select * from users")
-mysql.rawQuery("select * from some_table")
-redis.get("cached_data_key")
-```
+You can choose a custom env file by passing -e {env} or setting APP_ENV when running your program. The app will load it's environment from the file at `.env.{env}`.
 
 ## SQL queries
 
-Alchemy comes with a powerful query builder that makes it easy to interact with SQL databases. In addition, you can always run raw SQL strings on a `Database` instance.
+Alchemy comes with a powerful query builder that makes it easy to interact with SQL databases. You can always run raw queries as well. `DB` is a shortcut to injecting the default database.
 
 ```swift
-// Runs on Database.default
-Query.from("users").select("id").where("age" > 30)
+try await DB.from("users").select("id").where("age" > 30)
 
-database.rawQuery("SELECT * FROM users WHERE id = 1")
+try await DB.raw("SELECT * FROM users WHERE id = 1")
 ```
 
 Most SQL operations are supported, including nested `WHERE`s and atomic transactions.
 
 ```swift
 // The first user named Josh with age NULL or less than 28
-Query.from("users")
+try await DB.from("users")
     .where("name" == "Josh")
     .where { $0.whereNull("age").orWhere("age" < 28) }
     .first()
 
-// Wraps all inner queries in an atomic transaction.
-database.transaction { conn in
-    conn.query()
-        .where("account" == 1)
+// Wraps all inner queries in an atomic transaction, will rollback if an error is thrown.
+try await DB.transaction { conn in
+    try await conn.from("accounts")
+        .where("id" == 1)
         .update(values: ["amount": 100])
-        .flatMap { _ in
-            conn.query()
-                .where("account" == 2)
-                .update(values: ["amount": 200])
-        }
+    try await conn.from("accounts")
+        .where("id" == 2)
+        .update(values: ["amount": 200])
 }
 ```
 
@@ -280,17 +225,20 @@ struct User: Model {
     let age: Int
 }
 
-let newUser = User(firstName: "Josh", lastName: "Wright", age: 28)
-newUser.insert()
+try await User(firstName: "Josh", lastName: "Wright", age: 28).insert()
 ```
 
 You can easily query directly on your type using the same query builder syntax. Your model type is automatically decoded from the result of the query for you.
 
 ```swift
-User.where("id" == 1).firstModel()
+try await User.find(1)
+
+// equivalent to
+
+try await User.where("id" == 1).first()
 ```
 
-If your database naming convention is different than Swift's, for example `snake_case`, you can set the static `keyMapping` property on your Model to automatially convert from Swift `camelCase`.
+If your database naming convention is different than Swift's, for example `snake_case` instead of `camelCase`, you can set the static `keyMapping` property on your Model to automatially convert to the proper case.
 
 ```swift
 struct User: Model {
@@ -308,10 +256,13 @@ struct Todo: Model {
 }
 
 // Queries all `Todo`s with their related `User`s also loaded.
-Todo.all().with(\.$user)
+let todos = try await Todo.all().with(\.$user)
+for todo in todos {
+    print("\(todo.title) is owned by \(user.name)")
+}
 ```
 
-You can customize advanced relationship loading behavior, such as "has many through" by overriding `mapRelations()`.
+You can customize advanced relationship loading behavior, such as "has many through" by overriding the static `mapRelations()` function.
 
 ```swift
 struct User: Model {
@@ -329,16 +280,14 @@ Middleware lets you intercept requests coming in and responses coming out of you
 
 ```swift
 struct LoggingMiddleware: Middleware {
-    func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+    func intercept(_ request: Request, next: @escaping Next) async throws -> Response {
         let start = Date()
-        let requestInfo = "\(request.head.method.rawValue) \(request.path)"
-         Log.info("Incoming Request: \(requestInfo)")
-        return next(request)
-            .map { response in
-                let elapsedTime = String(format: "%.2fs", Date().timeIntervalSince(start))
-                Log.info("Outgoing Response: \(response.status.code) \(requestInfo) after \(elapsedTime)")
-                return response
-            }
+        let requestInfo = "\(request.head.method) \(request.path)"
+        Log.info("Received request: \(requestInfo)")
+        let response = try await next(request)
+        let elapsedTime = String(format: "%.2fs", Date().timeIntervalSince(start))
+        Log.info("Sending response: \(response.status.code) \(requestInfo) after \(elapsedTime)")
+        return response
     }
 }
 
@@ -347,6 +296,15 @@ app.use(LoggingMiddleware())
 
 // Applies the Middleware to all incoming requests & outgoing responses.
 app.useAll(OtherMiddleware())
+```
+
+You may also add anonymous middlewares with a closure.
+
+```swift
+app.use { req, next -> Response in
+    Log.info("\(req.method) \(req.path)")
+    return next(req)
+}
 ```
 
 ## Authentication
@@ -364,9 +322,7 @@ struct UserToken: Model, TokenAuthable {
 
 app.use(UserToken.tokenAuthMiddleware())
 app.get("/user") { req -> User in
-    let user = req.get(User.self)
-    // Do something with the authorized user...
-    return user
+    req.get(User.self) // The User is now accessible on the request
 }
 ```
 
@@ -379,7 +335,7 @@ Also note that, in this case, because `Model` descends from `Codable` you can re
 Working with Redis is powered by the excellent [RedisStack](https://github.com/Mordil/RediStack) package. Once you register a configuration, the `Redis` type has most Redis commands, including pub/sub, as functions you can access.
 
 ```swift
-Redis.config(default: .connection("localhost"))
+Redis.bind(.connection("localhost"))
 
 // Elsewhere
 @Inject var redis: Redis
@@ -394,17 +350,17 @@ redis.subscribe(to: "my_channel") { val in
 If the function you want isn't available, you can always send a raw command. Atomic `MULTI`/`EXEC` transactions are supported with `.transaction()`.
 
 ```swift
-redis.send(command: "GET my_key")
+try await redis.send(command: "GET my_key")
 
-redis.transaction { redisConn in
-    redisConn.increment("foo")
-        .flatMap { _ in redisConn.increment("bar") }
+try await redis.transaction { redisConn in
+    try await redisConn.increment("foo").get()
+    try await redisConn.increment("bar").get()
 }
 ```
 
 ## Queues
 
-Alchemy offers `Queue` as a unified API around various queue backends. Queues allow your application to dispatch or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis` and relational databases are supported, but you can easily write your own driver by conforming to the `QueueDriver` protocol. 
+Alchemy offers `Queue` as a unified API around various queue backends. Queues allow your application to dispatch or schedule lightweight background tasks called `Job`s to be executed by a separate worker. Out of the box, `Redis`, relational databases, and memory backed queues are supported, but you can easily write your own provider by conforming to the `QueueProvider` protocol. 
 
 To get started, configure the default `Queue` and `dispatch()` a `Job`. You can add any `Codable` fields to `Job`, such as a database `Model`, and they will be stored and decoded when it's time to run the job.
 
@@ -415,18 +371,18 @@ Queue.config(default: .redis())
 struct ProcessNewUser: Job {
     let user: User
     
-    func run() -> EventLoopFuture<Void> {
+    func run() async throws {
         // do something with the new user
     }
 }
 
-ProcessNewUser(user: someUser).dispatch()
+try await ProcessNewUser(user: someUser).dispatch()
 ```
 
 Note that no jobs will be dequeued and run until you run a worker to do so. You can spin up workers by separately running your app with the `queue` argument.
 
 ```shell
-swift run MyApp queue
+swift run MyApp worker
 ```
 
 If you'd like, you can run a worker as part of your main server by passing the `--workers` flag.
@@ -441,7 +397,7 @@ When a job is successfully run, you can optionally run logic by overriding the `
 struct EmailJob: Job {
     let email: String
 
-    func run() -> EventLoopFuture<Void> { ... }
+    func run() async throws { ... }
 
     func finished(result: Result<Void, Error>) {
         switch result {
@@ -454,45 +410,52 @@ struct EmailJob: Job {
 }
 ```
 
-For advanced queue usage including channels, queue priorities, backoff times, and retry policies, check out the [Queues guide](Docs/8_Queues.md).
+For advanced queue usage including channels, queue priorities, backoff times, and retry policies, check out the [Queues guide](https://www.alchemyswift.com/digging-deeper/queues).
 
 ## Scheduling tasks
 
-Alchemy contains a built in task scheduler so that you don't need to generate cron entries for repetitive work, and can instead schedule recurring tasks right from your code. You can schedule code or jobs from your `Application` instance.
+Alchemy contains a built in task scheduler so that you don't need to generate cron entries for repetitive work, and can instead schedule recurring tasks right from your code. You can schedule code or jobs from the `scheudle()` method of your `Application` instance.
 
 ```swift
-// Say good morning every day at 9:00 am.
-app.schedule { print("Good morning!") }
-    .daily(hour: 9)
+@main
+struct MyApp: Application {
+    ...
 
-// Run `SendInvoices` job on the first of every month at 9:30 am.
-app.schedule(job: SendInvoices())
-    .monthly(day: 1, hour: 9, min: 30)
+    func schedule(schedule: Scheduler) {
+        // Say good morning every day at 9:00 am.
+        schedule.run { print("Good morning!") }
+            .daily(hour: 9)
+
+        // Run `SendInvoices` job on the first of every month at 9:30 am.
+        schedule.job(SendInvoices())
+            .monthly(day: 1, hour: 9, min: 30)
+    }
+}
 ```
 
 A variety of builder functions are offered to customize your schedule frequency. If your desired frequency is complex, you can even schedule a task using a cron expression.
 
 ```swift
 // Every week on tuesday at 8:00 pm
-app.schedule { ... }
+schedule.run { ... }
     .weekly(day: .tue, hour: 20)
 
 // Every second
-app.schedule { ... }
+schedule.run { ... }
     .secondly()
 
 // Every minute at 30 seconds
-app.schedule { ... }
+schedule.run { ... }
     .minutely(sec: 30)
 
-// At 22:00 on every day-of-week from Monday through Friday.”
-app.schedule { ... }
+// At 22:00 on every day from Monday through Friday.”
+schedule.run { ... }
     .cron("0 22 * * 1-5")
 ```
 
 ## ...and more!
 
-Check out [the docs](Docs#docs) for more advanced guides on all of the above as well as [Migrations](Docs/5c_DatabaseMigrations.md), [Caching](Docs/9_Cache.md), [Custom Commands](Docs/13_Commands.md), [Logging](Docs/10_DiggingDeeper.md#logging), [making HTTP Requests](Docs/10_DiggingDeeper.md#making-http-requests), using the [HTML DSL](Docs/10_DiggingDeeper.md#plot--html-dsl), [advanced Request / Response usage](Docs/3a_RoutingBasics.md#responseencodable), [sharing API interfaces](Docs/4_Papyrus.md) between client and server, [deploying your apps to Linux or Docker](Docs/11_Deploying.md), and more.
+Check out [the docs](https://www.alchemyswift.com/getting-started/setup) for more advanced guides on all of the above as well as [Migrations](https://www.alchemyswift.com/database/migrations), [Caching](https://www.alchemyswift.com/digging-deeper/cache), [Custom Commands](https://www.alchemyswift.com/digging-deeper/commands), [Logging](https://www.alchemyswift.com/essentials/logging), [making HTTP Requests](https://www.alchemyswift.com/digging-deeper/http-client), using the [HTML DSL](https://www.alchemyswift.com/essentials/views), advanced [Request](https://www.alchemyswift.com/essentials/requests) / [Response](https://www.alchemyswift.com/essentials/responses) usage, [typesafe APIs](https://www.alchemyswift.com/supporting-libraries/papyrus) between client and server, [deploying your apps to Linux or Docker](https://www.alchemyswift.com/getting-started/deploying), and more.
 
 # Contributing
 

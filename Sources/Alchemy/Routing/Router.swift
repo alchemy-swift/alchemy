@@ -1,5 +1,6 @@
 import NIO
 import NIOHTTP1
+import Hummingbird
 
 /// The escape character for escaping path parameters.
 ///
@@ -10,24 +11,39 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// An `Router` responds to HTTP requests from the client.
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
-public final class Router: HTTPRouter, Service {
-    /// A router handler. Takes a request and returns a future with a
-    /// response.
-    private typealias RouterHandler = (Request) -> EventLoopFuture<Response>
+public final class Router {
+    public struct RouteOptions: OptionSet {
+        public let rawValue: Int
+        
+        public init(rawValue: Int) {
+            self.rawValue = rawValue
+        }
 
+        public static let stream = RouteOptions(rawValue: 1 << 0)
+    }
+    
+    private struct HandlerEntry {
+        let options: RouteOptions
+        let handler: (Request) async -> Response
+    }
+    
+    /// A route handler. Takes a request and returns a response.
+    public typealias Handler = (Request) async throws -> ResponseConvertible
+    
+    /// A handler for returning a response after an error is
+    /// encountered while initially handling the request.
+    public typealias ErrorHandler = (Request, Error) async throws -> ResponseConvertible
+    
     /// The default response for when there is an error along the
     /// routing chain that does not conform to
     /// `ResponseConvertible`.
-    public static var internalErrorResponse = Response(
-        status: .internalServerError,
-        body: HTTPBody(text: HTTPResponseStatus.internalServerError.reasonPhrase)
-    )
-
+    var internalErrorHandler: ErrorHandler = Router.uncaughtErrorHandler
+    
     /// The response for when no handler is found for a Request.
-    public static var notFoundResponse = Response(
-        status: .notFound,
-        body: HTTPBody(text: HTTPResponseStatus.notFound.reasonPhrase)
-    )
+    var notFoundHandler: Handler = { _ in
+        Response(status: .notFound)
+            .withString(HTTPResponseStatus.notFound.reasonPhrase)
+    }
     
     /// `Middleware` that will intercept all requests through this
     /// router, before all other `Middleware` regardless of
@@ -41,7 +57,7 @@ public final class Router: HTTPRouter, Service {
     var pathPrefixes: [String] = []
     
     /// A trie that holds all the handlers.
-    private let trie = RouterTrieNode<HTTPMethod, RouterHandler>()
+    private let trie = Trie<HandlerEntry>()
     
     /// Creates a new router.
     init() {}
@@ -54,22 +70,20 @@ public final class Router: HTTPRouter, Service {
     ///     given method and path.
     ///   - method: The method of a request this handler expects.
     ///   - path: The path of a requst this handler can handle.
-    func add(handler: @escaping (Request) throws -> ResponseConvertible, for method: HTTPMethod, path: String) {
-        let pathPrefixes = pathPrefixes.map { $0.hasPrefix("/") ? String($0.dropFirst()) : $0 }
-        let splitPath = pathPrefixes + path.tokenized
-        let middlewareClosures = middlewares.reversed().map(Middleware.interceptConvertError)
-        trie.insert(path: splitPath, storageKey: method) {
-            var next = { request in
-                catchError { try handler(request).convert() }.convertErrorToResponse()
-            }
-            
+    func add(handler: @escaping Handler, for method: HTTPMethod, path: String, options: RouteOptions) {
+        let splitPath = pathPrefixes + path.tokenized(with: method)
+        let middlewareClosures = middlewares.reversed().map(Middleware.intercept)
+        let entry = HandlerEntry(options: options) {
+            var next = self.cleanHandler(handler)
             for middleware in middlewareClosures {
                 let oldNext = next
-                next = { middleware($0, oldNext) }
+                next = self.cleanHandler { try await middleware($0, oldNext) }
             }
             
-            return next($0)
+            return await next($0)
         }
+        
+        trie.insert(path: splitPath, value: entry)
     }
     
     /// Handles a request. If the request has any dynamic path
@@ -78,68 +92,78 @@ public final class Router: HTTPRouter, Service {
     /// passing it to the handler closure.
     ///
     /// - Parameter request: The request this router will handle.
-    /// - Returns: A future containing the response of a handler or a
-    ///   `.notFound` response if there was not a matching handler.
-    func handle(request: Request) -> EventLoopFuture<Response> {
-        var handler = notFoundHandler
-
-        // Find a matching handler
-        if let match = trie.search(path: request.path.tokenized, storageKey: request.method) {
-            request.pathParameters = match.1
-            handler = match.0
+    /// - Returns: The response of a matching handler or a
+    ///   `.notFound` response if there was not a
+    ///   matching handler.
+    func handle(request: Request) async -> Response {
+        var handler = cleanHandler(notFoundHandler)
+        var additionalMiddlewares = Array(globalMiddlewares.reversed())
+        let hbApp: HBApplication? = Container.resolve()
+        
+        if let length = request.headers.contentLength, length > hbApp?.configuration.maxUploadSize ?? .max {
+            handler = cleanHandler { _ in throw HTTPError(.payloadTooLarge) }
+        } else if let match = trie.search(path: request.path.tokenized(with: request.method)) {
+            request.parameters = match.parameters
+            handler = match.value.handler
+            
+            // Collate the request if streaming isn't specified.
+            if !match.value.options.contains(.stream) {
+                additionalMiddlewares.append(AccumulateMiddleware())
+            }
         }
-
+        
         // Apply global middlewares
-        for middleware in globalMiddlewares.reversed() {
+        for middleware in additionalMiddlewares {
             let lastHandler = handler
-            handler = { middleware.interceptConvertError($0, next: lastHandler) }
-        }
-
-        return handler(request)
-    }
-
-    private func notFoundHandler(_ request: Request) -> EventLoopFuture<Response> {
-        return .new(Router.notFoundResponse)
-    }
-}
-
-private extension Middleware {
-    func interceptConvertError(_ request: Request, next: @escaping Next) -> EventLoopFuture<Response> {
-        return catchError {
-            try intercept(request, next: next)
-        }.convertErrorToResponse()
-    }
-}
-
-private extension EventLoopFuture where Value == Response {
-    func convertErrorToResponse() -> EventLoopFuture<Response> {
-        return flatMapError { error in
-            func serverError() -> EventLoopFuture<Response> {
-                Log.error("[Server] encountered internal error: \(error).")
-                return .new(Router.internalErrorResponse)
+            handler = cleanHandler {
+                try await middleware.intercept($0, next: lastHandler)
             }
-
+        }
+        
+        return await handler(request)
+    }
+    
+    /// Converts a throwing, ResponseConvertible handler into a
+    /// non-throwing Response handler.
+    private func cleanHandler(_ handler: @escaping Handler) -> (Request) async -> Response {
+        return { req in
             do {
-                if let error = error as? ResponseConvertible {
-                    return try error.convert()
-                } else {
-                    return serverError()
-                }
+                return try await handler(req).response()
             } catch {
-                return serverError()
+                do {
+                    if let error = error as? ResponseConvertible {
+                        do {
+                            return try await error.response()
+                        } catch {
+                            return try await self.internalErrorHandler(req, error).response()
+                        }
+                    }
+                    
+                    return try await self.internalErrorHandler(req, error).response()
+                } catch {
+                    return Router.uncaughtErrorHandler(req: req, error: error)
+                }
             }
         }
     }
-}
-
-private extension String {
-    var tokenized: [String] {
-        return split(separator: "/").map(String.init)
+    
+    /// The default error handler if an error is encountered while handling a
+    /// request.
+    private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
+        Log.error("[Server] encountered internal error: \(error).")
+        return Response(status: .internalServerError)
+            .withString(HTTPResponseStatus.internalServerError.reasonPhrase)
     }
 }
 
-extension HTTPMethod: Hashable {
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.rawValue)
+extension String {
+    fileprivate func tokenized(with method: HTTPMethod) -> [String] {
+        split(separator: "/").map(String.init).filter { !$0.isEmpty } + [method.rawValue]
+    }
+}
+
+private struct AccumulateMiddleware: Middleware {
+    func intercept(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
+        try await next(request.collect())
     }
 }

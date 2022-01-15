@@ -1,13 +1,23 @@
+import NIOCore
+
 /// A service for scheduling recurring work, in lieu of a separate
 /// cron task running apart from your server.
-public final class Scheduler: Service {
+public final class Scheduler {
     private struct WorkItem {
         let schedule: Schedule
-        let work: (EventLoop) throws -> Void
+        let work: () async throws -> Void
     }
-    
+
+    public private(set) var isStarted: Bool = false
     private var workItems: [WorkItem] = []
-    private var isStarted: Bool = false
+    private let isTesting: Bool
+    
+    /// Initialize this Scheduler, potentially flagging it for testing. If
+    /// testing is enabled, work items will only be run once, and not
+    /// rescheduled.
+    init(isTesting: Bool = false) {
+        self.isTesting = isTesting
+    }
     
     /// Start scheduling with the given loop.
     ///
@@ -31,31 +41,24 @@ public final class Scheduler: Service {
     /// - Parameters:
     ///   - schedule: The schedule to run this work.
     ///   - work: The work to run.
-    func addWork(schedule: Schedule, work: @escaping (EventLoop) throws -> Void) {
+    func addWork(schedule: Schedule, work: @escaping () async throws -> Void) {
         workItems.append(WorkItem(schedule: schedule, work: work))
     }
     
-    private func schedule(schedule: Schedule, task: @escaping (EventLoop) throws -> Void, on loop: EventLoop) {
-        guard
-            let next = schedule.next(),
-            let nextDate = next.date
-        else {
-            return Log.error("[Scheduler] schedule doesn't have a future date to run.")
+    private func schedule(schedule: Schedule, task: @escaping () async throws -> Void, on loop: EventLoop) {
+        guard let delay = schedule.next() else {
+            return Log.info("[Scheduler] scheduling finished; there's no future date to run.")
         }
-
-        func scheduleNextAndRun() throws -> Void {
-            self.schedule(schedule: schedule, task: task, on: loop)
-            try task(loop)
+        
+        loop.flatScheduleTask(in: delay) {
+            loop.asyncSubmit {
+                // Schedule next and run
+                if !self.isTesting {
+                    self.schedule(schedule: schedule, task: task, on: loop)
+                }
+                
+                try await task()
+            }
         }
-
-        var delay = Int64(nextDate.timeIntervalSinceNow * 1000)
-        // Occasionally Cron library returns the `next()` as fractions of a 
-        // millisecond before or after now. If the delay is 0, get the next
-        // date and use that instead.
-        if delay == 0 {
-            let newDate = schedule.next(next)?.date ?? Date().addingTimeInterval(1)
-            delay = Int64(newDate.timeIntervalSinceNow * 1000)
-        }
-        loop.scheduleTask(in: .milliseconds(delay), scheduleNextAndRun)
     }
 }

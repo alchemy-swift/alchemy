@@ -19,7 +19,7 @@ import ArgumentParser
 ///     @Flag(help: "Should data be loaded but not saved.")
 ///     var dry: Bool = false
 ///
-///     func start() -> EventLoopFuture<Void> {
+///     func start() async throws {
 ///         if let userId = id {
 ///             // sync only a specific user's data
 ///         } else {
@@ -41,6 +41,10 @@ import ArgumentParser
 /// $ swift run MyApp sync --id 2 --dry
 /// ```
 public protocol Command: ParsableCommand {
+    /// The name of this command. Run it in the command line by passing this
+    /// name as an argument. Defaults to the type name.
+    static var name: String { get }
+    
     /// When running the app with this command, should the app
     /// shut down after the command `start()` is finished.
     /// Defaults to `true`.
@@ -50,63 +54,69 @@ public protocol Command: ParsableCommand {
     /// worker or running the server.
     static var shutdownAfterRun: Bool { get }
     
-    /// Should the start and finish of this command be logged.
-    /// Defaults to true.
+    /// Should the start and finish of this command be logged. Defaults to true.
     static var logStartAndFinish: Bool { get }
     
-    /// Start the command. Your command's main logic should be here.
-    ///
-    /// - Returns: A future signalling the end of the command's
-    ///   execution.
-    func start() -> EventLoopFuture<Void>
+    /// Run the command. Your command's main logic should be here.
+    func start() async throws
     
     /// An optional function to run when your command receives a
     /// shutdown signal. You likely don't need this unless your
     /// command runs indefinitely. Defaults to a no-op.
-    ///
-    /// - Returns: A future that finishes when shutdown finishes.
-    func shutdown() -> EventLoopFuture<Void>
+    func shutdown() async throws
 }
 
 extension Command {
     public static var shutdownAfterRun: Bool { true }
     public static var logStartAndFinish: Bool { true }
-
+    
+    /// Registers this command with the application lifecycle.
     public func run() throws {
-        if Self.logStartAndFinish {
-            Log.info("[Command] running \(commandName)")
-        }
-        // By default, register self to lifecycle
-        registerToLifecycle()
+        registerWithLifecycle()
     }
     
-    public func shutdown() -> EventLoopFuture<Void> {
-        if Self.logStartAndFinish {
-            Log.info("[Command] finished \(commandName)")
-        }
-        return .new()
-    }
+    public func shutdown() {}
 
     /// Registers this command to the application lifecycle; useful
     /// for running the app with this command.
-    func registerToLifecycle() {
-        let lifecycle = ServiceLifecycle.default
+    func registerWithLifecycle() {
+        @Inject var lifecycle: ServiceLifecycle
+        
         lifecycle.register(
-            label: Self.configuration.commandName ?? name(of: Self.self),
+            label: Self.configuration.commandName ?? Alchemy.name(of: Self.self),
             start: .eventLoopFuture {
                 Loop.group.next()
-                    .flatSubmit(start)
+                    .asyncSubmit {
+                        if Self.logStartAndFinish {
+                            Log.info("[Command] running \(Self.name)")
+                        }
+                        
+                        try await start()
+                    }
                     .map {
                         if Self.shutdownAfterRun {
                             lifecycle.shutdown()
                         }
                     }
             },
-            shutdown: .eventLoopFuture { Loop.group.next().flatSubmit(shutdown) }
+            shutdown: .eventLoopFuture {
+                Loop.group.next()
+                    .asyncSubmit {
+                        if Self.logStartAndFinish {
+                            Log.info("[Command] finished \(Self.name)")
+                        }
+                        
+                        try await shutdown()
+                    }
+            }
         )
     }
     
-    private var commandName: String {
-        name(of: Self.self)
+    public static var name: String {
+        Alchemy.name(of: Self.self)
+    }
+    
+    public static var configuration: CommandConfiguration {
+        CommandConfiguration(commandName: name)
     }
 }

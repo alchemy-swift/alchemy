@@ -1,21 +1,30 @@
 import NIO
 
 /// Queue lets you run queued jobs to be processed in the background.
-/// Jobs are persisted by the given `QueueDriver`.
+/// Jobs are persisted by the given `QueueProvider`.
 public final class Queue: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     /// The default channel to dispatch jobs on for all queues.
     public static let defaultChannel = "default"
     /// The default rate at which workers poll queues.
     public static let defaultPollRate: TimeAmount = .seconds(1)
     
-    /// The driver backing this queue.
-    private let driver: QueueDriver
+    /// The ids of any workers associated with this queue and running in this
+    /// process.
+    public var workers: [String] = []
     
-    /// Initialize a queue backed by the given driver.
+    /// The provider backing this queue.
+    let provider: QueueProvider
+    
+    /// Initialize a queue backed by the given provider.
     ///
-    /// - Parameter driver: A queue driver to back this queue with.
-    public init(_ driver: QueueDriver) {
-        self.driver = driver
+    /// - Parameter provider: A queue provider to back this queue with.
+    public init(provider: QueueProvider) {
+        self.provider = provider
     }
     
     /// Enqueues a generic `Job` to this queue on the given channel.
@@ -24,30 +33,8 @@ public final class Queue: Service {
     ///   - job: A job to enqueue to this queue.
     ///   - channel: The channel on which to enqueue the job. Defaults
     ///     to `Queue.defaultChannel`.
-    /// - Returns: An future that completes when the job is enqueued.
-    public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) -> EventLoopFuture<Void> {
-        // If the Job hasn't been registered, register it.
-        if !JobDecoding.isRegistered(J.self) {
-            JobDecoding.register(J.self)
-        }
-        return catchError { driver.enqueue(try JobData(job, channel: channel)) }
-    }
-    
-    /// Start a worker that dequeues and runs jobs from this queue.
-    ///
-    /// - Parameters:
-    ///   - channels: The channels this worker should monitor for
-    ///     work. Defaults to `Queue.defaultChannel`.
-    ///   - pollRate: The rate at which this worker should poll the
-    ///     queue for new work. Defaults to `Queue.defaultPollRate`.
-    ///   - eventLoop: The loop this worker will run on. Defaults to
-    ///     your apps next available loop.
-    public func startWorker(
-        for channels: [String] = [Queue.defaultChannel],
-        pollRate: TimeAmount = Queue.defaultPollRate,
-        on eventLoop: EventLoop = Loop.group.next()
-    ) {
-        driver.startWorker(for: channels, pollRate: pollRate, on: eventLoop)
+    public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) async throws {
+        try await provider.enqueue(JobData(job, channel: channel))
     }
 }
 
@@ -57,9 +44,7 @@ extension Job {
     /// - Parameters:
     ///   - queue: The queue to dispatch on.
     ///   - channel: The name of the channel to dispatch on.
-    /// - Returns: A future that completes when this job has been
-    ///  dispatched to the queue.
-    public func dispatch(on queue: Queue = .default, channel: String = Queue.defaultChannel) -> EventLoopFuture<Void> {
-        queue.enqueue(self, channel: channel)
+    public func dispatch(on queue: Queue = Q, channel: String = Queue.defaultChannel) async throws {
+        try await queue.enqueue(self, channel: channel)
     }
 }

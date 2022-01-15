@@ -9,7 +9,10 @@ on:
 
 jobs:
   test-macos:
-    runs-on: macos-11
+    if: ${{ false }}  # disable until macOS 12 (with concurrency) runners are available.
+    runs-on: macos-12
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_13.2.app/Contents/Developer
     steps:
     - uses: actions/checkout@v2
     - name: Build
@@ -17,13 +20,15 @@ jobs:
     - name: Run tests
       run: swift test -v
   test-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        swift: [5.4]
+        swift: [5.5]
     container: swift:${{ matrix.swift }}
     steps:
     - uses: actions/checkout@v2
+    - name: Install sqlite
+      run: apt-get -q update && apt-get install -y libsqlite3-dev
     - name: Build
       run: swift build -v --enable-test-discovery
     - name: Run tests

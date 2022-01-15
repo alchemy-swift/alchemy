@@ -18,17 +18,23 @@ struct RunMigrate: Command {
     @Flag(help: "Should migrations be rolled back")
     var rollback: Bool = false
     
-    // MARK: Command
-    
-    func start() -> EventLoopFuture<Void> {
-        // Run on event loop
-        Loop.group.next()
-            .flatSubmit(rollback ? Database.default.rollbackMigrations : Database.default.migrate)
+    init() {}
+    init(rollback: Bool) {
+        self.rollback = rollback
     }
     
-    func shutdown() -> EventLoopFuture<Void> {
+    // MARK: Command
+    
+    func start() async throws {
+        if rollback {
+            try await DB.rollbackMigrations()
+        } else {
+            try await DB.migrate()
+        }
+    }
+    
+    func shutdown() async throws {
         let action = rollback ? "migration rollback" : "migrations"
         Log.info("[Migration] \(action) finished, shutting down.")
-        return .new()
     }
 }

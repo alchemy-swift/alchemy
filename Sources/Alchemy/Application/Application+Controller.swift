@@ -15,8 +15,11 @@ extension Application {
     ///   this router.
     /// - Returns: This router for chaining.
     @discardableResult
-    public func controller(_ controller: Controller) -> Self {
-        controller.route(self)
+    public func controller(_ controllers: Controller...) -> Self {
+        controllers.forEach { c in
+            _ = snapshotMiddleware { c.route($0) }
+        }
+        
         return self
     }
 }

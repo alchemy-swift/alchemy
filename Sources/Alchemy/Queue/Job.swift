@@ -1,6 +1,6 @@
 import NIO
 
-/// A task that can be persisted and queued for future handling.
+/// A task that can be persisted and queued for background processing.
 public protocol Job: Codable {
     /// The name of this Job. Defaults to the type name.
     static var name: String { get }
@@ -14,8 +14,10 @@ public protocol Job: Codable {
     /// Called when a job finishes, either successfully or with too
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
+    /// Called when a job fails, whether it can be retried or not.
+    func failed(error: Error)
     /// Run this Job.
-    func run() -> EventLoopFuture<Void>
+    func run() async throws
 }
 
 // Default implementations.
@@ -32,9 +34,11 @@ extension Job {
             Log.error("[Queue] Job '\(Self.name)' failed with error: \(error).")
         }
     }
+    
+    public func failed(error: Error) {}
 }
 
-public enum RecoveryStrategy {
+public enum RecoveryStrategy: Equatable {
     /// Removes task from the queue
     case none
     /// Retries the task a specified amount of times
@@ -48,6 +52,17 @@ public enum RecoveryStrategy {
         case .retry(let maxRetries):
             return maxRetries
         }
+    }
+}
+
+extension TimeAmount: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(nanoseconds)
+    }
+    
+    public init(from decoder: Decoder) throws {
+        self = .nanoseconds(try decoder.singleValueContainer().decode(Int64.self))
     }
 }
 

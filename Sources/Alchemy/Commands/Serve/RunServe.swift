@@ -4,14 +4,12 @@ import NIOSSL
 import NIOHTTP1
 import NIOHTTP2
 import Lifecycle
+import Hummingbird
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
 final class RunServe: Command {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(commandName: "serve")
-    }
-    
+    static let configuration = CommandConfiguration(commandName: "serve")
     static var shutdownAfterRun: Bool = false
     static var logStartAndFinish: Bool = false
     
@@ -36,159 +34,113 @@ final class RunServe: Command {
     /// Should migrations be run before booting. Defaults to `false`.
     @Flag var migrate: Bool = false
     
-    @IgnoreDecoding
-    private var channel: Channel?
+    init() {}
+    init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
+        self.host = host
+        self.port = port
+        self.unixSocket = nil
+        self.workers = workers
+        self.schedule = schedule
+        self.migrate = migrate
+    }
     
     // MARK: Command
 
     func run() throws {
-        let lifecycle = ServiceLifecycle.default
+        @Inject var lifecycle: ServiceLifecycle
+        @Inject var app: Application
+        
         if migrate {
             lifecycle.register(
                 label: "Migrate",
                 start: .eventLoopFuture {
                     Loop.group.next()
-                        .flatSubmit(Database.default.migrate)
+                        .asyncSubmit(DB.migrate)
                 },
                 shutdown: .none
             )
         }
         
-        registerToLifecycle()
+        var config = app.configuration
+        if let unixSocket = unixSocket {
+            config = config.with(address: .unixDomainSocket(path: unixSocket))
+        } else {
+            config = config.with(address: .hostname(host, port: port))
+        }
+        
+        let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(Loop.group))
+        server.router = app.router
+        Container.bind(.singleton, value: server)
+        
+        registerWithLifecycle()
         
         if schedule {
             lifecycle.registerScheduler()
         }
         
         if workers > 0 {
-            lifecycle.registerWorkers(workers, on: .default)
+            lifecycle.registerWorkers(workers, on: Q)
         }
     }
     
-    func start() -> EventLoopFuture<Void> {
-        func childChannelInitializer(_ channel: Channel) -> EventLoopFuture<Void> {
-            channel.pipeline
-                .addAnyTLS()
-                .flatMap { channel.addHTTP() }
+    func start() throws {
+        @Inject var server: HBApplication
+        
+        try server.start()
+        if let unixSocket = unixSocket {
+            Log.info("[Server] listening on \(unixSocket).")
+        } else {
+            Log.info("[Server] listening on \(host):\(port).")
         }
+    }
+    
+    func shutdown() throws {
+        @Inject var server: HBApplication
         
-        let serverBootstrap = ServerBootstrap(group: Loop.group)
-            .serverChannelOption(ChannelOptions.backlog, value: 256)
-            .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-            .childChannelInitializer(childChannelInitializer)
-            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
-            .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-            .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
-        
-        let channel = { () -> EventLoopFuture<Channel> in
-            if let unixSocket = unixSocket {
-                return serverBootstrap.bind(unixDomainSocketPath: unixSocket)
+        let promise = server.eventLoopGroup.next().makePromise(of: Void.self)
+        server.lifecycle.shutdown { error in
+            if let error = error {
+                promise.fail(error)
             } else {
-                return serverBootstrap.bind(host: host, port: port)
+                promise.succeed(())
             }
-        }()
+        }
         
-        return channel
-            .map { boundChannel in
-                guard let channelLocalAddress = boundChannel.localAddress else {
-                    fatalError("Address was unable to bind. Please check that the socket was not closed or that the address family was understood.")
-                }
-                
-                self.channel = boundChannel
-                Log.info("[Server] listening on \(channelLocalAddress.prettyName)")
-            }
-    }
-    
-    func shutdown() -> EventLoopFuture<Void> {
-        channel?.close() ?? .new()
+        try promise.futureResult.wait()
     }
 }
 
-@propertyWrapper
-private struct IgnoreDecoding<T>: Decodable {
-    var wrappedValue: T?
-    
-    init(from decoder: Decoder) throws {
-        wrappedValue = nil
+extension Router: HBRouter {
+    public func respond(to request: HBRequest) -> EventLoopFuture<HBResponse> {
+        request.eventLoop
+            .asyncSubmit { await self.handle(request: Request(hbRequest: request)) }
+            .map { HBResponse(status: $0.status, headers: $0.headers, body: $0.hbResponseBody) }
     }
     
-    init() {
-        wrappedValue = nil
-    }
+    public func add(_ path: String, method: HTTPMethod, responder: HBResponder) { /* using custom router funcs */ }
 }
 
-extension SocketAddress {
-    /// A human readable description for this socket.
-    var prettyName: String {
-        switch self {
-        case .unixDomainSocket:
-            return pathname ?? ""
-        case .v4:
-            let address = ipAddress ?? ""
-            let port = port ?? 0
-            return "\(address):\(port)"
-        case .v6:
-            let address = ipAddress ?? ""
-            let port = port ?? 0
-            return "\(address):\(port)"
+extension Response {
+    var hbResponseBody: HBResponseBody {
+        switch body {
+        case .buffer(let buffer):
+            return .byteBuffer(buffer)
+        case .stream(let stream):
+            return .stream(stream)
+        case .none:
+            return .empty
         }
     }
 }
 
-extension ChannelPipeline {
-    /// Configures this pipeline with any TLS config in the
-    /// `ApplicationConfiguration`.
-    ///
-    /// - Returns: A future that completes when the config completes.
-    fileprivate func addAnyTLS() -> EventLoopFuture<Void> {
-        let config = Container.resolve(ApplicationConfiguration.self)
-        if var tls = config.tlsConfig {
-            if config.httpVersions.contains(.http2) {
-                tls.applicationProtocols.append("h2")
-            }
-            if config.httpVersions.contains(.http1_1) {
-                tls.applicationProtocols.append("http/1.1")
-            }
-            let sslContext = try! NIOSSLContext(configuration: tls)
-            let sslHandler = NIOSSLServerHandler(context: sslContext)
-            return addHandler(sslHandler)
-        } else {
-            return .new()
-        }
+extension ByteStream: HBResponseBodyStreamer {
+    public func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+        _read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
     }
 }
 
-extension Channel {
-    /// Configures this channel to handle whatever HTTP versions the
-    /// server should be speaking over.
-    ///
-    /// - Returns: A future that completes when the config completes.
-    fileprivate func addHTTP() -> EventLoopFuture<Void> {
-        let config = Container.resolve(ApplicationConfiguration.self)
-        if config.httpVersions.contains(.http2) {
-            return configureHTTP2SecureUpgrade(
-                h2ChannelConfigurator: { h2Channel in
-                    h2Channel.configureHTTP2Pipeline(
-                        mode: .server,
-                        inboundStreamInitializer: { channel in
-                            channel.pipeline
-                                .addHandlers([
-                                    HTTP2FramePayloadToHTTP1ServerCodec(),
-                                    HTTPHandler(router: Router.default)
-                                ])
-                        })
-                        .voided()
-                },
-                http1ChannelConfigurator: { http1Channel in
-                    http1Channel.pipeline
-                        .configureHTTPServerPipeline(withErrorHandling: true)
-                        .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
-                }
-            )
-        } else {
-            return pipeline
-                .configureHTTPServerPipeline(withErrorHandling: true)
-                .flatMap { self.pipeline.addHandler(HTTPHandler(router: Router.default)) }
-        }
+extension HBHTTPError: ResponseConvertible {
+    public func response() -> Response {
+        Response(status: status, headers: headers, body: body.map { .string($0) })
     }
 }

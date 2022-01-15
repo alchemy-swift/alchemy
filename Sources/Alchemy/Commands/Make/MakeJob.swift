@@ -9,11 +9,13 @@ struct MakeJob: Command {
     
     @Argument var name: String
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try FileCreator.shared.create(fileName: name, contents: jobTemplate(), in: "Jobs")
-            return .new()
-        }
+    init() {}
+    init(name: String) {
+        self.name = name
+    }
+    
+    func start() throws {
+        try FileCreator.shared.create(fileName: name, contents: jobTemplate(), in: "Jobs")
     }
     
     private func jobTemplate() -> String {
@@ -21,9 +23,8 @@ struct MakeJob: Command {
         import Alchemy
         
         struct \(name): Job {
-            func run() -> EventLoopFuture<Void> {
+            func run() async throws {
                 // Write some code!
-                return .new()
             }
         }
         """

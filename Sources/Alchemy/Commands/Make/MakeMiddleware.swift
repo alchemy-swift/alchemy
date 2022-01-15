@@ -9,11 +9,13 @@ struct MakeMiddleware: Command {
     
     @Argument var name: String
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try FileCreator.shared.create(fileName: name, contents: middlewareTemplate(), in: "Middleware")
-            return .new()
-        }
+    init() {}
+    init(name: String) {
+        self.name = name
+    }
+    
+    func start() throws {
+        try FileCreator.shared.create(fileName: name, contents: middlewareTemplate(), in: "Middleware")
     }
     
     private func middlewareTemplate() -> String {
@@ -21,9 +23,9 @@ struct MakeMiddleware: Command {
         import Alchemy
 
         struct \(name): Middleware {
-            func intercept(_ request: Request, next: @escaping Next) throws -> EventLoopFuture<Response> {
+            func intercept(_ request: Request, next: Next) async throws -> Response {
                 // Write some code!
-                return next(request)
+                return try await next(request)
             }
         }
         """

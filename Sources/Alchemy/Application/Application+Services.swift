@@ -1,52 +1,65 @@
 import Fusion
 import Lifecycle
+import Logging
 
 extension Application {
     /// Register core services to `Container.default`.
-    func bootServices() {
-        // Setup app lifecycle
-        var lifecycleLogger = Log.logger
-        lifecycleLogger.logLevel = lifecycleLogLevel
-        ServiceLifecycle.config(
-            default: ServiceLifecycle(
-                configuration: ServiceLifecycle.Configuration(
-                    logger: lifecycleLogger,
-                    installBacktrace: true
-                )))
+    ///
+    /// - Parameter testing: If `true`, default services will be configured in a
+    ///   manner appropriate for tests.
+    func bootServices(testing: Bool = false) {
+        if testing {
+            Container.main = Container()
+            Log.logger.logLevel = .notice
+        }
         
-        Loop.config()
+        Env.boot()
+        Container.bind(value: Env.current)
+        
+        // Register as Self & Application
+        Container.bind(.singleton, to: Application.self, value: self)
+        Container.bind(.singleton, value: self)
+        
+        // Setup app lifecycle
+        Container.bind(.singleton, value: ServiceLifecycle(
+            configuration: ServiceLifecycle.Configuration(
+                logger: Log.logger.withLevel(.notice),
+                installBacktrace: !testing)))
         
         // Register all services
-        ApplicationConfiguration.config(default: ApplicationConfiguration())
-        Router.config(default: Router())
-        Scheduler.config(default: Scheduler())
-        NIOThreadPool.config(default: NIOThreadPool(numberOfThreads: System.coreCount))
-        HTTPClient.config(default: HTTPClient(eventLoopGroupProvider: .shared(Loop.group)))
         
-        // Start threadpool
-        NIOThreadPool.default.start()
-    }
-    
-    /// Mocks many common services. Can be called in the `setUp()`
-    /// function of test cases.
-    public func mockServices() {
-        Container.default = Container()
-        ServiceLifecycle.config(default: ServiceLifecycle())
-        Router.config(default: Router())
-        Loop.mock()
+        if testing {
+            Loop.mock()
+        } else {
+            Loop.config()
+        }
+        
+        Container.bind(.singleton, value: Router())
+        Container.bind(.singleton, value: Scheduler())
+        Container.bind(.singleton) { container -> NIOThreadPool in
+            let threadPool = NIOThreadPool(numberOfThreads: System.coreCount)
+            threadPool.start()
+            container
+                .resolve(ServiceLifecycle.self)?
+                .registerShutdown(label: "\(name(of: NIOThreadPool.self))", .sync(threadPool.syncShutdownGracefully))
+            return threadPool
+        }
+        
+        Client.bind(Client())
+        
+        if testing {
+            FileCreator.mock()
+        }
+
+        // Set up any configurable services.
+        ConfigurableServices.configureDefaults()
     }
 }
 
-extension HTTPClient: Service {
-    public func shutdown() throws {
-        try syncShutdown()
+extension Logger {
+    fileprivate func withLevel(_ level: Logger.Level) -> Logger {
+        var copy = self
+        copy.logLevel = level
+        return copy
     }
 }
-
-extension NIOThreadPool: Service {
-    public func shutdown() throws {
-        try syncShutdownGracefully()
-    }
-}
-
-extension ServiceLifecycle: Service {}

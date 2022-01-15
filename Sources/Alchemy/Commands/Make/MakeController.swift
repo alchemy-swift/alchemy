@@ -18,14 +18,7 @@ struct MakeController: Command {
         self.model = model
     }
     
-    func start() -> EventLoopFuture<Void> {
-        catchError {
-            try createController()
-            return .new()
-        }
-    }
-    
-    private func createController() throws {
+    func start() throws {
         let template = model.map(modelControllerTemplate) ?? controllerTemplate()
         let fileName = model.map { "\($0)Controller" } ?? name
         try FileCreator.shared.create(fileName: "\(fileName)", contents: template, in: "Controllers")
@@ -37,7 +30,7 @@ struct MakeController: Command {
 
         struct \(name): Controller {
             func route(_ app: Application) {
-                app.get("/index", handler: index)
+                app.get("/index", use: index)
             }
             
             private func index(req: Request) -> String {
@@ -57,33 +50,32 @@ struct MakeController: Command {
         struct \(name)Controller: Controller {
             func route(_ app: Application) {
                 app
-                    .get("/\(resourcePath)", handler: index)
-                    .post("/\(resourcePath)", handler: create)
-                    .get("/\(resourcePath)/:id", handler: show)
-                    .patch("/\(resourcePath)", handler: update)
-                    .delete("/\(resourcePath)/:id", handler: delete)
+                    .get("/\(resourcePath)", use: index)
+                    .post("/\(resourcePath)", use: create)
+                    .get("/\(resourcePath)/:id", use: show)
+                    .patch("/\(resourcePath)", use: update)
+                    .delete("/\(resourcePath)/:id", use: delete)
             }
             
-            private func index(req: Request) -> EventLoopFuture<[\(name)]> {
-                \(name).all()
+            private func index(req: Request) async throws -> [\(name)] {
+                try await \(name).all()
             }
             
-            private func create(req: Request) throws -> EventLoopFuture<\(name)> {
-                try req.decodeBody(as: \(name).self).insert()
+            private func create(req: Request) async throws -> \(name) {
+                try await req.decode(\(name).self).insertReturn()
             }
             
-            private func show(req: Request) throws -> EventLoopFuture<\(name)> {
-                \(name).find(try req.parameter("id"))
-                    .unwrap(orError: HTTPError(.notFound))
+            private func show(req: Request) async throws -> \(name) {
+                try await \(name).find(req.parameter("id")).unwrap(or: HTTPError(.notFound))
             }
             
-            private func update(req: Request) throws -> EventLoopFuture<\(name)> {
-                \(name).update(try req.parameter("id"), with: try req.bodyDict())
-                    .unwrap(orError: HTTPError(.notFound))
+            private func update(req: Request) async throws -> \(name) {
+                try await \(name).update(req.parameter("id"), with: req.body?.decodeJSONDictionary() ?? [:])
+                    .unwrap(or: HTTPError(.notFound))
             }
             
-            private func delete(req: Request) throws -> EventLoopFuture<Void> {
-                \(name).delete(try req.parameter("id"))
+            private func delete(req: Request) async throws {
+                try await \(name).delete(req.parameter("id"))
             }
         }
         """

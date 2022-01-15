@@ -4,46 +4,11 @@ protocol ColumnBuilderErased {
     func toCreate() -> CreateColumn
 }
 
-/// Options for an `onDelete` or `onUpdate` reference constraint.
-public enum ReferenceOption: String {
-    /// RESTRICT
-    case restrict = "RESTRICT"
-    /// CASCADE
-    case cascade = "CASCADE"
-    /// SET NULL
-    case setNull = "SET NULL"
-    /// NO ACTION
-    case noAction = "NO ACTION"
-    /// SET DEFAULT
-    case setDefault = "SET DEFAULT"
-}
-
-/// Various constraints for columns.
-enum ColumnConstraint {
-    /// This column shouldn't be null.
-    case notNull
-    /// The default value for this column.
-    case `default`(String)
-    /// This column is the primary key of it's table.
-    case primaryKey
-    /// This column is unique on this table.
-    case unique
-    /// This column references a `column` on another `table`.
-    case foreignKey(
-            column: String,
-            table: String,
-            onDelete: ReferenceOption? = nil,
-            onUpdate: ReferenceOption? = nil
-         )
-    /// This int column is unsigned.
-    case unsigned
-}
-
 /// A builder for creating columns on a table in a relational database.
 ///
 /// `Default` is a Swift type that can be used to add a default value
 /// to this column.
-public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderErased {
+public final class CreateColumnBuilder<Default: SQLValueConvertible>: ColumnBuilderErased {
     /// The grammar of this builder.
     private let grammar: Grammar
     
@@ -71,6 +36,14 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
         self.constraints = constraints
     }
     
+    // MARK: ColumnBuilderErased
+    
+    func toCreate() -> CreateColumn {
+        CreateColumn(name: self.name, type: self.type, constraints: self.constraints)
+    }
+}
+
+extension CreateColumnBuilder {
     /// Adds an expression as the default value of this column.
     ///
     /// - Parameter expression: An expression for generating the
@@ -88,10 +61,10 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
         // Janky, but MySQL requires parentheses around text (but not
         // varchar...) literals.
         if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
-            return self.adding(constraint: .default("(\(val.toSQL().query))"))
+            return self.adding(constraint: .default("(\(val.sqlLiteral))"))
         }
         
-        return self.adding(constraint: .default(val.toSQL().query))
+        return self.adding(constraint: .default(val.sqlLiteral))
     }
     
     /// Define this column as not nullable.
@@ -115,8 +88,8 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
     @discardableResult public func references(
         _ column: String,
         on table: String,
-        onDelete: ReferenceOption? = nil,
-        onUpdate: ReferenceOption? = nil
+        onDelete: ColumnConstraint.ReferenceOption? = nil,
+        onUpdate: ColumnConstraint.ReferenceOption? = nil
     ) -> Self {
         self.adding(constraint: .foreignKey(column: column, table: table, onDelete: onDelete, onUpdate: onUpdate))
     }
@@ -143,12 +116,6 @@ public final class CreateColumnBuilder<Default: Sequelizable>: ColumnBuilderEras
         self.constraints.append(constraint)
         return self
     }
-
-    // MARK: ColumnBuilderErased
-    
-    func toCreate() -> CreateColumn {
-        CreateColumn(column: self.name, type: self.type, constraints: self.constraints)
-    }
 }
 
 extension CreateColumnBuilder where Default == Int {
@@ -167,7 +134,7 @@ extension CreateColumnBuilder where Default == Date {
     ///
     /// - Returns: This column builder.
     @discardableResult public func defaultNow() -> Self {
-        self.default(expression: "NOW()")
+        self.default(expression: "CURRENT_TIMESTAMP")
     }
 }
 
@@ -179,7 +146,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
     ///   for this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(jsonString: String) -> Self {
-        self.adding(constraint: .default(self.grammar.jsonLiteral(from: jsonString)))
+        self.adding(constraint: .default(self.grammar.jsonLiteral(for: jsonString)))
     }
     
     /// Adds an `Encodable` as the default for this column.
@@ -199,42 +166,8 @@ extension CreateColumnBuilder where Default == SQLJSON {
         }
         
         let jsonString = String(decoding: jsonData, as: UTF8.self)
-        return self.adding(constraint: .default(self.grammar.jsonLiteral(from: jsonString)))
+        return self.adding(constraint: .default(self.grammar.jsonLiteral(for: jsonString)))
     }
-}
-
-extension Bool: Sequelizable {
-    public func toSQL() -> SQL { SQL("\(self)") }
-}
-
-extension UUID: Sequelizable {
-    public func toSQL() -> SQL { SQL("'\(self.uuidString)'") }
-}
-
-extension String: Sequelizable {
-    public func toSQL() -> SQL { SQL("'\(self)'") }
-}
-
-extension Int: Sequelizable {
-    public func toSQL() -> SQL { SQL("\(self)") }
-}
-
-extension Double: Sequelizable {
-    public func toSQL() -> SQL { SQL("\(self)") }
-}
-
-extension Date: Sequelizable {
-    /// The date formatter for turning this `Date` into an SQL string.
-    private static let sqlFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.timeZone = TimeZone(abbreviation: "GMT")
-        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        return df
-    }()
-    
-    // MARK: Sequelizable
-    
-    public func toSQL() -> SQL { SQL("'\(Date.sqlFormatter.string(from: self))'") }
 }
 
 /// A type used to signify that a column on a database has a JSON
@@ -244,11 +177,11 @@ extension Date: Sequelizable {
 /// generic `default` function on `CreateColumnBuilder`. Instead,
 /// opt to use `.default(jsonString:)` or `.default(encodable:)`
 /// to set a default value for a JSON column.
-public struct SQLJSON: Sequelizable {
+public struct SQLJSON: SQLValueConvertible {
     /// `init()` is kept private to this from ever being instantiated.
     private init() {}
     
-    // MARK: Sequelizable
+    // MARK: SQLConvertible
     
-    public func toSQL() -> SQL { SQL() }
+    public var value: SQLValue { .null }
 }
