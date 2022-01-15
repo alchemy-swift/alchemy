@@ -62,7 +62,7 @@ struct MakeController: Command {
             }
             
             private func create(req: Request) async throws -> \(name) {
-                try await req.decodeBodyJSON(as: \(name).self).insertReturn()
+                try await req.decode(\(name).self).insertReturn()
             }
             
             private func show(req: Request) async throws -> \(name) {
@@ -70,7 +70,7 @@ struct MakeController: Command {
             }
             
             private func update(req: Request) async throws -> \(name) {
-                try await \(name).update(req.parameter("id"), with: req.decodeBodyDict() ?? [:])
+                try await \(name).update(req.parameter("id"), with: req.body?.decodeJSONDictionary() ?? [:])
                     .unwrap(or: HTTPError(.notFound))
             }
             
