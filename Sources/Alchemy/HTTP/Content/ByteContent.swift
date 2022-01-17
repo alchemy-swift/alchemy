@@ -168,6 +168,7 @@ public final class ByteStream: AsyncSequence {
                     }
                 }
             }
+            .hop(to: eventLoop)
     }
     
     public func readAll(chunkHandler: (Element) async throws -> Void) async throws {
