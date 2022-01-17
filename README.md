@@ -84,17 +84,11 @@ struct App: Application {
         post("/hello") { req in
             "Hello, \(req.query("name")!)!"
         }
-
-        // handlers can be async supported
-        get("/download") { req in
-            // Fetch an image from another site.
-            try await Http.get("https://example.com/image.jpg")
-        }
     }
 }
 ```
 
-Route handlers can also be async using Swift's new concurrency features.
+Route handlers can also be async using Swift 5.5's new concurrency features.
 
 ```swift
 get("/download") { req in
