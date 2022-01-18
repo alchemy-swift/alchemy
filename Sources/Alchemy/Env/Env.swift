@@ -135,14 +135,14 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
         
         if let overridePath = overridePath {
             if let values = loadDotEnvFile(path: overridePath) {
-                Log.info("[Environment] loaded env from `\(overridePath)`.")
                 current.dotEnvVariables = values
+                Log.info("[Environment] loaded env from `\(overridePath)`.")
             } else {
                 Log.error("[Environment] couldnt find dotenv at `\(overridePath)`.")
             }
         } else if let values = loadDotEnvFile(path: defaultPath) {
-            Log.info("[Environment] loaded env from `\(defaultPath)`.")
             current.dotEnvVariables = values
+            Log.info("[Environment] loaded env from `\(defaultPath)`.")
         } else {
             Log.info("[Environment] no dotenv file found.")
         }
