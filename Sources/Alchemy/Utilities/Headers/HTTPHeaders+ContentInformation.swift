@@ -1,24 +1,24 @@
 extension HTTPHeaders {
     public var contentType: ContentType? {
         get {
-            first(name: "content-type").map(ContentType.init)
+            first(name: "Content-Type").map(ContentType.init)
         }
         set {
             if let contentType = newValue {
-                self.replaceOrAdd(name: "content-type", value: "\(contentType.string)")
+                self.replaceOrAdd(name: "Content-Type", value: "\(contentType.string)")
             } else {
-                self.remove(name: "content-type")
+                self.remove(name: "Content-Type")
             }
         }
     }
     
     public var contentLength: Int? {
-        get { first(name: "content-length").map { Int($0) } ?? nil }
+        get { first(name: "Content-Length").map { Int($0) } ?? nil }
         set {
             if let contentLength = newValue {
-                self.replaceOrAdd(name: "content-length", value: "\(contentLength)")
+                self.replaceOrAdd(name: "Content-Length", value: "\(contentLength)")
             } else {
-                self.remove(name: "content-length")
+                self.remove(name: "Content-Length")
             }
         }
     }

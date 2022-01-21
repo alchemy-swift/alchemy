@@ -32,12 +32,12 @@ public struct File: Codable, ResponseConvertible {
     // MARK: - ResponseConvertible
     
     public func response() async throws -> Response {
-        Response(status: .ok, headers: ["content-disposition":"inline; filename=\"\(name)\""])
+        Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\"\(name)\""])
             .withBody(content, type: contentType, length: size)
     }
     
     public func download() async throws -> Response {
-        Response(status: .ok, headers: ["content-disposition":"attachment; filename=\"\(name)\""])
+        Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\"\(name)\""])
             .withBody(content, type: contentType, length: size)
     }
     
