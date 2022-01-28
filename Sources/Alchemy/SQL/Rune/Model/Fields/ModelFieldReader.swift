@@ -76,6 +76,8 @@ private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingC
             return
         }
         
+        guard !(value is AnyHas) else { return }
+        
         let keyString = encoder.mappingStrategy.map(input: key.stringValue)
         guard let convertible = value as? SQLValueConvertible else {
             // Assume anything else is JSON.

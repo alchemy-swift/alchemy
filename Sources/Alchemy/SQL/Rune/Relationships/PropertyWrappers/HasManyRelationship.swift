@@ -47,8 +47,8 @@ public final class HasManyRelationship<From: Model, To: ModelMaybeOptional>: Any
     public init(from decoder: Decoder) throws {}
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder) {
-            try value.encode(to: encoder)
+        if !(encoder is SQLEncoder), let underlyingValue = value {
+            try underlyingValue.encode(to: encoder)
         }
     }
 }
@@ -56,14 +56,5 @@ public final class HasManyRelationship<From: Model, To: ModelMaybeOptional>: Any
 extension HasManyRelationship: Equatable where To: Equatable {
     public static func == (lhs: HasManyRelationship<From, To>, rhs: HasManyRelationship<From, To>) -> Bool {
         lhs.value == rhs.value
-    }
-}
-
-public extension KeyedEncodingContainer {
-    // Only encode the underlying value if it exists.
-    mutating func encode<From, To>(_ value: HasManyRelationship<From, To>, forKey key: Key) throws {
-        if let underlyingValue = value.value {
-            try encode(underlyingValue, forKey: key)
-        }
     }
 }
