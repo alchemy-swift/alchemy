@@ -18,7 +18,7 @@ import NIO
 /// }
 /// ```
 @propertyWrapper
-public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: Relationship {
+public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllowed>: Relationship {
     public typealias From = Child
     public typealias To = Parent
     

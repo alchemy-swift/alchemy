@@ -19,7 +19,15 @@ public final class RelationshipMapper<M: ModelBase> {
     }
 }
 
-protocol AnyRelation {}
+extension Model {
+    static func relationshipMapper() -> RelationshipMapper<Self> {
+        let mapper = RelationshipMapper<Self>()
+        Self.mapRelations(mapper)
+        return mapper
+    }
+}
+
+private protocol AnyRelation {}
 
 /// Defines how a `Relationship` is mapped from it's `From` to `To`.
 public final class RelationshipMapping<From: Model, To: Model>: AnyRelation, Equatable {

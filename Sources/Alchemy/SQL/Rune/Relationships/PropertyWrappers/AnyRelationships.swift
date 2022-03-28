@@ -1,19 +1,3 @@
-// Protocol
-// 1. Store value in db
-// 2. Load value from db
-// Eager loading?
-// - run complicated work on batches of data so it's simpler... only applies to
-//   relationships? Could easily be custom done? Add a "run after query"
-//   protocol? Custom map; take results and do something to them.
-
-// Appendable to a `ModelQuery`; async throw runs on results before returning.
-protocol EagerLoadableProperty: ModelProperty {
-    // Downside;
-    // 1. Must be in order
-    // 2. Must be same length
-    static func load(values: [PartialLoad<Self>]) async throws -> [Self]
-}
-
 struct PartialLoad<T: EagerLoadableProperty> {
     let row: SQLRow
     let initialValue: T

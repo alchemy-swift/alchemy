@@ -12,6 +12,14 @@ public extension Model {
     }
 }
 
+// Appendable to a `ModelQuery`; async throw runs on results before returning.
+protocol EagerLoadableProperty: ModelProperty {
+    // Downside;
+    // 1. Must be in order
+    // 2. Must be same length
+    static func load(values: [PartialLoad<Self>]) async throws -> [Self]
+}
+
 /// A `ModelQuery` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
