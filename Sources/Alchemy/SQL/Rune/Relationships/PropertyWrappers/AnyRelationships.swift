@@ -1,32 +1,3 @@
-/*
- Eager Loading
- 1. Some model properties may store something in an SQL row that's a hook for
-    another object.
-    a. `BelongsTo` stores id, eager loads other `Model`
-    b. `Store` stores url, eager loads `File`
-    c. custom, load from SQValue & column, store as `SQLValue` at `String`
-    d. should all fields be ModelProperty? no; couldn't do multipler arrays.
- 2.
- */
-
-/*
- Use cases
- 1. Relationships (Single, Optional, Array, Store / Don't Store)
- 2. Encryption
- 3. File on model
- 4. Image as blob
- 5. Custom
- 6. Convert JSON to Array
- 7. Custom JSON storage
- 8. Convert custom property; such as date using specific format. (in initializer)
- 9. Async operations on the wrapper itself
- */
-
-/*
- Relationship CRUD
- 1. On relationship object itself. Each defines method for get / add / update / delete
- */
-
 // Protocol
 // 1. Store value in db
 // 2. Load value from db

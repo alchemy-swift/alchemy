@@ -23,13 +23,13 @@ public protocol AnyModelEnum {
 }
 
 extension ModelEnum where Self: RawRepresentable, RawValue: ModelProperty {
-    public init(key: String, on row: SQLRowView) throws {
+    public init(key: String, on row: SQLRowReader) throws {
         self = try Self(rawValue: RawValue(key: key, on: row))
             .unwrap(or: DatabaseCodingError("Error decoding \(name(of: Self.self)) from \(key)"))
     }
     
-    public func toSQLField(at key: String) throws -> SQLField? {
-        try rawValue.toSQLField(at: key)
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        try rawValue.store(key: key, on: &row)
     }
 }
 

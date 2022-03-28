@@ -44,21 +44,21 @@ public final class HasOneRelationship<From: Model, To: ModelMaybeOptional>: Rela
 }
 
 extension HasOneRelationship: ModelProperty {
-    public convenience init(key: String, on row: SQLRowView) throws {
+    public convenience init(key: String, on row: SQLRowReader) throws {
         self.init()
     }
     
-    public func toSQLField(at key: String) throws -> SQLField? { nil }
+    public func store(key: String, on row: inout SQLRowWriter) throws {}
 }
 
-extension HasOneRelationship: Codable {
+extension HasOneRelationship: Codable where To: Codable {
     public convenience init(from decoder: Decoder) throws {
         self.init()
     }
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder), let underlyingValue = value, let encodableValue = underlyingValue as? Encodable {
-            try encodableValue.encode(to: encoder)
+        if let underlyingValue = value {
+            try underlyingValue.encode(to: encoder)
         }
     }
 }

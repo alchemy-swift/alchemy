@@ -323,10 +323,6 @@ extension Model {
     /// - Returns: An ordered dictionary mapping column names to
     ///   parameters for use in a QueryBuilder `Query`.
     fileprivate func fieldDictionary() throws -> [String: SQLValueConvertible] {
-        Dictionary(
-            try ModelFieldReader(Self.keyMapping)
-                .getFields(of: self)
-                .map { ($0.column, $0.value) },
-            uniquingKeysWith: { current, _ in current })
+        Dictionary(try toSQLRow().fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
     }
 }

@@ -11,7 +11,7 @@ extension Model {
     
     // Auto filled in for codable models, in extension
     public func toSQLRow() throws -> SQLRow {
-        try SQLRow(fields: fields())
+        try SQLRowEncoder(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder).sqlRow(for: self)
     }
 }
 

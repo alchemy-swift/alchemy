@@ -95,7 +95,7 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
 }
 
 extension BelongsToRelationship: ModelProperty {
-    public convenience init(key: String, on row: SQLRowView) throws {
+    public convenience init(key: String, on row: SQLRowReader) throws {
         let column = key + "Id"
         guard row.contains(column) else {
             try self.init(from: nil)
@@ -105,29 +105,14 @@ extension BelongsToRelationship: ModelProperty {
         try self.init(from: row.require(column))
     }
     
-    public func toSQLField(at key: String) throws -> SQLField? {
-        SQLField(column: key + "Id", value: idValue ?? .null)
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        row.put(idValue ?? .null, at: key + "Id")
     }
 }
 
 extension BelongsToRelationship: Codable where Parent: Codable {
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder) {
-            try value.encode(to: encoder)
-        } else {
-            // When encoding to the database, just encode the Parent's ID.
-            var container = encoder.singleValueContainer()
-            try container.encode(id)
-        }
-    }
-    
-    public convenience init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if container.decodeNil() {
-            try self.init(from: nil)
-        } else {
-            self.init(wrappedValue: try Parent(from: decoder))
-        }
+        try value.encode(to: encoder)
     }
 }
 

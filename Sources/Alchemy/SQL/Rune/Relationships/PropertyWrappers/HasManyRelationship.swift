@@ -44,18 +44,18 @@ public final class HasManyRelationship<From: Model, To: ModelMaybeOptional>: Rel
 }
 
 extension HasManyRelationship: ModelProperty {
-    public convenience init(key: String, on row: SQLRowView) throws {
+    public convenience init(key: String, on row: SQLRowReader) throws {
         self.init()
     }
     
-    public func toSQLField(at key: String) throws -> SQLField? { nil }
+    public func store(key: String, on row: inout SQLRowWriter) throws {}
 }
 
 extension HasManyRelationship: Codable where To: Codable {
     public convenience init(from decoder: Decoder) throws { self.init() }
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder), let underlyingValue = value {
+        if let underlyingValue = value {
             try underlyingValue.encode(to: encoder)
         }
     }
