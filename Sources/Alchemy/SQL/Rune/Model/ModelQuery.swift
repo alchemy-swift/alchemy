@@ -73,6 +73,11 @@ public class ModelQuery<M: Model>: Query {
         try await first().unwrap(or: error)
     }
     
+    /// Returns a model of this query, if one exists.
+    public func random() async throws -> M? {
+        try await select().orderBy("RANDOM()").limit(1).first()
+    }
+    
     /// Eager loads (loads a related `Model`) a `Relationship` on this
     /// model.
     ///

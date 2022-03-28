@@ -24,7 +24,7 @@ public protocol Relationship {
 /// similarly in relationship property wrappers. Sometimes a
 /// relationship may be optional, sometimes it may be
 /// required. Alchemy supports both cases.
-public protocol ModelMaybeOptional: Codable {
+public protocol ModelMaybeOptional {
     /// The underlying `Model` type. `Self` if this is a `Model`,
     /// `Wrapped` if this is a `Model?`.
     associatedtype Value: Model

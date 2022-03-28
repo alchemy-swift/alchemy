@@ -1,6 +1,29 @@
 import Foundation
 import Pluralize
 
+public protocol Model: ModelBase, Codable {}
+
+// For custom logic around attributes (ENUM, JSON, relationship, encrypted, filename, etc)
+// then thin out decoder / encoder to check for this type and that's it? Then
+// conform all types. Make it easy to add new types.
+protocol ModelProperty {
+    init(field: SQLField) throws
+    func toSQLField(at key: String) throws -> SQLField
+}
+
+extension Model {
+    // Auto filled in for codable models, in extension
+    init(row: SQLRow) throws {
+        self = try row.decode(Self.self)
+    }
+    
+    // Auto filled in for codable models, in extension
+    func toSQLRow() throws -> SQLRow {
+        fatalError()
+        // Row shouldn't be a protocol?
+    }
+}
+
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & much more.
@@ -11,7 +34,7 @@ import Pluralize
 ///   `init(from: Decoder)` or `func encode(to: Encoder)`. Override
 ///   those at your own risk! You might be able to get away with it,
 ///   but it could also break things in unexpected ways.
-public protocol Model: Identifiable, ModelMaybeOptional {
+public protocol ModelBase: Identifiable, ModelMaybeOptional {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
     

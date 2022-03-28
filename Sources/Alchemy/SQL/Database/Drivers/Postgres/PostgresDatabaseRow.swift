@@ -10,7 +10,15 @@ struct PostgresDatabaseRow: SQLRow {
     }
     
     func get(_ column: String) throws -> SQLValue {
-        try row.column(column)
+        let rando = row.makeRandomAccess()
+        rando.contains("foo")
+        rando["foo"]
+        for thing in rando {
+            let cell: PostgresCell = thing
+//            cell.
+        }
+        
+        return try row.column(column)
             .unwrap(or: DatabaseError("No column named `\(column)` was found \(columns)."))
             .toSQLValue(column)
     }

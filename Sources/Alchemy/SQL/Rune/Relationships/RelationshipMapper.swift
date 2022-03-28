@@ -1,5 +1,5 @@
 /// Associates Relationships with their mapping.
-public final class RelationshipMapper<M: Model> {
+public final class RelationshipMapper<M: ModelBase> {
     private var configs: [PartialKeyPath<M>: AnyRelation] = [:]
     
     init() {}

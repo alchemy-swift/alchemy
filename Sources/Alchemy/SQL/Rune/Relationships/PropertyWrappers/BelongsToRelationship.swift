@@ -18,7 +18,7 @@ import NIO
 /// }
 /// ```
 @propertyWrapper
-public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: AnyBelongsTo, Relationship, Codable {
+public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: AnyBelongsTo, Relationship {
     public typealias From = Child
     public typealias To = Parent
     
@@ -84,6 +84,17 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
     
     // MARK: Codable
     
+    init(from sqlValue: SQLValue?) throws {
+        guard sqlValue != .null else {
+            id = nil
+            return
+        }
+        
+        id = try sqlValue.map { try Parent.Value.Identifier.init(value: $0) }
+    }
+}
+
+extension BelongsToRelationship: Codable where Parent: Codable {
     public func encode(to encoder: Encoder) throws {
         if !(encoder is SQLEncoder) {
             try value.encode(to: encoder)
@@ -94,24 +105,13 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
         }
     }
     
-    public init(from decoder: Decoder) throws {
+    public convenience init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if container.decodeNil() {
-            id = nil
+            try self.init(from: nil)
         } else {
-            let parent = try Parent(from: decoder)
-            id = parent.id
-            value = parent
+            self.init(wrappedValue: try Parent(from: decoder))
         }
-    }
-    
-    init(from sqlValue: SQLValue?) throws {
-        guard sqlValue != .null else {
-            id = nil
-            return
-        }
-        
-        id = try sqlValue.map { try Parent.Value.Identifier.init(value: $0) }
     }
 }
 

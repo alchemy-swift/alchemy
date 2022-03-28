@@ -48,53 +48,39 @@ protocol AnyBelongsTo {
 //   protocol? Custom map; take results and do something to them.
 
 protocol Model2 {
-    init(from row: SQLRow) // Auto filled in for codable models, in extension
-    func toSQLRow() -> SQLRow // Auto filled in for codable models, in extension
+    init(row: SQLRow) throws // Auto filled in for codable models, in extension
+    func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
 }
-
-// For custom logic around attributes (ENUM, JSON, relationship, encrypted, filename, etc)
-// then thin out decoder / encoder to check for this type and that's it? Then
-// conform all types. Make it easy to add new types. What about arrays?
-//
-// Storing `null`?
-protocol ModelAttribute {
-    init(field: SQLField)
-    func store(at key: String) -> SQLField
-}
-
-// CreatedAt updated at?
 
 // Appendable to a `ModelQuery`; async throw runs on results before returning.
-protocol EagerLoadable {
-    // Also need the SQL rows? Since need to find value based on column key.
-    // Not quite right; need to set on models individually. Can just get rows
-    // and leave the setting to the caller who has KP access?
-    static func load(values: [SQLRow]) async throws -> [Self]
+protocol EagerLoadableProperty: ModelProperty {
+    // Downside;
+    // 1. Must be in order
+    // 2. Must be same length
+    static func load(values: [PartialLoad<Self>]) async throws -> [Self]
+}
+
+struct PartialLoad<T: EagerLoadableProperty> {
+    let row: SQLRow
+    let initialValue: T
 }
 
 // Relationship crud is a separate beast; all queries on the relationship.
 // user.$todos.append(moreTodos)
-protocol Relationship2 {
-    func get() // load in this case?
+protocol Relationship2: EagerLoadableProperty {
+    associatedtype From: Model
+    associatedtype To: Model
+    
+    var mapping: RelationshipMapping<To, From> { get }
+    
+    func get() -> To // load in this case?
     func add() // adds one or more
     func remove() // removes the given ones
     func update() // updates to the given ones? might be tricky
 }
 
-protocol ModelProperty {
-    // Initialize from a field.
-    init(field: SQLField)
-    
-    // Store as field.
-    func store() async throws
-}
-
-protocol EagerLoadable: ModelProperty {
-    // Eager loads this model, if it needs it.
-    func load(values: [SQLRow]) async throws
-}
-
-struct SQLField {
-    let column: String
-    let value: SQLValue
+protocol Timestamps {
+    // Might not need to require these? Can just update SQLRow.
+    var createdAt: Date? { get set }
+    var updatedAt: Date? { get set }
 }

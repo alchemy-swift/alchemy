@@ -61,7 +61,7 @@ extension Model {
     /// Returns a random model of this type, if one exists.
     public static func random() async throws -> Self? {
         // Note; MySQL should be `RAND()`
-        try await Self.query().select().orderBy("RANDOM()").limit(1).first()
+        try await Self.query().random()
     }
     
     /// Gets the first element that meets the given where value.

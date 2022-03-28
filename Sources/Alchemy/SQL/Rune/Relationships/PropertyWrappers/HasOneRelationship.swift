@@ -47,8 +47,8 @@ public final class HasOneRelationship<From: Model, To: ModelMaybeOptional>: AnyH
     public init(from decoder: Decoder) throws {}
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder), let underlyingValue = value {
-            try underlyingValue.encode(to: encoder)
+        if !(encoder is SQLEncoder), let underlyingValue = value, let encodableValue = underlyingValue as? Encodable {
+            try encodableValue.encode(to: encoder)
         }
     }
 }
