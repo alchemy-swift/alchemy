@@ -9,17 +9,17 @@ final class SQLRowTests: XCTestCase {
             let bar: String
         }
         
-        let row: SQLRow = StubDatabaseRow(data: [
+        let row: SQLRow = [
             "foo": 1,
             "bar": "two"
-        ])
+        ]
         XCTAssertEqual(try row.decode(Test.self), Test(foo: 1, bar: "two"))
     }
     
     func testModel() {
         let date = Date()
         let uuid = UUID()
-        let row: SQLRow = StubDatabaseRow(data: [
+        let row: SQLRow = [
             "id": SQLValue.null,
             "bool": false,
             "string": "foo",
@@ -44,12 +44,12 @@ final class SQLRowTests: XCTestCase {
             "date": SQLValue.date(date),
             "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1
-        ])
+        ]
         XCTAssertEqual(try row.decode(EverythingModel.self), EverythingModel(date: date, uuid: uuid, belongsTo: .pk(1)))
     }
     
     func testSubscript() {
-        let row: SQLRow = StubDatabaseRow(data: ["foo": 1])
+        let row: SQLRow = ["foo": 1]
         XCTAssertEqual(row["foo"], .int(1))
         XCTAssertEqual(row["bar"], nil)
     }

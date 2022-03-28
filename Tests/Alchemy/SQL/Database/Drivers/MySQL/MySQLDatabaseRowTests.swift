@@ -3,11 +3,11 @@
 import AlchemyTest
 
 final class MySQLDatabaseRowTests: TestCase<TestApp> {
-    func testGet() {
-        let row = MySQLDatabaseRow(.fooOneBar2)
-        XCTAssertEqual(try row.get("foo"), .string("one"))
-        XCTAssertEqual(try row.get("bar"), .int(2))
-        XCTAssertThrowsError(try row.get("baz"))
+    func testGet() throws {
+        let row = try SQLRow(mysql: .fooOneBar2)
+        XCTAssertEqual(row["foo"], .string("one"))
+        XCTAssertEqual(row["bar"], .int(2))
+        XCTAssertFalse(row.contains("baz"))
     }
     
     func testNil() {

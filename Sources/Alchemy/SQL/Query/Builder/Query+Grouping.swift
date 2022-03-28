@@ -44,6 +44,6 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func having(key: String, op: Operator, value: SQLValueConvertible, boolean: WhereBoolean = .and) -> Self {
-        having(Where(type: .value(key: key, op: op, value: value.value), boolean: boolean))
+        having(Where(type: .value(key: key, op: op, value: value.sqlValue), boolean: boolean))
     }
 }

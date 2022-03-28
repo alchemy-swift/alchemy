@@ -76,9 +76,12 @@ final class PostgresDatabase: DatabaseProvider {
     }
 }
 
-extension SQLRow2 {
+extension SQLRow {
     init(postgres: PostgresRow) throws {
-        self.init(fields: try postgres.map { SQLField(index: $0.columnIndex, column: $0.columnName, value: try $0.toSQLValue()) })
+        self.init(
+            fields: try postgres.map { SQLField(
+                column: $0.columnName,
+                value: try $0.toSQLValue()) })
     }
 }
 
@@ -114,11 +117,11 @@ extension PostgresConnection: DatabaseProvider {
     
     public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await query(sql.positionPostgresBindings(), values.map(PostgresData.init))
-            .get().rows.map(PostgresDatabaseRow.init)
+            .get().rows.map(SQLRow.init)
     }
     
     public func raw(_ sql: String) async throws -> [SQLRow] {
-        try await simpleQuery(sql).get().map(PostgresDatabaseRow.init)
+        try await simpleQuery(sql).get().map(SQLRow.init)
     }
     
     public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {

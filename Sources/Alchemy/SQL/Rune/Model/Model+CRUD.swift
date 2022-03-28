@@ -120,7 +120,7 @@ extension Model {
     /// - Parameter db: The database to insert this model to. Defaults
     ///   to `Database.default`.
     public func insert(db: Database = DB) async throws {
-        try await Self.query(database: db).insert(fields())
+        try await Self.query(database: db).insert(fieldDictionary())
     }
     
     /// Inserts this model to a database. Return the newly created model.
@@ -132,7 +132,7 @@ extension Model {
     ///   database. (an `id` being populated, for example).
     public func insertReturn(db: Database = DB) async throws -> Self {
         try await Self.query(database: db)
-            .insertReturn(try fields())
+            .insertReturn(try fieldDictionary())
             .first
             .unwrap(or: RuneError.notFound)
             .decode(Self.self)
@@ -150,7 +150,7 @@ extension Model {
     @discardableResult
     public func update(db: Database = DB) async throws -> Self {
         let id = try getID()
-        let fields = try fields()
+        let fields = try fieldDictionary()
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return self
     }
@@ -160,7 +160,7 @@ extension Model {
         let id = try self.getID()
         var copy = self
         updateClosure(&copy)
-        let fields = try copy.fields()
+        let fields = try copy.fieldDictionary()
         try await Self.query(database: db).where("id" == id).update(values: fields)
         return copy
     }
@@ -286,7 +286,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertAll(db: Database = DB) async throws {
         try await Element.query(database: db)
-            .insert(try self.map { try $0.fields().mapValues { $0 } })
+            .insert(try self.map { try $0.fieldDictionary().mapValues { $0 } })
     }
     
     /// Inserts and returns each element in this array to a database.
@@ -297,7 +297,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertReturnAll(db: Database = DB) async throws -> Self {
         try await Element.query(database: db)
-            .insertReturn(try self.map { try $0.fields().mapValues { $0 } })
+            .insertReturn(try self.map { try $0.fieldDictionary().mapValues { $0 } })
             .map { try $0.decode(Element.self) }
     }
 
@@ -311,5 +311,22 @@ extension Array where Element: Model {
         _ = try await Element.query(database: db)
             .where(key: "id", in: self.compactMap { $0.id })
             .delete()
+    }
+}
+
+extension Model {
+    /// Returns an ordered dictionary of column names to `Parameter`
+    /// values, appropriate for working with the QueryBuilder.
+    ///
+    /// - Throws: A `DatabaseCodingError` if there is an error
+    ///   creating any of the fields of this instance.
+    /// - Returns: An ordered dictionary mapping column names to
+    ///   parameters for use in a QueryBuilder `Query`.
+    fileprivate func fieldDictionary() throws -> [String: SQLValueConvertible] {
+        Dictionary(
+            try ModelFieldReader(Self.keyMapping)
+                .getFields(of: self)
+                .map { ($0.column, $0.value) },
+            uniquingKeysWith: { current, _ in current })
     }
 }

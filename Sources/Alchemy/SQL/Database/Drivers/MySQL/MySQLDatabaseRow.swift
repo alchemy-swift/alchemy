@@ -2,19 +2,17 @@ import MySQLNIO
 import MySQLKit
 import NIO
 
-final class MySQLDatabaseRow: SQLRow {
-    let columns: Set<String>
-    private let row: MySQLRow
-    
-    init(_ row: MySQLRow) {
-        self.row = row
-        self.columns = Set(self.row.columnDefinitions.map(\.name))
-    }
-
-    func get(_ column: String) throws -> SQLValue {
-        try row.column(column)
-            .unwrap(or: DatabaseError("No column named `\(column)` was found."))
-            .toSQLValue(column)
+extension SQLRow {
+    init(mysql: MySQLRow) throws {
+        self.init(
+            fields: try mysql.columnDefinitions.map {
+                guard let value = mysql.column($0.name) else {
+                    preconditionFailure("MySQLRow had a key but no value for column \($0.name)!")
+                }
+                
+                return SQLField(
+                    column: $0.name,
+                    value: try value.toSQLValue()) })
     }
 }
 

@@ -7,7 +7,7 @@ final class SQLiteGrammar: Grammar {
             let idString = id == nil ? "last_insert_rowid()" : "?"
             return [
                 compileInsert(table, values: [fields]),
-                SQL("select * from \(table) where id = \(idString)", bindings: [id?.value].compactMap { $0 })
+                SQL("select * from \(table) where id = \(idString)", bindings: [id?.sqlValue].compactMap { $0 })
             ]
         }
     }

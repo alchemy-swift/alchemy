@@ -47,11 +47,6 @@ protocol AnyBelongsTo {
 //   relationships? Could easily be custom done? Add a "run after query"
 //   protocol? Custom map; take results and do something to them.
 
-protocol Model2 {
-    init(row: SQLRow) throws // Auto filled in for codable models, in extension
-    func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
-}
-
 // Appendable to a `ModelQuery`; async throw runs on results before returning.
 protocol EagerLoadableProperty: ModelProperty {
     // Downside;

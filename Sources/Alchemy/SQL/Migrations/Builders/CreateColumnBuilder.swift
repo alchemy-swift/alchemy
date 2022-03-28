@@ -183,5 +183,5 @@ public struct SQLJSON: SQLValueConvertible {
     
     // MARK: SQLConvertible
     
-    public var value: SQLValue { .null }
+    public var sqlValue: SQLValue { .null }
 }

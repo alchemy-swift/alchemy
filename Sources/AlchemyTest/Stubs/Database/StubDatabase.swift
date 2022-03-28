@@ -1,3 +1,4 @@
+import Alchemy
 public final class StubDatabase: DatabaseProvider {
     private var isShutdown = false
     private var stubs: [[SQLRow]] = []
@@ -30,22 +31,8 @@ public final class StubDatabase: DatabaseProvider {
         isShutdown = true
     }
     
-    public func stub(_ rows: [StubDatabaseRow]) {
+    public func stub(_ rows: [SQLRow]) {
         stubs.append(rows)
-    }
-}
-
-public struct StubDatabaseRow: SQLRow {
-    public let data: [String: SQLValueConvertible]
-    public let columns: Set<String>
-    
-    public init(data: [String: SQLValueConvertible] = [:]) {
-        self.data = data
-        self.columns = Set(data.keys)
-    }
-    
-    public func get(_ column: String) throws -> SQLValue {
-        try data[column].unwrap(or: StubDatabaseError("Stubbed database row had no column `\(column)`.")).value
     }
 }
 

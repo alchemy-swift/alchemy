@@ -4,6 +4,6 @@ import XCTest
 final class SQLTests: XCTestCase {
     func testValueConvertible() {
         let sql: SQL = "NOW()"
-        XCTAssertEqual(sql.value, .string("NOW()"))
+        XCTAssertEqual(sql.sqlValue, .string("NOW()"))
     }
 }

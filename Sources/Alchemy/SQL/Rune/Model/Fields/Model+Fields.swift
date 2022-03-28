@@ -6,7 +6,7 @@ extension Model {
     ///   creating any of the fields of this instance.
     /// - Returns: An ordered dictionary mapping column names to
     ///   parameters for use in a QueryBuilder `Query`.
-    public func fields() throws -> [String: SQLValue] {
+    public func fields() throws -> [SQLField] {
         try ModelFieldReader(Self.keyMapping).getFields(of: self)
     }
 }

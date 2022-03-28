@@ -3,24 +3,15 @@ import Pluralize
 
 public protocol Model: ModelBase, Codable {}
 
-// For custom logic around attributes (ENUM, JSON, relationship, encrypted, filename, etc)
-// then thin out decoder / encoder to check for this type and that's it? Then
-// conform all types. Make it easy to add new types.
-protocol ModelProperty {
-    init(field: SQLField) throws
-    func toSQLField(at key: String) throws -> SQLField
-}
-
 extension Model {
     // Auto filled in for codable models, in extension
-    init(row: SQLRow) throws {
+    public init(row: SQLRow) throws {
         self = try row.decode(Self.self)
     }
     
     // Auto filled in for codable models, in extension
-    func toSQLRow() throws -> SQLRow {
-        fatalError()
-        // Row shouldn't be a protocol?
+    public func toSQLRow() throws -> SQLRow {
+        try SQLRow(fields: fields())
     }
 }
 
@@ -75,6 +66,10 @@ public protocol ModelBase: Identifiable, ModelMaybeOptional {
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
     
+    init(row: SQLRow) throws // Auto filled in for codable models, in extension
+    
+    func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
+    
     /// Defines any custom behavior when loading relationships.
     ///
     /// - Parameter mapper: An object with which to customize
@@ -82,7 +77,7 @@ public protocol ModelBase: Identifiable, ModelMaybeOptional {
     static func mapRelations(_ mapper: RelationshipMapper<Self>)
 }
 
-extension Model {
+extension ModelBase {
     public static var tableName: String {
         let typeName = String(describing: Self.self)
         let mapped = keyMapping.map(input: typeName)

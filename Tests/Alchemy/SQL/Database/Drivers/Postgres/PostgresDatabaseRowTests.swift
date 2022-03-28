@@ -3,11 +3,11 @@
 import AlchemyTest
 
 final class PostgresDatabaseRowTests: TestCase<TestApp> {
-    func testGet() {
-        let row = PostgresDatabaseRow(.fooOneBar2)
-        XCTAssertEqual(try row.get("foo"), .string("one"))
-        XCTAssertEqual(try row.get("bar"), .int(2))
-        XCTAssertThrowsError(try row.get("baz"))
+    func testGet() throws {
+        let row = try SQLRow(postgres: .fooOneBar2)
+        XCTAssertEqual(row["foo"], .string("one"))
+        XCTAssertEqual(row["bar"], .int(2))
+        XCTAssertFalse(row.contains("baz"))
     }
     
     func testNull() {

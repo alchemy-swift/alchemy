@@ -34,11 +34,10 @@ final class ModelFieldReader<M: Model>: SQLEncoder {
     /// - Throws: A `DatabaseCodingError` if there is an error reading
     ///   fields from `value`.
     /// - Returns: An ordered dictionary of the model's columns and values.
-    func getFields(of model: M) throws -> [String: SQLValue] {
+    func getFields(of model: M) throws -> [SQLField] {
         try model.encode(to: self)
-        let toReturn = Dictionary(uniqueKeysWithValues: readFields)
-        readFields = []
-        return toReturn
+        defer { readFields = [] }
+        return readFields.map { SQLField(column: $0.column, value: $0.value) }
     }
 
     func container<Key>(keyedBy: Key.Type) -> KeyedEncodingContainer<Key> {
@@ -86,7 +85,7 @@ private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingC
             return
         }
         
-        encoder.readFields.append((column: keyString, value: convertible.value))
+        encoder.readFields.append((column: keyString, value: convertible.sqlValue))
     }
     
     mutating func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> where NestedKey: CodingKey {

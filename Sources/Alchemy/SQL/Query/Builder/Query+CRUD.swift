@@ -55,11 +55,15 @@ extension Query {
     /// - Parameter column: What column to count. Defaults to `*`.
     /// - Returns: The count returned by the database.
     public func count(column: String = "*") async throws -> Int {
-        let row = try await select(["COUNT(\(column))"]).firstRow()
-            .unwrap(or: DatabaseError("a COUNT query didn't return any rows"))
-        let column = try row.columns.first
-            .unwrap(or: DatabaseError("a COUNT query didn't return any columns"))
-        return try row.get(column).value.int()
+        guard let row = try await select(["COUNT(\(column))"]).firstRow() else {
+            throw DatabaseError("a COUNT query didn't return any rows")
+        }
+        
+        guard let field = row.fields.first else {
+            throw DatabaseError("a COUNT query didn't return any columns")
+        }
+        
+        return try field.value.int()
     }
 
     /// Perform an insert and create a database row from the provided

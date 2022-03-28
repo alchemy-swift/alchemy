@@ -1,7 +1,7 @@
 import Foundation
 
 public protocol SQLValueConvertible: SQLConvertible {
-    var value: SQLValue { get }
+    var sqlValue: SQLValue { get }
 }
 
 extension SQLValueConvertible {
@@ -12,7 +12,7 @@ extension SQLValueConvertible {
     /// A string appropriate for representing this value in a non-parameterized
     /// query.
     public var sqlLiteral: String {
-        switch self.value {
+        switch self.sqlValue {
         case .int(let value):
             return "\(value)"
         case .double(let value):
@@ -36,79 +36,79 @@ extension SQLValueConvertible {
 }
 
 extension SQLValue: SQLValueConvertible {
-    public var value: SQLValue { self }
+    public var sqlValue: SQLValue { self }
 }
 
 extension String: SQLValueConvertible {
-    public var value: SQLValue { .string(self) }
+    public var sqlValue: SQLValue { .string(self) }
 }
 
 extension Int: SQLValueConvertible {
-    public var value: SQLValue { .int(self) }
+    public var sqlValue: SQLValue { .int(self) }
 }
 
 extension Int8: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension Int16: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension Int32: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension Int64: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension UInt: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension UInt8: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension UInt16: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension UInt32: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension UInt64: SQLValueConvertible {
-    public var value: SQLValue { .int(Int(self)) }
+    public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
 extension Bool: SQLValueConvertible {
-    public var value: SQLValue { .bool(self) }
+    public var sqlValue: SQLValue { .bool(self) }
 }
 
 extension Double: SQLValueConvertible {
-    public var value: SQLValue { .double(self) }
+    public var sqlValue: SQLValue { .double(self) }
 }
 
 extension Float: SQLValueConvertible {
-    public var value: SQLValue { .double(Double(self)) }
+    public var sqlValue: SQLValue { .double(Double(self)) }
 }
 
 extension Date: SQLValueConvertible {
-    public var value: SQLValue { .date(self) }
+    public var sqlValue: SQLValue { .date(self) }
 }
 
 extension UUID: SQLValueConvertible {
-    public var value: SQLValue { .uuid(self) }
+    public var sqlValue: SQLValue { .uuid(self) }
 }
 
 extension Optional: SQLConvertible where Wrapped: SQLValueConvertible {}
 
 extension Optional: SQLValueConvertible where Wrapped: SQLValueConvertible {
-    public var value: SQLValue { self?.value ?? .null }
+    public var sqlValue: SQLValue { self?.sqlValue ?? .null }
 }
 
 extension RawRepresentable where RawValue: SQLValueConvertible {
-    public var value: SQLValue { rawValue.value }
+    public var sqlValue: SQLValue { rawValue.sqlValue }
 }

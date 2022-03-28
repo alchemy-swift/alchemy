@@ -115,7 +115,7 @@ open class Grammar {
         var placeholders: [String] = []
 
         for value in values {
-            let orderedValues = columns.compactMap { value[$0]?.value }
+            let orderedValues = columns.compactMap { value[$0]?.sqlValue }
             parameters.append(contentsOf: orderedValues)
             placeholders.append("(\(parameterize(orderedValues)))")
         }
@@ -135,7 +135,7 @@ open class Grammar {
             if let expression = val as? SQL {
                 return SQL("\(key) = \(expression.statement)")
             } else {
-                return SQL("\(key) = ?", bindings: [val.value.value])
+                return SQL("\(key) = ?", bindings: [val.sqlValue.sqlValue])
             }
         }
         

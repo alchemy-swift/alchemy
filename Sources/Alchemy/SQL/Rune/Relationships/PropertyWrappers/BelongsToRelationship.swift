@@ -29,7 +29,7 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
         }
     }
     
-    var idValue: SQLValue? { id.value }
+    var idValue: SQLValue? { id.sqlValue }
     
     /// The underlying relationship object, if there is one. Populated
     /// by eager loading.
@@ -91,6 +91,16 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
         }
         
         id = try sqlValue.map { try Parent.Value.Identifier.init(value: $0) }
+    }
+}
+
+extension BelongsToRelationship: ModelProperty {
+    init(field: SQLField) throws {
+        // need to get proper key here!
+    }
+    
+    func toSQLField(at key: String) throws -> SQLField {
+        SQLField(column: key + "_id", value: idValue ?? .null)
     }
 }
 

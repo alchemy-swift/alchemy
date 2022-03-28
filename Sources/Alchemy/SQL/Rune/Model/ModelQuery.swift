@@ -151,12 +151,12 @@ public class ModelQuery<M: Model>: Query {
             
             // Key the results by the join key value
             let toResultsKeyedByJoinKey = try Dictionary(grouping: toResults) { _, row in
-                try row.get(toJoinKeyAlias).value
+                try row.require(toJoinKeyAlias)
             }
             
             // For each `from` populate it's relationship
             return try fromResults.map { model, row in
-                let pk = try row.get(config.fromKey).value
+                let pk = try row.require(config.fromKey)
                 let models = toResultsKeyedByJoinKey[pk]?.map(\.0) ?? []
                 try model[keyPath: relationshipKeyPath].set(values: models)
                 return (model, row)
@@ -193,7 +193,7 @@ private extension RelationshipMapping {
             query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
         }
         
-        let ids = try values.map { try $0.get(fromKey).value }
+        let ids = try values.map { try $0.require(fromKey).sqlValue }
         query = query.where(key: "\(whereKey)", in: ids.uniques)
         return query
     }
@@ -212,5 +212,11 @@ private extension Array where Element: Hashable {
             }
         }
         return buffer
+    }
+}
+
+extension SQLRow {
+    fileprivate func require(_ column: String) throws -> SQLValue {
+        try self[column].unwrap(or: DatabaseError.missingColumn(column))
     }
 }

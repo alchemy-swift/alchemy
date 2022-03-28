@@ -31,7 +31,7 @@ final class ModelFieldsTests: XCTestCase {
         )
         
         let jsonData = try EverythingModel.jsonEncoder.encode(json)
-        let expectedFields: [String: SQLValueConvertible] = [
+        let expectedFields: [SQLField] = [
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
@@ -57,7 +57,7 @@ final class ModelFieldsTests: XCTestCase {
         ]
         
         XCTAssertEqual("everything_models", EverythingModel.tableName)
-        XCTAssertEqual(expectedFields.mapValues(\.value), try model.fields())
+        XCTAssertEqual(expectedFields, try model.fields())
     }
     
     func testKeyMapping() throws {
@@ -70,7 +70,7 @@ final class ModelFieldsTests: XCTestCase {
             "valueTwo",
             "valueThreeInt",
             "snake_case"
-        ].sorted(), fields.map { $0.key }.sorted())
+        ].sorted(), fields.map { $0.column }.sorted())
     }
     
     func testCustomJSONEncoder() throws {
@@ -80,7 +80,7 @@ final class ModelFieldsTests: XCTestCase {
         
         XCTAssertEqual("custom_decoder_models", CustomDecoderModel.tableName)
         XCTAssertEqual(try model.fields(), [
-            "json": .json(jsonData)
+            "json": SQLValue.json(jsonData)
         ])
     }
 }
@@ -110,4 +110,10 @@ private struct CustomDecoderModel: Model {
     
     var id: Int?
     var json: DatabaseJSON
+}
+
+extension Array: ExpressibleByDictionaryLiteral where Element == SQLField {
+    public init(dictionaryLiteral elements: (String, SQLValueConvertible)...) {
+        self = elements.map { SQLField(column: $0, value: $1.sqlValue) }
+    }
 }
