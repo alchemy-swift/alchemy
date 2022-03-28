@@ -134,8 +134,8 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
     }
     
     func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T : Decodable {
-        if type is AnyModelEnum.Type {
-            return (type as! AnyModelEnum.Type).defaultCase as! T
+        if let type = type as? AnyModelEnum.Type {
+            return type.dummyValue as! T
         } else if type is AnyArray.Type {
             return [] as! T
         } else if type is AnyBelongsTo.Type {
@@ -165,6 +165,11 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
         throw RuneError("`DummyDecoder` doesn't support super decoding yet.")
     }
 }
+
+private protocol AnyBelongsTo {
+    init(from: SQLValue?) throws
+}
+extension BelongsToRelationship: AnyBelongsTo {}
 
 private protocol AnyArray {}
 extension Array: AnyArray {}

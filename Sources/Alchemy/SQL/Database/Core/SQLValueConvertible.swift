@@ -43,45 +43,20 @@ extension String: SQLValueConvertible {
     public var sqlValue: SQLValue { .string(self) }
 }
 
-extension Int: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(self) }
-}
-
-extension Int8: SQLValueConvertible {
+extension FixedWidthInteger {
     public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
-extension Int16: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension Int32: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension Int64: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension UInt: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension UInt8: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension UInt16: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension UInt32: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
-
-extension UInt64: SQLValueConvertible {
-    public var sqlValue: SQLValue { .int(Int(self)) }
-}
+extension Int: SQLValueConvertible {}
+extension Int8: SQLValueConvertible {}
+extension Int16: SQLValueConvertible {}
+extension Int32: SQLValueConvertible {}
+extension Int64: SQLValueConvertible {}
+extension UInt: SQLValueConvertible {}
+extension UInt8: SQLValueConvertible {}
+extension UInt16: SQLValueConvertible {}
+extension UInt32: SQLValueConvertible {}
+extension UInt64: SQLValueConvertible {}
 
 extension Bool: SQLValueConvertible {
     public var sqlValue: SQLValue { .bool(self) }

@@ -32,27 +32,13 @@ struct SQLRowDecoder: SQLDecoder {
         func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
             let column = string(for: key)
             guard let thing = type as? ModelProperty.Type else {
-                if type is AnyBelongsTo.Type {
-                    // need relationship mapping
-                    let belongsToColumn = string(for: key, includeIdSuffix: true)
-                    let value = row.contains(belongsToColumn) ? try row.require(belongsToColumn) : nil
-                    return try (type as! AnyBelongsTo.Type).init(from: value) as! T
-                } else if type is AnyHas.Type {
-                    return try T(from: decoder)
-                } else if type is AnyModelEnum.Type {
-                    let field = try row.require(column)
-                    return try (type as! AnyModelEnum.Type).init(from: field) as! T
-                } else {
-                    print("NOT MODEL PROP! \(type)")
-                    let field = try row.require(column)
-                    return try jsonDecoder.decode(T.self, from: field.json(column))
-                }
+                // Store every other type as JSON.
+                let field = try row.require(column)
+                return try jsonDecoder.decode(T.self, from: field.json(column))
             }
             
-            print("MODEL PROP!")
-            let value = try row.require(column)
-            let field = SQLField(column: column, value: value)
-            return try thing.init(field: field) as! T
+            let view = SQLRowView(row: row, keyMapping: keyMapping)
+            return try thing.init(key: key.stringValue, on: view) as! T
         }
         
         func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
@@ -71,20 +57,8 @@ struct SQLRowDecoder: SQLDecoder {
             throw DatabaseCodingError("Super decoding isn't supported.")
         }
         
-        /// Returns the database column string for a `CodingKey` given
-        /// this container's `keyMapping`.
-        ///
-        /// Keys to parent relationships are special cased to append
-        /// `M.belongsToColumnSuffix` to the field name.
-        ///
-        /// - Parameter key: The `CodingKey` to map.
-        /// - Parameter includeIdSuffix: Whether `M.belongsToColumnSuffix`
-        ///   should be appended to `key.stringValue` _before_ being
-        ///   mapped.
-        /// - Returns: The column name that `key` is mapped to.
-        private func string(for key: Key, includeIdSuffix: Bool = false) -> String {
-            let value = key.stringValue + (includeIdSuffix ? "Id" : "")
-            return keyMapping.map(input: value)
+        private func string(for key: Key) -> String {
+            keyMapping.map(input: key.stringValue)
         }
     }
     
@@ -108,21 +82,5 @@ struct SQLRowDecoder: SQLDecoder {
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
         throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
-    }
-}
-
-extension SQLRow {
-    /// Get the `SQLValue` of a column from this row.
-    ///
-    /// - Parameter column: The column to get the value for.
-    /// - Throws: A `DatabaseError` if the column does not exist on
-    ///   this row.
-    /// - Returns: The value at `column`.
-    fileprivate func require(_ column: String) throws -> SQLValue {
-        guard let value = self[column] else {
-            throw DatabaseError.missingColumn(column)
-        }
-        
-        return value
     }
 }

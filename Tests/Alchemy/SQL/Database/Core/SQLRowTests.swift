@@ -35,6 +35,7 @@ final class SQLRowTests: XCTestCase {
             "uint16": 0,
             "uint32": 0,
             "uint64": 0,
+            "string_optional": "bar",
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
@@ -86,6 +87,8 @@ struct EverythingModel: Model, Equatable {
     var uint16: UInt16 = 0
     var uint32: UInt32 = 0
     var uint64: UInt64 = 0
+    var intOptional: Int? = nil
+    var stringOptional: String? = "bar"
     var nested: Nested = Nested(string: "foo", int: 1)
     var date: Date = Date()
     var uuid: UUID = UUID()

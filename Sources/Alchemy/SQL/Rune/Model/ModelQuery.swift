@@ -216,7 +216,7 @@ private extension Array where Element: Hashable {
 }
 
 extension SQLRow {
-    fileprivate func require(_ column: String) throws -> SQLValue {
+    func require(_ column: String) throws -> SQLValue {
         try self[column].unwrap(or: DatabaseError.missingColumn(column))
     }
 }

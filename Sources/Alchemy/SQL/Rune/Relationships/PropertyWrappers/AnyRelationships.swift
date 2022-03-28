@@ -1,15 +1,3 @@
-/// A type erased `HasRelationship`. Used for special casing decoding
-/// behavior for `HasMany` or `HasOne`s.
-protocol AnyHas {}
-
-/// A type erased `BelongsToRelationship`. Used for special casing
-/// decoding behavior for `BelongsTo`s.
-protocol AnyBelongsTo {
-    var idValue: SQLValue? { get }
-    
-    init(from sqlValue: SQLValue?) throws
-}
-
 /*
  Eager Loading
  1. Some model properties may store something in an SQL row that's a hook for

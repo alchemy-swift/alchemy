@@ -66,26 +66,18 @@ private struct _KeyedEncodingContainer<M: Model, Key: CodingKey>: KeyedEncodingC
     }
 
     mutating func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
-        guard !(value is AnyBelongsTo) else {
-            let keyString = encoder.mappingStrategy.map(input: key.stringValue + "Id")
-            if let idValue = (value as? AnyBelongsTo)?.idValue {
-                encoder.readFields.append((keyString, idValue))
-            }
-            
-            return
-        }
-        
-        guard !(value is AnyHas) else { return }
-        
-        let keyString = encoder.mappingStrategy.map(input: key.stringValue)
-        guard let convertible = value as? SQLValueConvertible else {
+        guard let property = value as? ModelProperty else {
             // Assume anything else is JSON.
+            let keyString = encoder.mappingStrategy.map(input: key.stringValue)
             let jsonData = try M.jsonEncoder.encode(value)
             encoder.readFields.append((column: keyString, value: .json(jsonData)))
             return
         }
         
-        encoder.readFields.append((column: keyString, value: convertible.sqlValue))
+        if let field = try property.toSQLField(at: key.stringValue) {
+            let keyString = encoder.mappingStrategy.map(input: field.column)
+            encoder.readFields.append((column: keyString, value: field.value))
+        }
     }
     
     mutating func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> where NestedKey: CodingKey {

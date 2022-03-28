@@ -18,7 +18,7 @@ import NIO
 /// }
 /// ```
 @propertyWrapper
-public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: AnyBelongsTo, Relationship {
+public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: Relationship {
     public typealias From = Child
     public typealias To = Parent
     
@@ -95,12 +95,18 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
 }
 
 extension BelongsToRelationship: ModelProperty {
-    init(field: SQLField) throws {
-        // need to get proper key here!
+    public convenience init(key: String, on row: SQLRowView) throws {
+        let column = key + "Id"
+        guard row.contains(column) else {
+            try self.init(from: nil)
+            return
+        }
+        
+        try self.init(from: row.require(column))
     }
     
-    func toSQLField(at key: String) throws -> SQLField {
-        SQLField(column: key + "_id", value: idValue ?? .null)
+    public func toSQLField(at key: String) throws -> SQLField? {
+        SQLField(column: key + "Id", value: idValue ?? .null)
     }
 }
 

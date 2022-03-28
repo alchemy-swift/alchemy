@@ -49,11 +49,12 @@ final class ModelFieldsTests: XCTestCase {
             "uint16": 8,
             "uint32": 9,
             "uint64": 10,
+            "string_optional": "bar",
             "nested": SQLValue.json(jsonData),
             "date": SQLValue.date(date),
             "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1,
-            "belongs_to_optional_id": SQLValue.null,
+            "belongs_to_optional_id": SQLValue.null
         ]
         
         XCTAssertEqual("everything_models", EverythingModel.tableName)
