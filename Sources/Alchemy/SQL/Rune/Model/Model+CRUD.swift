@@ -325,26 +325,43 @@ extension Model {
     }
 }
 
+struct ModelDidFetch<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelWillCreate<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelDidCreate<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelWillUpdate<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelDidUpdate<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelWillDelete<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelDidDelete<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelWillSave<M: Model>: Event {
+    let models: [M]
+}
+
+struct ModelDidSave<M: Model>: Event {
+    let models: [M]
+}
+
 protocol EventDelegate {
-    // Read
-    func didFetch()
-    
-    // Create
-    func willCreate()
-    func didCreate()
-    
-    // Update
-    func willUpdate()
-    func didUpdate()
-    
-    // Delete
-    func willDelete()
-    func didDelete()
-    
-    // Saving
-    func willSave()
-    func didSave()
-    
     // Soft Delete
     func didHardDelete()
     func didSoftDelete()
