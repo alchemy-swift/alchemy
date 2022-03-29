@@ -1,5 +1,3 @@
-// MARK: Eager Loading
-
 extension ModelQuery {
     /// A closure for defining any nested eager loading when loading a
     /// relationship on this `Model`.

@@ -1,29 +1,7 @@
-// For custom logic around attributes (ENUM, JSON, relationship, encrypted, filename, etc)
-// then thin out decoder / encoder to check for this type and that's it? Then
-// conform all types. Make it easy to add new types.
+// For custom logic around loading and saving properties on a Model.
 public protocol ModelProperty {
     init(key: String, on row: SQLRowReader) throws
     func store(key: String, on row: inout SQLRowWriter) throws
-}
-
-public protocol SQLRowReader {
-    var row: SQLRow { get }
-    func require(_ key: String) throws -> SQLValue
-    func requireJSON<D: Decodable>(_ key: String) throws -> D
-    func contains(_ column: String) -> Bool
-    subscript(_ index: Int) -> SQLValue { get }
-    subscript(_ column: String) -> SQLValue? { get }
-}
-
-public protocol SQLRowWriter {
-    subscript(_ column: String) -> SQLValue? { get set }
-    mutating func put<E: Encodable>(json: E, at key: String) throws
-}
-
-extension SQLRowWriter {
-    mutating func put(_ value: SQLValue, at key: String) {
-        self[key] = value
-    }
 }
 
 extension String: ModelProperty {
