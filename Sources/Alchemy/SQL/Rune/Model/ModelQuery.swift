@@ -20,6 +20,11 @@ protocol EagerLoadableProperty: ModelProperty {
     static func load(values: [PartialLoad<Self>]) async throws -> [Self]
 }
 
+struct PartialLoad<T: EagerLoadableProperty> {
+    let row: SQLRow
+    let initialValue: T
+}
+
 /// A `ModelQuery` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
