@@ -80,6 +80,7 @@ extension Query {
     /// - Parameter values: An array of dictionaries containing the values to be
     ///   inserted.
     public func insert(_ values: [[String: SQLValueConvertible]]) async throws {
+        guard !values.isEmpty else { return }
         let sql = database.grammar.compileInsert(table, values: values)
         _ = try await database.query(sql.statement, values: sql.bindings)
         return
@@ -95,6 +96,7 @@ extension Query {
     ///   inserted.
     /// - Returns: The inserted rows.
     public func insertReturn(_ values: [[String: SQLValueConvertible]]) async throws -> [SQLRow] {
+        guard !values.isEmpty else { return [] }
         let statements = database.grammar.compileInsertReturn(table, values: values)
         return try await database.transaction { conn in
             var toReturn: [SQLRow] = []
@@ -123,6 +125,7 @@ extension Query {
     /// - Parameter values: An dictionary containing the values to be
     ///   updated.
     public func update(values: [String: SQLValueConvertible]) async throws {
+        guard !values.isEmpty else { return }
         let sql = try database.grammar.compileUpdate(table, joins: joins, wheres: wheres, values: values)
         _ = try await database.query(sql.statement, values: sql.bindings)
     }

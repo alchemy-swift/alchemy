@@ -4,6 +4,6 @@ public protocol Timestamps {
 }
 
 extension Timestamps {
-    public static var createdAtKey: String { "created_at" }
-    public static var updatedAtKey: String { "updated_at" }
+    public static var createdAtKey: String { "createdAt" }
+    public static var updatedAtKey: String { "updatedAt" }
 }

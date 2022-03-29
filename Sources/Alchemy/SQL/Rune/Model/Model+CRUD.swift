@@ -325,7 +325,7 @@ extension Array where Element: Model {
         }
         
         var input = input
-        input[timestamps.updatedAtKey] = SQLValue.now
+        input[Element.keyMapping.map(input: timestamps.updatedAtKey)] = SQLValue.now
         return input
     }
     
@@ -333,11 +333,11 @@ extension Array where Element: Model {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return try map { try $0.toSQLRow().fieldDictionary }
         }
-        
+
         return try map {
             var dict = try $0.toSQLRow().fieldDictionary
-            dict[timestamps.createdAtKey] = SQLValue.now
-            dict[timestamps.updatedAtKey] = SQLValue.now
+            dict[Element.keyMapping.map(input: timestamps.createdAtKey)] = SQLValue.now
+            dict[Element.keyMapping.map(input: timestamps.updatedAtKey)] = SQLValue.now
             return dict
         }
     }
