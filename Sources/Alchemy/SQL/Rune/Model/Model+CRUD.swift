@@ -145,7 +145,7 @@ extension Model {
     ///   database.
     @discardableResult
     public func update(db: Database = DB) async throws -> Self {
-        let fields = try fieldDictionary()
+        let fields = try toSQLRow().fieldDictionary
         try await [self].updateAll(db: db, values: fields)
         return try await sync(db: db)
     }
@@ -278,8 +278,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertAll(db: Database = DB) async throws {
         try await Element.willCreate(self)
-        try await Element.query(database: db)
-            .insert(try self.map { try $0.fieldDictionary().mapValues { $0 } })
+        try await Element.query(database: db).insert(try insertableFields())
         try await Element.didCreate(self)
     }
     
@@ -292,7 +291,7 @@ extension Array where Element: Model {
     public func insertReturnAll(db: Database = DB) async throws -> Self {
         try await Element.willCreate(self)
         let results = try await Element.query(database: db)
-            .insertReturn(try self.map { try $0.fieldDictionary().mapValues { $0 } })
+            .insertReturn(try insertableFields())
             .map { try $0.decode(Element.self) }
         try await Element.didCreate(results)
         return results
@@ -302,7 +301,7 @@ extension Array where Element: Model {
         try await Element.willUpdate(self)
         try await Element.query(database: db)
             .where(key: "id", in: map(\.id))
-            .update(values: values)
+            .update(values: touchUpdatedAt(values))
         try await Element.didUpdate(self)
     }
     
@@ -319,21 +318,38 @@ extension Array where Element: Model {
             .delete()
         try await Element.didDelete(self)
     }
-}
-
-extension Model {
-    /// Returns an ordered dictionary of column names to `Parameter`
-    /// values, appropriate for working with the QueryBuilder.
-    ///
-    /// - Throws: A `DatabaseCodingError` if there is an error
-    ///   creating any of the fields of this instance.
-    /// - Returns: An ordered dictionary mapping column names to
-    ///   parameters for use in a QueryBuilder `Query`.
-    fileprivate func fieldDictionary() throws -> [String: SQLValueConvertible] {
-        let fields = try toSQLRow().fields
-        return Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
+    
+    private func touchUpdatedAt(_ input: [String: SQLValueConvertible]) -> [String: SQLValueConvertible] {
+        guard let timestamps = Element.self as? Timestamps.Type else {
+            return input
+        }
+        
+        var input = input
+        input[timestamps.updatedAtKey] = SQLValue.now
+        return input
+    }
+    
+    private func insertableFields() throws -> [[String: SQLValueConvertible]] {
+        guard let timestamps = Element.self as? Timestamps.Type else {
+            return try map { try $0.toSQLRow().fieldDictionary }
+        }
+        
+        return try map {
+            var dict = try $0.toSQLRow().fieldDictionary
+            dict[timestamps.createdAtKey] = SQLValue.now
+            dict[timestamps.updatedAtKey] = SQLValue.now
+            return dict
+        }
     }
 }
+
+extension SQLRow {
+    fileprivate var fieldDictionary: [String: SQLValue] {
+        Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
+    }
+}
+
+// MARK: Model Events
 
 extension Model {
     fileprivate static func willCreate(_ models: [Self]) async throws {

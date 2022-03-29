@@ -22,6 +22,6 @@ public func Q(_ id: Queue.Identifier) -> Queue { .id(id) }
 public var Redis: RedisClient { .id(.default) }
 public func Redis(_ id: RedisClient.Identifier) -> RedisClient { .id(id) }
 
-/// Internal accessor for firing events; applications should listen to events
-/// via Application.schedule(events: EventBus)
-var Events: EventBus { .id(.default) }
+/// Accessor for firing events; applications should listen to events via
+/// `Application.schedule(events: EventBus)`.
+public var Events: EventBus { .id(.default) }
