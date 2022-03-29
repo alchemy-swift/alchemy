@@ -16,9 +16,3 @@ protocol Relationship2: EagerLoadableProperty {
     func remove() // removes the given ones
     func update() // updates to the given ones? might be tricky
 }
-
-protocol Timestamps {
-    // Might not need to require these? Can just update SQLRow.
-    var createdAt: Date? { get set }
-    var updatedAt: Date? { get set }
-}

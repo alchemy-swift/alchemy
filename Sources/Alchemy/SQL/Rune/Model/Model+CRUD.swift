@@ -1,4 +1,5 @@
 import NIO
+import NIOConcurrencyHelpers
 
 /// Useful extensions for various CRUD operations of a `Model`.
 extension Model {
@@ -120,7 +121,7 @@ extension Model {
     /// - Parameter db: The database to insert this model to. Defaults
     ///   to `Database.default`.
     public func insert(db: Database = DB) async throws {
-        try await Self.query(database: db).insert(fieldDictionary())
+        try await [self].insertAll(db: db)
     }
     
     /// Inserts this model to a database. Return the newly created model.
@@ -131,11 +132,7 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database. (an `id` being populated, for example).
     public func insertReturn(db: Database = DB) async throws -> Self {
-        try await Self.query(database: db)
-            .insertReturn(try fieldDictionary())
-            .first
-            .unwrap(or: RuneError.notFound)
-            .decode(Self.self)
+        try await [self].insertReturnAll(db: db).first.unwrap(or: RuneError.notFound)
     }
     
     // MARK: - Update
@@ -326,4 +323,31 @@ extension Model {
         let fields = try toSQLRow().fields
         return Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
     }
+}
+
+protocol EventDelegate {
+    // Read
+    func didFetch()
+    
+    // Create
+    func willCreate()
+    func didCreate()
+    
+    // Update
+    func willUpdate()
+    func didUpdate()
+    
+    // Delete
+    func willDelete()
+    func didDelete()
+    
+    // Saving
+    func willSave()
+    func didSave()
+    
+    // Soft Delete
+    func didHardDelete()
+    func didSoftDelete()
+    func willRestore()
+    func didRestore()
 }
