@@ -1,5 +1,4 @@
 import NIO
-import NIOConcurrencyHelpers
 
 /// Useful extensions for various CRUD operations of a `Model`.
 extension Model {
@@ -195,6 +194,15 @@ extension Model {
     
     // MARK: - Delete
     
+    /// Deletes this model from a database. This will fail if the
+    /// model has a nil `id` field.
+    ///
+    /// - Parameter db: The database to remove this model from.
+    ///   Defaults to `Database.default`.
+    public func delete(db: Database = DB) async throws {
+        try await [self].deleteAll(db: db)
+    }
+    
     /// Delete all models that match the given where clause.
     ///
     /// - Parameters:
@@ -226,15 +234,6 @@ extension Model {
         var query = Self.query(database: db)
         if let clause = `where` { query = query.where(clause) }
         try await query.delete()
-    }
-    
-    /// Deletes this model from a database. This will fail if the
-    /// model has a nil `id` field.
-    ///
-    /// - Parameter db: The database to remove this model from.
-    ///   Defaults to `Database.default`.
-    public func delete(db: Database = DB) async throws {
-        try await Self.query(database: db).where("id" == id).delete()
     }
     
     // MARK: - Sync
@@ -282,8 +281,10 @@ extension Array where Element: Model {
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
     public func insertAll(db: Database = DB) async throws {
+        try await Element.willCreate(self)
         try await Element.query(database: db)
             .insert(try self.map { try $0.fieldDictionary().mapValues { $0 } })
+        try await Element.didCreate(self)
     }
     
     /// Inserts and returns each element in this array to a database.
@@ -293,9 +294,12 @@ extension Array where Element: Model {
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
     public func insertReturnAll(db: Database = DB) async throws -> Self {
-        try await Element.query(database: db)
+        try await Element.willCreate(self)
+        let results = try await Element.query(database: db)
             .insertReturn(try self.map { try $0.fieldDictionary().mapValues { $0 } })
             .map { try $0.decode(Element.self) }
+        try await Element.didCreate(results)
+        return results
     }
 
     /// Deletes all objects in this array from a database. If an
@@ -305,9 +309,11 @@ extension Array where Element: Model {
     /// - Parameter db: The database to delete from. Defaults to
     ///   `Database.default`.
     public func deleteAll(db: Database = DB) async throws {
+        try await Element.willDelete(self)
         _ = try await Element.query(database: db)
             .where(key: "id", in: self.compactMap { $0.id })
             .delete()
+        try await Element.didDelete(self)
     }
 }
 
@@ -325,58 +331,40 @@ extension Model {
     }
 }
 
-public struct ModelDidFetch<M: Model>: Event {
-    public let models: [M]
-}
-
 extension Model {
-    fileprivate func didFetch(_ models: [Self]) async throws {
-        try await ModelDidFetch(models: models).fire()
+    fileprivate static func willCreate(_ models: [Self]) async throws {
+        try await ModelWillCreate(models: models).fire()
+        try await willSave(models)
     }
-}
-
-extension EventBus {
-    public func onDidFetch<M: Model>(_ type: M.Type, action: @escaping (ModelDidFetch<M>) async throws -> Void) {
-        on(ModelDidFetch<M>.self, action: action)
+    
+    fileprivate static func didCreate(_ models: [Self]) async throws {
+        try await ModelDidCreate(models: models).fire()
+        try await didSave(models)
     }
-}
-
-struct ModelWillCreate<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelDidCreate<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelWillUpdate<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelDidUpdate<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelWillDelete<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelDidDelete<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelWillSave<M: Model>: Event {
-    let models: [M]
-}
-
-struct ModelDidSave<M: Model>: Event {
-    let models: [M]
-}
-
-protocol EventDelegate {
-    // Soft Delete
-    func didHardDelete()
-    func didSoftDelete()
-    func willRestore()
-    func didRestore()
+    
+    fileprivate static func willUpdate(_ models: [Self]) async throws {
+        try await ModelWillUpdate(models: models).fire()
+        try await willSave(models)
+    }
+    
+    fileprivate static func didUpdate(_ models: [Self]) async throws {
+        try await ModelDidUpdate(models: models).fire()
+        try await didSave(models)
+    }
+    
+    fileprivate static func willDelete(_ models: [Self]) async throws {
+        try await ModelWillDelete(models: models).fire()
+    }
+    
+    fileprivate static func didDelete(_ models: [Self]) async throws {
+        try await ModelDidDelete(models: models).fire()
+    }
+    
+    private static func willSave(_ models: [Self]) async throws {
+        try await ModelWillSave(models: models).fire()
+    }
+    
+    private static func didSave(_ models: [Self]) async throws {
+        try await ModelDidSave(models: models).fire()
+    }
 }

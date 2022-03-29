@@ -57,6 +57,7 @@ public class ModelQuery<M: Model>: Query {
     func fetch(columns: [String]? = ["\(M.tableName).*"]) async throws -> [ModelRow] {
         let initialResults = try await getRows(columns).map { (try $0.decode(M.self), $0) }
         let withEagerLoads = try await evaluateEagerLoads(for: initialResults)
+        try await M.didFetch(withEagerLoads.map(\.model))
         return withEagerLoads
     }
     
@@ -74,5 +75,11 @@ public class ModelQuery<M: Model>: Query {
         }
         
         return results
+    }
+}
+
+extension Model {
+    fileprivate static func didFetch(_ models: [Self]) async throws {
+        try await ModelDidFetch(models: models).fire()
     }
 }
