@@ -55,13 +55,13 @@ extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: The first model, if one exists.
     public static func first(db: Database = DB) async throws -> Self? {
-        try await Self.query().first()
+        try await Self.query(database: db).first()
     }
     
     /// Returns a random model of this type, if one exists.
-    public static func random() async throws -> Self? {
+    public static func random(db: Database = DB) async throws -> Self? {
         // Note; MySQL should be `RAND()`
-        try await Self.query().random()
+        try await Self.query(database: db).random()
     }
     
     /// Gets the first element that meets the given where value.
@@ -145,32 +145,28 @@ extension Model {
     ///   database.
     @discardableResult
     public func update(db: Database = DB) async throws -> Self {
-        let id = try getID()
         let fields = try fieldDictionary()
-        try await Self.query(database: db).where("id" == id).update(values: fields)
-        return self
+        try await [self].updateAll(db: db, values: fields)
+        return try await sync(db: db)
     }
     
     @discardableResult
     public func update(db: Database = DB, updateClosure: (inout Self) -> Void) async throws -> Self {
-        let id = try self.getID()
         var copy = self
         updateClosure(&copy)
-        let fields = try copy.fieldDictionary()
-        try await Self.query(database: db).where("id" == id).update(values: fields)
-        return copy
-    }
-    
-    @discardableResult
-    public static func update(db: Database = DB, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
-        try await Self.find(id)?.update(with: dict)
+        return try await copy.update(db: db)
     }
     
     @discardableResult
     public func update(db: Database = DB, with dict: [String: Any]) async throws -> Self {
-        let updateValues = dict.compactMapValues { $0 as? SQLValueConvertible }
-        try await Self.query().where("id" == id).update(values: updateValues)
-        return try await sync()
+        let values = dict.compactMapValues { $0 as? SQLValueConvertible }
+        try await [self].updateAll(db: db, values: values)
+        return try await sync(db: db)
+    }
+    
+    @discardableResult
+    public static func update(db: Database = DB, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
+        try await Self.find(id, db: db)?.update(db: db, with: dict)
     }
     
     // MARK: - Save
@@ -210,7 +206,7 @@ extension Model {
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
     public static func delete(_ where: Query.Where, db: Database = DB) async throws {
-        try await query().where(`where`).delete()
+        try await query(database: db).where(`where`).delete()
     }
     
     /// Delete the first model with the given id.
@@ -220,7 +216,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
     public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
-        try await query().where("id" == id).delete()
+        try await query(database: db).where("id" == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -301,7 +297,15 @@ extension Array where Element: Model {
         try await Element.didCreate(results)
         return results
     }
-
+    
+    public func updateAll(db: Database = DB, values: [String: SQLValueConvertible]) async throws {
+        try await Element.willUpdate(self)
+        try await Element.query(database: db)
+            .where(key: "id", in: map(\.id))
+            .update(values: values)
+        try await Element.didUpdate(self)
+    }
+    
     /// Deletes all objects in this array from a database. If an
     /// object in this array isn't actually in the database, it
     /// will be ignored.
