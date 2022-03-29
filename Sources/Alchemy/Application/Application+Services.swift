@@ -34,6 +34,7 @@ extension Application {
             Loop.config()
         }
         
+        Container.bind(.singleton, value: EventBus())
         Container.bind(.singleton, value: Router())
         Container.bind(.singleton, value: Scheduler())
         Container.bind(.singleton) { container -> NIOThreadPool in

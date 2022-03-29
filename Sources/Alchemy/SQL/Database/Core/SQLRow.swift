@@ -27,6 +27,10 @@ public struct SQLRow {
         guard let index = lookupTable[column] else { return nil }
         return fields[index].value
     }
+    
+    public func require(_ column: String) throws -> SQLValue {
+        try self[column].unwrap(or: DatabaseError.missingColumn(column))
+    }
 }
 
 extension SQLRow: ExpressibleByDictionaryLiteral {

@@ -62,7 +62,7 @@ extension Database {
             try await runStatements(statements: statements)
         }
         
-        return try await AlchemyMigration.query(database: self).get()
+        return try await AlchemyMigration.query(database: self).all()
     }
     
     /// Run the `.down` functions of an array of migrations, in order.

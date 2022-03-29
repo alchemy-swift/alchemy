@@ -1,21 +1,26 @@
 import NIOConcurrencyHelpers
 
-final class EventBus {
-    enum Handler<E: Event>: AnyHandler {
-        typealias Closure = (E) async throws -> Void
+public final class EventBus: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
+    public enum Handler<E: Event>: AnyHandler {
+        public typealias Closure = (E) async throws -> Void
         case closure(Closure)
     }
     
     private var registeredHandlers: [String: [AnyHandler]] = [:]
     private var lock = Lock()
     
-    func observe<E: Event>(_ event: E.Type, action: @escaping Handler<E>.Closure) {
+    public func on<E: Event>(_ event: E.Type, action: @escaping Handler<E>.Closure) {
         let _handlers = lock.withLock { registeredHandlers[E.registrationKey] ?? [] }
         guard let existingHandlers = _handlers as? [Handler<E>] else { return }
         registeredHandlers[E.registrationKey] = existingHandlers + [.closure(action)]
     }
     
-    func observe<L: Listener>(listener: L.Type) {
+    public func on<L: Listener>(listener: L.Type) {
         let _handlers = lock.withLock { registeredHandlers[L.ObservedEvent.registrationKey] ?? [] }
         guard let existingHandlers = _handlers as? [Handler<L.ObservedEvent>] else { return }
         registeredHandlers[L.ObservedEvent.registrationKey] = existingHandlers + [.closure {
@@ -23,7 +28,7 @@ final class EventBus {
         }]
     }
     
-    func dispatch<E: Event>(event: E) async throws {
+    public func fire<E: Event>(_ event: E) async throws {
         let _handlers = lock.withLock { registeredHandlers[E.registrationKey] ?? [] }
         guard let handlers = _handlers as? [Handler<E>] else {
             return

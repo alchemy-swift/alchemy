@@ -12,7 +12,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
     public static func all(db: Database = DB) async throws -> [Self] {
-        try await Self.query(database: db).get()
+        try await Self.query(database: db).all()
     }
     
     /// Fetch the first model with the given id.
@@ -85,7 +85,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: All the models matching the `where` clause.
     public static func allWhere(_ where: Query.Where, db: Database = DB) async throws -> [Self] {
-        try await Self.where(`where`, db: db).get()
+        try await Self.where(`where`, db: db).all()
     }
     
     /// Gets the first element that meets the given where value.
@@ -325,8 +325,20 @@ extension Model {
     }
 }
 
-struct ModelDidFetch<M: Model>: Event {
-    let models: [M]
+public struct ModelDidFetch<M: Model>: Event {
+    public let models: [M]
+}
+
+extension Model {
+    fileprivate func didFetch(_ models: [Self]) async throws {
+        try await ModelDidFetch(models: models).fire()
+    }
+}
+
+extension EventBus {
+    public func onDidFetch<M: Model>(_ type: M.Type, action: @escaping (ModelDidFetch<M>) async throws -> Void) {
+        on(ModelDidFetch<M>.self, action: action)
+    }
 }
 
 struct ModelWillCreate<M: Model>: Event {
