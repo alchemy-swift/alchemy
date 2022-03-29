@@ -319,7 +319,7 @@ extension Array where Element: Model {
         try await Element.didDelete(self)
     }
     
-    public func syncAll(db: Database = DB, eagerLoadsQuery: ModelQueryConfig = { $0 }) async throws -> Self {
+    public func syncAll(db: Database = DB, eagerLoadsQuery: (ModelQuery<Element>) -> ModelQuery<Element> = { $0 }) async throws -> Self {
         guard !isEmpty else { return self }
         guard allSatisfy({ $0.id != nil }) else { throw RuneError.syncErrorNoId }
         let initialQuery = Element.query(database: db).where(key: "id", in: map(\.id))

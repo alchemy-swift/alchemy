@@ -13,6 +13,10 @@ public protocol Relationship {
     /// property on.
     associatedtype To: RelationshipAllowed
     
+    associatedtype Wrapped
+    
+    var wrappedValue: Wrapped { get }
+    
     func set(values: [To]) throws
     
     static func defaultConfig() -> RelationshipMapping<From, To.Value>
