@@ -12,19 +12,6 @@ public extension Model {
     }
 }
 
-// Appendable to a `ModelQuery`; async throw runs on results before returning.
-protocol EagerLoadableProperty: ModelProperty {
-    // Downside;
-    // 1. Must be in order
-    // 2. Must be same length
-    static func load(values: [PartialLoad<Self>]) async throws -> [Self]
-}
-
-struct PartialLoad<T: EagerLoadableProperty> {
-    let row: SQLRow
-    let initialValue: T
-}
-
 /// A `ModelQuery` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
@@ -42,14 +29,6 @@ public class ModelQuery<M: Model>: Query {
     
     /// The closures of any eager loads to run. To be run after the
     /// initial models of type `Self` are fetched.
-    ///
-    /// -  Warning: Right now these only run when the query is
-    ///    finished with `allModels` or `firstModel`. If the user
-    ///    finishes a query with a `get()` we don't know if/when the
-    ///    decode will happen and how to handle it. A potential ways
-    ///    of doing this could be to call eager loading @ the
-    ///    `.decode` level of a `SQLRow`, but that's too
-    ///    complicated for now).
     private var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []
     
     /// Gets all models matching this query from the database.
