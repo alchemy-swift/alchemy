@@ -16,8 +16,6 @@ public extension Model {
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
 public class ModelQuery<M: Model>: Query {
-    typealias ModelRow = (model: M, row: SQLRow)
-    
     /// The closures of any eager loads to run. To be run after the
     /// initial models of type `Self` are fetched.
     var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []

@@ -10,6 +10,9 @@ extension ModelQuery {
     /// _other_ model.
     public typealias NestedEagerLoads<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
     
+    /// A tuple of models and the SQLRow that they were loaded from.
+    typealias ModelRow = (model: M, row: SQLRow)
+    
     /// Eager loads (loads a related `Model`) a `Relationship` on this
     /// model.
     ///
@@ -75,11 +78,11 @@ extension ModelQuery {
             }()
             
             // Load the matching `To` rows
-            let allRows = fromResults.map(\.1)
+            let allRows = fromResults.map(\.row)
             let query = try nested(config.load(allRows, database: Database(provider: self.database)))
             let toResults = try await query
                 .fetch(columns: ["\(R.To.Value.tableName).*", toJoinKey])
-                .map { (try R.To.from($0), $1) }
+                .map { (model: try R.To.from($0), row: $1) }
             
             // Key the results by the join key value
             let toResultsKeyedByJoinKey = try Dictionary(grouping: toResults) { _, row in
@@ -89,7 +92,7 @@ extension ModelQuery {
             // For each `from` populate it's relationship
             return try fromResults.map { model, row in
                 let pk = try row.require(config.fromKey)
-                let models = toResultsKeyedByJoinKey[pk]?.map(\.0) ?? []
+                let models = toResultsKeyedByJoinKey[pk]?.map(\.model) ?? []
                 try model[keyPath: relationshipKeyPath].set(values: models)
                 return (model, row)
             }
@@ -99,8 +102,8 @@ extension ModelQuery {
     }
 }
 
-private extension RelationshipMapping {
-    func load<M: Model>(_ values: [SQLRow], database: Database) throws -> ModelQuery<M> {
+extension RelationshipMapping {
+    fileprivate func load<M: Model>(_ values: [SQLRow], database: Database) throws -> ModelQuery<M> {
         var query = M.query(database: database)
         query.table = toTable
         var whereKey = "\(toTable).\(toKey)"
@@ -115,10 +118,10 @@ private extension RelationshipMapping {
     }
 }
 
-private extension Array where Element: Hashable {
+extension Array where Element: Hashable {
     /// Removes any duplicates from the array while maintaining the
     /// original order.
-    var uniques: Array {
+    fileprivate var uniques: Array {
         var buffer = Array()
         var added = Set<Element>()
         for elem in self {
@@ -128,5 +131,49 @@ private extension Array where Element: Hashable {
             }
         }
         return buffer
+    }
+}
+
+
+// MARK: - SCRATCH
+
+extension Model {
+    func with<R: Relationship>(db: Database = DB, _ relationship: KeyPath<Self, R>) async throws -> Self where R.From == Self {
+        try await sync(db: db) { $0.with(relationship) }
+    }
+    
+    func fetch<To>(db: Database = DB, _ relationship: KeyPath<Self, HasMany<To>>) async throws -> [To] {
+        try await sync(db: db) { $0.with(relationship) }[keyPath: relationship].wrappedValue
+    }
+    
+    func fetch<To>(db: Database = DB, _ relationship: KeyPath<Self, BelongsTo<To>>) async throws -> To {
+        try await sync(db: db) { $0.with(relationship) }[keyPath: relationship].wrappedValue
+    }
+    
+    func fetch<To>(db: Database = DB, _ relationship: KeyPath<Self, HasOne<To>>) async throws -> To {
+        try await sync(db: db) { $0.with(relationship) }[keyPath: relationship].wrappedValue
+    }
+}
+
+extension Array where Element: Model {
+    public typealias ModelQueryConfig = (ModelQuery<Element>) -> ModelQuery<Element>
+    
+    func with<R: Relationship>(db: Database = DB, _ relationship: KeyPath<Element, R>) async throws -> Self where R.From == Element {
+        try await syncAll(db: db) { $0.with(relationship) }
+    }
+    
+    func fetchAll<To: RelationshipAllowed>(db: Database = DB, _ relationship: KeyPath<Element, Element.HasMany<To>>) async throws -> [To] {
+        try await syncAll(db: db) { $0.with(relationship) }
+            .flatMap { $0[keyPath: relationship].wrappedValue }
+    }
+    
+    func fetchAll<To: RelationshipAllowed>(db: Database = DB, _ relationship: KeyPath<Element, Element.BelongsTo<To>>) async throws -> [To] {
+        try await syncAll(db: db) { $0.with(relationship) }
+            .map { $0[keyPath: relationship].wrappedValue }
+    }
+    
+    func fetchAll<To: RelationshipAllowed>(db: Database = DB, _ relationship: KeyPath<Element, Element.HasOne<To>>) async throws -> [To] {
+        try await syncAll(db: db) { $0.with(relationship) }
+            .map { $0[keyPath: relationship].wrappedValue }
     }
 }

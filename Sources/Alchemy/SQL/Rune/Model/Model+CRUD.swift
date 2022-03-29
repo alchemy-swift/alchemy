@@ -319,6 +319,13 @@ extension Array where Element: Model {
         try await Element.didDelete(self)
     }
     
+    public func syncAll(db: Database = DB, eagerLoadsQuery: ModelQueryConfig = { $0 }) async throws -> Self {
+        guard !isEmpty else { return self }
+        guard allSatisfy({ $0.id != nil }) else { throw RuneError.syncErrorNoId }
+        let initialQuery = Element.query(database: db).where(key: "id", in: map(\.id))
+        return try await eagerLoadsQuery(initialQuery).all()
+    }
+    
     private func touchUpdatedAt(_ input: [String: SQLValueConvertible]) -> [String: SQLValueConvertible] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return input
