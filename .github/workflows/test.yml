@@ -9,10 +9,9 @@ on:
 
 jobs:
   test-macos:
-    if: ${{ false }}  # disable until macOS 12 (with concurrency) runners are available.
     runs-on: macos-12
     env:
-      DEVELOPER_DIR: /Applications/Xcode_13.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_13.3.app/Contents/Developer
     steps:
     - uses: actions/checkout@v2
     - name: Build
