@@ -350,12 +350,6 @@ extension Array where Element: Model {
     }
 }
 
-extension SQLRow {
-    fileprivate var fieldDictionary: [String: SQLValue] {
-        Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
-    }
-}
-
 // MARK: Model Events
 
 extension Model {

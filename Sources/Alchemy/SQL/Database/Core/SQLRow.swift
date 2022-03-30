@@ -10,6 +10,10 @@ public struct SQLRow {
     public let fields: [SQLField]
     public let lookupTable: [String: Int]
     
+    public var fieldDictionary: [String: SQLValue] {
+        Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
+    }
+    
     init(fields: [SQLField]) {
         self.fields = fields
         self.lookupTable = Dictionary(fields.enumerated().map { ($1.column, $0) }, uniquingKeysWith: { current, _ in current })
