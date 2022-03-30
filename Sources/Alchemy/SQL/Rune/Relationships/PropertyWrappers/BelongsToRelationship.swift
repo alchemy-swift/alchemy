@@ -18,7 +18,7 @@ import NIO
 /// }
 /// ```
 @propertyWrapper
-public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptional>: AnyBelongsTo, Relationship, Codable {
+public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllowed>: Relationship {
     public typealias From = Child
     public typealias To = Parent
     
@@ -29,7 +29,7 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
         }
     }
     
-    var idValue: SQLValue? { id.value }
+    var idValue: SQLValue? { id.sqlValue }
     
     /// The underlying relationship object, if there is one. Populated
     /// by eager loading.
@@ -84,27 +84,6 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
     
     // MARK: Codable
     
-    public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder) {
-            try value.encode(to: encoder)
-        } else {
-            // When encoding to the database, just encode the Parent's ID.
-            var container = encoder.singleValueContainer()
-            try container.encode(id)
-        }
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if container.decodeNil() {
-            id = nil
-        } else {
-            let parent = try Parent(from: decoder)
-            id = parent.id
-            value = parent
-        }
-    }
-    
     init(from sqlValue: SQLValue?) throws {
         guard sqlValue != .null else {
             id = nil
@@ -112,6 +91,28 @@ public final class BelongsToRelationship<Child: Model, Parent: ModelMaybeOptiona
         }
         
         id = try sqlValue.map { try Parent.Value.Identifier.init(value: $0) }
+    }
+}
+
+extension BelongsToRelationship: ModelProperty {
+    public convenience init(key: String, on row: SQLRowReader) throws {
+        let column = key + "Id"
+        guard row.contains(column) else {
+            try self.init(from: nil)
+            return
+        }
+        
+        try self.init(from: row.require(column))
+    }
+    
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        row.put(idValue ?? .null, at: key + "Id")
+    }
+}
+
+extension BelongsToRelationship: Codable where Parent: Codable {
+    public func encode(to encoder: Encoder) throws {
+        try value.encode(to: encoder)
     }
 }
 

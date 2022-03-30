@@ -11,7 +11,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
     public static func all(db: Database = DB) async throws -> [Self] {
-        try await Self.query(database: db).get()
+        try await Self.query(database: db).all()
     }
     
     /// Fetch the first model with the given id.
@@ -55,13 +55,13 @@ extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: The first model, if one exists.
     public static func first(db: Database = DB) async throws -> Self? {
-        try await Self.query().first()
+        try await Self.query(database: db).first()
     }
     
     /// Returns a random model of this type, if one exists.
-    public static func random() async throws -> Self? {
+    public static func random(db: Database = DB) async throws -> Self? {
         // Note; MySQL should be `RAND()`
-        try await Self.query().select().orderBy("RANDOM()").limit(1).first()
+        try await Self.query(database: db).random()
     }
     
     /// Gets the first element that meets the given where value.
@@ -84,7 +84,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: All the models matching the `where` clause.
     public static func allWhere(_ where: Query.Where, db: Database = DB) async throws -> [Self] {
-        try await Self.where(`where`, db: db).get()
+        try await Self.where(`where`, db: db).all()
     }
     
     /// Gets the first element that meets the given where value.
@@ -120,7 +120,7 @@ extension Model {
     /// - Parameter db: The database to insert this model to. Defaults
     ///   to `Database.default`.
     public func insert(db: Database = DB) async throws {
-        try await Self.query(database: db).insert(fields())
+        try await [self].insertAll(db: db)
     }
     
     /// Inserts this model to a database. Return the newly created model.
@@ -131,11 +131,7 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database. (an `id` being populated, for example).
     public func insertReturn(db: Database = DB) async throws -> Self {
-        try await Self.query(database: db)
-            .insertReturn(try fields())
-            .first
-            .unwrap(or: RuneError.notFound)
-            .decode(Self.self)
+        try await [self].insertReturnAll(db: db).first.unwrap(or: RuneError.notFound)
     }
     
     // MARK: - Update
@@ -149,32 +145,28 @@ extension Model {
     ///   database.
     @discardableResult
     public func update(db: Database = DB) async throws -> Self {
-        let id = try getID()
-        let fields = try fields()
-        try await Self.query(database: db).where("id" == id).update(values: fields)
-        return self
+        let fields = try toSQLRow().fieldDictionary
+        try await [self].updateAll(db: db, values: fields)
+        return try await sync(db: db)
     }
     
     @discardableResult
     public func update(db: Database = DB, updateClosure: (inout Self) -> Void) async throws -> Self {
-        let id = try self.getID()
         var copy = self
         updateClosure(&copy)
-        let fields = try copy.fields()
-        try await Self.query(database: db).where("id" == id).update(values: fields)
-        return copy
-    }
-    
-    @discardableResult
-    public static func update(db: Database = DB, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
-        try await Self.find(id)?.update(with: dict)
+        return try await copy.update(db: db)
     }
     
     @discardableResult
     public func update(db: Database = DB, with dict: [String: Any]) async throws -> Self {
-        let updateValues = dict.compactMapValues { $0 as? SQLValueConvertible }
-        try await Self.query().where("id" == id).update(values: updateValues)
-        return try await sync()
+        let values = dict.compactMapValues { $0 as? SQLValueConvertible }
+        try await [self].updateAll(db: db, values: values)
+        return try await sync(db: db)
+    }
+    
+    @discardableResult
+    public static func update(db: Database = DB, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
+        try await Self.find(id, db: db)?.update(db: db, with: dict)
     }
     
     // MARK: - Save
@@ -198,6 +190,15 @@ extension Model {
     
     // MARK: - Delete
     
+    /// Deletes this model from a database. This will fail if the
+    /// model has a nil `id` field.
+    ///
+    /// - Parameter db: The database to remove this model from.
+    ///   Defaults to `Database.default`.
+    public func delete(db: Database = DB) async throws {
+        try await [self].deleteAll(db: db)
+    }
+    
     /// Delete all models that match the given where clause.
     ///
     /// - Parameters:
@@ -205,7 +206,7 @@ extension Model {
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
     public static func delete(_ where: Query.Where, db: Database = DB) async throws {
-        try await query().where(`where`).delete()
+        try await query(database: db).where(`where`).delete()
     }
     
     /// Delete the first model with the given id.
@@ -215,7 +216,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
     public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
-        try await query().where("id" == id).delete()
+        try await query(database: db).where("id" == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -229,15 +230,6 @@ extension Model {
         var query = Self.query(database: db)
         if let clause = `where` { query = query.where(clause) }
         try await query.delete()
-    }
-    
-    /// Deletes this model from a database. This will fail if the
-    /// model has a nil `id` field.
-    ///
-    /// - Parameter db: The database to remove this model from.
-    ///   Defaults to `Database.default`.
-    public func delete(db: Database = DB) async throws {
-        try await Self.query(database: db).where("id" == id).delete()
     }
     
     // MARK: - Sync
@@ -285,8 +277,9 @@ extension Array where Element: Model {
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
     public func insertAll(db: Database = DB) async throws {
-        try await Element.query(database: db)
-            .insert(try self.map { try $0.fields().mapValues { $0 } })
+        try await Element.willCreate(self)
+        try await Element.query(database: db).insert(try insertableFields())
+        try await Element.didCreate(self)
     }
     
     /// Inserts and returns each element in this array to a database.
@@ -296,11 +289,22 @@ extension Array where Element: Model {
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
     public func insertReturnAll(db: Database = DB) async throws -> Self {
-        try await Element.query(database: db)
-            .insertReturn(try self.map { try $0.fields().mapValues { $0 } })
+        try await Element.willCreate(self)
+        let results = try await Element.query(database: db)
+            .insertReturn(try insertableFields())
             .map { try $0.decode(Element.self) }
+        try await Element.didCreate(results)
+        return results
     }
-
+    
+    public func updateAll(db: Database = DB, values: [String: SQLValueConvertible]) async throws {
+        try await Element.willUpdate(self)
+        try await Element.query(database: db)
+            .where(key: "id", in: map(\.id))
+            .update(values: touchUpdatedAt(values))
+        try await Element.didUpdate(self)
+    }
+    
     /// Deletes all objects in this array from a database. If an
     /// object in this array isn't actually in the database, it
     /// will be ignored.
@@ -308,8 +312,80 @@ extension Array where Element: Model {
     /// - Parameter db: The database to delete from. Defaults to
     ///   `Database.default`.
     public func deleteAll(db: Database = DB) async throws {
+        try await Element.willDelete(self)
         _ = try await Element.query(database: db)
             .where(key: "id", in: self.compactMap { $0.id })
             .delete()
+        try await Element.didDelete(self)
+    }
+    
+    public func syncAll(db: Database = DB, eagerLoadsQuery: (ModelQuery<Element>) -> ModelQuery<Element> = { $0 }) async throws -> Self {
+        guard !isEmpty else { return self }
+        guard allSatisfy({ $0.id != nil }) else { throw RuneError.syncErrorNoId }
+        let initialQuery = Element.query(database: db).where(key: "id", in: map(\.id))
+        return try await eagerLoadsQuery(initialQuery).all()
+    }
+    
+    private func touchUpdatedAt(_ input: [String: SQLValueConvertible]) -> [String: SQLValueConvertible] {
+        guard let timestamps = Element.self as? Timestamps.Type else {
+            return input
+        }
+        
+        var input = input
+        input[Element.keyMapping.map(input: timestamps.updatedAtKey)] = SQLValue.now
+        return input
+    }
+    
+    private func insertableFields() throws -> [[String: SQLValueConvertible]] {
+        guard let timestamps = Element.self as? Timestamps.Type else {
+            return try map { try $0.toSQLRow().fieldDictionary }
+        }
+
+        return try map {
+            var dict = try $0.toSQLRow().fieldDictionary
+            dict[Element.keyMapping.map(input: timestamps.createdAtKey)] = SQLValue.now
+            dict[Element.keyMapping.map(input: timestamps.updatedAtKey)] = SQLValue.now
+            return dict
+        }
+    }
+}
+
+// MARK: Model Events
+
+extension Model {
+    fileprivate static func willCreate(_ models: [Self]) async throws {
+        try await ModelWillCreate(models: models).fire()
+        try await willSave(models)
+    }
+    
+    fileprivate static func didCreate(_ models: [Self]) async throws {
+        try await ModelDidCreate(models: models).fire()
+        try await didSave(models)
+    }
+    
+    fileprivate static func willUpdate(_ models: [Self]) async throws {
+        try await ModelWillUpdate(models: models).fire()
+        try await willSave(models)
+    }
+    
+    fileprivate static func didUpdate(_ models: [Self]) async throws {
+        try await ModelDidUpdate(models: models).fire()
+        try await didSave(models)
+    }
+    
+    fileprivate static func willDelete(_ models: [Self]) async throws {
+        try await ModelWillDelete(models: models).fire()
+    }
+    
+    fileprivate static func didDelete(_ models: [Self]) async throws {
+        try await ModelDidDelete(models: models).fire()
+    }
+    
+    private static func willSave(_ models: [Self]) async throws {
+        try await ModelWillSave(models: models).fire()
+    }
+    
+    private static func didSave(_ models: [Self]) async throws {
+        try await ModelDidSave(models: models).fire()
     }
 }

@@ -1,21 +1,5 @@
 import PostgresNIO
 
-struct PostgresDatabaseRow: SQLRow {
-    let columns: Set<String>
-    private let row: PostgresRow
-    
-    init(_ row: PostgresRow) {
-        self.row = row
-        self.columns = Set(self.row.rowDescription.fields.map(\.name))
-    }
-    
-    func get(_ column: String) throws -> SQLValue {
-        try row.column(column)
-            .unwrap(or: DatabaseError("No column named `\(column)` was found \(columns)."))
-            .toSQLValue(column)
-    }
-}
-
 extension PostgresData {
     /// Initialize from an Alchemy `SQLValue`.
     ///

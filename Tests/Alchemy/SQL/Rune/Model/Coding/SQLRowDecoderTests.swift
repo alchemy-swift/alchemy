@@ -4,7 +4,7 @@ import AlchemyTest
 
 final class SQLRowDecoderTests: XCTestCase {
     func testDecodeThrowing() throws {
-        let row = StubDatabaseRow()
+        let row: SQLRow = [:]
         let decoder = SQLRowDecoder(row: row, keyMapping: .useDefaultKeys, jsonDecoder: JSONDecoder())
         XCTAssertThrowsError(try decoder.singleValueContainer())
         XCTAssertThrowsError(try decoder.unkeyedContainer())

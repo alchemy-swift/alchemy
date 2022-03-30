@@ -20,7 +20,7 @@ extension SQL: SQLConvertible {
 }
 
 extension SQL: SQLValueConvertible {
-    public var value: SQLValue {
+    public var sqlValue: SQLValue {
         .string(statement)
     }
 }

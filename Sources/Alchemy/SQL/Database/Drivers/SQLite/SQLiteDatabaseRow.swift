@@ -1,18 +1,12 @@
 import SQLiteNIO
 
-struct SQLiteDatabaseRow: SQLRow {
-    let columns: Set<String>
-    private let row: SQLiteRow
-    
-    init(_ row: SQLiteRow) {
-        self.row = row
-        self.columns = Set(row.columns.map(\.name))
-    }
-    
-    func get(_ column: String) throws -> SQLValue {
-        try row.column(column)
-            .unwrap(or: DatabaseError("No column named `\(column)` was found \(columns)."))
-            .toSQLValue()
+extension SQLRow {
+    init(sqlite: SQLiteRow) throws {
+        self.init(
+            fields: try sqlite.columns.map {
+                SQLField(
+                    column: $0.name,
+                    value: try $0.data.toSQLValue()) })
     }
 }
 

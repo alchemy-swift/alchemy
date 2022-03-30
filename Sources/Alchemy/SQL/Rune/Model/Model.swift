@@ -1,17 +1,12 @@
 import Foundation
 import Pluralize
 
+public protocol Model: ModelBase, Codable {}
+
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & much more.
-///
-/// - Warning: To keep things elegant for the end user, a lot of
-///   Rune's under-the-hood querying and saving rely on the compiler
-///   synthesized `Codable` functions of a `Model`,
-///   `init(from: Decoder)` or `func encode(to: Encoder)`. Override
-///   those at your own risk! You might be able to get away with it,
-///   but it could also break things in unexpected ways.
-public protocol Model: Identifiable, ModelMaybeOptional {
+public protocol ModelBase: Identifiable, RelationshipAllowed {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
     
@@ -52,6 +47,10 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
     
+    init(row: SQLRow) throws // Auto filled in for codable models, in extension
+    
+    func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
+    
     /// Defines any custom behavior when loading relationships.
     ///
     /// - Parameter mapper: An object with which to customize
@@ -59,7 +58,19 @@ public protocol Model: Identifiable, ModelMaybeOptional {
     static func mapRelations(_ mapper: RelationshipMapper<Self>)
 }
 
-extension Model {
+extension ModelBase where Self: Codable {
+    // Auto filled in for codable models, in extension
+    public init(row: SQLRow) throws {
+        self = try row.decode(Self.self)
+    }
+    
+    // Auto filled in for codable models, in extension
+    public func toSQLRow() throws -> SQLRow {
+        try SQLRowEncoder(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder).sqlRow(for: self)
+    }
+}
+
+extension ModelBase {
     public static var tableName: String {
         let typeName = String(describing: Self.self)
         let mapped = keyMapping.map(input: typeName)
@@ -85,6 +96,10 @@ extension Model {
     /// - Throws: A `DatabaseError` if the `id` of this object is nil.
     /// - Returns: The unwrapped `id` value of this database object.
     public func getID() throws -> Self.Identifier {
-        try self.id.unwrap(or: DatabaseError("Object of type \(type(of: self)) had a nil id."))
+        guard let id = id else {
+            throw DatabaseError("Object of type \(type(of: self)) had a nil id.")
+        }
+        
+        return id
     }
 }

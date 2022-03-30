@@ -3,7 +3,7 @@ import Alchemy
 import XCTest
 
 final class RelationshipTests: XCTestCase {
-    func testModelMaybeOptional() throws {
+    func testRelationshipAllowed() throws {
         let nilModel: TestModel? = nil
         let doubleOptionalNilModel: TestModel?? = nil
         XCTAssertEqual(nilModel.id, nil)

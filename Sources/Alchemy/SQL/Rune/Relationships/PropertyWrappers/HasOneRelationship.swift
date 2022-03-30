@@ -4,7 +4,7 @@ import NIO
 /// relationship are defined in the initializers inherited from
 /// `HasRelationship`.
 @propertyWrapper
-public final class HasOneRelationship<From: Model, To: ModelMaybeOptional>: AnyHas, Codable, Relationship {
+public final class HasOneRelationship<From: Model, To: RelationshipAllowed>: Relationship {
     /// Internal value for storing the `To` object of this
     /// relationship, when it is loaded.
     fileprivate var value: To?
@@ -41,13 +41,23 @@ public final class HasOneRelationship<From: Model, To: ModelMaybeOptional>: AnyH
     public func set(values: [To]) throws {
         wrappedValue = try To.from(values.first)
     }
+}
+
+extension HasOneRelationship: ModelProperty {
+    public convenience init(key: String, on row: SQLRowReader) throws {
+        self.init()
+    }
     
-    // MARK: Codable
-    
-    public init(from decoder: Decoder) throws {}
+    public func store(key: String, on row: inout SQLRowWriter) throws {}
+}
+
+extension HasOneRelationship: Codable where To: Codable {
+    public convenience init(from decoder: Decoder) throws {
+        self.init()
+    }
     
     public func encode(to encoder: Encoder) throws {
-        if !(encoder is SQLEncoder), let underlyingValue = value {
+        if let underlyingValue = value {
             try underlyingValue.encode(to: encoder)
         }
     }

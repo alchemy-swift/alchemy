@@ -11,7 +11,11 @@ public protocol Relationship {
     /// The `To` model from the perspective of this relationship.
     /// Likely the type that the `Relationship` is _not_ a
     /// property on.
-    associatedtype To: ModelMaybeOptional
+    associatedtype To: RelationshipAllowed
+    
+    associatedtype Wrapped
+    
+    var wrappedValue: Wrapped { get }
     
     func set(values: [To]) throws
     
@@ -24,7 +28,7 @@ public protocol Relationship {
 /// similarly in relationship property wrappers. Sometimes a
 /// relationship may be optional, sometimes it may be
 /// required. Alchemy supports both cases.
-public protocol ModelMaybeOptional: Codable {
+public protocol RelationshipAllowed {
     /// The underlying `Model` type. `Self` if this is a `Model`,
     /// `Wrapped` if this is a `Model?`.
     associatedtype Value: Model
@@ -44,7 +48,7 @@ public protocol ModelMaybeOptional: Codable {
     var id: Value.Identifier? { get }
 }
 
-// MARK: ModelMaybeOptional
+// MARK: RelationshipAllowed
 
 extension Model {
     public static func from(_ value: Self?) throws -> Self {
@@ -52,7 +56,7 @@ extension Model {
     }
 }
 
-extension Optional: ModelMaybeOptional where Wrapped: Model {
+extension Optional: RelationshipAllowed where Wrapped: Model {
     public static func from(_ value: Optional<Wrapped>?) throws -> Optional<Wrapped> {
         value ?? nil
     }

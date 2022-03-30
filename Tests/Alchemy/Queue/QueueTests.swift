@@ -42,10 +42,15 @@ final class QueueTests: TestCase<TestApp> {
     }
     
     func testDatabaseQueue() async throws {
-        for test in allTests {
-            Database.fake(migrations: [Queue.AddJobsMigration()])
-            Queue.bind(.database)
-            try await test(#filePath, #line)
+        do {
+            for test in allTests {
+                Database.fake(migrations: [Queue.AddJobsMigration()])
+                Queue.bind(.database)
+                try await test(#filePath, #line)
+            }
+        } catch {
+            print("ERROR \(error)")
+            throw error
         }
     }
     

@@ -3,11 +3,11 @@
 import AlchemyTest
 
 final class PostgresDatabaseRowTests: TestCase<TestApp> {
-    func testGet() {
-        let row = PostgresDatabaseRow(.fooOneBar2)
-        XCTAssertEqual(try row.get("foo"), .string("one"))
-        XCTAssertEqual(try row.get("bar"), .int(2))
-        XCTAssertThrowsError(try row.get("baz"))
+    func testGet() throws {
+        let row = try SQLRow(postgres: .fooOneBar2)
+        XCTAssertEqual(row["foo"], .string("one"))
+        XCTAssertEqual(row["bar"], .int(2))
+        XCTAssertFalse(row.contains("baz"))
     }
     
     func testNull() {
@@ -58,32 +58,47 @@ final class PostgresDatabaseRowTests: TestCase<TestApp> {
 }
 
 extension PostgresRow {
+    
     static let fooOneBar2 = PostgresRow(
-        dataRow: .init(columns: [
-            .init(value: ByteBuffer(string: "one")),
-            .init(value: ByteBuffer(integer: 2))
-        ]),
-        lookupTable: .init(
-            rowDescription: .init(
-                fields: [
-                    .init(
-                        name: "foo",
-                        tableOID: 0,
-                        columnAttributeNumber: 0,
-                        dataType: .varchar,
-                        dataTypeSize: 3,
-                        dataTypeModifier: 0,
-                        formatCode: .text
-                    ),
-                    .init(
-                        name: "bar",
-                        tableOID: 0,
-                        columnAttributeNumber: 0,
-                        dataType: .int8,
-                        dataTypeSize: 8,
-                        dataTypeModifier: 0,
-                        formatCode: .binary
-                    ),
-                ]),
-            resultFormat: [.binary]))
+        data: .makeTestDataRow(ByteBuffer(string: "one"), ByteBuffer(integer: 2)),
+        lookupTable: ["foo": 0, "bar": 1],
+        columns: [
+            .init(
+                name: "foo",
+                tableOID: 0,
+                columnAttributeNumber: 0,
+                dataType: .varchar,
+                dataTypeSize: 3,
+                dataTypeModifier: 0,
+                format: .text
+            ),
+            .init(
+                name: "bar",
+                tableOID: 0,
+                columnAttributeNumber: 0,
+                dataType: .int8,
+                dataTypeSize: 8,
+                dataTypeModifier: 0,
+                format: .binary
+            ),
+        ]
+    )
 }
+
+extension DataRow {
+    static func makeTestDataRow(_ buffers: ByteBuffer?...) -> DataRow {
+        var bytes = ByteBuffer()
+        buffers.forEach { column in
+            switch column {
+            case .none:
+                bytes.writeInteger(Int32(-1))
+            case .some(var input):
+                bytes.writeInteger(Int32(input.readableBytes))
+                bytes.writeBuffer(&input)
+            }
+        }
+        
+        return DataRow(columnCount: Int16(buffers.count), bytes: bytes)
+    }
+}
+

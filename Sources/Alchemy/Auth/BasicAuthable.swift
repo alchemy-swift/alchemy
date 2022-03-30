@@ -106,7 +106,10 @@ extension BasicAuthable {
             throw error
         }
         
-        let passwordHash = try firstRow.get(passwordKeyString).value.string()
+        guard let passwordHash = try firstRow[passwordKeyString]?.string() else {
+            throw DatabaseError("Missing column \(passwordKeyString) on row of type \(name(of: Self.self))")
+        }
+        
         guard try verify(password: password, passwordHash: passwordHash) else {
             throw error
         }

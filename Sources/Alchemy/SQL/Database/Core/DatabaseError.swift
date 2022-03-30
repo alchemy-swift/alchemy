@@ -10,4 +10,8 @@ public struct DatabaseError: Error {
     init(_ message: String) {
         self.message = message
     }
+    
+    static func missingColumn(_ column: String) -> DatabaseError {
+        DatabaseError("Missing column named `\(column)`.")
+    }
 }

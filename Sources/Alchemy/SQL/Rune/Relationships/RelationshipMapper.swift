@@ -1,5 +1,5 @@
 /// Associates Relationships with their mapping.
-public final class RelationshipMapper<M: Model> {
+public final class RelationshipMapper<M: ModelBase> {
     private var configs: [PartialKeyPath<M>: AnyRelation] = [:]
     
     init() {}
@@ -19,7 +19,15 @@ public final class RelationshipMapper<M: Model> {
     }
 }
 
-protocol AnyRelation {}
+extension Model {
+    static func relationshipMapper() -> RelationshipMapper<Self> {
+        let mapper = RelationshipMapper<Self>()
+        Self.mapRelations(mapper)
+        return mapper
+    }
+}
+
+private protocol AnyRelation {}
 
 /// Defines how a `Relationship` is mapped from it's `From` to `To`.
 public final class RelationshipMapping<From: Model, To: Model>: AnyRelation, Equatable {

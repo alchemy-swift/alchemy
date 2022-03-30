@@ -102,11 +102,11 @@ final class QueryWhereTests: TestCase<TestApp> {
     }
     
     private func _andWhere(key: String = "foo", op: Query.Operator = .equals, value: SQLValueConvertible = 1) -> Query.Where {
-        _andWhere(.value(key: key, op: op, value: value.value))
+        _andWhere(.value(key: key, op: op, value: value.sqlValue))
     }
     
     private func _orWhere(key: String = "foo", op: Query.Operator = .equals, value: SQLValueConvertible = 1) -> Query.Where {
-        _orWhere(.value(key: key, op: op, value: value.value))
+        _orWhere(.value(key: key, op: op, value: value.sqlValue))
     }
     
     private func _andWhere(_ type: Query.WhereType) -> Query.Where {

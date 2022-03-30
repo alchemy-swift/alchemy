@@ -1,11 +1,26 @@
-/// A type erased `HasRelationship`. Used for special casing decoding
-/// behavior for `HasMany` or `HasOne`s.
-protocol AnyHas {}
+// Appendable to a `ModelQuery`; async throw runs on results before returning.
+protocol EagerLoadableProperty: ModelProperty {
+    // Downside;
+    // 1. Must be in order
+    // 2. Must be same length
+    static func load(values: [PartialLoad<Self>]) async throws -> [Self]
+}
 
-/// A type erased `BelongsToRelationship`. Used for special casing
-/// decoding behavior for `BelongsTo`s.
-protocol AnyBelongsTo {
-    var idValue: SQLValue? { get }
+struct PartialLoad<T: EagerLoadableProperty> {
+    let row: SQLRow
+    let initialValue: T
+}
+
+// Relationship crud is a separate beast; all queries on the relationship.
+// user.$todos.append(moreTodos)
+protocol Relationship2: EagerLoadableProperty {
+    associatedtype From: Model
+    associatedtype To: Model
     
-    init(from sqlValue: SQLValue?) throws
+    var mapping: RelationshipMapping<To, From> { get }
+    
+    func get() -> To // load in this case?
+    func add() // adds one or more
+    func remove() // removes the given ones
+    func update() // updates to the given ones? might be tricky
 }

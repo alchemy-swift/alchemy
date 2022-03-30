@@ -70,11 +70,11 @@ private struct MySQLConnectionDatabase: DatabaseProvider {
     let grammar: Grammar
     
     func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await conn.query(sql, values.map(MySQLData.init)).get().map(MySQLDatabaseRow.init)
+        try await conn.query(sql, values.map(MySQLData.init)).get().map(SQLRow.init)
     }
     
     func raw(_ sql: String) async throws -> [SQLRow] {
-        try await conn.simpleQuery(sql).get().map(MySQLDatabaseRow.init)
+        try await conn.simpleQuery(sql).get().map(SQLRow.init)
     }
     
     func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {

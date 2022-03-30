@@ -76,6 +76,40 @@ final class PostgresDatabase: DatabaseProvider {
     }
 }
 
+extension SQLRow {
+    init(postgres: PostgresRow) throws {
+        self.init(
+            fields: try postgres.map { SQLField(
+                column: $0.columnName,
+                value: try $0.toSQLValue()) })
+    }
+}
+
+extension PostgresCell {
+    func toSQLValue() throws -> SQLValue {
+        switch dataType {
+        case .int2, .int4, .int8:
+            return .int(try decode(Int.self, context: .default))
+        case .bool:
+            return .bool(try decode(Bool.self, context: .default))
+        case .varchar, .text:
+            return .string(try decode(String.self, context: .default))
+        case .date, .timestamptz, .timestamp:
+            return .date(try decode(Date.self, context: .default))
+        case .float4, .float8:
+            return .double(try decode(Double.self, context: .default))
+        case .uuid:
+            return .uuid(try decode(UUID.self, context: .default))
+        case .json, .jsonb:
+            return .json(try decode(Data.self, context: .default))
+        case .null:
+            return .null
+        default:
+            throw DatabaseError("Couldn't parse a `\(dataType)` from \(columnName). That PostgreSQL datatype isn't supported, yet.")
+        }
+    }
+}
+
 /// A database provider that is wrapped around a single connection to with which
 /// to send transactions.
 extension PostgresConnection: DatabaseProvider {
@@ -83,11 +117,11 @@ extension PostgresConnection: DatabaseProvider {
     
     public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await query(sql.positionPostgresBindings(), values.map(PostgresData.init))
-            .get().rows.map(PostgresDatabaseRow.init)
+            .get().rows.map(SQLRow.init)
     }
     
     public func raw(_ sql: String) async throws -> [SQLRow] {
-        try await simpleQuery(sql).get().map(PostgresDatabaseRow.init)
+        try await simpleQuery(sql).get().map(SQLRow.init)
     }
     
     public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {

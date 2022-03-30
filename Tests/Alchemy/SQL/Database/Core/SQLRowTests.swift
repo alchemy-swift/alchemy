@@ -9,17 +9,17 @@ final class SQLRowTests: XCTestCase {
             let bar: String
         }
         
-        let row: SQLRow = StubDatabaseRow(data: [
+        let row: SQLRow = [
             "foo": 1,
             "bar": "two"
-        ])
+        ]
         XCTAssertEqual(try row.decode(Test.self), Test(foo: 1, bar: "two"))
     }
     
     func testModel() {
         let date = Date()
         let uuid = UUID()
-        let row: SQLRow = StubDatabaseRow(data: [
+        let row: SQLRow = [
             "id": SQLValue.null,
             "bool": false,
             "string": "foo",
@@ -35,6 +35,7 @@ final class SQLRowTests: XCTestCase {
             "uint16": 0,
             "uint32": 0,
             "uint64": 0,
+            "string_optional": "bar",
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
@@ -44,12 +45,12 @@ final class SQLRowTests: XCTestCase {
             "date": SQLValue.date(date),
             "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1
-        ])
+        ]
         XCTAssertEqual(try row.decode(EverythingModel.self), EverythingModel(date: date, uuid: uuid, belongsTo: .pk(1)))
     }
     
     func testSubscript() {
-        let row: SQLRow = StubDatabaseRow(data: ["foo": 1])
+        let row: SQLRow = ["foo": 1]
         XCTAssertEqual(row["foo"], .int(1))
         XCTAssertEqual(row["bar"], nil)
     }
@@ -86,6 +87,8 @@ struct EverythingModel: Model, Equatable {
     var uint16: UInt16 = 0
     var uint32: UInt32 = 0
     var uint64: UInt64 = 0
+    var intOptional: Int? = nil
+    var stringOptional: String? = "bar"
     var nested: Nested = Nested(string: "foo", int: 1)
     var date: Date = Date()
     var uuid: UUID = UUID()
