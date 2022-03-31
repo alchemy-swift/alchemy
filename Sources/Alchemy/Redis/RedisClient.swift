@@ -4,7 +4,7 @@ import NIOSSL
 import RediStack
 
 /// A client for interfacing with a Redis instance.
-public struct RedisClient: Service {
+public struct RedisClient: Service, RediStack.RedisClient {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
@@ -20,6 +20,67 @@ public struct RedisClient: Service {
     public func shutdown() throws {
         try provider.shutdown()
     }
+    
+    // MARK: RediStack.RedisClient
+    
+    public var eventLoop: EventLoop {
+        Loop.current
+    }
+    
+    public func logging(to logger: Logger) -> RediStack.RedisClient {
+        provider.logging(to: logger)
+    }
+    
+    public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
+        wrapError {
+            try provider.getClient()
+                .send(command: command, with: arguments).hop(to: Loop.current)
+        }
+    }
+    
+    public func subscribe(
+        to channels: [RedisChannelName],
+        messageReceiver receiver: @escaping RedisSubscriptionMessageReceiver,
+        onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
+        onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
+    ) -> EventLoopFuture<Void> {
+        wrapError {
+            try provider.getClient()
+                .subscribe(
+                    to: channels,
+                    messageReceiver: receiver,
+                    onSubscribe: subscribeHandler,
+                    onUnsubscribe: unsubscribeHandler
+                )
+        }
+    }
+
+    public func psubscribe(
+        to patterns: [String],
+        messageReceiver receiver: @escaping RedisSubscriptionMessageReceiver,
+        onSubscribe subscribeHandler: RedisSubscriptionChangeHandler?,
+        onUnsubscribe unsubscribeHandler: RedisSubscriptionChangeHandler?
+    ) -> EventLoopFuture<Void> {
+        wrapError {
+            try provider.getClient()
+                .psubscribe(
+                    to: patterns,
+                    messageReceiver: receiver,
+                    onSubscribe: subscribeHandler,
+                    onUnsubscribe: unsubscribeHandler
+                )
+        }
+    }
+    
+    public func unsubscribe(from channels: [RedisChannelName]) -> EventLoopFuture<Void> {
+        wrapError { try provider.getClient().unsubscribe(from: channels) }
+    }
+    
+    public func punsubscribe(from patterns: [String]) -> EventLoopFuture<Void> {
+        wrapError { try provider.getClient().punsubscribe(from: patterns) }
+    }
+    
+    // MARK: Creating
     
     /// A single redis connection
     public static func connection(
@@ -55,18 +116,7 @@ public struct RedisClient: Service {
     ) -> RedisClient {
         return .configuration(
             RedisConnectionPool.Configuration(
-                initialServerConnectionAddresses: [] /*sockets.map {
-                    do {
-                        switch $0 {
-                        case let .ip(host, port):
-                            return try .makeAddressResolvingHost(host, port: port)
-                        case let .unix(path):
-                            return try .init(unixDomainSocketPath: path)
-                        }
-                    } catch {
-                        fatalError("Error generating socket address from `Socket` \($0) \(error)!")
-                    }
-                }*/,
+                initialServerConnectionAddresses: [],
                 maximumConnectionCount: poolSize,
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
@@ -94,29 +144,13 @@ public struct RedisClient: Service {
     }
 }
 
-/// Under the hood provider for `Redis`. Used so either connection pools
-/// or connections can be injected into `Redis` for accessing redis.
-public protocol RedisProvider {
-    /// Get a redis client for running commands.
-    func getClient() throws -> RediStack.RedisClient
-    
-    /// Shut down.
-    func shutdown() throws
-    
-    /// Runs a transaction on the redis client using a given closure.
-    ///
-    /// - Parameter transaction: An asynchronous transaction to run on
-    ///   the connection.
-    /// - Returns: The resulting value of the transaction.
-    func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T
-}
-
 /// A connection pool is a redis provider with a pool per `EventLoop`.
-private final class ConnectionPool: RedisProvider {
+private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     /// Map of `EventLoop` identifiers to respective connection pools.
     private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
     private var poolLock = Lock()
     private var lazyAddresses: [Socket]?
+    private var logger: Logger?
     
     /// The configuration to create pools with.
     private var config: RedisConnectionPool.Configuration
@@ -125,6 +159,8 @@ private final class ConnectionPool: RedisProvider {
         self.config = config
         self.lazyAddresses = lazyAddresses
     }
+    
+    // MARK: - RedisProvider
 
     func getClient() throws -> RediStack.RedisClient {
         try getPool()
@@ -182,8 +218,57 @@ private final class ConnectionPool: RedisProvider {
                 
                 let newPool = RedisConnectionPool(configuration: config, boundEventLoop: loop)
                 self.poolStorage[key] = newPool
-                return newPool
+                if let logger = logger {
+                    return newPool.logging(to: logger) as? RedisConnectionPool ?? newPool
+                } else {
+                    return newPool
+                }
             }
         }
     }
+    
+    // MARK: RediStack.RedisClient
+    
+    var eventLoop: EventLoop { Loop.current }
+    
+    func logging(to logger: Logger) -> RediStack.RedisClient {
+        self.logger = logger
+        return self
+    }
+    
+    func punsubscribe(from patterns: [String]) -> EventLoopFuture<Void> {
+        wrapError { try getClient().punsubscribe(from: patterns) }
+    }
+    
+    func unsubscribe(from channels: [RedisChannelName]) -> EventLoopFuture<Void> {
+        wrapError { try getClient().unsubscribe(from: channels) }
+    }
+    
+    func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
+        wrapError { try getClient().send(command: command, with: arguments) }
+    }
+    
+    private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        do { return try closure() }
+        catch { return Loop.current.makeFailedFuture(error) }
+    }
+}
+
+extension RedisConnection: RedisProvider {
+    public func getClient() -> RediStack.RedisClient {
+        self
+    }
+    
+    public func shutdown() throws {
+        try close().wait()
+    }
+    
+    public func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
+        try await transaction(self)
+    }
+}
+
+private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    do { return try closure() }
+    catch { return Loop.current.makeFailedFuture(error) }
 }
