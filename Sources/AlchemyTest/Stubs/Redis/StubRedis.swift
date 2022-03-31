@@ -1,10 +1,10 @@
 import NIOCore
 import RediStack
 
-public final class StubRedis: RedisProvider {
+public final class StubRedis: RedisProvider, RediStack.RedisClient {
+    public var eventLoop: EventLoop { Loop.current }
+    private var stubs: [String: RESPValue] = [:]
     private var isShutdown = false
-    
-    var stubs: [String: RESPValue] = [:]
     
     public func stub(_ command: String, response: RESPValue) {
         stubs[command] = response
@@ -23,10 +23,8 @@ public final class StubRedis: RedisProvider {
     public func shutdown() throws {
         isShutdown = true
     }
-}
-
-extension StubRedis: RediStack.RedisClient {
-    public var eventLoop: EventLoop { Loop.current }
+    
+    // MARK: RediStack.RedisClient
     
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
         guard !isShutdown else {
