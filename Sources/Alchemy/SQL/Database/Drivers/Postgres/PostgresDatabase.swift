@@ -89,19 +89,47 @@ extension PostgresCell {
     func toSQLValue() throws -> SQLValue {
         switch dataType {
         case .int2, .int4, .int8:
-            return .int(try decode(Int.self, context: .default))
+            guard let int = try decode(Int?.self, context: .default) else {
+                return .null
+            }
+
+            return .int(int)
         case .bool:
-            return .bool(try decode(Bool.self, context: .default))
+            guard let bool = try decode(Bool?.self, context: .default) else {
+                return .null
+            }
+
+            return .bool(bool)
         case .varchar, .text:
-            return .string(try decode(String.self, context: .default))
+            guard let str = try decode(String?.self, context: .default) else {
+                return .null
+            }
+
+            return .string(str)
         case .date, .timestamptz, .timestamp:
-            return .date(try decode(Date.self, context: .default))
+            guard let date = try decode(Date?.self, context: .default) else {
+                return .null
+            }
+
+            return .date(date)
         case .float4, .float8:
-            return .double(try decode(Double.self, context: .default))
+            guard let double = try decode(Double?.self, context: .default) else {
+                return .null
+            }
+
+            return .double(double)
         case .uuid:
-            return .uuid(try decode(UUID.self, context: .default))
+            guard let uuid = try decode(UUID?.self, context: .default) else {
+                return .null
+            }
+
+            return .uuid(uuid)
         case .json, .jsonb:
-            return .json(try decode(Data.self, context: .default))
+            guard let json = try decode(Data?.self, context: .default) else {
+                return .null
+            }
+
+            return .json(json)
         case .null:
             return .null
         default:
