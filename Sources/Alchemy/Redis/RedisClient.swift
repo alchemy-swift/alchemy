@@ -1,5 +1,6 @@
 import NIO
 import NIOConcurrencyHelpers
+import NIOSSL
 import RediStack
 
 /// A client for interfacing with a Redis instance.
@@ -26,9 +27,10 @@ public struct RedisClient: Service {
         port: Int = 6379,
         password: String? = nil,
         database: Int? = nil,
-        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1),
+        tlsConfiguration: TLSConfiguration? = nil
     ) -> RedisClient {
-        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize)
+        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize, tlsConfiguration: tlsConfiguration)
     }
     
     /// Convenience initializer for creating a redis client with the
@@ -48,11 +50,12 @@ public struct RedisClient: Service {
         _ sockets: Socket...,
         password: String? = nil,
         database: Int? = nil,
-        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1),
+        tlsConfiguration: TLSConfiguration? = nil
     ) -> RedisClient {
         return .configuration(
             RedisConnectionPool.Configuration(
-                initialServerConnectionAddresses: sockets.map {
+                initialServerConnectionAddresses: [] /*sockets.map {
                     do {
                         switch $0 {
                         case let .ip(host, port):
@@ -61,16 +64,18 @@ public struct RedisClient: Service {
                             return try .init(unixDomainSocketPath: path)
                         }
                     } catch {
-                        fatalError("Error generating socket address from `Socket` \(self)!")
+                        fatalError("Error generating socket address from `Socket` \($0) \(error)!")
                     }
-                },
+                }*/,
                 maximumConnectionCount: poolSize,
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
                     connectionPassword: password,
-                    connectionDefaultLogger: Log.logger
+                    connectionDefaultLogger: Log.logger,
+                    tlsConfiguration: tlsConfiguration
                 )
-            )
+            ),
+            addresses: sockets
         )
     }
     
@@ -83,13 +88,17 @@ public struct RedisClient: Service {
     public static func configuration(_ config: RedisConnectionPool.Configuration) -> RedisClient {
         return RedisClient(provider: ConnectionPool(config: config))
     }
+    
+    fileprivate static func configuration(_ config: RedisConnectionPool.Configuration, addresses: [Socket]) -> RedisClient {
+        return RedisClient(provider: ConnectionPool(config: config, lazyAddresses: addresses))
+    }
 }
 
 /// Under the hood provider for `Redis`. Used so either connection pools
 /// or connections can be injected into `Redis` for accessing redis.
 public protocol RedisProvider {
     /// Get a redis client for running commands.
-    func getClient() -> RediStack.RedisClient
+    func getClient() throws -> RediStack.RedisClient
     
     /// Shut down.
     func shutdown() throws
@@ -107,20 +116,22 @@ private final class ConnectionPool: RedisProvider {
     /// Map of `EventLoop` identifiers to respective connection pools.
     private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
     private var poolLock = Lock()
+    private var lazyAddresses: [Socket]?
     
     /// The configuration to create pools with.
     private var config: RedisConnectionPool.Configuration
 
-    init(config: RedisConnectionPool.Configuration) {
+    init(config: RedisConnectionPool.Configuration, lazyAddresses: [Socket]? = nil) {
         self.config = config
+        self.lazyAddresses = lazyAddresses
     }
 
-    func getClient() -> RediStack.RedisClient {
-        getPool()
+    func getClient() throws -> RediStack.RedisClient {
+        try getPool()
     }
 
     func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
-        let pool = getPool()
+        let pool = try getPool()
         return try await pool.leaseConnection { conn in
             pool.eventLoop.asyncSubmit { try await transaction(conn) }
         }.get()
@@ -140,14 +151,36 @@ private final class ConnectionPool: RedisProvider {
     ///
     /// - Returns: A `RedisConnectionPool` associated with the current
     ///   `EventLoop` for sending commands to.
-    private func getPool() -> RedisConnectionPool {
+    private func getPool() throws -> RedisConnectionPool {
         let loop = Loop.current
         let key = ObjectIdentifier(loop)
-        return poolLock.withLock {
+        return try poolLock.withLock {
             if let pool = self.poolStorage[key] {
                 return pool
             } else {
-                let newPool = RedisConnectionPool(configuration: self.config, boundEventLoop: loop)
+                var config = self.config
+                if let lazyAddresses = lazyAddresses {
+                    let initialAddresses: [SocketAddress] = try lazyAddresses.map {
+                        switch $0 {
+                        case let .ip(host, port):
+                            return try .makeAddressResolvingHost(host, port: port)
+                        case let .unix(path):
+                            return try .init(unixDomainSocketPath: path)
+                        }
+                    }
+                    
+                    config = RedisConnectionPool.Configuration(
+                        initialServerConnectionAddresses: initialAddresses,
+                        maximumConnectionCount: config.maximumConnectionCount,
+                        connectionFactoryConfiguration: config.factoryConfiguration,
+                        minimumConnectionCount: config.minimumConnectionCount,
+                        connectionBackoffFactor: config.connectionRetryConfiguration.backoff.factor,
+                        initialConnectionBackoffDelay: config.connectionRetryConfiguration.backoff.initialDelay,
+                        connectionRetryTimeout: config.connectionRetryConfiguration.timeout,
+                        poolDefaultLogger: config.poolDefaultLogger)
+                }
+                
+                let newPool = RedisConnectionPool(configuration: config, boundEventLoop: loop)
                 self.poolStorage[key] = newPool
                 return newPool
             }
