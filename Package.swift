@@ -28,6 +28,7 @@ let package = Package(
         .package(url: "https://github.com/alchemy-swift/RediStack.git", branch: "ssl-support-1.2.0"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
+        .package(url: "https://github.com/soto-project/soto.git", from: "5.0.0"),
     ],
     targets: [
         .target(
@@ -52,6 +53,7 @@ let package = Package(
                 .product(name: "HummingbirdFoundation", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
                 .product(name: "HummingbirdTLS", package: "hummingbird-core"),
+                .product(name: "SotoS3", package: "soto"),
                 
                 /// Internal dependencies
                 .byName(name: "AlchemyC"),
