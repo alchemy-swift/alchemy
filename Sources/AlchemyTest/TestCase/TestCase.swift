@@ -43,14 +43,14 @@ open class TestCase<A: Application>: XCTestCase {
     public var app = A()
     public var Test: Builder { Builder() }
     
-    open override func setUpWithError() throws {
-        try super.setUpWithError()
+    open override func setUp() async throws {
+        try await super.setUp()
         app = A()
         try app.setup()
     }
     
-    open override func tearDownWithError() throws {
-        try super.tearDownWithError()
+    open override func tearDown() async throws {
+        try await super.tearDown()
         try app.stop()
     }
 }

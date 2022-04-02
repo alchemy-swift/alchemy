@@ -1,6 +1,13 @@
 import NIOCore
 import SotoS3
 
+extension Filesystem {
+    /// Create a filesystem backed by an s3 bucket.
+    public static func s3(key: String, secret: String, bucket: String, region: Region) -> Filesystem {
+        Filesystem(provider: S3Filesystem(key: key, secret: secret, bucket: bucket, region: region))
+    }
+}
+
 struct S3Filesystem: FilesystemProvider {
     /// The file IO helper for streaming files.
     private let s3: S3
