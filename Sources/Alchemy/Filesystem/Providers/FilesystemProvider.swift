@@ -20,4 +20,6 @@ public protocol FilesystemProvider {
     
     /// Delete a file at the given path.
     func delete(_ filepath: String) async throws
+    
+    func signedUrl() async throws -> URL
 }

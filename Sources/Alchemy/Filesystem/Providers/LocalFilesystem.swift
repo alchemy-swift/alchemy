@@ -108,4 +108,8 @@ struct LocalFilesystem: FilesystemProvider {
         
         return url
     }
+    
+    func signedUrl() async throws -> URL {
+        fatalError("fuck off")
+    }
 }

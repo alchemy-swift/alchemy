@@ -3,8 +3,8 @@ import SotoS3
 
 extension Filesystem {
     /// Create a filesystem backed by an s3 bucket.
-    public static func s3(key: String, secret: String, bucket: String, region: Region) -> Filesystem {
-        Filesystem(provider: S3Filesystem(key: key, secret: secret, bucket: bucket, region: region))
+    public static func s3(key: String, secret: String, bucket: String, region: Region, endpoint: String? = nil) -> Filesystem {
+        Filesystem(provider: S3Filesystem(key: key, secret: secret, bucket: bucket, region: region, endpoint: endpoint))
     }
 }
 
@@ -19,13 +19,13 @@ struct S3Filesystem: FilesystemProvider {
     
     // MARK: - FilesystemProvider
     
-    init(key: String, secret: String, bucket: String, region: Region) {
+    init(key: String, secret: String, bucket: String, region: Region, endpoint: String? = nil) {
         let client = AWSClient(
             credentialProvider: .static(accessKeyId: key, secretAccessKey: secret),
             httpClientProvider: .createNewWithEventLoopGroup(Loop.group)
         )
         
-        self.s3 = S3(client: client, region: region)
+        self.s3 = S3(client: client, region: region, endpoint: endpoint)
         self.bucket = bucket
     }
     
@@ -55,5 +55,10 @@ struct S3Filesystem: FilesystemProvider {
     func delete(_ filepath: String) async throws {
         let req = S3.DeleteObjectRequest(bucket: bucket, key: filepath)
         _ = try await s3.deleteObject(req)
+    }
+    
+    func signedUrl() async throws -> URL {
+        let catUrl = URL(string: "https://apollo-private.sfo3.digitaloceanspaces.com/cat.jpg")!
+        return try await s3.signURL(url: catUrl, httpMethod: .GET, expires: .seconds(10))
     }
 }

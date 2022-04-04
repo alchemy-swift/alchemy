@@ -1,6 +1,104 @@
 import MultipartKit
 import Papyrus
 
+/*
+ Store on Model
+ 1. Came from request (raw data)
+ -> throw error "please save to storage first"
+ 2. Came from storage
+ -> {key}: {path_in_storage}
+ 3. Came from URL
+ -> {key}: {url}
+ */
+
+/*
+ Filesystem
+ 1. put() -> File no contents
+ 2. get() -> File with contents
+ 3. url() -> fileUrl
+ 4. tempUrl() -> tempUrl
+ 5. metadata() -> FileMetadata
+ */
+
+/*
+ File
+ 1. url() -> String
+ 2. tempUrl() -> String
+ 3. download() -> Response
+ 4. metadata() -> Response
+ */
+
+// File
+struct File2 {
+    enum Content {
+        // Ref to external URL
+        case url(String)
+        // Ref to Filesystem
+        case filesystem(String)
+        // Raw byte stream or content, possible uploaded
+        case bytes(ByteContent)
+    }
+    
+    /// The name of this file, including the extension
+    let name: String
+    let content: Content
+    let contentType: ContentType
+    
+    // MARK: - Accessing Contents
+    
+    /// get a url for this resource
+    func url() throws -> String {
+        switch content {
+        case .bytes:
+            throw FileError.invalidFileUrl
+        case .filesystem(let path):
+            return path
+        case .url(let url):
+            return url
+        }
+    }
+    
+    /// get temporary url for this resource
+    func temporaryUrl() async throws -> String {
+        switch content {
+        case .filesystem(let path):
+            // Generate temp url with filesystem
+            return path
+        default:
+            throw FileError.invalidFileUrl
+        }
+    }
+    
+    func contents() async throws -> ByteContent {
+        switch content {
+        case .bytes(let content):
+            return content
+        case .filesystem(let path):
+            // Load contents from filesystem
+            return .string("")
+        case .url(let url):
+            // Load contents from URL
+            return .string("")
+        }
+    }
+    
+    // MARK: ModelProperty
+    
+    init(key: String, on row: SQLRowReader) throws {
+        // Assume stored as storage
+        
+    }
+    
+    func store(key: String, on row: inout SQLRowWriter) throws {
+        guard case let .storage(ref) = content else {
+            throw FileError.invalidFileUrl
+        }
+        
+        // Only store stuff in storage
+        row.put(.string(ref), at: key)
+    }
+}
+
 /// Represents a file with a name and binary contents.
 public struct File: Codable, ResponseConvertible {
     // The name of the file, including the extension.
