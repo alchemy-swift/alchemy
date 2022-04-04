@@ -84,19 +84,19 @@ struct File2 {
     
     // MARK: ModelProperty
     
-    init(key: String, on row: SQLRowReader) throws {
-        // Assume stored as storage
-        
-    }
-    
-    func store(key: String, on row: inout SQLRowWriter) throws {
-        guard case let .storage(ref) = content else {
-            throw FileError.invalidFileUrl
-        }
-        
-        // Only store stuff in storage
-        row.put(.string(ref), at: key)
-    }
+//    init(key: String, on row: SQLRowReader) throws {
+//        // Assume stored as storage
+//
+//    }
+//
+//    func store(key: String, on row: inout SQLRowWriter) throws {
+//        guard case let .storage(ref) = content else {
+//            throw FileError.invalidFileUrl
+//        }
+//
+//        // Only store stuff in storage
+//        row.put(.string(ref), at: key)
+//    }
 }
 
 /// Represents a file with a name and binary contents.

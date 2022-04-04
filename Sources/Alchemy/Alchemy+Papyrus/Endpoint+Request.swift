@@ -49,7 +49,15 @@ extension Client {
         
         let method = HTTPMethod(rawValue: rawRequest.method)
         let fullUrl = try rawRequest.fullURL()
-        let clientResponse = try await builder.request(method, uri: fullUrl).validateSuccessful()
+        builder = builder.withBaseUrl(fullUrl).withMethod(method)
+        
+        if let mockedResponse = endpoint.mockedResponse {
+            let clientRequest = builder.clientRequest
+            let clientResponse = Client.Response(request: clientRequest, host: "mock", status: .ok, version: .http1_1, headers: [:])
+            return (clientResponse: clientResponse, response: mockedResponse)
+        }
+        
+        let clientResponse = try await builder.execute().validateSuccessful()
         
         guard Response.self != Empty.self else {
             return (clientResponse, Empty.value as! Response)
