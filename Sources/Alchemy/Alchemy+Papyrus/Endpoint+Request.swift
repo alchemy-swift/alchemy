@@ -54,7 +54,8 @@ extension Client {
         if let mockedResponse = endpoint.mockedResponse {
             let clientRequest = builder.clientRequest
             let clientResponse = Client.Response(request: clientRequest, host: "mock", status: .ok, version: .http1_1, headers: [:])
-            return (clientResponse: clientResponse, response: mockedResponse)
+            let res = mockedResponse(request)
+            return (clientResponse: clientResponse, response: res)
         }
         
         let clientResponse = try await builder.execute().validateSuccessful()
