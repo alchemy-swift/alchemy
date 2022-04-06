@@ -4,7 +4,7 @@ import AlchemyTest
 
 final class DatabaseMigrationTests: TestCase<TestApp> {
     func testMigration() async throws {
-        let db = Database.fake()
+        let db = try await Database.fake()
         try await db.rollbackMigrations()
         db.migrations = [MigrationA()]
         try await db.migrate()

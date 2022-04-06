@@ -1,9 +1,9 @@
 import AlchemyTest
 
 final class ModelCrudTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        Database.fake(migrations: [TestModelMigration(), TestModelCustomIdMigration()])
+    override func setUp() async throws {
+        try await super.setUp()
+        try await Database.fake(migrations: [TestModelMigration(), TestModelCustomIdMigration()])
     }
     
     func testAll() async throws {

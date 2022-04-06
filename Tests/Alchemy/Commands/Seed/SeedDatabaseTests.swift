@@ -4,7 +4,7 @@ import AlchemyTest
 
 final class SeedDatabaseTests: TestCase<TestApp> {
     func testSeed() async throws {
-        let db = Database.fake(migrations: [SeedModel.Migrate()])
+        let db = try await Database.fake(migrations: [SeedModel.Migrate()])
         db.seeders = [Seeder1(), Seeder2()]
         try SeedDatabase(database: nil).run()
         try app.lifecycle.startAndWait()
@@ -13,7 +13,7 @@ final class SeedDatabaseTests: TestCase<TestApp> {
     }
     
     func testNamedSeed() async throws {
-        let db = Database.fake("a", migrations: [SeedModel.Migrate()])
+        let db = try await Database.fake("a", migrations: [SeedModel.Migrate()])
         db.seeders = [Seeder3(), Seeder4()]
         
         try app.start("db:seed", "seeder3", "--database", "a")

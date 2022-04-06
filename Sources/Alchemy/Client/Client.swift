@@ -117,36 +117,36 @@ public final class Client: Service {
     
     public struct Builder: RequestBuilder {
         public var client: Client
-        public var urlComponents: URLComponents { get { request.urlComponents } set { request.urlComponents = newValue} }
-        public var method: HTTPMethod { get { request.method } set { request.method = newValue} }
-        public var headers: HTTPHeaders { get { request.headers } set { request.headers = newValue} }
-        public var body: ByteContent? { get { request.body } set { request.body = newValue} }
-        private var request: Client.Request
-        
+        public var urlComponents: URLComponents { get { clientRequest.urlComponents } set { clientRequest.urlComponents = newValue} }
+        public var method: HTTPMethod { get { clientRequest.method } set { clientRequest.method = newValue} }
+        public var headers: HTTPHeaders { get { clientRequest.headers } set { clientRequest.headers = newValue} }
+        public var body: ByteContent? { get { clientRequest.body } set { clientRequest.body = newValue} }
+        public private(set) var clientRequest: Client.Request
+
         init(client: Client) {
             self.client = client
-            self.request = Request()
+            self.clientRequest = Request()
         }
         
         public func execute() async throws -> Client.Response {
-            try await client.execute(req: request)
+            try await client.execute(req: clientRequest)
         }
         
         /// Sets an `HTTPClient.Configuration` for this request only. See the
         /// `swift-server/async-http-client` package for configuration
         /// options.
         public func withClientConfig(_ config: HTTPClient.Configuration) -> Builder {
-            with { $0.request.config = config }
+            with { $0.clientRequest.config = config }
         }
 
         /// Timeout if the request doesn't finish in the given time amount.
         public func withTimeout(_ timeout: TimeAmount) -> Builder {
-            with { $0.request.timeout = timeout }
+            with { $0.clientRequest.timeout = timeout }
         }
         
         /// Allow the response to be streamed.
         public func withStream() -> Builder {
-            with { $0.request.streamResponse = true }
+            with { $0.clientRequest.streamResponse = true }
         }
         
         /// Stub this builder's client, causing it to respond to all incoming

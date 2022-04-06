@@ -2,7 +2,7 @@ import AlchemyTest
 
 final class TokenAuthableTests: TestCase<TestApp> {
     func testTokenAuthable() async throws {
-        Database.fake(migrations: [AuthModel.Migrate(), TokenModel.Migrate()])
+        try await Database.fake(migrations: [AuthModel.Migrate(), TokenModel.Migrate()])
         
         app.use(TokenModel.tokenAuthMiddleware())
         app.get("/user") { req -> UUID in

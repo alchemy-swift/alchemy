@@ -3,9 +3,9 @@ import Alchemy
 import AlchemyTest
 
 final class RunServeTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        Database.fake()
+    override func setUp() async throws {
+        try await super.setUp()
+        try await Database.fake()
         Queue.fake()
     }
     

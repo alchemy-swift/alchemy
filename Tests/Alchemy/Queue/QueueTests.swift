@@ -44,7 +44,7 @@ final class QueueTests: TestCase<TestApp> {
     func testDatabaseQueue() async throws {
         do {
             for test in allTests {
-                Database.fake(migrations: [Queue.AddJobsMigration()])
+                try await Database.fake(migrations: [Queue.AddJobsMigration()])
                 Queue.bind(.database)
                 try await test(#filePath, #line)
             }

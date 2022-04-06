@@ -3,9 +3,9 @@ import AlchemyTest
 final class QueryCrudTests: TestCase<TestApp> {
     var db: Database!
     
-    override func setUp() {
-        super.setUp()
-        db = Database.fake(migrations: [TestModelMigration()])
+    override func setUp() async throws {
+        try await super.setUp()
+        db = try await Database.fake(migrations: [TestModelMigration()])
     }
     
     func testFind() async throws {
