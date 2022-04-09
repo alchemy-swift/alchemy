@@ -65,6 +65,6 @@ public struct Filesystem: Service {
 extension File {
     public func store(on filesystem: Filesystem = Storage, in directory: String? = nil, as name: String? = nil) async throws {
         let name = name ?? (UUID().uuidString + `extension`)
-        try await filesystem.put(named(name), in: directory)
+        try await filesystem.put(self, in: directory, as: name)
     }
 }

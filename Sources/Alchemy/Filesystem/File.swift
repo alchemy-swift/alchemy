@@ -39,12 +39,6 @@ public struct File: Codable, ResponseConvertible {
         self.clientContentType = nil
     }
     
-    func named(_ newName: String) -> File {
-        var copy = self
-        copy.name = newName
-        return self
-    }
-    
     // MARK: - Accessing Contents
     
     /// get a url for this resource
