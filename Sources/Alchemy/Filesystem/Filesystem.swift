@@ -42,18 +42,19 @@ public struct Filesystem: Service {
         try await provider.delete(filepath)
     }
     
-    public func put(_ file: File, in directory: String? = nil) async throws {
+    public func put(_ file: File, in directory: String? = nil, as name: String? = nil) async throws {
         let content = try await file.getContent()
+        let name = name ?? (UUID().uuidString + file.extension)
         guard let directory = directory, let directoryUrl = URL(string: directory) else {
-            try await create(file.name, content: content)
+            try await create(name, content: content)
             return
         }
         
-        try await create(directoryUrl.appendingPathComponent(file.name).path, content: content)
+        try await create(directoryUrl.appendingPathComponent(name).path, content: content)
     }
     
-    public func signedURL(_ filepath: String) async throws -> URL {
-        try await provider.signedUrl(filepath)
+    public func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+        try await provider.temporaryURL(filepath, expires: expires, headers: headers)
     }
     
     public func url(_ filepath: String) throws -> URL {
@@ -62,7 +63,8 @@ public struct Filesystem: Service {
 }
 
 extension File {
-    public func store(in directory: String? = nil, on filesystem: Filesystem = Storage) async throws {
-        try await filesystem.put(self, in: directory)
+    public func store(on filesystem: Filesystem = Storage, in directory: String? = nil, as name: String? = nil) async throws {
+        let name = name ?? (UUID().uuidString + `extension`)
+        try await filesystem.put(named(name), in: directory)
     }
 }

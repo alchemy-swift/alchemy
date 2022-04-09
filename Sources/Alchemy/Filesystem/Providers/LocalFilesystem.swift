@@ -42,6 +42,7 @@ struct LocalFilesystem: FilesystemProvider {
         
         return File(
             name: url.lastPathComponent,
+            source: .filesystem(path: filepath),
             content: .stream { writer in
                 // Load the file in chunks, streaming it.
                 let fileHandle = try NIOFileHandle(path: url.path)
@@ -76,7 +77,7 @@ struct LocalFilesystem: FilesystemProvider {
             offset += Int64(buffer.writerIndex)
         }
         
-        return File(name: url.path, filesystemPath: url.relativeString)
+        return File(name: url.path, source: .filesystem(path: url.relativeString))
     }
     
     func exists(_ filepath: String) async throws -> Bool {
@@ -117,7 +118,7 @@ struct LocalFilesystem: FilesystemProvider {
         return url
     }
     
-    func signedUrl(_ filepath: String) async throws -> URL {
-        throw FileError.signedUrlNotAvailable
+    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+        throw FileError.temporaryUrlNotAvailable
     }
 }

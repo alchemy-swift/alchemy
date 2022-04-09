@@ -66,7 +66,7 @@ extension MultipartPart: ContentValue {
     
     public var file: File? {
         guard let disposition = headers.contentDisposition, let filename = disposition.filename else { return nil }
-        return File(name: filename, content: .buffer(body), size: body.writerIndex)
+        return File(name: filename, source: .http(clientContentType: headers.contentType), content: .buffer(body), size: body.writerIndex)
     }
 }
 

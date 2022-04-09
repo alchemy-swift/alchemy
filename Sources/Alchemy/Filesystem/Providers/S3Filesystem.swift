@@ -34,13 +34,13 @@ struct S3Filesystem: FilesystemProvider {
         let res = try await s3.getObject(req)
         let size = Int(res.contentLength ?? 0)
         let content: ByteContent? = res.body?.asByteBuffer().map { .buffer($0) }
-        return File(name: filepath, filesystemPath: filepath, content: content, size: size)
+        return File(name: filepath, source: .filesystem(path: filepath), content: content, size: size)
     }
     
     func create(_ filepath: String, content: ByteContent) async throws -> File {
         let req = S3.PutObjectRequest(acl: .private, body: .byteBuffer(content.buffer), bucket: bucket, key: filepath)
         _ = try await s3.putObject(req)
-        return File(name: filepath, filesystemPath: filepath)
+        return File(name: filepath, source: .filesystem(path: filepath))
     }
     
     func exists(_ filepath: String) async throws -> Bool {
@@ -66,8 +66,11 @@ struct S3Filesystem: FilesystemProvider {
         return url
     }
     
-    func signedUrl(_ filepath: String) async throws -> URL {
-        let catUrl = URL(string: "https://apollo-private.sfo3.digitaloceanspaces.com/cat.jpg")!
-        return try await s3.signURL(url: catUrl, httpMethod: .GET, expires: .seconds(10))
+    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+        guard let url = URL(string: "https://apollo-private.sfo3.\(s3.endpoint)/\(filepath)") else {
+            throw FileError.urlUnavailable
+        }
+        
+        return try await s3.signURL(url: url, httpMethod: .GET, headers: headers, expires: .seconds(10))
     }
 }

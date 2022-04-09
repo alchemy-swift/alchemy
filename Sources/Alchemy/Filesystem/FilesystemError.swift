@@ -3,6 +3,6 @@ public enum FileError: Error {
     case urlUnavailable
     case fileDoesntExist
     case filenameAlreadyExists
-    case signedUrlNotAvailable
+    case temporaryUrlNotAvailable
     case contentNotLoaded
 }

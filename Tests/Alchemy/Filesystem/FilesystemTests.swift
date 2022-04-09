@@ -56,7 +56,7 @@ final class FilesystemTests: TestCase<TestApp> {
     }
     
     func _testPut() async throws {
-        let file = File(name: filePath, content: "foo", size: 3)
+        let file = File(name: filePath, source: .raw, content: "foo", size: 3)
         try await Storage.put(file)
         AssertTrue(try await Storage.exists(filePath))
         try await Storage.put(file, in: "foo/bar")
@@ -75,7 +75,7 @@ final class FilesystemTests: TestCase<TestApp> {
     }
     
     func _testFileStore() async throws {
-        try await File(name: filePath, content: "bar", size: 3).store()
+        try await File(name: filePath, source: .raw, content: "bar", size: 3).store()
         AssertTrue(try await Storage.exists(filePath))
     }
     

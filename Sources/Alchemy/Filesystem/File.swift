@@ -1,109 +1,76 @@
 import MultipartKit
 import Papyrus
-
-/*
- Store on Model
- 1. Came from request (raw data)
- -> throw error "please save to storage first"
- 2. Came from storage
- -> {key}: {path_in_storage}
- 3. Came from URL
- -> {key}: {url}
- */
-
-/*
- File
- - came from storage
- - came from request / response
- - came from url?
- 
- Contents
- - loaded
- - not loaded
- */
-
-/*
- Filesystem
- 1. put() -> File no contents
- 2. get() -> File with contents
- 3. url() -> fileUrl
- 4. tempUrl() -> tempUrl
- 5. metadata() -> FileMetadata
- */
-
-/*
- File
- 1. url() -> String
- 2. tempUrl() -> String
- 3. download() -> Response
- 4. metadata() -> Response
- */
+import NIOCore
 
 // File
 public struct File: Codable, ResponseConvertible {
-    public enum FileType {
-        // Ref to Filesystem
-        case filesystem(String)
-        // Raw bytes, likely from an HTTP request or response
-        case bytes
+    public enum Source {
+        // The file is stored in a `Filesystem`.
+        case filesystem(path: String)
+        // The file came with the given ContentType from an HTTP request.
+        case http(clientContentType: ContentType?)
+        
+        static var raw: Source {
+            .http(clientContentType: nil)
+        }
     }
     
     /// The name of this file, including the extension
-    public let name: String
-    /// The content of this file, either raw bytes or a path in a `Filesystem`.
-    public let type: FileType
+    public var name: String
+    /// The source of this file, either from an HTTP request or from a Filesystem.
+    public let source: Source
     public var content: ByteContent?
     public let size: Int?
     public let clientContentType: ContentType?
     /// The path extension of this file.
-    public var `extension`: String { name.components(separatedBy: ".").last ?? "" }
+    public var `extension`: String {
+        name.components(separatedBy: ".").last ?? ""
+    }
     
     public var contentType: ContentType {
         name.components(separatedBy: ".").last.map { ContentType(fileExtension: $0) ?? .octetStream }  ?? .octetStream
     }
     
-    public init(name: String, filesystemPath: String, content: ByteContent? = nil, size: Int? = nil) {
+    public init(name: String, source: Source, content: ByteContent? = nil, size: Int? = nil) {
         self.name = name
-        self.type = .filesystem(filesystemPath)
+        self.source = source
         self.content = content
         self.size = size
         self.clientContentType = nil
     }
     
-    public init(name: String, content: ByteContent, size: Int? = nil, clientContentType: ContentType? = nil) {
-        self.name = name
-        self.type = .bytes
-        self.content = content
-        self.size = size
-        self.clientContentType = clientContentType
+    func named(_ newName: String) -> File {
+        var copy = self
+        copy.name = newName
+        return self
     }
     
     // MARK: - Accessing Contents
     
     /// get a url for this resource
     public func url() throws -> URL {
-        switch type {
+        switch source {
         case .filesystem(let path):
             return try Storage(.default).url(path)
-        case .bytes:
+        case .http:
             throw FileError.urlUnavailable
         }
     }
     
     /// get temporary url for this resource
-    public func temporaryUrl() async throws -> URL {
-        switch type {
+    public func temporaryUrl(filesystem: Filesystem = Storage, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+        switch source {
         case .filesystem(let path):
-            return try await Storage(.default).signedURL(path)
+            return try await filesystem.temporaryURL(path, expires: expires, headers: headers)
         default:
-            throw FileError.invalidFileUrl
+            throw FileError.temporaryUrlNotAvailable
         }
     }
     
     public func getContent() async throws -> ByteContent {
         guard let content = content else {
-            switch type {
-            case .bytes:
+            switch source {
+            case .http:
                 throw FileError.contentNotLoaded
             case .filesystem(let path):
                 return try await Storage.get(path).getContent()
@@ -115,19 +82,19 @@ public struct File: Codable, ResponseConvertible {
     
     // MARK: ModelProperty
     
-//    init(key: String, on row: SQLRowReader) throws {
-//        // Assume stored as storage
-//
-//    }
-//
-//    func store(key: String, on row: inout SQLRowWriter) throws {
-//        guard case let .storage(ref) = content else {
-//            throw FileError.invalidFileUrl
-//        }
-//
-//        // Only store stuff in storage
-//        row.put(.string(ref), at: key)
-//    }
+    init(key: String, on row: SQLRowReader) throws {
+        let name = try row.require(key).string()
+        self.init(name: name, source: .filesystem(path: name))
+    }
+
+    func store(key: String, on row: inout SQLRowWriter) throws {
+        guard case let .filesystem(path) = source else {
+            throw RuneError("currently, only files saved in a `Filesystem` can be stored on a `Model`")
+        }
+
+        // Only store stuff in storage
+        row.put(.string(path), at: key)
+    }
     
     // MARK: - ResponseConvertible
     
@@ -149,7 +116,7 @@ public struct File: Codable, ResponseConvertible {
         let container = try decoder.singleValueContainer()
         let data = try container.decode(Data.self)
         self.name = UUID().uuidString
-        self.type = .bytes
+        self.source = .raw
         self.content = .data(data)
         self.size = data.count
         self.clientContentType = nil
@@ -162,35 +129,6 @@ public struct File: Codable, ResponseConvertible {
         }
         
         try container.encode(content.data())
-    }
-}
-
-/// Represents a file with a name and binary contents.
-public struct File2 {
-    // The name of the file, including the extension.
-    public var name: String
-    // The size of the file, in bytes.
-    public let size: Int
-    // The binary contents of the file.
-    public var content: ByteContent
-    /// The path extension of this file.
-    public var `extension`: String { name.components(separatedBy: ".").last ?? "" }
-    /// The content type of this file, based on it's extension.
-    public let contentType: ContentType
-    
-    public init(name: String, contentType: ContentType? = nil, size: Int, content: ByteContent) {
-        self.name = name
-        self.size = size
-        self.content = content
-        let _extension = name.components(separatedBy: ".").last ?? ""
-        self.contentType = contentType ?? ContentType(fileExtension: _extension) ?? .octetStream
-    }
-    
-    /// Returns a copy of this file with a new name.
-    public func named(_ name: String) -> File2 {
-        var copy = self
-        copy.name = name
-        return copy
     }
 }
 
@@ -219,6 +157,8 @@ extension File: MultipartPartConvertible {
         }
 
         // If there is no filename in the content disposition included (technically not required via RFC 7578) set to a random UUID.
-        self.init(name: (fileName ?? UUID().uuidString) + fileExtension, content: .buffer(multipart.body), size: fileSize, clientContentType: multipart.headers.contentType)
+        let name = (fileName ?? UUID().uuidString) + fileExtension
+        let contentType = multipart.headers.contentType
+        self.init(name: name, source: .http(clientContentType: contentType), content: .buffer(multipart.body), size: fileSize)
     }
 }
