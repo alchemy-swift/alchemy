@@ -32,7 +32,7 @@ public struct Filesystem: Service {
         try await provider.exists(filepath)
     }
     
-    /// Gets a file with the given path.
+    /// Gets the contents of the file at the given path.
     public func get(_ filepath: String) async throws -> File {
         try await provider.get(filepath)
     }
@@ -43,12 +43,13 @@ public struct Filesystem: Service {
     }
     
     public func put(_ file: File, in directory: String? = nil) async throws {
+        let content = try await file.getContent()
         guard let directory = directory, let directoryUrl = URL(string: directory) else {
-            try await create(file.name, content: file.content)
+            try await create(file.name, content: content)
             return
         }
         
-        try await create(directoryUrl.appendingPathComponent(file.name).path, content: file.content)
+        try await create(directoryUrl.appendingPathComponent(file.name).path, content: content)
     }
     
     public func signedURL() async throws -> URL {

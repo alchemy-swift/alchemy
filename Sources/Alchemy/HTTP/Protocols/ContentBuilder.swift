@@ -75,7 +75,7 @@ extension ContentBuilder {
     }
     
     public func attach(_ name: String, contents: ByteBuffer, filename: String? = nil, encoder: FormDataEncoder = FormDataEncoder()) async throws -> Self {
-        let file = File(name: filename ?? name, size: contents.writerIndex, content: .buffer(contents))
+        let file = File(name: filename ?? name, content: .buffer(contents), size: contents.writerIndex)
         return try withBody([name: file], encoder: encoder)
     }
     
