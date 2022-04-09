@@ -1,13 +1,4 @@
 extension ModelQuery {
-    /// A closure for defining any nested eager loading when loading a
-    /// relationship on this `Model`.
-    ///
-    /// "Eager loading" refers to loading a model at the other end of
-    /// a relationship of this queried model. Nested eager loads
-    /// refers to loading a model from a relationship on that
-    /// _other_ model.
-    public typealias NestedQuery<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
-    
     /// A tuple of models and the SQLRow that they were loaded from.
     typealias ModelRow = (model: M, row: SQLRow)
     
@@ -100,6 +91,15 @@ extension ModelQuery {
     }
 }
 
+/// A closure for defining any nested eager loading when loading a
+/// relationship on this `Model`.
+///
+/// "Eager loading" refers to loading a model at the other end of
+/// a relationship of this queried model. Nested eager loads
+/// refers to loading a model from a relationship on that
+/// _other_ model.
+public typealias NestedQuery<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
+
 extension RelationshipMapping {
     fileprivate func load<M: Model>(_ values: [SQLRow], database: Database) throws -> ModelQuery<M> {
         var query = M.query(database: database)
@@ -132,26 +132,41 @@ extension Array where Element: Hashable {
     }
 }
 
-
 // MARK: - Additional Eager Load convience functions
 
 extension Model {
-    public func with<R: Relationship>(db: Database = DB, _ relationship: KeyPath<Self, R>) async throws -> Self where R.From == Self {
-        try await sync(db: db) { $0.with(relationship) }
+    public func with<R: Relationship>(
+        db: Database = DB,
+        _ relationship: KeyPath<Self, R>,
+        nested: @escaping NestedQuery<R.To.Value> = { $0 }
+    ) async throws -> Self where R.From == Self {
+        try await sync(db: db) { $0.with(relationship, nested: nested) }
     }
     
-    public func fetch<R: Relationship>(db: Database = DB, _ relationship: KeyPath<Self, R>) async throws -> R.Wrapped where R.From == Self {
-        try await sync(db: db) { $0.with(relationship) }[keyPath: relationship].wrappedValue
+    public func fetch<R: Relationship>(
+        db: Database = DB,
+        _ relationship: KeyPath<Self, R>,
+        nested: @escaping NestedQuery<R.To.Value> = { $0 }
+    ) async throws -> R.Wrapped where R.From == Self {
+        try await sync(db: db) { $0.with(relationship, nested: nested) }[keyPath: relationship].wrappedValue
     }
 }
 
 extension Array where Element: Model {
-    public func with<R: Relationship>(db: Database = DB, _ relationship: KeyPath<Element, R>) async throws -> Self where R.From == Element {
-        try await syncAll(db: db) { $0.with(relationship) }
+    public func with<R: Relationship>(
+        db: Database = DB,
+        _ relationship: KeyPath<Element, R>,
+        nested: @escaping NestedQuery<R.To.Value> = { $0 }
+    ) async throws -> Self where R.From == Element {
+        try await syncAll(db: db) { $0.with(relationship, nested: nested) }
     }
     
-    public func fetch<R: Relationship>(db: Database = DB, _ relationship: KeyPath<Element, R>) async throws -> [R.Wrapped] where R.From == Element {
-        try await syncAll(db: db) { $0.with(relationship) }
+    public func fetch<R: Relationship>(
+        db: Database = DB,
+        _ relationship: KeyPath<Element, R>,
+        nested: @escaping NestedQuery<R.To.Value> = { $0 }
+    ) async throws -> [R.Wrapped] where R.From == Element {
+        try await syncAll(db: db) { $0.with(relationship, nested: nested) }
             .map { $0[keyPath: relationship].wrappedValue }
     }
 }

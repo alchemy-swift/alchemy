@@ -46,6 +46,10 @@ public final class Request: RequestInspector {
         self.parameters = parameters
     }
     
+    public func parameter<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
+        parameters.first(where: { $0.key == key }).map { L($0.value) } ?? nil
+    }
+    
     /// Returns the first parameter for the given key, if there is one.
     ///
     /// Use this to fetch any parameters from the path.
