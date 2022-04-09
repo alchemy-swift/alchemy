@@ -52,8 +52,12 @@ public struct Filesystem: Service {
         try await create(directoryUrl.appendingPathComponent(file.name).path, content: content)
     }
     
-    public func signedURL() async throws -> URL {
-        try await provider.signedUrl()
+    public func signedURL(_ filepath: String) async throws -> URL {
+        try await provider.signedUrl(filepath)
+    }
+    
+    public func url(_ filepath: String) throws -> URL {
+        try provider.url(filepath)
     }
 }
 

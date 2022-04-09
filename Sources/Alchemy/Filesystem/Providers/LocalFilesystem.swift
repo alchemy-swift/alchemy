@@ -109,7 +109,15 @@ struct LocalFilesystem: FilesystemProvider {
         return url
     }
     
-    func signedUrl() async throws -> URL {
+    func url(_ filepath: String) throws -> URL {
+        guard let url = URL(string: root + filepath) else {
+            throw FileError.urlUnavailable
+        }
+        
+        return url
+    }
+    
+    func signedUrl(_ filepath: String) async throws -> URL {
         throw FileError.signedUrlNotAvailable
     }
 }

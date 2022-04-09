@@ -33,19 +33,20 @@ struct S3Filesystem: FilesystemProvider {
         let req = S3.GetObjectRequest(bucket: bucket, key: filepath)
         let res = try await s3.getObject(req)
         let size = Int(res.contentLength ?? 0)
-        return File(name: filepath, size: size, content: res.body?.asByteBuffer().map { .buffer($0) } ?? .data(Data()))
+        let content: ByteContent? = res.body?.asByteBuffer().map { .buffer($0) }
+        return File(name: filepath, filesystemPath: filepath, content: content, size: size)
     }
     
     func create(_ filepath: String, content: ByteContent) async throws -> File {
         let req = S3.PutObjectRequest(acl: .private, body: .byteBuffer(content.buffer), bucket: bucket, key: filepath)
         _ = try await s3.putObject(req)
-        return File(name: filepath, size: content.buffer.writerIndex, content: content)
+        return File(name: filepath, filesystemPath: filepath)
     }
     
     func exists(_ filepath: String) async throws -> Bool {
-        let req = S3.GetObjectRequest(bucket: bucket, key: filepath)
         do {
-            _ = try await s3.getObject(req)
+            let req = S3.HeadObjectRequest(bucket: bucket, key: filepath)
+            _ = try await s3.headObject(req)
             return true
         } catch {
             return false
@@ -57,7 +58,15 @@ struct S3Filesystem: FilesystemProvider {
         _ = try await s3.deleteObject(req)
     }
     
-    func signedUrl() async throws -> URL {
+    func url(_ filepath: String) throws -> URL {
+        guard let url = URL(string: "\(s3.endpoint)/\(filepath)") else {
+            throw FileError.urlUnavailable
+        }
+        
+        return url
+    }
+    
+    func signedUrl(_ filepath: String) async throws -> URL {
         let catUrl = URL(string: "https://apollo-private.sfo3.digitaloceanspaces.com/cat.jpg")!
         return try await s3.signURL(url: catUrl, httpMethod: .GET, expires: .seconds(10))
     }

@@ -69,7 +69,8 @@ public enum ByteContent: ExpressibleByStringLiteral {
 extension File {
     @discardableResult
     mutating func collect() async throws -> File {
-        File(name: name, content: .buffer(try await getBytes().collect()), size: size, clientContentType: clientContentType)
+        self.content = .buffer(try await getContent().collect())
+        return self
     }
 }
 

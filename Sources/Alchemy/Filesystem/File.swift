@@ -52,9 +52,11 @@ public struct File: Codable, ResponseConvertible {
     public let name: String
     /// The content of this file, either raw bytes or a path in a `Filesystem`.
     public let type: FileType
-    public let content: ByteContent?
+    public var content: ByteContent?
     public let size: Int?
     public let clientContentType: ContentType?
+    /// The path extension of this file.
+    public var `extension`: String { name.components(separatedBy: ".").last ?? "" }
     
     public var contentType: ContentType {
         name.components(separatedBy: ".").last.map { ContentType(fileExtension: $0) ?? .octetStream }  ?? .octetStream
@@ -65,6 +67,7 @@ public struct File: Codable, ResponseConvertible {
         self.type = .filesystem(filesystemPath)
         self.content = content
         self.size = size
+        self.clientContentType = nil
     }
     
     public init(name: String, content: ByteContent, size: Int? = nil, clientContentType: ContentType? = nil) {
@@ -78,21 +81,20 @@ public struct File: Codable, ResponseConvertible {
     // MARK: - Accessing Contents
     
     /// get a url for this resource
-    public func url() throws -> String {
-        switch content {
-        case .bytes:
-            throw FileError.invalidFileUrl
+    public func url() throws -> URL {
+        switch type {
         case .filesystem(let path):
-            return path
+            return try Storage(.default).url(path)
+        case .bytes:
+            throw FileError.urlUnavailable
         }
     }
     
     /// get temporary url for this resource
-    public func temporaryUrl() async throws -> String {
-        switch content {
+    public func temporaryUrl() async throws -> URL {
+        switch type {
         case .filesystem(let path):
-            // Generate temp url with filesystem
-            return path
+            return try await Storage(.default).signedURL(path)
         default:
             throw FileError.invalidFileUrl
         }
@@ -102,20 +104,13 @@ public struct File: Codable, ResponseConvertible {
         guard let content = content else {
             switch type {
             case .bytes:
-                throw FileError.contentNotAvailable
+                throw FileError.contentNotLoaded
             case .filesystem(let path):
-                Storage.get(path).getContent()
+                return try await Storage.get(path).getContent()
             }
         }
         
         return content
-
-        switch content {
-        case .bytes(let content):
-            return content
-        case .filesystem(let path):
-            return try await Storage.get(path)
-        }
     }
     
     // MARK: ModelProperty
@@ -137,42 +132,36 @@ public struct File: Codable, ResponseConvertible {
     // MARK: - ResponseConvertible
     
     public func response() async throws -> Response {
-        let bytes = try await getBytes()
+        let content = try await getContent()
         return Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\"\(name)\""])
-            .withBody(bytes, type: contentType, length: size)
+            .withBody(content, type: contentType, length: size)
     }
     
     public func download() async throws -> Response {
-        let bytes = try await getBytes()
+        let content = try await getContent()
         return Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\"\(name)\""])
-            .withBody(bytes, type: contentType, length: size)
+            .withBody(content, type: contentType, length: size)
     }
     
     // MARK: - Codable
     
-    enum CodingKeys: String, CodingKey {
-        case name, size, content
-    }
-    
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.name = try container.decode(String.self, forKey: .name)
-        self.size = try container.decode(Int.self, forKey: .size)
-        self.content = .bytes(.data(try container.decode(Data.self, forKey: .content)))
-        let _extension = name.components(separatedBy: ".").last ?? ""
-        self.clientContentType = ContentType(fileExtension: _extension) ?? .octetStream
+        let container = try decoder.singleValueContainer()
+        let data = try container.decode(Data.self)
+        self.name = UUID().uuidString
+        self.type = .bytes
+        self.content = .data(data)
+        self.size = data.count
+        self.clientContentType = nil
     }
     
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(name, forKey: .name)
-        try container.encode(size, forKey: .size)
-        switch content {
-        case .bytes(let byteContent):
-            try container.encode(byteContent.data(), forKey: .content)
-        case .filesystem:
-            throw FileError.invalidFileUrl
+        var container = encoder.singleValueContainer()
+        guard let content = content else {
+            throw FileError.contentNotLoaded
         }
+        
+        try container.encode(content.data())
     }
 }
 

@@ -42,7 +42,7 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertTrue(try await Storage.exists(filePath))
         let file = try await Storage.get(filePath)
         AssertEqual(file.name, filePath)
-        AssertEqual(try await file.content.collect(), "1;2;3")
+        AssertEqual(try await file.getContent().collect(), "1;2;3")
     }
     
     func _testDelete() async throws {
@@ -56,7 +56,7 @@ final class FilesystemTests: TestCase<TestApp> {
     }
     
     func _testPut() async throws {
-        let file = File(name: filePath, size: 3, content: "foo")
+        let file = File(name: filePath, content: "foo", size: 3)
         try await Storage.put(file)
         AssertTrue(try await Storage.exists(filePath))
         try await Storage.put(file, in: "foo/bar")
@@ -69,13 +69,13 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertTrue(try await Storage.exists("foo/bar/baz/\(filePath)"))
         let file = try await Storage.get("foo/bar/baz/\(filePath)")
         AssertEqual(file.name, filePath)
-        AssertEqual(try await file.content.collect(), "foo")
+        AssertEqual(try await file.getContent().collect(), "foo")
         try await Storage.delete("foo/bar/baz/\(filePath)")
         AssertFalse(try await Storage.exists("foo/bar/baz/\(filePath)"))
     }
     
     func _testFileStore() async throws {
-        try await File(name: filePath, size: 3, content: "bar").store()
+        try await File(name: filePath, content: "bar", size: 3).store()
         AssertTrue(try await Storage.exists(filePath))
     }
     
