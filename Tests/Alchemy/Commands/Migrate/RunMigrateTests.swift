@@ -4,7 +4,7 @@ import AlchemyTest
 
 final class RunMigrateTests: TestCase<TestApp> {
     func testRun() async throws {
-        let db = Database.fake()
+        let db = try await Database.fake()
         db.migrations = [MigrationA()]
         XCTAssertFalse(MigrationA.didUp)
         XCTAssertFalse(MigrationA.didDown)

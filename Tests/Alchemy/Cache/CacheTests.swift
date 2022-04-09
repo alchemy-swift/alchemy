@@ -29,7 +29,7 @@ final class CacheTests: TestCase<TestApp> {
     
     func testDatabaseCache() async throws {
         for test in allTests {
-            Database.fake(migrations: [Cache.AddCacheMigration()])
+            try await Database.fake(migrations: [Cache.AddCacheMigration()])
             Cache.bind(.database)
             try await test()
         }

@@ -1,9 +1,9 @@
 import AlchemyTest
 
 final class ModelQueryTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        Database.fake(migrations: [
+    override func setUp() async throws {
+        try await super.setUp()
+        try await Database.fake(migrations: [
             TestModelMigration(),
             TestParentMigration()
         ])

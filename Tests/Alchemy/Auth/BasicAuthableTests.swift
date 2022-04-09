@@ -2,7 +2,7 @@ import AlchemyTest
 
 final class BasicAuthableTests: TestCase<TestApp> {
     func testBasicAuthable() async throws {
-        Database.fake(migrations: [AuthModel.Migrate()])
+        try await Database.fake(migrations: [AuthModel.Migrate()])
         
         app.use(AuthModel.basicAuthMiddleware())
         app.get("/user") { try $0.get(AuthModel.self) }

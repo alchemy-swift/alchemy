@@ -122,7 +122,7 @@ public final class Client: Service {
         public var headers: HTTPHeaders { get { clientRequest.headers } set { clientRequest.headers = newValue} }
         public var body: ByteContent? { get { clientRequest.body } set { clientRequest.body = newValue} }
         public private(set) var clientRequest: Client.Request
-        
+
         init(client: Client) {
             self.client = client
             self.clientRequest = Request()
