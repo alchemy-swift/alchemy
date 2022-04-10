@@ -121,4 +121,11 @@ struct LocalFilesystem: FilesystemProvider {
     func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
         throw FileError.temporaryUrlNotAvailable
     }
+    
+    func directory(_ path: String) -> FilesystemProvider {
+        var copy = self
+        let pathToAppend = root.last == "/" ? path : "/\(path)"
+        copy.root.append(pathToAppend)
+        return copy
+    }
 }

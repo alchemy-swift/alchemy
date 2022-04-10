@@ -60,6 +60,10 @@ public struct Filesystem: Service {
     public func url(_ filepath: String) throws -> URL {
         try provider.url(filepath)
     }
+    
+    public func directory(_ path: String) -> Filesystem {
+        Filesystem(provider: provider.directory(path))
+    }
 }
 
 extension File {

@@ -24,4 +24,6 @@ public protocol FilesystemProvider {
     func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders) async throws -> URL
     
     func url(_ filepath: String) throws -> URL
+    
+    func directory(_ path: String) -> FilesystemProvider
 }
