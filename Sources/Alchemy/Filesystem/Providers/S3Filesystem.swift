@@ -8,16 +8,11 @@ extension Filesystem {
     }
 }
 
+/// A `FilesystemProvider` for interacting with S3 or S3 compatible storage.
 struct S3Filesystem: FilesystemProvider {
-    /// The file IO helper for streaming files.
-    private let s3: S3
-    /// Used for allocating buffers when pulling out file data.
-    private let bufferAllocator = ByteBufferAllocator()
-    
     var root: String
-    let bucket: String
-    
-    // MARK: - FilesystemProvider
+    private let bucket: String
+    private let s3: S3
     
     init(key: String, secret: String, bucket: String, root: String, region: Region, endpoint: String? = nil) {
         let client = AWSClient(
@@ -29,6 +24,8 @@ struct S3Filesystem: FilesystemProvider {
         self.bucket = bucket
         self.root = root
     }
+    
+    // MARK: - FilesystemProvider
     
     func get(_ filepath: String) async throws -> File {
         let path = resolvedPath(filepath)
