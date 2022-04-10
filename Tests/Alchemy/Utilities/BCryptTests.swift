@@ -2,12 +2,12 @@ import AlchemyTest
 
 final class BcryptTests: TestCase<TestApp> {
     func testBcrypt() async throws {
-        let hashed = try await Bcrypt.hash("foo")
-        let verify = try await Bcrypt.verify(plaintext: "foo", hashed: hashed)
+        let hashed = try await Hash.hash("foo")
+        let verify = try await Hash.verify(plaintext: "foo", hashed: hashed)
         XCTAssertTrue(verify)
     }
     
     func testCostTooLow() {
-        XCTAssertThrowsError(try Bcrypt.hashSync("foo", cost: 1))
+        XCTAssertThrowsError(try Hash.hashSync("foo", cost: 1))
     }
 }

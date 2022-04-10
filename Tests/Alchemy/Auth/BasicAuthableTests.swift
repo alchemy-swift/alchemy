@@ -7,7 +7,7 @@ final class BasicAuthableTests: TestCase<TestApp> {
         app.use(AuthModel.basicAuthMiddleware())
         app.get("/user") { try $0.get(AuthModel.self) }
         
-        try await AuthModel(email: "test@withapollo.com", password: Bcrypt.hash("password")).insert()
+        try await AuthModel(email: "test@withapollo.com", password: Hash.hash("password")).insert()
         
         try await Test.get("/user")
             .assertUnauthorized()

@@ -37,7 +37,7 @@ import CAlchemy
 ///     try BCrypt.verify("vapor", created: hash) // true
 ///
 /// https://en.wikipedia.org/wiki/Bcrypt
-public var Bcrypt: BCryptDigest {
+public var Hash: Hasher {
     return .init()
 }
 
@@ -48,7 +48,7 @@ public var Bcrypt: BCryptDigest {
 ///     try BCrypt.hash("vapor", cost: 4)
 ///
 /// See `BCrypt` for more information.
-public final class BCryptDigest {
+public final class Hasher {
     /// Creates a new `BCryptDigest`. Use the global `BCrypt` convenience variable.
     public init() { }
 
@@ -57,7 +57,7 @@ public final class BCryptDigest {
     /// - Parameter password: The password to hash.
     /// - Returns: The hashed password.
     public func hash(_ password: String) async throws -> String {
-        try await Thread.run { try Bcrypt.hashSync(password) }
+        try await Thread.run { try Hash.hashSync(password) }
     }
     
     public func hashSync(_ plaintext: String, cost: Int = 12) throws -> String {
@@ -118,7 +118,7 @@ public final class BCryptDigest {
     ///   - hashed: The hashed password to verify with.
     /// - Returns: Whether the password and hash matched.
     public func verify(plaintext: String, hashed: String) async throws -> Bool {
-        try await Thread.run { try Bcrypt.verifySync(plaintext, created: hashed) }
+        try await Thread.run { try Hash.verifySync(plaintext, created: hashed) }
     }
 
     /// Verifies an existing BCrypt hash matches the supplied plaintext value. Verification works by parsing the salt and version from
