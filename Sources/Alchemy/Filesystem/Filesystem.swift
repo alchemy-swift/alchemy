@@ -24,7 +24,7 @@ public struct Filesystem: Service {
     /// - Returns: The newly created file.
     @discardableResult
     public func create(_ filepath: String, content: ByteContent) async throws -> File {
-        try await provider.create(filepath, content: content)
+        try await provider.create(filepath, content: content)._in(self)
     }
     
     /// Returns whether a file with the given path exists.
@@ -34,7 +34,7 @@ public struct Filesystem: Service {
     
     /// Gets the contents of the file at the given path.
     public func get(_ filepath: String) async throws -> File {
-        try await provider.get(filepath)
+        try await provider.get(filepath)._in(self)
     }
     
     /// Delete a file at the given path.
@@ -42,15 +42,15 @@ public struct Filesystem: Service {
         try await provider.delete(filepath)
     }
     
-    public func put(_ file: File, in directory: String? = nil, as name: String? = nil) async throws {
+    @discardableResult
+    public func put(_ file: File, in directory: String? = nil, as name: String? = nil) async throws -> File {
         let content = try await file.getContent()
         let name = name ?? (UUID().uuidString + file.extension)
         guard let directory = directory, let directoryUrl = URL(string: directory) else {
-            try await create(name, content: content)
-            return
+            return try await create(name, content: content)
         }
         
-        try await create(directoryUrl.appendingPathComponent(name).path, content: content)
+        return try await create(directoryUrl.appendingPathComponent(name).path, content: content)
     }
     
     public func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
@@ -67,8 +67,9 @@ public struct Filesystem: Service {
 }
 
 extension File {
-    public func store(on filesystem: Filesystem = Storage, in directory: String? = nil, as name: String? = nil) async throws {
+    @discardableResult
+    public func store(on filesystem: Filesystem = Storage, in directory: String? = nil, as name: String? = nil) async throws -> File {
         let name = name ?? (UUID().uuidString + `extension`)
-        try await filesystem.put(self, in: directory, as: name)
+        return try await filesystem.put(self, in: directory, as: name)
     }
 }

@@ -5,8 +5,8 @@ import NIOCore
 // File
 public struct File: Codable, ResponseConvertible {
     public enum Source {
-        // The file is stored in a `Filesystem`.
-        case filesystem(id: Filesystem.Identifier = .default, path: String)
+        // The file is stored in a `Filesystem` with the given path.
+        case filesystem(Filesystem? = nil, path: String)
         // The file came with the given ContentType from an HTTP request.
         case http(clientContentType: ContentType?)
         
@@ -39,13 +39,25 @@ public struct File: Codable, ResponseConvertible {
         self.clientContentType = nil
     }
     
+    public func _in(_ filesystem: Filesystem) -> File {
+        var copy = self
+        switch source {
+        case .filesystem(_, let path):
+            copy.source = .filesystem(filesystem, path: path)
+        default:
+            break
+        }
+        
+        return copy
+    }
+    
     // MARK: - Accessing Contents
     
     /// get a url for this resource
     public func url() throws -> URL {
         switch source {
-        case .filesystem(let id, let path):
-            return try Storage(id).url(path)
+        case .filesystem(let filesystem, let path):
+            return try (filesystem ?? Storage).url(path)
         case .http:
             throw FileError.urlUnavailable
         }
@@ -54,8 +66,8 @@ public struct File: Codable, ResponseConvertible {
     /// get temporary url for this resource
     public func temporaryUrl(expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
         switch source {
-        case .filesystem(let id, let path):
-            return try await Storage(id).temporaryURL(path, expires: expires, headers: headers)
+        case .filesystem(let filesystem, let path):
+            return try await (filesystem ?? Storage).temporaryURL(path, expires: expires, headers: headers)
         default:
             throw FileError.temporaryUrlNotAvailable
         }
@@ -66,8 +78,8 @@ public struct File: Codable, ResponseConvertible {
             switch source {
             case .http:
                 throw FileError.contentNotLoaded
-            case .filesystem(let id, let path):
-                return try await Storage(id).get(path).getContent()
+            case .filesystem(let filesystem, let path):
+                return try await (filesystem ?? Storage).get(path).getContent()
             }
         }
         
@@ -78,7 +90,7 @@ public struct File: Codable, ResponseConvertible {
     
     init(key: String, on row: SQLRowReader) throws {
         let name = try row.require(key).string()
-        self.init(name: name, source: .filesystem(path: name))
+        self.init(name: name, source: .filesystem(Storage, path: name))
     }
 
     func store(key: String, on row: inout SQLRowWriter) throws {
