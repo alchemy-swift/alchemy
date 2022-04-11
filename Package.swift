@@ -29,7 +29,6 @@ let package = Package(
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
-        .package(url: "https://github.com/soto-project/soto.git", from: "5.0.0"),
     ],
     targets: [
         .target(
@@ -54,7 +53,6 @@ let package = Package(
                 .product(name: "HummingbirdFoundation", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
                 .product(name: "HummingbirdTLS", package: "hummingbird-core"),
-                .product(name: "SotoS3", package: "soto"),
                 .product(name: "Crypto", package: "swift-crypto"),
                 
                 /// Internal dependencies
