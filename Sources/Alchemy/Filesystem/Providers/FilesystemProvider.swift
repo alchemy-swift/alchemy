@@ -20,4 +20,10 @@ public protocol FilesystemProvider {
     
     /// Delete a file at the given path.
     func delete(_ filepath: String) async throws
+    
+    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders) async throws -> URL
+    
+    func url(_ filepath: String) throws -> URL
+    
+    func directory(_ path: String) -> FilesystemProvider
 }

@@ -44,6 +44,6 @@ struct OtherSeedModel: Model, Seedable {
     let bar: Bool
     
     static func generate() -> OtherSeedModel {
-        OtherSeedModel(foo: .random(), bar: .random())
+        OtherSeedModel(foo: faker.number.randomInt(), bar: .random())
     }
 }

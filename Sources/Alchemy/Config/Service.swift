@@ -42,7 +42,7 @@ extension Service {
     // MARK: Resolve shorthand
     
     public static var `default`: Self {
-        Container.resolveAssert(Self.self, identifier: Database.Identifier.default)
+        .id(.default)
     }
     
     public static func id(_ identifier: Identifier) -> Self {

@@ -1,68 +1,139 @@
 import MultipartKit
 import Papyrus
+import NIOCore
 
-/// Represents a file with a name and binary contents.
+// File
 public struct File: Codable, ResponseConvertible {
-    // The name of the file, including the extension.
-    public var name: String
-    // The size of the file, in bytes.
-    public let size: Int
-    // The binary contents of the file.
-    public var content: ByteContent
-    /// The path extension of this file.
-    public var `extension`: String { name.components(separatedBy: ".").last ?? "" }
-    /// The content type of this file, based on it's extension.
-    public let contentType: ContentType
-    
-    public init(name: String, contentType: ContentType? = nil, size: Int, content: ByteContent) {
-        self.name = name
-        self.size = size
-        self.content = content
-        let _extension = name.components(separatedBy: ".").last ?? ""
-        self.contentType = contentType ?? ContentType(fileExtension: _extension) ?? .octetStream
+    public enum Source {
+        // The file is stored in a `Filesystem` with the given path.
+        case filesystem(Filesystem? = nil, path: String)
+        // The file came with the given ContentType from an HTTP request.
+        case http(clientContentType: ContentType?)
+        
+        static var raw: Source {
+            .http(clientContentType: nil)
+        }
     }
     
-    /// Returns a copy of this file with a new name.
-    public func named(_ name: String) -> File {
+    /// The name of this file, including the extension
+    public var name: String
+    /// The source of this file, either from an HTTP request or from a Filesystem.
+    public var source: Source
+    public var content: ByteContent?
+    public let size: Int?
+    public let clientContentType: ContentType?
+    /// The path extension of this file.
+    public var `extension`: String {
+        name.components(separatedBy: ".").last ?? ""
+    }
+    
+    public var contentType: ContentType {
+        name.components(separatedBy: ".").last.map { ContentType(fileExtension: $0) ?? .octetStream }  ?? .octetStream
+    }
+    
+    public init(name: String, source: Source, content: ByteContent? = nil, size: Int? = nil) {
+        self.name = name
+        self.source = source
+        self.content = content
+        self.size = size
+        self.clientContentType = nil
+    }
+    
+    public func _in(_ filesystem: Filesystem) -> File {
         var copy = self
-        copy.name = name
+        switch source {
+        case .filesystem(_, let path):
+            copy.source = .filesystem(filesystem, path: path)
+        default:
+            break
+        }
+        
         return copy
+    }
+    
+    // MARK: - Accessing Contents
+    
+    /// get a url for this resource
+    public func url() throws -> URL {
+        switch source {
+        case .filesystem(let filesystem, let path):
+            return try (filesystem ?? Storage).url(path)
+        case .http:
+            throw FileError.urlUnavailable
+        }
+    }
+    
+    /// get temporary url for this resource
+    public func temporaryUrl(expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+        switch source {
+        case .filesystem(let filesystem, let path):
+            return try await (filesystem ?? Storage).temporaryURL(path, expires: expires, headers: headers)
+        default:
+            throw FileError.temporaryUrlNotAvailable
+        }
+    }
+    
+    public func getContent() async throws -> ByteContent {
+        guard let content = content else {
+            switch source {
+            case .http:
+                throw FileError.contentNotLoaded
+            case .filesystem(let filesystem, let path):
+                return try await (filesystem ?? Storage).get(path).getContent()
+            }
+        }
+        
+        return content
+    }
+    
+    // MARK: ModelProperty
+    
+    init(key: String, on row: SQLRowReader) throws {
+        let name = try row.require(key).string()
+        self.init(name: name, source: .filesystem(Storage, path: name))
+    }
+
+    func store(key: String, on row: inout SQLRowWriter) throws {
+        guard case .filesystem(_, let path) = source else {
+            throw RuneError("currently, only files saved in a `Filesystem` can be stored on a `Model`")
+        }
+
+        row.put(.string(path), at: key)
     }
     
     // MARK: - ResponseConvertible
     
     public func response() async throws -> Response {
-        Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\"\(name)\""])
+        let content = try await getContent()
+        return Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\"\(name)\""])
             .withBody(content, type: contentType, length: size)
     }
     
     public func download() async throws -> Response {
-        Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\"\(name)\""])
+        let content = try await getContent()
+        return Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\"\(name)\""])
             .withBody(content, type: contentType, length: size)
     }
     
-    // MARK: - Decodable
-    
-    enum CodingKeys: String, CodingKey {
-        case name, size, content
-    }
+    // MARK: - Codable
     
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.name = try container.decode(String.self, forKey: .name)
-        self.size = try container.decode(Int.self, forKey: .size)
-        self.content = .data(try container.decode(Data.self, forKey: .content))
-        let _extension = name.components(separatedBy: ".").last ?? ""
-        self.contentType = ContentType(fileExtension: _extension) ?? .octetStream
+        let container = try decoder.singleValueContainer()
+        let data = try container.decode(Data.self)
+        self.name = UUID().uuidString
+        self.source = .raw
+        self.content = .data(data)
+        self.size = data.count
+        self.clientContentType = nil
     }
     
-    // MARK: - Encodable
-    
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(name, forKey: .name)
-        try container.encode(size, forKey: .size)
-        try container.encode(content.data(), forKey: .content)
+        var container = encoder.singleValueContainer()
+        guard let content = content else {
+            throw FileError.contentNotLoaded
+        }
+        
+        try container.encode(content.data())
     }
 }
 
@@ -70,10 +141,15 @@ public struct File: Codable, ResponseConvertible {
 extension File: MultipartPartConvertible {
     public var multipart: MultipartPart? {
         var headers: HTTPHeaders = [:]
-        headers.contentType = ContentType(fileExtension: `extension`)
+        headers.contentType = contentType
         headers.contentDisposition = HTTPHeaders.ContentDisposition(value: "form-data", name: nil, filename: name)
         headers.contentLength = size
-        return MultipartPart(headers: headers, body: content.buffer)
+        guard let content = self.content else {
+            Log.warning("Unable to convert a filesystem reference to a `MultipartPart`. Please load the contents of the file first.")
+            return nil
+        }
+        
+        return MultipartPart(headers: headers, body: content.data())
     }
     
     public init?(multipart: MultipartPart) {
@@ -86,6 +162,8 @@ extension File: MultipartPartConvertible {
         }
 
         // If there is no filename in the content disposition included (technically not required via RFC 7578) set to a random UUID.
-        self.init(name: (fileName ?? UUID().uuidString) + fileExtension, contentType: multipart.headers.contentType, size: fileSize, content: .buffer(multipart.body))
+        let name = (fileName ?? UUID().uuidString) + fileExtension
+        let contentType = multipart.headers.contentType
+        self.init(name: name, source: .http(clientContentType: contentType), content: .buffer(multipart.body), size: fileSize)
     }
 }

@@ -85,7 +85,7 @@ final class ContentTests: XCTestCase {
     func _testMultipart(content: Content) throws {
         let file = try content["file"].fileThrowing
         AssertEqual(file.name, "a.txt")
-        AssertEqual(file.content.buffer.string, "Content of a.txt.\n")
+        AssertEqual(file.content?.buffer.string, "Content of a.txt.\n")
     }
     
     func _testFlatten(content: Content, allowsNull: Bool) throws {
