@@ -11,7 +11,7 @@ final class HashTests: TestCase<TestApp> {
         XCTAssertThrowsError(try Hash(.bcrypt(rounds: 1)).make("foo"))
     }
     
-    func testSHA256() async throws {
+    func testSHA256() throws {
         let hashed = try Hash(.sha256).make("foo")
         let verify = try Hash(.sha256).verify("foo", hash: hashed)
         XCTAssertTrue(verify)

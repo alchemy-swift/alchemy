@@ -1,4 +1,5 @@
 import Alchemy
+
 public final class StubDatabase: DatabaseProvider {
     private var isShutdown = false
     private var stubs: [[SQLRow]] = []

@@ -1,54 +1,58 @@
 import Crypto
-
-enum EncryptionError: Error {
-    case stringNotBase64Encoded
-    case misc
-}
+import Foundation
 
 extension SymmetricKey {
-    public static let app = SymmetricKey(size: .bits256)
+    public static var app: SymmetricKey = {
+        guard let appKey: String = Env.APP_KEY else {
+            fatalError("Unable to load APP_KEY from Environment. Please set an APP_KEY before encrypting any data with `Crypt` or provide a custom `SymmetricKey` using `Crypt(key:)`.")
+        }
+        
+        guard let data = Data(base64Encoded: appKey) else {
+            fatalError("Unable to create encryption key from APP_KEY. Please ensure APP_KEY is a base64 encoded String.")
+        }
+        
+        return SymmetricKey(data: data)
+    }()
 }
 
 public struct Encrypter {
+    private let key: SymmetricKey
     
-    public func encrypt(_ string: String, key: SymmetricKey = .app) throws -> Data {
-        let message = Data(string.utf8)
-        guard let result = try AES.GCM.seal(message, using: key).combined else {
-            throw EncryptionError.misc
+    public init(key: SymmetricKey) {
+        self.key = key
+    }
+    
+    public func encrypt(string: String) throws -> Data {
+        try encrypt(data: Data(string.utf8))
+    }
+    
+    public func encrypt<D: DataProtocol>(data: D) throws -> Data {
+        guard let result = try AES.GCM.seal(data, using: key).combined else {
+            throw EncryptionError("could not encrypt the data")
         }
         
         return result
     }
     
-    public func decrypt(_ data: Data, key: SymmetricKey = .app) throws -> String {
+    public func decrypt(base64Encoded string: String) throws -> String {
+        guard let data = Data(base64Encoded: string) else {
+            throw EncryptionError("the string wasn't base64 encoded")
+        }
+        
+        return try decrypt(data: data)
+    }
+    
+    public func decrypt<D: DataProtocol>(data: D) throws -> String {
         let box = try AES.GCM.SealedBox(combined: data)
         let data = try AES.GCM.open(box, using: key)
         guard let string = String(data: data, encoding: .utf8) else {
-            throw EncryptionError.misc
+            throw EncryptionError("could not decrypt the data")
         }
         
         return string
     }
-}
-
-@propertyWrapper
-public struct Encrypted: ModelProperty {
-    public var wrappedValue: String
-
-    // MARK: ModelProperty
-
-    public init(key: String, on row: SQLRowReader) throws {
-        let encrypted = try row.require(key).string()
-        guard let data = Data(base64Encoded: encrypted) else {
-            throw EncryptionError.stringNotBase64Encoded
-        }
-        
-        wrappedValue = try Crypt.decrypt(data)
-    }
-
-    public func store(key: String, on row: inout SQLRowWriter) throws {
-        let encrypted = try Crypt.encrypt(wrappedValue)
-        let string = encrypted.base64EncodedString()
-        row.put(.string(string), at: key)
+    
+    public static func generateKeyString(size: SymmetricKeySize = .bits256) -> String {
+        SymmetricKey(size: size).withUnsafeBytes { Data($0) }.base64EncodedString()
     }
 }

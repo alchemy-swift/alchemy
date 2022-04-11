@@ -1,3 +1,5 @@
+import CryptoKit
+
 /// The default configured Client
 public var Http: Client.Builder { Client.id(.default).builder() }
 public func Http(_ id: Client.Identifier) -> Client.Builder { Client.id(id).builder() }
@@ -31,4 +33,5 @@ public var Hash: Hasher<BCryptHasher> { Hasher(algorithm: .bcrypt) }
 public func Hash<Algorithm: HashAlgorithm>(_ algorithm: Algorithm) -> Hasher<Algorithm> { Hasher(algorithm: algorithm) }
 
 /// Accessor for encryption
-public var Crypt: Encrypter { Encrypter() }
+public var Crypt: Encrypter { Encrypter(key: .app) }
+public func Crypt(key: SymmetricKey) -> Encrypter { Encrypter(key: key) }
