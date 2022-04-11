@@ -25,3 +25,10 @@ public func Redis(_ id: RedisClient.Identifier) -> RedisClient { .id(id) }
 /// Accessor for firing events; applications should listen to events via
 /// `Application.schedule(events: EventBus)`.
 public var Events: EventBus { .id(.default) }
+
+/// Accessors for Hashing
+public var Hash: Hasher<BCryptHasher> { Hasher(algorithm: .bcrypt) }
+public func Hash<Algorithm: HashAlgorithm>(_ algorithm: Algorithm) -> Hasher<Algorithm> { Hasher(algorithm: algorithm) }
+
+/// Accessor for encryption
+public var Crypt: Encrypter { Encrypter() }

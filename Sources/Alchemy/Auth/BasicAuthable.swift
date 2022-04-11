@@ -74,7 +74,7 @@ extension BasicAuthable {
     /// - Returns: A `Bool` indicating if `password` matched
     ///   `passwordHash`.
     public static func verify(password: String, passwordHash: String) throws -> Bool {
-        try Hash.verifySync(password, created: passwordHash)
+        try Hash.verify(password, hash: passwordHash)
     }
     
     /// A `Middleware` configured to validate the

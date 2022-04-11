@@ -1,46 +1,31 @@
-/// The MIT License (MIT)
-///
-/// Copyright (c) 2020 Qutheory, LLC
-///
-/// Permission is hereby granted, free of charge, to any person obtaining a copy
-/// of this software and associated documentation files (the "Software"), to deal
-/// in the Software without restriction, including without limitation the rights
-/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-/// copies of the Software, and to permit persons to whom the Software is
-/// furnished to do so, subject to the following conditions:
-///
-/// The above copyright notice and this permission notice shall be included in all
-/// copies or substantial portions of the Software.
-///
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-/// SOFTWARE.
-///
-/// Courtesy of https://github.com/vapor/vapor
-///
-/// This depends on the supplied `CBCrypt` C library.
 import CAlchemy
 
-/// Creates and verifies BCrypt hashes.
-///
-/// Use BCrypt to create hashes for sensitive information like passwords.
-///
-///     try BCrypt.hash("vapor", cost: 4)
-///
-/// BCrypt uses a random salt each time it creates a hash. To verify hashes, use the `verify(_:matches)` method.
-///
-///     let hash = try BCrypt.hash("vapor", cost: 4)
-///     try BCrypt.verify("vapor", created: hash) // true
-///
-/// https://en.wikipedia.org/wiki/Bcrypt
-public var Hash: Hasher {
-    return .init()
+extension HashAlgorithm where Self == BCryptHasher {
+    public static var bcrypt: BCryptHasher {
+        BCryptHasher(rounds: 10)
+    }
+    
+    public static func bcrypt(rounds: Int) -> BCryptHasher {
+        BCryptHasher(rounds: rounds)
+    }
 }
 
+public final class BCryptHasher: HashAlgorithm {
+    private let bcrypt = _BCrypt()
+    private let rounds: Int
+    
+    public init(rounds: Int) {
+        self.rounds = rounds
+    }
+    
+    public func verify(_ plaintext: String, hash: String) throws -> Bool {
+        try bcrypt.verify(plaintext, hash: hash)
+    }
+    
+    public func make(_ value: String) throws -> String {
+        try bcrypt.hash(value, cost: rounds)
+    }
+}
 
 /// Creates and verifies BCrypt hashes. Normally you will not need to initialize one of these classes and you will
 /// use the global `BCrypt` convenience instead.
@@ -48,24 +33,48 @@ public var Hash: Hasher {
 ///     try BCrypt.hash("vapor", cost: 4)
 ///
 /// See `BCrypt` for more information.
-public final class Hasher {
-    /// Creates a new `BCryptDigest`. Use the global `BCrypt` convenience variable.
-    public init() { }
-
-    /// Asynchronously hashes a password on a separate thread.
-    ///
-    /// - Parameter password: The password to hash.
-    /// - Returns: The hashed password.
-    public func hash(_ password: String) async throws -> String {
-        try await Thread.run { try Hash.hashSync(password) }
+private final class _BCrypt {
+    func hash(_ plaintext: String, cost: Int = 12) throws -> String {
+        guard cost >= BCRYPT_MINLOGROUNDS && cost <= 31 else {
+            throw BcryptError.invalidCost
+        }
+        
+        return try _hash(plaintext, salt: generateSalt(cost: cost))
     }
     
-    public func hashSync(_ plaintext: String, cost: Int = 12) throws -> String {
-        guard cost >= BCRYPT_MINLOGROUNDS && cost <= 31 else { throw BcryptError.invalidCost }
-        return try self.hashSync(plaintext, salt: self.generateSalt(cost: cost))
+    /// Verifies an existing BCrypt hash matches the supplied plaintext value. Verification works by parsing the salt and version from
+    /// the existing digest and using that information to hash the plaintext data. If hash digests match, this method returns `true`.
+    ///
+    ///     let hash = try BCrypt.hash("vapor", cost: 4)
+    ///     try BCrypt.verify("vapor", created: hash) // true
+    ///     try BCrypt.verify("foo", created: hash) // false
+    ///
+    /// - parameters:
+    ///     - plaintext: Plaintext data to digest and verify.
+    ///     - hash: Existing BCrypt hash to parse version, salt, and existing digest from.
+    /// - throws: `CryptoError` if hashing fails or if data conversion fails.
+    /// - returns: `true` if the hash was created from the supplied plaintext data.
+    func verify(_ plaintext: String, hash: String) throws -> Bool {
+        guard let hashVersion = Algorithm(rawValue: String(hash.prefix(4))) else {
+            throw BcryptError.invalidHash
+        }
+
+        let hashSalt = String(hash.prefix(hashVersion.fullSaltCount))
+        guard !hashSalt.isEmpty, hashSalt.count == hashVersion.fullSaltCount else {
+            throw BcryptError.invalidHash
+        }
+
+        let hashChecksum = String(hash.suffix(hashVersion.checksumCount))
+        guard !hashChecksum.isEmpty, hashChecksum.count == hashVersion.checksumCount else {
+            throw BcryptError.invalidHash
+        }
+
+        let messageHash = try _hash(plaintext, salt: hashSalt)
+        let messageHashChecksum = String(messageHash.suffix(hashVersion.checksumCount))
+        return messageHashChecksum.secureCompare(to: hashChecksum)
     }
 
-    public func hashSync(_ plaintext: String, salt: String) throws -> String {
+    private func _hash(_ plaintext: String, salt: String) throws -> String {
         guard isSaltValid(salt) else {
             throw BcryptError.invalidSalt
         }
@@ -110,50 +119,6 @@ public final class Hasher {
                 .dropFirst(originalAlgorithm.revisionCount)
     }
     
-    /// Asynchronously verifies a password & hash on a separate
-    /// thread.
-    ///
-    /// - Parameters:
-    ///   - plaintext: The plaintext password.
-    ///   - hashed: The hashed password to verify with.
-    /// - Returns: Whether the password and hash matched.
-    public func verify(plaintext: String, hashed: String) async throws -> Bool {
-        try await Thread.run { try Hash.verifySync(plaintext, created: hashed) }
-    }
-
-    /// Verifies an existing BCrypt hash matches the supplied plaintext value. Verification works by parsing the salt and version from
-    /// the existing digest and using that information to hash the plaintext data. If hash digests match, this method returns `true`.
-    ///
-    ///     let hash = try BCrypt.hash("vapor", cost: 4)
-    ///     try BCrypt.verify("vapor", created: hash) // true
-    ///     try BCrypt.verify("foo", created: hash) // false
-    ///
-    /// - parameters:
-    ///     - plaintext: Plaintext data to digest and verify.
-    ///     - hash: Existing BCrypt hash to parse version, salt, and existing digest from.
-    /// - throws: `CryptoError` if hashing fails or if data conversion fails.
-    /// - returns: `true` if the hash was created from the supplied plaintext data.
-    public func verifySync(_ plaintext: String, created hash: String) throws -> Bool {
-        guard let hashVersion = Algorithm(rawValue: String(hash.prefix(4))) else {
-            throw BcryptError.invalidHash
-        }
-
-        let hashSalt = String(hash.prefix(hashVersion.fullSaltCount))
-        guard !hashSalt.isEmpty, hashSalt.count == hashVersion.fullSaltCount else {
-            throw BcryptError.invalidHash
-        }
-
-        let hashChecksum = String(hash.suffix(hashVersion.checksumCount))
-        guard !hashChecksum.isEmpty, hashChecksum.count == hashVersion.checksumCount else {
-            throw BcryptError.invalidHash
-        }
-
-        let messageHash = try self.hashSync(plaintext, salt: hashSalt)
-        let messageHashChecksum = String(messageHash.suffix(hashVersion.checksumCount))
-        return messageHashChecksum.secureCompare(to: hashChecksum)
-    }
-
-    // MARK: Private
     /// Generates string (29 chars total) containing the algorithm information + the cost + base-64 encoded 22 character salt
     ///
     ///     E.g:  $2b$05$J/dtt5ybYUTCJ/dtt5ybYO
@@ -253,11 +218,11 @@ public enum BcryptError: Swift.Error, CustomStringConvertible, LocalizedError {
     case invalidHash
 
     public var errorDescription: String? {
-        return self.description
+        return description
     }
 
     public var description: String {
-        return "Bcrypt error: \(self.reason)"
+        return "Bcrypt error: \(reason)"
     }
 
     var reason: String {
@@ -288,7 +253,7 @@ extension Collection where Element: Equatable {
     /// - parameters:
     ///     - other: Collection to compare to.
     /// - returns: `true` if the collections are equal.
-    public func secureCompare<C>(to other: C) -> Bool where C: Collection, C.Element == Element {
+    fileprivate func secureCompare<C>(to other: C) -> Bool where C: Collection, C.Element == Element {
         let chk = self
         let sig = other
 
@@ -309,16 +274,10 @@ extension Collection where Element: Equatable {
     }
 }
 
-extension FixedWidthInteger {
-    public static func random() -> Self {
-        return Self.random(in: .min ... .max)
-    }
-}
-
 extension Array where Element: FixedWidthInteger {
-    public static func random(count: Int) -> [Element] {
+    fileprivate static func random(count: Int) -> [Element] {
         var array: [Element] = .init(repeating: 0, count: count)
-        (0..<count).forEach { array[$0] = Element.random() }
+        (0..<count).forEach { array[$0] = Element.random(in: .min ... .max) }
         return array
     }
 }

@@ -10,7 +10,7 @@ final class TokenAuthableTests: TestCase<TestApp> {
             return try req.get(TokenModel.self).value
         }
         
-        let auth = try await AuthModel(email: "test@withapollo.com", password: Hash.hash("password")).insertReturn()
+        let auth = try await AuthModel(email: "test@withapollo.com", password: Hash.make("password")).insertReturn()
         let token = try await TokenModel(authModel: auth).insertReturn()
         
         try await Test.get("/user")

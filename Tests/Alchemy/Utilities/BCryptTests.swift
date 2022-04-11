@@ -1,13 +1,19 @@
 import AlchemyTest
 
-final class BcryptTests: TestCase<TestApp> {
+final class HashTests: TestCase<TestApp> {
     func testBcrypt() async throws {
-        let hashed = try await Hash.hash("foo")
-        let verify = try await Hash.verify(plaintext: "foo", hashed: hashed)
+        let hashed = try await Hash.makeAsync("foo")
+        let verify = try await Hash.verifyAsync("foo", hash: hashed)
         XCTAssertTrue(verify)
     }
     
-    func testCostTooLow() {
-        XCTAssertThrowsError(try Hash.hashSync("foo", cost: 1))
+    func testBcryptCostTooLow() {
+        XCTAssertThrowsError(try Hash(.bcrypt(rounds: 1)).make("foo"))
+    }
+    
+    func testSHA256() async throws {
+        let hashed = try Hash(.sha256).make("foo")
+        let verify = try Hash(.sha256).verify("foo", hash: hashed)
+        XCTAssertTrue(verify)
     }
 }
