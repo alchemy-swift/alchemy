@@ -1,4 +1,4 @@
-import CryptoKit
+import Crypto
 
 /// The default configured Client
 public var Http: Client.Builder { Client.id(.default).builder() }
