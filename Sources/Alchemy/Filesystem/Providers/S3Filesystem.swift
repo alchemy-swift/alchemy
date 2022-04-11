@@ -38,7 +38,22 @@ struct S3Filesystem: FilesystemProvider {
     
     func create(_ filepath: String, content: ByteContent) async throws -> File {
         let path = resolvedPath(filepath)
-        let req = S3.PutObjectRequest(acl: .private, body: .byteBuffer(content.buffer), bucket: bucket, key: path)
+        var req: S3.PutObjectRequest
+        switch content {
+        case .buffer(let buffer):
+            req = S3.PutObjectRequest(body: .byteBuffer(buffer), bucket: bucket, key: path)
+        case .stream(let stream):
+            req = S3.PutObjectRequest(body: .stream { eventLoop in
+                stream._read(on: eventLoop).map { buffer in
+                    guard let buffer = buffer else {
+                        return .end
+                    }
+                    
+                    return .byteBuffer(buffer)
+                }
+            }, bucket: bucket, key: path)
+        }
+        
         _ = try await s3.putObject(req)
         return File(name: path, source: .filesystem(path: path))
     }
