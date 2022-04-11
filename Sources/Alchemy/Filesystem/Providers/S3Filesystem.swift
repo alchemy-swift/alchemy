@@ -62,7 +62,8 @@ struct S3Filesystem: FilesystemProvider {
     
     func url(_ filepath: String) throws -> URL {
         let path = resolvedPath(filepath)
-        guard let url = URL(string: "\(s3.endpoint)/\(path)") else {
+        let basePath = s3.endpoint.replacingOccurrences(of: "://", with: "://\(bucket).")
+        guard let url = URL(string: "\(basePath)/\(path)") else {
             throw FileError.urlUnavailable
         }
         
@@ -70,11 +71,7 @@ struct S3Filesystem: FilesystemProvider {
     }
     
     func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
-        let path = resolvedPath(filepath)
-        guard let url = URL(string: "https://\(bucket).\(s3.region.rawValue).\(s3.endpoint)/\(path)") else {
-            throw FileError.urlUnavailable
-        }
-        
+        let url = try url(filepath)
         return try await s3.signURL(url: url, httpMethod: .GET, headers: headers, expires: .seconds(10))
     }
     
@@ -91,6 +88,7 @@ struct S3Filesystem: FilesystemProvider {
     }
     
     private func resolvedPath(_ filePath: String) -> String {
+        guard !root.isEmpty else { return filePath }
         let path = root.last == "/" ? filePath : "/\(filePath)"
         return root + path
     }
