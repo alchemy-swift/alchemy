@@ -59,50 +59,79 @@ struct Tester {
          */
         
         let user = User(name: "Josh", phone: "8609902262", email: "josh@withapollo.com")
-        try await user.send(SMSMessage(text: "yo"))
-        try await user.sendSMS("Welcome to Apollo!!!")
+        try await user.send(SMSMessage(text: "yo"), via: .default)
+        try await SMSMessage(text: "yo").send(to: user, via: .default)
+        try await user.send(sms: "Welcome to Apollo!!!", via: .default)
         try await user.sendEmail("<p> Hello from Apollo! </p>")
-        try await SMS.send(message: SMSMessage(text: "yo"), to: user)
-        try await SMS.send(message: SMSMessage(text: "yo"), to: "8609902262")
-        try await WelcomeText(user: user).send()
-        try await NewReward(user: user).send()
-        try await DeploymentComplete(users: [user]).send()
+        try await SMS.send(SMSMessage(text: "yo"), to: user)
+        try await SMS.send("yo", to: "8609902262")
+        try await WelcomeText().send(to: user)
+        try await NewReward().send(to: user)
+        try await DeploymentComplete().send(to: [user])
         
         // Wishlist
         try await user.send(WelcomeText())
+        try await user.send(NewReward())
+        try await [user].send(DeploymentComplete())
+        
+        /*
+         Combine Push notifications? i.e. send on multiple push channels
+         */
     }
 }
 
 /*
  Goal
  1. reduce sugar method bloat
+ 
+ separate recipient and content? No, since recipient and content could be connected.
  */
 
-struct DeploymentComplete {
-    let users: [User]
+protocol Message {
+    associatedtype R: Receiver
+    associatedtype Sender: Service
     
-    func send() async throws {
+    func send(to receiver: R, via sender: Sender) async throws
+}
+
+protocol Notification {
+    associatedtype R: Receiver
+    
+    func send(to receiver: R) async throws
+}
+
+extension Message {
+    func send(to receiver: R, via sender: Sender = .default) async throws {
+        try await send(to: receiver, via: sender)
+    }
+}
+
+protocol Receiver {}
+extension Array: Receiver where Element: Receiver {}
+extension Receiver {
+    func send<M: Message>(_ message: M, via sender: M.Sender = .default) async throws where M.R == Self {}
+    func send<N: Notification>(_ message: N) async throws where N.R == Self {}
+}
+
+struct DeploymentComplete: Notification {
+    func send(to users: [User]) async throws {
         for user in users {
-            try await user.sendSMS("Deployment complete!")
+            try await user.send(sms: "Deployment complete!")
         }
     }
 }
 
-struct NewReward {
-    let user: User
-    
-    func send() async throws {
+struct NewReward: Notification {
+    func send(to user: User) async throws {
         for device in 0...10 {
-            try await user.sendSMS("New reward, \(user.name)!")
+            try await user.send(sms: "New reward, \(user.name)!")
         }
     }
 }
 
-struct WelcomeText {
-    let user: User
-    
-    func send() async throws {
-        try await user.sendSMS("Welcome to Apollo, \(user.name)!")
+struct WelcomeText: Notification {
+    func send(to user: User) async throws {
+        try await user.send(sms: "Welcome to Apollo, \(user.name)!")
     }
 }
 
@@ -163,31 +192,40 @@ extension EmailReceiver {
 
 // MARK: SMS
 
-struct SMSMessage {
+struct SMSMessage<R: SMSReceiver>: Message {
     let text: String
+    
+    func send(to receiver: R, via sender: SMSSender) async throws {
+        
+    }
 }
 
-protocol SMSReceiver {
+extension SMSMessage: ExpressibleByStringInterpolation {
+    init(stringLiteral value: String) {
+        self.init(text: value)
+    }
+}
+
+protocol SMSReceiver: Receiver {
     var phone: String { get }
 }
 
+extension String: SMSReceiver {
+    var phone: String { self }
+}
+
 var SMS: SMSSender { SMSSender() }
-struct SMSSender {
-    func send(message: SMSMessage, to receiver: SMSReceiver) async throws {
-        // send it
+struct SMSSender: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
     }
     
-    func send(message: SMSMessage, to phone: String) async throws {
+    func send<R: SMSReceiver>(_ message: SMSMessage<R>, to receiver: R) async throws {
         // send it
     }
 }
 
 extension SMSReceiver {
-    func send(_ sms: SMSMessage) async throws {
-        
-    }
-    
-    func sendSMS(_ message: String) async throws {
-        try await SMSSender().send(message: SMSMessage(text: message), to: self)
-    }
+    func send(sms: SMSMessage<Self>, via sender: SMSSender = .default) async throws {}
 }
