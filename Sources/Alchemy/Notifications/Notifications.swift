@@ -62,9 +62,16 @@ struct Tester {
         try await user.send(SMSMessage(text: "yo"))
         try await user.sendSMS("Welcome to Apollo!!!")
         try await user.sendEmail("<p> Hello from Apollo! </p>")
+        try await SMS.send(message: SMSMessage(text: "yo"), to: user)
+        try await SMS.send(message: SMSMessage(text: "yo"), to: "8609902262")
         try await WelcomeText(user: user).send()
     }
 }
+
+/*
+ Goal
+ 1. reduce sugar method bloat
+ */
 
 struct WelcomeText {
     let user: User
@@ -139,8 +146,13 @@ protocol SMSReceiver {
     var phone: String { get }
 }
 
+var SMS: SMSSender { SMSSender() }
 struct SMSSender {
     func send(message: SMSMessage, to receiver: SMSReceiver) async throws {
+        // send it
+    }
+    
+    func send(message: SMSMessage, to phone: String) async throws {
         // send it
     }
 }
