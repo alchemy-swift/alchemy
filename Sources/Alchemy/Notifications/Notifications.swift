@@ -65,6 +65,11 @@ struct Tester {
         try await SMS.send(message: SMSMessage(text: "yo"), to: user)
         try await SMS.send(message: SMSMessage(text: "yo"), to: "8609902262")
         try await WelcomeText(user: user).send()
+        try await NewReward(user: user).send()
+        try await DeploymentComplete(users: [user]).send()
+        
+        // Wishlist
+        try await user.send(WelcomeText())
     }
 }
 
@@ -72,6 +77,26 @@ struct Tester {
  Goal
  1. reduce sugar method bloat
  */
+
+struct DeploymentComplete {
+    let users: [User]
+    
+    func send() async throws {
+        for user in users {
+            try await user.sendSMS("Deployment complete!")
+        }
+    }
+}
+
+struct NewReward {
+    let user: User
+    
+    func send() async throws {
+        for device in 0...10 {
+            try await user.sendSMS("New reward, \(user.name)!")
+        }
+    }
+}
 
 struct WelcomeText {
     let user: User
