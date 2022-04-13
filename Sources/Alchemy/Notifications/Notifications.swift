@@ -1,63 +1,24 @@
 /*
- Shared Logic
- 1. Destination
- 2. Content
- 3. Sender
+ Up Next
+ 1. Queueable
+ 2. Implement Required
+    1. Text
+    2. Email
+    3. APNS
+    4. Database
+ 3. Implement not required
+ 
+ Bonus
+ 5. Slack
  */
 
-/*
- Notification
- 1. data
- 2. message(s)
-    1. content
-    2. receiver
-    3. channel
- 3. queuable
- */
+import Foundation
+import Papyrus
 
 // MARK: Example
 
 struct Tester {
     func main() async throws {
-        
-        /*
-         APIs
-         Type Based
-         1. user.sendSMS("Hello!") // Would require User: SMSNotifiable
-         2. user.send(MyNotification()) // would need User: Notifiable and `send(to recipient: GenericType)` in `MyNotification`
-         
-         Problem; some receivers may be concrete types (User) some may be protocols (SMSNotifiable). Hard to add generic methods for protocols; can do associatedtype R: Protocol ?
-         
-         One Off
-         1. SMS.send("Hello!", to: "8609902262") // simple
-         2. SMSMessage("Hello there!").send(to: "8609902262") // Would require Generic Receiver / Sender type embedded in SMSMessage
-         3. MyNotification(user: User).send() // simple, esp with Job. Makes it easier to encode payload too.
-         4. MyNotification().send(to: user) // Would require Generic Receiver / Sender type embedded in SMSMessage
-         */
-        
-        /*
-         Sender
-         Message
-         Receiver
-         
-         1. user.sendSMS("ddd")
-         - user needs receiver data (via protocol to add method)
-         2. user.send(MyNotification())
-         - User needs to know it can send notifications (protocol)
-         - User needs to know what notifications it can send (impossible(?) constraint)
-         - MyNotification needs Receiver type embedded (PAT)
-         3. SMS.send(...)
-         - Sender needs Message and Reciever embedded
-         4. SMSMessage().send(to: ...)
-         - Message needs receiver type embedded (PAT)
-         5. SMSMessage().send()
-         - Message needs receiver data embedded (data)
-         6. MyNotification().send(to: ...)
-         - Message needs receiver type embedded (PAT)
-         7. MyNotification().send()
-         - Message needs receiver data embedded (data)
-         */
-        
         let user = User(name: "Josh", phone: "8609902262", email: "josh@withapollo.com")
         try await user.send(SMSMessage(text: "yo"), via: .default)
         try await SMSMessage(text: "yo").send(to: user, via: .default)
@@ -73,44 +34,35 @@ struct Tester {
         try await user.send(WelcomeText())
         try await user.send(NewReward())
         try await [user].send(DeploymentComplete())
-        
-        /*
-         Combine Push notifications? i.e. send on multiple push channels
-         */
     }
 }
 
 /*
- Goal
- 1. reduce sugar method bloat
- 
- separate recipient and content? No, since recipient and content could be connected.
+ Job v2.0
+ 1. Each `Job` converts itself to and from `JobData`.
+ 2. `Codable` `Jobs` automatically conform by encoding / decoding self.
  */
 
-protocol Message {
-    associatedtype R: Receiver
-    associatedtype Sender: Service
-    
-    func send(to receiver: R, via sender: Sender) async throws
+protocol Job2 {
+    init(from: JobData) throws
+    func enqueue() throws -> JobData
 }
 
-protocol Notification {
-    associatedtype R: Receiver
-    
-    func send(to receiver: R) async throws
+struct NotificationJobPayload<Notif: Codable, Receiver: Codable>: Codable {
+    let notif: Notif
+    let receiver: Receiver
 }
 
-extension Message {
-    func send(to receiver: R, via sender: Sender = .default) async throws {
-        try await send(to: receiver, via: sender)
+extension Notification where Self: Job2, Self: Codable, Self.R: Codable {
+    func enqueue(receiver: R, on queue: Queue) async throws {
+        let payload = NotificationJobPayload(notif: self, receiver: receiver)
+        let data = try JSONEncoder().encode(payload)
     }
-}
-
-protocol Receiver {}
-extension Array: Receiver where Element: Receiver {}
-extension Receiver {
-    func send<M: Message>(_ message: M, via sender: M.Sender = .default) async throws where M.R == Self {}
-    func send<N: Notification>(_ message: N) async throws where N.R == Self {}
+    
+    static func dequeue(data: JobData) async throws {
+        let payload = try JSONDecoder().decode(NotificationJobPayload<Self, R>.self, from: Data(data.json.utf8))
+        try await payload.notif.send(to: payload.receiver)
+    }
 }
 
 struct DeploymentComplete: Notification {
@@ -145,23 +97,32 @@ struct User: Model, SMSReceiver, EmailReceiver {
 
 // MARK: Types
 
-/*
- For Each Channel
- - Sender
- - Message
- - Receiver
- - receiver.send(Message(...), via: Sender)
- - receiver.sendChannel(..., via: Sender)
- - sender.send(Message(), to: Receiver)
- 
- Notification
- - Might have multiple channels (aka multiple messages)
- - can't do notifiable.send(MyNotification()) generically without flagging user as something that can handle MyNotification. Lose this 1 API.
- 
- What shared logic can generics solve with notifications?
- 1. All notifications can be send (however need typesafety, so end up with single protocol for each)
- 2. Protocols allow free functions, at the expense of associated types
- */
+protocol Message {
+    associatedtype R: Receiver
+    associatedtype Sender: Service
+    
+    func send(to receiver: R, via sender: Sender) async throws
+}
+
+extension Message {
+    func send(to receiver: R, via sender: Sender = .default) async throws {
+        try await send(to: receiver, via: sender)
+    }
+}
+
+protocol Notification {
+    associatedtype R: Receiver
+    
+    func send(to receiver: R) async throws
+}
+
+protocol Receiver {}
+extension Receiver {
+    func send<M: Message>(_ message: M, via sender: M.Sender = .default) async throws where M.R == Self {}
+    func send<N: Notification>(_ message: N) async throws where N.R == Self {}
+}
+
+extension Array: Receiver where Element: Receiver {}
 
 
 // MARK: Email
