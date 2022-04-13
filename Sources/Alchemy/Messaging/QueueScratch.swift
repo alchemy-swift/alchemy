@@ -14,14 +14,14 @@ struct NotificationJobPayload<Notif: Codable, Receiver: Codable>: Codable {
     let receiver: Receiver
 }
 
-extension Notification where Self: Job2, Self: Codable, Self.R: Codable {
-    func enqueue(receiver: R, on queue: Queue) async throws {
-        let payload = NotificationJobPayload(notif: self, receiver: receiver)
+extension Notification where Self: Job2, Self: Codable, Self.N: Codable {
+    func enqueue(notifiable: N, on queue: Queue) async throws {
+        let payload = NotificationJobPayload(notif: self, receiver: notifiable)
         let data = try JSONEncoder().encode(payload)
     }
     
     static func dequeue(data: JobData) async throws {
-        let payload = try JSONDecoder().decode(NotificationJobPayload<Self, R>.self, from: Data(data.json.utf8))
+        let payload = try JSONDecoder().decode(NotificationJobPayload<Self, N>.self, from: Data(data.json.utf8))
         try await payload.notif.send(to: payload.receiver)
     }
 }
