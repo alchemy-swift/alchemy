@@ -24,18 +24,28 @@ public protocol AnyChannelConfig {
     func bind()
 }
 
-extension AnyChannelConfig where Self == SMSMessenger.ChannelConfig {
-    static func sms(_ messengers: [SMSMessenger.Identifier: SMSMessenger]) -> AnyChannelConfig {
-        SMSMessenger.ChannelConfig(messengers: messengers)
-    }
-}
-
 extension Messenger: Configurable {
     public static var config: Config {
-        Config(channels: [
-            .sms([
-                .default: .twilio(key: "foo")
-            ]),
-        ])
+        Config(
+            channels: [
+                
+                /// Put your SMS configs here
+                
+                .sms([
+                    .default: .twilio(key: "foo")
+                ]),
+                
+                /// Put your email configs here
+            
+                .email([
+                    .default: .customerio(key: "foo")
+                ]),
+
+                /// Put your database configs here
+                    
+                .apns([
+                    .default: .apnswift(key: "foo")
+                ]),
+            ])
     }
 }

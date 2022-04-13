@@ -12,11 +12,17 @@ extension SMSMessenger {
         let phone: String
     }
     
-    public func send(message: SMSMessage, phone: String) async throws {
-        try await send(message: message, receiver: _OneOffReceiver(phone: phone))
+    public func send(_ message: SMSMessage, toPhone: String, fromPhone: String? = nil) async throws {
+        var copy = message
+        copy.from = fromPhone
+        try await send(copy, to: _OneOffReceiver(phone: toPhone))
     }
 }
 
-extension Messenger.Identifier where C == SMSChannel {
-    static let foo: Self = "foo"
+// MARK: Config + SMS
+
+extension AnyChannelConfig where Self == SMSMessenger.ChannelConfig {
+    static func sms(_ messengers: [SMSMessenger.Identifier: SMSMessenger]) -> AnyChannelConfig {
+        SMSMessenger.ChannelConfig(messengers: messengers)
+    }
 }

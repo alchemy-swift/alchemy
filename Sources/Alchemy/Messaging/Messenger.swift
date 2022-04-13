@@ -10,7 +10,7 @@ public struct Messenger<C: Channel>: Service {
         self._send = provider.send
     }
     
-    public func send(message: C.Message, receiver: C.Receiver) async throws {
+    public func send(_ message: C.Message, to receiver: C.Receiver) async throws {
         try await _send(message, receiver)
     }
 }

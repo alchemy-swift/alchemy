@@ -11,8 +11,8 @@ public struct SMSMessage {
     public let text: String
     public var from: String?
     
-    public func send<R: SMSReceiver>(to receiver: R, via sender: SMSMessenger) async throws {
-        try await sender.send(message: self, receiver: receiver)
+    public func send<R: SMSReceiver>(to receiver: R, via sender: SMSMessenger = .default) async throws {
+        try await sender.send(self, to: receiver)
     }
 }
 
@@ -30,6 +30,6 @@ public protocol SMSReceiver {
 
 extension SMSReceiver {
     public func send(sms: SMSMessage, via sender: SMSMessenger = .default) async throws {
-        try await sender.send(message: sms, receiver: self)
+        try await sender.send(sms, to: self)
     }
 }

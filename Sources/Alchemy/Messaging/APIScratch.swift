@@ -18,17 +18,19 @@
 struct Tester {
     func main() async throws {
         let user = User(name: "Josh", phone: "8609902262", email: "josh@withapollo.com")
+        
+        // Messaging
         try await user.send(sms: SMSMessage(text: "yo"), via: .default)
         try await SMSMessage(text: "yo").send(to: user, via: .default)
         try await user.send(sms: "Welcome to Apollo!!!", via: .default)
-        try await user.sendEmail("<p> Hello from Apollo! </p>")
-        try await SMS.send(message: SMSMessage(text: "yo"), receiver: user)
-        try await SMS.send(message: "yo", phone: "8609902262")
+        try await user.send(email: "<p> Hello from Apollo! </p>", via: .default)
+        try await SMS.send(SMSMessage(text: "yo"), to: user)
+        try await SMS.send("yo", toPhone: "8609902262")
         try await WelcomeText().send(to: user)
         try await NewReward().send(to: user)
         try await DeploymentComplete().send(to: [user])
         
-        // Wishlist
+        // Notifications
         try await user.notify(WelcomeText())
         try await user.notify(NewReward())
         try await [user].notify(DeploymentComplete())
@@ -45,7 +47,7 @@ struct DeploymentComplete: Notification {
 
 struct NewReward: Notification {
     func send(to user: User) async throws {
-        for device in 0...10 {
+        for _ in 0...10 {
             try await user.send(sms: "New reward, \(user.name)!")
         }
     }
