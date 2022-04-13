@@ -18,16 +18,36 @@ extension Messenger where C.Message: Codable {
 }
 
 struct DatabaseMessage: Model {
-    static let tableName: String = "notifications"
+    static let tableName: String = "messages"
     
     var id: Int?
     let channel: String
-    let json: JSONString
+    let message: JSONString
+    let receiver: JSONString
 }
 
 extension DatabaseMessage {
     init<C: Channel, M: Codable>(channel: C.Type, message: M) throws {
         self.channel = C.identifier
-        self.json = try message.jsonString()
+        self.message = try message.jsonString()
+        self.receiver = try message.jsonString()
+    }
+}
+
+public struct AddMessagesMigration: Migration {
+    public init() {}
+    
+    public func up(schema: Schema) {
+        schema.create(table: DatabaseMessage.tableName) {
+            $0.string("id").primary()
+            $0.string("channel").notNull()
+            $0.json("message").notNull()
+            $0.json("receiver").notNull()
+            $0.timestamps()
+        }
+    }
+    
+    public func down(schema: Schema) {
+        schema.drop(table: DatabaseMessage.tableName)
     }
 }
