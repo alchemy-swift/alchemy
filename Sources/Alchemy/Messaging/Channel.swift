@@ -1,8 +1,8 @@
 public protocol Channel {
-    static var identifier: String { get }
-    
     associatedtype Message
     associatedtype Receiver
+    
+    static var identifier: String { get }
 }
 
 extension Channel {

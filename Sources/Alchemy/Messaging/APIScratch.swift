@@ -7,10 +7,8 @@
     2. Email
     3. APNS
     4. Database
- 4. Implement not required
- 
- Bonus
- 5. Slack
+ 4. Bonus
+    1. Slack
  */
 
 // MARK: Example
@@ -37,6 +35,8 @@ struct Tester {
     }
 }
 
+// MARK: Notifications
+
 struct DeploymentComplete: Notification {
     func send(to users: [User]) async throws {
         for user in users {
@@ -59,10 +59,40 @@ struct WelcomeText: Notification {
     }
 }
 
+// MARK: Model
+
 struct User: Model, Notifiable, SMSReceiver, EmailReceiver {
     var id: Int?
     let name: String
     let phone: String
     let email: String
     var token: String { "foo" }
+}
+
+// MARK: Config
+
+extension Messenger: Configurable {
+    public static var config: Config {
+        Config(
+            channels: [
+                
+                /// Put your SMS configs here
+                
+                .sms([
+                    .default: .twilio(key: "foo")
+                ]),
+                
+                /// Put your email configs here
+            
+                .email([
+                    .default: .customerio(key: "foo")
+                ]),
+
+                /// Put your database configs here
+                    
+                .apns([
+                    .default: .apnswift(key: "foo")
+                ]),
+            ])
+    }
 }
