@@ -1,28 +1,32 @@
 // MARK: SMS
 
+import Fakery
+
 public var SMS: SMSSender { .default }
 public func SMS(_ id: SMSSender.Identifier) -> SMSSender { .id(id) }
 
-public struct SMSSender: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
-    let provider: SMSProvider
-    
-    public init(provider: SMSProvider) {
-        self.provider = provider
-    }
-    
-    public func send<R: SMSReceiver>(_ message: SMSMessage<R>, to receiver: R) async throws {
-        try await provider.send(message: message.text, to: receiver.phone, from: message.from)
-    }
-    
-    public func send(_ message: SMSMessage<SMSPhoneNumber>, to phone: String) async throws {
-        try await send(message, to: SMSPhoneNumber(phone: phone))
-    }
-}
+//public struct SMSSender: Service {
+//    public struct Identifier: ServiceIdentifier {
+//        private let hashable: AnyHashable
+//        public init(hashable: AnyHashable) { self.hashable = hashable }
+//    }
+//
+//    let provider: SMSProvider
+//
+//    public init(provider: SMSProvider) {
+//        self.provider = provider
+//    }
+//
+//    public func send<R: SMSReceiver>(_ message: SMSMessage<R>, to receiver: R) async throws {
+//        try await provider.send(message: message.text, to: receiver.phone, from: message.from)
+//    }
+//
+//    public func send(_ message: SMSMessage<SMSPhoneNumber>, to phone: String) async throws {
+//        try await send(message, to: SMSPhoneNumber(phone: phone))
+//    }
+//}
+
+public typealias SMSSender = NotificationSender<SMSChannel>
 
 public struct SMSPhoneNumber: SMSReceiver {
     public let phone: String
@@ -32,42 +36,51 @@ public struct SMSPhoneNumber: SMSReceiver {
 //    func send(message: String, to: String, from: String?) async throws
 //}
 
-public protocol SMSProvider: ChannelProvider where M == SMSMessage<R>, R: SMSReceiver {}
-
-struct TwilioProvider<R: SMSReceiver>: SMSProvider {
-    func send(message: SMSMessage<R>, receiver: R) async throws {
+struct TwilioProvider: ChannelProvider {
+    typealias C = SMSChannel
+    
+    func send(message: SMSMessage2, to: SMSReceiver2) async throws {
         // send
     }
 }
 
-public protocol ChannelProvider {
-    associatedtype M: Message
-    associatedtype R: Receiver
+public struct SMSMessage2 {
     
-    func send(message: M, receiver: R) async throws
 }
 
-public protocol NotificationChannel {
-    associatedtype Provider: ChannelProvider
+public struct SMSReceiver2 {
+    
 }
 
-public struct NotificationSender<Channel: NotificationChannel>: Service {
+public enum SMSChannel: Channel {
+    public typealias Message = SMSMessage2
+    public typealias Receiver = SMSReceiver2
+}
+
+public protocol Channel {
+    associatedtype Message
+    associatedtype Receiver
+}
+
+public protocol ChannelProvider {
+    associatedtype C: Channel
+    
+    func send(message: C.Message, to: C.Receiver) async throws
+}
+
+public struct NotificationSender<C: Channel>: Service {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
     
-    let provider: Channel.Provider
+    let _send: (C.Message, C.Receiver) async throws -> Void
     
-    public init(provider: Channel.Provider) {
-        self.provider = provider
+    public init<P: ChannelProvider>(provider: P) where P.C == C {
+        self._send = provider.send
     }
     
-    public func send(message: Channel.Provider.M, receiver: Channel.Provider.R) async throws {
-        try await provider.send(message: message, receiver: receiver)
+    public func send(message: C.Message, receiver: C.Receiver) async throws {
+        try await _send(message, receiver)
     }
-}
-
-extension NotificationSender where Channel.Provider: SMSProvider {
-    
 }
