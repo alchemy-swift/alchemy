@@ -7,7 +7,7 @@ struct CustomerIOProvider: ChannelProvider {
 }
 
 extension EmailMessenger {
-    public static func customerio(key: String) -> EmailMessenger {
-        Messenger(provider: CustomerIOProvider())
+    public static func customerio(key: String, saveInDatabase: Bool = false) -> EmailMessenger {
+        Messenger(provider: CustomerIOProvider(), saveInDatabase: saveInDatabase)
     }
 }

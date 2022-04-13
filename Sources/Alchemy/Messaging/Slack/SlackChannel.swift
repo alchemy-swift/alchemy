@@ -7,7 +7,7 @@ public struct SlackChannel: Channel {
 
 // MARK: SMSMessage
 
-public struct SlackMessage {
+public struct SlackMessage: Codable, Queueable {
     public let text: String
     public var from: String?
     

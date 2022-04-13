@@ -7,7 +7,7 @@ struct TwilioProvider: ChannelProvider {
 }
 
 extension SMSMessenger {
-    public static func twilio(key: String) -> SMSMessenger {
-        Messenger(provider: TwilioProvider())
+    public static func twilio(key: String, saveInDatabase: Bool = false) -> SMSMessenger {
+        Messenger(provider: TwilioProvider(), saveInDatabase: saveInDatabase)
     }
 }

@@ -7,7 +7,7 @@ struct APNSwiftProvider: ChannelProvider {
 }
 
 extension APNSMessenger {
-    public static func apnswift(key: String) -> APNSMessenger {
-        Messenger(provider: APNSwiftProvider())
+    public static func apnswift(key: String, saveInDatabase: Bool = false) -> APNSMessenger {
+        Messenger(provider: APNSwiftProvider(), saveInDatabase: saveInDatabase)
     }
 }

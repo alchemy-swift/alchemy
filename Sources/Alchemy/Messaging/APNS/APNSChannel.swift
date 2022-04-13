@@ -7,7 +7,7 @@ public struct APNSChannel: Channel {
 
 // MARK: SMSMessage
 
-public struct APNSMessage {
+public struct APNSMessage: Codable, Queueable {
     public let body: String
     public var from: String?
     
