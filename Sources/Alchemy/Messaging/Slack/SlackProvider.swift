@@ -7,7 +7,7 @@ struct SlackProvider: ChannelProvider {
 }
 
 extension SlackMessenger {
-    public static func hook(_ hook: String) -> SlackMessenger {
+    public static func slackHook(_ hook: String) -> SlackMessenger {
         Messenger(provider: SlackProvider())
     }
 }

@@ -22,7 +22,7 @@ extension SlackMessenger {
 // MARK: Config + SMS
 
 extension AnyChannelConfig where Self == SlackMessenger.ChannelConfig {
-    static func slack(_ messengers: [SlackMessenger.Identifier: SlackMessenger]) -> AnyChannelConfig {
+    public static func slack(_ messengers: [SlackMessenger.Identifier: SlackMessenger]) -> AnyChannelConfig {
         SlackMessenger.ChannelConfig(messengers: messengers)
     }
 }

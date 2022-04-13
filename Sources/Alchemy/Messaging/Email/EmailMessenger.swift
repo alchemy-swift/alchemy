@@ -22,7 +22,7 @@ extension EmailMessenger {
 // MARK: Config + Email
 
 extension AnyChannelConfig where Self == EmailMessenger.ChannelConfig {
-    static func email(_ messengers: [EmailMessenger.Identifier: EmailMessenger]) -> AnyChannelConfig {
+    public static func email(_ messengers: [EmailMessenger.Identifier: EmailMessenger]) -> AnyChannelConfig {
         EmailMessenger.ChannelConfig(messengers: messengers)
     }
 }

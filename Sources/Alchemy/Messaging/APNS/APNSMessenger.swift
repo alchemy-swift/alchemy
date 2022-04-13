@@ -20,7 +20,7 @@ extension APNSMessenger {
 // MARK: Config + APNS
 
 extension AnyChannelConfig where Self == APNSMessenger.ChannelConfig {
-    static func apns(_ messengers: [APNSMessenger.Identifier: APNSMessenger]) -> AnyChannelConfig {
+    public static func apns(_ messengers: [APNSMessenger.Identifier: APNSMessenger]) -> AnyChannelConfig {
         APNSMessenger.ChannelConfig(messengers: messengers)
     }
 }

@@ -68,31 +68,3 @@ struct User: Model, Notifiable, SMSReceiver, EmailReceiver {
     let email: String
     var token: String { "foo" }
 }
-
-// MARK: Config
-
-extension Messenger: Configurable {
-    public static var config: Config {
-        Config(
-            channels: [
-                
-                /// Put your SMS configs here
-                
-                .sms([
-                    .default: .twilio(key: "foo")
-                ]),
-                
-                /// Put your email configs here
-            
-                .email([
-                    .default: .customerio(key: "foo")
-                ]),
-
-                /// Put your database configs here
-                    
-                .apns([
-                    .default: .apnswift(key: "foo")
-                ]),
-            ])
-    }
-}

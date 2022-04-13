@@ -22,7 +22,7 @@ extension SMSMessenger {
 // MARK: Config + SMS
 
 extension AnyChannelConfig where Self == SMSMessenger.ChannelConfig {
-    static func sms(_ messengers: [SMSMessenger.Identifier: SMSMessenger]) -> AnyChannelConfig {
+    public static func sms(_ messengers: [SMSMessenger.Identifier: SMSMessenger]) -> AnyChannelConfig {
         SMSMessenger.ChannelConfig(messengers: messengers)
     }
 }
