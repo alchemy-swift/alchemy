@@ -1,7 +1,3 @@
-public protocol AnyChannelConfig {
-    func bind()
-}
-
 extension Messenger {
     public struct ChannelConfig: AnyChannelConfig {
         let messengers: [Messenger<C>.Identifier: Messenger<C>]
@@ -22,6 +18,10 @@ extension Messenger {
     public static func configure(with config: Config) {
         config.channels.forEach { $0.bind() }
     }
+}
+
+public protocol AnyChannelConfig {
+    func bind()
 }
 
 extension AnyChannelConfig where Self == SMSMessenger.ChannelConfig {
