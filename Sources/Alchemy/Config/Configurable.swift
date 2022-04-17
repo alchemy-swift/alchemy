@@ -14,7 +14,8 @@ public struct ConfigurableServices {
         Database.self,
         Cache.self,
         Queue.self,
-        Filesystem.self
+        Filesystem.self,
+        Messenger<SlackChannel>.self
     ]
     
     public static func register<T>(_ type: T.Type) {

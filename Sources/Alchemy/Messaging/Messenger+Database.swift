@@ -1,3 +1,5 @@
+import Papyrus
+
 extension Messenger where C.Message: Codable {
     public init<P: ChannelProvider>(provider: P, saveInDatabase: Bool = false) where P.C == C {
         self._send = provider.send
@@ -17,7 +19,7 @@ extension Messenger where C.Message: Codable {
     }
 }
 
-struct DatabaseMessage: Model {
+struct DatabaseMessage: Model, Timestamps {
     static let tableName: String = "messages"
     
     var id: Int?
@@ -39,10 +41,10 @@ public struct AddMessagesMigration: Migration {
     
     public func up(schema: Schema) {
         schema.create(table: DatabaseMessage.tableName) {
-            $0.string("id").primary()
+            $0.increments("id").primary()
             $0.string("channel").notNull()
-            $0.json("message").notNull()
-            $0.json("receiver").notNull()
+            $0.string("message", length: .unlimited).notNull()
+            $0.string("receiver", length: .unlimited).notNull()
             $0.timestamps()
         }
     }
