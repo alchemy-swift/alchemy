@@ -1,12 +1,6 @@
 import Papyrus
 
 extension Messenger where C.Message: Codable, C.Receiver: Codable {
-    public init<P: ChannelProvider>(provider: P, saveInDatabase: Bool = false) where P.C == C {
-        self._send = provider.send
-        self.saveInDatabase = saveInDatabase
-        self.preferQueueing = false
-    }
-    
     public func send(_ message: C.Message, to receiver: C.Receiver) async throws {
         try await _send(message, receiver)
         try await _saveInDatabase(message, to: receiver)

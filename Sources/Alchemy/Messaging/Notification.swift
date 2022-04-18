@@ -7,7 +7,9 @@ public protocol Notification {
 public protocol Notifiable {}
 
 extension Notifiable {
-    public func notify<N: Notification>(_ message: N) async throws where N.N == Self {}
+    public func notify<N: Notification>(_ message: N) async throws where N.N == Self {
+        try await message.send(to: self)
+    }
 }
 
 extension Array: Notifiable where Element: Notifiable {}
