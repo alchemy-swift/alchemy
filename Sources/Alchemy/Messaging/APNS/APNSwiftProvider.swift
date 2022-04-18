@@ -1,13 +1,13 @@
 struct APNSwiftProvider: ChannelProvider {
     typealias C = APNSChannel
     
-    func send(message: APNSMessage, to: APNSReceiver) async throws {
-        // send
+    func send(message: APNMessage, to device: APNDevice) async throws {
+        print("Sending \(message.title) to \(device.deviceToken)!")
     }
 }
 
-extension APNSMessenger {
-    public static func apnswift(key: String, saveInDatabase: Bool = false) -> APNSMessenger {
-        Messenger(provider: APNSwiftProvider(), saveInDatabase: saveInDatabase)
+extension APNMessenger {
+    public static func apnswift(key: String, saveInDatabase: Bool = false, preferQueueing: Bool = false) -> APNMessenger {
+        Messenger(provider: APNSwiftProvider(), saveInDatabase: saveInDatabase, preferQueueing: preferQueueing)
     }
 }

@@ -1,5 +1,6 @@
 extension Messenger where C.Message: Codable, C.Receiver: Codable, C.Message: Queueable {
     public init<P: ChannelProvider>(provider: P, saveInDatabase: Bool = false, preferQueueing: Bool = false) where P.C == C {
+        JobDecoding.register(MessageJob<C>.self)
         self._send = provider.send
         self.saveInDatabase = saveInDatabase
         self.preferQueueing = preferQueueing

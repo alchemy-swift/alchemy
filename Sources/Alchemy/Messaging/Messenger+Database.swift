@@ -1,6 +1,6 @@
 import Papyrus
 
-extension Messenger where C.Message: Codable {
+extension Messenger where C.Message: Codable, C.Receiver: Codable {
     public init<P: ChannelProvider>(provider: P, saveInDatabase: Bool = false) where P.C == C {
         self._send = provider.send
         self.saveInDatabase = saveInDatabase
@@ -14,25 +14,25 @@ extension Messenger where C.Message: Codable {
     
     func _saveInDatabase(_ message: C.Message, to receiver: C.Receiver) async throws {
         if saveInDatabase {
-            try await DatabaseMessage(channel: C.self, message: message).save()
+            try await DatabaseMessage(channel: C.self, message: message, receiver: receiver).save()
         }
     }
 }
 
-struct DatabaseMessage: Model, Timestamps {
-    static let tableName: String = "messages"
+struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model, Timestamps {
+    static var tableName: String { "messages" }
     
     var id: Int?
     let channel: String
-    let message: JSONString
-    let receiver: JSONString
+    let message: Message
+    let receiver: Receiver
 }
 
 extension DatabaseMessage {
-    init<C: Channel, M: Codable>(channel: C.Type, message: M) throws {
+    init<C: Channel>(channel: C.Type, message: Message, receiver: Receiver) throws {
         self.channel = C.identifier
-        self.message = try message.jsonString()
-        self.receiver = try message.jsonString()
+        self.message = message
+        self.receiver = receiver
     }
 }
 
@@ -40,16 +40,16 @@ public struct AddMessagesMigration: Migration {
     public init() {}
     
     public func up(schema: Schema) {
-        schema.create(table: DatabaseMessage.tableName) {
+        schema.create(table: "messages") {
             $0.increments("id").primary()
             $0.string("channel").notNull()
-            $0.string("message", length: .unlimited).notNull()
-            $0.string("receiver", length: .unlimited).notNull()
+            $0.json("message").notNull()
+            $0.json("receiver").notNull()
             $0.timestamps()
         }
     }
     
     public func down(schema: Schema) {
-        schema.drop(table: DatabaseMessage.tableName)
+        schema.drop(table: "messages")
     }
 }
