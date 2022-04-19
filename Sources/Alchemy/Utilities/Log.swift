@@ -23,7 +23,7 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func trace(_ message: String, metadata: Logger.Metadata? = nil) {
+    public static func trace(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
         Log.logger.trace(.init(stringLiteral: message), metadata: metadata)
     }
     
@@ -33,8 +33,8 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func debug(_ message: String, metadata: Logger.Metadata? = nil) {
-        Log.logger.debug(.init(stringLiteral: message), metadata: metadata)
+    public static func debug(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
+        Log.logger.debug(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
     
     /// Log a message with the `Logger.Level.info` log level.
@@ -43,8 +43,8 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func info(_ message: String, metadata: Logger.Metadata? = nil) {
-        Log.logger.info(.init(stringLiteral: message), metadata: metadata)
+    public static func info(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
+        Log.logger.info(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
     
     /// Log a message with the `Logger.Level.notice` log level.
@@ -53,8 +53,8 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func notice(_ message: String, metadata: Logger.Metadata? = nil) {
-        Log.logger.notice(.init(stringLiteral: message), metadata: metadata)
+    public static func notice(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
+        Log.logger.notice(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
     
     /// Log a message with the `Logger.Level.warning` log level.
@@ -63,8 +63,8 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func warning(_ message: String, metadata: Logger.Metadata? = nil) {
-        Log.logger.warning(.init(stringLiteral: message), metadata: metadata)
+    public static func warning(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
+        Log.logger.warning(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
     
     /// Log a message with the `Logger.Level.error` log level.
@@ -73,8 +73,8 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func error(_ message: String, metadata: Logger.Metadata? = nil) {
-        Log.logger.error(.init(stringLiteral: message), metadata: metadata)
+    public static func error(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
+        Log.logger.error(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
     
     /// Log a message with the `Logger.Level.critical` log level.
@@ -83,7 +83,7 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func critical(_ message: String, metadata: Logger.Metadata? = nil) {
-        Log.logger.critical(.init(stringLiteral: message), metadata: metadata)
+    public static func critical(_ message: String, metadata: Logger.Metadata? = nil, file: String = #file, function: String = #function, line: UInt = #line) {
+        Log.logger.critical(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
 }
