@@ -7,7 +7,7 @@ public struct EmailChannel: Channel {
 
 // MARK: SMSMessage
 
-public struct EmailMessage: Codable, Queueable {
+public struct EmailMessage: Codable {
     public let body: String
     public var from: String?
     

@@ -29,6 +29,9 @@ let package = Package(
         .package(url: "https://github.com/johnsundell/Plot.git", from: "0.8.0"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
+        
+        /// Messaging
+        .package(url: "https://github.com/kylebrowning/APNSwift.git", from: "4.0.0"),
     ],
     targets: [
         .target(
@@ -54,6 +57,9 @@ let package = Package(
                 .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
                 .product(name: "HummingbirdTLS", package: "hummingbird-core"),
                 .product(name: "Crypto", package: "swift-crypto"),
+                
+                /// Messaging
+                .product(name: "APNSwift", package: "APNSwift"),
                 
                 /// Internal dependencies
                 .byName(name: "AlchemyC"),

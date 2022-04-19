@@ -5,43 +5,22 @@ public struct Messenger<C: Channel>: Service {
     }
 
     let _send: (C.Message, C.Receiver) async throws -> Void
-    fileprivate(set) var saveInDatabase: Bool
-    fileprivate(set) var preferQueueing: Bool
+    fileprivate(set) var store: Bool
+    fileprivate(set) var queue: Bool
     
     public init<P: ChannelProvider>(provider: P) where P.C == C {
         self._send = provider.send
-        self.saveInDatabase = false
-        self.preferQueueing = false
+        self.store = false
+        self.queue = false
     }
     
-    fileprivate init(_send: @escaping (C.Message, C.Receiver) async throws -> Void, saveInDatabase: Bool, preferQueueing: Bool) {
+    init(_send: @escaping (C.Message, C.Receiver) async throws -> Void, saveInDatabase: Bool, preferQueueing: Bool) {
         self._send = _send
-        self.saveInDatabase = saveInDatabase
-        self.preferQueueing = preferQueueing
+        self.store = saveInDatabase
+        self.queue = preferQueueing
     }
     
     public func send(_ message: C.Message, to receiver: C.Receiver) async throws {
         try await _send(message, receiver)
-    }
-}
-
-extension Messenger where C.Message: Codable, C.Receiver: Codable {
-    public func store(_ store: Bool = true) -> Self {
-        Self(_send: _send, saveInDatabase: store, preferQueueing: preferQueueing)
-    }
-    
-    public func dontStore() -> Self {
-        store(false)
-    }
-}
-
-extension Messenger where C.Message: Codable & Queueable, C.Receiver: Codable {
-    public func queue(_ queue: Bool = true) -> Self {
-        JobDecoding.register(MessageJob<C>.self)
-        return Self(_send: _send, saveInDatabase: saveInDatabase, preferQueueing: queue)
-    }
-    
-    public func immediately() -> Self {
-        queue(false)
     }
 }

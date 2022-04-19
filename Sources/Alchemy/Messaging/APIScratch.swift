@@ -1,16 +1,3 @@
-/*
- Up Next
- 1. Queueable
- 2. Save to database
- 3. Implement Required
-    1. Text
-    2. Email
-    3. APNS
-    4. Database
- 4. Bonus
-    1. Slack
- */
-
 // MARK: Example
 
 struct Tester {
@@ -24,11 +11,11 @@ struct Tester {
         try await user.send(email: "<p> Hello from Apollo! </p>", via: .default)
         try await SMS.send(SMSMessage(text: "yo"), to: user)
         try await SMS.send("yo", toPhone: "8609902262")
+        
+        // Notifications
         try await WelcomeText().send(to: user)
         try await NewReward().send(to: user)
         try await DeploymentComplete().send(to: [user])
-        
-        // Notifications
         try await user.notify(WelcomeText())
         try await user.notify(NewReward())
         try await [user].notify(DeploymentComplete())
