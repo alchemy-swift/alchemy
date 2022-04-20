@@ -69,7 +69,7 @@ public struct Filesystem: Service {
 extension File {
     @discardableResult
     public func store(on filesystem: Filesystem = Storage, in directory: String? = nil, as name: String? = nil) async throws -> File {
-        let name = name ?? (UUID().uuidString + `extension`)
+        let name = name ?? ("\(UUID().uuidString).\(`extension`)")
         return try await filesystem.put(self, in: directory, as: name)
     }
 }

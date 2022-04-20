@@ -1,11 +1,11 @@
 @propertyWrapper
-public struct Encrypted: ModelProperty {
+public struct Encrypted: ModelProperty, Codable {
     public var wrappedValue: String
 
     // MARK: ModelProperty
 
     public init(key: String, on row: SQLRowReader) throws {
-        let encrypted = try row.require(key).string()
+        let encrypted = try row.require(key).string(key)
         guard let data = Data(base64Encoded: encrypted) else {
             throw EncryptionError("could not decrypt data; it wasn't base64 encoded")
         }

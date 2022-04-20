@@ -10,7 +10,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         // The file came with the given ContentType from an HTTP request.
         case http(clientContentType: ContentType?)
         
-        static var raw: Source {
+        public static var raw: Source {
             .http(clientContentType: nil)
         }
     }
@@ -89,7 +89,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     // MARK: ModelProperty
     
     public init(key: String, on row: SQLRowReader) throws {
-        let name = try row.require(key).string()
+        let name = try row.require(key).string(key)
         self.init(name: name, source: .filesystem(Storage, path: name))
     }
 
