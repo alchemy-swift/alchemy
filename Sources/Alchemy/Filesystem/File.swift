@@ -3,7 +3,7 @@ import Papyrus
 import NIOCore
 
 // File
-public struct File: Codable, ResponseConvertible {
+public struct File: Codable, ResponseConvertible, ModelProperty {
     public enum Source {
         // The file is stored in a `Filesystem` with the given path.
         case filesystem(Filesystem? = nil, path: String)
@@ -88,12 +88,12 @@ public struct File: Codable, ResponseConvertible {
     
     // MARK: ModelProperty
     
-    init(key: String, on row: SQLRowReader) throws {
+    public init(key: String, on row: SQLRowReader) throws {
         let name = try row.require(key).string()
         self.init(name: name, source: .filesystem(Storage, path: name))
     }
 
-    func store(key: String, on row: inout SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         guard case .filesystem(_, let path) = source else {
             throw RuneError("currently, only files saved in a `Filesystem` can be stored on a `Model`")
         }
