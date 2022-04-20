@@ -23,6 +23,14 @@ extension Seedable where Self: Model {
         
         return try await rows.insertReturnAll()
     }
+    
+    public static func randomOrSeed() async throws -> Self {
+        guard let random = try await random() else {
+            return try await seed()
+        }
+        
+        return random
+    }
 }
 
 extension Faker {
