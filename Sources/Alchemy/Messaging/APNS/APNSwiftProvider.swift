@@ -1,4 +1,5 @@
 import APNSwift
+import AsyncKit
 import JWTKit
 
 extension APNSMessenger {
@@ -30,13 +31,40 @@ extension APNSMessenger {
 private struct APNSwiftProvider: ChannelProvider {
     typealias C = APNSChannel
     
-    fileprivate let config: APNSwiftConfiguration
+    private let pool: EventLoopGroupConnectionPool<APNSConnectionSource>
+    
+    init(config: APNSwiftConfiguration) {
+        let source = APNSConnectionSource(configuration: config)
+        self.pool = EventLoopGroupConnectionPool<APNSConnectionSource>(source: source, logger: Log.logger, on: Loop.group)
+    }
     
     func send(message: APNSMessage, to device: APNSDevice) async throws {
-        let connection = try await APNSwiftConnection.connect(configuration: config, on: Loop.current).get()
-        let alert = APNSwiftAlert(title: message.title, body: message.body)
-        let payload = APNSwiftPayload(alert: alert)
-        try await connection.send(payload, pushType: .alert, to: device.deviceToken).get()
-        try await connection.close().get()
+        return try await pool.withConnection { connection in
+            let alert = APNSwiftAlert(title: message.title, body: message.body)
+            let payload = APNSwiftPayload(alert: alert)
+            try await connection.send(payload, pushType: .alert, to: device.deviceToken).get()
+        }
+    }
+}
+
+private struct APNSConnectionSource: ConnectionPoolSource {
+    let configuration: APNSwiftConfiguration
+
+    init(configuration: APNSwiftConfiguration) {
+        self.configuration = configuration
+    }
+    
+    func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<APNSwiftConnection> {
+        APNSwiftConnection.connect(configuration: self.configuration, on: eventLoop)
+    }
+}
+
+extension APNSwiftConnection: ConnectionPoolItem {
+    public var eventLoop: EventLoop {
+        channel.eventLoop
+    }
+
+    public var isClosed: Bool {
+        !channel.isActive
     }
 }
