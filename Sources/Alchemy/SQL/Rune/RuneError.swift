@@ -14,8 +14,8 @@ public struct RuneError: Error {
     public static let notFound = RuneError("Unable to find an element of this type.")
     
     /// Couldn't unwrap a relationship that was expected to be nonnil.
-    public static func relationshipWasNil(type: String) -> RuneError {
-        return RuneError("This non-optional relationship to \(type) has no matching models.")
+    public static func relationshipWasNil<M: Model>(type: M.Type) -> RuneError {
+        RuneError("This non-optional relationship to \(type) has no matching models.")
     }
     
     /// Couldn't sync a model; its id was nil.

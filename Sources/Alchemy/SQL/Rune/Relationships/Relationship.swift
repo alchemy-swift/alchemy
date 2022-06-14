@@ -52,7 +52,7 @@ public protocol RelationshipAllowed {
 
 extension Model {
     public static func from(_ value: Self?) throws -> Self {
-        try value.unwrap(or: RuneError.relationshipWasNil(type: "\(Self.self)"))
+        try value.unwrap(or: RuneError.relationshipWasNil(type: Self.self))
     }
 }
 
