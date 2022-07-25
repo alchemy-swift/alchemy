@@ -6,7 +6,7 @@ public protocol ModelProperty {
 
 extension String: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self =  try row.require(key).string()
+        self =  try row.require(key).string(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
@@ -16,7 +16,7 @@ extension String: ModelProperty {
 
 extension Bool: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self = try row.require(key).bool()
+        self = try row.require(key).bool(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
@@ -26,7 +26,7 @@ extension Bool: ModelProperty {
 
 extension Float: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self = Float(try row.require(key).double())
+        self = Float(try row.require(key).double(key))
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
@@ -36,7 +36,7 @@ extension Float: ModelProperty {
 
 extension Double: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self =  try row.require(key).double()
+        self =  try row.require(key).double(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
@@ -46,7 +46,7 @@ extension Double: ModelProperty {
 
 extension FixedWidthInteger {
     public init(key: String, on row: SQLRowReader) throws {
-        self = try .init(row.require(key).int())
+        self = try .init(row.require(key).int(key))
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
@@ -67,7 +67,7 @@ extension UInt64: ModelProperty {}
 
 extension Date: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self = try row.require(key).date()
+        self = try row.require(key).date(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
@@ -77,7 +77,7 @@ extension Date: ModelProperty {
 
 extension UUID: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self = try row.require(key).uuid()
+        self = try row.require(key).uuid(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {

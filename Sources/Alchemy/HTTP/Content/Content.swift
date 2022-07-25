@@ -365,3 +365,21 @@ extension Content: CustomStringConvertible {
         return string
     }
 }
+
+extension Content {
+    public static func == (lhs: Content, rhs: String) -> Bool {
+        lhs.string == rhs
+    }
+    
+    public static func == (lhs: Content, rhs: Int) -> Bool {
+        lhs.int == rhs
+    }
+    
+    public static func == (lhs: Content, rhs: Double) -> Bool {
+        lhs.double == rhs
+    }
+    
+    public static func == (lhs: Content, rhs: Bool) -> Bool {
+        lhs.bool == rhs
+    }
+}
