@@ -43,7 +43,7 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllow
             do {
                 return try Parent.from(value)
             } catch {
-                fatalError("Relationship of type `\(name(of: Parent.self))` was not loaded!")
+                fatalError("BelongsToRelationship of type `\(name(of: Parent.self))` on `\(name(of: From.self))` was not loaded!")
             }
         }
         set {

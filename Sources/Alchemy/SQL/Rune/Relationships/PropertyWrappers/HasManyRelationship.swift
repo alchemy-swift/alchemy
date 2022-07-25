@@ -15,7 +15,7 @@ public final class HasManyRelationship<From: Model, To: RelationshipAllowed>: Re
     public var wrappedValue: [To] {
         get {
             guard let value = value else {
-                fatalError("Relationship of type `\(name(of: To.self))` was not loaded!")
+                fatalError("HasManyRelationship of type `\(name(of: To.self))` on `\(name(of: From.self))` was not loaded!")
             }
             
             return value

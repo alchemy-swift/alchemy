@@ -22,7 +22,7 @@ public final class HasOneRelationship<From: Model, To: RelationshipAllowed>: Rel
             do {
                 return try To.from(value)
             } catch {
-                fatalError("Relationship of type `\(name(of: To.self))` was not loaded!")
+                fatalError("HasOneRelationship of type `\(name(of: To.self))` on `\(name(of: From.self))` was not loaded!")
             }
         }
         set { value = newValue }
