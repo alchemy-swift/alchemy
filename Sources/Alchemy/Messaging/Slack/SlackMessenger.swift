@@ -8,14 +8,12 @@ public func Slack(_ id: SlackMessenger.Identifier) -> SlackMessenger { .id(id) }
 public typealias SlackMessenger = Messenger<SlackChannel>
 
 extension SlackMessenger {
-    private struct _OneOffReceiver: SlackReceiver {
-        let hook: String
+    public func send(_ message: SlackMessage, toHook: String) async throws {
+        try await send(message, to: SlackHook(url: toHook))
     }
     
-    public func send(_ message: SlackMessage, toPhone: String, fromPhone: String? = nil) async throws {
-        var copy = message
-        copy.from = fromPhone
-        try await send(copy, to: _OneOffReceiver(hook: toPhone))
+    public func send(_ message: SlackMessage, to receiver: SlackReceiver) async throws {
+        try await send(message, to: receiver.hook)
     }
 }
 

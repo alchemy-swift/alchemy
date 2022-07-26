@@ -14,6 +14,12 @@ public struct APNSMessage: Codable {
     }
 }
 
+extension APNSMessage: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self.init(title: "Alert", body: value)
+    }
+}
+
 public struct APNSDevice: Codable {
     public let deviceToken: String
 }
