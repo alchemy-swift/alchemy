@@ -37,7 +37,7 @@ public protocol APNSReceiver {
 }
 
 extension APNSReceiver {
-    public var apnsDevice: APNSDevice {
+    var apnsDevice: APNSDevice {
         APNSDevice(deviceToken: deviceToken)
     }
     

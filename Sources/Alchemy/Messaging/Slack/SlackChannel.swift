@@ -11,7 +11,7 @@ public struct SlackMessage: Codable {
     public let text: String
     
     public func send<R: SlackReceiver>(to receiver: R, via sender: SlackMessenger = .default) async throws {
-        try await sender.send(self, to: receiver.hook)
+        try await sender.send(self, to: receiver.slackHook)
     }
 }
 
@@ -42,11 +42,11 @@ public protocol SlackReceiver {
 }
 
 extension SlackReceiver {
-    public var hook: SlackHook {
+    var slackHook: SlackHook {
         SlackHook(url: hookURL)
     }
     
     public func send(slack: SlackMessage, via sender: SlackMessenger = .default) async throws {
-        try await sender.send(slack, to: hook)
+        try await sender.send(slack, to: slackHook)
     }
 }

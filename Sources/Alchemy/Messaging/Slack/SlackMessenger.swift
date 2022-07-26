@@ -13,7 +13,7 @@ extension SlackMessenger {
     }
     
     public func send(_ message: SlackMessage, to receiver: SlackReceiver) async throws {
-        try await send(message, to: receiver.hook)
+        try await send(message, to: receiver.slackHook)
     }
 }
 

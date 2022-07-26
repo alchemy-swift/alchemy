@@ -43,7 +43,7 @@ public protocol SMSReceiver {
 }
 
 extension SMSReceiver {
-    public var smsDevice: SMSDevice {
+    var smsDevice: SMSDevice {
         SMSDevice(number: phone)
     }
     

@@ -1,7 +1,7 @@
 struct CustomerIOProvider: ChannelProvider {
     typealias C = EmailChannel
     
-    func send(message: EmailMessage, to: EmailReceiver) async throws {
+    func send(message: EmailMessage, to: EmailRecipient) async throws {
         // send
     }
 }

@@ -8,14 +8,14 @@ public func Email(_ id: EmailMessenger.Identifier) -> EmailMessenger { .id(id) }
 public typealias EmailMessenger = Messenger<EmailChannel>
 
 extension EmailMessenger {
-    private struct _OneOffReceiver: EmailReceiver {
-        let email: String
-    }
-    
     public func send(_ message: EmailMessage, toEmail: String, fromEmail: String? = nil) async throws {
         var copy = message
         copy.from = fromEmail
-        try await send(copy, to: _OneOffReceiver(email: toEmail))
+        try await send(copy, to: EmailRecipient(email: toEmail))
+    }
+    
+    public func send(_ message: EmailMessage, to receiver: EmailReceiver) async throws {
+        try await send(message, to: receiver.emailRecipient)
     }
 }
 
