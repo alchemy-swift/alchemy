@@ -10,7 +10,7 @@ public struct APNSMessage: Codable {
     public let body: String
     
     public func send<R: APNSReceiver>(to receiver: R, via sender: APNSMessenger = .default) async throws {
-        try await sender.send(self, to: receiver.device)
+        try await sender.send(self, to: receiver.apnsDevice)
     }
 }
 
@@ -37,15 +37,15 @@ public protocol APNSReceiver {
 }
 
 extension APNSReceiver {
-    public var device: APNSDevice {
+    public var apnsDevice: APNSDevice {
         APNSDevice(deviceToken: deviceToken)
     }
     
     public func send(push: APNSMessage, via sender: APNSMessenger = .default) async throws {
-        try await sender.send(push, to: device)
+        try await sender.send(push, to: apnsDevice)
     }
     
     public func send(push title: String, body: String, via sender: APNSMessenger = .default) async throws {
-        try await sender.send(APNSMessage(title: title, body: body), to: device)
+        try await sender.send(APNSMessage(title: title, body: body), to: apnsDevice)
     }
 }

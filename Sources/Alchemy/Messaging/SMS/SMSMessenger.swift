@@ -8,14 +8,14 @@ public func SMS(_ id: SMSMessenger.Identifier) -> SMSMessenger { .id(id) }
 public typealias SMSMessenger = Messenger<SMSChannel>
 
 extension SMSMessenger {
-    private struct _OneOffReceiver: SMSReceiver {
-        let phone: String
-    }
-    
     public func send(_ message: SMSMessage, toPhone: String, fromPhone: String? = nil) async throws {
         var copy = message
         copy.from = fromPhone
-        try await send(copy, to: _OneOffReceiver(phone: toPhone))
+        try await send(copy, to: SMSDevice(number: toPhone))
+    }
+    
+    public func send(_ message: SMSMessage, to receiver: SMSReceiver, fromPhone: String? = nil) async throws {
+        try await send(message, toPhone: receiver.phone, fromPhone: fromPhone)
     }
 }
 

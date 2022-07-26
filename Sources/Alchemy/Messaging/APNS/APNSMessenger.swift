@@ -13,7 +13,7 @@ extension APNSMessenger {
     }
     
     public func send(title: String, body: String, to receiver: APNSReceiver) async throws {
-        try await send(APNSMessage(title: title, body: body), to: receiver.device)
+        try await send(APNSMessage(title: title, body: body), to: receiver.apnsDevice)
     }
 }
 

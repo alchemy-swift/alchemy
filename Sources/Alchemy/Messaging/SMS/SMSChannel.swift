@@ -2,7 +2,7 @@
 
 public struct SMSChannel: Channel {
     public typealias Message = SMSMessage
-    public typealias Receiver = SMSReceiver
+    public typealias Receiver = SMSDevice
 }
 
 // MARK: SMSMessage
@@ -12,13 +12,27 @@ public struct SMSMessage: Codable {
     public var from: String?
     
     public func send<R: SMSReceiver>(to receiver: R, via sender: SMSMessenger = .default) async throws {
-        try await sender.send(self, to: receiver)
+        try await sender.send(self, to: receiver.smsDevice)
     }
 }
 
 extension SMSMessage: ExpressibleByStringInterpolation {
     public init(stringLiteral value: String) {
         self.init(text: value)
+    }
+}
+
+public struct SMSDevice: Codable {
+    public let number: String
+    
+    public init(number: String) {
+        self.number = number
+    }
+}
+
+extension SMSDevice: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self.number = value
     }
 }
 
@@ -29,7 +43,11 @@ public protocol SMSReceiver {
 }
 
 extension SMSReceiver {
+    public var smsDevice: SMSDevice {
+        SMSDevice(number: phone)
+    }
+    
     public func send(sms: SMSMessage, via sender: SMSMessenger = .default) async throws {
-        try await sender.send(sms, to: self)
+        try await sender.send(sms, to: smsDevice)
     }
 }
