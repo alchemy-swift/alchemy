@@ -54,9 +54,9 @@ final class SQLiteGrammar: Grammar {
         "'\(jsonString)'"
     }
 
-    override func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
-        // SQLite ALTER TABLE can't drop columns and can only add one column per statement.
-        addColumns.map { super.compileAlterTable(table, dropColumns: [], addColumns: [$0]) }
+    override func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], allowConstraints: Bool = true) -> [SQL] {
+        // SQLite ALTER TABLE can't drop columns or add constraints. It also only supports adding one column per statement.
+        addColumns.map { super.compileAlterTable(table, dropColumns: [], addColumns: [$0], allowConstraints: false) }
             .flatMap { $0 }
     }
 }

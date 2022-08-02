@@ -218,7 +218,7 @@ open class Grammar {
         SQL("DROP TABLE \(table)")
     }
     
-    open func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
+    open func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], allowConstraints: Bool = true) -> [SQL] {
         guard !dropColumns.isEmpty || !addColumns.isEmpty else {
             return []
         }
@@ -227,7 +227,9 @@ open class Grammar {
         var constraints: [String] = []
         for (sql, tableConstraints) in addColumns.map({ createColumnString(for: $0) }) {
             adds.append("ADD COLUMN \(sql)")
-            constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
+            if allowConstraints {
+                constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
+            }
         }
         
         let drops = dropColumns.map { "DROP COLUMN \($0.escapedColumn)" }
