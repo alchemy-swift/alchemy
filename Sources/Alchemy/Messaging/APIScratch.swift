@@ -8,7 +8,7 @@ struct Tester {
         try await user.send(sms: SMSMessage(text: "yo"), via: .default)
         try await SMSMessage(text: "yo").send(to: user, via: .default)
         try await user.send(sms: "Welcome to Apollo!!!", via: .default)
-        try await user.send(email: "<p> Hello from Apollo! </p>", via: .default)
+        try await user.send(email: EmailMessage(subject: "Testing Alchemy", content: "<b> Hello from Apollo! </b>"), via: .default)
         try await SMS.send(SMSMessage(text: "yo"), to: user)
         try await SMS.send("yo", toPhone: "8609902262")
         

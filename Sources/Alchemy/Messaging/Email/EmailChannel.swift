@@ -1,24 +1,25 @@
-// MARK: SMSChannel
+// MARK: EmailChannel
 
 public struct EmailChannel: Channel {
     public typealias Message = EmailMessage
     public typealias Receiver = EmailRecipient
 }
 
-// MARK: SMSMessage
+// MARK: EmailMessage
 
 public struct EmailMessage: Codable {
-    public let body: String
+    public let subject: String
+    public let content: String
     public var from: String?
-    
+
+    public init(subject: String, content: String, from: String? = nil) {
+        self.subject = subject
+        self.content = content
+        self.from = from
+    }
+
     public func send<R: EmailReceiver>(to receiver: R, via sender: EmailMessenger = .default) async throws {
         try await sender.send(self, to: receiver.emailRecipient)
-    }
-}
-
-extension EmailMessage: ExpressibleByStringInterpolation {
-    public init(stringLiteral value: String) {
-        self.init(body: value)
     }
 }
 
@@ -36,7 +37,7 @@ extension EmailRecipient: ExpressibleByStringLiteral {
     }
 }
 
-// MARK: SMSReceiver
+// MARK: EmailReceiver
 
 public protocol EmailReceiver {
     var email: String { get }
