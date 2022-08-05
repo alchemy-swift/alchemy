@@ -1,9 +1,11 @@
 private struct SendgridProvider: ChannelProvider {
     typealias C = EmailChannel
 
+    static let baseUrl = "https://api.sendgrid.com/v3/mail/send"
+
     let key: String
-    let sender: String
-    
+    let fromEmail: String
+
     func send(message: EmailMessage, to recipient: EmailRecipient) async throws {
         _ = try await Http
             .withToken(key)
@@ -17,7 +19,7 @@ private struct SendgridProvider: ChannelProvider {
                     ]
                 ],
                 "from": [
-                    "email": message.from ?? sender
+                    "email": message.from ?? fromEmail
                 ],
                 "content": [
                     [
@@ -26,13 +28,13 @@ private struct SendgridProvider: ChannelProvider {
                     ],
                 ]
             ])
-            .post("https://api.sendgrid.com/v3/mail/send")
+            .post(SendgridProvider.baseUrl)
             .validateSuccessful()
     }
 }
 
 extension EmailMessenger {
-    public static func sendGrid(key: String, sender: String) -> EmailMessenger {
-        Messenger(provider: SendgridProvider(key: key, sender: sender))
+    public static func sendGrid(key: String, fromEmail: String) -> EmailMessenger {
+        Messenger(provider: SendgridProvider(key: key, fromEmail: fromEmail))
     }
 }
