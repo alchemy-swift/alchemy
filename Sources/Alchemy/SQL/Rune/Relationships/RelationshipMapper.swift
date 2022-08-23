@@ -132,7 +132,7 @@ extension RelationshipMapping {
 
 extension Model {
     public static var referenceKey: String {
-        let key = name(of: Self.self) + "Id"
+        let key = Self.tableName.singularized + "Id"
         return keyMapping.map(input: key)
     }
 }
