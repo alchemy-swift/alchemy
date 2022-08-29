@@ -14,7 +14,8 @@ public struct ConfigurableServices {
         Database.self,
         Cache.self,
         Queue.self,
-        Filesystem.self
+        Filesystem.self,
+        Messenger<DummyChannel>.self
     ]
     
     public static func register<T>(_ type: T.Type) {
@@ -29,6 +30,12 @@ public struct ConfigurableServices {
         }
     }
 }
+
+private struct DummyChannel: Channel {
+    public typealias Message = Void
+    public typealias Receiver = Void
+}
+
 
 /// An erased configurable.
 public protocol AnyConfigurable {
