@@ -2,7 +2,7 @@ import AsyncKit
 
 extension EventLoopGroupConnectionPool {
     /// Async wrapper around the future variant of `withConnection`.
-    func withConnection<Result>(
+    public func withConnection<Result>(
         logger: Logger? = nil,
         on eventLoop: EventLoop? = nil,
         _ closure: @escaping (Source.Connection) async throws -> Result

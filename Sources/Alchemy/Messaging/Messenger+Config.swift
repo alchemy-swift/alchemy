@@ -1,6 +1,10 @@
 extension Messenger {
     public struct ChannelConfig: AnyChannelConfig {
-        let messengers: [Messenger<C>.Identifier: Messenger<C>]
+        public let messengers: [Messenger<C>.Identifier: Messenger<C>]
+
+        public init(messengers: [Messenger<C>.Identifier : Messenger<C>]) {
+            self.messengers = messengers
+        }
         
         public func bind() {
             messengers.forEach { Messenger.bind($0, $1) }
