@@ -294,7 +294,12 @@ extension ByteContent {
     }
     
     public static func json(_ dict: [String: Any?]) throws -> ByteContent {
-        .buffer(ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)))
+        guard JSONSerialization.isValidJSONObject(dict) else {
+            let context = EncodingError.Context(codingPath: [], debugDescription: "Invalid JSON dict.")
+            throw EncodingError.invalidValue(dict, context)
+        }
+
+        return .buffer(ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)))
     }
     
     /// Decodes the body as a JSON dictionary.
