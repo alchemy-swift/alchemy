@@ -26,7 +26,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
     
     public func queue(_ queue: Bool = true) -> Self {
         JobDecoding.register(MessageJob<C>.self)
-        return Self(_send: _send, saveInDatabase: store, preferQueueing: queue)
+        return Self(_send: _send, _shutdown: _shutdown, saveInDatabase: store, preferQueueing: queue)
     }
     
     public func immediately() -> Self {

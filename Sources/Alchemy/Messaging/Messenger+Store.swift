@@ -3,7 +3,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
     // MARK: Storing
 
     public func store(_ store: Bool = true) -> Self {
-        Self(_send: _send, saveInDatabase: store, preferQueueing: queue)
+        Self(_send: _send, _shutdown: _shutdown, saveInDatabase: store, preferQueueing: queue)
     }
 
     public func dontStore() -> Self {

@@ -17,4 +17,9 @@ public protocol ChannelProvider {
     associatedtype C: Channel
     
     func send(message: C.Message, to receiver: C.Receiver) async throws
+    func shutdown() throws
+}
+
+extension ChannelProvider {
+    public func shutdown() throws {}
 }
