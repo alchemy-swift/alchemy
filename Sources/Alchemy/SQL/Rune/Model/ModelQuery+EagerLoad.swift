@@ -68,7 +68,7 @@ extension ModelQuery {
             
             // Load the matching `To` rows
             let allRows = fromResults.map(\.row)
-            let query = try nested(config.load(allRows, database: Database(provider: self.database)))
+            let query = try nested(config.load(allRows, database: self.database))
             let toResults = try await query
                 .fetch(columns: ["\(R.To.Value.tableName).*", toJoinKey])
                 .map { (model: try R.To.from($0), row: $1) }

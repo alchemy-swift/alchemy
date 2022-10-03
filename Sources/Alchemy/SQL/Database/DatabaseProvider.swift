@@ -27,11 +27,13 @@ public protocol DatabaseProvider {
     ///     '?'s in `sql`. Ensure there are the same amnount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
+    @discardableResult
     func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow]
     
     /// Run a raw, not parametrized SQL string.
     ///
     /// - Returns: The rows returned by the query.
+    @discardableResult
     func raw(_ sql: String) async throws -> [SQLRow]
     
     /// Runs a transaction on the database, using the given closure.
@@ -41,6 +43,7 @@ public protocol DatabaseProvider {
     ///
     /// - Parameter action: The action to run atomically.
     /// - Returns: The return value of the transaction.
+    @discardableResult
     func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T
     
     /// Called when the database connection will shut down.

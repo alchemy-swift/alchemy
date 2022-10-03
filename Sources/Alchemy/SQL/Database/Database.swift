@@ -15,12 +15,15 @@ public final class Database: Service {
     
     /// Any seeders associated with this database.
     public var seeders: [Seeder] = []
-    
+
     /// The provider of this database.
     let provider: DatabaseProvider
     
     /// Indicates whether migrations were run on this database, by this process.
     var didRunMigrations: Bool = false
+
+    /// Whether this database should log all queries at the `debug` level.
+    var shouldLog: Bool = false
     
     /// Create a database backed by the given provider.
     ///
@@ -28,7 +31,13 @@ public final class Database: Service {
     public init(provider: DatabaseProvider) {
         self.provider = provider
     }
-    
+
+    /// Log all executed queries to the `debug` level.
+    public func debug() -> Self {
+        self.shouldLog = true
+        return self
+    }
+
     /// Run a parameterized query on the database. Parameterization
     /// helps protect against SQL injection.
     ///

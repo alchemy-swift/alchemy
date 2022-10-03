@@ -8,12 +8,6 @@ final class QueryCrudTests: TestCase<TestApp> {
         db = try await Database.fake(migrations: [TestModelMigration()])
     }
     
-    func testFind() async throws {
-        AssertTrue(try await db.table("test_models").findRow("foo", equals: .string("bar")) == nil)
-        try await TestModel(foo: "bar", bar: false).insert()
-        AssertTrue(try await db.table("test_models").findRow("foo", equals: .string("bar")) != nil)
-    }
-    
     func testCount() async throws {
         AssertEqual(try await db.table("test_models").count(), 0)
         try await TestModel(foo: "bar", bar: false).insert()

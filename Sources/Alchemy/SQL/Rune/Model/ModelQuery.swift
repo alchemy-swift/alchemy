@@ -8,7 +8,7 @@ public extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
     static func query(database: Database = DB) -> ModelQuery<Self> {
-        ModelQuery<Self>(database: database.provider, table: Self.tableName)
+        ModelQuery<Self>(database: database, table: Self.tableName)
     }
 }
 

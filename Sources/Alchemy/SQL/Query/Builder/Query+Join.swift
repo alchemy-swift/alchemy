@@ -28,7 +28,7 @@ extension Query {
         ///   - database: The database the join table is on.
         ///   - type: The type of join this is.
         ///   - joinTable: The name of the table to join to.
-        init(database: DatabaseProvider, table: String, type: JoinType, joinTable: String) {
+        init(database: Database, table: String, type: JoinType, joinTable: String) {
             self.type = type
             self.joinTable = joinTable
             super.init(database: database, table: table)

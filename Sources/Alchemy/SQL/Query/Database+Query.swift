@@ -15,10 +15,10 @@ extension Database {
     ///   queries to.
     public func table(_ table: String, as alias: String? = nil) -> Query {
         guard let alias = alias else {
-            return Query(database: provider, table: table)
+            return Query(database: self, table: table)
         }
         
-        return Query(database: provider, table: "\(table) as \(alias)")
+        return Query(database: self, table: "\(table) as \(alias)")
     }
 
     /// An alias for `table(_ table: String)` to be used when running.

@@ -6,31 +6,19 @@ open class Grammar {
 
     // MARK: Compiling Query Builder
     
-    open func compileSelect(
-        table: String,
-        isDistinct: Bool,
-        columns: [String],
-        joins: [Query.Join],
-        wheres: [Query.Where],
-        groups: [String],
-        havings: [Query.Where],
-        orders: [Query.Order],
-        limit: Int?,
-        offset: Int?,
-        lock: Query.Lock?
-    ) throws -> SQL {
-        let select = isDistinct ? "select distinct" : "select"
+    open func compileSelect(query: Query) -> SQL {
+        let select = query.isDistinct ? "select distinct" : "select"
         return [
-            SQL("\(select) \(columns.joined(separator: ", "))"),
-            SQL("from \(table)"),
-            compileJoins(joins),
-            compileWheres(wheres),
-            compileGroups(groups),
-            compileHavings(havings),
-            compileOrders(orders),
-            compileLimit(limit),
-            compileOffset(offset),
-            compileLock(lock)
+            SQL("\(select) \(query.columns.joined(separator: ", "))"),
+            SQL("from \(query.table)"),
+            compileJoins(query.joins),
+            compileWheres(query.wheres),
+            compileGroups(query.groups),
+            compileHavings(query.havings),
+            compileOrders(query.orders),
+            compileLimit(query.limit),
+            compileOffset(query.offset),
+            compileLock(query.lock)
         ].compactMap { $0 }.joinedSQL()
     }
 
@@ -129,9 +117,9 @@ open class Grammar {
         return [SQL("\(insert.statement) returning *", bindings: insert.bindings)]
     }
     
-    open func compileUpdate(_ table: String, joins: [Query.Join], wheres: [Query.Where], values: [String: SQLValueConvertible]) throws -> SQL {
+    open func compileUpdate(query: Query, fields: [String: SQLValueConvertible]) -> SQL {
         var bindings: [SQLValue] = []
-        let columnStatements: [SQL] = values.map { key, val in
+        let columnStatements: [SQL] = fields.map { key, val in
             if let expression = val as? SQL {
                 return SQL("\(key) = \(expression.statement)")
             } else {
@@ -141,8 +129,8 @@ open class Grammar {
         
         let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), bindings: columnStatements.flatMap(\.bindings))
         
-        var base = "update \(table)"
-        if let joinSQL = compileJoins(joins) {
+        var base = "update \(query.table)"
+        if let joinSQL = compileJoins(query.joins) {
             bindings += joinSQL.bindings
             base += " \(joinSQL)"
         }
@@ -150,7 +138,7 @@ open class Grammar {
         bindings += columnSQL.bindings
         base += " set \(columnSQL.statement)"
 
-        if let whereSQL = compileWheres(wheres) {
+        if let whereSQL = compileWheres(query.wheres) {
             bindings += whereSQL.bindings
             base += " \(whereSQL.statement)"
         }
@@ -158,7 +146,7 @@ open class Grammar {
         return SQL(base, bindings: bindings)
     }
 
-    open func compileDelete(_ table: String, wheres: [Query.Where]) throws -> SQL {
+    open func compileDelete(_ table: String, wheres: [Query.Where]) -> SQL {
         if let whereSQL = compileWheres(wheres) {
             return SQL("delete from \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
         } else {

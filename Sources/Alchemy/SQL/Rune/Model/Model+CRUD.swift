@@ -301,7 +301,7 @@ extension Array where Element: Model {
         try await Element.willUpdate(self)
         try await Element.query(database: db)
             .where(key: "id", in: map(\.id))
-            .update(values: touchUpdatedAt(values))
+            .update(fields: touchUpdatedAt(values))
         try await Element.didUpdate(self)
     }
     
