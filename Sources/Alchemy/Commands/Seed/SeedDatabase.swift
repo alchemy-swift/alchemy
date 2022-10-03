@@ -17,18 +17,18 @@ struct SeedDatabase: Command {
     /// Whether specific seeders to run. If this is empty, all seeders
     /// on the database will be run.
     @Option(help: "The database to run the seeders on. Leave empty to run on the default database.")
-    var database: String?
+    var db: String?
     
     init() {}
-    init(database: String?, seeders: [String] = []) {
-        self.database = database
+    init(db: String?, seeders: [String] = []) {
+        self.db = db
         self.seeders = seeders
     }
     
     // MARK: Command
     
     func start() async throws {
-        let db: Database = database.map { .id(.init(hashable: $0)) } ?? DB
+        let db: Database = db.map { .id(.init(hashable: $0)) } ?? DB
         guard seeders.isEmpty else {
             try await db.seed(names: seeders)
             return

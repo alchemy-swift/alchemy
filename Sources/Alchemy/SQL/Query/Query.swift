@@ -2,7 +2,7 @@ import Foundation
 import NIO
 
 public class Query: Equatable {
-    let database: Database
+    let db: Database
     var table: String
     var shouldLog: Bool = false
 
@@ -18,8 +18,8 @@ public class Query: Equatable {
     var havings: [Where] = []
     var orders: [Order] = []
 
-    public init(database: Database, table: String) {
-        self.database = database
+    public init(db: Database, table: String) {
+        self.db = db
         self.table = table
     }
     

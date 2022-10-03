@@ -68,7 +68,7 @@ extension ModelQuery {
             
             // Load the matching `To` rows
             let allRows = fromResults.map(\.row)
-            let query = try nested(config.load(allRows, database: self.database))
+            let query = try nested(config.load(allRows, db: self.db))
             let toResults = try await query
                 .fetch(columns: ["\(R.To.Value.tableName).*", toJoinKey])
                 .map { (model: try R.To.from($0), row: $1) }
@@ -101,8 +101,8 @@ extension ModelQuery {
 public typealias NestedQuery<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
 
 extension RelationshipMapping {
-    fileprivate func load<M: Model>(_ values: [SQLRow], database: Database) throws -> ModelQuery<M> {
-        var query = M.query(database: database)
+    fileprivate func load<M: Model>(_ values: [SQLRow], db: Database) throws -> ModelQuery<M> {
+        var query = M.query(db: db)
         query.table = toTable
         var whereKey = "\(toTable).\(toKey)"
         if let through = through {
@@ -111,7 +111,7 @@ extension RelationshipMapping {
         }
         
         let ids = try values.map { try $0.require(fromKey).sqlValue }
-        query = query.where(key: "\(whereKey)", in: ids.uniques)
+        query = query.where("\(whereKey)", in: ids.uniques)
         return query
     }
 }

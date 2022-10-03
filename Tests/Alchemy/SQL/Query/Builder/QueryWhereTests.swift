@@ -33,8 +33,8 @@ final class QueryWhereTests: TestCase<TestApp> {
     
     func testWhereIn() {
         let query = DB.table("foo")
-            .where(key: "foo", in: [1])
-            .orWhere(key: "bar", in: [2])
+            .where("foo", in: [1])
+            .orWhere("bar", in: [2])
         XCTAssertEqual(query.wheres, [
             _andWhere(.in(key: "foo", values: [.int(1)], type: .in)),
             _orWhere(.in(key: "bar", values: [.int(2)], type: .in)),
@@ -43,8 +43,8 @@ final class QueryWhereTests: TestCase<TestApp> {
     
     func testWhereNotIn() {
         let query = DB.table("foo")
-            .whereNot(key: "foo", in: [1])
-            .orWhereNot(key: "bar", in: [2])
+            .whereNot("foo", in: [1])
+            .orWhereNot("bar", in: [2])
         XCTAssertEqual(query.wheres, [
             _andWhere(.in(key: "foo", values: [.int(1)], type: .notIn)),
             _orWhere(.in(key: "bar", values: [.int(2)], type: .notIn)),
@@ -53,8 +53,8 @@ final class QueryWhereTests: TestCase<TestApp> {
     
     func testWhereRaw() {
         let query = DB.table("foo")
-            .whereRaw(sql: "foo", bindings: [1])
-            .orWhereRaw(sql: "bar", bindings: [2])
+            .whereRaw("foo", bindings: [1])
+            .orWhereRaw("bar", bindings: [2])
         XCTAssertEqual(query.wheres, [
             _andWhere(.raw(SQL("foo", bindings: [.int(1)]))),
             _orWhere(.raw(SQL("bar", bindings: [.int(2)]))),
@@ -73,8 +73,8 @@ final class QueryWhereTests: TestCase<TestApp> {
     
     func testWhereNull() {
         let query = DB.table("foo")
-            .whereNull(key: "foo")
-            .orWhereNull(key: "bar")
+            .whereNull("foo")
+            .orWhereNull("bar")
         XCTAssertEqual(query.wheres, [
             _andWhere(.raw(SQL("foo IS NULL"))),
             _orWhere(.raw(SQL("bar IS NULL"))),
@@ -83,8 +83,8 @@ final class QueryWhereTests: TestCase<TestApp> {
     
     func testWhereNotNull() {
         let query = DB.table("foo")
-            .whereNotNull(key: "foo")
-            .orWhereNotNull(key: "bar")
+            .whereNotNull("foo")
+            .orWhereNotNull("bar")
         XCTAssertEqual(query.wheres, [
             _andWhere(.raw(SQL("foo IS NOT NULL"))),
             _orWhere(.raw(SQL("bar IS NOT NULL"))),

@@ -3,28 +3,28 @@ import Foundation
 /// A queue that persists jobs to a database.
 final class DatabaseQueue: QueueProvider {
     /// The database backing this queue.
-    private let database: Database
+    private let db: Database
     
     /// Initialize with a database, to which Jobs will be persisted.
     ///
     /// - Parameters:
     ///   - database: The database.
-    init(database: Database = DB) {
-        self.database = database
+    init(db: Database = DB) {
+        self.db = db
     }
     
     // MARK: - Queue
     
     func enqueue(_ job: JobData) async throws {
-        _ = try await JobModel(jobData: job).insertReturn(db: database)
+        _ = try await JobModel(jobData: job).insertReturn(db: db)
     }
 
     func dequeue(from channel: String) async throws -> JobData? {
-        return try await database.transaction { conn in
-            let job = try await JobModel.query(database: conn)
+        return try await db.transaction { conn in
+            let job = try await JobModel.query(db: conn)
                 .where("reserved" != true)
                 .where("channel" == channel)
-                .where { $0.whereNull(key: "backoff_until").orWhere("backoff_until" < Date()) }
+                .where { $0.whereNull("backoff_until").orWhere("backoff_until" < Date()) }
                 .orderBy("queued_at")
                 .limit(1)
                 .lock(for: .update, option: .skipLocked)
@@ -40,12 +40,12 @@ final class DatabaseQueue: QueueProvider {
     func complete(_ job: JobData, outcome: JobOutcome) async throws {
         switch outcome {
         case .success, .failed:
-            _ = try await JobModel.query(database: database)
+            _ = try await JobModel.query(db: db)
                 .where("id" == job.id)
                 .where("channel" == job.channel)
                 .delete()
         case .retry:
-            _ = try await JobModel(jobData: job).update(db: database)
+            _ = try await JobModel(jobData: job).update(db: db)
         }
     }
 }
@@ -56,8 +56,8 @@ public extension Queue {
     /// - Parameter database: A database to drive this queue with.
     ///   Defaults to your default database.
     /// - Returns: The configured queue.
-    static func database(_ database: Database = DB) -> Queue {
-        Queue(provider: DatabaseQueue(database: database))
+    static func database(_ db: Database = DB) -> Queue {
+        Queue(provider: DatabaseQueue(db: db))
     }
     
     /// A queue backed by the default SQL database.

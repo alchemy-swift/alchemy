@@ -28,10 +28,10 @@ extension Query {
         ///   - database: The database the join table is on.
         ///   - type: The type of join this is.
         ///   - joinTable: The name of the table to join to.
-        init(database: Database, table: String, type: JoinType, joinTable: String) {
+        init(db: Database, table: String, type: JoinType, joinTable: String) {
             self.type = type
             self.joinTable = joinTable
-            super.init(database: database, table: table)
+            super.init(db: db, table: table)
         }
         
         func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Join {
@@ -69,7 +69,7 @@ extension Query {
     ///   queries to.
     public func join(table: String, first: String, op: Operator = .equals, second: String, type: JoinType = .inner) -> Self {
         joins.append(
-            Join(database: database, table: self.table, type: type, joinTable: table)
+            Join(db: db, table: self.table, type: type, joinTable: table)
                 .on(first: first, op: op, second: second)
         )
         return self
@@ -84,7 +84,7 @@ extension Query {
     ///   - conditions: A closure that sets the conditions on the join using.
     /// - Returns: This query builder.
     public func join(table: String, type: JoinType = .inner, conditions: (Join) -> Join) -> Self {
-        joins.append(conditions(Join(database: database, table: self.table, type: type, joinTable: table)))
+        joins.append(conditions(Join(db: db, table: self.table, type: type, joinTable: table)))
         return self
     }
 

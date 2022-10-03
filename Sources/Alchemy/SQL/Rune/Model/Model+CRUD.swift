@@ -11,7 +11,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
     public static func all(db: Database = DB) async throws -> [Self] {
-        try await Self.query(database: db).all()
+        try await Self.query(db: db).all()
     }
     
     /// Fetch the first model with the given id.
@@ -55,13 +55,13 @@ extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: The first model, if one exists.
     public static func first(db: Database = DB) async throws -> Self? {
-        try await Self.query(database: db).first()
+        try await Self.query(db: db).first()
     }
     
     /// Returns a random model of this type, if one exists.
     public static func random(db: Database = DB) async throws -> Self? {
         // Note; MySQL should be `RAND()`
-        try await Self.query(database: db).random()
+        try await Self.query(db: db).random()
     }
     
     /// Gets the first element that meets the given where value.
@@ -73,7 +73,7 @@ extension Model {
     /// - Returns: The first result matching the `where` clause, if
     ///   one exists.
     public static func firstWhere(_ where: Query.Where, db: Database = DB) async throws -> Self? {
-        try await Self.query(database: db).where(`where`).first()
+        try await Self.query(db: db).where(`where`).first()
     }
     
     /// Gets all elements that meets the given where value.
@@ -110,7 +110,7 @@ extension Model {
     /// - Returns: A query on the `Model`'s table that matches the
     ///   given where clause.
     public static func `where`(_ where: Query.Where, db: Database = DB) -> ModelQuery<Self> {
-        Self.query(database: db).where(`where`)
+        Self.query(db: db).where(`where`)
     }
     
     // MARK: - Insert
@@ -206,7 +206,7 @@ extension Model {
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
     public static func delete(_ where: Query.Where, db: Database = DB) async throws {
-        try await query(database: db).where(`where`).delete()
+        try await query(db: db).where(`where`).delete()
     }
     
     /// Delete the first model with the given id.
@@ -216,7 +216,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
     public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
-        try await query(database: db).where("id" == id).delete()
+        try await query(db: db).where("id" == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -227,7 +227,7 @@ extension Model {
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
     public static func deleteAll(db: Database = DB, where: Query.Where? = nil) async throws {
-        var query = Self.query(database: db)
+        var query = Self.query(db: db)
         if let clause = `where` { query = query.where(clause) }
         try await query.delete()
     }
@@ -242,7 +242,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
     public func sync(db: Database = DB, query: ((ModelQuery<Self>) -> ModelQuery<Self>) = { $0 }) async throws -> Self {
-        try await query(Self.query(database: db).where("id" == id))
+        try await query(Self.query(db: db).where("id" == id))
             .first()
             .unwrap(or: RuneError.syncErrorNoMatch(table: Self.tableName, id: id))
     }
@@ -261,7 +261,7 @@ extension Model {
     ///     the where clause find a result.
     ///   - db: The database to query. Defaults to `Database.default`.
     public static func ensureNotExists(_ where: Query.Where, else error: Error, db: Database = DB) async throws {
-        try await Self.query(database: db).where(`where`).firstRow()
+        try await Self.query(db: db).where(`where`).firstRow()
             .map { _ in throw error }
     }
 }
@@ -278,7 +278,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertAll(db: Database = DB) async throws {
         try await Element.willCreate(self)
-        try await Element.query(database: db).insert(try insertableFields())
+        try await Element.query(db: db).insert(try insertableFields())
         try await Element.didCreate(self)
     }
     
@@ -290,7 +290,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertReturnAll(db: Database = DB) async throws -> Self {
         try await Element.willCreate(self)
-        let results = try await Element.query(database: db)
+        let results = try await Element.query(db: db)
             .insertReturn(try insertableFields())
             .map { try $0.decode(Element.self) }
         try await Element.didCreate(results)
@@ -299,8 +299,8 @@ extension Array where Element: Model {
     
     public func updateAll(db: Database = DB, values: [String: SQLValueConvertible]) async throws {
         try await Element.willUpdate(self)
-        try await Element.query(database: db)
-            .where(key: "id", in: map(\.id))
+        try await Element.query(db: db)
+            .where("id", in: map(\.id))
             .update(fields: touchUpdatedAt(values))
         try await Element.didUpdate(self)
     }
@@ -313,8 +313,8 @@ extension Array where Element: Model {
     ///   `Database.default`.
     public func deleteAll(db: Database = DB) async throws {
         try await Element.willDelete(self)
-        _ = try await Element.query(database: db)
-            .where(key: "id", in: self.compactMap { $0.id })
+        _ = try await Element.query(db: db)
+            .where("id", in: self.compactMap { $0.id })
             .delete()
         try await Element.didDelete(self)
     }
@@ -322,7 +322,7 @@ extension Array where Element: Model {
     public func syncAll(db: Database = DB, eagerLoadsQuery: (ModelQuery<Element>) -> ModelQuery<Element> = { $0 }) async throws -> Self {
         guard !isEmpty else { return self }
         guard allSatisfy({ $0.id != nil }) else { throw RuneError.syncErrorNoId }
-        let initialQuery = Element.query(database: db).where(key: "id", in: map(\.id))
+        let initialQuery = Element.query(db: db).where("id", in: map(\.id))
         return try await eagerLoadsQuery(initialQuery).all()
     }
     

@@ -14,13 +14,13 @@ final class DatabaseCache: CacheProvider {
     
     /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) async throws -> CacheItem? {
-        let item = try await CacheItem.query(database: db).where("_key" == key).first()
+        let item = try await CacheItem.query(db: db).where("_key" == key).first()
         guard let item = item else {
             return nil
         }
         
         guard item.isValid else {
-            try await CacheItem.query(database: db).where("_key" == key).delete()
+            try await CacheItem.query(db: db).where("_key" == key).delete()
             return nil
         }
         
@@ -60,7 +60,7 @@ final class DatabaseCache: CacheProvider {
     }
     
     func delete(_ key: String) async throws {
-        _ = try await CacheItem.query(database: db).where("_key" == key).delete()
+        _ = try await CacheItem.query(db: db).where("_key" == key).delete()
     }
     
     func increment(_ key: String, by amount: Int) async throws -> Int {

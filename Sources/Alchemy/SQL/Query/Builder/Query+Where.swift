@@ -75,7 +75,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ closure: @escaping (Query) -> Query, boolean: WhereBoolean = .and) -> Self {
-        let query = closure(Query(database: database, table: table))
+        let query = closure(Query(db: db, table: table))
         wheres.append(Where(type: .nested(wheres: query.wheres), boolean: boolean))
         return self
     }
@@ -103,7 +103,7 @@ extension Query {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func `where`(key: String, in values: [SQLValueConvertible], type: WhereInType = .in, boolean: WhereBoolean = .and) -> Self {
+    public func `where`(_ key: String, in values: [SQLValueConvertible], type: WhereInType = .in, boolean: WhereBoolean = .and) -> Self {
         wheres.append(Where(type: .in(key: key, values: values.map { $0.sqlValue }, type: type), boolean: boolean))
         return self
     }
@@ -117,8 +117,8 @@ extension Query {
     ///     Defaults to `.in`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(key: String, in values: [SQLValueConvertible], type: WhereInType = .in) -> Self {
-        `where`(key: key, in: values, type: type, boolean: .or)
+    public func orWhere(_ key: String, in values: [SQLValueConvertible], type: WhereInType = .in) -> Self {
+        `where`(key, in: values, type: type, boolean: .or)
     }
 
     /// Add a clause requiring that a column not match any values in a
@@ -131,8 +131,8 @@ extension Query {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNot(key: String, in values: [SQLValueConvertible], boolean: WhereBoolean = .and) -> Self {
-        `where`(key: key, in: values, type: .notIn, boolean: boolean)
+    public func whereNot(_ key: String, in values: [SQLValueConvertible], boolean: WhereBoolean = .and) -> Self {
+        `where`(key, in: values, type: .notIn, boolean: boolean)
     }
 
     /// A helper for adding an **or** `whereNot` clause.
@@ -142,8 +142,8 @@ extension Query {
     ///   - values: The values that the column should not match.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNot(key: String, in values: [SQLValueConvertible]) -> Self {
-        `where`(key: key, in: values, type: .notIn, boolean: .or)
+    public func orWhereNot(_ key: String, in values: [SQLValueConvertible]) -> Self {
+        `where`(key, in: values, type: .notIn, boolean: .or)
     }
 
     /// Add a raw SQL where clause to your query.
@@ -155,7 +155,7 @@ extension Query {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereRaw(sql: String, bindings: [SQLValueConvertible], boolean: WhereBoolean = .and) -> Self {
+    public func whereRaw(_ sql: String, bindings: [SQLValueConvertible], boolean: WhereBoolean = .and) -> Self {
         wheres.append(Where(type: .raw(SQL(sql, bindings: bindings.map(\.sqlValue))), boolean: boolean))
         return self
     }
@@ -167,8 +167,8 @@ extension Query {
     ///   - bindings: Any variables for binding in the SQL.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereRaw(sql: String, bindings: [SQLValueConvertible]) -> Self {
-        whereRaw(sql: sql, bindings: bindings, boolean: .or)
+    public func orWhereRaw(_ sql: String, bindings: [SQLValueConvertible]) -> Self {
+        whereRaw(sql, bindings: bindings, boolean: .or)
     }
 
     /// Add a where clause requiring that two columns match each other
@@ -208,7 +208,7 @@ extension Query {
     ///   - not: Should the value be null or not null.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNull(key: String, boolean: WhereBoolean = .and, not: Bool = false) -> Self {
+    public func whereNull(_ key: String, boolean: WhereBoolean = .and, not: Bool = false) -> Self {
         let action = not ? "IS NOT" : "IS"
         wheres.append(Where(type: .raw(SQL("\(key) \(action) NULL")), boolean: boolean))
         return self
@@ -219,8 +219,8 @@ extension Query {
     /// - Parameter key: The column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNull(key: String) -> Self {
-        whereNull(key: key, boolean: .or)
+    public func orWhereNull(_ key: String) -> Self {
+        whereNull(key, boolean: .or)
     }
 
     /// Add a where clause requiring that a column not be null.
@@ -231,8 +231,8 @@ extension Query {
     ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNotNull(key: String, boolean: WhereBoolean = .and) -> Self {
-        whereNull(key: key, boolean: boolean, not: true)
+    public func whereNotNull(_ key: String, boolean: WhereBoolean = .and) -> Self {
+        whereNull(key, boolean: boolean, not: true)
     }
 
     /// A helper for adding an **or** `whereNotNull` clause.
@@ -240,8 +240,8 @@ extension Query {
     /// - Parameter key: The column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNotNull(key: String) -> Self {
-        whereNotNull(key: key, boolean: .or)
+    public func orWhereNotNull(_ key: String) -> Self {
+        whereNotNull(key, boolean: .or)
     }
 }
 

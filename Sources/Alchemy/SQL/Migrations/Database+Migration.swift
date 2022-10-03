@@ -62,7 +62,7 @@ extension Database {
             try await runStatements(statements: statements)
         }
         
-        return try await AlchemyMigration.query(database: self).all()
+        return try await AlchemyMigration.query(db: self).all()
     }
     
     /// Run the `.down` functions of an array of migrations, in order.
@@ -73,7 +73,7 @@ extension Database {
         for m in migrations.sorted(by: { $0.name > $1.name }) {
             let statements = m.downStatements(for: provider.grammar)
             try await runStatements(statements: statements)
-            try await AlchemyMigration.query(database: self).where("name" == m.name).delete()
+            try await AlchemyMigration.query(db: self).where("name" == m.name).delete()
         }
     }
     

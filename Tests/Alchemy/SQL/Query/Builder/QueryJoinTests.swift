@@ -38,7 +38,7 @@ final class QueryJoinTests: TestCase<TestApp> {
                 .orOn(first: "id3", op: .greaterThan, second: "id4")
         }
         
-        let expectedJoin = Query.Join(database: DB, table: "foo", type: .inner, joinTable: "bar")
+        let expectedJoin = Query.Join(db: DB, table: "foo", type: .inner, joinTable: "bar")
         expectedJoin.joinWheres = [
             Query.Where(type: .column(first: "id1", op: .equals, second: "id2"), boolean: .and),
             Query.Where(type: .column(first: "id3", op: .greaterThan, second: "id4"), boolean: .or)
@@ -54,7 +54,7 @@ final class QueryJoinTests: TestCase<TestApp> {
     }
     
     private func sampleJoin(of type: Query.JoinType) -> Query.Join {
-        return Query.Join(database: DB, table: "foo", type: type, joinTable: "bar")
+        return Query.Join(db: DB, table: "foo", type: type, joinTable: "bar")
             .on(first: "id1", op: .equals, second: "id2")
     }
 }

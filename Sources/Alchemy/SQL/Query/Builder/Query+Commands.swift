@@ -11,8 +11,8 @@ extension Query {
             self.columns = columns
         }
 
-        let sql = database.grammar.compileSelect(query: self)
-        return try await database.query(sql: sql, log: shouldLog)
+        let sql = db.grammar.compileSelect(query: self)
+        return try await db.query(sql: sql, log: shouldLog)
     }
 
     /// Run a select query and return the first database row only row.
@@ -56,8 +56,8 @@ extension Query {
             return
         }
 
-        let sql = database.grammar.compileInsert(table, values: values)
-        try await database.query(sql: sql, log: shouldLog)
+        let sql = db.grammar.compileInsert(table, values: values)
+        try await db.query(sql: sql, log: shouldLog)
     }
     
     public func insertReturn(_ values: [String: SQLValueConvertible]) async throws -> [SQLRow] {
@@ -74,9 +74,9 @@ extension Query {
             return []
         }
 
-        let statements = database.grammar.compileInsertReturn(table, values: values)
+        let statements = db.grammar.compileInsertReturn(table, values: values)
         let shouldLog = shouldLog
-        return try await database.transaction { conn in
+        return try await db.transaction { conn in
             var toReturn: [SQLRow] = []
             for sql in statements {
                 let rows = try await conn.query(sql: sql, log: shouldLog)
@@ -108,14 +108,14 @@ extension Query {
             return
         }
 
-        let sql = database.grammar.compileUpdate(query: self, fields: fields)
-        try await database.query(sql: sql, log: shouldLog)
+        let sql = db.grammar.compileUpdate(query: self, fields: fields)
+        try await db.query(sql: sql, log: shouldLog)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
-        let sql = database.grammar.compileDelete(table, wheres: wheres)
-        try await database.query(sql: sql, log: shouldLog)
+        let sql = db.grammar.compileDelete(table, wheres: wheres)
+        try await db.query(sql: sql, log: shouldLog)
     }
 }
 
