@@ -16,7 +16,7 @@ extension Query {
     
     public enum WhereInType: String {
         case `in`
-        case notIn
+        case notIn = "not in"
     }
     
     public struct Where: Equatable {

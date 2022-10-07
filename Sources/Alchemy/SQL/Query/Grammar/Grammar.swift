@@ -382,7 +382,7 @@ extension Query.Where: SQLConvertible {
             return SQL("\(boolean) (\(nestedSQL.statement))", bindings: nestedSQL.bindings)
         case .in(let key, let values, let type):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
+            return SQL("\(boolean) \(key) \(type.rawValue) (\(placeholders))", bindings: values)
         case .raw(let sql):
             return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
         }
