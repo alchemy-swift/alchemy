@@ -110,12 +110,12 @@ open class Grammar {
             return SQL("insert into \(table) default values")
         }
 
-        let columns = values[0].map { $0.key }
+        let columns = Set(values.flatMap(\.keys))
         var parameters: [SQLValue] = []
         var placeholders: [String] = []
 
         for value in values {
-            let orderedValues = columns.compactMap { value[$0]?.sqlValue }
+            let orderedValues = columns.map { value[$0]?.sqlValue ?? .null }
             parameters.append(contentsOf: orderedValues)
             placeholders.append("(\(parameterize(orderedValues)))")
         }

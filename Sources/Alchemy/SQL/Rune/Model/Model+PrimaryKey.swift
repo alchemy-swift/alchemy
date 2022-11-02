@@ -145,7 +145,7 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
         } else if type is Date.Type {
             return Date() as! T
         }
-        
+
         return try T(from: DummyDecoder())
     }
     
