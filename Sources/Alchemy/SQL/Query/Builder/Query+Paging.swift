@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     /// Limit the returned results to a given amount.
     ///
     /// - Parameter value: An amount to cap the total result at.

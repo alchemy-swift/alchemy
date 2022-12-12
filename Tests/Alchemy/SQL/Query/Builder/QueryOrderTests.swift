@@ -13,8 +13,8 @@ final class QueryOrderTests: TestCase<TestApp> {
             .orderBy("bar")
             .orderBy("baz", direction: .desc)
         XCTAssertEqual(query.orders, [
-            Query.Order(column: "bar", direction: .asc),
-            Query.Order(column: "baz", direction: .desc),
+            SQLQuery.Order(column: "bar", direction: .asc),
+            SQLQuery.Order(column: "baz", direction: .desc),
         ])
     }
 }

@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     /// Group returned data by a given column.
     ///
     /// - Parameter group: The table column to group data on.

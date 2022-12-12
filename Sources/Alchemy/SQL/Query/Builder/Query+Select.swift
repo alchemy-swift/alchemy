@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     /// Set the columns that should be returned by the query.
     ///
     /// - Parameters:

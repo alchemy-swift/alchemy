@@ -6,7 +6,7 @@ open class Grammar {
 
     // MARK: Compiling Query Builder
     
-    open func compileSelect(query: Query) -> SQL {
+    open func compileSelect(query: SQLQuery) -> SQL {
         let select = query.isDistinct ? "select distinct" : "select"
         return [
             SQL("\(select) \(query.columns.joined(separator: ", "))"),
@@ -22,7 +22,7 @@ open class Grammar {
         ].compactMap { $0 }.joinedSQL()
     }
 
-    open func compileJoins(_ joins: [Query.Join]) -> SQL? {
+    open func compileJoins(_ joins: [SQLQuery.Join]) -> SQL? {
         guard !joins.isEmpty else {
             return nil
         }
@@ -47,7 +47,7 @@ open class Grammar {
         return SQL(query, bindings: bindings)
     }
     
-    open func compileWheres(_ wheres: [Query.Where], isJoin: Bool = false) -> SQL? {
+    open func compileWheres(_ wheres: [SQLQuery.Where], isJoin: Bool = false) -> SQL? {
         guard wheres.count > 0 else {
             return nil
         }
@@ -65,7 +65,7 @@ open class Grammar {
         return SQL("group by \(groups.joined(separator: ", "))")
     }
 
-    open func compileHavings(_ havings: [Query.Where]) -> SQL? {
+    open func compileHavings(_ havings: [SQLQuery.Where]) -> SQL? {
         guard havings.count > 0 else {
             return nil
         }
@@ -74,7 +74,7 @@ open class Grammar {
         return SQL("having \(sql.statement)", bindings: sql.bindings)
     }
 
-    open func compileOrders(_ orders: [Query.Order]) -> SQL? {
+    open func compileOrders(_ orders: [SQLQuery.Order]) -> SQL? {
         guard !orders.isEmpty else {
             return nil
         }
@@ -117,7 +117,7 @@ open class Grammar {
         return [SQL("\(insert.statement) returning *", bindings: insert.bindings)]
     }
     
-    open func compileUpdate(query: Query, fields: [String: SQLValueConvertible]) -> SQL {
+    open func compileUpdate(query: SQLQuery, fields: [String: SQLValueConvertible]) -> SQL {
         var bindings: [SQLValue] = []
         let columnStatements: [SQL] = fields.map { key, val in
             if let expression = val as? SQL {
@@ -146,7 +146,7 @@ open class Grammar {
         return SQL(base, bindings: bindings)
     }
 
-    open func compileDelete(_ table: String, wheres: [Query.Where]) -> SQL {
+    open func compileDelete(_ table: String, wheres: [SQLQuery.Where]) -> SQL {
         if let whereSQL = compileWheres(wheres) {
             return SQL("delete from \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
         } else {
@@ -154,7 +154,7 @@ open class Grammar {
         }
     }
     
-    open func compileLock(_ lock: Query.Lock?) -> SQL? {
+    open func compileLock(_ lock: SQLQuery.Lock?) -> SQL? {
         guard let lock = lock else {
             return nil
         }
@@ -348,7 +348,7 @@ extension String {
     }
 }
 
-extension Query.Where: SQLConvertible {
+extension SQLQuery.Where: SQLConvertible {
     public var sql: SQL {
         switch type {
         case .value(let key, let op, let value):
@@ -370,7 +370,7 @@ extension Query.Where: SQLConvertible {
             return SQL("\(boolean) (\(nestedSQL.statement))", bindings: nestedSQL.bindings)
         case .in(let key, let values, let type):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) \(type)(\(placeholders))", bindings: values)
+            return SQL("\(boolean) \(key) \(type) (\(placeholders))", bindings: values)
         case .raw(let sql):
             return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
         }

@@ -1,7 +1,7 @@
 import Foundation
 import Pluralize
 
-public protocol Model: ModelBase, Codable {}
+public protocol Model: ModelBase, Codable, RelationAllowed where M == Self {}
 
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
@@ -9,10 +9,10 @@ public protocol Model: ModelBase, Codable {}
 public protocol ModelBase: Identifiable, RelationshipAllowed {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
-    
+
     /// The identifier / primary key of this type.
     var id: Self.Identifier? { get set }
-    
+
     /// The table with which this object is associated. Defaults to
     /// the type name, pluralized. Affected by `keyMapping`. This
     /// can be overridden for custom table names.
@@ -27,30 +27,32 @@ public protocol ModelBase: Identifiable, RelationshipAllowed {
     /// }
     /// ```
     static var tableName: String { get }
-    
+
+    static var idKey: String { get }
+
     /// How should the Swift `CodingKey`s be mapped to database
     /// columns? Defaults to `.convertToSnakeCase`. Can be
     /// overridden on a per-type basis.
     static var keyMapping: DatabaseKeyMapping { get }
-    
+
     /// The `JSONDecoder` to use when decoding any JSON fields of this
     /// type. A JSON field is any `Codable` field that doesn't have a
     /// corresponding `DatabaseValue`.
     ///
     /// Defaults to `JSONDecoder()`.
     static var jsonDecoder: JSONDecoder { get }
-    
+
     /// The `JSONEncoder` to use when decoding any JSON fields of this
     /// type. A JSON field is any `Codable` field on this type that
     /// doesn't have a corresponding `DatabaseValue`.
     ///
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
-    
+
     init(row: SQLRow) throws // Auto filled in for codable models, in extension
-    
+
     func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
-    
+
     /// Defines any custom behavior when loading relationships.
     ///
     /// - Parameter mapper: An object with which to customize
@@ -61,7 +63,7 @@ public protocol ModelBase: Identifiable, RelationshipAllowed {
 extension ModelBase where Self: Codable {
     // Auto filled in for codable models, in extension
     public init(row: SQLRow) throws {
-        self = try row.decode(Self.self)
+        self = try row.decode(Self.self, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)
     }
     
     // Auto filled in for codable models, in extension
@@ -75,6 +77,10 @@ extension ModelBase {
         let typeName = String(describing: Self.self)
         let mapped = keyMapping.map(input: typeName)
         return mapped.pluralized
+    }
+
+    public static var idKey: String {
+        "id"
     }
     
     public static var keyMapping: DatabaseKeyMapping {

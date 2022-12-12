@@ -14,7 +14,7 @@ final class SQLiteGrammar: Grammar {
     
     // No locks are supported with SQLite; the entire database is locked on
     // write anyways.
-    override func compileLock(_ lock: Query.Lock?) -> SQL? {
+    override func compileLock(_ lock: SQLQuery.Lock?) -> SQL? {
         return nil
     }
     

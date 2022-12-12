@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     public struct Lock: Equatable {
         public enum Strength: String {
             case update

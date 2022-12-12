@@ -1,32 +1,57 @@
 import Foundation
 import NIO
 
+/*
+ 1. Run query.
+ 2. Run eager loads.
+ 3. When accessing relationships, check eager loaded properties. Else retrieve on the fly.
+ */
+
 public extension Model {
-    /// Begin a `ModelQuery<Self>` from a given database.
+    /// Begin a `Query<Self>` from a given database.
     ///
     /// - Parameter database: The database to run the query on.
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
-    static func query(db: Database = DB) -> ModelQuery<Self> {
-        ModelQuery<Self>(db: db, table: Self.tableName)
+    static func query(db: Database = DB) -> Query<Self> {
+        Query(db: db)
     }
 }
 
-/// A `ModelQuery` is just a subclass of `Query` with some added
+/// A `Query` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
-public class ModelQuery<M: Model>: Query {
+public class Query<M: Model>: SQLQuery {
     /// The closures of any eager loads to run. To be run after the
     /// initial models of type `Self` are fetched.
     var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []
+
+    var withQueries: [(inout [M]) async throws -> Void] = []
+
+    /*
+     1. Load initial models.
+     2. Run query with loaded models.
+     3. Set specific models keyed by relationship query.
+     */
+
+    init(db: Database) {
+        super.init(db: db, table: M.tableName)
+    }
     
     // MARK: Fetching
-    
+
+    /// Gets all models matching this query from the database.
+    ///
+    /// - Returns: All models matching this query.
+    public func get() async throws -> [M] {
+        try await _get()
+    }
+
     /// Gets all models matching this query from the database.
     ///
     /// - Returns: All models matching this query.
     public func all() async throws -> [M] {
-        try await fetch().map(\.model)
+        try await get()
     }
     
     /// Get the first model matching this query from the database.
@@ -52,14 +77,34 @@ public class ModelQuery<M: Model>: Query {
         try await select().orderBy("RANDOM()").limit(1).first()
     }
     
-    func fetch(columns: [String]? = ["\(M.tableName).*"]) async throws -> [ModelRow] {
-        let initialResults = try await getRows(columns).map { (try $0.decode(M.self), $0) }
-        let withEagerLoads = try await evaluateEagerLoads(for: initialResults)
-        try await M.didFetch(withEagerLoads.map(\.model))
-        return withEagerLoads
+    func _get(columns: [String]? = ["\(M.tableName).*"]) async throws -> [M] {
+        // Get Initial rows.
+        var models = try await getRows(columns).map { try $0.decode(M.self) }
+        print("LOAD WITH QUERIES!")
+        if let first = models.first {
+            // Use the first model to get the query.
+            for query in withQueries {
+                print("EAGER LOADING...")
+                try await query(&models)
+            }
+        }
+
+        return models
+
+//        for query in withQueries {
+//            query.
+//        }
+//
+//
+//        // Fetch eager loads.
+//        let withEagerLoads = try await evaluateEagerLoads(for: initialResults)
+//        // Set eager loads.
+//        // Fire event.
+//        try await M.didFetch(withEagerLoads.map(\.model))
+//        return withEagerLoads
     }
     
-    /// Evaluate all eager loads in this `ModelQuery` sequentially.
+    /// Evaluate all eager loads in this `Query` sequentially.
     /// This occurs after the inital `M` query has completed.
     ///
     /// - Parameter models: The models that were loaded by the initial

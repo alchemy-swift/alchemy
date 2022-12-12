@@ -101,19 +101,19 @@ final class QueryWhereTests: TestCase<TestApp> {
         XCTAssertEqual("foo" ~= 1, _andWhere(op: .like))
     }
     
-    private func _andWhere(key: String = "foo", op: Query.Operator = .equals, value: SQLValueConvertible = 1) -> Query.Where {
+    private func _andWhere(key: String = "foo", op: SQLQuery.Operator = .equals, value: SQLValueConvertible = 1) -> SQLQuery.Where {
         _andWhere(.value(key: key, op: op, value: value.sqlValue))
     }
     
-    private func _orWhere(key: String = "foo", op: Query.Operator = .equals, value: SQLValueConvertible = 1) -> Query.Where {
+    private func _orWhere(key: String = "foo", op: SQLQuery.Operator = .equals, value: SQLValueConvertible = 1) -> SQLQuery.Where {
         _orWhere(.value(key: key, op: op, value: value.sqlValue))
     }
     
-    private func _andWhere(_ type: Query.WhereType) -> Query.Where {
-        Query.Where(type: type, boolean: .and)
+    private func _andWhere(_ type: SQLQuery.WhereType) -> SQLQuery.Where {
+        SQLQuery.Where(type: type, boolean: .and)
     }
     
-    private func _orWhere(_ type: Query.WhereType) -> Query.Where {
-        Query.Where(type: type, boolean: .or)
+    private func _orWhere(_ type: SQLQuery.WhereType) -> SQLQuery.Where {
+        SQLQuery.Where(type: type, boolean: .or)
     }
 }

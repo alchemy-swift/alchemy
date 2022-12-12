@@ -38,10 +38,10 @@ final class QueryJoinTests: TestCase<TestApp> {
                 .orOn(first: "id3", op: .greaterThan, second: "id4")
         }
         
-        let expectedJoin = Query.Join(db: DB, table: "foo", type: .inner, joinTable: "bar")
+        let expectedJoin = SQLQuery.Join(db: DB, table: "foo", type: .inner, joinTable: "bar")
         expectedJoin.joinWheres = [
-            Query.Where(type: .column(first: "id1", op: .equals, second: "id2"), boolean: .and),
-            Query.Where(type: .column(first: "id3", op: .greaterThan, second: "id4"), boolean: .or)
+            SQLQuery.Where(type: .column(first: "id1", op: .equals, second: "id2"), boolean: .and),
+            SQLQuery.Where(type: .column(first: "id3", op: .greaterThan, second: "id4"), boolean: .or)
         ]
         XCTAssertEqual(query.joins, [expectedJoin])
         XCTAssertEqual(query.wheres, [])
@@ -53,8 +53,8 @@ final class QueryJoinTests: TestCase<TestApp> {
         XCTAssertNotEqual(sampleJoin(of: .inner), DB.table("foo"))
     }
     
-    private func sampleJoin(of type: Query.JoinType) -> Query.Join {
-        return Query.Join(db: DB, table: "foo", type: type, joinTable: "bar")
+    private func sampleJoin(of type: SQLQuery.JoinType) -> SQLQuery.Join {
+        return SQLQuery.Join(db: DB, table: "foo", type: type, joinTable: "bar")
             .on(first: "id1", op: .equals, second: "id2")
     }
 }

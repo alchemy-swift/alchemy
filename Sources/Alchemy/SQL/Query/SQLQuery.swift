@@ -1,7 +1,7 @@
 import Foundation
 import NIO
 
-public class Query: Equatable {
+public class SQLQuery: Equatable {
     let db: Database
     var table: String
     var shouldLog: Bool = false
@@ -32,11 +32,11 @@ public class Query: Equatable {
 
     // MARK: Equatable
 
-    public static func == (lhs: Query, rhs: Query) -> Bool {
+    public static func == (lhs: SQLQuery, rhs: SQLQuery) -> Bool {
         lhs.isEqual(to: rhs)
     }
 
-    func isEqual(to other: Query) -> Bool {
+    func isEqual(to other: SQLQuery) -> Bool {
         return table == other.table &&
             columns == other.columns &&
             isDistinct == other.isDistinct &&

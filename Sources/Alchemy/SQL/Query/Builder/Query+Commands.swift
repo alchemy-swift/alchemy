@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     /// Run a select query and return the database rows.
     ///
     /// - Note: Optional columns can be provided that override the

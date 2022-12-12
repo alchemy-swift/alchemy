@@ -3,7 +3,7 @@ import Alchemy
 import AlchemyTest
 
 final class QueryGroupingTests: TestCase<TestApp> {
-    private let sampleWhere = Query.Where(
+    private let sampleWhere = SQLQuery.Where(
         type: .value(key: "id", op: .equals, value: .int(1)),
         boolean: .and)
     
@@ -18,7 +18,7 @@ final class QueryGroupingTests: TestCase<TestApp> {
     }
     
     func testHaving() {
-        let orWhere = Query.Where(type: sampleWhere.type, boolean: .or)
+        let orWhere = SQLQuery.Where(type: sampleWhere.type, boolean: .or)
         let query = DB.table("foo")
             .having(sampleWhere)
             .orHaving(orWhere)
@@ -26,7 +26,7 @@ final class QueryGroupingTests: TestCase<TestApp> {
         XCTAssertEqual(query.havings, [
             sampleWhere,
             orWhere,
-            Query.Where(type: .value(key: "bar", op: .like, value: .string("baz")), boolean: .or)
+            SQLQuery.Where(type: .value(key: "bar", op: .like, value: .string("baz")), boolean: .or)
         ])
     }
 }

@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     public enum Operator: CustomStringConvertible, Equatable {
         case equals
         case lessThan

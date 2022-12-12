@@ -9,14 +9,14 @@ final class QueryOperatorTests: TestCase<TestApp> {
     }
     
     func testOperatorDescriptions() {
-        XCTAssertEqual(Query.Operator.equals.description, "=")
-        XCTAssertEqual(Query.Operator.lessThan.description, "<")
-        XCTAssertEqual(Query.Operator.greaterThan.description, ">")
-        XCTAssertEqual(Query.Operator.lessThanOrEqualTo.description, "<=")
-        XCTAssertEqual(Query.Operator.greaterThanOrEqualTo.description, ">=")
-        XCTAssertEqual(Query.Operator.notEqualTo.description, "!=")
-        XCTAssertEqual(Query.Operator.like.description, "LIKE")
-        XCTAssertEqual(Query.Operator.notLike.description, "NOT LIKE")
-        XCTAssertEqual(Query.Operator.raw("foo").description, "foo")
+        XCTAssertEqual(SQLQuery.Operator.equals.description, "=")
+        XCTAssertEqual(SQLQuery.Operator.lessThan.description, "<")
+        XCTAssertEqual(SQLQuery.Operator.greaterThan.description, ">")
+        XCTAssertEqual(SQLQuery.Operator.lessThanOrEqualTo.description, "<=")
+        XCTAssertEqual(SQLQuery.Operator.greaterThanOrEqualTo.description, ">=")
+        XCTAssertEqual(SQLQuery.Operator.notEqualTo.description, "!=")
+        XCTAssertEqual(SQLQuery.Operator.like.description, "LIKE")
+        XCTAssertEqual(SQLQuery.Operator.notLike.description, "NOT LIKE")
+        XCTAssertEqual(SQLQuery.Operator.raw("foo").description, "foo")
     }
 }

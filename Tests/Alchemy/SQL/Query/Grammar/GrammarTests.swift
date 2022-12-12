@@ -28,8 +28,8 @@ final class GrammarTests: XCTestCase {
     
     func testCompileOrders() {
         XCTAssertEqual(grammar.compileOrders([
-            Query.Order(column: "foo", direction: .asc),
-            Query.Order(column: "bar", direction: .desc)
+            SQLQuery.Order(column: "foo", direction: .asc),
+            SQLQuery.Order(column: "bar", direction: .desc)
         ]), "order by foo asc, bar desc")
         XCTAssertEqual(grammar.compileOrders([]), nil)
     }
@@ -62,10 +62,10 @@ final class GrammarTests: XCTestCase {
     
     func testCompileLock() {
         XCTAssertEqual(grammar.compileLock(nil), nil)
-        XCTAssertEqual(grammar.compileLock(Query.Lock(strength: .update, option: nil)), "FOR UPDATE")
-        XCTAssertEqual(grammar.compileLock(Query.Lock(strength: .share, option: nil)), "FOR SHARE")
-        XCTAssertEqual(grammar.compileLock(Query.Lock(strength: .update, option: .skipLocked)), "FOR UPDATE SKIP LOCKED")
-        XCTAssertEqual(grammar.compileLock(Query.Lock(strength: .update, option: .noWait)), "FOR UPDATE NO WAIT")
+        XCTAssertEqual(grammar.compileLock(SQLQuery.Lock(strength: .update, option: nil)), "FOR UPDATE")
+        XCTAssertEqual(grammar.compileLock(SQLQuery.Lock(strength: .share, option: nil)), "FOR SHARE")
+        XCTAssertEqual(grammar.compileLock(SQLQuery.Lock(strength: .update, option: .skipLocked)), "FOR UPDATE SKIP LOCKED")
+        XCTAssertEqual(grammar.compileLock(SQLQuery.Lock(strength: .update, option: .noWait)), "FOR UPDATE NO WAIT")
     }
     
     func testCompileCreateTable() {

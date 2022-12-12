@@ -1,6 +1,6 @@
 protocol WhereClause: SQLConvertible {}
 
-extension Query {
+extension SQLQuery {
     public indirect enum WhereType: Equatable {
         case value(key: String, op: Operator, value: SQLValue)
         case column(first: String, op: Operator, second: String)
@@ -74,8 +74,8 @@ extension Query {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func `where`(_ closure: @escaping (Query) -> Query, boolean: WhereBoolean = .and) -> Self {
-        let query = closure(Query(db: db, table: table))
+    public func `where`(_ closure: @escaping (SQLQuery) -> SQLQuery, boolean: WhereBoolean = .and) -> Self {
+        let query = closure(SQLQuery(db: db, table: table))
         wheres.append(Where(type: .nested(wheres: query.wheres), boolean: boolean))
         return self
     }
@@ -87,7 +87,7 @@ extension Query {
     ///     query to attach nested where clauses to.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(_ closure: @escaping (Query) -> Query) -> Self {
+    public func orWhere(_ closure: @escaping (SQLQuery) -> SQLQuery) -> Self {
         `where`(closure, boolean: .or)
     }
 
@@ -248,31 +248,31 @@ extension Query {
 extension String {
     // MARK: Custom Swift Operators
     
-    public static func == (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .equals, value: rhs.sqlValue), boolean: .and)
+    public static func == (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .equals, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func != (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .notEqualTo, value: rhs.sqlValue), boolean: .and)
+    public static func != (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .notEqualTo, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func < (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .lessThan, value: rhs.sqlValue), boolean: .and)
+    public static func < (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .lessThan, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func > (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .greaterThan, value: rhs.sqlValue), boolean: .and)
+    public static func > (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .greaterThan, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func <= (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
+    public static func <= (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func >= (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
+    public static func >= (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func ~= (lhs: String, rhs: SQLValueConvertible) -> Query.Where {
-        Query.Where(type: .value(key: lhs, op: .like, value: rhs.sqlValue), boolean: .and)
+    public static func ~= (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
+        SQLQuery.Where(type: .value(key: lhs, op: .like, value: rhs.sqlValue), boolean: .and)
     }
 }

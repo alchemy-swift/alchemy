@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     /// The type of the join clause.
     public enum JoinType: String {
         /// INNER JOIN.
@@ -14,13 +14,13 @@ extension Query {
     }
 
     /// A JOIN query builder.
-    public final class Join: Query {
+    public final class Join: SQLQuery {
         /// The type of the join to perform.
         var type: JoinType
         /// The table to join to.
         let joinTable: String
         /// The join conditions
-        var joinWheres: [Query.Where] = []
+        var joinWheres: [SQLQuery.Where] = []
         
         /// Create a join builder with a query, type, and table.
         ///
@@ -43,7 +43,7 @@ extension Query {
             on(first: first, op: op, second: second, boolean: .or)
         }
         
-        override func isEqual(to other: Query) -> Bool {
+        override func isEqual(to other: SQLQuery) -> Bool {
             guard let other = other as? Join else {
                 return false
             }

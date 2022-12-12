@@ -17,11 +17,23 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
         var allKeys: [Key] = []
         
         func contains(_ key: Key) -> Bool {
-            reader.contains(key.stringValue)
+            // Always decode an instance of `let row: ModelRow?`. Note that this
+            // will cause issues for any optional columns named `row`.
+            if key.stringValue == "row" {
+                return true
+            }
+
+            return reader.contains(key.stringValue)
         }
         
         func decodeNil(forKey key: Key) throws -> Bool {
-            try reader.require(key.stringValue) == .null
+            // Always decode an instance of `let row: ModelRow?`. Note that this
+            // will cause issues for any optional columns named `row`.
+            if key.stringValue == "row" {
+                return false
+            }
+
+            return try reader.require(key.stringValue) == .null
         }
         
         func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
@@ -29,7 +41,7 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
                 // Assume other types are JSON.
                 return try reader.requireJSON(key.stringValue)
             }
-            
+
             return try thing.init(key: key.stringValue, on: reader) as! T
         }
         

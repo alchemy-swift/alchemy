@@ -1,4 +1,4 @@
-extension Query {
+extension SQLQuery {
     /// A clause for ordering rows by a certain column.
     public struct Order: Equatable {
         /// A sorting direction.

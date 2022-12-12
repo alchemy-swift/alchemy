@@ -1,4 +1,4 @@
-extension ModelQuery {
+extension Query {
     /// A tuple of models and the SQLRow that they were loaded from.
     typealias ModelRow = (model: M, row: SQLRow)
     
@@ -47,45 +47,45 @@ extension ModelQuery {
     public func with<R: Relationship>(
         _ relationshipKeyPath: KeyPath<M, R>,
         nested: @escaping NestedQuery<R.To.Value> = { $0 }
-    ) -> ModelQuery<M> where R.From == M {
-        eagerLoadQueries.append { fromResults in
-            let mapper = RelationshipMapper<M>()
-            M.mapRelations(mapper)
-            let config = mapper.getConfig(for: relationshipKeyPath)
-            
-            // If there are no results, don't need to eager load.
-            guard !fromResults.isEmpty else {
-                return []
-            }
-            
-            // Alias whatever key we'll join the relationship on
-            let toJoinKeyAlias = "_to_join_key"
-            let toJoinKey: String = {
-                let table = config.through?.table ?? config.toTable
-                let key = config.through?.fromKey ?? config.toKey
-                return "\(table).\(key) as \(toJoinKeyAlias)"
-            }()
-            
-            // Load the matching `To` rows
-            let allRows = fromResults.map(\.row)
-            let query = try nested(config.load(allRows, db: self.db))
-            let toResults = try await query
-                .fetch(columns: ["\(R.To.Value.tableName).*", toJoinKey])
-                .map { (model: try R.To.from($0), row: $1) }
-            
-            // Key the results by the join key value
-            let toResultsKeyedByJoinKey = try Dictionary(grouping: toResults) { _, row in
-                try row.require(toJoinKeyAlias)
-            }
-            
-            // For each `from` populate it's relationship
-            return try fromResults.map { model, row in
-                let pk = try row.require(config.fromKey)
-                let models = toResultsKeyedByJoinKey[pk]?.map(\.model) ?? []
-                try model[keyPath: relationshipKeyPath].set(values: models)
-                return (model, row)
-            }
-        }
+    ) -> Query<M> where R.From == M {
+//        eagerLoadQueries.append { fromResults in
+//            let mapper = RelationshipMapper<M>()
+//            M.mapRelations(mapper)
+//            let config = mapper.getConfig(for: relationshipKeyPath)
+//            
+//            // If there are no results, don't need to eager load.
+//            guard !fromResults.isEmpty else {
+//                return []
+//            }
+//            
+//            // Alias whatever key we'll join the relationship on
+//            let toJoinKeyAlias = "_to_join_key"
+//            let toJoinKey: String = {
+//                let table = config.through?.table ?? config.toTable
+//                let key = config.through?.fromKey ?? config.toKey
+//                return "\(table).\(key) as \(toJoinKeyAlias)"
+//            }()
+//            
+//            // Load the matching `To` rows
+//            let allRows = fromResults.map(\.row)
+//            let query = try nested(config.load(allRows, db: self.db))
+//            let toResults = try await query
+//                ._get(columns: ["\(R.To.Value.tableName).*", toJoinKey])
+//                .map { (model: try R.To.from($0), row: $1) }
+//            
+//            // Key the results by the join key value
+//            let toResultsKeyedByJoinKey = try Dictionary(grouping: toResults) { _, row in
+//                try row.require(toJoinKeyAlias)
+//            }
+//            
+//            // For each `from` populate it's relationship
+//            return try fromResults.map { model, row in
+//                let pk = try row.require(config.fromKey)
+//                let models = toResultsKeyedByJoinKey[pk]?.map(\.model) ?? []
+//                try model[keyPath: relationshipKeyPath].set(values: models)
+//                return (model, row)
+//            }
+//        }
         
         return self
     }
@@ -98,10 +98,10 @@ extension ModelQuery {
 /// a relationship of this queried model. Nested eager loads
 /// refers to loading a model from a relationship on that
 /// _other_ model.
-public typealias NestedQuery<R: Model> = (ModelQuery<R>) -> ModelQuery<R>
+public typealias NestedQuery<R: Model> = (Query<R>) -> Query<R>
 
 extension RelationshipMapping {
-    fileprivate func load<M: Model>(_ values: [SQLRow], db: Database) throws -> ModelQuery<M> {
+    fileprivate func load<M: Model>(_ values: [SQLRow], db: Database) throws -> Query<M> {
         var query = M.query(db: db)
         query.table = toTable
         var whereKey = "\(toTable).\(toKey)"

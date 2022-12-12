@@ -9,7 +9,7 @@ public struct SQLField: Equatable {
 public struct SQLRow {
     public let fields: [SQLField]
     public let lookupTable: [String: Int]
-    
+
     public var fieldDictionary: [String: SQLValue] {
         Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
     }
@@ -51,8 +51,8 @@ extension SQLRow {
     /// same as the property.
     ///
     /// - Parameter type: The type to decode from this row.
-    public func decode<M: Model>(_ type: M.Type) throws -> M {
-        try M(from: SQLRowDecoder(row: self, keyMapping: M.keyMapping, jsonDecoder: M.jsonDecoder))
+    public func decode<M: ModelBase>(_ type: M.Type) throws -> M {
+        try M(row: self)
     }
     
     public func decode<D: Decodable>(
