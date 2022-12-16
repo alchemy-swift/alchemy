@@ -26,7 +26,7 @@ public class Query<M: Model>: SQLQuery {
     /// initial models of type `Self` are fetched.
     var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []
 
-    var withQueries: [(inout [M]) async throws -> Void] = []
+    var eagerLoads: [(inout [M]) async throws -> Void] = []
 
     /*
      1. Load initial models.
@@ -80,28 +80,12 @@ public class Query<M: Model>: SQLQuery {
     func _get(columns: [String]? = ["\(M.tableName).*"]) async throws -> [M] {
         // Get Initial rows.
         var models = try await getRows(columns).map { try $0.decode(M.self) }
-        print("LOAD WITH QUERIES!")
-        if let first = models.first {
-            // Use the first model to get the query.
-            for query in withQueries {
-                print("EAGER LOADING...")
-                try await query(&models)
-            }
+        // Eager load.
+        for load in eagerLoads {
+            try await load(&models)
         }
 
         return models
-
-//        for query in withQueries {
-//            query.
-//        }
-//
-//
-//        // Fetch eager loads.
-//        let withEagerLoads = try await evaluateEagerLoads(for: initialResults)
-//        // Set eager loads.
-//        // Fire event.
-//        try await M.didFetch(withEagerLoads.map(\.model))
-//        return withEagerLoads
     }
     
     /// Evaluate all eager loads in this `Query` sequentially.

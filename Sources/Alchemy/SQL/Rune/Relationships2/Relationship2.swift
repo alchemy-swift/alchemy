@@ -1,7 +1,3 @@
-protocol RelationshipQueryProtocol {
-
-}
-
 public protocol EagerLoadable where Self: Model {
     var row: ModelRow? { get set }
 }
@@ -31,17 +27,7 @@ public struct ModelRow: ModelProperty, Codable {
     }
 }
 
-public struct PartialRelationshipQuery<From: Model> {
-    let load: ([From]) async throws -> Void
-
-    init<To: RelationAllowed>(_ query: RelationshipQuery<From, To>) {
-        self.load = { from in
-
-        }
-    }
-}
-
-public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, RelationshipQueryProtocol, Hashable {
+public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, Hashable {
     struct Through: Hashable {
         let table: String
         let fromKey: String
@@ -65,6 +51,8 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         hasher.combine(fromKey)
         hasher.combine(toKey)
         hasher.combine(throughs)
+
+        // TODO: Take into account where's in hashing.
     }
 
     init(db: Database = DB, from: From, fromKey: String, toKey: String) {
@@ -116,6 +104,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         let parentKeys = parents.compactMap(\.row?.sqlRow).map(\.[fromKey])
         return try await self
             .where(toKey, in: parentKeys)
+            // TODO: Get rid of this? Why isn't it working?
             .debug()
             .getRows()
             .map { (try $0.decode(To.M.self), $0) }
@@ -124,17 +113,17 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
 extension Query where M: EagerLoadable {
     public func with<To: RelationAllowed>(_ relationship: @escaping (M) -> M.Relationship2<To>) -> Self {
-        let closure: (inout [M]) async throws -> Void = { things in
-            print("LOAD FOR \(things.count)")
-            guard let first = things.first else {
+        let load: (inout [M]) async throws -> Void = { results in
+            guard let first = results.first else {
                 return
             }
 
+            // Get the relationship from the first model.
             let relationship = relationship(first)
-            try await relationship.load(for: &things)
+            try await relationship.load(for: &results)
         }
 
-        withQueries.append(closure)
+        eagerLoads.append(load)
         return self
     }
 }
