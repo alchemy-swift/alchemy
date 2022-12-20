@@ -9,7 +9,8 @@ public struct ModelRow: ModelProperty, Codable {
     // MARK: Codable
 
     public init(from decoder: Decoder) throws {
-        fatalError("DIE!")
+        self.sqlRow = SQLRow(fields: [])
+        self.eagerLoaded = [:]
     }
 
     public func encode(to encoder: Encoder) throws {
