@@ -81,6 +81,7 @@ public class Query<M: Model>: SQLQuery {
         // Get Initial rows.
         var models = try await getRows(columns).map { try $0.decode(M.self) }
         // Eager load.
+        print("There are \(eagerLoads.count) eager loads to evaluate")
         for load in eagerLoads {
             try await load(&models)
         }

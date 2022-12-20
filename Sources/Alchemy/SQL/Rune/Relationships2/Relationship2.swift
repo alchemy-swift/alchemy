@@ -83,6 +83,10 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         parents = results
     }
 
+    public func fetch() async throws -> To {
+        try await To.from(array: get())
+    }
+
     public override func get() async throws -> [To.M] {
         guard let results = from.row?.eagerLoaded[hashValue] else {
             return try await _get([from]).map(\.0)
@@ -110,7 +114,10 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 }
 
 extension Query where M: EagerLoadable {
-    public func with<To: RelationAllowed>(_ relationship: @escaping (M) -> M.Relationship2<To>) -> Self {
+    public func with<To: RelationAllowed>(
+        _ relationship: @escaping (M) -> M.Relationship2<To>,
+        nested: @escaping ((M.Relationship2<To>) -> M.Relationship2<To>) = { $0 }
+    ) -> Self {
         let load: (inout [M]) async throws -> Void = { results in
             guard let first = results.first else {
                 return
@@ -118,7 +125,7 @@ extension Query where M: EagerLoadable {
 
             // Get the relationship from the first model.
             let relationship = relationship(first)
-            try await relationship.load(for: &results)
+            try await nested(relationship).load(for: &results)
         }
 
         eagerLoads.append(load)
@@ -144,12 +151,22 @@ extension EagerLoadable {
 
 public protocol RelationAllowed {
     associatedtype M: Model
+
+    static func from(array: [M]) throws -> Self
 }
 
 extension Array: RelationAllowed where Element: Model {
     public typealias M = Element
+
+    public static func from(array: [Element]) throws -> [M] {
+        array
+    }
 }
 
 extension Optional: RelationAllowed where Wrapped: Model {
     public typealias M = Wrapped
+
+    public static func from(array: [Wrapped]) throws -> Wrapped? {
+        array.first
+    }
 }
