@@ -123,7 +123,7 @@ extension Database {
     @discardableResult
     fileprivate func query(sql: SQL, log: Bool) async throws -> [SQLRow] {
         if log || shouldLog {
-            Log.debug("\(sql.statement)\n\(sql.bindings)")
+            Log.info("\(sql.statement)\n\(sql.bindings)")
         }
 
         return try await query(sql.statement, values: sql.bindings)

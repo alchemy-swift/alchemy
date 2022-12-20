@@ -24,8 +24,8 @@ public class SQLQuery: Equatable {
     }
     
     /// Indicates the entire query should be logged when it's executed. Logs
-    /// will occur at the `debug` log level.
-    public func debug() -> Self {
+    /// will occur at the `info` log level.
+    public func log() -> Self {
         self.shouldLog = true
         return self
     }

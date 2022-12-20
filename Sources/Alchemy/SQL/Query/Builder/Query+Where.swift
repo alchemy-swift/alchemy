@@ -1,25 +1,29 @@
 protocol WhereClause: SQLConvertible {}
 
 extension SQLQuery {
-    public indirect enum WhereType: Equatable {
+    public indirect enum WhereType: Equatable, Hashable {
         case value(key: String, op: Operator, value: SQLValue)
         case column(first: String, op: Operator, second: String)
         case nested(wheres: [Where])
         case `in`(key: String, values: [SQLValue], type: WhereInType)
         case raw(SQL)
+
+        public func hash(into hasher: inout Swift.Hasher) {
+            hasher.combine("\(self)")
+        }
     }
     
-    public enum WhereBoolean: String {
+    public enum WhereBoolean: String, Hashable {
         case and
         case or
     }
     
-    public enum WhereInType: String {
+    public enum WhereInType: String, Hashable {
         case `in`
         case notIn
     }
     
-    public struct Where: Equatable {
+    public struct Where: Equatable, Hashable {
         public let type: WhereType
         public let boolean: WhereBoolean
     }

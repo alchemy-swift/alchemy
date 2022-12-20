@@ -51,8 +51,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         hasher.combine(fromKey)
         hasher.combine(toKey)
         hasher.combine(throughs)
-
-        // TODO: Take into account where's in hashing.
+        hasher.combine(wheres)
     }
 
     init(db: Database = DB, from: From, fromKey: String, toKey: String) {
@@ -69,13 +68,14 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     }
 
     func load(for parents: inout [From]) async throws {
+        let _hashValue = hashValue
         let _results = try await _get(parents).map(\.1)
         var results: [From] = []
         for var parent in parents {
             let from = parent.row?.sqlRow[fromKey]
             let matching = _results.filter { $0[toKey] == from }
             let decoded = try matching.map { try $0.decode(To.M.self) }
-            parent.row?.eagerLoaded[hashValue] = decoded
+            parent.row?.eagerLoaded[_hashValue] = decoded
             results.append(parent)
         }
 
@@ -84,7 +84,6 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     public override func get() async throws -> [To.M] {
         guard let results = from.row?.eagerLoaded[hashValue] else {
-            print("NO EAGER LOAD - FETCHING!")
             return try await _get([from]).map(\.0)
         }
 
@@ -92,7 +91,6 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
             throw RuneError("Eager loading type mismatch!")
         }
 
-        print("YES EAGER LOAD - RETURNING!")
         return castResults
     }
 
@@ -104,8 +102,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         let parentKeys = parents.compactMap(\.row?.sqlRow).map(\.[fromKey])
         return try await self
             .where(toKey, in: parentKeys)
-            // TODO: Get rid of this? Why isn't it working?
-            .debug()
+            .log()
             .getRows()
             .map { (try $0.decode(To.M.self), $0) }
     }
