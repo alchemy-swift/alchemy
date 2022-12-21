@@ -123,7 +123,8 @@ extension Database {
     @discardableResult
     fileprivate func query(sql: SQL, log: Bool) async throws -> [SQLRow] {
         if log || shouldLog {
-            Log.info("\(sql.statement)\n\(sql.bindings)")
+            let bindingsString = sql.bindings.isEmpty ? "" : " \(sql.bindings)"
+            Log.info("\(sql.statement);\(bindingsString)")
         }
 
         return try await query(sql.statement, values: sql.bindings)

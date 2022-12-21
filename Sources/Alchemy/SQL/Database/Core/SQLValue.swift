@@ -28,21 +28,21 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
     public var description: String {
         switch self {
         case .int(let int):
-            return "SQLValue.int(\(int))"
+            return "\(int)"
         case .double(let double):
-            return "SQLValue.double(\(double))"
+            return "\(double)"
         case .bool(let bool):
-            return "SQLValue.bool(\(bool))"
+            return "\(bool)"
         case .string(let string):
-            return "SQLValue.string(`\(string)`)"
+            return "\"\(string)\""
         case .date(let date):
-            return "SQLValue.date(\(date))"
+            return "\(date)"
         case .json(let data):
-            return "SQLValue.json(\(String(data: data, encoding: .utf8) ?? "\(data)"))"
+            return "\(String(data: data, encoding: .utf8) ?? "\(data)")"
         case .uuid(let uuid):
-            return "SQLValue.uuid(\(uuid.uuidString))"
+            return "\(uuid.uuidString)"
         case .null:
-            return "SQLValue.null"
+            return "null"
         }
     }
     

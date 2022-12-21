@@ -28,6 +28,7 @@ public struct ModelRow: ModelProperty, Codable {
     }
 }
 
+@dynamicMemberLookup
 public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, Hashable {
     struct Through: Hashable {
         let table: String
@@ -40,6 +41,8 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
             hasher.combine(toKey)
         }
     }
+
+    var previous: (any PartialRelationshipQuery<From>)? = nil
 
     var from: From
     var fromKey: String
@@ -70,26 +73,41 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     func load(for parents: inout [From]) async throws {
         let _hashValue = hashValue
-        let _results = try await _get(parents).map(\.1)
+        let keys = Array(Set(parents.compactMap(\.row?.sqlRow).map(\.[fromKey])))
+        let _childRows = try await super.where(toKey, in: keys).getRows()
+        var _childModels = try _childRows.mapDecode(To.M.self)
+
+        for load in eagerLoads {
+            try await load(&_childModels)
+        }
+
+        let _children = zip(_childRows, _childModels)
         var results: [From] = []
         for var parent in parents {
             let from = parent.row?.sqlRow[fromKey]
-            let matching = _results.filter { $0[toKey] == from }
-            let decoded = try matching.map { try $0.decode(To.M.self) }
-            parent.row?.eagerLoaded[_hashValue] = decoded
+            let matching = _children.filter { $0.0[toKey] == from }
+            parent.row?.eagerLoaded[_hashValue] = matching.map(\.1)
             results.append(parent)
         }
 
         parents = results
     }
 
+    public func require() throws -> To {
+        guard let results = try getEagerLoaded() else {
+            throw RuneError("Required relationship from `\(From.self)` to `\(To.self)` wasn't eager loaded!")
+        }
+
+        return try To.from(array: results)
+    }
+
     public func fetch() async throws -> To {
         try await To.from(array: get())
     }
 
-    public override func get() async throws -> [To.M] {
+    private func getEagerLoaded() throws -> [To.M]? {
         guard let results = from.row?.eagerLoaded[hashValue] else {
-            return try await _get([from]).map(\.0)
+            return nil
         }
 
         guard let castResults = results as? [To.M] else {
@@ -99,18 +117,54 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         return castResults
     }
 
-    private func _get(_ parents: [From]) async throws -> [(To.M, SQLRow)] {
-        guard !parents.isEmpty else {
-            return []
+    public override func get() async throws -> [To.M] {
+        guard let eagerLoaded = try getEagerLoaded() else {
+            let key = from.row?.sqlRow[fromKey]
+            return try await super
+                .where(toKey == key)
+                .get()
         }
 
-        let parentKeys = parents.compactMap(\.row?.sqlRow).map(\.[fromKey])
-        return try await self
-            .where(toKey, in: parentKeys)
-            .log()
-            .getRows()
-            .map { (try $0.decode(To.M.self), $0) }
+        return eagerLoaded
     }
+
+    // MARK: @dynamicMemberLookup
+
+    public subscript<T: RelationAllowed>(dynamicMember child: KeyPath<To, To.M.Relationship2<T>>) -> RelationshipQuery<To.M, T> where To.M: EagerLoadable {
+        through { $0[keyPath: child] }
+    }
+
+    var through: ((From) -> To)?
+
+    func through<T: RelationAllowed>(closure: (To) -> RelationshipQuery<To.M, T>) -> RelationshipQuery<To.M, T> {
+        // 0. a closure that...
+        // 1. fetches this one
+        // 2. maps to the next one
+        // 3. when get called, call through (if exists), then fetch
+
+        // **simple things that compose**
+
+        // 0. a composable model query
+
+        // Model Query
+        // 1. from -> to
+        // 2. from -> to, anonymous throughs
+        // 3. from -> to, through
+
+        // Through
+        // 1. anonymous no type
+        // 2. keypath
+    }
+}
+
+protocol PartialRelationshipQuery<To> {
+    associatedtype To: RelationAllowed
+
+    func fetch() async throws -> To
+}
+
+extension RelationshipQuery: PartialRelationshipQuery {
+
 }
 
 extension Query where M: EagerLoadable {
@@ -123,9 +177,8 @@ extension Query where M: EagerLoadable {
                 return
             }
 
-            // Get the relationship from the first model.
-            let relationship = relationship(first)
-            try await nested(relationship).load(for: &results)
+            let query = nested(relationship(first))
+            try await query.load(for: &results)
         }
 
         eagerLoads.append(load)

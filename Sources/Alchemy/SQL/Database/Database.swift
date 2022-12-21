@@ -33,7 +33,7 @@ public final class Database: Service {
     }
 
     /// Log all executed queries to the `debug` level.
-    public func debug() -> Self {
+    public func log() -> Self {
         self.shouldLog = true
         return self
     }

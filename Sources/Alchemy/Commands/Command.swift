@@ -88,7 +88,7 @@ extension Command {
                 Loop.group.next()
                     .asyncSubmit {
                         if Self.logStartAndFinish {
-                            Log.info("[Command] running \(Self.name)")
+                            Log.info("[Command] running `\(Self._commandName)`.")
                         }
                         
                         try await start()
@@ -103,7 +103,7 @@ extension Command {
                 Loop.group.next()
                     .asyncSubmit {
                         if Self.logStartAndFinish {
-                            Log.info("[Command] finished \(Self.name)")
+                            Log.info("[Command] finished `\(Self.name)`.")
                         }
                         
                         try await shutdown()

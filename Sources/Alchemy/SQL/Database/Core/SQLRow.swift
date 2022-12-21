@@ -33,7 +33,11 @@ public struct SQLRow {
     }
     
     public func require(_ column: String) throws -> SQLValue {
-        try self[column].unwrap(or: DatabaseError.missingColumn(column))
+        guard let value = self[column] else {
+            throw DatabaseError.missingColumn(column)
+        }
+
+        return value
     }
 }
 
@@ -61,5 +65,11 @@ extension SQLRow {
         jsonDecoder: JSONDecoder = JSONDecoder()
     ) throws -> D {
         try D(from: SQLRowDecoder(row: self, keyMapping: keyMapping, jsonDecoder: jsonDecoder))
+    }
+}
+
+extension Array where Element == SQLRow {
+    public func mapDecode<M: ModelBase>(_ type: M.Type) throws -> [M] {
+        try map { try M(row: $0) }
     }
 }

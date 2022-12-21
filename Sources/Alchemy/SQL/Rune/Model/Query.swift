@@ -44,7 +44,15 @@ public class Query<M: Model>: SQLQuery {
     ///
     /// - Returns: All models matching this query.
     public func get() async throws -> [M] {
-        try await _get()
+        // Load models.
+        var models = try await getRows().mapDecode(M.self)
+
+        // Evaluate eager loads.
+        for load in eagerLoads {
+            try await load(&models)
+        }
+
+        return models
     }
 
     /// Gets all models matching this query from the database.
@@ -75,18 +83,6 @@ public class Query<M: Model>: SQLQuery {
     /// Returns a model of this query, if one exists.
     public func random() async throws -> M? {
         try await select().orderBy("RANDOM()").limit(1).first()
-    }
-    
-    func _get(columns: [String]? = ["\(M.tableName).*"]) async throws -> [M] {
-        // Get Initial rows.
-        var models = try await getRows(columns).map { try $0.decode(M.self) }
-        // Eager load.
-        print("There are \(eagerLoads.count) eager loads to evaluate")
-        for load in eagerLoads {
-            try await load(&models)
-        }
-
-        return models
     }
     
     /// Evaluate all eager loads in this `Query` sequentially.
