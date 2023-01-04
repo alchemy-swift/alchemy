@@ -19,7 +19,7 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
         func contains(_ key: Key) -> Bool {
             // Always decode an instance of `let row: ModelRow?`. Note that this
             // will cause issues for any optional columns named `row`.
-            if key.stringValue == "row" {
+            if key.stringValue == "cache" {
                 return true
             }
 
@@ -29,7 +29,7 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
         func decodeNil(forKey key: Key) throws -> Bool {
             // Always decode an instance of `let row: ModelRow?`. Note that this
             // will cause issues for any optional columns named `row`.
-            if key.stringValue == "row" {
+            if key.stringValue == "cache" {
                 return false
             }
 

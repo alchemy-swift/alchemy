@@ -9,3 +9,9 @@ extension Array {
         return self[index]
     }
 }
+
+extension Array where Element: Hashable {
+    func filterUniqueValues() -> Self {
+        Array(Set(self))
+    }
+}
