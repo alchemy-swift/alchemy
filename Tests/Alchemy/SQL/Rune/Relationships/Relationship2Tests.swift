@@ -14,24 +14,34 @@ final class RelationshipNewTests: TestCase<TestApp> {
         try await Database.fake(migrations: [WorkflowMigration()])
 
         /*
+         ============ TODO =============
+         1. Default keys for throughs.
+            Assume each relationship
+            same as parent.
+         2. Relationship CRUD. Constrain
+            to pivot relationships only.
+         ===============================
+         */
+
+        /*
          ========== STRUCTURE ==========
          organizations              1   2
                                      \ /
-         user_organizations           X
+         user_organizations           X   M-M
                                      / \
          users                      3 - 4
-                                   / \
+                                   / \    1-M
          repositories             5   6
-                                 / \
+                                 / \      1-M
          workflows              7   8
-                               / \
+                               / \        1-M
          jobs                 9  10
          ===============================
          */
         organization = try await Organization(id: 1).insertReturn()
         try await Organization(id: 2).insert()
         user = try await User(id: 3, name: "Josh", age: 29, managerId: nil).insertReturn()
-        try await User(id: 4, name: "Bill", age: 25, managerId: 3).insert()
+        try await User(id: 4, name: "Bill", age: 35, managerId: 3).insert()
         try await UserOrganization(userId: 3, organizationId: 1).insert()
         try await UserOrganization(userId: 3, organizationId: 2).insert()
         try await UserOrganization(userId: 4, organizationId: 1).insert()
@@ -52,7 +62,7 @@ final class RelationshipNewTests: TestCase<TestApp> {
     }
 
     func testHasOne() async throws {
-        let manager = try await user.manager.fetch()
+        let manager = try await user.report.fetch()
         XCTAssertEqual(manager?.id, 4)
     }
 
@@ -71,8 +81,9 @@ final class RelationshipNewTests: TestCase<TestApp> {
         XCTAssertEqual(organizations.map(\.id), [1, 2])
     }
 
-    func testFetchWhere() {
-        // TODO
+    func testFetchWhere() async throws {
+        let organizations = try await organization.usersOver30.fetch()
+        XCTAssertEqual(organizations.map(\.id), [4])
     }
 
     // MARK: - Eager Loading
@@ -86,33 +97,47 @@ final class RelationshipNewTests: TestCase<TestApp> {
     func testAutoCache() async throws {
         XCTAssertThrowsError(try user.repositories.require())
         _ = try await user.repositories.fetch()
+        XCTAssertTrue(user.repositories.isLoaded)
         XCTAssertNoThrow(try user.repositories.require())
+    }
+
+    func testWhereCache() async throws {
+        _ = try await organization.users.fetch()
+        XCTAssertTrue(organization.users.isLoaded)
+        XCTAssertFalse(organization.usersOver30.isLoaded)
+    }
+
+    func testSync() async throws {
+        let report = try await user.report.fetch()
+        XCTAssertEqual(report?.id, 4)
+        try await report?.update(with: ["manager_id": SQLValue.null])
+        XCTAssertTrue(user.report.isLoaded)
+        AssertEqual(try await user.report.fetch()?.id, 4)
+        AssertNil(try await user.report.sync())
     }
 
     // MARK: - CRUD
 
-    /*
-     // TODO: Use Cases
-     1. Add pivot table entry?
-     2.
-     */
-
-    func pivotAdd() async throws {
-        let newOrganization = try await Organization().insertReturn()
+    func testPivotAdd() async throws {
+        let newOrganization = try await Organization(id: 3).insertReturn()
         try await user.organizations.add(newOrganization)
+        throw XCTSkip()
     }
 
-    func pivotRemove() async throws {
+    func testPivotRemove() async throws {
         try await user.organizations.remove(organization)
+        throw XCTSkip()
     }
 
-    func pivotRemoveAll() async throws {
+    func testPivotRemoveAll() async throws {
         try await user.organizations.removeAll()
+        throw XCTSkip()
     }
 
-    func pivotReplace() async throws {
-        let newOrganization = try await Organization().insertReturn()
-        try await user.organizations.replace(newOrganization)
+    func testPivotReplace() async throws {
+        let newOrganization = try await Organization(id: 4).insertReturn()
+        try await user.organizations.replace([newOrganization])
+        throw XCTSkip()
     }
 }
 
@@ -121,9 +146,15 @@ private struct Organization: Model, EagerLoadable {
 
     var id: Int?
 
-    var hasMany: Relationship2<[User]> {
+    var users: Relationship2<[User]> {
         hasMany()
-            .through(UserOrganization.self)
+            .throughPivot(UserOrganization.self)
+    }
+
+    var usersOver30: Relationship2<[User]> {
+        hasMany()
+            .throughPivot(UserOrganization.self)
+            .where("age" >= 30)
     }
 }
 
@@ -139,9 +170,9 @@ private struct User: Model, EagerLoadable {
     var id: Int?
     let name: String
     let age: Int
-    let managerId: Int?
+    var managerId: Int?
 
-    var manager: Relationship2<User?> {
+    var report: Relationship2<User?> {
         hasOne(to: "manager_id")
     }
 

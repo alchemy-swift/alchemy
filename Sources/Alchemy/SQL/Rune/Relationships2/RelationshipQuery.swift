@@ -1,5 +1,24 @@
 //@dynamicMemberLookup
 public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, Hashable {
+    struct Keys: Equatable {
+        let idKey: String
+        let referenceKey: String
+
+        static func model(_ model: (some Model).Type) -> Keys {
+            Keys(
+                idKey: model.idKey,
+                referenceKey: model.referenceKey
+            )
+        }
+
+        static func table(_ table: String) -> Keys {
+            Keys(
+                idKey: From.keyMapping.map(input: "Id"),
+                referenceKey: From.keyMapping.map(input: table.singularized + "Id")
+            )
+        }
+    }
+
     /// The kind of relationship. Used only to determine to/from key defaults.
     enum Relation {
         /// `From` is a child of `To`.
@@ -9,22 +28,46 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         /// `From` and `To` are parents of a separate pivot table.
         case pivot
 
-        func defaultFromKey() -> String {
+        func defaultFromKey(from: Keys, to: Keys) -> String {
             switch self {
             case .has, .pivot:
-                return From.idKey
+                return from.idKey
             case .belongsTo:
-                return To.M.referenceKey
+                return to.referenceKey
             }
         }
 
-        func defaultToKey() -> String {
+        func defaultToKey(from: Keys, to: Keys) -> String {
             switch self {
             case .belongsTo, .pivot:
-                return To.M.idKey
+                return to.idKey
             case .has:
-                return From.referenceKey
+                return from.referenceKey
             }
+        }
+    }
+
+    struct Through: Hashable {
+        let table: String
+        let fromKeyOverride: String?
+        let toKeyOverride: String?
+        let keys: Keys
+        let relation: Relation
+
+        func fromKey(fromKeys: Keys) -> String {
+            relation.defaultToKey(from: fromKeys, to: keys)
+        }
+
+        func toKey(toKeys: Keys) -> String{
+            relation.defaultFromKey(from: keys, to: toKeys)
+        }
+
+        // TODO: Better default keys for multiple throughs.
+
+        func hash(into hasher: inout Swift.Hasher) {
+            hasher.combine(table)
+            hasher.combine(fromKeyOverride)
+            hasher.combine(toKeyOverride)
         }
     }
 
@@ -33,21 +76,20 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     var toKeyOverride: String?
     var relation: Relation
 
-    var fromKey: String {
-        fromKeyOverride ?? relation.defaultFromKey()
+    // MARK: Through Scratch
+
+    var throughs: [Through] = []
+
+    func fromKey(to: Keys?) -> String {
+        fromKeyOverride ?? relation.defaultFromKey(from: .model(From.self), to: to ?? .model(To.M.self))
     }
 
-    var toKey: String {
-        toKeyOverride ?? relation.defaultToKey()
+    func toKey(from: Keys?) -> String {
+        toKeyOverride ?? relation.defaultToKey(from: from ?? .model(From.self), to: .model(To.M.self))
     }
 
-
-    public func hash(into hasher: inout Swift.Hasher) {
-        hasher.combine(From.tableName)
-        hasher.combine(To.M.tableName)
-        hasher.combine(fromKey)
-        hasher.combine(toKey)
-        hasher.combine(wheres)
+    var isLoaded: Bool {
+        from.cacheExists(hashValue: hashValue)
     }
 
     init(db: Database = DB, from: From, fromKey: String?, toKey: String?, relation: Relation) {
@@ -60,20 +102,34 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     private func loadChildren(for parents: [From]) async throws -> Zip2Sequence<[SQLRow], [To.M]> {
         // Evaluate throughs
+
+        var allKeys: [Keys] = [.model(From.self)]
+        allKeys.append(contentsOf: throughs.map(\.keys))
+        allKeys.append(.model(To.M.self))
+
+        let fromKeys: Keys = .model(From.self)
+        let toKeys: Keys = throughs.first
+        let fromKey = fromKey(to: throughs.first?.keys)
         var parentKeys = parents.compactMap(\.cache?.row).map(\.[fromKey]).filterUniqueValues()
+        print("> parent keys \(parentKeys.compactMap(\.?.description))")
+        print("> from \(fromKey)")
         for through in throughs {
-            print("> parent keys \(parentKeys.compactMap(\.?.description))")
-            print("> \(through.table) \(through.fromKey) \(through.toKey)")
+            print("> through \(through.table) \(through.fromKey) \(through.toKey)")
             parentKeys = try await db
                 .from(through.table)
                 .where(through.fromKey, in: parentKeys)
                 .getRows()
-                .map(\.[fromKey])
+                .map(\.[through.toKey])
                 .filterUniqueValues()
+
+            print("> new parent keys \(parentKeys.compactMap(\.?.description))")
         }
+
+        print("> to \(toKey)")
 
         // Fetch children.
         let childRows = try await super.where(toKey, in: parentKeys).getRows()
+        print("> there were \(childRows.count) child rows")
         var childModels = try childRows.mapDecode(To.M.self)
         for load in eagerLoads {
             try await load(&childModels)
@@ -100,19 +156,29 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     }
 
     public override func get() async throws -> [To.M] {
-        if let cached = try checkEagerLoadCache() {
-            return cached
-        } else {
-            return try await loadChildren(for: [from]).map(\.1)
-        }
+        try await loadChildren(for: [from]).map(\.1)
     }
 
     /// Fetches the value of this relationship.
     public func fetch() async throws -> To {
+        try await _fetch(checkCache: true)
+    }
+
+    public func sync() async throws -> To {
+        try await _fetch(checkCache: false)
+    }
+
+    private func _fetch(checkCache: Bool) async throws -> To {
+        // Compute the hash value before applying `where`s since those will
+        // alter the has value.
         let hashValue = hashValue
-        let value = try await To.from(array: get())
-        from.cache(hashValue: hashValue, value: value)
-        return value
+        if checkCache, let cached = try checkEagerLoadCache() {
+            return cached
+        } else {
+            let value = try await To.from(array: get())
+            from.cache(hashValue: hashValue, value: value)
+            return value
+        }
     }
 
     /// Returns any eager loaded value for this relationship or throws an error.
@@ -121,41 +187,44 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
             throw RuneError("Required relationship from `\(From.self)` to `\(To.self)` wasn't eager loaded!")
         }
 
-        return try To.from(array: results)
+        return results
     }
 
     /// Fetches any value from the relationship's eager loaded cache.
-    private func checkEagerLoadCache() throws -> [To.M]? {
+    private func checkEagerLoadCache() throws -> To? {
         guard let results = from.cache?.relationships[hashValue] else {
             return nil
         }
 
-        guard let castResults = results as? [To.M] else {
+        guard let castResults = results as? To else {
             throw RuneError("Eager loading type mismatch!")
         }
 
         return castResults
     }
 
-    // MARK: Through Scratch
+    // Through Model
 
-    var throughs: [Through] = []
+    func through(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+        through(model.tableName, from: fromKey, to: toKey)
+    }
 
-    struct Through: Hashable {
-        let table: String
-        let fromKeyOverride: String?
-        let toKeyOverride: String?
-        let relation: Relation
+    func throughPivot(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+        throughPivot(model.tableName, from: fromKey, to: toKey)
+    }
 
-        // TODO: Somehow get wheres / other queries here
-        // TODO: Finish default keys (need to look @ next through potentially...? Decide @ query time? Might want some special logic for this.)
+    // Through table
 
-        func hash(into hasher: inout Swift.Hasher) {
-            hasher.combine(table)
-            hasher.combine(fromKeyOverride)
-            hasher.combine(toKeyOverride)
-            hasher.combine(relation)
-        }
+    func throughPivot(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+        self.relation = .pivot
+        return through(table, from: fromKey ?? From.referenceKey, to: toKey ?? To.M.referenceKey)
+    }
+
+    func through(_ table: String, from fromKey: String, to toKey: String) -> Self {
+        let from = fromKey ?? relation.defaultFromKey(from: <#T##(Model).Protocol#>, to: <#T##(Model).Protocol#>)
+        let through = Through(table: table, fromKey: fromKey, toKey: toKey)
+        throughs.append(through)
+        return self
     }
 
     // Through from other relationship (allows custom query) convenience
@@ -200,27 +269,14 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 //        return copy
 //    }
 
-    // Through Model
+    // MARK: Hashable
 
-    func through(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        through(model.tableName, from: fromKey, to: toKey)
-    }
-
-    func throughPivot(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        self.relation = .pivot
-        return throughPivot(model.tableName, from: fromKey, to: toKey)
-    }
-
-    // Through table
-
-    func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        let through = Through(table: table, fromKeyOverride: fromKey, toKeyOverride: toKey, relation: relation)
-        throughs.append(through)
-        return self
-    }
-
-    func throughPivot(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        through(table, from: fromKey ?? From.referenceKey, to: toKey ?? To.M.referenceKey)
+    public func hash(into hasher: inout Swift.Hasher) {
+        hasher.combine(From.tableName)
+        hasher.combine(To.M.tableName)
+        hasher.combine(fromKey)
+        hasher.combine(toKey)
+        hasher.combine(wheres)
     }
 }
 

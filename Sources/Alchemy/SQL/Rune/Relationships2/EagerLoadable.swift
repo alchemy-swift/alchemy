@@ -10,4 +10,8 @@ extension EagerLoadable {
     func checkCache<To: RelationAllowed>(hashValue: Int) -> To? {
         cache?.relationships[hashValue] as? To
     }
+
+    func cacheExists(hashValue: Int) -> Bool {
+        cache?.relationships[hashValue] != nil
+    }
 }
