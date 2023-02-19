@@ -150,7 +150,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     }
 
     public override func get() async throws -> [To.M] {
-        try await fetch(for: [fromModel]).map(\.model)
+        try await fetch(for: [fromModel]).first?.value ?? []
     }
 
     struct ModelRow<M: Model> {
@@ -195,12 +195,19 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         return steps
     }
 
-    private func fetch(for fromModels: [From]) async throws -> [ModelRow<To.M>] {
+    private func fetch(for fromModels: [From]) async throws -> [From.ID: [To.M]] {
 
-        // 0. Calculate the steps of the query.
+        // 1. Calculate the steps of the query.
         let steps = calculateSteps()
         var fromRows = fromModels.compactMap(\.cache?.row)
+        var idLookup: [From.ID: [SQLRow]] = [:]
+        for fromModel in fromModels {
+            if let row = fromModel.cache?.row {
+                idLookup[fromModel.id] = [row]
+            }
+        }
 
+        // 2. Evaluate each step.
         for step in steps {
             var fromKeyValues = fromRows
                 .map(\.[step.fromKey])
@@ -209,19 +216,35 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
                 .from(step.toTable)
                 .where(step.toKey, in: fromKeyValues)
                 .getRows()
+
+            idLookup = idLookup
+                .mapValues { previousResults in
+                    let previousResultsKeys = previousResults.map(\.[step.fromKey])
+                    return stepResults
+                        .filter { previousResultsKeys.contains($0[step.toKey]) }
+                }
+
             fromRows = stepResults
         }
 
         // 3. Decode the results.
-        var toModels = try fromRows.mapDecode(To.M.self)
+        var toModelsByFromId = try idLookup.mapValues { try $0.mapDecode(To.M.self) }
+        var toModelsEagerLoaded = toModelsByFromId.flatMap { $0.value }
 
         // 4. Run any eager loads.
         for load in eagerLoads {
-            try await load(&toModels)
+            try await load(&toModelsEagerLoaded)
         }
 
-        return zip(toModels, fromRows)
-            .map { ModelRow(model: $0, row: $1) }
+        // 5. Use eager loaded models.
+        toModelsByFromId = toModelsByFromId
+            .mapValues { toModelsNotEagerLoaded in
+                toModelsNotEagerLoaded.compactMap { toModelNotEagerLoaded in
+                    toModelsEagerLoaded.first(where: { $0.id == toModelNotEagerLoaded.id })
+                }
+            }
+
+        return toModelsByFromId
     }
 
     // THIS IS SOLID.
@@ -235,17 +258,18 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         var fromModelsEagerLoaded: [From] = []
         for var fromModel in fromModels {
             // 2a. Get the `from` key value.
-            let fromKey = fromKey(to: nil)
-            let fromKeyValue = fromModel.cache?.row[fromKey]
+//            let fromKey = fromKey(to: nil)
+//            let fromKeyValue = fromModel.cache?.row[fromKey]
 
             // 2b. Find matching `to` models.
-            let toKey = toKey(from: nil)
-            let matchingModels = toResults
-                .filter { $0.row[toKey] == fromKeyValue }
-                .map(\.model)
+//            let toKey = toKey(from: nil)
+//            let matchingModels = toResults
+//                .filter { $0.row[toKey] == fromKeyValue }
+//                .map(\.model)
 
             // 2c. Cache the relationship result on `fromModel`.
-            let toValue = try To.from(array: matchingModels)
+            let toResults = toResults[fromModel.id]!
+            let toValue = try To.from(array: toResults)
             fromModel.cache(hashValue: hashValue, value: toValue)
             fromModelsEagerLoaded.append(fromModel)
         }
