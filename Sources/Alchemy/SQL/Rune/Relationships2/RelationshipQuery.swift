@@ -47,19 +47,27 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         }
     }
 
+    /// Computes the relationship across another table.
     struct Through: Hashable {
+        /// The table through which the relationship should go.
         let table: String
+        /// Any user provided `fromKey`.
         let fromKeyOverride: String?
+        /// Any user provided `toKey`.
         let toKeyOverride: String?
-        let keys: Keys
+        /// The key defaults for the table.
+        let tableKeys: Keys
+        /// The type of relationship this through table is to the from table.
         let relation: Relation
 
+        /// The from key to use when constructing the query.
         func fromKey(fromKeys: Keys) -> String {
-            relation.defaultToKey(from: fromKeys, to: keys)
+            fromKeyOverride ?? relation.defaultToKey(from: fromKeys, to: tableKeys)
         }
 
-        func toKey(toKeys: Keys) -> String{
-            relation.defaultFromKey(from: keys, to: toKeys)
+        /// The to key to use when constructing the query.
+        func toKey(toKeys: Keys) -> String {
+            toKeyOverride ?? relation.defaultFromKey(from: tableKeys, to: toKeys)
         }
 
         // TODO: Better default keys for multiple throughs.
@@ -71,7 +79,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         }
     }
 
-    var from: From
+    var fromModel: From
     var fromKeyOverride: String?
     var toKeyOverride: String?
     var relation: Relation
@@ -89,79 +97,25 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     }
 
     var isLoaded: Bool {
-        from.cacheExists(hashValue: hashValue)
+        fromModel.cacheExists(hashValue: hashValue)
     }
 
-    init(db: Database = DB, from: From, fromKey: String?, toKey: String?, relation: Relation) {
-        self.from = from
+    init(db: Database = DB, fromModel: From, fromKey: String?, toKey: String?, relation: Relation) {
+        self.fromModel = fromModel
         self.fromKeyOverride = fromKey
         self.toKeyOverride = toKey
         self.relation = relation
         super.init(db: db)
     }
 
-    private func loadChildren(for parents: [From]) async throws -> Zip2Sequence<[SQLRow], [To.M]> {
-        // Evaluate throughs
-
-        var allKeys: [Keys] = [.model(From.self)]
-        allKeys.append(contentsOf: throughs.map(\.keys))
-        allKeys.append(.model(To.M.self))
-
-        let fromKeys: Keys = .model(From.self)
-        let toKeys: Keys = throughs.first
-        let fromKey = fromKey(to: throughs.first?.keys)
-        var parentKeys = parents.compactMap(\.cache?.row).map(\.[fromKey]).filterUniqueValues()
-        print("> parent keys \(parentKeys.compactMap(\.?.description))")
-        print("> from \(fromKey)")
-        for through in throughs {
-            print("> through \(through.table) \(through.fromKey) \(through.toKey)")
-            parentKeys = try await db
-                .from(through.table)
-                .where(through.fromKey, in: parentKeys)
-                .getRows()
-                .map(\.[through.toKey])
-                .filterUniqueValues()
-
-            print("> new parent keys \(parentKeys.compactMap(\.?.description))")
-        }
-
-        print("> to \(toKey)")
-
-        // Fetch children.
-        let childRows = try await super.where(toKey, in: parentKeys).getRows()
-        print("> there were \(childRows.count) child rows")
-        var childModels = try childRows.mapDecode(To.M.self)
-        for load in eagerLoads {
-            try await load(&childModels)
-        }
-
-        return zip(childRows, childModels)
-    }
-
-    func eagerLoad(on parents: inout [From]) async throws {
-        let hashValue = hashValue
-
-        // Cache children on each parent.
-        let children = try await loadChildren(for: parents)
-        var results: [From] = []
-        for var parent in parents {
-            let fromValue = parent.cache?.row[fromKey]
-            let matchingChildModels = children.filter { $0.0[toKey] == fromValue }.map(\.1)
-            let relationshipValue = try To.from(array: matchingChildModels)
-            parent.cache(hashValue: hashValue, value: relationshipValue)
-            results.append(parent)
-        }
-
-        parents = results
-    }
-
-    public override func get() async throws -> [To.M] {
-        try await loadChildren(for: [from]).map(\.1)
-    }
-
     /// Fetches the value of this relationship.
     public func fetch() async throws -> To {
         try await _fetch(checkCache: true)
+    }
+
+    /// Sugar for `fetch()`.
+    public func callAsFunction() async throws -> To {
+        try await fetch()
     }
 
     public func sync() async throws -> To {
@@ -175,24 +129,16 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         if checkCache, let cached = try checkEagerLoadCache() {
             return cached
         } else {
-            let value = try await To.from(array: get())
-            from.cache(hashValue: hashValue, value: value)
+            let results = try await get()
+            let value = try To.from(array: results)
+            fromModel.cache(hashValue: hashValue, value: value)
             return value
         }
     }
 
-    /// Returns any eager loaded value for this relationship or throws an error.
-    public func require() throws -> To {
-        guard let results = try checkEagerLoadCache() else {
-            throw RuneError("Required relationship from `\(From.self)` to `\(To.self)` wasn't eager loaded!")
-        }
-
-        return results
-    }
-
     /// Fetches any value from the relationship's eager loaded cache.
     private func checkEagerLoadCache() throws -> To? {
-        guard let results = from.cache?.relationships[hashValue] else {
+        guard let results = fromModel.cache?.relationships[hashValue] else {
             return nil
         }
 
@@ -203,26 +149,143 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         return castResults
     }
 
+    public override func get() async throws -> [To.M] {
+        try await fetch(for: [fromModel]).map(\.model)
+    }
+
+    struct ModelRow<M: Model> {
+        let model: M
+        let row: SQLRow
+    }
+
+    public struct QueryStep {
+        public let fromTable: String
+        public let fromKey: String
+        public let toTable: String
+        public let toKey: String
+    }
+
+    /// Calculate all step of this relationship. 1 JOIN = 1 step.
+    public func calculateSteps() -> [QueryStep] {
+        var stepIndex = 0
+
+        var allKeys: [Keys] = [.model(From.self)]
+        allKeys.append(contentsOf: throughs.map(\.tableKeys))
+        allKeys.append(.model(To.M.self))
+
+        var steps: [QueryStep] = []
+
+        var previousTable = From.tableName
+        var previousKey = fromKey(to: allKeys[stepIndex + 1])
+
+        for through in throughs {
+            let nextKey = through.fromKey(fromKeys: allKeys[stepIndex])
+            let nextTable = through.table
+            steps.append(QueryStep(fromTable: previousTable, fromKey: previousKey, toTable: nextTable, toKey: nextKey))
+            stepIndex += 1
+
+            // Hop across same table.
+            previousKey = through.toKey(toKeys: allKeys[stepIndex + 1])
+            previousTable = through.table
+        }
+
+        let lastKey = toKey(from: allKeys[stepIndex])
+        steps.append(QueryStep(fromTable: previousTable, fromKey: previousKey, toTable: To.M.tableName, toKey: lastKey))
+        
+        return steps
+    }
+
+    private func fetch(for fromModels: [From]) async throws -> [ModelRow<To.M>] {
+
+        // 0. Calculate the steps of the query.
+        let steps = calculateSteps()
+        var fromRows = fromModels.compactMap(\.cache?.row)
+
+        for step in steps {
+            var fromKeyValues = fromRows
+                .map(\.[step.fromKey])
+                .filterUniqueValues()
+            let stepResults = try await db
+                .from(step.toTable)
+                .where(step.toKey, in: fromKeyValues)
+                .getRows()
+            fromRows = stepResults
+        }
+
+        // 3. Decode the results.
+        var toModels = try fromRows.mapDecode(To.M.self)
+
+        // 4. Run any eager loads.
+        for load in eagerLoads {
+            try await load(&toModels)
+        }
+
+        return zip(toModels, fromRows)
+            .map { ModelRow(model: $0, row: $1) }
+    }
+
+    // THIS IS SOLID.
+    func eagerLoad(on fromModels: inout [From]) async throws {
+        let hashValue = hashValue
+
+        // 1. Fetch relationships for all `fromModel`s.
+        let toResults = try await fetch(for: fromModels)
+
+        // 2. Cach relationship on relevant `fromModel`.
+        var fromModelsEagerLoaded: [From] = []
+        for var fromModel in fromModels {
+            // 2a. Get the `from` key value.
+            let fromKey = fromKey(to: nil)
+            let fromKeyValue = fromModel.cache?.row[fromKey]
+
+            // 2b. Find matching `to` models.
+            let toKey = toKey(from: nil)
+            let matchingModels = toResults
+                .filter { $0.row[toKey] == fromKeyValue }
+                .map(\.model)
+
+            // 2c. Cache the relationship result on `fromModel`.
+            let toValue = try To.from(array: matchingModels)
+            fromModel.cache(hashValue: hashValue, value: toValue)
+            fromModelsEagerLoaded.append(fromModel)
+        }
+
+        fromModels = fromModelsEagerLoaded
+    }
+
+    // THIS IS SOLID.
+    /// Returns any eager loaded value for this relationship or throws an error.
+    public func require() throws -> To {
+        guard let results = try checkEagerLoadCache() else {
+            throw RuneError("Required relationship from `\(From.self)` to `\(To.self)` wasn't eager loaded!")
+        }
+
+        return results
+    }
+
     // Through Model
 
-    func through(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+    public func through(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         through(model.tableName, from: fromKey, to: toKey)
     }
 
-    func throughPivot(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+    public func throughPivot(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         throughPivot(model.tableName, from: fromKey, to: toKey)
     }
 
     // Through table
 
-    func throughPivot(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+    public func throughPivot(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         self.relation = .pivot
         return through(table, from: fromKey ?? From.referenceKey, to: toKey ?? To.M.referenceKey)
     }
 
-    func through(_ table: String, from fromKey: String, to toKey: String) -> Self {
-        let from = fromKey ?? relation.defaultFromKey(from: <#T##(Model).Protocol#>, to: <#T##(Model).Protocol#>)
-        let through = Through(table: table, fromKey: fromKey, toKey: toKey)
+    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
+        let through = Through(table: table,
+                              fromKeyOverride: fromKey,
+                              toKeyOverride: toKey,
+                              tableKeys: .table(table),
+                              relation: .has)
         throughs.append(through)
         return self
     }
@@ -274,8 +337,8 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     public func hash(into hasher: inout Swift.Hasher) {
         hasher.combine(From.tableName)
         hasher.combine(To.M.tableName)
-        hasher.combine(fromKey)
-        hasher.combine(toKey)
+        hasher.combine(fromKeyOverride)
+        hasher.combine(toKeyOverride)
         hasher.combine(wheres)
     }
 }
@@ -303,23 +366,23 @@ extension EagerLoadable {
     public typealias Relationship2<To: RelationAllowed> = RelationshipQuery<Self, To>
 
     public func hasMany<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship2<[To]> {
-        Relationship2(db: DB, from: self, fromKey: fromKey, toKey: toKey, relation: .has)
+        Relationship2(db: DB, fromModel: self, fromKey: fromKey, toKey: toKey, relation: .has)
     }
 
     public func hasOne<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship2<To> {
-        Relationship2(db: DB, from: self, fromKey: fromKey, toKey: toKey, relation: .has)
+        Relationship2(db: DB, fromModel: self, fromKey: fromKey, toKey: toKey, relation: .has)
     }
 
     public func hasOne<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship2<To?> {
-        Relationship2(db: DB, from: self, fromKey: fromKey, toKey: toKey, relation: .has)
+        Relationship2(db: DB, fromModel: self, fromKey: fromKey, toKey: toKey, relation: .has)
     }
 
     public func belongsTo<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship2<To> {
-        Relationship2(db: DB, from: self, fromKey: fromKey, toKey: toKey, relation: .belongsTo)
+        Relationship2(db: DB, fromModel: self, fromKey: fromKey, toKey: toKey, relation: .belongsTo)
     }
 
     public func belongsTo<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship2<To?> {
-        Relationship2(db: DB, from: self, fromKey: fromKey, toKey: toKey, relation: .belongsTo)
+        Relationship2(db: DB, fromModel: self, fromKey: fromKey, toKey: toKey, relation: .belongsTo)
     }
 }
 
@@ -367,4 +430,38 @@ extension EagerLoadable {
  - ignore A belongs to B has C; mostly irrelevant.
 
  through -> infer keys based on same relationship on other side, must keep same "direction" or use another relationship.
+ */
+
+/*
+ Through
+ A -> D
+ A -> B -> C -> D
+ */
+
+/*
+ Each Through has the same key inference.
+
+ Might decode through, might not.
+
+ SIMPLE THINGS THAT COMPOSE
+
+ 1. Query fetches models.
+ 2. Relationship = query that fetches related models - auto filling in some query parameters.
+    - instead of `Todo.where("user_id" == user.id).all()`, do `user.todos()`
+ 3. Through = query that fetches related models through joins across N tables.
+    - instead of `Tag.join("todos", from: "todo_id", to: "id").where("todos.user_id" == user.id).all()`, `user.tags()`
+
+ RelationshipQuery
+ - through, updates `throughs` on the model.
+ - on fetch,
+    - compute inferred keys,
+    - compute the entire query
+    - compute which models to cach
+
+ */
+
+/*
+ SUGAR
+ 1. `relationship.callAsFunction()` instead of `relationship.fetch()`.
+ 2. `relationship.otherRelationship` evaluates to `relationship.with(\.otherRelationship)` (so multiple eager loads).
  */
