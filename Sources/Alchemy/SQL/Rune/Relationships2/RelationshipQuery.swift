@@ -225,14 +225,9 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
         // 3. Decode the results.
         var toModelsByFromId = try idLookup.mapValues { try $0.mapDecode(To.M.self) }
-        var toModelsEagerLoaded = toModelsByFromId.flatMap { $0.value }
+        var toModelsEagerLoaded = try await mapRows(idLookup.flatMap { $0.value })
 
-        // 4. Run any eager loads.
-        for load in eagerLoads {
-            try await load(&toModelsEagerLoaded)
-        }
-
-        // 5. Set eager loaded models in the results dict.
+        // 4. Set eager loaded models in the results dict.
         toModelsByFromId = toModelsByFromId
             .mapValues { toModelsNotEagerLoaded in
                 toModelsNotEagerLoaded.compactMap { toModelNotEagerLoaded in
@@ -313,9 +308,11 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
          */
 
         // Then, on completion, map to the child.
-        return with2 { $0[keyPath: child] }
+//        return with2 { $0[keyPath: child] }
 
-        return to { $0[keyPath: child] }
+//        return to { $0[keyPath: child] }
+
+        fatalError()
 
         // New relationship that also loads the current one?
 //        through { $0[keyPath: child] }
@@ -415,37 +412,39 @@ extension Query where M: EagerLoadable {
  */
 
 
-extension RelationshipQuery where To.M: EagerLoadable {
-    fileprivate func to<T: RelationAllowed>(
-        _ relationship: @escaping (To.M) -> To.M.Relationship2<T>,
-        nested: @escaping ((To.M.Relationship2<T>) -> To.M.Relationship2<T>) = { $0 }
-    ) -> RelationshipQuery<From, T> {
-        let load: (inout [To.M]) async throws -> Void = { fromModels in
-            guard let first = fromModels.first else {
-                return
-            }
-
-            let query = nested(relationship(first))
-            try await query.eagerLoad(on: &fromModels)
-        }
-
-        // Need to return a query that
-        // 1. Loads the inital query.
-        // 2. Given the result, loads the next query.
-
-        eagerLoads.append(load)
-        return self
-    }
-}
+//extension RelationshipQuery where To.M: EagerLoadable {
+//    fileprivate func to<T: RelationAllowed>(
+//        _ relationship: @escaping (To.M) -> To.M.Relationship2<T>,
+//        nested: @escaping ((To.M.Relationship2<T>) -> To.M.Relationship2<T>) = { $0 }
+//    ) -> RelationshipQuery<From, T> {
+//        let load: (inout [To.M]) async throws -> Void = { fromModels in
+//            guard let first = fromModels.first else {
+//                return
+//            }
+//
+//            let query = nested(relationship(first))
+//            try await query.eagerLoad(on: &fromModels)
+//        }
+//
+//        // Need to return a query that
+//        // 1. Loads the inital query.
+//        // 2. Given the result, loads the next query.
+//
+//        eagerLoads.append(load)
+//        return self
+//    }
+//}
 
 extension Query {
     func withLoad(loader: @escaping (inout [M]) async throws -> Void) -> Self {
-        eagerLoads.append(loader)
+        let _mapRows = mapRows
+        mapRows = { rows in
+            var models = try await _mapRows(rows)
+            try await loader(&models)
+            return models
+        }
+
         return self
-    }
-
-    func map<O: Model>(_ input: ([M]) -> O) -> Query<O> {
-
     }
 }
 

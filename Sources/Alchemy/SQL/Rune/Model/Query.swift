@@ -18,6 +18,14 @@ public extension Model {
     }
 }
 
+/*
+ Query
+ 1. Fetch Rows
+ 2. Map Rows
+ 3. Eager Loads
+ 4. Map Result (for relationship queries only?)
+ */
+
 /// A `Query` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
@@ -26,20 +34,28 @@ public class Query<M: Model>: SQLQuery {
     /// initial models of type `Self` are fetched.
     var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []
 
-    var eagerLoads: [(inout [M]) async throws -> Void] = []
-
     /*
+     SQLQuery
+     - Build raw SQL query
+
+     Query
+     - build raw SQL query, map to Model
+     - perform arbitrary action after fetching model (eager load)
+
+     RelationshipQuery
+     - Based on [From] input fetch Model
+
      1. Load initial models.
      2. Run query with loaded models.
      3. Set specific models keyed by relationship query.
      */
 
+    var mapRows: ([SQLRow]) async throws -> [M] = { try $0.mapDecode(M.self) }
+
     init(db: Database) {
         super.init(db: db, table: M.tableName)
     }
 
-    var map: ([SQLRow]) async throws -> [M] = { try $0.mapDecode(M.self) }
-    
     // MARK: Fetching
 
     /// Gets all models matching this query from the database.
@@ -47,16 +63,7 @@ public class Query<M: Model>: SQLQuery {
     /// - Returns: All models matching this query.
     public func get() async throws -> [M] {
         // Load models.
-//        var models = try await getRows().mapDecode(M.self)
-
-        try await map(getRows())
-
-//        // Evaluate eager loads.
-//        for load in eagerLoads {
-//            try await load(&models)
-//        }
-//
-//        return models
+        try await mapRows(getRows())
     }
 
     /// Gets all models matching this query from the database.
