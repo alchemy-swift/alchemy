@@ -1,4 +1,4 @@
-//@dynamicMemberLookup
+@dynamicMemberLookup
 public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, Hashable {
     struct Keys: Equatable {
         let idKey: String
@@ -70,8 +70,6 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
             toKeyOverride ?? relation.defaultFromKey(from: tableKeys, to: toKeys)
         }
 
-        // TODO: Better default keys for multiple throughs.
-
         func hash(into hasher: inout Swift.Hasher) {
             hasher.combine(table)
             hasher.combine(fromKeyOverride)
@@ -123,9 +121,6 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
     }
 
     private func _fetch(checkCache: Bool) async throws -> To {
-        // Compute the hash value before applying `where`s since those will
-        // alter the has value.
-        let hashValue = hashValue
         if checkCache, let cached = try checkEagerLoadCache() {
             return cached
         } else {
@@ -165,7 +160,8 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         public let toKey: String
     }
 
-    /// Calculate all step of this relationship. 1 JOIN = 1 step.
+    // THIS IS SOLID
+    /// Calculate all step of this relationship. 1 query = 1 step.
     public func calculateSteps() -> [QueryStep] {
         var stepIndex = 0
 
@@ -191,10 +187,10 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
         let lastKey = toKey(from: allKeys[stepIndex])
         steps.append(QueryStep(fromTable: previousTable, fromKey: previousKey, toTable: To.M.tableName, toKey: lastKey))
-        
         return steps
     }
 
+    // THIS IS SOLID
     private func fetch(for fromModels: [From]) async throws -> [From.ID: [To.M]] {
 
         // 1. Calculate the steps of the query.
@@ -236,7 +232,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
             try await load(&toModelsEagerLoaded)
         }
 
-        // 5. Use eager loaded models.
+        // 5. Set eager loaded models in the results dict.
         toModelsByFromId = toModelsByFromId
             .mapValues { toModelsNotEagerLoaded in
                 toModelsNotEagerLoaded.compactMap { toModelNotEagerLoaded in
@@ -249,26 +245,13 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     // THIS IS SOLID.
     func eagerLoad(on fromModels: inout [From]) async throws {
-        let hashValue = hashValue
-
         // 1. Fetch relationships for all `fromModel`s.
         let toResults = try await fetch(for: fromModels)
 
         // 2. Cach relationship on relevant `fromModel`.
         var fromModelsEagerLoaded: [From] = []
         for var fromModel in fromModels {
-            // 2a. Get the `from` key value.
-//            let fromKey = fromKey(to: nil)
-//            let fromKeyValue = fromModel.cache?.row[fromKey]
-
-            // 2b. Find matching `to` models.
-//            let toKey = toKey(from: nil)
-//            let matchingModels = toResults
-//                .filter { $0.row[toKey] == fromKeyValue }
-//                .map(\.model)
-
-            // 2c. Cache the relationship result on `fromModel`.
-            let toResults = toResults[fromModel.id]!
+            let toResults = toResults[fromModel.id] ?? []
             let toValue = try To.from(array: toResults)
             fromModel.cache(hashValue: hashValue, value: toValue)
             fromModelsEagerLoaded.append(fromModel)
@@ -289,21 +272,25 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     // Through Model
 
+    // SOLID
     public func through(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         through(model.tableName, from: fromKey, to: toKey)
     }
 
+    // SOLID
     public func throughPivot(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         throughPivot(model.tableName, from: fromKey, to: toKey)
     }
 
     // Through table
 
+    // SOLID
     public func throughPivot(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         self.relation = .pivot
         return through(table, from: fromKey ?? From.referenceKey, to: toKey ?? To.M.referenceKey)
     }
 
+    // SOLID
     public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
         let through = Through(table: table,
                               fromKeyOverride: fromKey,
@@ -316,9 +303,38 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     // Through from other relationship (allows custom query) convenience
 
-//    public subscript<T: RelationAllowed>(dynamicMember child: KeyPath<To, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> where To.M: EagerLoadable {
+    public subscript<T: RelationAllowed>(dynamicMember child: KeyPath<To.M, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> where To.M: EagerLoadable {
+        /*
+         USE CASES
+         1. `with` -> loads all items.
+         2. `fetch` -> fetches last item.
+
+         return a query that loads all relationships in the keypath chain. With will eager load that query, fetch will return the result.
+         */
+
+        // Then, on completion, map to the child.
+        return with2 { $0[keyPath: child] }
+
+        return to { $0[keyPath: child] }
+
+        // New relationship that also loads the current one?
 //        through { $0[keyPath: child] }
-//    }
+    }
+
+    /*
+     ALGO
+     A -> B -> C -> D
+
+     Store logic as closure on Query<A>.
+
+     1. Start with [A]
+     2. Fetch [B]
+     3. Fetch [C]
+     4. Fetch [D]
+     5. Cache [D] on [C]
+     6. Cache [C] on [B]
+     7. Cache [B] on [A]
+     */
 
     // Through from other relationship (allows custom query)
 
@@ -368,21 +384,68 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 }
 
 extension Query where M: EagerLoadable {
-    public func with<To: RelationAllowed>(
+    public func with2<To: RelationAllowed>(
         _ relationship: @escaping (M) -> M.Relationship2<To>,
         nested: @escaping ((M.Relationship2<To>) -> M.Relationship2<To>) = { $0 }
     ) -> Self {
-        let load: (inout [M]) async throws -> Void = { parents in
-            guard let first = parents.first else {
+        withLoad { models in
+            guard let first = models.first else {
                 return
             }
 
             let query = nested(relationship(first))
-            try await query.eagerLoad(on: &parents)
+            try await query.eagerLoad(on: &models)
         }
+    }
+}
+
+/*
+ Relationship Query: From -> To via single SQLQuery
+ ThroughQuery: From -> To via multiple SQLQueries
+ - A -> B + cache
+ - B -> C + cache
+ - C -> D + cache
+ */
+
+/*
+ Query
+ - Gets [SQLRow]
+ - Converts to Model
+ - Does Other Things (eager load)
+ */
+
+
+extension RelationshipQuery where To.M: EagerLoadable {
+    fileprivate func to<T: RelationAllowed>(
+        _ relationship: @escaping (To.M) -> To.M.Relationship2<T>,
+        nested: @escaping ((To.M.Relationship2<T>) -> To.M.Relationship2<T>) = { $0 }
+    ) -> RelationshipQuery<From, T> {
+        let load: (inout [To.M]) async throws -> Void = { fromModels in
+            guard let first = fromModels.first else {
+                return
+            }
+
+            let query = nested(relationship(first))
+            try await query.eagerLoad(on: &fromModels)
+        }
+
+        // Need to return a query that
+        // 1. Loads the inital query.
+        // 2. Given the result, loads the next query.
 
         eagerLoads.append(load)
         return self
+    }
+}
+
+extension Query {
+    func withLoad(loader: @escaping (inout [M]) async throws -> Void) -> Self {
+        eagerLoads.append(loader)
+        return self
+    }
+
+    func map<O: Model>(_ input: ([M]) -> O) -> Query<O> {
+
     }
 }
 
@@ -488,4 +551,11 @@ extension EagerLoadable {
  SUGAR
  1. `relationship.callAsFunction()` instead of `relationship.fetch()`.
  2. `relationship.otherRelationship` evaluates to `relationship.with(\.otherRelationship)` (so multiple eager loads).
+ */
+
+/*
+ KeyPath support.
+
+ Allow for multiple relationships loaded in one. Each get loaded / cached.
+
  */

@@ -37,6 +37,8 @@ public class Query<M: Model>: SQLQuery {
     init(db: Database) {
         super.init(db: db, table: M.tableName)
     }
+
+    var map: ([SQLRow]) async throws -> [M] = { try $0.mapDecode(M.self) }
     
     // MARK: Fetching
 
@@ -45,14 +47,16 @@ public class Query<M: Model>: SQLQuery {
     /// - Returns: All models matching this query.
     public func get() async throws -> [M] {
         // Load models.
-        var models = try await getRows().mapDecode(M.self)
+//        var models = try await getRows().mapDecode(M.self)
 
-        // Evaluate eager loads.
-        for load in eagerLoads {
-            try await load(&models)
-        }
+        try await map(getRows())
 
-        return models
+//        // Evaluate eager loads.
+//        for load in eagerLoads {
+//            try await load(&models)
+//        }
+//
+//        return models
     }
 
     /// Gets all models matching this query from the database.
