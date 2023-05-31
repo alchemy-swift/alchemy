@@ -5,88 +5,109 @@
     - SQL
     - Throughs
  2. Followup `SQLQuery`s
+
+ Features
+ 1. SQL Load
+ 2. Realtionship
+ 3. Through
+ 4. Key overrides
+ 5. Cahcing
+ 6. Chaining
  */
 
+/*
+ Query
+ - Has Steps, Depend on Eachother
+ From -> To = 1 Query
+ From -> Through -> To = 2 Queries
+ */
+
+struct Keys: Equatable {
+    let idKey: String
+    let referenceKey: String
+
+    static func model(_ model: (some Model).Type) -> Keys {
+        Keys(
+            idKey: model.idKey,
+            referenceKey: model.referenceKey
+        )
+    }
+
+    static func table(_ table: String, from: (some Model).Type) -> Keys {
+        Keys(
+            idKey: from.keyMapping.map(input: "Id"),
+            referenceKey: from.keyMapping.map(input: table.singularized + "Id")
+        )
+    }
+}
+
+/// The kind of relationship. Used only to determine to/from key defaults.
+enum Relation {
+    /// `From` is a child of `To`.
+    case belongsTo
+    /// `From` is a parent of `To`.
+    case has
+    /// `From` and `To` are parents of a separate pivot table.
+    case pivot
+
+    func defaultFromKey(from: Keys, to: Keys) -> String {
+        switch self {
+        case .has, .pivot:
+            return from.idKey
+        case .belongsTo:
+            return to.referenceKey
+        }
+    }
+
+    func defaultToKey(from: Keys, to: Keys) -> String {
+        switch self {
+        case .belongsTo, .pivot:
+            return to.idKey
+        case .has:
+            return from.referenceKey
+        }
+    }
+}
+
+public struct QueryStep {
+    public let fromTable: String
+    public let fromKey: String
+    public let toTable: String
+    public let toKey: String
+}
+
+/// Computes the relationship across another table.
+struct Through: Hashable {
+    /// The table through which the relationship should go.
+    let table: String
+    /// Any user provided `fromKey`.
+    let fromKeyOverride: String?
+    /// Any user provided `toKey`.
+    let toKeyOverride: String?
+    /// The key defaults for the table.
+    let tableKeys: Keys
+    /// The type of relationship this through table is to the from table.
+    let relation: Relation
+
+    /// The from key to use when constructing the query.
+    func fromKey(fromKeys: Keys) -> String {
+        fromKeyOverride ?? relation.defaultToKey(from: fromKeys, to: tableKeys)
+    }
+
+    /// The to key to use when constructing the query.
+    func toKey(toKeys: Keys) -> String {
+        toKeyOverride ?? relation.defaultFromKey(from: tableKeys, to: toKeys)
+    }
+
+    func hash(into hasher: inout Swift.Hasher) {
+        hasher.combine(table)
+        hasher.combine(fromKeyOverride)
+        hasher.combine(toKeyOverride)
+    }
+}
 
 @dynamicMemberLookup
 public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, Hashable {
-    struct Keys: Equatable {
-        let idKey: String
-        let referenceKey: String
-
-        static func model(_ model: (some Model).Type) -> Keys {
-            Keys(
-                idKey: model.idKey,
-                referenceKey: model.referenceKey
-            )
-        }
-
-        static func table(_ table: String) -> Keys {
-            Keys(
-                idKey: From.keyMapping.map(input: "Id"),
-                referenceKey: From.keyMapping.map(input: table.singularized + "Id")
-            )
-        }
-    }
-
-    /// The kind of relationship. Used only to determine to/from key defaults.
-    enum Relation {
-        /// `From` is a child of `To`.
-        case belongsTo
-        /// `From` is a parent of `To`.
-        case has
-        /// `From` and `To` are parents of a separate pivot table.
-        case pivot
-
-        func defaultFromKey(from: Keys, to: Keys) -> String {
-            switch self {
-            case .has, .pivot:
-                return from.idKey
-            case .belongsTo:
-                return to.referenceKey
-            }
-        }
-
-        func defaultToKey(from: Keys, to: Keys) -> String {
-            switch self {
-            case .belongsTo, .pivot:
-                return to.idKey
-            case .has:
-                return from.referenceKey
-            }
-        }
-    }
-
-    /// Computes the relationship across another table.
-    struct Through: Hashable {
-        /// The table through which the relationship should go.
-        let table: String
-        /// Any user provided `fromKey`.
-        let fromKeyOverride: String?
-        /// Any user provided `toKey`.
-        let toKeyOverride: String?
-        /// The key defaults for the table.
-        let tableKeys: Keys
-        /// The type of relationship this through table is to the from table.
-        let relation: Relation
-
-        /// The from key to use when constructing the query.
-        func fromKey(fromKeys: Keys) -> String {
-            fromKeyOverride ?? relation.defaultToKey(from: fromKeys, to: tableKeys)
-        }
-
-        /// The to key to use when constructing the query.
-        func toKey(toKeys: Keys) -> String {
-            toKeyOverride ?? relation.defaultFromKey(from: tableKeys, to: toKeys)
-        }
-
-        func hash(into hasher: inout Swift.Hasher) {
-            hasher.combine(table)
-            hasher.combine(fromKeyOverride)
-            hasher.combine(toKeyOverride)
-        }
-    }
-
     var fromModel: From
     var fromKeyOverride: String?
     var toKeyOverride: String?
@@ -158,18 +179,6 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         try await fetch(for: [fromModel]).first?.value ?? []
     }
 
-    struct ModelRow<M: Model> {
-        let model: M
-        let row: SQLRow
-    }
-
-    public struct QueryStep {
-        public let fromTable: String
-        public let fromKey: String
-        public let toTable: String
-        public let toKey: String
-    }
-
     // THIS IS SOLID
     /// Calculate all step of this relationship. 1 query = 1 step.
     public func calculateSteps() -> [QueryStep] {
@@ -196,7 +205,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         }
 
         let lastKey = toKey(from: allKeys[stepIndex])
-        steps.append(QueryStep(fromTable: previousTable, fromKey: previousKey, toTable: To.M.tableName, toKey: lastKey))
+        steps.append(QueryStep(fromTable: previousTable, fromKey: previousKey, toTable: table, toKey: lastKey))
         return steps
     }
 
@@ -235,7 +244,7 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
         // 3. Decode the results.
         var toModelsByFromId = try idLookup.mapValues { try $0.mapDecode(To.M.self) }
-        var toModelsEagerLoaded = try await mapRows(idLookup.flatMap { $0.value })
+        var toModelsEagerLoaded = try await didLoad(idLookup.flatMap { $0.value })
 
         // 4. Set eager loaded models in the results dict.
         toModelsByFromId = toModelsByFromId
@@ -300,45 +309,10 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         let through = Through(table: table,
                               fromKeyOverride: fromKey,
                               toKeyOverride: toKey,
-                              tableKeys: .table(table),
+                              tableKeys: .table(table, from: From.self),
                               relation: .has)
         throughs.append(through)
         return self
-    }
-
-    // Through from other relationship (allows custom query) convenience
-
-    // Execute Query
-    // 1. Construct Query
-    // 2. Construct Followup Queries (Queries that modify results)
-    // 3. Load Query
-    // 4. Load relationships.
-    //   a. Load Nested realtioships
-    // 5. Return results.
-
-    public subscript<T: RelationAllowed>(dynamicMember child: KeyPath<To.M, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> where To.M: EagerLoadable {
-        // 1. Construct Query from To -> T.
-        // 2. Append to sub queries.
-        // 3. return ref to new query for additional nesting.
-
-        // Must return a custom query
-        // 1. to the destination relationship (so the end type can be inferred for subsequent chains)
-        // 2. but originating from the root relationship (so the whole thing can be set via mapRows)
-
-        // 1. Inital Query
-        // 2. Followup Queries
-
-        print("TESTING!")
-        return thenLoad(then: child)
-    }
-
-    func thenLoad<T: RelationAllowed>(then: KeyPath<To.M, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> where To.M: EagerLoadable {
-        RelationshipQuery<From, T>(
-            db: db,
-            fromModel: fromModel,
-            fromKey: nil,
-            toKey: nil,
-            relation: .has)
     }
 
     // MARK: Hashable
@@ -350,12 +324,66 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
         hasher.combine(toKeyOverride)
         hasher.combine(wheres)
     }
+
+    func map<T: RelationAllowed>(mapper: @escaping (inout [To.M]) async throws -> [T.M]) -> RelationshipQuery<From, T> {
+        // Copy to new query with different type
+        let newQuery = RelationshipQuery<From, T>(db: db, fromModel: fromModel, fromKey: fromKeyOverride, toKey: toKeyOverride, relation: self.relation)
+        print("SETTING TO \(table)")
+        newQuery.table = table
+        newQuery.shouldLog = shouldLog
+
+        newQuery.columns = columns
+        newQuery.isDistinct = isDistinct
+        newQuery.limit = limit
+        newQuery.offset = offset
+        newQuery.lock = lock
+
+        newQuery.joins = joins
+        newQuery.wheres = wheres
+        newQuery.groups = groups
+        newQuery.havings = havings
+        newQuery.orders = orders
+
+        let _didLoad = didLoad
+        newQuery.didLoad = { (rows: [SQLRow]) in
+            print("GOT ROWS! \(rows.count)")
+            var models = try await _didLoad(rows)
+            let results = try await mapper(&models)
+            return results
+        }
+
+        return newQuery
+    }
+}
+
+extension RelationshipQuery where To.M: EagerLoadable {
+    public subscript<T: RelationAllowed>(dynamicMember relationship: KeyPath<To.M, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> {
+        // 1. Construct Query from To -> T.
+        // 2. Append to sub queries.
+        // 3. return ref to new query for additional nesting.
+
+        // Must return a custom query
+        // 1. to the destination relationship (so the end type can be inferred for subsequent chains)
+        // 2. but originating from the root relationship (so the whole thing can be set via didLoad)
+
+        // 1. Inital Query
+        // 2. Followup Queries
+        return map { models in
+            guard let first = models.first else {
+                return []
+            }
+
+            let query = first[keyPath: relationship]
+            try await query.eagerLoad(on: &models)
+            return try models.flatMap { try $0[keyPath: relationship].require().toModel() }
+        }
+    }
 }
 
 extension Query where M: EagerLoadable {
-    public func with2<To: RelationAllowed>(
-        _ relationship: @escaping (M) -> M.Relationship2<To>,
-        nested: @escaping ((M.Relationship2<To>) -> M.Relationship2<To>) = { $0 }
+    public func with2<T: RelationAllowed>(
+        _ relationship: @escaping (M) -> M.Relationship2<T>,
+        nested: @escaping ((M.Relationship2<T>) -> M.Relationship2<T>) = { $0 }
     ) -> Self {
         withLoad { models in
             guard let first = models.first else {
@@ -365,19 +393,6 @@ extension Query where M: EagerLoadable {
             let query = nested(relationship(first))
             try await query.eagerLoad(on: &models)
         }
-    }
-}
-
-extension Query {
-    func withLoad(loader: @escaping (inout [M]) async throws -> Void) -> Self {
-        let _mapRows = mapRows
-        mapRows = { rows in
-            var models = try await _mapRows(rows)
-            try await loader(&models)
-            return models
-        }
-
-        return self
     }
 }
 

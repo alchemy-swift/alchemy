@@ -26,7 +26,7 @@ public class SQLQuery: Equatable {
     /// Indicates the entire query should be logged when it's executed. Logs
     /// will occur at the `info` log level.
     public func log() -> Self {
-        self.shouldLog = true
+        shouldLog = true
         return self
     }
 
@@ -37,16 +37,16 @@ public class SQLQuery: Equatable {
     }
 
     func isEqual(to other: SQLQuery) -> Bool {
-        return table == other.table &&
-            columns == other.columns &&
-            isDistinct == other.isDistinct &&
-            limit == other.limit &&
-            offset == other.offset &&
-            lock == other.lock &&
-            joins == other.joins &&
-            wheres == other.wheres &&
-            groups == other.groups &&
-            havings == other.havings &&
-            orders == other.orders
+        table == other.table
+            && columns == other.columns
+            && isDistinct == other.isDistinct
+            && limit == other.limit
+            && offset == other.offset
+            && lock == other.lock
+            && joins == other.joins
+            && wheres == other.wheres
+            && groups == other.groups
+            && havings == other.havings
+            && orders == other.orders
     }
 }

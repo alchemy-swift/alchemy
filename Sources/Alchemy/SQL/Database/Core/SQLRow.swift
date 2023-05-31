@@ -34,6 +34,7 @@ public struct SQLRow {
     
     public func require(_ column: String) throws -> SQLValue {
         guard let value = self[column] else {
+            Log.info("ONLY SAW: \(lookupTable.keys)")
             throw DatabaseError.missingColumn(column)
         }
 

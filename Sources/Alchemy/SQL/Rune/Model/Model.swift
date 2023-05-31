@@ -11,6 +11,10 @@ extension Model {
 
         return array[0]
     }
+
+    public func toModel() -> [M] {
+        [self]
+    }
 }
 
 /// An ActiveRecord-esque type used for modeling a table in a

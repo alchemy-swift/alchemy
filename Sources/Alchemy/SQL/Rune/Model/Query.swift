@@ -18,42 +18,32 @@ public extension Model {
     }
 }
 
-/*
- Query
- 1. Fetch Rows
- 2. Map Rows
- 3. Eager Loads
- 4. Map Result (for relationship queries only?)
- */
-
 /// A `Query` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
 public class Query<M: Model>: SQLQuery {
-    /// The closures of any eager loads to run. To be run after the
-    /// initial models of type `Self` are fetched.
-    var eagerLoadQueries: [([ModelRow]) async throws -> [ModelRow]] = []
-
-    /*
-     SQLQuery
-     - Build raw SQL query
-
-     Query
-     - build raw SQL query, map to Model
-     - perform arbitrary action after fetching model (eager load)
-
-     RelationshipQuery
-     - Based on [From] input fetch Model
-
-     1. Load initial models.
-     2. Run query with loaded models.
-     3. Set specific models keyed by relationship query.
-     */
-
-    var mapRows: ([SQLRow]) async throws -> [M] = { try $0.mapDecode(M.self) }
+    // Any actions to run after the SQLQuery is run, such as decoding models or
+    // executing eager loads.
+    var didLoad: ([SQLRow]) async throws -> [M] = {
+        print("DECODE: \(M.self)")
+        return try $0.mapDecode(M.self)
+    }
 
     init(db: Database) {
         super.init(db: db, table: M.tableName)
+    }
+
+    // MARK: Loading
+
+    func withLoad(loader: @escaping (inout [M]) async throws -> Void) -> Self {
+        let _didLoad = didLoad
+        didLoad = { rows in
+            var models = try await _didLoad(rows)
+            try await loader(&models)
+            return models
+        }
+
+        return self
     }
 
     // MARK: Fetching
@@ -63,7 +53,7 @@ public class Query<M: Model>: SQLQuery {
     /// - Returns: All models matching this query.
     public func get() async throws -> [M] {
         // Load models.
-        try await mapRows(getRows())
+        try await didLoad(getRows())
     }
 
     /// Gets all models matching this query from the database.
@@ -94,22 +84,6 @@ public class Query<M: Model>: SQLQuery {
     /// Returns a model of this query, if one exists.
     public func random() async throws -> M? {
         try await select().orderBy("RANDOM()").limit(1).first()
-    }
-    
-    /// Evaluate all eager loads in this `Query` sequentially.
-    /// This occurs after the inital `M` query has completed.
-    ///
-    /// - Parameter models: The models that were loaded by the initial
-    ///   query.
-    /// - Returns: The loaded models that will have all specified
-    ///   relationships loaded.
-    private func evaluateEagerLoads(for models: [ModelRow]) async throws -> [ModelRow] {
-        var results: [ModelRow] = models
-        for query in eagerLoadQueries {
-            results = try await query(results)
-        }
-        
-        return results
     }
 }
 
