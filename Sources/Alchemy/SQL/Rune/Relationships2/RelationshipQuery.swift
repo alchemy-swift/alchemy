@@ -17,9 +17,33 @@
 
 /*
  Query
- - Has Steps, Depend on Eachother
+ - results in an output
+ - is built
+ - might have steps that depend on eachother (2 parts, part 2 relies on results of part 1)
+
+ Types
+ 1. Pure SQL
+ 2. Model
+ 3. Relationships (belongs to, has one, has many)
+ 4. Multi Step Relationships (pivot, through, chaining)
+
+ Query Step
+ 1. Get Results (based on previous)
+ 2. Do Something With Results
+ 3. Return Results
+
  From -> To = 1 Query
  From -> Through -> To = 2 Queries
+ */
+
+/*
+ Step Options:
+ 1. Don't Have
+ */
+
+/*
+ Single Query Class
+ 1. OnLoad & Map that modify or change results.
  */
 
 struct Keys: Equatable {
