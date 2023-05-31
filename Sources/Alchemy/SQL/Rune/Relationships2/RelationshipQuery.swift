@@ -1,3 +1,13 @@
+
+/*
+ Parts:
+ 1. `SQLQuery`
+    - SQL
+    - Throughs
+ 2. Followup `SQLQuery`s
+ */
+
+
 @dynamicMemberLookup
 public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<To.M>, Hashable {
     struct Keys: Equatable {
@@ -298,76 +308,38 @@ public class RelationshipQuery<From: EagerLoadable, To: RelationAllowed>: Query<
 
     // Through from other relationship (allows custom query) convenience
 
+    // Execute Query
+    // 1. Construct Query
+    // 2. Construct Followup Queries (Queries that modify results)
+    // 3. Load Query
+    // 4. Load relationships.
+    //   a. Load Nested realtioships
+    // 5. Return results.
+
     public subscript<T: RelationAllowed>(dynamicMember child: KeyPath<To.M, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> where To.M: EagerLoadable {
-        /*
-         USE CASES
-         1. `with` -> loads all items.
-         2. `fetch` -> fetches last item.
+        // 1. Construct Query from To -> T.
+        // 2. Append to sub queries.
+        // 3. return ref to new query for additional nesting.
 
-         return a query that loads all relationships in the keypath chain. With will eager load that query, fetch will return the result.
-         */
+        // Must return a custom query
+        // 1. to the destination relationship (so the end type can be inferred for subsequent chains)
+        // 2. but originating from the root relationship (so the whole thing can be set via mapRows)
 
-        // Then, on completion, map to the child.
-//        return with2 { $0[keyPath: child] }
+        // 1. Inital Query
+        // 2. Followup Queries
 
-//        return to { $0[keyPath: child] }
-
-        fatalError()
-
-        // New relationship that also loads the current one?
-//        through { $0[keyPath: child] }
+        print("TESTING!")
+        return thenLoad(then: child)
     }
 
-    /*
-     ALGO
-     A -> B -> C -> D
-
-     Store logic as closure on Query<A>.
-
-     1. Start with [A]
-     2. Fetch [B]
-     3. Fetch [C]
-     4. Fetch [D]
-     5. Cache [D] on [C]
-     6. Cache [C] on [B]
-     7. Cache [B] on [A]
-     */
-
-    // Through from other relationship (allows custom query)
-
-//    func through<T: RelationAllowed>(closure: @escaping (To) -> RelationshipQuery<To.M, T>) -> RelationshipQuery<From, T> {
-
-        /*
-         1. Users
-         2. Repositories
-         3. Workflows
-         4. Jobs
-         */
-
-        /*
-         A relationship may have a previous relationship that needs to be
-         loaded first.
-         */
-
-//        user
-//            .hasMany(Repository.self)
-//            .hasMany(Workflow.self)
-//            .hasMany(Job.self)
-//
-//        user
-//            .through("repostiories") // from, to, table
-//            .through("workflows") // from, to, table
-//            .hasMany(Job.self)
-
-        // Ignore types and jsut store to from / through. Then closure to cache intermediary relationships.
-
-//        let copy = RelationshipQuery<From, T>.init(from: from, fromKey: fromKey, toKey: toKey)
-//        copy.through = { firstChild in
-//            try await closure(self.fetch()).fetch()
-//        }
-
-//        return copy
-//    }
+    func thenLoad<T: RelationAllowed>(then: KeyPath<To.M, To.M.Relationship2<T>>) -> RelationshipQuery<From, T> where To.M: EagerLoadable {
+        RelationshipQuery<From, T>(
+            db: db,
+            fromModel: fromModel,
+            fromKey: nil,
+            toKey: nil,
+            relation: .has)
+    }
 
     // MARK: Hashable
 
@@ -395,45 +367,6 @@ extension Query where M: EagerLoadable {
         }
     }
 }
-
-/*
- Relationship Query: From -> To via single SQLQuery
- ThroughQuery: From -> To via multiple SQLQueries
- - A -> B + cache
- - B -> C + cache
- - C -> D + cache
- */
-
-/*
- Query
- - Gets [SQLRow]
- - Converts to Model
- - Does Other Things (eager load)
- */
-
-
-//extension RelationshipQuery where To.M: EagerLoadable {
-//    fileprivate func to<T: RelationAllowed>(
-//        _ relationship: @escaping (To.M) -> To.M.Relationship2<T>,
-//        nested: @escaping ((To.M.Relationship2<T>) -> To.M.Relationship2<T>) = { $0 }
-//    ) -> RelationshipQuery<From, T> {
-//        let load: (inout [To.M]) async throws -> Void = { fromModels in
-//            guard let first = fromModels.first else {
-//                return
-//            }
-//
-//            let query = nested(relationship(first))
-//            try await query.eagerLoad(on: &fromModels)
-//        }
-//
-//        // Need to return a query that
-//        // 1. Loads the inital query.
-//        // 2. Given the result, loads the next query.
-//
-//        eagerLoads.append(load)
-//        return self
-//    }
-//}
 
 extension Query {
     func withLoad(loader: @escaping (inout [M]) async throws -> Void) -> Self {
