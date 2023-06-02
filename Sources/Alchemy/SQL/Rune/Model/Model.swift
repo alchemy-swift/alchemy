@@ -3,6 +3,32 @@ import Pluralize
 
 public protocol Model: ModelBase, Codable, RelationAllowed, SQLQueryResult where M == Self {}
 
+extension Model {
+    var row: SQLRow {
+        id.storage.row
+    }
+
+    func cache<To: RelationAllowed>(hashValue: Int, value: To) {
+        id.storage.relationships[hashValue] = value
+    }
+
+    func checkCache<To: RelationAllowed>(hashValue: Int) throws -> To? {
+        guard let value = id.storage.relationships[hashValue] else {
+            return nil
+        }
+
+        guard let value = value as? To else {
+            throw RuneError("Relationship type mismatch!")
+        }
+
+        return value
+    }
+
+    func cacheExists(hashValue: Int) -> Bool {
+        id.storage.relationships[hashValue] != nil
+    }
+}
+
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & much more.

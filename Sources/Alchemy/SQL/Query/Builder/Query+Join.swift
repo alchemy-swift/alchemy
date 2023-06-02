@@ -17,32 +17,36 @@ public struct SQLJoin: Equatable {
     /// The type of the join to perform.
     var type: JoinType
     /// The table to join to.
-    let joinTable: String
+    let table: String
     /// The join conditions
-    var joinWheres: [SQLWhere] = []
+    var wheres: [SQLWhere] = []
 
     /// Create a join builder with a query, type, and table.
     ///
     /// - Parameters:
-    ///   - database: The database the join table is on.
     ///   - type: The type of join this is.
     ///   - joinTable: The name of the table to join to.
-    init(db: Database, type: JoinType, joinTable: String) {
+    init(type: JoinType, joinTable: String) {
         self.type = type
-        self.joinTable = joinTable
+        self.table = joinTable
     }
 
-    mutating func on(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        joinWheres.append(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
-        return self
+    func on(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
+        var join = self
+        join.wheres.append(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
+        return join
     }
 
-    mutating func orOn(first: String, op: SQLWhere.Operator, second: String) -> SQLJoin {
+    func orOn(first: String, op: SQLWhere.Operator, second: String) -> SQLJoin {
         on(first: first, op: op, second: second, boolean: .or)
     }
 }
 
 extension Query {
+    func join(_ join: SQLJoin) {
+
+    }
+
     /// Join data from a separate table into the current query data.
     ///
     /// - Parameters:
@@ -56,7 +60,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func join(table: String, first: String, op: SQLWhere.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
-        var join = SQLJoin(db: db, type: type, joinTable: table)
+        var join = SQLJoin(type: type, joinTable: table)
         query.joins.append(join.on(first: first, op: op, second: second))
         return self
     }
@@ -70,7 +74,7 @@ extension Query {
     ///   - conditions: A closure that sets the conditions on the join using.
     /// - Returns: This query builder.
     public func join(table: String, type: SQLJoin.JoinType = .inner, conditions: (SQLJoin) -> SQLJoin) -> Self {
-        query.joins.append(conditions(SQLJoin(db: db, type: type, joinTable: table)))
+        query.joins.append(conditions(SQLJoin(type: type, joinTable: table)))
         return self
     }
 

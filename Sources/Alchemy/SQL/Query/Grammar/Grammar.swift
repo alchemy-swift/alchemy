@@ -78,12 +78,12 @@ extension SQLDialect {
 
         var bindings: [SQLValue] = []
         let query = joins.compactMap { join -> String? in
-            guard let whereSQL = compileWheres(join.joinWheres, isJoin: true) else {
+            guard let whereSQL = compileWheres(join.wheres, isJoin: true) else {
                 return nil
             }
 
             bindings += whereSQL.bindings
-            return "\(join.type) join \(join.joinTable) \(whereSQL.statement)"
+            return "\(join.type) join \(join.table) \(whereSQL.statement)"
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }.joined(separator: " ")
 

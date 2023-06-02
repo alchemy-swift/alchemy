@@ -39,9 +39,9 @@ public class Query<Result: SQLQueryResult> {
     func didLoad(_ then: @escaping(inout [Result]) async throws -> Void) -> Self {
         let _didLoad = didLoad
         didLoad = { rows in
-            var models = try await _didLoad(rows)
-            try await then(&models)
-            return models
+            var results = try await _didLoad(rows)
+            try await then(&results)
+            return results
         }
 
         return self
