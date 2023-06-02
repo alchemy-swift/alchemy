@@ -70,7 +70,7 @@ final class RelationshipQuery: Hashable {
         let table: Key.Table
         let from: String?
         let to: String?
-        let isPivot: Bool = false
+        let isPivot: Bool
     }
 
     private let db: Database
@@ -98,6 +98,8 @@ final class RelationshipQuery: Hashable {
                 return previousTable.referenceKey
             }
         }()
+
+        // TODO: Check for Pivot for default keys
 
         var joins: [SQLJoin] = []
         for (index, through) in throughs.reversed().enumerated() {
@@ -130,8 +132,8 @@ final class RelationshipQuery: Hashable {
         return joins
     }
 
-    func addThrough(_ table: String, from: String? = nil, to: String? = nil) {
-        throughs.append(Through(table: .string(table, keyMapping: .convertToSnakeCase), from: from, to: to))
+    func addThrough(_ table: String, from: String? = nil, to: String? = nil, isPivot: Bool = false) {
+        throughs.append(Through(table: .string(table, keyMapping: .convertToSnakeCase), from: from, to: to, isPivot: isPivot))
     }
 
     func addWhere(_ where: SQLWhere) {
@@ -271,7 +273,7 @@ extension ModelRelationship {
     }
 
     public func throughPivot(_ table: String, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        query.addThrough(table, from: from, to: to)
+        query.addThrough(table, from: from, to: to, isPivot: true)
         return self
     }
 
