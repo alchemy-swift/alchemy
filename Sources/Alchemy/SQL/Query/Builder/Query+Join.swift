@@ -43,8 +43,10 @@ public struct SQLJoin: Equatable {
 }
 
 extension Query {
-    func join(_ join: SQLJoin) {
 
+    func join(_ join: SQLJoin) -> Self {
+        query.joins.append(join)
+        return self
     }
 
     /// Join data from a separate table into the current query data.

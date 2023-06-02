@@ -38,13 +38,18 @@ public final class ModelRelationship<From: Model, To: RelationAllowed> {
 
 struct Key: Hashable {
     let table: String
-    let column: String
+    /// If nil, the key will be inferred.
+    let explicitColumn: String?
+
+    func column(for: RelationshipQuery.Kind) -> String {
+        explicitColumn ?? "FOO"
+    }
 }
 
 /// Describes a relationship between SQL tables. A single query.
 final class RelationshipQuery: Hashable {
     /// Used to infer default keys.
-    private enum Kind {
+    enum Kind {
         case has
         case belongs
     }
@@ -57,14 +62,14 @@ final class RelationshipQuery: Hashable {
         let isPivot: Bool = false
     }
 
-    private let path: [Key] = []
     private let type: Kind
     private let from: Key
     private let to: Key
     private var throughs: [Through] = []
     private var wheres: [SQLWhere] = []
 
-    init(from: Key, to: Key) {
+    init(type: Kind, from: Key, to: Key) {
+        self.type = type
         self.from = from
         self.to = to
     }
@@ -88,9 +93,7 @@ final class RelationshipQuery: Hashable {
         // 1. Infer the keys.
         // 2. Add the join.
         // 3. Change `to` defaults if it's a pivot.
-        let join = SQLJoin(type: .left, joinTable: table)
-            .on(first: from ?? "foo", op: .equals, second: to ?? "foo")
-        joins.append(join)
+        throughs.append(Through(table: table, from: from, to: to))
     }
 
     func addWhere(_ where: SQLWhere) {
@@ -101,20 +104,25 @@ final class RelationshipQuery: Hashable {
     /// the same length as the input array.
     func execute(input: [SQLRow]) async throws -> [[SQLRow]] {
         var query = DB.from(to.table)
-        for join in joins {
-            query = query.join(table: <#T##String#>, conditions: <#T##(SQLJoin) -> SQLJoin#>)
+
+        for through in throughs {
+            let join = SQLJoin(type: .left, joinTable: through.table)
+                .on(first: through.from ?? "foo", op: .equals, second: through.to ?? "foo")
+            query = query.join(join)
         }
+
         for `where` in wheres {
             query = query.where(`where`)
         }
 
-        let inputValues = try input.map { try $0.require(from.column) }
-        let results = try await DB
-            .from(to.table)
-            .where(to.column, in: inputValues)
-            .select()
+        let fromColumn = from.column(for: type)
+        let toColumn = to.column(for: type)
+        let inputValues = try input.map { try $0.require(fromColumn) }
+        let results = try await query
+            .where(toColumn, in: inputValues)
+            .select(["\(to.table).*", fromColumn])
 
-        let resultsByToColumn = results.grouped(by: \.[to.column])
+        let resultsByToColumn = results.grouped(by: \.[fromColumn])
         return inputValues.map { resultsByToColumn[$0] ?? [] }
     }
 
@@ -148,16 +156,16 @@ extension Query where Result: Model {
 
 extension ModelRelationship {
     fileprivate static func has(_ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        let fromKey = Key(table: From.tableName, column: from ?? From.idKey)
-        let toKey = Key(table: To.M.tableName, column: to ?? From.referenceKey)
-        let query = RelationshipQuery(from: fromKey, to: toKey)
+        let fromKey = Key(table: From.tableName, explicitColumn: from)
+        let toKey = Key(table: To.M.tableName, explicitColumn: to)
+        let query = RelationshipQuery(type: .has, from: fromKey, to: toKey)
         return ModelRelationship(from: model, query: query)
     }
 
     fileprivate static func belongs(_ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        let fromKey = Key(table: From.tableName, column: from ?? To.M.referenceKey)
-        let toKey = Key(table: To.M.tableName, column: to ?? To.M.idKey)
-        let query = RelationshipQuery(from: fromKey, to: toKey)
+        let fromKey = Key(table: From.tableName, explicitColumn: from)
+        let toKey = Key(table: To.M.tableName, explicitColumn: to)
+        let query = RelationshipQuery(type: .belongs, from: fromKey, to: toKey)
         return ModelRelationship(from: model, query: query)
     }
 }
