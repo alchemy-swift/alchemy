@@ -65,7 +65,7 @@ struct EverythingModel: Model, Equatable {
     enum IntEnum: Int, ModelEnum { case two = 2 }
     enum DoubleEnum: Double, ModelEnum { case three = 3.0 }
     
-    var id: Int?
+    var id: PK<Int> = .new
     
     // Enum
     var stringEnum: StringEnum = .one

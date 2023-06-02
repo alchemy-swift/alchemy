@@ -10,27 +10,27 @@ final class QuerySelectTests: TestCase<TestApp> {
     
     func testStartsEmpty() {
         let query = DB.table("foo")
-        XCTAssertEqual(query.table, "foo")
-        XCTAssertEqual(query.columns, ["*"])
-        XCTAssertEqual(query.isDistinct, false)
-        XCTAssertNil(query.limit)
-        XCTAssertNil(query.offset)
-        XCTAssertNil(query.lock)
-        XCTAssertEqual(query.joins, [])
-        XCTAssertEqual(query.wheres, [])
-        XCTAssertEqual(query.groups, [])
-        XCTAssertEqual(query.havings, [])
-        XCTAssertEqual(query.orders, [])
+        XCTAssertEqual(query.query.table, "foo")
+        XCTAssertEqual(query.query.columns, ["*"])
+        XCTAssertEqual(query.query.isDistinct, false)
+        XCTAssertNil(query.query.limit)
+        XCTAssertNil(query.query.offset)
+        XCTAssertNil(query.query.lock)
+        XCTAssertEqual(query.query.joins, [])
+        XCTAssertEqual(query.query.wheres, [])
+        XCTAssertEqual(query.query.groups, [])
+        XCTAssertEqual(query.query.havings, [])
+        XCTAssertEqual(query.query.orders, [])
     }
     
     func testSelect() {
         let specific = DB.table("foo").select(["bar", "baz"])
-        XCTAssertEqual(specific.columns, ["bar", "baz"])
+        XCTAssertEqual(specific.query.columns, ["bar", "baz"])
         let all = DB.table("foo").select()
-        XCTAssertEqual(all.columns, ["*"])
+        XCTAssertEqual(all.query.columns, ["*"])
     }
     
     func testDistinct() {
-        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
+        XCTAssertEqual(DB.table("foo").distinct().query.isDistinct, true)
     }
 }

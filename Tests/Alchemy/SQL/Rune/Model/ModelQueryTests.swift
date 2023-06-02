@@ -20,7 +20,7 @@ final class ModelQueryTests: TestCase<TestApp> {
 private struct TestError: Error {}
 
 private struct TestParent: Model, Seedable, Equatable {
-    var id: Int?
+    var id: PK<Int> = .new
     var baz: String
     
     static func generate() async throws -> TestParent {
@@ -29,7 +29,7 @@ private struct TestParent: Model, Seedable, Equatable {
 }
 
 private struct TestModel: Model, Seedable, Equatable {
-    var id: Int?
+    var id: PK<Int> = .new
     var foo: String
     var bar: Bool
     

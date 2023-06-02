@@ -5,7 +5,7 @@ struct AlchemyMigration: Model {
     static let tableName: String = "migrations"
     
     /// Serial primary key.
-    var id: Int?
+    var id: PK<Int> = .new
     
     /// The name of the migration.
     let name: String

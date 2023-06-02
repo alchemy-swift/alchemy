@@ -2,16 +2,17 @@ import NIO
 
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
-final class MySQLGrammar: Grammar {
-    override func compileInsertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
-        return values.flatMap {
-            return [
-                compileInsert(table, values: [$0]),
-                SQL("select * from \(table) where id = LAST_INSERT_ID()")
-            ]
-        }
+
+struct MySQLDialect: SQLDialect {
+    func insertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+        values.flatMap {[
+            insert(table, values: [$0]),
+            SQL("select * from \(table) where id = LAST_INSERT_ID()")
+        ]}
     }
-    
+}
+
+final class MySQLGrammar: Grammar {
     override func compileDropIndex(on table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName) ON \(table)")
     }

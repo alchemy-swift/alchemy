@@ -72,7 +72,7 @@ public extension Queue {
 struct JobModel: Model {
     static var tableName: String = "jobs"
 
-    var id: String?
+    var id: PK<String> = .new
     let jobName: String
     let channel: String
     let json: JSONString
@@ -86,7 +86,7 @@ struct JobModel: Model {
     var backoffUntil: Date?
 
     init(jobData: JobData) {
-        id = jobData.id
+        id = .existing(jobData.id)
         jobName = jobData.jobName
         channel = jobData.channel
         json = jobData.json

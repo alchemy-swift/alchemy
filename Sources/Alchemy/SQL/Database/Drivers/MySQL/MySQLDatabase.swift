@@ -7,6 +7,7 @@ final class MySQLDatabase: DatabaseProvider {
     let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
     
     var grammar: Grammar = MySQLGrammar()
+    let dialect: SQLDialect = MySQLDialect()
 
     init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
         pool = EventLoopGroupConnectionPool(
@@ -55,7 +56,7 @@ final class MySQLDatabase: DatabaseProvider {
 
     private func withConnection<T>(_ action: @escaping (MySQLConnectionDatabase) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
-            try await action(MySQLConnectionDatabase(conn: $0, grammar: self.grammar))
+            try await action(MySQLConnectionDatabase(conn: $0, grammar: self.grammar, dialect: self.dialect))
         }
     }
     
@@ -68,6 +69,7 @@ final class MySQLDatabase: DatabaseProvider {
 private struct MySQLConnectionDatabase: DatabaseProvider {
     let conn: MySQLConnection
     let grammar: Grammar
+    let dialect: SQLDialect
     
     func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql, values.map(MySQLData.init)).get().map(SQLRow.init)

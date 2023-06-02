@@ -1,23 +1,25 @@
-final class SQLiteGrammar: Grammar {
-    override func compileInsertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+struct SQLiteDialect: SQLDialect {
+    func insertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
         return values.flatMap { fields -> [SQL] in
             // If the id is already set, search the database for that. Otherwise
             // assume id is autoincrementing and search for the last rowid.
             let id = fields["id"]
             let idString = id == nil ? "last_insert_rowid()" : "?"
             return [
-                compileInsert(table, values: [fields]),
+                insert(table, values: [fields]),
                 SQL("select * from \(table) where id = \(idString)", bindings: [id?.sqlValue].compactMap { $0 })
             ]
         }
     }
-    
-    // No locks are supported with SQLite; the entire database is locked on
-    // write anyways.
-    override func compileLock(_ lock: SQLQuery.Lock?) -> SQL? {
+
+    func compileLock(_ lock: SQLLock?) -> SQL? {
+        // No locks are supported with SQLite; the entire database is locked on
+        // write anyways.
         return nil
     }
-    
+}
+
+final class SQLiteGrammar: Grammar {
     override func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:

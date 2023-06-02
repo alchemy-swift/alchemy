@@ -144,12 +144,12 @@ final class ModelCrudTests: TestCase<TestApp> {
 private struct TestError: Error {}
 
 private struct TestModelCustomId: Model {
-    var id: UUID? = UUID()
+    var id: PK<UUID> = .new(UUID())
     var foo: String
 }
 
 private struct TestModel: Model, Seedable, Equatable {
-    var id: Int?
+    var id: PK<Int> = .new
     var foo: String
     var bar: Bool
     

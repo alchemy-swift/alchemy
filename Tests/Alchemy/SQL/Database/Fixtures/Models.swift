@@ -15,7 +15,7 @@ struct SeedModel: Model, Seedable {
         }
     }
     
-    var id: Int?
+    var id: PK<Int> = .new
     let name: String
     let email: String
     
@@ -39,7 +39,7 @@ struct OtherSeedModel: Model, Seedable {
         }
     }
     
-    var id: UUID? = UUID()
+    var id: PK<UUID> = .new(UUID())
     let foo: Int
     let bar: Bool
     

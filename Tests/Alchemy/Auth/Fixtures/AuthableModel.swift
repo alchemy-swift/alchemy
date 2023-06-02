@@ -1,7 +1,7 @@
 import Alchemy
 
 struct AuthModel: BasicAuthable {
-    var id: Int?
+    var id: PK<Int> = .new
     let email: String
     let password: String
     
@@ -27,7 +27,7 @@ struct AuthModel: BasicAuthable {
 struct TokenModel: Model, TokenAuthable {
     static var userKey = \TokenModel.$authModel
     
-    var id: Int?
+    var id: PK<Int> = .new
     var value = UUID()
     
     @BelongsTo

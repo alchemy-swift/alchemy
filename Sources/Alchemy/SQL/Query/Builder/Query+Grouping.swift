@@ -1,11 +1,11 @@
-extension SQLQuery {
+extension Query {
     /// Group returned data by a given column.
     ///
     /// - Parameter group: The table column to group data on.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func groupBy(_ group: String) -> Self {
-        groups.append(group)
+        query.groups.append(group)
         return self
     }
     
@@ -16,8 +16,8 @@ extension SQLQuery {
     ///   value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(_ clause: Where) -> Self {
-        havings.append(clause)
+    public func having(_ clause: SQLWhere) -> Self {
+        query.havings.append(clause)
         return self
     }
 
@@ -28,8 +28,8 @@ extension SQLQuery {
     ///   value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orHaving(_ clause: Where) -> Self {
-        having(Where(type: clause.type, boolean: .or))
+    public func orHaving(_ clause: SQLWhere) -> Self {
+        having(SQLWhere(type: clause.type, boolean: .or))
     }
 
     /// Add a having clause to filter results from aggregate functions
@@ -43,7 +43,7 @@ extension SQLQuery {
     ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(key: String, op: Operator, value: SQLValueConvertible, boolean: WhereBoolean = .and) -> Self {
-        having(Where(type: .value(key: key, op: op, value: value.sqlValue), boolean: boolean))
+    public func having(key: String, op: SQLWhere.Operator, value: SQLValueConvertible, boolean: SQLWhere.Boolean = .and) -> Self {
+        having(SQLWhere(type: .value(key: key, op: op, value: value.sqlValue), boolean: boolean))
     }
 }

@@ -1,4 +1,4 @@
-extension RelationshipQuery {
+extension ModelRelationship {
     public func add(_ model: To.M) async throws {
 
     }

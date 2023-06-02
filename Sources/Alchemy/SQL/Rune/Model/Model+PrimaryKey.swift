@@ -40,7 +40,7 @@ extension Model {
     /// - Returns: An instance of `Self` with the given primary key.
     public static func pk(_ id: Self.Identifier) -> Self {
         var this = try! Self(from: DummyDecoder())
-        this.id = id
+        this.id = .existing(id)
         return this
     }
 }
@@ -137,7 +137,7 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
         if let type = type as? AnyModelEnum.Type {
             return type.dummyValue as! T
         } else if type is AnyArray.Type {
-            return [] as! T
+            return [AnyArray]() as! T
         } else if type is AnyBelongsTo.Type {
             return try (type as! AnyBelongsTo.Type).init(from: nil) as! T
         } else if type is UUID.Type {

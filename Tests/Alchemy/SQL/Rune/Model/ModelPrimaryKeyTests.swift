@@ -43,7 +43,7 @@ private struct TestModel: Model {
         case one, two, three
     }
     
-    var id: Int?
+    var id: PK<Int> = .new
     
     // Enum
     let `enum`: Enum

@@ -22,8 +22,8 @@ public struct RuneError: Error {
     public static let syncErrorNoId = RuneError("Can't .sync() an object with a nil `id`.")
     
     /// Failed to sync a model; it didn't exist in the database.
-    public static func syncErrorNoMatch<P: PrimaryKey>(table: String, id: P?) -> RuneError {
-        let id = id.map { "\($0)" } ?? "nil"
+    public static func syncErrorNoMatch<P: PrimaryKey>(table: String, id: PK<P>) -> RuneError {
+        let id = id.value.map { "\($0)" } ?? "nil"
         return RuneError("Error syncing Model, didn't find a row with id '\(id)' on table '\(table)'.")
     }
 }

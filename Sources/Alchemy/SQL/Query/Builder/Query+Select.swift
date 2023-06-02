@@ -1,4 +1,4 @@
-extension SQLQuery {
+extension Query {
     /// Set the columns that should be returned by the query.
     ///
     /// - Parameters:
@@ -7,7 +7,7 @@ extension SQLQuery {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func select(_ columns: String...) -> Self {
-        self.columns = columns
+        query.columns = columns
         return self
     }
     
@@ -19,7 +19,7 @@ extension SQLQuery {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func select(_ columns: [String] = ["*"]) -> Self {
-        self.columns = columns
+        query.columns = columns
         return self
     }
 
@@ -30,8 +30,8 @@ extension SQLQuery {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func distinct(_ columns: [String] = ["*"]) -> Self {
-        self.columns = columns
-        self.isDistinct = true
+        query.columns = columns
+        query.isDistinct = true
         return self
     }
 }

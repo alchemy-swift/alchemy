@@ -12,6 +12,7 @@ final class PostgresDatabase: DatabaseProvider {
     let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
 
     let grammar: Grammar = PostgresGrammar()
+    let dialect: SQLDialect = PostgresDialect()
     
     init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
         pool = EventLoopGroupConnectionPool(
@@ -142,7 +143,8 @@ extension PostgresCell {
 /// to send transactions.
 extension PostgresConnection: DatabaseProvider {
     public var grammar: Grammar { PostgresGrammar() }
-    
+    public var dialect: SQLDialect { PostgresDialect() }
+
     public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await query(sql.positionPostgresBindings(), values.map(PostgresData.init))
             .get().rows.map(SQLRow.init)

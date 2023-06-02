@@ -16,7 +16,7 @@ final class QueryCrudTests: TestCase<TestApp> {
 }
 
 private struct TestModel: Model, Seedable, Equatable {
-    var id: Int?
+    var id: PK<Int> = .new
     var foo: String
     var bar: Bool
     

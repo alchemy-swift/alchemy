@@ -1,99 +1,167 @@
 import Foundation
 
-/// Used for compiling query builders into raw SQL statements.
-open class Grammar {
-    public init() {}
+public protocol SQLDialect {
 
-    // MARK: Compiling Query Builder
-    
-    open func compileSelect(query: SQLQuery) -> SQL {
-        let select = query.isDistinct ? "select distinct" : "select"
+    // MARK: SELECT
+
+    func select(isDistinct: Bool,
+                columns: [String],
+                table: String,
+                joins: [SQLJoin],
+                wheres: [SQLWhere],
+                groups: [String],
+                havings: [SQLWhere],
+                orders: [SQLOrder],
+                limit: Int?,
+                offset: Int?,
+                lock: SQLLock?) -> SQL
+
+    func compileJoins(_ joins: [SQLJoin]) -> SQL?
+    func compileWheres(_ wheres: [SQLWhere], isJoin: Bool) -> SQL?
+    func compileGroups(_ groups: [String]) -> SQL?
+    func compileHavings(_ havings: [SQLWhere]) -> SQL?
+    func compileOrders(_ orders: [SQLOrder]) -> SQL?
+    func compileLimit(_ limit: Int?) -> SQL?
+    func compileOffset(_ offset: Int?) -> SQL?
+    func compileLock(_ lock: SQLLock?) -> SQL?
+
+    // MARK: Insert
+
+    func insert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL
+    func insertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL]
+
+    // MARK: Update
+
+    func update(table: String,
+                joins: [SQLJoin],
+                wheres: [SQLWhere],
+                fields: [String: SQLValueConvertible]) -> SQL
+
+    // MARK: Delete
+
+    func delete(_ table: String, wheres: [SQLWhere]) -> SQL
+}
+
+// MARK: - Defaults
+
+extension SQLDialect {
+    public func select(isDistinct: Bool,
+                       columns: [String],
+                       table: String,
+                       joins: [SQLJoin],
+                       wheres: [SQLWhere],
+                       groups: [String],
+                       havings: [SQLWhere],
+                       orders: [SQLOrder],
+                       limit: Int?,
+                       offset: Int?,
+                       lock: SQLLock?) -> SQL {
+        let select = isDistinct ? "select distinct" : "select"
         return [
-            SQL("\(select) \(query.columns.joined(separator: ", "))"),
-            SQL("from \(query.table)"),
-            compileJoins(query.joins),
-            compileWheres(query.wheres),
-            compileGroups(query.groups),
-            compileHavings(query.havings),
-            compileOrders(query.orders),
-            compileLimit(query.limit),
-            compileOffset(query.offset),
-            compileLock(query.lock)
+            SQL("\(select) \(columns.joined(separator: ", "))"),
+            SQL("from \(table)"),
+            compileJoins(joins),
+            compileWheres(wheres),
+            compileGroups(groups),
+            compileHavings(havings),
+            compileOrders(orders),
+            compileLimit(limit),
+            compileOffset(offset),
+            compileLock(lock)
         ].compactMap { $0 }.joinedSQL()
     }
 
-    open func compileJoins(_ joins: [SQLQuery.Join]) -> SQL? {
+    public func compileJoins(_ joins: [SQLJoin]) -> SQL? {
         guard !joins.isEmpty else {
             return nil
         }
-        
+
         var bindings: [SQLValue] = []
         let query = joins.compactMap { join -> String? in
             guard let whereSQL = compileWheres(join.joinWheres, isJoin: true) else {
                 return nil
             }
-            
+
             bindings += whereSQL.bindings
-            if let nestedSQL = compileJoins(join.joins) {
-                bindings += nestedSQL.bindings
-                return "\(join.type) join (\(join.joinTable)\(nestedSQL.statement)) \(whereSQL.statement)"
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            
             return "\(join.type) join \(join.joinTable) \(whereSQL.statement)"
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }.joined(separator: " ")
-        
+
         return SQL(query, bindings: bindings)
     }
-    
-    open func compileWheres(_ wheres: [SQLQuery.Where], isJoin: Bool = false) -> SQL? {
+
+    public func compileWheres(_ wheres: [SQLWhere], isJoin: Bool = false) -> SQL? {
         guard wheres.count > 0 else {
             return nil
         }
-        
+
         let conjunction = isJoin ? "on" : "where"
         let sql = wheres.joinedSQL().droppingLeadingBoolean()
         return SQL("\(conjunction) \(sql.statement)", bindings: sql.bindings)
     }
 
-    open func compileGroups(_ groups: [String]) -> SQL? {
+    public func compileGroups(_ groups: [String]) -> SQL? {
         guard !groups.isEmpty else {
             return nil
         }
-        
+
         return SQL("group by \(groups.joined(separator: ", "))")
     }
 
-    open func compileHavings(_ havings: [SQLQuery.Where]) -> SQL? {
+    public func compileHavings(_ havings: [SQLWhere]) -> SQL? {
         guard havings.count > 0 else {
             return nil
         }
-        
+
         let sql = havings.joinedSQL().droppingLeadingBoolean()
         return SQL("having \(sql.statement)", bindings: sql.bindings)
     }
 
-    open func compileOrders(_ orders: [SQLQuery.Order]) -> SQL? {
+    public func compileOrders(_ orders: [SQLOrder]) -> SQL? {
         guard !orders.isEmpty else {
             return nil
         }
-        
+
         let ordersSQL = orders
             .map { "\($0.column) \($0.direction)" }
             .joined(separator: ", ")
         return SQL("order by \(ordersSQL)")
     }
 
-    open func compileLimit(_ limit: Int?) -> SQL? {
+    public func compileLimit(_ limit: Int?) -> SQL? {
         limit.map { SQL("limit \($0)") }
     }
 
-    open func compileOffset(_ offset: Int?) -> SQL? {
+    public func compileOffset(_ offset: Int?) -> SQL? {
         offset.map { SQL("offset \($0)") }
     }
 
-    open func compileInsert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL {
+    public func compileLock(_ lock: SQLLock?) -> SQL? {
+        guard let lock = lock else {
+            return nil
+        }
+
+        var string = ""
+        switch lock.strength {
+        case .update:
+            string = "FOR UPDATE"
+        case .share:
+            string = "FOR SHARE"
+        }
+
+        switch lock.option {
+        case .noWait:
+            string.append(" NO WAIT")
+        case .skipLocked:
+            string.append(" SKIP LOCKED")
+        case .none:
+            break
+        }
+
+        return SQL(string)
+    }
+
+    public func insert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL {
         guard !values.isEmpty else {
             return SQL("insert into \(table) default values")
         }
@@ -107,17 +175,20 @@ open class Grammar {
             parameters.append(contentsOf: orderedValues)
             placeholders.append("(\(parameterize(orderedValues)))")
         }
-        
+
         let columnsJoined = columns.joined(separator: ", ")
         return SQL("insert into \(table) (\(columnsJoined)) values \(placeholders.joined(separator: ", "))", bindings: parameters)
     }
-    
-    open func compileInsertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
-        let insert = compileInsert(table, values: values)
+
+    public func insertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
+        let insert = insert(table, values: values)
         return [SQL("\(insert.statement) returning *", bindings: insert.bindings)]
     }
-    
-    open func compileUpdate(query: SQLQuery, fields: [String: SQLValueConvertible]) -> SQL {
+
+    public func update(table: String,
+                       joins: [SQLJoin],
+                       wheres: [SQLWhere],
+                       fields: [String: SQLValueConvertible]) -> SQL {
         var bindings: [SQLValue] = []
         let columnStatements: [SQL] = fields.map { key, val in
             if let expression = val as? SQL {
@@ -126,11 +197,11 @@ open class Grammar {
                 return SQL("\(key) = ?", bindings: [val.sqlValue.sqlValue])
             }
         }
-        
+
         let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), bindings: columnStatements.flatMap(\.bindings))
-        
-        var base = "update \(query.table)"
-        if let joinSQL = compileJoins(query.joins) {
+
+        var base = "update \(table)"
+        if let joinSQL = compileJoins(joins) {
             bindings += joinSQL.bindings
             base += " \(joinSQL)"
         }
@@ -138,47 +209,31 @@ open class Grammar {
         bindings += columnSQL.bindings
         base += " set \(columnSQL.statement)"
 
-        if let whereSQL = compileWheres(query.wheres) {
+        if let whereSQL = compileWheres(wheres) {
             bindings += whereSQL.bindings
             base += " \(whereSQL.statement)"
         }
-        
+
         return SQL(base, bindings: bindings)
     }
 
-    open func compileDelete(_ table: String, wheres: [SQLQuery.Where]) -> SQL {
+    public func delete(_ table: String, wheres: [SQLWhere]) -> SQL {
         if let whereSQL = compileWheres(wheres) {
             return SQL("delete from \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
         } else {
             return SQL("delete from \(table)")
         }
     }
-    
-    open func compileLock(_ lock: SQLQuery.Lock?) -> SQL? {
-        guard let lock = lock else {
-            return nil
-        }
-        
-        var string = ""
-        switch lock.strength {
-        case .update:
-            string = "FOR UPDATE"
-        case .share:
-            string = "FOR SHARE"
-        }
-        
-        switch lock.option {
-        case .noWait:
-            string.append(" NO WAIT")
-        case .skipLocked:
-            string.append(" SKIP LOCKED")
-        case .none:
-            break
-        }
-        
-        return SQL(string)
+
+    private func parameterize(_ values: [SQLValueConvertible]) -> String {
+        values.map { ($0 as? SQL)?.statement ?? "?" }.joined(separator: ", ")
     }
-    
+}
+
+/// Used for compiling query builders into raw SQL statements.
+open class Grammar {
+    public init() {}
+
     // MARK: - Compiling Migrations
     
     open func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
@@ -348,7 +403,7 @@ extension String {
     }
 }
 
-extension SQLQuery.Where: SQLConvertible {
+extension SQLWhere: SQLConvertible {
     public var sql: SQL {
         switch type {
         case .value(let key, let op, let value):
@@ -368,9 +423,12 @@ extension SQLQuery.Where: SQLConvertible {
         case .nested(let wheres):
             let nestedSQL = wheres.joinedSQL().droppingLeadingBoolean()
             return SQL("\(boolean) (\(nestedSQL.statement))", bindings: nestedSQL.bindings)
-        case .in(let key, let values, let type):
+        case .in(let key, let values):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) \(type) (\(placeholders))", bindings: values)
+            return SQL("\(boolean) \(key) IN (\(placeholders))", bindings: values)
+        case .notIn(let key, let values):
+            let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
+            return SQL("\(boolean) \(key) NOT IN (\(placeholders))", bindings: values)
         case .raw(let sql):
             return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
         }

@@ -4,7 +4,7 @@ import NIO
 /// relationship. The details of this relationship are defined
 /// in the initializers inherited from `HasRelationship`.
 @propertyWrapper
-public final class HasManyRelationship<From: Model, To: RelationshipAllowed>: Relationship {
+public final class HasManyRelationship<From: Model, To: RelationshipAllowed>: RelationshipOld {
     /// Internal value for storing the `To` objects of this
     /// relationship, when they are loaded.
     fileprivate var value: [To]?

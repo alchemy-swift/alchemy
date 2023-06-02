@@ -18,7 +18,7 @@ import NIO
 /// }
 /// ```
 @propertyWrapper
-public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllowed>: Relationship {
+public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllowed>: RelationshipOld {
     public typealias From = Child
     public typealias To = Parent
     
@@ -47,7 +47,7 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllow
             }
         }
         set {
-            id = newValue.id
+//            id = newValue.id
             value = newValue
         }
     }
@@ -66,7 +66,7 @@ public final class BelongsToRelationship<Child: Model, Parent: RelationshipAllow
     public init(wrappedValue: Parent) {
         do {
             value = try Parent.from(wrappedValue)
-            id = value?.id
+//            id = value?.id
         } catch {
             fatalError("Error initializing `BelongsTo`; expected a value but got nil. Perhaps this relationship should be optional?")
         }

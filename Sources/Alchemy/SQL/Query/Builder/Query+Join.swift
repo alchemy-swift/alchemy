@@ -1,4 +1,5 @@
-extension SQLQuery {
+/// A JOIN query builder.
+public struct SQLJoin: Equatable {
     /// The type of the join clause.
     public enum JoinType: String {
         /// INNER JOIN.
@@ -13,48 +14,35 @@ extension SQLQuery {
         case cross
     }
 
-    /// A JOIN query builder.
-    public final class Join: SQLQuery {
-        /// The type of the join to perform.
-        var type: JoinType
-        /// The table to join to.
-        let joinTable: String
-        /// The join conditions
-        var joinWheres: [SQLQuery.Where] = []
-        
-        /// Create a join builder with a query, type, and table.
-        ///
-        /// - Parameters:
-        ///   - database: The database the join table is on.
-        ///   - type: The type of join this is.
-        ///   - joinTable: The name of the table to join to.
-        init(db: Database, table: String, type: JoinType, joinTable: String) {
-            self.type = type
-            self.joinTable = joinTable
-            super.init(db: db, table: table)
-        }
-        
-        func on(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Join {
-            joinWheres.append(Where(type: .column(first: first, op: op, second: second), boolean: boolean))
-            return self
-        }
+    /// The type of the join to perform.
+    var type: JoinType
+    /// The table to join to.
+    let joinTable: String
+    /// The join conditions
+    var joinWheres: [SQLWhere] = []
 
-        func orOn(first: String, op: Operator, second: String) -> Join {
-            on(first: first, op: op, second: second, boolean: .or)
-        }
-        
-        override func isEqual(to other: SQLQuery) -> Bool {
-            guard let other = other as? Join else {
-                return false
-            }
-            
-            return super.isEqual(to: other) &&
-                type == other.type &&
-                joinTable == other.joinTable &&
-                joinWheres == other.joinWheres
-        }
+    /// Create a join builder with a query, type, and table.
+    ///
+    /// - Parameters:
+    ///   - database: The database the join table is on.
+    ///   - type: The type of join this is.
+    ///   - joinTable: The name of the table to join to.
+    init(db: Database, type: JoinType, joinTable: String) {
+        self.type = type
+        self.joinTable = joinTable
     }
-    
+
+    mutating func on(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
+        joinWheres.append(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
+        return self
+    }
+
+    mutating func orOn(first: String, op: SQLWhere.Operator, second: String) -> SQLJoin {
+        on(first: first, op: op, second: second, boolean: .or)
+    }
+}
+
+extension Query {
     /// Join data from a separate table into the current query data.
     ///
     /// - Parameters:
@@ -67,11 +55,9 @@ extension SQLQuery {
     ///     `.inner`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func join(table: String, first: String, op: Operator = .equals, second: String, type: JoinType = .inner) -> Self {
-        joins.append(
-            Join(db: db, table: self.table, type: type, joinTable: table)
-                .on(first: first, op: op, second: second)
-        )
+    public func join(table: String, first: String, op: SQLWhere.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
+        var join = SQLJoin(db: db, type: type, joinTable: table)
+        query.joins.append(join.on(first: first, op: op, second: second))
         return self
     }
     
@@ -83,8 +69,8 @@ extension SQLQuery {
     ///   - type: The type of join. Defaults to `.inner`
     ///   - conditions: A closure that sets the conditions on the join using.
     /// - Returns: This query builder.
-    public func join(table: String, type: JoinType = .inner, conditions: (Join) -> Join) -> Self {
-        joins.append(conditions(Join(db: db, table: self.table, type: type, joinTable: table)))
+    public func join(table: String, type: SQLJoin.JoinType = .inner, conditions: (SQLJoin) -> SQLJoin) -> Self {
+        query.joins.append(conditions(SQLJoin(db: db, type: type, joinTable: table)))
         return self
     }
 
@@ -99,7 +85,7 @@ extension SQLQuery {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func leftJoin(table: String, first: String, op: Operator = .equals, second: String) -> Self {
+    public func leftJoin(table: String, first: String, op: SQLWhere.Operator = .equals, second: String) -> Self {
         join(table: table, first: first, op: op, second: second, type: .left)
     }
 
@@ -114,7 +100,7 @@ extension SQLQuery {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func rightJoin(table: String, first: String, op: Operator = .equals, second: String) -> Self {
+    public func rightJoin(table: String, first: String, op: SQLWhere.Operator = .equals, second: String) -> Self {
         join(table: table, first: first, op: op, second: second, type: .right)
     }
 
@@ -129,7 +115,7 @@ extension SQLQuery {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func crossJoin(table: String, first: String, op: Operator = .equals, second: String) -> Self {
+    public func crossJoin(table: String, first: String, op: SQLWhere.Operator = .equals, second: String) -> Self {
         join(table: table, first: first, op: op, second: second, type: .cross)
     }
 }

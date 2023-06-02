@@ -3,7 +3,7 @@ import NIO
 /// A protocol representing a relationship between two `Model`s.
 /// Contains only those two types and functionality for eager
 /// loading this relationship.
-public protocol Relationship {
+public protocol RelationshipOld {
     /// The `From` model from the perspective of this relationship.
     /// Likely the type that the `Relationship` is a property on.
     associatedtype From: Model
@@ -44,8 +44,6 @@ public protocol RelationshipAllowed {
     static func from(_ value: Value?) throws -> Self
     
     static func from(_ value: Self?) throws -> Self
-    
-    var id: Value.Identifier? { get }
 }
 
 // MARK: RelationshipAllowed
@@ -63,9 +61,5 @@ extension Optional: RelationshipAllowed where Wrapped: Model {
     
     public static func from(_ value: Wrapped?) throws -> Self {
         value
-    }
-    
-    public var id: Wrapped.Identifier? {
-        map(\.id) ?? nil
     }
 }

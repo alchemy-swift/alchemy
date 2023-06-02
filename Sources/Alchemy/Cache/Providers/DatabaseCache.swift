@@ -103,7 +103,7 @@ extension Cache {
 private struct CacheItem: Model {
     static var tableName: String { "cache" }
     
-    var id: Int?
+    var id: PK<Int> = .new
     let _key: String
     var text: String
     var expiration: Int = -1

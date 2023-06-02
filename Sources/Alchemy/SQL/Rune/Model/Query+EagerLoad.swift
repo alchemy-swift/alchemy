@@ -1,6 +1,6 @@
 extension Query {
     /// A tuple of models and the SQLRow that they were loaded from.
-    typealias ModelRow = (model: M, row: SQLRow)
+    typealias ModelRow = (model: Result, row: SQLRow)
     
     /// Eager loads (loads a related `Model`) a `Relationship` on this
     /// model.
@@ -44,10 +44,10 @@ extension Query {
     ///   - nested: A closure for any nested loading to do. See
     ///     example above. Defaults to an empty closure.
     /// - Returns: A query builder for extending the query.
-    public func with<R: Relationship>(
-        _ relationshipKeyPath: KeyPath<M, R>,
+    public func with<R: RelationshipOld>(
+        _ relationshipKeyPath: KeyPath<Result, R>,
         nested: @escaping NestedQuery<R.To.Value> = { $0 }
-    ) -> Query<M> where R.From == M {
+    ) -> Query<Result> where R.From == Result {
 //        eagerLoadQueries.append { fromResults in
 //            let mapper = RelationshipMapper<M>()
 //            M.mapRelations(mapper)
@@ -100,42 +100,10 @@ extension Query {
 /// _other_ model.
 public typealias NestedQuery<R: Model> = (Query<R>) -> Query<R>
 
-extension RelationshipMapping {
-    fileprivate func load<M: Model>(_ values: [SQLRow], db: Database) throws -> Query<M> {
-        var query = M.query(db: db)
-        query.table = toTable
-        var whereKey = "\(toTable).\(toKey)"
-        if let through = through {
-            whereKey = "\(through.table).\(through.fromKey)"
-            query = query.leftJoin(table: through.table, first: "\(through.table).\(through.toKey)", second: "\(toTable).\(toKey)")
-        }
-        
-        let ids = try values.map { try $0.require(fromKey).sqlValue }
-        query = query.where("\(whereKey)", in: ids.uniques)
-        return query
-    }
-}
-
-extension Array where Element: Hashable {
-    /// Removes any duplicates from the array while maintaining the
-    /// original order.
-    fileprivate var uniques: Array {
-        var buffer = Array()
-        var added = Set<Element>()
-        for elem in self {
-            if !added.contains(elem) {
-                buffer.append(elem)
-                added.insert(elem)
-            }
-        }
-        return buffer
-    }
-}
-
 // MARK: - Additional Eager Load convience functions
 
 extension Model {
-    public func with<R: Relationship>(
+    public func with<R: RelationshipOld>(
         db: Database = DB,
         _ relationship: KeyPath<Self, R>,
         nested: @escaping NestedQuery<R.To.Value> = { $0 }
@@ -143,7 +111,7 @@ extension Model {
         try await sync(db: db) { $0.with(relationship, nested: nested) }
     }
     
-    public func fetch<R: Relationship>(
+    public func fetch<R: RelationshipOld>(
         db: Database = DB,
         _ relationship: KeyPath<Self, R>,
         nested: @escaping NestedQuery<R.To.Value> = { $0 }
@@ -153,7 +121,7 @@ extension Model {
 }
 
 extension Array where Element: Model {
-    public func with<R: Relationship>(
+    public func with<R: RelationshipOld>(
         db: Database = DB,
         _ relationship: KeyPath<Element, R>,
         nested: @escaping NestedQuery<R.To.Value> = { $0 }
@@ -161,7 +129,7 @@ extension Array where Element: Model {
         try await syncAll(db: db) { $0.with(relationship, nested: nested) }
     }
     
-    public func fetch<R: Relationship>(
+    public func fetch<R: RelationshipOld>(
         db: Database = DB,
         _ relationship: KeyPath<Element, R>,
         nested: @escaping NestedQuery<R.To.Value> = { $0 }

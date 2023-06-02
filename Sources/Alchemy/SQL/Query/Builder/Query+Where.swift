@@ -1,33 +1,53 @@
-protocol WhereClause: SQLConvertible {}
+public struct SQLWhere: Equatable, Hashable {
+    public enum Operator: CustomStringConvertible, Equatable {
+        case equals
+        case lessThan
+        case greaterThan
+        case lessThanOrEqualTo
+        case greaterThanOrEqualTo
+        case notEqualTo
+        case like
+        case notLike
+        case raw(String)
 
-extension SQLQuery {
+        public var description: String {
+            switch self {
+            case .equals: return "="
+            case .lessThan: return "<"
+            case .greaterThan: return ">"
+            case .lessThanOrEqualTo: return "<="
+            case .greaterThanOrEqualTo: return ">="
+            case .notEqualTo: return "!="
+            case .like: return "LIKE"
+            case .notLike: return "NOT LIKE"
+            case .raw(let value): return value
+            }
+        }
+    }
+    
     public indirect enum WhereType: Equatable, Hashable {
         case value(key: String, op: Operator, value: SQLValue)
         case column(first: String, op: Operator, second: String)
-        case nested(wheres: [Where])
-        case `in`(key: String, values: [SQLValue], type: WhereInType)
+        case nested(wheres: [SQLWhere])
+        case `in`(key: String, values: [SQLValue])
+        case notIn(key: String, values: [SQLValue])
         case raw(SQL)
 
         public func hash(into hasher: inout Swift.Hasher) {
             hasher.combine("\(self)")
         }
     }
-    
-    public enum WhereBoolean: String, Hashable {
+
+    public enum Boolean: String, Hashable {
         case and
         case or
     }
-    
-    public enum WhereInType: String, Hashable {
-        case `in`
-        case notIn
-    }
-    
-    public struct Where: Equatable, Hashable {
-        public let type: WhereType
-        public let boolean: WhereBoolean
-    }
 
+    public let type: WhereType
+    public let boolean: Boolean
+}
+
+extension Query {
     /// Add a basic where clause to the query to filter down results.
     ///
     /// - Parameters:
@@ -35,8 +55,8 @@ extension SQLQuery {
     ///     value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func `where`(_ clause: Where) -> Self {
-        wheres.append(clause)
+    public func `where`(_ clause: SQLWhere) -> Self {
+        query.wheres.append(clause)
         return self
     }
 
@@ -48,8 +68,8 @@ extension SQLQuery {
     ///     value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(_ clause: Where) -> Self {
-        `where`(Where(type: clause.type, boolean: .or))
+    public func orWhere(_ clause: SQLWhere) -> Self {
+        `where`(SQLWhere(type: clause.type, boolean: .or))
     }
 
     /// Add a nested where clause that is a group of combined clauses.
@@ -78,9 +98,9 @@ extension SQLQuery {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func `where`(_ closure: @escaping (SQLQuery) -> SQLQuery, boolean: WhereBoolean = .and) -> Self {
-        let query = closure(SQLQuery(db: db, table: table))
-        wheres.append(Where(type: .nested(wheres: query.wheres), boolean: boolean))
+    public func `where`(_ closure: @escaping (Query) -> Query, boolean: SQLWhere.Boolean = .and) -> Self {
+        let query = closure(Query(db: db, table: query.table))
+        self.query.wheres.append(SQLWhere(type: .nested(wheres: query.query.wheres), boolean: boolean))
         return self
     }
 
@@ -91,7 +111,7 @@ extension SQLQuery {
     ///     query to attach nested where clauses to.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(_ closure: @escaping (SQLQuery) -> SQLQuery) -> Self {
+    public func orWhere(_ closure: @escaping (Query) -> Query) -> Self {
         `where`(closure, boolean: .or)
     }
 
@@ -107,8 +127,8 @@ extension SQLQuery {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func `where`(_ key: String, in values: [SQLValueConvertible], type: WhereInType = .in, boolean: WhereBoolean = .and) -> Self {
-        wheres.append(Where(type: .in(key: key, values: values.map { $0.sqlValue }, type: type), boolean: boolean))
+    public func `where`(_ key: String, in values: [SQLValueConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
+        query.wheres.append(SQLWhere(type: .in(key: key, values: values.map { $0.sqlValue }), boolean: boolean))
         return self
     }
 
@@ -121,8 +141,8 @@ extension SQLQuery {
     ///     Defaults to `.in`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(_ key: String, in values: [SQLValueConvertible], type: WhereInType = .in) -> Self {
-        `where`(key, in: values, type: type, boolean: .or)
+    public func orWhere(_ key: String, in values: [SQLValueConvertible]) -> Self {
+        `where`(key, in: values, boolean: .or)
     }
 
     /// Add a clause requiring that a column not match any values in a
@@ -135,8 +155,9 @@ extension SQLQuery {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNot(_ key: String, in values: [SQLValueConvertible], boolean: WhereBoolean = .and) -> Self {
-        `where`(key, in: values, type: .notIn, boolean: boolean)
+    public func whereNot(_ key: String, in values: [SQLValueConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
+        query.wheres.append(SQLWhere(type: .notIn(key: key, values: values.map { $0.sqlValue }), boolean: boolean))
+        return self
     }
 
     /// A helper for adding an **or** `whereNot` clause.
@@ -147,7 +168,7 @@ extension SQLQuery {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func orWhereNot(_ key: String, in values: [SQLValueConvertible]) -> Self {
-        `where`(key, in: values, type: .notIn, boolean: .or)
+        whereNot(key, in: values, boolean: .or)
     }
 
     /// Add a raw SQL where clause to your query.
@@ -159,8 +180,8 @@ extension SQLQuery {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereRaw(_ sql: String, bindings: [SQLValueConvertible], boolean: WhereBoolean = .and) -> Self {
-        wheres.append(Where(type: .raw(SQL(sql, bindings: bindings.map(\.sqlValue))), boolean: boolean))
+    public func whereRaw(_ sql: String, bindings: [SQLValueConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
+        query.wheres.append(SQLWhere(type: .raw(SQL(sql, bindings: bindings.map(\.sqlValue))), boolean: boolean))
         return self
     }
 
@@ -186,8 +207,8 @@ extension SQLQuery {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     @discardableResult
-    public func whereColumn(first: String, op: Operator, second: String, boolean: WhereBoolean = .and) -> Self {
-        wheres.append(Where(type: .column(first: first, op: op, second: second), boolean: boolean))
+    public func whereColumn(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
+        query.wheres.append(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
         return self
     }
 
@@ -199,7 +220,7 @@ extension SQLQuery {
     ///   - second: The second column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereColumn(first: String, op: Operator, second: String) -> Self {
+    public func orWhereColumn(first: String, op: SQLWhere.Operator, second: String) -> Self {
         whereColumn(first: first, op: op, second: second, boolean: .or)
     }
 
@@ -212,9 +233,8 @@ extension SQLQuery {
     ///   - not: Should the value be null or not null.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNull(_ key: String, boolean: WhereBoolean = .and, not: Bool = false) -> Self {
-        let action = not ? "IS NOT" : "IS"
-        wheres.append(Where(type: .raw(SQL("\(key) \(action) NULL")), boolean: boolean))
+    public func whereNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
+        query.wheres.append(SQLWhere(type: .raw(SQL("\(key) IS NULL")), boolean: boolean))
         return self
     }
 
@@ -235,8 +255,9 @@ extension SQLQuery {
     ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNotNull(_ key: String, boolean: WhereBoolean = .and) -> Self {
-        whereNull(key, boolean: boolean, not: true)
+    public func whereNotNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
+        query.wheres.append(SQLWhere(type: .raw(SQL("\(key) IS NOT NULL")), boolean: boolean))
+        return self
     }
 
     /// A helper for adding an **or** `whereNotNull` clause.
@@ -252,31 +273,31 @@ extension SQLQuery {
 extension String {
     // MARK: Custom Swift Operators
     
-    public static func == (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .equals, value: rhs.sqlValue), boolean: .and)
+    public static func == (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .equals, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func != (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .notEqualTo, value: rhs.sqlValue), boolean: .and)
+    public static func != (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .notEqualTo, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func < (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .lessThan, value: rhs.sqlValue), boolean: .and)
+    public static func < (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .lessThan, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func > (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .greaterThan, value: rhs.sqlValue), boolean: .and)
+    public static func > (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .greaterThan, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func <= (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
+    public static func <= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func >= (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
+    public static func >= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
     }
 
-    public static func ~= (lhs: String, rhs: SQLValueConvertible) -> SQLQuery.Where {
-        SQLQuery.Where(type: .value(key: lhs, op: .like, value: rhs.sqlValue), boolean: .and)
+    public static func ~= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .like, value: rhs.sqlValue), boolean: .and)
     }
 }

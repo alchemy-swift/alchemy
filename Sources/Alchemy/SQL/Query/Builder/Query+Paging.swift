@@ -1,11 +1,11 @@
-extension SQLQuery {
+extension Query {
     /// Limit the returned results to a given amount.
     ///
     /// - Parameter value: An amount to cap the total result at.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func limit(_ value: Int) -> Self {
-        self.limit = max(0, value)
+        query.limit = max(0, value)
         return self
     }
     
@@ -15,7 +15,7 @@ extension SQLQuery {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func offset(_ value: Int) -> Self {
-        self.offset = max(0, value)
+        query.offset = max(0, value)
         return self
     }
 

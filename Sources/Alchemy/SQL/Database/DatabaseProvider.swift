@@ -6,6 +6,8 @@ public protocol DatabaseProvider {
     /// Functions around compiling SQL statments for this database's
     /// SQL dialect when using the QueryBuilder or Rune.
     var grammar: Grammar { get }
+
+    var dialect: SQLDialect { get }
     
     /// Run a parameterized query on the database. Parameterization
     /// helps protect against SQL injection.

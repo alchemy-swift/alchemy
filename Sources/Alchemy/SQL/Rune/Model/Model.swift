@@ -1,7 +1,7 @@
 import Foundation
 import Pluralize
 
-public protocol Model: ModelBase, Codable, RelationAllowed where M == Self {}
+public protocol Model: ModelBase, Codable, RelationAllowed, SQLQueryResult where M == Self {}
 
 extension Model {
     public static func from(array: [M]) throws -> Self {
@@ -25,7 +25,7 @@ public protocol ModelBase: Identifiable, RelationshipAllowed {
     associatedtype Identifier: PrimaryKey
 
     /// The identifier / primary key of this type.
-    var id: Self.Identifier? { get set }
+    var id: PK<Self.Identifier> { get set }
 
     /// The table with which this object is associated. Defaults to
     /// the type name, pluralized. Affected by `keyMapping`. This
@@ -116,7 +116,7 @@ extension ModelBase {
     /// - Throws: A `DatabaseError` if the `id` of this object is nil.
     /// - Returns: The unwrapped `id` value of this database object.
     public func getID() throws -> Self.Identifier {
-        guard let id = id else {
+        guard let id = id.value else {
             throw DatabaseError("Object of type \(type(of: self)) had a nil id.")
         }
         

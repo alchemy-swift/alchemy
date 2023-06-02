@@ -76,7 +76,7 @@ final class RelationshipMapperTests: XCTestCase {
 }
 
 struct MapperModel: Model {
-    var id: Int?
+    var id: PK<Int> = .new
     
     @BelongsTo var belongsTo: MapperModel
     @BelongsTo var belongsToOptional: MapperModel?

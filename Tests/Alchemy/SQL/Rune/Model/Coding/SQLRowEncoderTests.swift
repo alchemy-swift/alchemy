@@ -94,7 +94,7 @@ private struct DatabaseJSON: Codable {
 private struct CustomKeyedModel: Model {
     static var keyMapping: DatabaseKeyMapping = .useDefaultKeys
     
-    var id: Int?
+    var id: PK<Int> = .new
     var val1: String = "foo"
     var valueTwo: Int = 0
     var valueThreeInt: Int = 1
@@ -109,7 +109,7 @@ private struct CustomDecoderModel: Model {
         return encoder
     }()
     
-    var id: Int?
+    var id: PK<Int> = .new
     var json: DatabaseJSON
 }
 

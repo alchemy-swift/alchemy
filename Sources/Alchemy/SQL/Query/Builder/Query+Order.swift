@@ -1,28 +1,28 @@
-extension SQLQuery {
-    /// A clause for ordering rows by a certain column.
-    public struct Order: Equatable {
-        /// A sorting direction.
-        public enum Direction: String {
-            /// Sort elements in ascending order.
-            case asc
-            /// Sort elements in descending order.
-            case desc
-        }
-        
-        /// The column to order by.
-        let column: String
-        /// The direction to order by.
-        let direction: Direction
+/// A clause for ordering rows by a certain column.
+public struct SQLOrder: Equatable {
+    /// A sorting direction.
+    public enum Direction: String {
+        /// Sort elements in ascending order.
+        case asc
+        /// Sort elements in descending order.
+        case desc
     }
-    
+
+    /// The column to order by.
+    let column: String
+    /// The direction to order by.
+    let direction: Direction
+}
+
+extension Query {
     /// Order the data from the query based on given clause.
     ///
     /// - Parameter order: The `OrderClause` that defines the
     ///   ordering.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orderBy(_ order: Order) -> Self {
-        orders.append(order)
+    public func orderBy(_ order: SQLOrder) -> Self {
+        query.orders.append(order)
         return self
     }
 
@@ -34,7 +34,7 @@ extension SQLQuery {
     ///     or `.desc`). Defaults to `.asc`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orderBy(_ column: String, direction: Order.Direction = .asc) -> Self {
-        orderBy(Order(column: column, direction: direction))
+    public func orderBy(_ column: String, direction: SQLOrder.Direction = .asc) -> Self {
+        orderBy(SQLOrder(column: column, direction: direction))
     }
 }

@@ -9,20 +9,20 @@ final class QueryPagingTests: TestCase<TestApp> {
     }
     
     func testLimit() {
-        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
+        XCTAssertEqual(DB.table("foo").distinct().query.isDistinct, true)
     }
     
     func testOffset() {
-        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
+        XCTAssertEqual(DB.table("foo").distinct().query.isDistinct, true)
     }
     
     func testPaging() {
         let standardPage = DB.table("foo").forPage(4)
-        XCTAssertEqual(standardPage.limit, 25)
-        XCTAssertEqual(standardPage.offset, 75)
+        XCTAssertEqual(standardPage.query.limit, 25)
+        XCTAssertEqual(standardPage.query.offset, 75)
         
         let customPage = DB.table("foo").forPage(2, perPage: 10)
-        XCTAssertEqual(customPage.limit, 10)
-        XCTAssertEqual(customPage.offset, 10)
+        XCTAssertEqual(customPage.query.limit, 10)
+        XCTAssertEqual(customPage.query.offset, 10)
     }
 }

@@ -100,7 +100,7 @@ extension BasicAuthable {
     public static func authenticate(username: String, password: String, else error: Error = HTTPError(.unauthorized)) async throws -> Self {
         let rows = try await query()
             .where(usernameKeyString == username)
-            .getRows(["\(tableName).*", passwordKeyString])
+            .select(["\(tableName).*", passwordKeyString])
         
         guard let firstRow = rows.first else {
             throw error

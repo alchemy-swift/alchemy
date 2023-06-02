@@ -11,7 +11,30 @@ extension Array {
 }
 
 extension Array where Element: Hashable {
-    func filterUniqueValues() -> Self {
+    func uniques() -> Self {
         Array(Set(self))
+    }
+}
+
+extension Sequence {
+    public func keyed<T: Hashable>(by value: (Element) -> T) -> [T: Element] {
+        let withKeys = map { (value($0), $0) }
+        return Dictionary(withKeys, uniquingKeysWith: { first, _ in first })
+    }
+
+    public func grouped<T: Hashable>(by grouping: (Element) throws -> T) rethrows -> [T: [Element]] {
+        try Dictionary(grouping: self, by: { try grouping($0) })
+    }
+
+    public func compactGrouped<T: Hashable>(by grouping: (Element) throws -> T?) rethrows -> [T: [Element]] {
+        let tuples: [(T, Element)] = try compactMap { value in
+            guard let key = try grouping(value) else {
+                return nil
+            }
+
+            return (key, value)
+        }
+
+        return Dictionary(grouping: tuples, by: { $0.0 }).mapValues { $0.map(\.1) }
     }
 }

@@ -1,10 +1,13 @@
 import Alchemy
 
+public struct StubDialect: SQLDialect {}
+
 public final class StubDatabase: DatabaseProvider {
     private var isShutdown = false
     private var stubs: [[SQLRow]] = []
     
     public let grammar = Grammar()
+    public let dialect: SQLDialect = StubDialect()
     
     init() {}
     

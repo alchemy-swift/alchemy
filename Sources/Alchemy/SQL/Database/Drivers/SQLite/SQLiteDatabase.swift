@@ -6,6 +6,7 @@ final class SQLiteDatabase: DatabaseProvider {
     let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
     let config: Config
     let grammar: Grammar = SQLiteGrammar()
+    let dialect: SQLDialect = SQLiteDialect()
     
     enum Config: Equatable {
         case memory(identifier: String = UUID().uuidString)
@@ -59,7 +60,7 @@ final class SQLiteDatabase: DatabaseProvider {
     
     private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
-            try await action(SQLiteConnectionDatabase(conn: $0, grammar: self.grammar))
+            try await action(SQLiteConnectionDatabase(conn: $0, grammar: self.grammar, dialect: self.dialect))
         }
     }
 }
@@ -67,6 +68,7 @@ final class SQLiteDatabase: DatabaseProvider {
 private struct SQLiteConnectionDatabase: DatabaseProvider {
     let conn: SQLiteConnection
     let grammar: Grammar
+    let dialect: SQLDialect
     
     func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql, values.map(SQLiteData.init)).get().map(SQLRow.init)

@@ -6,13 +6,13 @@ final class RelationshipTests: XCTestCase {
     func testRelationshipAllowed() throws {
         let nilModel: TestModel? = nil
         let doubleOptionalNilModel: TestModel?? = nil
-        XCTAssertEqual(nilModel.id, nil)
+        XCTAssertEqual(nilModel?.id, nil)
         XCTAssertEqual(try Optional<TestModel>.from(nilModel), nil)
         XCTAssertEqual(try Optional<TestModel>.from(doubleOptionalNilModel), nil)
         
         let optionalModel: TestModel? = TestModel(id: 1)
         let doubleOptionalModel: TestModel?? = TestModel(id: 1)
-        XCTAssertEqual(optionalModel.id, 1)
+        XCTAssertEqual(optionalModel?.id, 1)
         XCTAssertEqual(try Optional<TestModel>.from(optionalModel), optionalModel)
         XCTAssertEqual(try Optional<TestModel>.from(doubleOptionalModel), optionalModel)
         
@@ -24,5 +24,5 @@ final class RelationshipTests: XCTestCase {
 }
 
 private struct TestModel: Model, Equatable {
-    var id: Int?
+    var id: PK<Int> = .new
 }
