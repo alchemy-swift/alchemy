@@ -3,20 +3,6 @@ import Pluralize
 
 public protocol Model: ModelBase, Codable, RelationAllowed, SQLQueryResult where M == Self {}
 
-extension Model {
-    public static func from(array: [M]) throws -> Self {
-        guard array.count == 1 else {
-            throw RuneError("Unable to determine relationship from `\(array.count)` values!")
-        }
-
-        return array[0]
-    }
-
-    public func toModel() -> [M] {
-        [self]
-    }
-}
-
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & much more.

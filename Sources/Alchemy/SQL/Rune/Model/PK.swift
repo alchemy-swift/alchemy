@@ -1,12 +1,12 @@
 import Foundation
 
 final class ModelStorage {
-    var row: SQLRow?
+    var row: SQLRow
     var relationships: [Int: any RelationAllowed]
 
     init() {
         self.relationships = [:]
-        self.row = nil
+        self.row = SQLRow()
     }
 
     static var new: ModelStorage {
@@ -14,7 +14,7 @@ final class ModelStorage {
     }
 }
 
-public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConvertible, ModelProperty {
+public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
     public var value: Identifier?
     var storage: ModelStorage
 
@@ -27,6 +27,10 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
         self.storage = .new
     }
 
+    public var debugDescription: String {
+        value.map { "\($0)" } ?? "null"
+    }
+
     // MARK: ModelProperty
 
     public init(key: String, on row: SQLRowReader) throws {
@@ -36,7 +40,7 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
     }
 
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        // Do nothing.
+        row.put(value.sqlValue, at: key)
     }
 
     // MARK: Codable

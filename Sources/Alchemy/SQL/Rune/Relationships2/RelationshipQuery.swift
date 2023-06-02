@@ -1,18 +1,26 @@
 extension Model {
     var row: SQLRow {
-        fatalError()
+        id.storage.row
     }
 
     func cache<To: RelationAllowed>(hashValue: Int, value: To) {
-        fatalError()
+        id.storage.relationships[hashValue] = value
     }
 
-    func checkCache<To: RelationAllowed>(hashValue: Int) -> To? {
-        fatalError()
+    func checkCache<To: RelationAllowed>(hashValue: Int) throws -> To? {
+        guard let value = id.storage.relationships[hashValue] else {
+            return nil
+        }
+
+        guard let value = value as? To else {
+            throw RuneError("Relationship type mismatch!")
+        }
+
+        return value
     }
 
     func cacheExists(hashValue: Int) -> Bool {
-        fatalError()
+        id.storage.relationships[hashValue] != nil
     }
 }
 
@@ -26,12 +34,20 @@ public final class ModelRelationship<From: Model, To: RelationAllowed> {
         self.query = query
     }
 
-    func get() async throws -> To {
-        let results = try await query.execute(input: [from.row])[0]
-        let models = try results.mapDecode(To.M.self)
-        let value = try To.from(array: models)
-        from.cache(hashValue: query.hashValue, value: value)
+    public func get() async throws -> To {
+        guard let value: To = try from.checkCache(hashValue: query.hashValue) else {
+            let results = try await query.execute(input: [from.row])[0]
+            let models = try results.mapDecode(To.M.self)
+            let value = try To(models: models)
+            from.cache(hashValue: query.hashValue, value: value)
+            return value
+        }
+
         return value
+    }
+
+    public func callAsFunction() async throws -> To {
+        try await get()
     }
 
     func eagerLoad(on input: [From]) async throws {
@@ -39,7 +55,7 @@ public final class ModelRelationship<From: Model, To: RelationAllowed> {
         let rows = try await query.execute(input: inputRows)
         let values = try rows
             .map { try $0.mapDecode(To.M.self) }
-            .map { try To.from(array: $0) }
+            .map { try To(models: $0) }
         for (model, results) in zip(input, values) {
             model.cache(hashValue: query.hashValue, value: results)
         }
@@ -64,7 +80,7 @@ final class RelationshipQuery: Hashable {
     /// Execute the relationship given the input rows. Always returns an array
     /// the same length as the input array.
     func execute(input: [SQLRow]) async throws -> [[SQLRow]] {
-        let inputValues = input.map(\.[from.column])
+        let inputValues = try input.map { try $0.require(from.column) }
         let results = try await DB
             .from(to.table)
             .where(to.column, in: inputValues)
@@ -86,7 +102,7 @@ final class RelationshipQuery: Hashable {
     }
 }
 
-extension Query where Result: EagerLoadable {
+extension Query where Result: Model {
     public func with2<T: RelationAllowed>(
         _ relationship: @escaping (Result) -> Result.Relationship<T>,
         nested: @escaping ((Result.Relationship<T>) -> Result.Relationship<T>) = { $0 }
@@ -140,148 +156,16 @@ extension Model {
     public func belongsTo<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To?> {
         return .belongs(self, from: fromKey, to: toKey)
     }
-}
 
-// MARK: Deprecated / Scratch
+    // TODO: DO THIS! ALSO SET DATABASE
 
-private class __RelationshipQueryDeprecated<From: EagerLoadable, To: RelationAllowed>: Query<To.M> {
-    var fromModel: From
-    var fromKeyOverride: String?
-    var toKeyOverride: String?
-    var relation: Relation
-
-    // MARK: Through Scratch
-
-    var throughs: [Through] = []
-
-    func fromKey(to: Keys?) -> String {
-        fromKeyOverride ?? relation.defaultFromKey(from: .model(From.self), to: to ?? .model(To.M.self))
+    func through() {
+        // don't forget to allow for table string or models; for table string be sure to use the key mapping.
+        // for implementation just add a join
     }
 
-    func toKey(from: Keys?) -> String {
-        toKeyOverride ?? relation.defaultToKey(from: from ?? .model(From.self), to: .model(To.M.self))
-    }
-
-    init(db: Database = DB, fromModel: From, fromKey: String?, toKey: String?, relation: Relation) {
-        self.fromModel = fromModel
-        self.fromKeyOverride = fromKey
-        self.toKeyOverride = toKey
-        self.relation = relation
-        super.init(db: db, table: To.M.tableName)
-    }
-
-    // Through Model
-
-    // SOLID
-    public func through(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        through(model.tableName, from: fromKey, to: toKey)
-    }
-
-    // SOLID
-    public func throughPivot(_ model: (some Model).Type, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        throughPivot(model.tableName, from: fromKey, to: toKey)
-    }
-
-    // Through table
-
-    // SOLID
-    public func throughPivot(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        self.relation = .pivot
-        return through(table, from: fromKey ?? From.referenceKey, to: toKey ?? To.M.referenceKey)
-    }
-
-    // SOLID
-    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> Self {
-        let through = Through(table: table,
-                              fromKeyOverride: fromKey,
-                              toKeyOverride: toKey,
-                              tableKeys: .table(table, from: From.self),
-                              relation: .has)
-        throughs.append(through)
-        return self
-    }
-}
-
-struct Keys: Equatable {
-    let idKey: String
-    let referenceKey: String
-
-    static func model(_ model: (some Model).Type) -> Keys {
-        Keys(
-            idKey: model.idKey,
-            referenceKey: model.referenceKey
-        )
-    }
-
-    static func table(_ table: String, from: (some Model).Type) -> Keys {
-        Keys(
-            idKey: from.keyMapping.map(input: "Id"),
-            referenceKey: from.keyMapping.map(input: table.singularized + "Id")
-        )
-    }
-}
-
-/// The kind of relationship. Used only to determine to/from key defaults.
-enum Relation {
-    /// `From` is a child of `To`.
-    case belongsTo
-    /// `From` is a parent of `To`.
-    case has
-    /// `From` and `To` are parents of a separate pivot table.
-    case pivot
-
-    func defaultFromKey(from: Keys, to: Keys) -> String {
-        switch self {
-        case .has, .pivot:
-            return from.idKey
-        case .belongsTo:
-            return to.referenceKey
-        }
-    }
-
-    func defaultToKey(from: Keys, to: Keys) -> String {
-        switch self {
-        case .belongsTo, .pivot:
-            return to.idKey
-        case .has:
-            return from.referenceKey
-        }
-    }
-}
-
-public struct QueryStep {
-    public let fromTable: String
-    public let fromKey: String
-    public let toTable: String
-    public let toKey: String
-}
-
-/// Computes the relationship across another table.
-struct Through: Hashable {
-    /// The table through which the relationship should go.
-    let table: String
-    /// Any user provided `fromKey`.
-    let fromKeyOverride: String?
-    /// Any user provided `toKey`.
-    let toKeyOverride: String?
-    /// The key defaults for the table.
-    let tableKeys: Keys
-    /// The type of relationship this through table is to the from table.
-    let relation: Relation
-
-    /// The from key to use when constructing the query.
-    func fromKey(fromKeys: Keys) -> String {
-        fromKeyOverride ?? relation.defaultToKey(from: fromKeys, to: tableKeys)
-    }
-
-    /// The to key to use when constructing the query.
-    func toKey(toKeys: Keys) -> String {
-        toKeyOverride ?? relation.defaultFromKey(from: tableKeys, to: toKeys)
-    }
-
-    func hash(into hasher: inout Swift.Hasher) {
-        hasher.combine(table)
-        hasher.combine(fromKeyOverride)
-        hasher.combine(toKeyOverride)
+    func throughPivot() {
+        // don't forget to allow for table string or models; for table string be sure to use the key mapping.
+        // for implementation just add a join
     }
 }

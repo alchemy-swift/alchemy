@@ -1,30 +1,26 @@
 public protocol RelationAllowed {
     associatedtype M: Model
+    init(models: [M]) throws
+}
 
-    static func from(array: [M]) throws -> Self
-    func toModel() -> [M]
+extension Model {
+    public init(models: [M]) throws {
+        guard models.count == 1 else {
+            throw RuneError("Unable to determine relationship from `\(models.count)` values!")
+        }
+
+        self = models[0]
+    }
 }
 
 extension Array: RelationAllowed where Element: Model {
-    public typealias M = Element
-
-    public static func from(array: [Element]) throws -> [M] {
-        array
-    }
-
-    public func toModel() -> [M] {
-        self
+    public init(models: [Element]) throws {
+        self = models
     }
 }
 
 extension Optional: RelationAllowed where Wrapped: Model {
-    public typealias M = Wrapped
-
-    public static func from(array: [Wrapped]) throws -> Wrapped? {
-        array.first
-    }
-
-    public func toModel() -> [M] {
-        [self].compactMap { $0 }
+    public init(models: [Wrapped]) throws {
+        self = models.first
     }
 }
