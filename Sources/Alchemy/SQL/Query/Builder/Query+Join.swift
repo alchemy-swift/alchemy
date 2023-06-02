@@ -3,15 +3,15 @@ public struct SQLJoin: Equatable {
     /// The type of the join clause.
     public enum JoinType: String {
         /// INNER JOIN.
-        case inner
+        case inner = "INNER"
         /// OUTER JOIN.
-        case outer
+        case outer = "OUTER"
         /// LEFT JOIN.
-        case left
+        case left = "LEFT"
         /// RIGHT JOIN.
-        case right
+        case right = "RIGHT"
         /// CROSS JOIN.
-        case cross
+        case cross = "CROSS"
     }
 
     /// The type of the join to perform.

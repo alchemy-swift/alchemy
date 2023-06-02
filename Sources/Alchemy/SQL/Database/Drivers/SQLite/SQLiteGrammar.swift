@@ -7,7 +7,7 @@ struct SQLiteDialect: SQLDialect {
             let idString = id == nil ? "last_insert_rowid()" : "?"
             return [
                 insert(table, values: [fields]),
-                SQL("select * from \(table) where id = \(idString)", bindings: [id?.sqlValue].compactMap { $0 })
+                SQL("SELECT * FROM \(table) WHERE id = \(idString)", bindings: [id?.sqlValue].compactMap { $0 })
             ]
         }
     }

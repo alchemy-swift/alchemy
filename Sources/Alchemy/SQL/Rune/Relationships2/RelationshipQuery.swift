@@ -106,12 +106,12 @@ final class RelationshipQuery: Hashable {
                 case .belongs:
                     return nextTable.referenceKey
                 case .has:
-                    return through.table.referenceKey
+                    return through.table.idKey
                 }
             }()
 
             let join = SQLJoin(type: .inner, joinTable: through.table.string)
-                .on(first: "\(through.table).\(toKey)", op: .equals, second: "\(nextTable).\(nextKey)")
+                .on(first: "\(through.table.string).\(toKey)", op: .equals, second: "\(nextTable.string).\(nextKey)")
             joins.append(join)
 
             nextTable = through.table
@@ -162,6 +162,7 @@ final class RelationshipQuery: Hashable {
             }
         }()
 
+        let toTable = throughs.first?.table.string ?? to.table.string
         let toColumn: String = throughs.first?.from ?? to.column ?? {
             switch type {
             case .belongs:
@@ -171,12 +172,22 @@ final class RelationshipQuery: Hashable {
             }
         }()
 
-        let inputValues = try input.map { try $0.require(fromColumn) }
-        let results = try await query
-            .where(toColumn, in: inputValues)
-            .select(["\(to.table.string).*", "\(to.table.string).\(toColumn) as __lookup"])
+        var lookupKey = toColumn
+        var lookupAlias = lookupKey
 
-        let resultsByToColumn = results.grouped(by: \.[fromColumn])
+        var columns: [String] = ["\(to.table.string).*"]
+        if let first = throughs.first {
+            lookupKey = "\(toTable).\(toColumn)"
+            lookupAlias = "__lookup"
+            columns.append("\(lookupKey) as \(lookupAlias)")
+        }
+
+        let inputValues = try input.map { try $0.require(fromColumn) }
+        let results: [SQLRow] = try await query
+            .where("\(lookupKey)", in: inputValues)
+            .select(columns)
+
+        let resultsByToColumn = results.grouped(by: \.[lookupAlias])
         return inputValues.map { resultsByToColumn[$0] ?? [] }
     }
 

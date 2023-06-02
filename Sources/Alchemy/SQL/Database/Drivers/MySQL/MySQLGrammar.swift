@@ -7,7 +7,7 @@ struct MySQLDialect: SQLDialect {
     func insertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
         values.flatMap {[
             insert(table, values: [$0]),
-            SQL("select * from \(table) where id = LAST_INSERT_ID()")
+            SQL("SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()")
         ]}
     }
 }

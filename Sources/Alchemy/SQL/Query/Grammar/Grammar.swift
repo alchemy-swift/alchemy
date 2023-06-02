@@ -56,10 +56,10 @@ extension SQLDialect {
                        limit: Int?,
                        offset: Int?,
                        lock: SQLLock?) -> SQL {
-        let select = isDistinct ? "select distinct" : "select"
+        let select = isDistinct ? "SELECT DISTINCT" : "SELECT"
         return [
             SQL("\(select) \(columns.joined(separator: ", "))"),
-            SQL("from \(table)"),
+            SQL("FROM \(table)"),
             compileJoins(joins),
             compileWheres(wheres),
             compileGroups(groups),
@@ -83,7 +83,7 @@ extension SQLDialect {
             }
 
             bindings += whereSQL.bindings
-            return "\(join.type) join \(join.table) \(whereSQL.statement)"
+            return "\(join.type.rawValue) JOIN \(join.table) \(whereSQL.statement)"
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }.joined(separator: " ")
 
@@ -95,7 +95,7 @@ extension SQLDialect {
             return nil
         }
 
-        let conjunction = isJoin ? "on" : "where"
+        let conjunction = isJoin ? "ON" : "WHERE"
         let sql = wheres.joinedSQL().droppingLeadingBoolean()
         return SQL("\(conjunction) \(sql.statement)", bindings: sql.bindings)
     }
@@ -105,7 +105,7 @@ extension SQLDialect {
             return nil
         }
 
-        return SQL("group by \(groups.joined(separator: ", "))")
+        return SQL("GROUP BY \(groups.joined(separator: ", "))")
     }
 
     public func compileHavings(_ havings: [SQLWhere]) -> SQL? {
@@ -114,7 +114,7 @@ extension SQLDialect {
         }
 
         let sql = havings.joinedSQL().droppingLeadingBoolean()
-        return SQL("having \(sql.statement)", bindings: sql.bindings)
+        return SQL("HAVING \(sql.statement)", bindings: sql.bindings)
     }
 
     public func compileOrders(_ orders: [SQLOrder]) -> SQL? {
@@ -125,15 +125,15 @@ extension SQLDialect {
         let ordersSQL = orders
             .map { "\($0.column) \($0.direction)" }
             .joined(separator: ", ")
-        return SQL("order by \(ordersSQL)")
+        return SQL("ORDER BY \(ordersSQL)")
     }
 
     public func compileLimit(_ limit: Int?) -> SQL? {
-        limit.map { SQL("limit \($0)") }
+        limit.map { SQL("LIMIT \($0)") }
     }
 
     public func compileOffset(_ offset: Int?) -> SQL? {
-        offset.map { SQL("offset \($0)") }
+        offset.map { SQL("OFFSET \($0)") }
     }
 
     public func compileLock(_ lock: SQLLock?) -> SQL? {
@@ -163,7 +163,7 @@ extension SQLDialect {
 
     public func insert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL {
         guard !values.isEmpty else {
-            return SQL("insert into \(table) default values")
+            return SQL("INSERT INTO \(table) DEFAULT VALUES")
         }
 
         let columns = values[0].map { $0.key }
@@ -177,12 +177,12 @@ extension SQLDialect {
         }
 
         let columnsJoined = columns.joined(separator: ", ")
-        return SQL("insert into \(table) (\(columnsJoined)) values \(placeholders.joined(separator: ", "))", bindings: parameters)
+        return SQL("INSERT INTO \(table) (\(columnsJoined)) VALUES \(placeholders.joined(separator: ", "))", bindings: parameters)
     }
 
     public func insertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
         let insert = insert(table, values: values)
-        return [SQL("\(insert.statement) returning *", bindings: insert.bindings)]
+        return [SQL("\(insert.statement) RETURNING *", bindings: insert.bindings)]
     }
 
     public func update(table: String,
@@ -200,14 +200,14 @@ extension SQLDialect {
 
         let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), bindings: columnStatements.flatMap(\.bindings))
 
-        var base = "update \(table)"
+        var base = "UPDATE \(table)"
         if let joinSQL = compileJoins(joins) {
             bindings += joinSQL.bindings
             base += " \(joinSQL)"
         }
 
         bindings += columnSQL.bindings
-        base += " set \(columnSQL.statement)"
+        base += " SET \(columnSQL.statement)"
 
         if let whereSQL = compileWheres(wheres) {
             bindings += whereSQL.bindings
@@ -219,9 +219,9 @@ extension SQLDialect {
 
     public func delete(_ table: String, wheres: [SQLWhere]) -> SQL {
         if let whereSQL = compileWheres(wheres) {
-            return SQL("delete from \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
+            return SQL("DELETE FROM \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
         } else {
-            return SQL("delete from \(table)")
+            return SQL("DELETE FROM \(table)")
         }
     }
 
