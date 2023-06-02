@@ -37,13 +37,24 @@ public final class ModelRelationship<From: Model, To: RelationAllowed> {
 }
 
 struct Key: Hashable {
-    let table: String
-    /// If nil, the key will be inferred.
-    let explicitColumn: String?
+    struct Table: Hashable {
+        let string: String
+        let idKey: String
+        let referenceKey: String
 
-    func column(for: RelationshipQuery.Kind) -> String {
-        explicitColumn ?? "FOO"
+        static func model(_ model: (some Model).Type) -> Table {
+            Table(string: model.tableName, idKey: model.idKey, referenceKey: model.referenceKey)
+        }
+
+        static func string(_ string: String, keyMapping: DatabaseKeyMapping) -> Table {
+            let id = keyMapping.map(input: "Id")
+            let ref = keyMapping.map(input: string.singularized + "Id")
+            return Table(string: string, idKey: id, referenceKey: ref)
+        }
     }
+
+    let table: Table
+    let column: String?
 }
 
 /// Describes a relationship between SQL tables. A single query.
@@ -56,44 +67,71 @@ final class RelationshipQuery: Hashable {
 
     private struct Through {
         // Ensure key mapping is used to find defaults.
-        let table: String
+        let table: Key.Table
         let from: String?
         let to: String?
         let isPivot: Bool = false
     }
 
+    private let db: Database
     private let type: Kind
     private let from: Key
     private let to: Key
     private var throughs: [Through] = []
     private var wheres: [SQLWhere] = []
 
-    init(type: Kind, from: Key, to: Key) {
+    init(db: Database, type: Kind, from: Key, to: Key) {
+        self.db = db
         self.type = type
         self.from = from
         self.to = to
     }
 
+    func calculateJoins() -> [SQLJoin] {
+        var nextTable = to.table
+        var previousTable = throughs.last?.table ?? from.table
+        var nextKey: String = to.column ?? {
+            switch type {
+            case .belongs:
+                return nextTable.idKey
+            case .has:
+                return previousTable.referenceKey
+            }
+        }()
+
+        var joins: [SQLJoin] = []
+        for (index, through) in throughs.reversed().enumerated() {
+            var toKey: String = through.to ?? {
+                switch type {
+                case .belongs:
+                    return nextTable.referenceKey
+                case .has:
+                    return through.table.referenceKey
+                }
+            }()
+
+            let join = SQLJoin(type: .inner, joinTable: through.table.string)
+                .on(first: "\(through.table).\(toKey)", op: .equals, second: "\(nextTable).\(nextKey)")
+            joins.append(join)
+
+            nextTable = through.table
+            previousTable = throughs[safe: index - 1]?.table ?? from.table
+
+            nextKey = through.from ?? {
+                switch type {
+                case .belongs:
+                    return previousTable.idKey
+                case .has:
+                    return nextTable.referenceKey
+                }
+            }()
+        }
+
+        return joins
+    }
+
     func addThrough(_ table: String, from: String? = nil, to: String? = nil) {
-        /*
-         MAY NEED TO CHANGE OTHERS
-         1. `from` or `to` if through pivot.
-         2. `joins.previous` if through pivot AND override not set.
-         3. `from` if through AND belongsTo
-         4. `to` if through AND has
-         5. `joins.previous` if through AND belongTo
-         */
-
-        // It would be nice if this were just a join added to a query. The issue
-        // comes from inferring key types. The logic will need to look "back"
-        // and see which keys have been set as a default or inferred. There's no
-        // way given an SQLJoin to see if the key was set manually or
-        // inferred.
-
-        // 1. Infer the keys.
-        // 2. Add the join.
-        // 3. Change `to` defaults if it's a pivot.
-        throughs.append(Through(table: table, from: from, to: to))
+        throughs.append(Through(table: .string(table, keyMapping: .convertToSnakeCase), from: from, to: to))
     }
 
     func addWhere(_ where: SQLWhere) {
@@ -103,11 +141,9 @@ final class RelationshipQuery: Hashable {
     /// Execute the relationship given the input rows. Always returns an array
     /// the same length as the input array.
     func execute(input: [SQLRow]) async throws -> [[SQLRow]] {
-        var query = DB.from(to.table)
+        var query = db.from(to.table.string)
 
-        for through in throughs {
-            let join = SQLJoin(type: .left, joinTable: through.table)
-                .on(first: through.from ?? "foo", op: .equals, second: through.to ?? "foo")
+        for join in calculateJoins() {
             query = query.join(join)
         }
 
@@ -115,12 +151,30 @@ final class RelationshipQuery: Hashable {
             query = query.where(`where`)
         }
 
-        let fromColumn = from.column(for: type)
-        let toColumn = to.column(for: type)
+        let thisTable = from.table
+        let nextTable = throughs.first?.table ?? to.table
+        let fromColumn: String = from.column ?? {
+            switch type {
+            case .belongs:
+                return thisTable.referenceKey
+            case .has:
+                return nextTable.idKey
+            }
+        }()
+
+        let toColumn: String = throughs.first?.from ?? to.column ?? {
+            switch type {
+            case .belongs:
+                return nextTable.idKey
+            case .has:
+                return thisTable.referenceKey
+            }
+        }()
+
         let inputValues = try input.map { try $0.require(fromColumn) }
         let results = try await query
             .where(toColumn, in: inputValues)
-            .select(["\(to.table).*", fromColumn])
+            .select(["\(to.table.string).*", "\(to.table.string).\(toColumn) as __lookup"])
 
         let resultsByToColumn = results.grouped(by: \.[fromColumn])
         return inputValues.map { resultsByToColumn[$0] ?? [] }
@@ -155,17 +209,17 @@ extension Query where Result: Model {
 }
 
 extension ModelRelationship {
-    fileprivate static func has(_ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        let fromKey = Key(table: From.tableName, explicitColumn: from)
-        let toKey = Key(table: To.M.tableName, explicitColumn: to)
-        let query = RelationshipQuery(type: .has, from: fromKey, to: toKey)
+    fileprivate static func has(db: Database, _ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
+        let fromKey = Key(table: .model(From.self), column: from)
+        let toKey = Key(table: .model(To.M.self), column: to)
+        let query = RelationshipQuery(db: db, type: .has, from: fromKey, to: toKey)
         return ModelRelationship(from: model, query: query)
     }
 
-    fileprivate static func belongs(_ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        let fromKey = Key(table: From.tableName, explicitColumn: from)
-        let toKey = Key(table: To.M.tableName, explicitColumn: to)
-        let query = RelationshipQuery(type: .belongs, from: fromKey, to: toKey)
+    fileprivate static func belongs(db: Database, _ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
+        let fromKey = Key(table: .model(From.self), column: from)
+        let toKey = Key(table: .model(To.M.self), column: to)
+        let query = RelationshipQuery(db: db, type: .belongs, from: fromKey, to: toKey)
         return ModelRelationship(from: model, query: query)
     }
 }
@@ -175,24 +229,24 @@ extension ModelRelationship {
 extension Model {
     public typealias Relationship<To: RelationAllowed> = ModelRelationship<Self, To>
 
-    public func hasMany<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<[To]> {
-        return .has(self, from: fromKey, to: toKey)
+    public func hasMany<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<[To]> {
+        return .has(db: db, self, from: fromKey, to: toKey)
     }
 
-    public func hasOne<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To> {
-        return .has(self, from: fromKey, to: toKey)
+    public func hasOne<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To> {
+        return .has(db: db, self, from: fromKey, to: toKey)
     }
 
-    public func hasOne<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To?> {
-        return .has(self, from: fromKey, to: toKey)
+    public func hasOne<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To?> {
+        return .has(db: db, self, from: fromKey, to: toKey)
     }
 
-    public func belongsTo<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To> {
-        return .belongs(self, from: fromKey, to: toKey)
+    public func belongsTo<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To> {
+        return .belongs(db: db, self, from: fromKey, to: toKey)
     }
 
-    public func belongsTo<To: Model>(_ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To?> {
-        return .belongs(self, from: fromKey, to: toKey)
+    public func belongsTo<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To?> {
+        return .belongs(db: db, self, from: fromKey, to: toKey)
     }
 }
 
