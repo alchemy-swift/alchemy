@@ -48,7 +48,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.
-    let keyMapping: DatabaseKeyMapping
+    let keyMapping: KeyMapping
     let jsonEncoder: JSONEncoder
     
     // MARK: Encoder
@@ -56,18 +56,18 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     var codingPath = [CodingKey]()
     var userInfo: [CodingUserInfoKey: Any] = [:]
     
-    /// Create with an associated `DatabasekeyMapping`.
+    /// Create with an associated `KeyMapping`.
     ///
     /// - Parameter mappingStrategy: The strategy for mapping `CodingKey` string
     ///   values to SQL columns.
-    init(keyMapping: DatabaseKeyMapping, jsonEncoder: JSONEncoder) {
+    init(keyMapping: KeyMapping, jsonEncoder: JSONEncoder) {
         self.keyMapping = keyMapping
         self.jsonEncoder = jsonEncoder
     }
     
     subscript(column: String) -> SQLValue? {
         get { readFields.first(where: { $0.column == column })?.value }
-        set { readFields.append(SQLField(column: keyMapping.map(input: column), value: newValue ?? .null)) }
+        set { readFields.append(SQLField(column: keyMapping.encode(column), value: newValue ?? .null)) }
     }
     
     func put<E: Encodable>(json: E, at key: String) throws {

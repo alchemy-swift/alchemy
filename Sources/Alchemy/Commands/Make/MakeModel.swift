@@ -1,6 +1,5 @@
 import ArgumentParser
 import Foundation
-import Papyrus
 
 typealias Flag = ArgumentParser.Flag
 typealias Option = ArgumentParser.Option
@@ -58,7 +57,7 @@ final class MakeModel: Command {
         if migration {
             try MakeMigration(
                 name: "Create\(name.pluralized)",
-                table: name.camelCaseToSnakeCase().pluralized,
+                table: KeyMapping.snakeCase.encode(name).pluralized,
                 columns: columns ?? []
             ).start()
         }
@@ -112,16 +111,7 @@ private extension ColumnData {
         }
         
         let declaration = name == "id" ? "var" : "let"
-        return "\(declaration) \(name.snakeCaseToCamelCase()): \(swiftType)"
-    }
-}
-
-extension String {
-    func camelCaseToSnakeCase() -> String {
-        KeyMapping.snakeCase.mapTo(input: self)
-    }
-    
-    func snakeCaseToCamelCase() -> String {
-        KeyMapping.snakeCase.mapFrom(input: self)
+        let name = KeyMapping.snakeCase.decode(name)
+        return "\(declaration) \(name): \(swiftType)"
     }
 }

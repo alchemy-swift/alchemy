@@ -236,7 +236,7 @@ If your database naming convention is different than Swift's, for example `snake
 
 ```swift
 struct User: Model {
-    static var keyMapping: DatabaseKeyMapping = .convertToSnakeCase
+    static var keyMapping: KeyMapping = .snakeCase
     ...
 }
 ```

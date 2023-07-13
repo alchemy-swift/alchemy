@@ -61,7 +61,7 @@ extension SQLRow {
     
     public func decode<D: Decodable>(
         _ type: D.Type,
-        keyMapping: DatabaseKeyMapping = .useDefaultKeys,
+        keyMapping: KeyMapping = .useDefaultKeys,
         jsonDecoder: JSONDecoder = JSONDecoder()
     ) throws -> D {
         try D(from: SQLRowDecoder(row: self, keyMapping: keyMapping, jsonDecoder: jsonDecoder))

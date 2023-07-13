@@ -92,7 +92,7 @@ private struct DatabaseJSON: Codable {
 }
 
 private struct CustomKeyedModel: Model {
-    static var keyMapping: DatabaseKeyMapping = .useDefaultKeys
+    static var keyMapping: KeyMapping = .useDefaultKeys
     
     var id: PK<Int> = .new
     var val1: String = "foo"

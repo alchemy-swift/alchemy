@@ -92,7 +92,7 @@ public final class RelationshipMapping<From: Model, To: Model>: AnyRelation, Equ
     
     @discardableResult
     public func through(_ table: String, from: String? = nil, to: String? = nil) -> Self {
-        let tableReference = From.keyMapping.map(input: table.singularized + "Id")
+        let tableReference = From.keyMapping.encode(table.singularized + "Id")
         let _from, _to: String
         switch type {
         case .belongs:
@@ -133,6 +133,6 @@ extension RelationshipMapping {
 extension Model {
     public static var referenceKey: String {
         let key = Self.tableName.singularized + "Id"
-        return keyMapping.map(input: key)
+        return keyMapping.encode(key)
     }
 }

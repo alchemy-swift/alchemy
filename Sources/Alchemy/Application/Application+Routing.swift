@@ -1,5 +1,4 @@
 import NIOHTTP1
-import Papyrus
 
 extension Application {
     /// A basic route handler closure. Most types you'll need conform

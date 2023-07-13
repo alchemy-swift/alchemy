@@ -1,5 +1,4 @@
 import Foundation
-import Papyrus
 
 public protocol ContentValue {
     var string: String? { get }
@@ -77,7 +76,6 @@ public final class Content: Buildable {
     public var array: [Content]? { try? convertArray() }
     public var arrayThrowing: [Content] { get throws { try convertArray() } }
     
-    public var exists: Bool { (try? decode(Empty.self)) != nil }
     public var isNull: Bool { self == nil }
     
     public var error: Error? {

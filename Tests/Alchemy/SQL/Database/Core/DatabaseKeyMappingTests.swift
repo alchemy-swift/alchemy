@@ -1,19 +1,19 @@
 import Alchemy
 import XCTest
 
-final class DatabaseKeyMappingTests: XCTestCase {
+final class KeyMappingTests: XCTestCase {
     func testCustom() {
-        let custom = DatabaseKeyMapping.custom { "\($0)_1" }
-        XCTAssertEqual(custom.map(input: "foo"), "foo_1")
+        let custom = KeyMapping.custom { "\($0)_1" }
+        XCTAssertEqual(custom.encode("foo"), "foo_1")
     }
     
     func testSnakeCase() {
-        let snakeCase = DatabaseKeyMapping.convertToSnakeCase
-        XCTAssertEqual(snakeCase.map(input: ""), "")
-        XCTAssertEqual(snakeCase.map(input: "foo"), "foo")
-        XCTAssertEqual(snakeCase.map(input: "fooBar"), "foo_bar")
-        XCTAssertEqual(snakeCase.map(input: "AI"), "a_i")
-        XCTAssertEqual(snakeCase.map(input: "testJSON"), "test_json")
-        XCTAssertEqual(snakeCase.map(input: "testNumbers123"), "test_numbers123")
+        let snakeCase = KeyMapping.convertToSnakeCase
+        XCTAssertEqual(snakeCase.encode(""), "")
+        XCTAssertEqual(snakeCase.encode("foo"), "foo")
+        XCTAssertEqual(snakeCase.encode("fooBar"), "foo_bar")
+        XCTAssertEqual(snakeCase.encode("AI"), "a_i")
+        XCTAssertEqual(snakeCase.encode("testJSON"), "test_json")
+        XCTAssertEqual(snakeCase.encode("testNumbers123"), "test_numbers123")
     }
 }

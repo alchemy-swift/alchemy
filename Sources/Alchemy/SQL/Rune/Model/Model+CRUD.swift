@@ -332,7 +332,7 @@ extension Array where Element: Model {
         }
         
         var input = input
-        input[Element.keyMapping.map(input: timestamps.updatedAtKey)] = SQLValue.now
+        input[Element.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
         return input
     }
     
@@ -343,8 +343,8 @@ extension Array where Element: Model {
 
         return try map {
             var dict = try $0.toSQLRow().fieldDictionary
-            dict[Element.keyMapping.map(input: timestamps.createdAtKey)] = SQLValue.now
-            dict[Element.keyMapping.map(input: timestamps.updatedAtKey)] = SQLValue.now
+            dict[Element.keyMapping.encode(timestamps.createdAtKey)] = SQLValue.now
+            dict[Element.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
             return dict
         }
     }

@@ -46,9 +46,9 @@ struct Key: Hashable {
             Table(string: model.tableName, idKey: model.idKey, referenceKey: model.referenceKey)
         }
 
-        static func string(_ string: String, keyMapping: DatabaseKeyMapping) -> Table {
-            let id = keyMapping.map(input: "Id")
-            let ref = keyMapping.map(input: string.singularized + "Id")
+        static func string(_ string: String, keyMapping: KeyMapping) -> Table {
+            let id = keyMapping.encode("Id")
+            let ref = keyMapping.encode(string.singularized + "Id")
             return Table(string: string, idKey: id, referenceKey: ref)
         }
     }
@@ -133,7 +133,7 @@ final class RelationshipQuery: Hashable {
     }
 
     func addThrough(_ table: String, from: String? = nil, to: String? = nil, isPivot: Bool = false) {
-        throughs.append(Through(table: .string(table, keyMapping: .convertToSnakeCase), from: from, to: to, isPivot: isPivot))
+        throughs.append(Through(table: .string(table, keyMapping: .snakeCase), from: from, to: to, isPivot: isPivot))
     }
 
     func addWhere(_ where: SQLWhere) {

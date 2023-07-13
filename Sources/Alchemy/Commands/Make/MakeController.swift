@@ -42,7 +42,7 @@ struct MakeController: Command {
     }
     
     private func modelControllerTemplate(name: String) -> String {
-        let resourcePath = name.camelCaseToSnakeCase()
+        let resourcePath = KeyMapping.snakeCase.encode(name)
         
         return """
         import Alchemy

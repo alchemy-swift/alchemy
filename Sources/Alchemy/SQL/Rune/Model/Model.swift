@@ -57,9 +57,9 @@ public protocol ModelBase: Identifiable, RelationshipAllowed {
     static var idKey: String { get }
 
     /// How should the Swift `CodingKey`s be mapped to database
-    /// columns? Defaults to `.convertToSnakeCase`. Can be
+    /// columns? Defaults to `.snakeCase`. Can be
     /// overridden on a per-type basis.
-    static var keyMapping: DatabaseKeyMapping { get }
+    static var keyMapping: KeyMapping { get }
 
     /// The `JSONDecoder` to use when decoding any JSON fields of this
     /// type. A JSON field is any `Codable` field that doesn't have a
@@ -101,7 +101,7 @@ extension ModelBase where Self: Codable {
 extension ModelBase {
     public static var tableName: String {
         let typeName = String(describing: Self.self)
-        let mapped = keyMapping.map(input: typeName)
+        let mapped = keyMapping.encode(typeName)
         return mapped.pluralized
     }
 
@@ -109,8 +109,8 @@ extension ModelBase {
         "id"
     }
     
-    public static var keyMapping: DatabaseKeyMapping {
-        .convertToSnakeCase
+    public static var keyMapping: KeyMapping {
+        .snakeCase
     }
     
     public static var jsonDecoder: JSONDecoder {

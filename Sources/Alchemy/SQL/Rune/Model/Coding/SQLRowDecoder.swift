@@ -64,7 +64,7 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     
     /// The row that will be decoded out of.
     let row: SQLRow
-    let keyMapping: DatabaseKeyMapping
+    let keyMapping: KeyMapping
     let jsonDecoder: JSONDecoder
     
     // MARK: Decoder
@@ -87,16 +87,16 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     // MARK: SQLRowReader
     
     func requireJSON<D: Decodable>(_ key: String) throws -> D {
-        let key = keyMapping.map(input: key)
+        let key = keyMapping.encode(key)
         return try jsonDecoder.decode(D.self, from: row.require(key).json(key))
     }
     
     func require(_ key: String) throws -> SQLValue {
-        try row.require(keyMapping.map(input: key))
+        try row.require(keyMapping.encode(key))
     }
     
     func contains(_ column: String) -> Bool {
-        row[keyMapping.map(input: column)] != nil
+        row[keyMapping.encode(column)] != nil
     }
     
     subscript(_ index: Int) -> SQLValue {
@@ -104,6 +104,6 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     }
     
     subscript(_ column: String) -> SQLValue? {
-        row[keyMapping.map(input: column)]
+        row[keyMapping.encode(column)]
     }
 }
