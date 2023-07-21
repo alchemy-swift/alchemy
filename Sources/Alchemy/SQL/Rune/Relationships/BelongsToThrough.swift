@@ -1,28 +1,20 @@
 extension Model {
-    public typealias HasOneThrough<To: ModelOrOptional> = HasThroughRelation<Self, To>
-    public typealias HasManyThrough<To: Model> = HasThroughRelation<Self, [To]>
+    public typealias BelongsToThrough<To: ModelOrOptional> = BelongsToThroughRelation<Self, To>
 }
 
-extension HasRelation where To: ModelOrOptional {
-    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasOneThrough<To> {
-        HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
+extension BelongsToRelation {
+    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.BelongsToThrough<To> {
+        BelongsToThroughRelation(db: db, from: self.from, fromKey: self._fromKey, toKey: self.toKey)
             .through(table, from: fromKey, to: toKey)
     }
 }
 
-extension HasRelation where To: Sequence {
-    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasManyThrough<To.M> {
-        HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
-            .through(table, from: fromKey, to: toKey)
-    }
-}
-
-public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation {
+public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: Relation {
     let db: Database
-    let fromKey: String
-    var _toKey: String?
-    var toKey: String {
-        _toKey ?? throughs.first?.from ?? Table.model(From.self).referenceKey(mapping: db.keyMapping)
+    let toKey: String
+    let _fromKey: String?
+    var fromKey: String {
+        _fromKey ?? (throughs.first?.table ?? Table.model(To.M.self)).referenceKey(mapping: db.keyMapping)
     }
 
     private var throughs: [Through] = []
@@ -35,8 +27,8 @@ public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation {
     fileprivate init(db: Database, from: From, fromKey: String?, toKey: String?) {
         self.db = db
         self.from = from
-        self.fromKey = fromKey ?? From.idKey
-        self._toKey = toKey
+        self._fromKey = fromKey
+        self.toKey = toKey ?? To.M.idKey
         self.throughs = []
     }
 
@@ -68,20 +60,17 @@ public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation {
     // Is there a way to isolate the key mapping and inference logic to either the functions themselves or elsewhere?
     private func calculateJoins() -> [SQLJoin] {
         var nextTable: Table = .model(To.M.self)
-        var previousTable = throughs.last?.table ?? .model(To.M.self)
-        var nextKey: String = _toKey ?? previousTable.referenceKey(mapping: db.keyMapping)
+        var nextKey: String = toKey
 
         var joins: [SQLJoin] = []
-        let reversed = Array(throughs.reversed())
-        for (index, through) in reversed.enumerated() {
-            let toKey: String = through.to ?? through.table.idKey(mapping: db.keyMapping)
+        for through in throughs.reversed() {
+            let toKey: String = through.to ?? nextTable.referenceKey(mapping: db.keyMapping)
             let join = SQLJoin(type: .inner, joinTable: through.table.string)
                 .on(first: "\(through.table.string).\(toKey)", op: .equals, second: "\(nextTable.string).\(nextKey)")
             joins.append(join)
 
             nextTable = through.table
-            previousTable = reversed[safe: index + 1]?.table ?? .model(From.self)
-            nextKey = through.from ?? previousTable.referenceKey(mapping: db.keyMapping)
+            nextKey = through.from ?? nextTable.referenceKey(mapping: db.keyMapping)
         }
 
         return joins

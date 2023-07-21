@@ -11,8 +11,11 @@ extension Model {
 
 public struct BelongsToRelation<From: Model, To: ModelOrOptional>: Relation {
     let db: Database
-    let fromKey: String
     let toKey: String
+    let _fromKey: String?
+    var fromKey: String {
+        _fromKey ?? To.M.referenceKey
+    }
 
     public let from: From
     public var cacheKey: String {
@@ -22,7 +25,7 @@ public struct BelongsToRelation<From: Model, To: ModelOrOptional>: Relation {
     fileprivate init(db: Database, from: From, fromKey: String?, toKey: String?) {
         self.db = db
         self.from = from
-        self.fromKey = fromKey ?? To.M.referenceKey
+        self._fromKey = fromKey
         self.toKey = toKey ?? To.M.idKey
     }
 

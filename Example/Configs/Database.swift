@@ -28,6 +28,7 @@ extension Database: Configurable {
                 AddMessagesMigration(),
                 AddStuffMigration(),
                 AddStuff2Migration(),
+                AddStuff3Migration(),
             ],
             
             /// Seeders for your database

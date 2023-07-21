@@ -5,20 +5,23 @@ struct Go: Command {
 
     func start() async throws {
         let user = try await User.query()
-            .with(\.posts)
-            .with(\.tokens)
+//            .with(\.posts)
+//            .with(\.tokens)
             .where("id" == "user_1")
             .first()!
 //        print("USER: \(user.name)")
-        let posts = try await user.posts()
+//        let posts = try await user.posts()
 //        print("POSTS: \(posts.map(\.id))")
-        let tokens = try await user.tokens()
+//        let tokens = try await user.tokens()
 //        print("TOKENS: \(tokens.map(\.id))")
-        let throughTokens = try await posts.first!.tokens()
+//        let throughTokens = try await posts.first!.tokens()
 //        print("THROUGH TOKENS: \(throughTokens.map(\.id))")
-        let comments = try await user.comments()
+//        let comments = try await user.comments()
 //        let owner = try await comments.first!.postOwner()
-        let friends = try await user.friends()
+//        let friends = try await user.friends()
+
+        let likes = try await user.likes()
+        let owner2 = try await likes.first!.postOwner()
 
 //        let users = try await User
 //            .query()
@@ -69,6 +72,10 @@ struct User: Model {
         hasMany().through("posts")
     }
 
+    var likes: HasManyThrough<Like> {
+        hasMany().through("posts").through("comments")
+    }
+
     var friends: BelongsToMany<User> {
         belongsToMany(pivot: "friends", pivotFrom: "user_a", pivotTo: "user_b")
     }
@@ -99,9 +106,19 @@ struct Comment: Model {
     let text: String
     let userId: String
 
-//    var postOwner: Relationship<User> {
-//        belongsTo().through(Post.self)
-//    }
+    var postOwner: BelongsToThrough<User> {
+        belongsTo().through("posts")
+    }
+}
+
+struct Like: Model {
+    var id: PK<String> = .new
+    let commentId: String
+    let userId: String
+
+    var postOwner: BelongsToThrough<User> {
+        belongsTo().through("comments").through("posts")
+    }
 }
 
 struct AddStuffMigration: Migration {
@@ -151,5 +168,19 @@ struct AddStuff2Migration: Migration {
     func down(schema: Schema) {
         schema.drop(table: "friends")
         schema.drop(table: "comments")
+    }
+}
+
+struct AddStuff3Migration: Migration {
+    func up(schema: Schema) {
+        schema.create(table: "likes") {
+            $0.string("id").primary()
+            $0.string("comment_id").references("id", on: "comments").notNull()
+            $0.string("user_id").references("id", on: "users").notNull()
+        }
+    }
+
+    func down(schema: Schema) {
+        schema.drop(table: "likes")
     }
 }
