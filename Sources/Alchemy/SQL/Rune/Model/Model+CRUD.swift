@@ -278,7 +278,7 @@ extension Array where Element: Model {
     ///   in the model caused by inserting.
     public func insertAll(db: Database = DB) async throws {
         try await Element.willCreate(self)
-        try await Element.query(db: db).insert(try insertableFields())
+        try await Element.query(db: db).insert(try insertableFields(db: db))
         try await Element.didCreate(self)
     }
     
@@ -291,7 +291,7 @@ extension Array where Element: Model {
     public func insertReturnAll(db: Database = DB) async throws -> Self {
         try await Element.willCreate(self)
         let results = try await Element.query(db: db)
-            .insertReturn(try insertableFields())
+            .insertReturn(try insertableFields(db: db))
             .map { try $0.decode(Element.self) }
         try await Element.didCreate(results)
         return results
@@ -301,7 +301,7 @@ extension Array where Element: Model {
         try await Element.willUpdate(self)
         try await Element.query(db: db)
             .where("id", in: map(\.id))
-            .update(fields: touchUpdatedAt(values))
+            .update(fields: touchUpdatedAt(values, db: db))
         try await Element.didUpdate(self)
     }
     
@@ -326,25 +326,25 @@ extension Array where Element: Model {
         return try await eagerLoadsQuery(initialQuery).all()
     }
     
-    private func touchUpdatedAt(_ input: [String: SQLValueConvertible]) -> [String: SQLValueConvertible] {
+    private func touchUpdatedAt(_ input: [String: SQLValueConvertible], db: Database) -> [String: SQLValueConvertible] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return input
         }
         
         var input = input
-        input[Element.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
+        input[db.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
         return input
     }
     
-    private func insertableFields() throws -> [[String: SQLValueConvertible]] {
+    private func insertableFields(db: Database) throws -> [[String: SQLValueConvertible]] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return try map { try $0.toSQLRow().fieldDictionary }
         }
 
         return try map {
             var dict = try $0.toSQLRow().fieldDictionary
-            dict[Element.keyMapping.encode(timestamps.createdAtKey)] = SQLValue.now
-            dict[Element.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
+            dict[db.keyMapping.encode(timestamps.createdAtKey)] = SQLValue.now
+            dict[db.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
             return dict
         }
     }

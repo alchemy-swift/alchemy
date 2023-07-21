@@ -16,6 +16,9 @@ public final class Database: Service {
     /// Any seeders associated with this database.
     public var seeders: [Seeder] = []
 
+    /// The mapping from Swift types to tables and columns in this database.
+    public var keyMapping: KeyMapping = .snakeCase
+
     /// The provider of this database.
     let provider: DatabaseProvider
     
@@ -35,6 +38,12 @@ public final class Database: Service {
     /// Log all executed queries to the `debug` level.
     public func log() -> Self {
         self.shouldLog = true
+        return self
+    }
+
+    /// Set custom key mapping for this database.
+    public func keyMapping(_ mapping: KeyMapping) -> Self {
+        self.keyMapping = mapping
         return self
     }
 

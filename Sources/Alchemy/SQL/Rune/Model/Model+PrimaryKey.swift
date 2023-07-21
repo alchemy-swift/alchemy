@@ -138,8 +138,6 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
             return type.dummyValue as! T
         } else if type is AnyArray.Type {
             return [AnyArray]() as! T
-        } else if type is AnyBelongsTo.Type {
-            return try (type as! AnyBelongsTo.Type).init(from: nil) as! T
         } else if type is UUID.Type {
             return UUID() as! T
         } else if type is Date.Type {
@@ -165,11 +163,6 @@ private struct Keyed<K: CodingKey>: KeyedDecodingContainerProtocol {
         throw RuneError("`DummyDecoder` doesn't support super decoding yet.")
     }
 }
-
-private protocol AnyBelongsTo {
-    init(from: SQLValue?) throws
-}
-extension BelongsToRelationship: AnyBelongsTo {}
 
 private protocol AnyArray {}
 extension Array: AnyArray {}

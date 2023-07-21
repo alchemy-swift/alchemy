@@ -50,7 +50,7 @@ public protocol TokenAuthable: Model {
     /// `KeyPath` to the _relationship_ type, so it will
     /// begin with a "$", such as `\.$user` as opposed
     /// to `\.user`.
-    static var userKey: KeyPath<Self, Self.BelongsTo<User>> { get }
+    static var userKey: KeyPath<Self, Self.Relationship<User>> { get }
 }
 
 extension TokenAuthable {
@@ -82,16 +82,14 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
         
         let model = try await T.query()
             .where(T.valueKeyString == bearerAuth.token)
-            .with(T.userKey)
+            .with { $0[keyPath: T.userKey] }
             .first()
             .unwrap(or: HTTPError(.unauthorized))
-        
+        let user = try await model[keyPath: T.userKey].get()
         return try await next(
             request
-                // Set the token
                 .set(model)
-                // Set the user
-                .set(model[keyPath: T.userKey].wrappedValue)
+                .set(user)
         )
     }
 }
