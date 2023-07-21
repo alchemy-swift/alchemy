@@ -3,7 +3,7 @@ import NIO
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
-public final class MemoryQueue: QueueProvider {
+public actor MemoryQueue: QueueProvider {
     var jobs: [JobID: JobData] = [:]
     var pending: [String: [JobID]] = [:]
     var reserved: [String: [JobID]] = [:]
@@ -15,17 +15,11 @@ public final class MemoryQueue: QueueProvider {
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) async throws {
-        lock.lock()
-        defer { lock.unlock() }
-        
         jobs[job.id] = job
         append(id: job.id, on: job.channel, dict: &pending)
     }
     
     public func dequeue(from channel: String) async throws -> JobData? {
-        lock.lock()
-        defer { lock.unlock() }
-        
         guard
             let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
                 let isInBackoff = jobs[thing]?.inBackoff ?? false
@@ -41,9 +35,6 @@ public final class MemoryQueue: QueueProvider {
     }
     
     public func complete(_ job: JobData, outcome: JobOutcome) async throws {
-        lock.lock()
-        defer { lock.unlock() }
-        
         switch outcome {
         case .success, .failed:
             reserved[job.channel]?.removeAll(where: { $0 == job.id })

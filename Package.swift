@@ -1,4 +1,4 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
@@ -7,6 +7,7 @@ let package = Package(
         .macOS(.v12),
     ],
     products: [
+        .executable(name: "app", targets: ["Example"]),
         .library(name: "Alchemy", targets: ["Alchemy"]),
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
@@ -27,37 +28,42 @@ let package = Package(
         .package(url: "https://github.com/alchemy-swift/RediStack.git", branch: "ssl-support-1.2.0"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
-        
-        /// Messaging
-        .package(url: "https://github.com/kylebrowning/APNSwift.git", from: "4.0.0"),
     ],
     targets: [
+        .executableTarget(
+            name: "Example",
+            dependencies: ["Alchemy"],
+            path: "Example"
+        ),
         .target(
             name: "Alchemy",
             dependencies: [
-                /// External dependencies
+
+                /// Core
+
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
-                .product(name: "MySQLKit", package: "mysql-kit"),
-                .product(name: "PostgresKit", package: "postgres-kit"),
-                .product(name: "SQLiteKit", package: "sqlite-kit"),
-                .product(name: "MultipartKit", package: "multipart-kit"),
-                .product(name: "RediStack", package: "RediStack"),
-                .product(name: "Logging", package: "swift-log"),
-                .product(name: "Fusion", package: "fusion"),
                 .product(name: "Cron", package: "cron"),
-                .product(name: "Pluralize", package: "pluralize"),
-                .product(name: "Rainbow", package: "Rainbow"),
+                .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "Fakery", package: "Fakery"),
+                .product(name: "Fusion", package: "fusion"),
                 .product(name: "HummingbirdFoundation", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
                 .product(name: "HummingbirdTLS", package: "hummingbird-core"),
-                .product(name: "Crypto", package: "swift-crypto"),
-                
-                /// Messaging
-                .product(name: "APNSwift", package: "APNSwift"),
-                
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "MultipartKit", package: "multipart-kit"),
+                .product(name: "Pluralize", package: "pluralize"),
+                .product(name: "Rainbow", package: "Rainbow"),
+
+                /// Databases
+
+                .product(name: "MySQLKit", package: "mysql-kit"),
+                .product(name: "PostgresKit", package: "postgres-kit"),
+                .product(name: "SQLiteKit", package: "sqlite-kit"),
+                .product(name: "RediStack", package: "RediStack"),
+
                 /// Internal dependencies
+
                 .byName(name: "AlchemyC"),
             ]
         ),

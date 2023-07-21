@@ -88,7 +88,7 @@ extension Command {
                 Loop.group.next()
                     .asyncSubmit {
                         if Self.logStartAndFinish {
-                            Log.info("[Command] running `\(Self._commandName)`.")
+                            Log.info("[Command] running `\(Self.name)`.")
                         }
                         
                         try await start()

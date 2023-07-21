@@ -1,12 +1,6 @@
 import Foundation
 import NIO
 
-/*
- 1. Run query.
- 2. Run eager loads.
- 3. When accessing relationships, check eager loaded properties. Else retrieve on the fly.
- */
-
 public extension Model {
     /// Begin a `Query<Self>` from a given database.
     ///
@@ -17,8 +11,6 @@ public extension Model {
         Query(db: db, table: Self.tableName)
     }
 }
-
-//public typealias Query<M: Model> = SQLQuery<M>
 
 /// A `Query` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of

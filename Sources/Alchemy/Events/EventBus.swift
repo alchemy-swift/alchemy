@@ -12,7 +12,7 @@ public final class EventBus: Service {
     }
     
     private var registeredHandlers: [String: [AnyHandler]] = [:]
-    private var lock = Lock()
+    private var lock = NIOLock()
     
     public func on<E: Event>(_ event: E.Type, action: @escaping Handler<E>.Closure) {
         let _handlers = lock.withLock { registeredHandlers[E.registrationKey] ?? [] }

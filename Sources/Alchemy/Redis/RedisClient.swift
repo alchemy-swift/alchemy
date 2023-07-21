@@ -148,7 +148,7 @@ public struct RedisClient: Service, RediStack.RedisClient {
 private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     /// Map of `EventLoop` identifiers to respective connection pools.
     private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
-    private var poolLock = Lock()
+    private var poolLock = NIOLock()
     private var lazyAddresses: [Socket]?
     private var logger: Logger?
     

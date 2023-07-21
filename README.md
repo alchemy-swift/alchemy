@@ -31,7 +31,6 @@ Alchemy provides you with Swifty APIs for everything you need to build productio
 - Database agnostic [query builder](https://www.alchemyswift.com/database/query-builder) and [schema migrations](https://www.alchemyswift.com/database/migrations).
 - [Robust job queues backed by Redis or SQL](https://www.alchemyswift.com/digging-deeper/queues).
 - First class support for [Plot](https://github.com/JohnSundell/Plot), a typesafe HTML DSL.
-- [Supporting libraries to share typesafe backend APIs with Swift frontends](https://www.alchemyswift.com/supporting-libraries/papyrus).
 
 ## Why Alchemy?
 
@@ -449,7 +448,7 @@ schedule.run { ... }
 
 ## ...and more!
 
-Check out [the docs](https://www.alchemyswift.com/getting-started/setup) for more advanced guides on all of the above as well as [Migrations](https://www.alchemyswift.com/database/migrations), [Caching](https://www.alchemyswift.com/digging-deeper/cache), [Custom Commands](https://www.alchemyswift.com/digging-deeper/commands), [Logging](https://www.alchemyswift.com/essentials/logging), [making HTTP Requests](https://www.alchemyswift.com/digging-deeper/http-client), using the [HTML DSL](https://www.alchemyswift.com/essentials/views), advanced [Request](https://www.alchemyswift.com/essentials/requests) / [Response](https://www.alchemyswift.com/essentials/responses) usage, [typesafe APIs](https://www.alchemyswift.com/supporting-libraries/papyrus) between client and server, [deploying your apps to Linux or Docker](https://www.alchemyswift.com/getting-started/deploying), and more.
+Check out [the docs](https://www.alchemyswift.com/getting-started/setup) for more advanced guides on all of the above as well as [Migrations](https://www.alchemyswift.com/database/migrations), [Caching](https://www.alchemyswift.com/digging-deeper/cache), [Custom Commands](https://www.alchemyswift.com/digging-deeper/commands), [Logging](https://www.alchemyswift.com/essentials/logging), [making HTTP Requests](https://www.alchemyswift.com/digging-deeper/http-client), using the [HTML DSL](https://www.alchemyswift.com/essentials/views), advanced [Request](https://www.alchemyswift.com/essentials/requests) / [Response](https://www.alchemyswift.com/essentials/responses) usage, [deploying your apps to Linux or Docker](https://www.alchemyswift.com/getting-started/deploying), and more.
 
 # Contributing
 

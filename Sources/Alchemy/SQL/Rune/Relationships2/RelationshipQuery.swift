@@ -36,26 +36,10 @@ public final class ModelRelationship<From: Model, To: RelationAllowed> {
     }
 }
 
-struct Key: Hashable {
-    struct Table: Hashable {
-        let string: String
-        let idKey: String
-        let referenceKey: String
-
-        static func model(_ model: (some Model).Type) -> Table {
-            Table(string: model.tableName, idKey: model.idKey, referenceKey: model.referenceKey)
-        }
-
-        static func string(_ string: String, keyMapping: KeyMapping) -> Table {
-            let id = keyMapping.encode("Id")
-            let ref = keyMapping.encode(string.singularized + "Id")
-            return Table(string: string, idKey: id, referenceKey: ref)
-        }
-    }
-
-    let table: Table
-    let column: String?
-}
+/*
+ KayMapping is inside the `calculateJoins` function making it messy and
+ confusing. Can we isolate it to the individual functions?
+ */
 
 /// Describes a relationship between SQL tables. A single query.
 final class RelationshipQuery: Hashable {
@@ -67,7 +51,7 @@ final class RelationshipQuery: Hashable {
 
     private struct Through {
         // Ensure key mapping is used to find defaults.
-        let table: Key.Table
+        let table: Column.Table
         let from: String?
         let to: String?
         let isPivot: Bool
@@ -75,22 +59,26 @@ final class RelationshipQuery: Hashable {
 
     private let db: Database
     private let type: Kind
-    private let from: Key
-    private let to: Key
+    private let from: Column
+    private let to: Column
     private var throughs: [Through] = []
     private var wheres: [SQLWhere] = []
 
-    init(db: Database, type: Kind, from: Key, to: Key) {
+    init(db: Database, type: Kind, from: Column, to: Column) {
         self.db = db
         self.type = type
         self.from = from
         self.to = to
     }
 
+    // These need to be calculated at run time if we want to allow the builder
+    // to add multiple `through`s. This is because each through needs to look
+    // back at the previous one to infer which keys to use.
     func calculateJoins() -> [SQLJoin] {
         var nextTable = to.table
         var previousTable = throughs.last?.table ?? from.table
-        var nextKey: String = to.column ?? {
+        var nextKeyImplicit: Bool = to.key == nil
+        var nextKey: String = to.key ?? {
             switch type {
             case .belongs:
                 return nextTable.idKey
@@ -103,7 +91,11 @@ final class RelationshipQuery: Hashable {
 
         var joins: [SQLJoin] = []
         for (index, through) in throughs.reversed().enumerated() {
-            var toKey: String = through.to ?? {
+            let toKey: String = through.to ?? {
+                guard !through.isPivot else {
+                    return nextTable.referenceKey
+                }
+
                 switch type {
                 case .belongs:
                     return nextTable.referenceKey
@@ -112,6 +104,10 @@ final class RelationshipQuery: Hashable {
                 }
             }()
 
+            if nextKeyImplicit && through.isPivot {
+                nextKey = nextTable.idKey
+            }
+
             let join = SQLJoin(type: .inner, joinTable: through.table.string)
                 .on(first: "\(through.table.string).\(toKey)", op: .equals, second: "\(nextTable.string).\(nextKey)")
             joins.append(join)
@@ -119,6 +115,7 @@ final class RelationshipQuery: Hashable {
             nextTable = through.table
             previousTable = throughs[safe: index - 1]?.table ?? from.table
 
+            nextKeyImplicit = through.from == nil
             nextKey = through.from ?? {
                 switch type {
                 case .belongs:
@@ -155,17 +152,8 @@ final class RelationshipQuery: Hashable {
 
         let thisTable = from.table
         let nextTable = throughs.first?.table ?? to.table
-        let fromColumn: String = from.column ?? {
-            switch type {
-            case .belongs:
-                return thisTable.referenceKey
-            case .has:
-                return nextTable.idKey
-            }
-        }()
-
         let toTable = throughs.first?.table.string ?? to.table.string
-        let toColumn: String = throughs.first?.from ?? to.column ?? {
+        let toColumn: String = throughs.first?.from ?? to.key ?? {
             switch type {
             case .belongs:
                 return nextTable.idKey
@@ -178,12 +166,20 @@ final class RelationshipQuery: Hashable {
         var lookupAlias = lookupKey
 
         var columns: [String] = ["\(to.table.string).*"]
-        if let first = throughs.first {
+        if !throughs.isEmpty {
             lookupKey = "\(toTable).\(toColumn)"
             lookupAlias = "__lookup"
             columns.append("\(lookupKey) as \(lookupAlias)")
         }
 
+        let fromColumn: String = from.key ?? {
+            switch type {
+            case .belongs:
+                return nextTable.referenceKey
+            case .has:
+                return thisTable.idKey
+            }
+        }()
         let inputValues = try input.map { try $0.require(fromColumn) }
         let results: [SQLRow] = try await query
             .where("\(lookupKey)", in: inputValues)
@@ -221,17 +217,40 @@ extension Query where Result: Model {
     }
 }
 
+// MARK: - Key Inference
+
+struct Column: Hashable {
+    struct Table: Hashable {
+        let string: String
+        let idKey: String
+        let referenceKey: String
+
+        static func model(_ model: (some Model).Type) -> Table {
+            Table(string: model.tableName, idKey: model.idKey, referenceKey: model.referenceKey)
+        }
+
+        static func string(_ string: String, keyMapping: KeyMapping) -> Table {
+            let id = keyMapping.encode("Id")
+            let ref = keyMapping.encode(string.singularized + "Id")
+            return Table(string: string, idKey: id, referenceKey: ref)
+        }
+    }
+
+    let table: Table
+    let key: String?
+}
+
 extension ModelRelationship {
     fileprivate static func has(db: Database, _ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        let fromKey = Key(table: .model(From.self), column: from)
-        let toKey = Key(table: .model(To.M.self), column: to)
+        let fromKey = Column(table: .model(From.self), key: from)
+        let toKey = Column(table: .model(To.M.self), key: to)
         let query = RelationshipQuery(db: db, type: .has, from: fromKey, to: toKey)
         return ModelRelationship(from: model, query: query)
     }
 
     fileprivate static func belongs(db: Database, _ model: From, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
-        let fromKey = Key(table: .model(From.self), column: from)
-        let toKey = Key(table: .model(To.M.self), column: to)
+        let fromKey = Column(table: .model(From.self), key: from)
+        let toKey = Column(table: .model(To.M.self), key: to)
         let query = RelationshipQuery(db: db, type: .belongs, from: fromKey, to: toKey)
         return ModelRelationship(from: model, query: query)
     }
@@ -266,13 +285,23 @@ extension Model {
 // MARK: - Relationship Modifiers
 
 extension ModelRelationship {
+    public func through<M: Model>(_ type: M.Type, from: String? = nil, to: String? = nil) -> From.Relationship<To> {
+        through(type.tableName, from: from, to: to)
+    }
 
-    public func through(_ table: String, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
+    public func through(_ table: String, from: String? = nil, to: String? = nil) -> From.Relationship<To> {
+        // This needs to know if the relationship is has or belongs to infer keys.
+        // Therefore the inference needs to be stored in `ModelRelationship`. Can
+        // we remove that and just assume stuff here?
         query.addThrough(table, from: from, to: to)
         return self
     }
 
-    public func throughPivot(_ table: String, from: String? = nil, to: String? = nil) -> ModelRelationship<From, To> {
+    public func throughPivot<M: Model>(_ type: M.Type, from: String? = nil, to: String? = nil) -> From.Relationship<To> {
+        throughPivot(type.tableName, from: from, to: to)
+    }
+
+    public func throughPivot(_ table: String, from: String? = nil, to: String? = nil) -> From.Relationship<To> {
         query.addThrough(table, from: from, to: to, isPivot: true)
         return self
     }
@@ -284,5 +313,20 @@ extension ModelRelationship {
     public subscript<T: RelationAllowed>(dynamicMember relationship: KeyPath<To.M, To.M.Relationship<T>>) -> From.Relationship<T> {
         // Could add a through, however it would be great to eager load the intermidiary relationship.
         fatalError()
+
+        /*
+         Edge cases:
+         1. multiple throughs (keep the same direction)
+         2. multiple pivots (never update the previous one - should only be used on hasMany, which infers the same)
+         */
+
+//        // 1. Has Many
+//        user.hasMany(Post.self).through()
+//        // 2. Has One
+//        user.hasOne(Post.self).through()
+//        // 3. BelongsTo
+//        user.belongsTo(Post.self).through()
+//        // 4. BelongsToMany
+//        user.belongsTo(Post.self).through()
     }
 }

@@ -144,7 +144,7 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
             current.dotEnvVariables = values
             Log.info("[Environment] loaded env from `\(defaultPath)`.")
         } else {
-            Log.info("[Environment] no dotenv file found.")
+            Log.info("[Environment] .env file found.")
         }
     }
     

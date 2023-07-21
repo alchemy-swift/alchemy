@@ -7,7 +7,7 @@ struct JobDecoding {
     /// Stored decoding behavior for jobs.
     private static var decoders: [String: (JobData) throws -> Job] = [:]
     
-    private static let lock = Lock()
+    private static let lock = NIOLock()
     
     /// Register a job to cache its decoding behavior.
     ///

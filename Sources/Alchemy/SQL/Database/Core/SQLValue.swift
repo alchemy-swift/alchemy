@@ -34,7 +34,7 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
         case .bool(let bool):
             return "\(bool)"
         case .string(let string):
-            return "\"\(string)\""
+            return "'\(string)'"
         case .date(let date):
             return "\(date)"
         case .json(let data):

@@ -40,7 +40,9 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
     }
 
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(value.sqlValue, at: key)
+        if let value {
+            row.put(value.sqlValue, at: key)
+        }
     }
 
     // MARK: Codable

@@ -62,7 +62,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func join(table: String, first: String, op: SQLWhere.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
-        var join = SQLJoin(type: type, joinTable: table)
+        let join = SQLJoin(type: type, joinTable: table)
         query.joins.append(join.on(first: first, op: op, second: second))
         return self
     }

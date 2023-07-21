@@ -14,7 +14,7 @@ public struct Locked<T> {
     /// The underlying value of this property.
     private var value: T
     /// The lock to protect this property.
-    private let lock = Lock()
+    private let lock = NIOLock()
     
     /// Initialize with the given value.
     ///
