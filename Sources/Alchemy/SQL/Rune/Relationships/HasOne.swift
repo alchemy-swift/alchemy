@@ -1,10 +1,12 @@
 extension Model {
     public typealias HasOne<To: ModelOrOptional> = HasOneRelation<Self, To>
 
-    public func hasOne<To: ModelOrOptional>(db: Database = DB,
-                                          _ type: To.Type = To.self,
-                                          from fromKey: String? = nil,
-                                          to toKey: String? = nil) -> HasOne<To> {
+    public func hasOne<To: ModelOrOptional>(
+        db: Database = DB,
+        _ type: To.Type = To.self,
+        from fromKey: String? = nil,
+        to toKey: String? = nil
+    ) -> HasOne<To> {
         HasOne(db: db, from: self, fromKey: fromKey, toKey: toKey)
     }
 }
@@ -12,7 +14,10 @@ extension Model {
 public struct HasOneRelation<From: Model, To: ModelOrOptional>: Relation {
     let db: Database
     let fromKey: String
-    let toKey: String
+    let _toKey: String?
+    var toKey: String {
+        _toKey ?? From.referenceKey
+    }
 
     public let from: From
     public var cacheKey: String {
@@ -23,7 +28,7 @@ public struct HasOneRelation<From: Model, To: ModelOrOptional>: Relation {
         self.db = db
         self.from = from
         self.fromKey = fromKey ?? From.idKey
-        self.toKey = toKey ?? From.referenceKey
+        self._toKey = toKey
     }
 
     public func fetch(for models: [From]) async throws -> [To] {

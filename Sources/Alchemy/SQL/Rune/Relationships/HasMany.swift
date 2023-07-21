@@ -1,10 +1,12 @@
 extension Model {
     public typealias HasMany<To: Model> = HasManyRelation<Self, To>
 
-    public func hasMany<To: Model>(db: Database = DB,
-                                   _ type: To.Type = To.self,
-                                   from fromKey: String? = nil,
-                                   to toKey: String? = nil) -> HasMany<To> {
+    public func hasMany<To: Model>(
+        db: Database = DB,
+        _ type: To.Type = To.self,
+        from fromKey: String? = nil,
+        to toKey: String? = nil
+    ) -> HasMany<To> {
         HasMany(db: db, from: self, fromKey: fromKey, toKey: toKey)
     }
 }
@@ -33,7 +35,8 @@ public struct HasManyRelation<From: Model, M: Model>: Relation {
         let ids = models.map(\.row[fromKey])
         let rows = try await To.Element.query(db: db).where(toKey, in: ids).select()
         let rowsByToColumn = rows.grouped(by: \.[toKey])
-        return try ids.map { rowsByToColumn[$0] ?? [] }
+        return try ids
+            .map { rowsByToColumn[$0] ?? [] }
             .map { try $0.mapDecode(M.self) }
     }
 }
