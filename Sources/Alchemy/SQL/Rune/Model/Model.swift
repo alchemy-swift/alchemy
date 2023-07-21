@@ -1,19 +1,19 @@
 import Foundation
 import Pluralize
 
-public protocol Model: ModelBase, Codable, RelationAllowed, SQLQueryResult where M == Self {}
+public protocol Model: Codable, ModelBase, ModelOrOptional {}
 
 extension Model {
     var row: SQLRow {
         id.storage.row
     }
 
-    func cache<To: RelationAllowed>(hashValue: Int, value: To) {
-        id.storage.relationships[hashValue] = value
+    func cache<To>(key: String, value: To) {
+        id.storage.relationships[key] = value
     }
 
-    func checkCache<To: RelationAllowed>(hashValue: Int) throws -> To? {
-        guard let value = id.storage.relationships[hashValue] else {
+    func checkCache<To>(key: String, _ type: To.Type = To.self) throws -> To? {
+        guard let value = id.storage.relationships[key] else {
             return nil
         }
 
@@ -24,15 +24,15 @@ extension Model {
         return value
     }
 
-    func cacheExists(hashValue: Int) -> Bool {
-        id.storage.relationships[hashValue] != nil
+    func exists(key: String) -> Bool {
+        id.storage.relationships[key] != nil
     }
 }
 
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & much more.
-public protocol ModelBase: Identifiable {
+public protocol ModelBase: Identifiable, SQLQueryResult {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
 
@@ -69,8 +69,6 @@ public protocol ModelBase: Identifiable {
     ///
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
-
-    init(row: SQLRow) throws // Auto filled in for codable models, in extension
 
     func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
 }

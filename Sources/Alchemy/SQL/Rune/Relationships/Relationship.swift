@@ -1,42 +1,5 @@
-/*
- Checklist
- 1. DONE Add where to Relationship
- 2. DONE Add multiple throughs
- 3. DONE Infer keys
- 4. DONE BelongsTo
- 5. DONE HasOne
- 6. DONE HasMany
- 7. DONE Through pivot
- 8. DONE Eager loading
- 9. CRUD
- 10. Subscript loading
- */
-
-/*
- Refactor to make cleaner.
- - Not clear what logic goes in `ModelRelationship`, `RelationshipQuery`, and `Column`.
- - Not clear how to extend to add custom relationships.
- - Not clear how or where to add CRUD elements.
- - Might be wise to break things down into different types.
- */
-
-/*
- A relationship has:
- 1. A query.
- 2. A unique set of CRUD ops.
- 3. The ability to be eager loaded (run query with arbitrary input ids).
- 4. A unique hash value for caching.
- */
-
-/*
- Relationship CRUD:
- 1. I'd like to allow custom operations for each relationship type.
- 2. However, doing so with type safety will mean exposing the relationship type on the variable. This isn't ideal because it will require duplicate identification as "hasMany" etc.
- 3. I could also add functions to all "relationships" and throw an error if it's not supported.
- */
-
 /// One of these per eager loadable relationship.
-public final class ModelRelationship<From: Model, To: RelationAllowed> {
+public final class ModelRelationship<From: Model, To: ModelOrOptional> {
     let from: From
     let query: RelationshipQuery
 
@@ -46,26 +9,28 @@ public final class ModelRelationship<From: Model, To: RelationAllowed> {
     }
 
     func eagerLoad(on input: [From]) async throws {
-        let inputRows = input.map(\.row)
-        let rows = try await query.execute(input: inputRows)
-        let values = try rows
-            .map { try $0.mapDecode(To.M.self) }
-            .map { try To(models: $0) }
-        for (model, results) in zip(input, values) {
-            model.cache(hashValue: query.hashValue, value: results)
-        }
+        fatalError()
+//        let inputRows = input.map(\.row)
+//        let rows = try await query.execute(input: inputRows)
+//        let values = try rows
+//            .map { try $0.mapDecode(To.M.self) }
+//            .map { try To(model: $0) }
+//        for (model, results) in zip(input, values) {
+//            model.cache(key: String(query.hashValue), value: results)
+//        }
     }
 
     public func get() async throws -> To {
-        guard let value: To = try from.checkCache(hashValue: query.hashValue) else {
-            let results = try await query.execute(input: [from.row])[0]
-            let models = try results.mapDecode(To.M.self)
-            let value = try To(models: models)
-            from.cache(hashValue: query.hashValue, value: value)
-            return value
-        }
-
-        return value
+        fatalError()
+//        guard let value: To = try from.checkCache(key: String(query.hashValue)) else {
+//            let results = try await query.execute(input: [from.row])[0]
+//            let models = try results.mapDecode(To.M.self)
+//            let value = try To(model: models)
+//            from.cache(key: String(query.hashValue), value: value)
+//            return value
+//        }
+//
+//        return value
     }
 
     public func callAsFunction() async throws -> To {
@@ -298,11 +263,7 @@ struct Column: Hashable {
 // MARK: - Default Relationships
 
 extension Model {
-    public typealias Relationship<To: RelationAllowed> = ModelRelationship<Self, To>
-
-    public func hasMany<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<[To]> {
-        return .has(db: db, self, from: fromKey, to: toKey)
-    }
+    public typealias Relationship<To: ModelOrOptional> = ModelRelationship<Self, To>
 
     public func hasOne<To: Model>(db: Database = DB, _ type: To.Type = To.self, from fromKey: String? = nil, to toKey: String? = nil) -> Relationship<To> {
         return .has(db: db, self, from: fromKey, to: toKey)
@@ -324,7 +285,22 @@ extension Model {
 // MARK: - Query + Eager Loading
 
 extension Query where Result: Model {
-    public func with<T: RelationAllowed>(
+
+    public func with<R: Relation>(
+        _ relationship: @escaping (Result) -> R,
+        nested: @escaping ((R) -> R) = { $0 }
+    ) -> Self where R.From == Result {
+        didLoad { models in
+            guard let first = models.first else {
+                return
+            }
+
+            let query = nested(relationship(first))
+            try await query.eagerLoad(on: models)
+        }
+    }
+
+    public func with<T: ModelOrOptional>(
         _ relationship: @escaping (Result) -> Result.Relationship<T>,
         nested: @escaping ((Result.Relationship<T>) -> Result.Relationship<T>) = { $0 }
     ) -> Self {
@@ -342,7 +318,7 @@ extension Query where Result: Model {
 // MARK: Compoun Queries Loading
 
 extension ModelRelationship {
-    public subscript<T: RelationAllowed>(dynamicMember relationship: KeyPath<To.M, To.M.Relationship<T>>) -> From.Relationship<T> {
+    public subscript<T: ModelOrOptional>(dynamicMember relationship: KeyPath<To.M, To.M.Relationship<T>>) -> From.Relationship<T> {
         // Could add a through, however it would be great to eager load the intermidiary relationship.
         fatalError()
     }

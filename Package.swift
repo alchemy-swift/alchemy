@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "alchemy",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v13),
     ],
     products: [
         .executable(name: "app", targets: ["Example"]),

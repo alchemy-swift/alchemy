@@ -2,7 +2,7 @@ import Foundation
 
 final class ModelStorage {
     var row: SQLRow
-    var relationships: [Int: any RelationAllowed]
+    var relationships: [String: Any]
 
     init() {
         self.relationships = [:]

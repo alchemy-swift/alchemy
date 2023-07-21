@@ -5,18 +5,18 @@ struct Go: Command {
 
     func start() async throws {
         let user = try await User.query()
-//            .with(\.posts)
-//            .with(\.tokens)
+            .with(\.posts)
+            .with(\.tokens)
             .where("id" == "user_1")
             .first()!
 //        print("USER: \(user.name)")
-//        let posts = try await user.posts()
+        let posts = try await user.posts()
 //        print("POSTS: \(posts.map(\.id))")
-//        let tokens = try await user.tokens()
+        let tokens = try await user.tokens()
 //        print("TOKENS: \(tokens.map(\.id))")
-//        let throughTokens = try await posts.first!.tokens()
+        let throughTokens = try await posts.first!.tokens()
 //        print("THROUGH TOKENS: \(throughTokens.map(\.id))")
-//        let comments = try await user.comments()
+        let comments = try await user.comments()
 //        let owner = try await comments.first!.postOwner()
 //        let friends = try await user.friends()
 
@@ -57,20 +57,20 @@ struct User: Model {
     let name: String
     let age: Int
 
-    var tokens: Relationship<[UserToken]> {
+    var tokens: HasMany<UserToken> {
         hasMany()
     }
 
-    var posts: Relationship<[Post]> {
+    var posts: HasMany<Post> {
         hasMany()
     }
 
-    var comments: Relationship<[Comment]> {
+    var comments: HasManyThrough<Comment> {
         hasMany().through("posts")
     }
 
-    var friends: Relationship<[User]> {
-        hasMany().throughPivot("friends", from: "user_a", to: "user_b")
+    var friends: BelongsToMany<User> {
+        belongsToMany(pivot: "friends", pivotFrom: "user_a", pivotTo: "user_b")
     }
 }
 
@@ -79,7 +79,7 @@ struct UserToken: Model {
     let token: String
     let userId: String
 
-    var user: Relationship<User> {
+    var user: BelongsTo<User> {
         belongsTo()
     }
 }
@@ -89,9 +89,8 @@ struct Post: Model {
     let title: String
     let userId: String
 
-    var tokens: Relationship<[UserToken]> {
-        hasMany(from: "user_id")
-            .through("users", from: "id")
+    var tokens: HasManyThrough<UserToken> {
+        hasMany(from: "user_id").through("users", from: "id")
     }
 }
 
@@ -100,9 +99,9 @@ struct Comment: Model {
     let text: String
     let userId: String
 
-    var postOwner: Relationship<User> {
-        belongsTo().through(Post.self)
-    }
+//    var postOwner: Relationship<User> {
+//        belongsTo().through(Post.self)
+//    }
 }
 
 struct AddStuffMigration: Migration {

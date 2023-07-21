@@ -41,16 +41,14 @@ public protocol TokenAuthable: Model {
     /// this type will be pulled from the database and
     /// associated with the request.
     associatedtype User: Model
-    
+    associatedtype UserRelation: Relation<Self, User>
+
+    /// The user in question.
+    var user: UserRelation { get }
+
     /// The name of the row that stores the token's value. Defaults to
     /// `"value"`.
     static var valueKeyString: String { get }
-    
-    /// A keypath to the parent `User` model. Note that this a
-    /// `KeyPath` to the _relationship_ type, so it will
-    /// begin with a "$", such as `\.$user` as opposed
-    /// to `\.user`.
-    static var userKey: KeyPath<Self, Self.Relationship<User>> { get }
 }
 
 extension TokenAuthable {
@@ -82,10 +80,10 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
         
         let model = try await T.query()
             .where(T.valueKeyString == bearerAuth.token)
-            .with { $0[keyPath: T.userKey] }
+            .with(\.user)
             .first()
             .unwrap(or: HTTPError(.unauthorized))
-        let user = try await model[keyPath: T.userKey].get()
+        let user = try await model.user.get()
         return try await next(
             request
                 .set(model)
