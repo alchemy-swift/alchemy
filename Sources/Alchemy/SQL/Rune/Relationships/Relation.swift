@@ -9,10 +9,11 @@
  6. DONE BelongsToMany
  7. DONE BelongsToThrough
  8. DONE Add multiple throughs
- 9. Add where to Relationship
- 10. Infer keys (has = modify next to inference, belongs = modify last from inference)
- 11. CRUD
- 12. Subscript loading
+ 9. Eager Loading
+ 10. Add where to Relationship
+ 11. Infer keys (has = modify next to inference, belongs = modify last from inference)
+ 12. CRUD
+ 13. Subscript loading
 
  */
 
@@ -51,5 +52,32 @@ extension Relation {
 
     public func callAsFunction() async throws -> To {
         try await get()
+    }
+}
+
+// MARK: - Eager Loading
+
+extension Query where Result: Model {
+    public func with<R: Relation>(
+        _ relationship: @escaping (Result) -> R,
+        nested: @escaping ((R) -> R) = { $0 }
+    ) -> Self where R.From == Result {
+        didLoad { models in
+            guard let first = models.first else {
+                return
+            }
+
+            let query = nested(relationship(first))
+            try await query.eagerLoad(on: models)
+        }
+    }
+}
+
+// MARK: - Compound Eager Loading
+
+extension Relation where To: OneOrMany {
+    public subscript<T: OneOrMany>(dynamicMember relationship: KeyPath<To.M, any Relation<To.M, T>>) -> any Relation<From, T> {
+        // Could add a through, however it would be great to eager load the intermidiary relationship.
+        fatalError()
     }
 }

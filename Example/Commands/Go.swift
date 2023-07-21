@@ -5,8 +5,10 @@ struct Go: Command {
 
     func start() async throws {
         let user = try await User.query()
-//            .with(\.posts)
-//            .with(\.tokens)
+            .with(\.posts) {
+                $0
+            }
+            .with(\.tokens)
             .where("id" == "user_1")
             .first()!
 //        print("USER: \(user.name)")
