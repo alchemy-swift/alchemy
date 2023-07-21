@@ -4,9 +4,9 @@
  1. DONE BelongsTo
  2. DONE HasOne
  3. DONE HasMany
- 4. DONE BelongsToMany
- 5. DONE HasManyThrough
- 6. HasOneThrough
+ 4. DONE HasManyThrough
+ 5. DONE HasOneThrough
+ 6. BelongsToMany
  7. BelongsToThrough
  8. Add multiple throughs
  9. Add where to Relationship

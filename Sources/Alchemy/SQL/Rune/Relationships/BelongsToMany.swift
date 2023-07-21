@@ -1,5 +1,5 @@
 extension Model {
-    public typealias BelongsToMany<To: ModelOrOptional> = BelongsToManyRelation<Self, To>
+    public typealias BelongsToMany<To: Model> = BelongsToManyRelation<Self, To>
 
     public func belongsToMany<To: ModelOrOptional>(db: Database = DB,
                                                    _ type: To.Type = To.self,
@@ -12,7 +12,7 @@ extension Model {
     }
 }
 
-public struct BelongsToManyRelation<From: Model, To: ModelOrOptional>: Relation {
+public struct BelongsToManyRelation<From: Model, M: Model>: Relation {
     let db: Database
     public let from: From
 
@@ -36,13 +36,16 @@ public struct BelongsToManyRelation<From: Model, To: ModelOrOptional>: Relation 
         self.pivotTo = pivotTo ?? To.M.referenceKey
     }
 
-    public func fetch(for models: [From]) async throws -> [To] {
+    public func fetch(for models: [From]) async throws -> [[M]] {
         let ids = models.map(\.row[fromKey])
-        let rows = try await To.M.query(db: db).where(toKey, in: ids).select()
+        let rows = try await To.M.query(db: db)
+            .join(table: pivot, first: "\(pivot).\(pivotTo)", second: "\(To.M.tableName).\(toKey)")
+            .where("\(pivot).\(pivotFrom)", in: ids)
+            .select()
         let rowsByToColumn = rows.grouped(by: \.[toKey])
         return try ids
             .map { rowsByToColumn[$0] ?? [] }
-            .map { try $0.first?.decode(To.M.self) }
-            .map { try To(model: $0) }
+            .map { try $0.mapDecode(To.M.self) }
+            .map { try To(models: $0) }
     }
 }

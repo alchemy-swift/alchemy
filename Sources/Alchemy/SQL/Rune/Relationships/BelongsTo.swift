@@ -32,7 +32,7 @@ public struct BelongsToRelation<From: Model, To: ModelOrOptional>: Relation {
         let rowsByToColumn = rows.grouped(by: \.[toKey])
         return try ids
             .map { rowsByToColumn[$0] ?? [] }
-            .map { try $0.first?.decode(To.M.self) }
-            .map { try To(model: $0) }
+            .map { try $0.mapDecode(To.M.self) }
+            .map { try To(models: $0) }
     }
 }

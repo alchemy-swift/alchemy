@@ -18,7 +18,7 @@ struct Go: Command {
 //        print("THROUGH TOKENS: \(throughTokens.map(\.id))")
         let comments = try await user.comments()
 //        let owner = try await comments.first!.postOwner()
-//        let friends = try await user.friends()
+        let friends = try await user.friends()
 
 //        let users = try await User
 //            .query()

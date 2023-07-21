@@ -1,15 +1,23 @@
 extension Model {
-    public typealias HasManyThrough<To: Model> = HasManyThroughRelation<Self, To>
+    public typealias HasOneThrough<To: ModelOrOptional> = HasThroughRelation<Self, To>
+    public typealias HasManyThrough<To: Model> = HasThroughRelation<Self, [To]>
 }
 
-extension HasManyRelation {
-    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasManyThrough<M> {
-        HasManyThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
+extension HasRelation where To: ModelOrOptional {
+    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasOneThrough<To> {
+        HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
             .through(table, from: fromKey, to: toKey)
     }
 }
 
-public final class HasManyThroughRelation<From: Model, M: Model>: Relation {
+extension HasRelation where To: Sequence {
+    public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasManyThrough<To.M> {
+        HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
+            .through(table, from: fromKey, to: toKey)
+    }
+}
+
+public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation {
     let db: Database
     let fromKey: String
     var _toKey: String?
@@ -32,13 +40,13 @@ public final class HasManyThroughRelation<From: Model, M: Model>: Relation {
         self.throughs = []
     }
 
-    public func fetch(for models: [From]) async throws -> [[M]] {
-        var query: Query<M> = M.query(db: db)
+    public func fetch(for models: [From]) async throws -> [To] {
+        var query: Query<To.M> = To.M.query(db: db)
         for join in calculateJoins() {
             query = query.join(join)
         }
 
-        let toTable = Table.model(M.self).string
+        let toTable = Table.model(To.M.self).string
         let lookupTable = throughs.first?.table.string ?? toTable
         let lookupColumn = throughs.first?.from ?? toKey
 
@@ -49,7 +57,8 @@ public final class HasManyThroughRelation<From: Model, M: Model>: Relation {
         let rows = try await query.where(lookupKey, in: ids).select(columns)
         let rowsByToColumn = rows.grouped(by: \.[lookupAlias])
         return try ids.map { rowsByToColumn[$0] ?? [] }
-            .map { try $0.mapDecode(M.self) }
+            .map { try $0.mapDecode(To.M.self) }
+            .map { try To(models: $0) }
     }
 
     // These need to be calculated at run time if we want to allow the builder
@@ -58,8 +67,8 @@ public final class HasManyThroughRelation<From: Model, M: Model>: Relation {
     //
     // Is there a way to isolate the key mapping and inference logic to either the functions themselves or elsewhere?
     private func calculateJoins() -> [SQLJoin] {
-        var nextTable: Table = .model(M.self)
-        var previousTable = throughs.last?.table ?? .model(M.self)
+        var nextTable: Table = .model(To.M.self)
+        var previousTable = throughs.last?.table ?? .model(To.M.self)
         var nextKey: String = _toKey ?? previousTable.referenceKey(mapping: db.keyMapping)
 
         var joins: [SQLJoin] = []
@@ -77,12 +86,12 @@ public final class HasManyThroughRelation<From: Model, M: Model>: Relation {
         return joins
     }
 
-    func through(_ table: String, from: String? = nil, to: String? = nil) -> Self {
+    public func through(_ table: String, from: String? = nil, to: String? = nil) -> Self {
         throughs.append(Through(table: .string(table), from: from, to: to))
         return self
     }
 
-    func through(_ model: (some Model).Type, from: String? = nil, to: String? = nil) -> Self {
+    public func through(_ model: (some Model).Type, from: String? = nil, to: String? = nil) -> Self {
         throughs.append(Through(table: .model(model), from: from, to: to))
         return self
     }
