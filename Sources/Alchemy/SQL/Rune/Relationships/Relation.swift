@@ -8,7 +8,7 @@
  5. DONE HasOneThrough
  6. DONE BelongsToMany
  7. DONE BelongsToThrough
- 8. Add multiple throughs
+ 8. DONE Add multiple throughs
  9. Add where to Relationship
  10. Infer keys (has = modify next to inference, belongs = modify last from inference)
  11. CRUD

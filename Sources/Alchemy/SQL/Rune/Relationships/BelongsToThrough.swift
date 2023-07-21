@@ -70,7 +70,7 @@ public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: R
             joins.append(join)
 
             nextTable = through.table
-            nextKey = through.from ?? nextTable.referenceKey(mapping: db.keyMapping)
+            nextKey = through.from ?? nextTable.idKey(mapping: db.keyMapping)
         }
 
         return joins
