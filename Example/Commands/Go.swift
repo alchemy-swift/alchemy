@@ -4,7 +4,7 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        let user = try await User.query()
+        _ = try await User.query()
             .with(\.posts) {
                 $0
             }
@@ -21,9 +21,8 @@ struct Go: Command {
 //        let comments = try await user.comments()
 //        let owner = try await comments.first!.postOwner()
 //        let friends = try await user.friends()
-
-        let likes = try await user.likes()
-        let owner2 = try await likes.first!.postOwner()
+//        let likes = try await user.likes()
+//        let owner2 = try await likes.first!.postOwner()
 
 //        let users = try await User
 //            .query()

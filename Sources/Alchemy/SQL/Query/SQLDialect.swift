@@ -434,3 +434,16 @@ extension SQLWhere: SQLConvertible {
         }
     }
 }
+
+extension Array where Element: SQLConvertible {
+    func joinedSQL() -> SQL {
+        let statements = map(\.sql)
+        return SQL(statements.map(\.statement).joined(separator: " "), bindings: statements.flatMap(\.bindings))
+    }
+}
+
+extension SQL {
+    func droppingLeadingBoolean() -> SQL {
+        SQL(statement.droppingPrefix("and ").droppingPrefix("or "), bindings: bindings)
+    }
+}

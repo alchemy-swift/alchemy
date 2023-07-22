@@ -31,7 +31,7 @@ public struct BelongsToManyRelation<From: Model, M: Model>: Relation {
         self.from = from
         self.fromKey = fromKey ?? From.idKey
         self.toKey = toKey ?? To.M.idKey
-        self.pivot = pivot ?? From.tableName.singularized + "_" + To.M.tableName.singularized
+        self.pivot = pivot ?? From.table.singularized + "_" + To.M.table.singularized
         self.pivotFrom = pivotFrom ?? From.referenceKey
         self.pivotTo = pivotTo ?? To.M.referenceKey
     }
@@ -39,7 +39,7 @@ public struct BelongsToManyRelation<From: Model, M: Model>: Relation {
     public func fetch(for models: [From]) async throws -> [[M]] {
         let ids = models.map(\.row[fromKey])
         let rows = try await To.M.query(db: db)
-            .join(table: pivot, first: "\(pivot).\(pivotTo)", second: "\(To.M.tableName).\(toKey)")
+            .join(table: pivot, first: "\(pivot).\(pivotTo)", second: "\(To.M.table).\(toKey)")
             .where("\(pivot).\(pivotFrom)", in: ids)
             .select()
         let rowsByToColumn = rows.grouped(by: \.[toKey])

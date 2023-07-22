@@ -101,7 +101,7 @@ extension Cache {
 
 /// Model for storing cache data
 private struct CacheItem: Model {
-    static var tableName: String { "cache" }
+    static let table = "cache"
     
     var id: PK<Int> = .new
     let _key: String

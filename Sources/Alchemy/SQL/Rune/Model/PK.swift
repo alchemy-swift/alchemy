@@ -1,20 +1,20 @@
 import Foundation
 
-final class ModelStorage {
-    var row: SQLRow
-    var relationships: [String: Any]
-
-    init() {
-        self.relationships = [:]
-        self.row = SQLRow()
-    }
-
-    static var new: ModelStorage {
-        ModelStorage()
-    }
-}
-
 public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
+    final class ModelStorage {
+        var row: SQLRow
+        var relationships: [String: Any]
+
+        init() {
+            self.relationships = [:]
+            self.row = SQLRow()
+        }
+
+        static var new: ModelStorage {
+            ModelStorage()
+        }
+    }
+
     public var value: Identifier?
     var storage: ModelStorage
 
@@ -29,6 +29,14 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
 
     public var debugDescription: String {
         value.map { "\($0)" } ?? "null"
+    }
+
+    func callAsFunction() throws -> Identifier {
+        guard let value else {
+            throw DatabaseError("Object of type \(type(of: self)) had a nil id.")
+        }
+
+        return value
     }
 
     // MARK: ModelProperty

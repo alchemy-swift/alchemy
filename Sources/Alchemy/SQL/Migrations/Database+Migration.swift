@@ -48,7 +48,7 @@ extension Database {
     private func getMigrations() async throws -> [AlchemyMigration] {
         let count: Int
         if provider is PostgresDatabase || provider is MySQLDatabase {
-            count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.tableName).count()
+            count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.table).count()
         } else {
             count = try await table("sqlite_master")
                 .where("type" == "table")
@@ -57,7 +57,7 @@ extension Database {
         }
         
         if count == 0 {
-            Log.info("[Migration] creating '\(AlchemyMigration.tableName)' table.")
+            Log.info("[Migration] creating '\(AlchemyMigration.table)' table.")
             let statements = AlchemyMigration.Migration().upStatements(for: provider.grammar)
             try await runStatements(statements: statements)
         }

@@ -2,7 +2,7 @@
 /// this table for keeping track of the various batches of
 /// migrations that have been run.
 struct AlchemyMigration: Model {
-    static let tableName: String = "migrations"
+    static let table = "migrations"
     
     /// Serial primary key.
     var id: PK<Int> = .new
@@ -21,7 +21,7 @@ extension AlchemyMigration {
     /// A migration for adding the `AlchemyMigration` table.
     struct Migration: Alchemy.Migration {
         func up(schema: Schema) {
-            schema.create(table: tableName, ifNotExists: true) {
+            schema.create(table: table, ifNotExists: true) {
                 $0.increments("id").primary()
                 $0.string("name").notNull()
                 $0.int("batch").notNull()
@@ -30,7 +30,7 @@ extension AlchemyMigration {
         }
         
         func down(schema: Schema) {
-            schema.drop(table: tableName)
+            schema.drop(table: table)
         }
     }
 }

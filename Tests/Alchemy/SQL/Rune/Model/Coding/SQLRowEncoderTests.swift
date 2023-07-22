@@ -57,14 +57,14 @@ final class SQLRowEncoderTests: XCTestCase {
             "belongs_to_optional_id": SQLValue.null
         ]
         
-        XCTAssertEqual("everything_models", EverythingModel.tableName)
+        XCTAssertEqual("everything_models", EverythingModel.table)
         XCTAssertEqual(expectedFields, try model.toSQLRow().fields)
     }
     
     func testKeyMapping() throws {
         let model = CustomKeyedModel.pk(0)
         let fields = try model.toSQLRow().fields
-        XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.tableName)
+        XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.table)
         XCTAssertEqual([
             "id",
             "val1",
@@ -79,7 +79,7 @@ final class SQLRowEncoderTests: XCTestCase {
         let jsonData = try CustomDecoderModel.jsonEncoder.encode(json)
         let model = CustomDecoderModel(json: json)
         
-        XCTAssertEqual("custom_decoder_models", CustomDecoderModel.tableName)
+        XCTAssertEqual("custom_decoder_models", CustomDecoderModel.table)
         XCTAssertEqual(try model.toSQLRow().fields, [
             "json": SQLValue.json(jsonData)
         ])

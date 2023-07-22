@@ -29,7 +29,7 @@ enum Table {
     var string: String {
         switch self {
         case .model(let model):
-            return model.tableName
+            return model.table
         case .string(let string):
             return string
         }

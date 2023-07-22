@@ -12,7 +12,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
 }
 
 struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model {
-    static var tableName: String { "messages" }
+    static var table: String { "messages" }
 
     var id: PK<Int> = .new
     let channel: String

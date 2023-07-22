@@ -17,6 +17,13 @@
 
  */
 
+/*
+ Options:
+ 1. Make Relation a Query
+ 2. Give it a subquery object, add passthrough with and where functions.
+ 3. Just add with & where functions that store info on it.
+ */
+
 public protocol Relation<From, To> {
     associatedtype From: Model
     associatedtype To

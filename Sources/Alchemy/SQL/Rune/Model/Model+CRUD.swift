@@ -244,7 +244,7 @@ extension Model {
     public func sync(db: Database = DB, query: ((Query<Self>) -> Query<Self>) = { $0 }) async throws -> Self {
         try await query(Self.query(db: db).where("id" == id))
             .first()
-            .unwrap(or: RuneError.syncErrorNoMatch(table: Self.tableName, id: id))
+            .unwrap(or: RuneError.syncErrorNoMatch(table: Self.table, id: id))
     }
     
     // MARK: - Misc

@@ -70,7 +70,7 @@ public extension Queue {
 
 /// Represents the table of jobs backing a `DatabaseQueue`.
 struct JobModel: Model {
-    static var tableName: String = "jobs"
+    static var table = "jobs"
 
     var id: PK<String> = .new
     let jobName: String
@@ -99,7 +99,7 @@ struct JobModel: Model {
     
     func toJobData() throws -> JobData {
         JobData(
-            id: try getID(),
+            id: try id(),
             json: json,
             jobName: jobName,
             channel: channel,

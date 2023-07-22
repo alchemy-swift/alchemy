@@ -7,7 +7,7 @@ struct AuthModel: BasicAuthable {
     
     struct Migrate: Migration {
         func up(schema: Schema) {
-            schema.create(table: AuthModel.tableName) {
+            schema.create(table: AuthModel.table) {
                 $0.increments("id")
                     .primary()
                 $0.string("email")
@@ -19,7 +19,7 @@ struct AuthModel: BasicAuthable {
         }
         
         func down(schema: Schema) {
-            schema.drop(table: AuthModel.tableName)
+            schema.drop(table: AuthModel.table)
         }
     }
 }
@@ -35,7 +35,7 @@ struct TokenModel: Model, TokenAuthable {
     
     struct Migrate: Migration {
         func up(schema: Schema) {
-            schema.create(table: TokenModel.tableName) {
+            schema.create(table: TokenModel.table) {
                 $0.increments("id")
                     .primary()
                 $0.uuid("value")
@@ -47,7 +47,7 @@ struct TokenModel: Model, TokenAuthable {
         }
         
         func down(schema: Schema) {
-            schema.drop(table: TokenModel.tableName)
+            schema.drop(table: TokenModel.table)
         }
     }
 }

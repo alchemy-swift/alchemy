@@ -47,6 +47,40 @@ public struct SQLWhere: Equatable, Hashable {
     public let boolean: Boolean
 }
 
+// MARK: - Where Operators
+
+extension String {
+    public static func == (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .equals, value: rhs.sqlValue), boolean: .and)
+    }
+
+    public static func != (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .notEqualTo, value: rhs.sqlValue), boolean: .and)
+    }
+
+    public static func < (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .lessThan, value: rhs.sqlValue), boolean: .and)
+    }
+
+    public static func > (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .greaterThan, value: rhs.sqlValue), boolean: .and)
+    }
+
+    public static func <= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
+    }
+
+    public static func >= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
+    }
+
+    public static func ~= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
+        SQLWhere(type: .value(key: lhs, op: .like, value: rhs.sqlValue), boolean: .and)
+    }
+}
+
+// MARK: - Builders
+
 extension Query {
     /// Add a basic where clause to the query to filter down results.
     ///
@@ -267,37 +301,5 @@ extension Query {
     ///   queries to.
     public func orWhereNotNull(_ key: String) -> Self {
         whereNotNull(key, boolean: .or)
-    }
-}
-
-extension String {
-    // MARK: Custom Swift Operators
-    
-    public static func == (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .equals, value: rhs.sqlValue), boolean: .and)
-    }
-
-    public static func != (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .notEqualTo, value: rhs.sqlValue), boolean: .and)
-    }
-
-    public static func < (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .lessThan, value: rhs.sqlValue), boolean: .and)
-    }
-
-    public static func > (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .greaterThan, value: rhs.sqlValue), boolean: .and)
-    }
-
-    public static func <= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
-    }
-
-    public static func >= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sqlValue), boolean: .and)
-    }
-
-    public static func ~= (lhs: String, rhs: SQLValueConvertible) -> SQLWhere {
-        SQLWhere(type: .value(key: lhs, op: .like, value: rhs.sqlValue), boolean: .and)
     }
 }

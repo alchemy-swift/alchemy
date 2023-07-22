@@ -14,7 +14,7 @@ extension Database {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func table(_ table: String, as alias: String? = nil) -> Query<SQLRow> {
-        let tableName = alias.map { "\(table) as \($0)" } ?? table
+        let tableName = alias.map { "\(table) AS \($0)" } ?? table
         return Query(db: self, table: tableName)
     }
 

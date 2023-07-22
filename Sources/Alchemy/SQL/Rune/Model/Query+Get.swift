@@ -1,17 +1,6 @@
 import Foundation
 import NIO
 
-public extension Model {
-    /// Begin a `Query<Self>` from a given database.
-    ///
-    /// - Parameter database: The database to run the query on.
-    ///   Defaults to `Database.default`.
-    /// - Returns: A builder for building your query.
-    static func query(db: Database = DB) -> Query<Self> {
-        Query(db: db, table: Self.tableName)
-    }
-}
-
 /// A `Query` is just a subclass of `Query` with some added
 /// typing and convenience functions for querying the table of
 /// a specific `Model`.
@@ -47,6 +36,17 @@ extension Query where Result: Model {
     /// Returns a model of this query, if one exists.
     public func random() async throws -> Result? {
         try await select().orderBy("RANDOM()").limit(1).first()
+    }
+}
+
+public extension Model {
+    /// Begin a `Query<Self>` from a given database.
+    ///
+    /// - Parameter database: The database to run the query on.
+    ///   Defaults to `Database.default`.
+    /// - Returns: A builder for building your query.
+    static func query(db: Database = DB) -> Query<Self> {
+        Query(db: db, table: Self.table)
     }
 }
 

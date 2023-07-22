@@ -52,7 +52,7 @@ public protocol ModelBase: Identifiable, SQLQueryResult {
     ///     let email: String
     /// }
     /// ```
-    static var tableName: String { get }
+    static var table: String { get }
 
     static var idKey: String { get }
 
@@ -86,14 +86,14 @@ extension ModelBase where Self: Codable {
 }
 
 extension ModelBase {
-    public static var tableName: String {
+    public static var table: String {
         let typeName = String(describing: Self.self)
         let mapped = KeyMapping.snakeCase.encode(typeName)
         return mapped.pluralized
     }
 
     public static var referenceKey: String {
-        let key = Self.tableName.singularized + "Id"
+        let key = Self.table.singularized + "Id"
         return KeyMapping.snakeCase.encode(key)
     }
 
@@ -107,17 +107,5 @@ extension ModelBase {
     
     public static var jsonEncoder: JSONEncoder {
         JSONEncoder()
-    }
-    
-    /// Unwraps the id of this object or throws if it is nil.
-    ///
-    /// - Throws: A `DatabaseError` if the `id` of this object is nil.
-    /// - Returns: The unwrapped `id` value of this database object.
-    public func getID() throws -> Self.Identifier {
-        guard let id = id.value else {
-            throw DatabaseError("Object of type \(type(of: self)) had a nil id.")
-        }
-        
-        return id
     }
 }
