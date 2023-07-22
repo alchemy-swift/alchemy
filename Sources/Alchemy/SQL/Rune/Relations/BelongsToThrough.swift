@@ -4,7 +4,16 @@ extension Model {
 
 extension BelongsToRelation {
     public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.BelongsToThrough<To> {
-        BelongsToThroughRelation(db: db, from: self.from, fromKey: self._fromKey, toKey: self.toKey)
+        let _fromKey: String? = {
+            switch self.fromKey {
+            case .specified(let string):
+                return string
+            case .inferred:
+                return nil
+            }
+        }()
+
+        return BelongsToThroughRelation(db: db, from: self.from, fromKey: _fromKey, toKey: self.toKey.description)
             .through(table, from: fromKey, to: toKey)
     }
 }

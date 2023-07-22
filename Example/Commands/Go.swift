@@ -4,6 +4,28 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
+
+        /*
+         Checklist
+
+         1. DONE BelongsTo
+         2. DONE HasOne
+         3. DONE HasMany
+         4. DONE HasManyThrough
+         5. DONE HasOneThrough
+         6. DONE BelongsToMany
+         7. DONE BelongsToThrough
+         8. DONE Add multiple throughs
+         9. DONE Eager Loading
+         10 DONE Nested eager loading
+         11. DONE Add where to Relationship
+         12. Clean up key inference (has = modify next to inference, belongs = modify last from inference)
+         13. Clean up cache keying
+         14. CRUD
+         15. Subscript loading
+
+         */
+
         let user = try await User.query()
             .with(\.posts) {
                 $0.with(\.comments) {
@@ -15,12 +37,11 @@ struct Go: Command {
             .first()!
         let posts = try await user.posts()
         let tokens = try await user.tokens()
-//        let throughTokens = try await posts.first!.tokens()
-        let comments = try await posts[0].comments()
-        let likes = try await comments[0].likes()
-//        let friends = try await user.friends()
-//        let likes = try await user.likes()
-//        let owner2 = try await likes.first!.postOwner()
+        let throughTokens = try await posts.first!.tokens()
+        let comments = try await user.comments()
+        let friends = try await user.friends()
+        let likes = try await user.likes()
+        let owner = try await likes.first!.postOwner()
 
 //        let users = try await User
 //            .query()
@@ -42,17 +63,6 @@ struct Go: Command {
 //        }
     }
 }
-
-/*
- DONE:
- 1. Basic relationships & through relationships
-
- LEFT:
- 1. KeyPath loading `with`.
- 2. Load in between relationships.
- 3. Don't let where permanently change the query.
- 4. Support wheres on relationships.
- */
 
 struct User: Model {
     var id: PK<String> = .new

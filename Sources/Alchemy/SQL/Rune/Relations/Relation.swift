@@ -1,23 +1,3 @@
-/*
- Checklist
-
- 1. DONE BelongsTo
- 2. DONE HasOne
- 3. DONE HasMany
- 4. DONE HasManyThrough
- 5. DONE HasOneThrough
- 6. DONE BelongsToMany
- 7. DONE BelongsToThrough
- 8. DONE Add multiple throughs
- 9. DONE Eager Loading
- 10 DONE Nested eager loading
- 11. Add where to Relationship
- 12. Infer keys (has = modify next to inference, belongs = modify last from inference)
- 13. CRUD
- 14. Subscript loading
-
- */
-
 public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     /// Used when caching after eager loading. This should be unique per relationship. Might be able to use the SQL query intead.
     var cacheKey: String {

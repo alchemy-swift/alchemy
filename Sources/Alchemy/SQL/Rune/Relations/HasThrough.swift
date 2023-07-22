@@ -5,14 +5,30 @@ extension Model {
 
 extension HasRelation where To: ModelOrOptional {
     public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasOneThrough<To> {
-        HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
+        let _toKey: String? = {
+            switch self.toKey {
+            case .inferred:
+                return nil
+            case .specified(let string):
+                return string
+            }
+        }()
+        return HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey.string, toKey: _toKey)
             .through(table, from: fromKey, to: toKey)
     }
 }
 
 extension HasRelation where To: Sequence {
     public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasManyThrough<To.M> {
-        HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey, toKey: self._toKey)
+        let _toKey: String? = {
+            switch self.toKey {
+            case .inferred:
+                return nil
+            case .specified(let string):
+                return string
+            }
+        }()
+        return HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey.string, toKey: _toKey)
             .through(table, from: fromKey, to: toKey)
     }
 }
