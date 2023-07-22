@@ -18,8 +18,6 @@ extension Model {
 }
 
 public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
-    let fromKey: SQLKey
-    let toKey: SQLKey
     let pivot: String
     let pivotFrom: SQLKey
     let pivotTo: SQLKey
@@ -29,12 +27,10 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
     }
 
     init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey, pivot: String, pivotFrom: SQLKey, pivotTo: SQLKey) {
-        self.fromKey = fromKey
-        self.toKey = toKey
         self.pivot = pivot
         self.pivotFrom = pivotFrom
         self.pivotTo = pivotTo
-        super.init(db: db, from: from)
+        super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
     }
 
     public override func fetch(for models: [From]) async throws -> [[M]] {

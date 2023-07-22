@@ -22,17 +22,8 @@ extension Model {
 }
 
 public final class HasRelation<From: Model, To: OneOrMany>: Relation<From, To> {
-    let fromKey: SQLKey
-    let toKey: SQLKey
-
     public override var cacheKey: String {
         "\(name(of: Self.self))_\(fromKey)_\(toKey)"
-    }
-
-    fileprivate init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
-        self.fromKey = fromKey
-        self.toKey = toKey
-        super.init(db: db, from: from)
     }
 
     public override func fetch(for models: [From]) async throws -> [To] {

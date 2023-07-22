@@ -7,9 +7,13 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
 
     /// The specific model this relation was accessed from.
     let from: From
+    var fromKey: SQLKey
+    var toKey: SQLKey
 
-    public init(db: Database, from: From) {
+    public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
         self.from = from
+        self.fromKey = fromKey
+        self.toKey = toKey
         super.init(db: db, table: To.M.table)
     }
 

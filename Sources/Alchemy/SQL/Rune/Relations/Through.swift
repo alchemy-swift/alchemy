@@ -1,5 +1,5 @@
 /// Used to infer keys for relationships.
-enum SQLKey: CustomStringConvertible {
+public enum SQLKey: CustomStringConvertible {
     case specified(String)
     case inferred(String)
 
@@ -10,7 +10,7 @@ enum SQLKey: CustomStringConvertible {
         }
     }
 
-    var description: String {
+    public var description: String {
         string
     }
 
@@ -30,40 +30,10 @@ enum SQLKey: CustomStringConvertible {
     }
 }
 
+let kLookupAlias = "__lookup"
+
 struct Through {
-    let table: Table
-    let from: String?
-    let to: String?
-}
-
-enum Table {
-    case model(any Model.Type)
-    case string(String)
-
-    func idKey(mapping: KeyMapping) -> String {
-        switch self {
-        case .model(let model):
-            return model.idKey
-        case .string:
-            return mapping.encode("Id")
-        }
-    }
-
-    func referenceKey(mapping: KeyMapping) -> String {
-        switch self {
-        case .model(let model):
-            return model.referenceKey
-        case .string(let string):
-            return mapping.encode(string.singularized + "Id")
-        }
-    }
-
-    var string: String {
-        switch self {
-        case .model(let model):
-            return model.table
-        case .string(let string):
-            return string
-        }
-    }
+    let table: String
+    let from: SQLKey
+    let to: SQLKey
 }

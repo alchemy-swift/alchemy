@@ -6,6 +6,7 @@ public class Query<Result: SQLQueryResult> {
     let db: Database
     var shouldLog: Bool = false
 
+    /// The SQL table to be queried.
     let table: String
     var columns: [String] = ["*"]
     var isDistinct = false
