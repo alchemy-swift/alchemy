@@ -45,7 +45,7 @@ public struct SQLJoin: Equatable {
 extension Query {
 
     func join(_ join: SQLJoin) -> Self {
-        query.joins.append(join)
+        joins.append(join)
         return self
     }
 
@@ -62,9 +62,10 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func join(table: String, first: String, op: SQLWhere.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
-        let join = SQLJoin(type: type, joinTable: table)
-        query.joins.append(join.on(first: first, op: op, second: second))
-        return self
+        join(
+            SQLJoin(type: type, joinTable: table)
+                .on(first: first, op: op, second: second)
+        )
     }
     
     /// Joins data from a separate table into the current query, using the given
@@ -76,8 +77,7 @@ extension Query {
     ///   - conditions: A closure that sets the conditions on the join using.
     /// - Returns: This query builder.
     public func join(table: String, type: SQLJoin.JoinType = .inner, conditions: (SQLJoin) -> SQLJoin) -> Self {
-        query.joins.append(conditions(SQLJoin(type: type, joinTable: table)))
-        return self
+        join(conditions(SQLJoin(type: type, joinTable: table)))
     }
 
     /// Left join data from a separate table into the current query

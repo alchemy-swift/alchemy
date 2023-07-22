@@ -90,7 +90,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ clause: SQLWhere) -> Self {
-        query.wheres.append(clause)
+        wheres.append(clause)
         return self
     }
 
@@ -133,9 +133,8 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ closure: @escaping (Query) -> Query, boolean: SQLWhere.Boolean = .and) -> Self {
-        let query = closure(Query(db: db, table: query.table))
-        self.query.wheres.append(SQLWhere(type: .nested(wheres: query.query.wheres), boolean: boolean))
-        return self
+        let query = closure(Query(db: db, table: table))
+        return `where`(SQLWhere(type: .nested(wheres: query.wheres), boolean: boolean))
     }
 
     /// A helper for adding an **or** `where` nested closure clause.
@@ -162,8 +161,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func `where`(_ key: String, in values: [SQLValueConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
-        query.wheres.append(SQLWhere(type: .in(key: key, values: values.map { $0.sqlValue }), boolean: boolean))
-        return self
+        `where`(SQLWhere(type: .in(key: key, values: values.map { $0.sqlValue }), boolean: boolean))
     }
 
     /// A helper for adding an **or** variant of the `where(key:in:)` clause.
@@ -190,8 +188,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func whereNot(_ key: String, in values: [SQLValueConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
-        query.wheres.append(SQLWhere(type: .notIn(key: key, values: values.map { $0.sqlValue }), boolean: boolean))
-        return self
+        `where`(SQLWhere(type: .notIn(key: key, values: values.map { $0.sqlValue }), boolean: boolean))
     }
 
     /// A helper for adding an **or** `whereNot` clause.
@@ -215,8 +212,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func whereRaw(_ sql: String, bindings: [SQLValueConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
-        query.wheres.append(SQLWhere(type: .raw(SQL(sql, bindings: bindings.map(\.sqlValue))), boolean: boolean))
-        return self
+        `where`(SQLWhere(type: .raw(SQL(sql, bindings: bindings.map(\.sqlValue))), boolean: boolean))
     }
 
     /// A helper for adding an **or** `whereRaw` clause.
@@ -242,8 +238,7 @@ extension Query {
     ///   queries to.
     @discardableResult
     public func whereColumn(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        query.wheres.append(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
-        return self
+        `where`(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
     }
 
     /// A helper for adding an **or** `whereColumn` clause.
@@ -268,8 +263,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func whereNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        query.wheres.append(SQLWhere(type: .raw(SQL("\(key) IS NULL")), boolean: boolean))
-        return self
+        `where`(SQLWhere(type: .raw(SQL("\(key) IS NULL")), boolean: boolean))
     }
 
     /// A helper for adding an **or** `whereNull` clause.
@@ -290,8 +284,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func whereNotNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        query.wheres.append(SQLWhere(type: .raw(SQL("\(key) IS NOT NULL")), boolean: boolean))
-        return self
+        `where`(SQLWhere(type: .raw(SQL("\(key) IS NOT NULL")), boolean: boolean))
     }
 
     /// A helper for adding an **or** `whereNotNull` clause.

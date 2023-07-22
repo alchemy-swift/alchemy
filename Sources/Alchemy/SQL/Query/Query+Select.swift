@@ -7,7 +7,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func select(_ columns: String...) -> Self {
-        query.columns = columns
+        self.columns = columns
         return self
     }
     
@@ -19,7 +19,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func select(_ columns: [String] = ["*"]) -> Self {
-        query.columns = columns
+        self.columns = columns
         return self
     }
 
@@ -30,8 +30,8 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func distinct(_ columns: [String] = ["*"]) -> Self {
-        query.columns = columns
-        query.isDistinct = true
+        self.columns = columns
+        isDistinct = true
         return self
     }
 }

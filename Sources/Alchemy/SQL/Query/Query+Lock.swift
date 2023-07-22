@@ -16,7 +16,7 @@ public struct SQLLock: Equatable {
 extension Query {
     /// Adds custom locking SQL to the end of a SELECT query.
     public func lock(for strength: SQLLock.Strength, option: SQLLock.Option? = nil) -> Self {
-        query.lock = SQLLock(strength: strength, option: option)
+        lock = SQLLock(strength: strength, option: option)
         return self
     }
 }

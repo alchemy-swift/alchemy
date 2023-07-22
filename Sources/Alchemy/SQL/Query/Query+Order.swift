@@ -22,7 +22,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func orderBy(_ order: SQLOrder) -> Self {
-        query.orders.append(order)
+        orders.append(order)
         return self
     }
 

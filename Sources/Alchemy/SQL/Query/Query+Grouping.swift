@@ -5,7 +5,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func groupBy(_ group: String) -> Self {
-        query.groups.append(group)
+        groups.append(group)
         return self
     }
     
@@ -17,7 +17,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func having(_ clause: SQLWhere) -> Self {
-        query.havings.append(clause)
+        havings.append(clause)
         return self
     }
 

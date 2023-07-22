@@ -5,7 +5,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func limit(_ value: Int) -> Self {
-        query.limit = max(0, value)
+        limit = max(0, value)
         return self
     }
     
@@ -15,7 +15,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func offset(_ value: Int) -> Self {
-        query.offset = max(0, value)
+        offset = max(0, value)
         return self
     }
 
