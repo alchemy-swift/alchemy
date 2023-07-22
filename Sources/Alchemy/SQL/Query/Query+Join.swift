@@ -44,6 +44,7 @@ public struct SQLJoin: Equatable {
 
 extension Query {
 
+    @discardableResult
     func join(_ join: SQLJoin) -> Self {
         joins.append(join)
         return self
@@ -61,6 +62,7 @@ extension Query {
     ///     `.inner`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
+    @discardableResult
     public func join(table: String, first: String, op: SQLWhere.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
         join(
             SQLJoin(type: type, joinTable: table)

@@ -17,8 +17,7 @@ extension HasRelation where To: Sequence {
     }
 }
 
-public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation {
-    let db: Database
+public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation<From, To> {
     let fromKey: String
     var _toKey: String?
     var toKey: String {
@@ -27,37 +26,33 @@ public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation {
 
     private var throughs: [Through] = []
 
-    public let from: From
-    public var cacheKey: String {
+    public override var cacheKey: String {
         "\(name(of: Self.self))_\(fromKey)_\(toKey)"
     }
 
     fileprivate init(db: Database, from: From, fromKey: String?, toKey: String?) {
-        self.db = db
-        self.from = from
         self.fromKey = fromKey ?? From.idKey
         self._toKey = toKey
         self.throughs = []
+        super.init(db: db, from: from)
     }
 
-    public func fetch(for models: [From]) async throws -> [To] {
-        var query: Query<To.M> = To.M.query(db: db)
-        for join in calculateJoins() {
-            query = query.join(join)
+    public override func fetch(for models: [From]) async throws -> [To] {
+        for j in calculateJoins() {
+            join(j)
         }
 
         let toTable = Table.model(To.M.self).string
         let lookupTable = throughs.first?.table.string ?? toTable
         let lookupColumn = throughs.first?.from ?? toKey
-
-        let ids = models.map(\.row[fromKey])
         let lookupKey = "\(lookupTable).\(lookupColumn)"
         let lookupAlias = "__lookup"
         let columns: [String]? = ["\(toTable).*", "\(lookupKey) AS \(lookupAlias)"]
-        let rows = try await query.where(lookupKey, in: ids).select(columns)
-        let rowsByToColumn = rows.grouped(by: \.[lookupAlias])
-        return try ids.map { rowsByToColumn[$0] ?? [] }
-            .map { try $0.mapDecode(To.M.self) }
+        let ids = models.map(\.row[fromKey])
+        let results = try await `where`(lookupKey, in: ids).get(columns)
+        let resultsByLookup = results.grouped(by: \.row[lookupAlias])
+        return try ids
+            .map { resultsByLookup[$0] ?? [] }
             .map { try To(models: $0) }
     }
 

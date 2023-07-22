@@ -4,22 +4,20 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        _ = try await User.query()
+        let user = try await User.query()
             .with(\.posts) {
-                $0
+                $0.with(\.comments) {
+                    $0.with(\.likes)
+                }
             }
             .with(\.tokens)
             .where("id" == "user_1")
             .first()!
-//        print("USER: \(user.name)")
-//        let posts = try await user.posts()
-//        print("POSTS: \(posts.map(\.id))")
-//        let tokens = try await user.tokens()
-//        print("TOKENS: \(tokens.map(\.id))")
+        let posts = try await user.posts()
+        let tokens = try await user.tokens()
 //        let throughTokens = try await posts.first!.tokens()
-//        print("THROUGH TOKENS: \(throughTokens.map(\.id))")
-//        let comments = try await user.comments()
-//        let owner = try await comments.first!.postOwner()
+        let comments = try await posts[0].comments()
+        let likes = try await comments[0].likes()
 //        let friends = try await user.friends()
 //        let likes = try await user.likes()
 //        let owner2 = try await likes.first!.postOwner()
@@ -97,6 +95,10 @@ struct Post: Model {
     let title: String
     let userId: String
 
+    var comments: HasMany<Comment> {
+        hasMany()
+    }
+
     var tokens: HasManyThrough<UserToken> {
         hasMany(from: "user_id").through("users", from: "id")
     }
@@ -106,6 +108,14 @@ struct Comment: Model {
     var id: PK<String> = .new
     let text: String
     let userId: String
+
+    var post: BelongsTo<Post> {
+        belongsTo()
+    }
+
+    var likes: HasMany<Like> {
+        hasMany()
+    }
 
     var postOwner: BelongsToThrough<User> {
         belongsTo().through("posts")

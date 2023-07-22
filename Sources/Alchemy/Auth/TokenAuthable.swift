@@ -80,7 +80,7 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
         
         let model = try await T.query()
             .where(T.valueKeyString == bearerAuth.token)
-            .with(\.user)
+            .with { $0.user }
             .first()
             .unwrap(or: HTTPError(.unauthorized))
         let user = try await model.user.get()

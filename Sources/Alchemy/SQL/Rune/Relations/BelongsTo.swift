@@ -9,33 +9,29 @@ extension Model {
     }
 }
 
-public struct BelongsToRelation<From: Model, To: ModelOrOptional>: Relation {
-    let db: Database
+public class BelongsToRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
     let toKey: String
     let _fromKey: String?
     var fromKey: String {
         _fromKey ?? To.M.referenceKey
     }
 
-    public let from: From
-    public var cacheKey: String {
+    public override var cacheKey: String {
         "\(name(of: Self.self))_\(fromKey)_\(toKey)"
     }
 
     fileprivate init(db: Database, from: From, fromKey: String?, toKey: String?) {
-        self.db = db
-        self.from = from
         self._fromKey = fromKey
         self.toKey = toKey ?? To.M.idKey
+        super.init(db: db, from: from)
     }
 
-    public func fetch(for models: [From]) async throws -> [To] {
+    public override func fetch(for models: [From]) async throws -> [To] {
         let ids = models.map(\.row[fromKey])
-        let rows = try await To.M.query(db: db).where(toKey, in: ids).select()
-        let rowsByToColumn = rows.grouped(by: \.[toKey])
+        let results = try await `where`(toKey, in: ids).get(nil)
+        let resultsByToColumn = results.grouped(by: \.row[toKey])
         return try ids
-            .map { rowsByToColumn[$0] ?? [] }
-            .map { try $0.mapDecode(To.M.self) }
+            .map { resultsByToColumn[$0] ?? [] }
             .map { try To(models: $0) }
     }
 }
