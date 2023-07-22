@@ -1,23 +1,10 @@
-extension Model {
-    public typealias HasOneThrough<To: ModelOrOptional> = HasThroughRelation<Self, To>
-    public typealias HasManyThrough<To: Model> = HasThroughRelation<Self, [To]>
+struct Through {
+    let table: String
+    let from: SQLKey
+    let to: SQLKey
 }
 
-extension HasRelation where To: ModelOrOptional {
-    public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.HasOneThrough<To> {
-        HasThroughRelation(db: db, from: from, fromKey: fromKey, toKey: toKey)
-            .through(table, from: throughFromKey, to: throughToKey)
-    }
-}
-
-extension HasRelation where To: Sequence {
-    public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.HasManyThrough<To.M> {
-        HasThroughRelation(db: db, from: from, fromKey: fromKey, toKey: toKey)
-            .through(table, from: throughFromKey, to: throughToKey)
-    }
-}
-
-public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation<From, To> {
+public class ThroughRelation<From: Model, To: OneOrMany>: Relation<From, To> {
     var throughs: [Through] = []
 
     public override var cacheKey: String {

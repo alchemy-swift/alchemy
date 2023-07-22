@@ -29,11 +29,3 @@ public enum SQLKey: CustomStringConvertible {
         .inferred(key)
     }
 }
-
-let kLookupAlias = "__lookup"
-
-struct Through {
-    let table: String
-    let from: SQLKey
-    let to: SQLKey
-}

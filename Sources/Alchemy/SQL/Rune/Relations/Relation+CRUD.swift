@@ -14,11 +14,11 @@
 
  */
 
-extension HasRelation where To: Sequence {
+extension HasManyRelation {
     // MARK: HasMany operations
 }
 
-extension HasRelation where To: ModelOrOptional {
+extension HasOneRelation {
     // MARK: HasOne operations
 }
 

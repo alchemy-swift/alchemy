@@ -1,8 +1,7 @@
 public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     /// Used when caching after eager loading. This should be unique per relationship. Might be able to use the SQL query intead.
     var cacheKey: String {
-        // Infer with query?
-        preconditionFailure("This should be overrided.")
+        "\(name(of: Self.self))_\(fromKey)_\(toKey)"
     }
 
     /// The specific model this relation was accessed from.
@@ -20,7 +19,12 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     /// Execute the relationship given the input rows. Always returns an array
     /// the same length as the input array.
     public func fetch(for models: [From]) async throws -> [To] {
-        preconditionFailure("This should be overridden.")
+        let ids = models.map(\.row[fromKey.string])
+        let results = try await `where`(toKey.string, in: ids).get(nil)
+        let resultsByToColumn = results.grouped(by: \.row[toKey.string])
+        return try ids
+            .map { resultsByToColumn[$0] ?? [] }
+            .map { try To(models: $0) }
     }
 
     public final func eagerLoad(on models: [From]) async throws {

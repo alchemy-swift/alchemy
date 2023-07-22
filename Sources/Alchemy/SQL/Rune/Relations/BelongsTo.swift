@@ -11,17 +11,4 @@ extension Model {
     }
 }
 
-public class BelongsToRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
-    public override var cacheKey: String {
-        "\(name(of: Self.self))_\(fromKey)_\(toKey)"
-    }
-
-    public override func fetch(for models: [From]) async throws -> [To] {
-        let ids = models.map(\.row[fromKey.string])
-        let results = try await `where`(toKey.string, in: ids).get(nil)
-        let resultsByToColumn = results.grouped(by: \.row[toKey.string])
-        return try ids
-            .map { resultsByToColumn[$0] ?? [] }
-            .map { try To(models: $0) }
-    }
-}
+public class BelongsToRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {}
