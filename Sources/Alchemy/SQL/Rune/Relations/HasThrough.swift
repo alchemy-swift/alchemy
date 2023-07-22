@@ -5,40 +5,25 @@ extension Model {
 
 extension HasRelation where To: ModelOrOptional {
     public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasOneThrough<To> {
-        let _toKey: String? = {
-            switch self.toKey {
-            case .inferred:
-                return nil
-            case .specified(let string):
-                return string
-            }
-        }()
-        return HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey.string, toKey: _toKey)
+        let from: SQLKey = self.fromKey
+        let to: SQLKey = self.toKey
+        return HasThroughRelation(db: db, from: self.from, fromKey: from, toKey: to)
             .through(table, from: fromKey, to: toKey)
     }
 }
 
 extension HasRelation where To: Sequence {
     public func through(_ table: String, from fromKey: String? = nil, to toKey: String? = nil) -> From.HasManyThrough<To.M> {
-        let _toKey: String? = {
-            switch self.toKey {
-            case .inferred:
-                return nil
-            case .specified(let string):
-                return string
-            }
-        }()
-        return HasThroughRelation(db: db, from: self.from, fromKey: self.fromKey.string, toKey: _toKey)
+        let from: SQLKey = self.fromKey
+        let to: SQLKey = self.toKey
+        return HasThroughRelation(db: db, from: self.from, fromKey: from, toKey: to)
             .through(table, from: fromKey, to: toKey)
     }
 }
 
 public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation<From, To> {
-    let fromKey: String
-    var _toKey: String?
-    var toKey: String {
-        _toKey ?? throughs.first?.from ?? Table.model(From.self).referenceKey(mapping: db.keyMapping)
-    }
+    let toKey: SQLKey
+    let fromKey: SQLKey
 
     private var throughs: [Through] = []
 
@@ -46,9 +31,9 @@ public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation<From
         "\(name(of: Self.self))_\(fromKey)_\(toKey)"
     }
 
-    fileprivate init(db: Database, from: From, fromKey: String?, toKey: String?) {
-        self.fromKey = fromKey ?? From.idKey
-        self._toKey = toKey
+    fileprivate init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
+        self.fromKey = fromKey
+        self.toKey = toKey
         self.throughs = []
         super.init(db: db, from: from)
     }
@@ -60,11 +45,11 @@ public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation<From
 
         let toTable = Table.model(To.M.self).string
         let lookupTable = throughs.first?.table.string ?? toTable
-        let lookupColumn = throughs.first?.from ?? toKey
+        let lookupColumn = throughs.first?.from ?? toKey.string
         let lookupKey = "\(lookupTable).\(lookupColumn)"
         let lookupAlias = "__lookup"
         let columns: [String]? = ["\(toTable).*", "\(lookupKey) AS \(lookupAlias)"]
-        let ids = models.map(\.row[fromKey])
+        let ids = models.map(\.row[fromKey.string])
         let results = try await `where`(lookupKey, in: ids).get(columns)
         let resultsByLookup = results.grouped(by: \.row[lookupAlias])
         return try ids
@@ -80,7 +65,7 @@ public final class HasThroughRelation<From: Model, To: OneOrMany>: Relation<From
     private func calculateJoins() -> [SQLJoin] {
         var nextTable: Table = .model(To.M.self)
         var previousTable = throughs.last?.table ?? .model(To.M.self)
-        var nextKey: String = _toKey ?? previousTable.referenceKey(mapping: db.keyMapping)
+        var nextKey: String = toKey.string
 
         var joins: [SQLJoin] = []
         let reversed = Array(throughs.reversed())

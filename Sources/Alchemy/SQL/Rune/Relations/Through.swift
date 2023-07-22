@@ -1,3 +1,4 @@
+/// Used to infer keys for relationships.
 enum SQLKey: CustomStringConvertible {
     case specified(String)
     case inferred(String)
