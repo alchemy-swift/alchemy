@@ -21,26 +21,35 @@ struct Go: Command {
          12. DONE Clean up key inference
          13. DONE Clean up cache keying
          14. Subscript loading
-         15. CRUD
+
+         LATER
+         1. CRUD
 
          */
 
         let user = try await User.query()
-            .with(\.posts) {
-                $0.with(\.comments) {
-                    $0.with(\.likes)
-                }
-            }
-            .with(\.tokens)
+//            .with(\.posts.comments.likes)
+//            .with {
+//                $0.posts.with {
+//                    $0.comments.with {
+//                        $0.likes
+//                    }
+//                }
+//            }
+//            .with(\.tokens)
             .where("id" == "user_1")
             .first()!
-        let posts = try await user.posts()
-        let tokens = try await user.tokens()
-        let throughTokens = try await posts.first!.tokens()
-        let comments = try await user.comments()
-        let friends = try await user.friends()
-        let likes = try await user.likes()
-        let owner = try await likes.first!.postOwner()
+//        let _posts: [Post] = try await user.posts.get()
+//        let _comments: [Comment] = try await user.posts.comments.get()
+        let _likes: [Like] = try await user.posts.comments.likes.get()
+        print("LIKES: \(_likes.count)")
+//        let posts = try await user.posts()
+//        let tokens = try await user.tokens()
+//        let throughTokens = try await posts.first!.tokens()
+//        let comments = try await user.comments()
+//        let friends = try await user.friends()
+//        let likes = try await user.likes()
+//        let owner = try await likes.first!.postOwner()
 
 //        let users = try await User
 //            .query()
