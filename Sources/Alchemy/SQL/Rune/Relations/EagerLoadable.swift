@@ -1,4 +1,5 @@
-public protocol EagerLoadable {
+@dynamicMemberLookup
+public protocol EagerLoadable<From, To> {
     associatedtype From: Model
     associatedtype To
 
@@ -13,23 +14,23 @@ extension EagerLoadable {
         "\(Self.self)"
     }
 
-    public func eagerLoad(on models: [From]) async throws {
+    @discardableResult
+    public func eagerLoad(on models: [From]) async throws -> [To] {
         let key = cacheKey
         let values = try await fetch(for: models)
         for (model, results) in zip(models, values) {
             model.cache(key: key, value: results)
         }
+
+        return values
     }
 
     public func get() async throws -> To {
-        let key = cacheKey
-        if let cached = try from.checkCache(key: key, To.self) {
-            return cached
+        guard let cached = try from.checkCache(key: cacheKey, To.self) else {
+            return try await eagerLoad(on: [from])[0]
         }
 
-        let value = try await fetch(for: [from])[0]
-        from.cache(key: key, value: value)
-        return value
+        return cached
     }
 
     public func callAsFunction() async throws -> To {

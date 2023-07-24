@@ -20,7 +20,7 @@ struct Go: Command {
          11. DONE Add where to Relationship
          12. DONE Clean up key inference
          13. DONE Clean up cache keying
-         14. Subscript loading
+         14. DONE Subscript loading
 
          LATER
          1. CRUD
@@ -28,7 +28,7 @@ struct Go: Command {
          */
 
         let user = try await User.query()
-//            .with(\.posts.comments.likes)
+            .with(\.posts.comments.likes)
 //            .with {
 //                $0.posts.with {
 //                    $0.comments.with {
@@ -39,10 +39,17 @@ struct Go: Command {
 //            .with(\.tokens)
             .where("id" == "user_1")
             .first()!
-//        let _posts: [Post] = try await user.posts.get()
+
+        print("LOADED")
+        let posts = try await user.posts()
+        let comments = try await posts[0].comments()
+        _ = try await comments[0].likes()
+        _ = try await user.posts.comments.likes()
 //        let _comments: [Comment] = try await user.posts.comments.get()
-        let _likes: [Like] = try await user.posts.comments.likes.get()
-        print("LIKES: \(_likes.count)")
+//        let _likes: [Like] = try await user.posts.comments.likes.get()
+//        let _likes1: [Like] = try await user.posts.comments.likes1.get()
+//        let _comments: [Comment] = try await user.posts.comments.get()
+//        let _comments1: [Comment] = try await user.posts.comments1.get()
 //        let posts = try await user.posts()
 //        let tokens = try await user.tokens()
 //        let throughTokens = try await posts.first!.tokens()
@@ -117,6 +124,10 @@ struct Post: Model {
         hasMany()
     }
 
+    var comments1: HasOne<Comment?> {
+        hasOne()
+    }
+
     var tokens: HasManyThrough<UserToken> {
         hasMany(from: "user_id").through("users", from: "id")
     }
@@ -133,6 +144,10 @@ struct Comment: Model {
 
     var likes: HasMany<Like> {
         hasMany()
+    }
+
+    var likes1: HasOne<Like> {
+        hasOne()
     }
 
     var postOwner: BelongsToThrough<User> {

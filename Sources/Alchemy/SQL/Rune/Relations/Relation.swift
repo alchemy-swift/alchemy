@@ -1,4 +1,3 @@
-@dynamicMemberLookup
 public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     struct Through {
         let table: String
@@ -17,7 +16,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         let key = "\(name(of: Self.self))_\(fromKey)_\(toKey)"
         let throughKeys = throughs.map { "\($0.table)_\($0.from)_\($0.to)" }
         let whereKeys = wheres.map { "\($0.hashValue)" }
-        return ([key] + throughKeys + whereKeys).joined(separator: "_")
+        return ([key] + throughKeys + whereKeys).joined(separator: ":")
     }
 
     public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
@@ -37,7 +36,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         let results = try await `where`(lookupKey, in: fromKeys).get(columns)
         let resultsByLookup = results.grouped(by: \.row[lookupKey])
         return try fromKeys
-            .map { resultsByLookup[$0] ?? [] }
+            .map { resultsByLookup[$0, default: []] }
             .map { try To(models: $0) }
     }
 

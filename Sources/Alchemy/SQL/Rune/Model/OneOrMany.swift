@@ -29,7 +29,7 @@ extension Optional: OneOrMany where Wrapped: Model {
 extension Model {
     public init(models: [Self]) throws {
         guard let model = models.first else {
-            throw RuneError("Unable to find a hasOne!")
+            throw RuneError("Non-optional relationship to \(Self.self) had no results!")
         }
 
         self = model
