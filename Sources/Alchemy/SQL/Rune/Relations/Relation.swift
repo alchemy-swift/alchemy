@@ -1,5 +1,5 @@
 public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
-    /// Used when caching after eager loading. This should be unique per relationship. Might be able to use the SQL query intead.
+    // Might be able to use the SQL query intead?
     var cacheKey: String {
         "\(name(of: Self.self))_\(fromKey)_\(toKey)"
     }
@@ -19,11 +19,13 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     /// Execute the relationship given the input rows. Always returns an array
     /// the same length as the input array.
     public func fetch(for models: [From]) async throws -> [To] {
-        let ids = models.map(\.row[fromKey.string])
-        let results = try await `where`(toKey.string, in: ids).get(nil)
-        let resultsByToColumn = results.grouped(by: \.row[toKey.string])
-        return try ids
-            .map { resultsByToColumn[$0] ?? [] }
+        let lookupKey = "\(toKey)"
+        let columns = ["\(table).*"]
+        let keys = models.map(\.row["\(fromKey)"])
+        let results = try await `where`(lookupKey, in: keys).get(columns)
+        let resultsByLookup = results.grouped(by: \.row[lookupKey])
+        return try keys
+            .map { resultsByLookup[$0] ?? [] }
             .map { try To(models: $0) }
     }
 
