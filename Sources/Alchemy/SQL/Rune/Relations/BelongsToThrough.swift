@@ -4,12 +4,17 @@ extension Model {
 
 extension BelongsToRelation {
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.BelongsToThrough<To> {
-        BelongsToThroughRelation(db: db, from: self.from, fromKey: fromKey, toKey: toKey)
-            .through(table, from: throughFromKey, to: throughToKey)
+        BelongsToThroughRelation(belongsTo: self, through: table, fromKey: throughFromKey, toKey: throughToKey)
     }
 }
 
-public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: ThroughRelation<From, To> {
+public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
+    init(belongsTo: BelongsToRelation<From, To>, through table: String, fromKey: String?, toKey: String?) {
+        super.init(db: belongsTo.db, from: belongsTo.from, fromKey: belongsTo.fromKey, toKey: belongsTo.toKey)
+        through(table, from: fromKey, to: toKey)
+    }
+
+    @discardableResult
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
         // TODO: FIX FOR BELONGS
         let from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
@@ -18,6 +23,7 @@ public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: T
         return _through(table: table, from: from, to: to)
     }
 
+    @discardableResult
     public func through(_ model: (some Model).Type, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
         // TODO: FIX FOR BELONGS
         let from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)

@@ -4,12 +4,17 @@ extension Model {
 
 extension HasOneRelation {
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.HasOneThrough<To> {
-        HasOneThroughRelation(db: db, from: from, fromKey: fromKey, toKey: toKey)
-            .through(table, from: throughFromKey, to: throughToKey)
+        HasOneThroughRelation(hasOne: self, through: table, fromKey: throughFromKey, toKey: throughToKey)
     }
 }
 
-public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: ThroughRelation<From, To> {
+public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
+    init(hasOne: HasOneRelation<From, To>, through table: String, fromKey: String?, toKey: String?) {
+        super.init(db: hasOne.db, from: hasOne.from, fromKey: hasOne.fromKey, toKey: hasOne.toKey)
+        through(table, from: fromKey, to: toKey)
+    }
+
+    @discardableResult
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
         // TODO: OR throughs.last.table.referenceKey if another through exists!
         let from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
@@ -18,6 +23,7 @@ public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: Thro
         return _through(table: table, from: from, to: to)
     }
 
+    @discardableResult
     public func through(_ model: (some Model).Type, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
         // TODO: OR throughs.last.table.referenceKey if another through exists!
         let from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)

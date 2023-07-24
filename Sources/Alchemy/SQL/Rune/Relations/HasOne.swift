@@ -5,10 +5,14 @@ extension Model {
                                             _ type: To.Type = To.self,
                                             from fromKey: String? = nil,
                                             to toKey: String? = nil) -> HasOne<To> {
-        let from: SQLKey = .infer(Self.idKey).specify(fromKey)
-        let to: SQLKey = .infer(Self.referenceKey).specify(toKey)
-        return HasOne(db: db, from: self, fromKey: from, toKey: to)
+        HasOne(db: db, from: self, fromKey: fromKey, toKey: toKey)
     }
 }
 
-public class HasOneRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {}
+public class HasOneRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
+    init(db: Database, from: From, fromKey: String?, toKey: String?) {
+        let fromKey: SQLKey = .infer(From.idKey).specify(fromKey)
+        let toKey: SQLKey = .infer(From.referenceKey).specify(toKey)
+        super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
+    }
+}

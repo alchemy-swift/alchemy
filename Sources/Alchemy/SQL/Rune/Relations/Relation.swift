@@ -1,32 +1,65 @@
 public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
-    // Might be able to use the SQL query intead?
-    var cacheKey: String {
-        "\(name(of: Self.self))_\(fromKey)_\(toKey)"
+    struct Through {
+        let table: String
+        let from: SQLKey
+        let to: SQLKey
     }
 
-    /// The specific model this relation was accessed from.
+    // Might be able to use the SQL query intead?
+    var cacheKey: String {
+        var key = "\(name(of: Self.self))_\(fromKey)_\(toKey)"
+        for through in throughs {
+            key.append("_\(through.table)_\(through.from)_\(through.to)")
+        }
+
+        return key
+    }
+
+    /// The model instance this relation was accessed from.
     let from: From
     var fromKey: SQLKey
     var toKey: SQLKey
+    private var lookupKey: String
+    private var throughs: [Through]
 
     public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
         self.from = from
         self.fromKey = fromKey
         self.toKey = toKey
+        self.throughs = []
+        self.lookupKey = "\(toKey)"
         super.init(db: db, table: To.M.table)
     }
 
     /// Execute the relationship given the input rows. Always returns an array
     /// the same length as the input array.
     public func fetch(for models: [From]) async throws -> [To] {
-        let lookupKey = "\(toKey)"
-        let columns = ["\(table).*"]
-        let keys = models.map(\.row["\(fromKey)"])
-        let results = try await `where`(lookupKey, in: keys).get(columns)
+        setJoins()
+        let fromKeys = models.map(\.row["\(fromKey)"])
+        let results = try await `where`(lookupKey, in: fromKeys).get(columns)
         let resultsByLookup = results.grouped(by: \.row[lookupKey])
-        return try keys
+        return try fromKeys
             .map { resultsByLookup[$0] ?? [] }
             .map { try To(models: $0) }
+    }
+
+    private func setJoins() {
+        var nextKey = "\(table).\(toKey)"
+        for through in throughs.reversed() {
+            join(table: through.table, first: "\(through.table).\(through.to)", second: nextKey)
+            nextKey = "\(through.table).\(through.from)"
+        }
+    }
+
+    @discardableResult
+    func _through(table: String, from: SQLKey, to: SQLKey) -> Self {
+        if throughs.isEmpty {
+            lookupKey = "\(table).\(from)"
+            columns.append(lookupKey)
+        }
+
+        throughs.append(Through(table: table, from: from, to: to))
+        return self
     }
 
     public final func eagerLoad(on models: [From]) async throws {

@@ -8,7 +8,7 @@ public class Query<Result: SQLQueryResult> {
 
     /// The SQL table to be queried.
     let table: String
-    var columns: [String] = ["*"]
+    var columns: [String]
     var isDistinct = false
     var limit: Int? = nil
     var offset: Int? = nil
@@ -24,6 +24,7 @@ public class Query<Result: SQLQueryResult> {
     public init(db: Database, table: String) {
         self.db = db
         self.table = table
+        self.columns = ["\(table).*"]
     }
 
     // MARK: - Logging
