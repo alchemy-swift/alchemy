@@ -16,8 +16,11 @@ public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: Rela
 
     @discardableResult
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        // TODO: OR throughs.last.table.referenceKey if another through exists!
-        let from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
+        var from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
+        if let through = throughs.last {
+            from = from.infer(db.keyMapping.encode(through.table.singularized + "Id"))
+        }
+
         let to: SQLKey = .infer(db.keyMapping.encode("Id")).specify(throughToKey)
         toKey = toKey.infer(db.keyMapping.encode(table.singularized + "Id"))
         return _through(table: table, from: from, to: to)
@@ -25,10 +28,13 @@ public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: Rela
 
     @discardableResult
     public func through(_ model: (some Model).Type, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        // TODO: OR throughs.last.table.referenceKey if another through exists!
-        let from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
+        var from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
+        if let through = throughs.last {
+            from = from.infer(db.keyMapping.encode(through.table.singularized + "Id"))
+        }
+
         let to: SQLKey = .infer(model.idKey).specify(throughToKey)
-        toKey = toKey.infer(db.keyMapping.encode(table.singularized + "Id"))
+        toKey = toKey.infer(db.keyMapping.encode(model.referenceKey))
         return _through(table: model.table, from: from, to: to)
     }
 }

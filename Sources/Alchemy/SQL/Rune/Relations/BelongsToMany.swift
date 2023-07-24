@@ -1,8 +1,8 @@
 extension Model {
     public typealias BelongsToMany<To: Model> = BelongsToManyRelation<Self, To>
 
-    public func belongsToMany<To: ModelOrOptional>(db: Database = DB,
-                                                   _ type: To.Type = To.self,
+    public func belongsToMany<To: ModelOrOptional>(_ type: To.Type = To.self,
+                                                   db: Database = DB,
                                                    from fromKey: String? = nil,
                                                    to toKey: String? = nil,
                                                    pivot: String? = nil,

@@ -19,7 +19,7 @@ struct Go: Command {
          9. DONE Eager Loading
          10 DONE Nested eager loading
          11. DONE Add where to Relationship
-         12. Clean up key inference (has = modify next to inference, belongs = modify last from inference)
+         12. DONE Clean up key inference
          13. Clean up cache keying
          14. CRUD
          15. Subscript loading

@@ -1,8 +1,8 @@
 extension Model {
     public typealias HasOne<To: ModelOrOptional> = HasOneRelation<Self, To>
 
-    public func hasOne<To: ModelOrOptional>(db: Database = DB,
-                                            _ type: To.Type = To.self,
+    public func hasOne<To: ModelOrOptional>(_ type: To.Type = To.self,
+                                            db: Database = DB,
                                             from fromKey: String? = nil,
                                             to toKey: String? = nil) -> HasOne<To> {
         HasOne(db: db, from: self, fromKey: fromKey, toKey: toKey)

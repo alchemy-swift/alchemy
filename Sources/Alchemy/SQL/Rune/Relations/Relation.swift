@@ -1,8 +1,8 @@
 public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     struct Through {
         let table: String
-        let from: SQLKey
-        let to: SQLKey
+        var from: SQLKey
+        var to: SQLKey
     }
 
     // Might be able to use the SQL query intead?
@@ -19,8 +19,8 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     let from: From
     var fromKey: SQLKey
     var toKey: SQLKey
-    private var lookupKey: String
-    private var throughs: [Through]
+    var lookupKey: String
+    var throughs: [Through]
 
     public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
         self.from = from
@@ -55,7 +55,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     func _through(table: String, from: SQLKey, to: SQLKey) -> Self {
         if throughs.isEmpty {
             lookupKey = "\(table).\(from)"
-            columns.append(lookupKey)
+            columns.append("\(lookupKey) as \"\(lookupKey)\"")
         }
 
         throughs.append(Through(table: table, from: from, to: to))
