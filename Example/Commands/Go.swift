@@ -6,7 +6,6 @@ struct Go: Command {
     func start() async throws {
 
         /*
-         Checklist
 
          1. DONE BelongsTo
          2. DONE HasOne
@@ -20,9 +19,9 @@ struct Go: Command {
          10 DONE Nested eager loading
          11. DONE Add where to Relationship
          12. DONE Clean up key inference
-         13. Clean up cache keying
-         14. CRUD
-         15. Subscript loading
+         13. DONE Clean up cache keying
+         14. Subscript loading
+         15. CRUD
 
          */
 

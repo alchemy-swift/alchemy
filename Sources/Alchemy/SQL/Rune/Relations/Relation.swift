@@ -5,22 +5,19 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
         var to: SQLKey
     }
 
-    // Might be able to use the SQL query intead?
-    var cacheKey: String {
-        var key = "\(name(of: Self.self))_\(fromKey)_\(toKey)"
-        for through in throughs {
-            key.append("_\(through.table)_\(through.from)_\(through.to)")
-        }
-
-        return key
-    }
-
     /// The model instance this relation was accessed from.
     let from: From
     var fromKey: SQLKey
     var toKey: SQLKey
     var lookupKey: String
     var throughs: [Through]
+
+    private var cacheKey: String {
+        let key = "\(name(of: Self.self))_\(fromKey)_\(toKey)"
+        let throughKeys = throughs.map { "\($0.table)_\($0.from)_\($0.to)" }
+        let whereKeys = wheres.map { "\($0.hashValue)" }
+        return ([key] + throughKeys + whereKeys).joined(separator: "_")
+    }
 
     public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
         self.from = from
@@ -63,19 +60,21 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M> {
     }
 
     public final func eagerLoad(on models: [From]) async throws {
+        let key = cacheKey
         let values = try await fetch(for: models)
         for (model, results) in zip(models, values) {
-            model.cache(key: cacheKey, value: results)
+            model.cache(key: key, value: results)
         }
     }
 
     public final func get() async throws -> To {
-        if let cached = try from.checkCache(key: cacheKey, To.self) {
+        let key = cacheKey
+        if let cached = try from.checkCache(key: key, To.self) {
             return cached
         }
 
         let value = try await fetch(for: [from])[0]
-        from.cache(key: cacheKey, value: value)
+        from.cache(key: key, value: value)
         return value
     }
 
