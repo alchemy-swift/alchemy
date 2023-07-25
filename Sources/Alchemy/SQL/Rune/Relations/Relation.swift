@@ -55,4 +55,20 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         throughs.append(Through(table: table, from: from, to: to))
         return self
     }
+
+    func requireFromValue() throws -> SQLValue {
+        guard let value = from.row["\(fromKey)"] else {
+            throw RuneError("Missing key `\(fromKey)` on `\(From.self)`.")
+        }
+
+        return value
+    }
+
+    func requireToValue<M: Model>(_ model: M) throws -> SQLValue {
+        guard let value = model.row["\(toKey)"] else {
+            throw RuneError("Missing key `\(toKey)` on `\(M.self)`.")
+        }
+
+        return value
+    }
 }

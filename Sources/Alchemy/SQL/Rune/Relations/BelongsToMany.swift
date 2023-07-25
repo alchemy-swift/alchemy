@@ -22,4 +22,14 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
         _through(table: pivot, from: pivotFrom, to: pivotTo)
     }
+
+    /*
+     4. (M-M) `BelongsToMany`
+
+     - `connect`: associate with a new value(s) (+ keys for intermediary)
+     - `connectOrUpdate`: adds or updates any new connections (+ keys for intermediary)
+     - `replace`: set the results, remove all others (+ keys for intermediary)
+     - `disconnect`: delete intermediary entry
+     - `disconnectAll`: delete all intermediary entries
+     */
 }

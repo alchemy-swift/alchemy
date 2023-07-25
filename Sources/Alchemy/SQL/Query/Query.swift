@@ -173,7 +173,7 @@ public class Query<Result: SQLQueryResult> {
     ///
     /// - Parameter fields: An dictionary containing the values to be
     ///   updated.
-    public func update(fields: [String: SQLValueConvertible]) async throws {
+    public func update(_ fields: [String: SQLValueConvertible]) async throws {
         guard !fields.isEmpty else {
             return
         }

@@ -22,7 +22,7 @@ extension EagerLoadable {
     }
 
     @discardableResult
-    public func eagerLoad(on models: [From]) async throws -> [To] {
+    public func load(on models: [From]) async throws -> [To] {
         let key = cacheKey
         let values = try await fetch(for: models)
         for (model, results) in zip(models, values) {
@@ -34,14 +34,14 @@ extension EagerLoadable {
 
     public func get() async throws -> To {
         guard let cached = try from.cached(at: cacheKey, To.self) else {
-            return try await refresh()
+            return try await load()
         }
 
         return cached
     }
 
-    public func refresh() async throws -> To {
-        try await eagerLoad(on: [from])[0]
+    public func load() async throws -> To {
+        try await load(on: [from])[0]
     }
 
     public func require() throws -> To {
@@ -61,14 +61,14 @@ extension Query {
     public func with<E: EagerLoadable>(_ loader: @escaping (Result) -> E) -> Self where E.From == Result {
         didLoad { models in
             guard let first = models.first else { return }
-            try await loader(first).eagerLoad(on: models)
+            try await loader(first).load(on: models)
         }
     }
 }
 
 extension Array where Element: Model {
-    public func with<E: EagerLoadable>(_ loader: @escaping (Element) -> E) async throws where E.From == Element {
+    public func load<E: EagerLoadable>(_ loader: @escaping (Element) -> E) async throws where E.From == Element {
         guard let first else { return }
-        try await loader(first).eagerLoad(on: self)
+        try await loader(first).load(on: self)
     }
 }

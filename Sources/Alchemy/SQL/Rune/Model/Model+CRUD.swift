@@ -146,7 +146,7 @@ extension Model {
     @discardableResult
     public func update(db: Database = DB) async throws -> Self {
         let fields = try toSQLRow().fieldDictionary
-        try await [self].updateAll(db: db, values: fields)
+        try await [self].updateAll(db: db, fields)
         return try await refresh(db: db)
     }
     
@@ -158,15 +158,15 @@ extension Model {
     }
     
     @discardableResult
-    public func update(db: Database = DB, with dict: [String: Any]) async throws -> Self {
-        let values = dict.compactMapValues { $0 as? SQLValueConvertible }
-        try await [self].updateAll(db: db, values: values)
+    public func update(db: Database = DB, _ fields: [String: Any]) async throws -> Self {
+        let values = fields.compactMapValues { $0 as? SQLValueConvertible }
+        try await [self].updateAll(db: db, values)
         return try await refresh(db: db)
     }
     
     @discardableResult
-    public static func update(db: Database = DB, _ id: Identifier, with dict: [String: Any]) async throws -> Self? {
-        try await Self.find(id, db: db)?.update(db: db, with: dict)
+    public static func update(db: Database = DB, _ id: Identifier, fields: [String: Any]) async throws -> Self? {
+        try await Self.find(id, db: db)?.update(db: db, fields)
     }
     
     // MARK: - Save
@@ -298,11 +298,11 @@ extension Array where Element: Model {
         return results
     }
     
-    public func updateAll(db: Database = DB, values: [String: SQLValueConvertible]) async throws {
+    public func updateAll(db: Database = DB, _ fields: [String: SQLValueConvertible]) async throws {
         try await Element.willUpdate(self)
         try await Element.query(db: db)
             .where("id", in: map(\.id))
-            .update(fields: touchUpdatedAt(values, db: db))
+            .update(touchUpdatedAt(fields, db: db))
         try await Element.didUpdate(self)
     }
     

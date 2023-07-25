@@ -13,11 +13,11 @@ private struct CompoundRelation<From: Model, To: OneOrMany, A: EagerLoadable, B:
 
     public func fetch(for models: [From]) async throws -> [To] {
         // 1. Eager load relation a.
-        let aResults = try await relationA.eagerLoad(on: models)
+        let aResults = try await relationA.load(on: models)
         let aModels = aResults.flatMap(\.array)
 
         // 2. Eager load relation b.
-        try await aModels.first?[keyPath: relationBKey].eagerLoad(on: aModels)
+        try await aModels.first?[keyPath: relationBKey].load(on: aModels)
 
         // 3. Return the results of relation b.
         return try aResults
