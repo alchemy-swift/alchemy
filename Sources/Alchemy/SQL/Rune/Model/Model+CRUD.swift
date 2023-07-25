@@ -147,7 +147,7 @@ extension Model {
     public func update(db: Database = DB) async throws -> Self {
         let fields = try toSQLRow().fieldDictionary
         try await [self].updateAll(db: db, values: fields)
-        return try await sync(db: db)
+        return try await refresh(db: db)
     }
     
     @discardableResult
@@ -161,7 +161,7 @@ extension Model {
     public func update(db: Database = DB, with dict: [String: Any]) async throws -> Self {
         let values = dict.compactMapValues { $0 as? SQLValueConvertible }
         try await [self].updateAll(db: db, values: values)
-        return try await sync(db: db)
+        return try await refresh(db: db)
     }
     
     @discardableResult
@@ -232,7 +232,7 @@ extension Model {
         try await query.delete()
     }
     
-    // MARK: - Sync
+    // MARK: - Refresh
 
     /// Fetches an copy of this model from a database, with any
     /// updates that may have been made since it was last
@@ -241,8 +241,9 @@ extension Model {
     /// - Parameter db: The database to load from. Defaults to
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
-    public func sync(db: Database = DB, query: ((Query<Self>) -> Query<Self>) = { $0 }) async throws -> Self {
-        try await query(Self.query(db: db).where("id" == id))
+    public func refresh(db: Database = DB) async throws -> Self {
+        try await Self.query(db: db)
+            .where("id" == id)
             .first()
             .unwrap(or: RuneError.syncErrorNoMatch(table: Self.table, id: id))
     }

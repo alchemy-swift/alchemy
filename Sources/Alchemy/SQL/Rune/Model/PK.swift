@@ -1,22 +1,8 @@
 import Foundation
 
 public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
-    final class ModelStorage {
-        var row: SQLRow
-        var relationships: [String: Any]
-
-        init() {
-            self.relationships = [:]
-            self.row = SQLRow()
-        }
-
-        static var new: ModelStorage {
-            ModelStorage()
-        }
-    }
-
     public var value: Identifier?
-    var storage: ModelStorage
+    fileprivate var storage: ModelStorage
 
     public var sqlValue: SQLValue {
         value.sqlValue
@@ -105,5 +91,45 @@ extension PK<String>: ExpressibleByStringLiteral, ExpressibleByExtendedGraphemeC
 
     public convenience init(stringLiteral value: String) {
         self.init(value)
+    }
+}
+
+private final class ModelStorage {
+    var row: SQLRow
+    var relationships: [String: Any]
+
+    init() {
+        self.relationships = [:]
+        self.row = SQLRow()
+    }
+
+    static var new: ModelStorage {
+        ModelStorage()
+    }
+}
+
+extension Model {
+    public var row: SQLRow {
+        id.storage.row
+    }
+
+    func cache<To>(_ value: To, at key: String) {
+        id.storage.relationships[key] = value
+    }
+
+    func cached<To>(at key: String, _ type: To.Type = To.self) throws -> To? {
+        guard let value = id.storage.relationships[key] else {
+            return nil
+        }
+
+        guard let value = value as? To else {
+            throw RuneError("Eager load cache type mismatch!")
+        }
+
+        return value
+    }
+
+    func cacheExists(_ key: String) -> Bool {
+        id.storage.relationships[key] != nil
     }
 }

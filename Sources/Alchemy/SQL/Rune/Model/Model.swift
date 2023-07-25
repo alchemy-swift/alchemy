@@ -3,32 +3,6 @@ import Pluralize
 
 public protocol Model: Codable, ModelBase, ModelOrOptional {}
 
-extension Model {
-    var row: SQLRow {
-        id.storage.row
-    }
-
-    func cache<To>(_ value: To, at key: String) {
-        id.storage.relationships[key] = value
-    }
-
-    func cached<To>(at key: String, _ type: To.Type = To.self) throws -> To? {
-        guard let value = id.storage.relationships[key] else {
-            return nil
-        }
-
-        guard let value = value as? To else {
-            throw RuneError("Eager load cache type mismatch!")
-        }
-
-        return value
-    }
-
-    func cacheExists(_ key: String) -> Bool {
-        id.storage.relationships[key] != nil
-    }
-}
-
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & much more.
@@ -54,7 +28,8 @@ public protocol ModelBase: Identifiable, SQLQueryResult {
     /// ```
     static var table: String { get }
 
-    static var idKey: String { get }
+    /// The primary key of this table.
+    static var primaryKey: String { get }
 
     /// The `JSONDecoder` to use when decoding any JSON fields of this
     /// type. A JSON field is any `Codable` field that doesn't have a
@@ -73,18 +48,6 @@ public protocol ModelBase: Identifiable, SQLQueryResult {
     func toSQLRow() throws -> SQLRow // Auto filled in for codable models, in extension
 }
 
-extension ModelBase where Self: Codable {
-    // Auto filled in for codable models, in extension
-    public init(row: SQLRow) throws {
-        self = try row.decode(Self.self, keyMapping: .snakeCase, jsonDecoder: Self.jsonDecoder)
-    }
-    
-    // Auto filled in for codable models, in extension
-    public func toSQLRow() throws -> SQLRow {
-        try SQLRowEncoder(keyMapping: .snakeCase, jsonEncoder: Self.jsonEncoder).sqlRow(for: self)
-    }
-}
-
 extension ModelBase {
     public static var table: String {
         let typeName = String(describing: Self.self)
@@ -92,12 +55,7 @@ extension ModelBase {
         return mapped.pluralized
     }
 
-    public static var referenceKey: String {
-        let key = Self.table.singularized + "Id"
-        return KeyMapping.snakeCase.encode(key)
-    }
-
-    public static var idKey: String {
+    public static var primaryKey: String {
         "id"
     }
     
@@ -107,5 +65,15 @@ extension ModelBase {
     
     public static var jsonEncoder: JSONEncoder {
         JSONEncoder()
+    }
+}
+
+extension ModelBase where Self: Codable {
+    public init(row: SQLRow) throws {
+        self = try row.decode(Self.self, keyMapping: .snakeCase, jsonDecoder: Self.jsonDecoder)
+    }
+
+    public func toSQLRow() throws -> SQLRow {
+        try SQLRowEncoder(keyMapping: .snakeCase, jsonEncoder: Self.jsonEncoder).sqlRow(for: self)
     }
 }

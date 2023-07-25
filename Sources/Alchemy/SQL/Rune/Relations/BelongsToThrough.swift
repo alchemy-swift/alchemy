@@ -16,15 +16,15 @@ public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: R
 
     @discardableResult
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        let from: SQLKey = .infer(From.idKey).specify(throughFromKey)
-        let to: SQLKey = .infer(To.M.referenceKey).specify(throughToKey)
+        let from: SQLKey = .infer(From.primaryKey).specify(throughFromKey)
+        let to: SQLKey = db.inferReferenceKey(To.M.self).specify(throughToKey)
 
-        let throughReference = db.keyMapping.encode(table.singularized + "Id")
+        let throughReference = db.inferReferenceKey(table)
         if throughs.isEmpty {
-            fromKey = fromKey.infer(throughReference)
+            fromKey = fromKey.infer(throughReference.string)
         } else {
             let lastIndex = throughs.count - 1
-            throughs[lastIndex].to = throughs[lastIndex].to.infer(throughReference)
+            throughs[lastIndex].to = throughs[lastIndex].to.infer(throughReference.string)
         }
 
         return _through(table: table, from: from, to: to)
@@ -32,15 +32,15 @@ public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: R
 
     @discardableResult
     public func through(_ model: (some Model).Type, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        let from: SQLKey = .infer(From.idKey).specify(throughFromKey)
-        let to: SQLKey = .infer(To.M.referenceKey).specify(throughToKey)
+        let from: SQLKey = .infer(From.primaryKey).specify(throughFromKey)
+        let to: SQLKey = db.inferReferenceKey(To.M.self).specify(throughToKey)
 
-        let throughReference = db.keyMapping.encode(model.referenceKey)
+        let throughReference = db.inferReferenceKey(model)
         if throughs.isEmpty {
-            fromKey = fromKey.infer(throughReference)
+            fromKey = fromKey.infer(throughReference.string)
         } else {
             let lastIndex = throughs.count - 1
-            throughs[lastIndex].to = throughs[lastIndex].to.infer(throughReference)
+            throughs[lastIndex].to = throughs[lastIndex].to.infer(throughReference.string)
         }
 
         return _through(table: model.table, from: from, to: to)

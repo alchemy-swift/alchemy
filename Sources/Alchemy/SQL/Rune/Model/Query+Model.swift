@@ -39,19 +39,25 @@ extension Query where Result: Model {
     }
 }
 
-public extension Model {
+extension Model {
     /// Begin a `Query<Self>` from a given database.
     ///
     /// - Parameter database: The database to run the query on.
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
-    static func query(db: Database = DB) -> Query<Self> {
-        Query(db: db, table: Self.table)
+    public static func query(db: Database = DB) -> Query<Self> {
+        db.table(Self.self)
+    }
+
+    // TODO: Re-enable this
+    fileprivate static func didFetch(_ models: [Self]) async throws {
+        try await ModelDidFetch(models: models).fire()
     }
 }
 
-extension Model {
-    fileprivate static func didFetch(_ models: [Self]) async throws {
-        try await ModelDidFetch(models: models).fire()
+extension Database {
+    public func table<M: Model>(_ model: M.Type, as alias: String? = nil) -> Query<M> {
+        let tableName = alias.map { "\(model.table) AS \($0)" } ?? model.table
+        return Query(db: self, table: tableName)
     }
 }

@@ -29,3 +29,17 @@ public enum SQLKey: CustomStringConvertible {
         .inferred(key)
     }
 }
+
+extension Database {
+    func inferReferenceKey(_ table: (some Model).Type) -> SQLKey {
+        inferReferenceKey(table.table)
+    }
+
+    func inferReferenceKey(_ table: String) -> SQLKey {
+        .infer(keyMapping.encode(table.singularized + "Id"))
+    }
+
+    func inferPrimaryKey() -> SQLKey {
+        .infer(keyMapping.encode("Id"))
+    }
+}

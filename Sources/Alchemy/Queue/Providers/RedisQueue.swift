@@ -95,18 +95,18 @@ struct RedisQueue: QueueProvider {
     }
 }
 
-public extension Queue {
+extension Queue {
     /// A queue backed by a Redis connection.
     ///
     /// - Parameter redis: A redis connection to drive this queue.
     ///   Defaults to your default redis connection.
     /// - Returns: The configured queue.
-    static func redis(_ redis: RedisClient = Redis) -> Queue {
+    public static func redis(_ redis: RedisClient = Redis) -> Queue {
         Queue(provider: RedisQueue(redis: redis))
     }
     
     /// A queue backed by the default Redis connection.
-    static var redis: Queue {
+    public static var redis: Queue {
         .redis()
     }
 }

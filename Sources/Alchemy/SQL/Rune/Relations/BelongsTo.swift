@@ -11,8 +11,8 @@ extension Model {
 
 public class BelongsToRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
     init(db: Database, from: From, fromKey: String?, toKey: String?) {
-        let fromKey: SQLKey = .infer(To.M.referenceKey).specify(fromKey)
-        let toKey: SQLKey = .infer(To.M.idKey).specify(toKey)
+        let fromKey: SQLKey = db.inferReferenceKey(To.M.self).specify(fromKey)
+        let toKey: SQLKey = .infer(To.M.primaryKey).specify(toKey)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
     }
 }

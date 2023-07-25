@@ -16,25 +16,25 @@ public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: Rela
 
     @discardableResult
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        var from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
+        var from: SQLKey = db.inferReferenceKey(From.self).specify(throughFromKey)
         if let through = throughs.last {
-            from = from.infer(db.keyMapping.encode(through.table.singularized + "Id"))
+            from = from.infer(db.inferReferenceKey(through.table).string)
         }
 
-        let to: SQLKey = .infer(db.keyMapping.encode("Id")).specify(throughToKey)
-        toKey = toKey.infer(db.keyMapping.encode(table.singularized + "Id"))
+        let to: SQLKey = db.inferPrimaryKey().specify(throughToKey)
+        toKey = toKey.infer(db.inferReferenceKey(table).string)
         return _through(table: table, from: from, to: to)
     }
 
     @discardableResult
     public func through(_ model: (some Model).Type, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        var from: SQLKey = .infer(From.referenceKey).specify(throughFromKey)
+        var from: SQLKey = db.inferReferenceKey(From.self).specify(throughFromKey)
         if let through = throughs.last {
-            from = from.infer(db.keyMapping.encode(through.table.singularized + "Id"))
+            from = from.infer(db.inferReferenceKey(through.table).string)
         }
 
-        let to: SQLKey = .infer(model.idKey).specify(throughToKey)
-        toKey = toKey.infer(db.keyMapping.encode(model.referenceKey))
+        let to: SQLKey = .infer(model.primaryKey).specify(throughToKey)
+        toKey = toKey.infer(db.inferReferenceKey(model).string)
         return _through(table: model.table, from: from, to: to)
     }
 }

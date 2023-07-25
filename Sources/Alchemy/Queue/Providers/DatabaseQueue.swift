@@ -50,18 +50,18 @@ final class DatabaseQueue: QueueProvider {
     }
 }
 
-public extension Queue {
+extension Queue {
     /// A queue backed by an SQL database.
     ///
     /// - Parameter database: A database to drive this queue with.
     ///   Defaults to your default database.
     /// - Returns: The configured queue.
-    static func database(_ db: Database = DB) -> Queue {
+    public static func database(_ db: Database = DB) -> Queue {
         Queue(provider: DatabaseQueue(db: db))
     }
     
     /// A queue backed by the default SQL database.
-    static var database: Queue {
+    public static var database: Queue {
         .database()
     }
 }

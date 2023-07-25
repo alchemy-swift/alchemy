@@ -60,11 +60,15 @@ extension EagerLoadable {
 extension Query {
     public func with<E: EagerLoadable>(_ loader: @escaping (Result) -> E) -> Self where E.From == Result {
         didLoad { models in
-            guard let first = models.first else {
-                return
-            }
-
+            guard let first = models.first else { return }
             try await loader(first).eagerLoad(on: models)
         }
+    }
+}
+
+extension Array where Element: Model {
+    public func with<E: EagerLoadable>(_ loader: @escaping (Element) -> E) async throws where E.From == Element {
+        guard let first else { return }
+        try await loader(first).eagerLoad(on: self)
     }
 }

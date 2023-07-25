@@ -11,8 +11,8 @@ extension Model {
 
 public class HasManyRelation<From: Model, M: Model>: Relation<From, [M]> {
     init(db: Database, from: From, fromKey: String?, toKey: String?) {
-        let fromKey: SQLKey = .infer(From.idKey).specify(fromKey)
-        let toKey: SQLKey = .infer(From.referenceKey).specify(toKey)
+        let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
+        let toKey: SQLKey = db.inferReferenceKey(From.self).specify(toKey)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
     }
 }
