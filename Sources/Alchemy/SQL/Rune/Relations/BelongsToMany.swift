@@ -13,6 +13,11 @@ extension Model {
 }
 
 public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
+    private var pivot: Through {
+        guard let pivot = throughs.first else { preconditionFailure("BelongsToManyRelation must never have no throughs.") }
+        return pivot
+    }
+
     init(db: Database, from: From, fromKey: String?, toKey: String?, pivot: String?, pivotFrom: String?, pivotTo: String?) {
         let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
         let toKey: SQLKey = .infer(M.primaryKey).specify(toKey)
@@ -23,13 +28,61 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
         _through(table: pivot, from: pivotFrom, to: pivotTo)
     }
 
-    /*
-     4. (M-M) `BelongsToMany`
+    public func connect(_ model: M, pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+        try await connect([model], pivotFields: pivotFields)
+    }
 
-     - `connect`: associate with a new value(s) (+ keys for intermediary)
-     - `connectOrUpdate`: adds or updates any new connections (+ keys for intermediary)
-     - `replace`: set the results, remove all others (+ keys for intermediary)
-     - `disconnect`: delete intermediary entry
-     - `disconnectAll`: delete all intermediary entries
-     */
+    public func connect(_ models: [M], pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+        let from = try requireFromValue()
+        let tos = try models.map { try requireToValue($0) }
+        let fieldsArray = tos.map { ["\(fromKey)": from, "\(toKey)": $0] + pivotFields }
+        try await db.table(pivot.table).insert(fieldsArray)
+    }
+
+    public func connectOrUpdate(_ model: M, pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+        try await connectOrUpdate([model], pivotFields: pivotFields)
+    }
+
+    public func connectOrUpdate(_ models: [M], pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+        let from = try requireFromValue()
+        let tos = try models.map { try (requireToValue($0), $0) }
+
+        // 0. Get existing
+        let existing = try await db.table(pivot.table)
+            .where("\(fromKey)" == from)
+            .where("\(toKey)", in: tos.map(\.0))
+            .get(["\(toKey)"])
+        let existingToKeys = existing.compactMap(\.["\(toKey)"])
+
+        // 1. Update existing
+        try await db.table(pivot.table)
+            .where("\(fromKey)" == from)
+            .where("\(toKey)", in: existingToKeys)
+            .update(pivotFields)
+
+        // 2. Insert new
+        let notExisting = tos.filter { !existingToKeys.contains($0.0) }.map(\.1)
+        try await connect(notExisting, pivotFields: pivotFields)
+    }
+
+    public func replace(_ models: [M], pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+        try await disconnectAll()
+        try await connect(models, pivotFields: pivotFields)
+    }
+
+    public func disconnect(_ model: M) async throws {
+        let from = try requireFromValue()
+        let to = try requireToValue(model)
+        try await db.table(pivot.table)
+            .where("\(toKey)" == to)
+            .where("\(fromKey)" == from)
+            .delete()
+    }
+
+    public func disconnectAll() async throws {
+        let from = try requireFromValue()
+        try await db.table(pivot.table)
+            .where("\(fromKey)" == from)
+            .delete()
+    }
 }

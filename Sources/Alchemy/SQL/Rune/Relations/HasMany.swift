@@ -25,6 +25,11 @@ public class HasManyRelation<From: Model, M: Model>: Relation<From, [M]> {
         try await models.updateAll(["\(toKey)": value])
     }
 
+    public func replace(_ models: [M]) async throws {
+        try await disconnectAll()
+        try await connect(models)
+    }
+
     public func disconnect(_ model: M) async throws {
         try await model.update(["\(toKey)": SQLValue.null])
     }
@@ -32,10 +37,5 @@ public class HasManyRelation<From: Model, M: Model>: Relation<From, [M]> {
     public func disconnectAll() async throws {
         let value = try requireFromValue()
         try await To.M.`where`("\(toKey)" == value).update(["\(toKey)": SQLValue.null])
-    }
-
-    public func replace(_ models: [M]) async throws {
-        try await disconnectAll()
-        try await connect(models)
     }
 }

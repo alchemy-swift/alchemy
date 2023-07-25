@@ -18,8 +18,7 @@ extension Array where Element: Hashable {
 
 extension Sequence {
     public func keyed<T: Hashable>(by value: (Element) -> T) -> [T: Element] {
-        let withKeys = map { (value($0), $0) }
-        return Dictionary(withKeys, uniquingKeysWith: { first, _ in first })
+        Dictionary(map { (value($0), $0) })
     }
 
     public func grouped<T: Hashable>(by grouping: (Element) throws -> T) rethrows -> [T: [Element]] {

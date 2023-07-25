@@ -16,12 +16,12 @@ public struct SQLRow {
     public let lookupTable: [String: Int]
 
     public var fieldDictionary: [String: SQLValue] {
-        Dictionary(fields.map { ($0.column, $0.value) }, uniquingKeysWith: { current, _ in current })
+        Dictionary(fields.map { ($0.column, $0.value) })
     }
     
     init(fields: [SQLField]) {
         self.fields = fields
-        self.lookupTable = Dictionary(fields.enumerated().map { ($1.column, $0) }, uniquingKeysWith: { current, _ in current })
+        self.lookupTable = Dictionary(fields.enumerated().map { ($1.column, $0) })
     }
     
     public func contains(_ column: String) -> Bool {
