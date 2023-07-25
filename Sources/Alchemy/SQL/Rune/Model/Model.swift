@@ -8,23 +8,23 @@ extension Model {
         id.storage.row
     }
 
-    func cache<To>(key: String, value: To) {
+    func cache<To>(_ value: To, at key: String) {
         id.storage.relationships[key] = value
     }
 
-    func checkCache<To>(key: String, _ type: To.Type = To.self) throws -> To? {
+    func cached<To>(at key: String, _ type: To.Type = To.self) throws -> To? {
         guard let value = id.storage.relationships[key] else {
             return nil
         }
 
         guard let value = value as? To else {
-            throw RuneError("Relationship type mismatch!")
+            throw RuneError("Eager load cache type mismatch!")
         }
 
         return value
     }
 
-    func exists(key: String) -> Bool {
+    func cacheExists(_ key: String) -> Bool {
         id.storage.relationships[key] != nil
     }
 }

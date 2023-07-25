@@ -3,9 +3,12 @@ public protocol EagerLoadable<From, To> {
     associatedtype From: Model
     associatedtype To
 
-    var cacheKey: String { get }
+    /// The model instance this relation was accessed from.
     var from: From { get }
+    var cacheKey: String { get }
 
+    /// Load results given the input rows. Results must be the same length and
+    /// order as the input.
     func fetch(for models: [From]) async throws -> [To]
 }
 
@@ -14,20 +17,36 @@ extension EagerLoadable {
         "\(Self.self)"
     }
 
+    public var isCached: Bool {
+        from.cacheExists(cacheKey)
+    }
+
     @discardableResult
     public func eagerLoad(on models: [From]) async throws -> [To] {
         let key = cacheKey
         let values = try await fetch(for: models)
         for (model, results) in zip(models, values) {
-            model.cache(key: key, value: results)
+            model.cache(results, at: key)
         }
 
         return values
     }
 
     public func get() async throws -> To {
-        guard let cached = try from.checkCache(key: cacheKey, To.self) else {
-            return try await eagerLoad(on: [from])[0]
+        guard let cached = try from.cached(at: cacheKey, To.self) else {
+            return try await refresh()
+        }
+
+        return cached
+    }
+
+    public func refresh() async throws -> To {
+        try await eagerLoad(on: [from])[0]
+    }
+
+    public func require() throws -> To {
+        guard let cached = try from.cached(at: cacheKey, To.self) else {
+            throw RuneError("\(Self.To.self) wasn't eager loaded and must be fetched.")
         }
 
         return cached

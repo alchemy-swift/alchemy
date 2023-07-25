@@ -1,7 +1,7 @@
 public protocol OneOrMany {
     associatedtype M: Model
+    var array: [M] { get }
     init(models: [M]) throws
-    func toArray() -> [M]
 }
 
 extension Array: OneOrMany where Element: Model {
@@ -11,7 +11,7 @@ extension Array: OneOrMany where Element: Model {
         self = models
     }
 
-    public func toArray() -> [M] {
+    public var array: [Element] {
         self
     }
 }
@@ -21,8 +21,8 @@ extension Optional: OneOrMany where Wrapped: Model {
         self = models.first
     }
 
-    public func toArray() -> [Wrapped] {
-        self.map { [$0] } ?? []
+    public var array: [Wrapped] {
+        map { [$0] } ?? []
     }
 }
 
@@ -35,7 +35,7 @@ extension Model {
         self = model
     }
 
-    public func toArray() -> [Self] {
+    public var array: [Self] {
         [self]
     }
 }

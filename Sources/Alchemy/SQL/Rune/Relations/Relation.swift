@@ -5,7 +5,6 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         var to: SQLKey
     }
 
-    /// The model instance this relation was accessed from.
     public let from: From
     var fromKey: SQLKey
     var toKey: SQLKey
@@ -28,8 +27,6 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         super.init(db: db, table: To.M.table)
     }
 
-    /// Execute the relationship given the input rows. Always returns an array
-    /// the same length as the input array.
     public func fetch(for models: [From]) async throws -> [To] {
         setJoins()
         let fromKeys = models.map(\.row["\(fromKey)"])
