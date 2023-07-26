@@ -11,8 +11,4 @@ final class SQLParameterConvertibleTests: XCTestCase {
         XCTAssertEqual(SQLValue.null.rawSQLString, "NULL")
         XCTAssertEqual(SQLValue.string("foo").rawSQLString, "'foo'")
     }
-    
-    func testSQL() {
-        XCTAssertEqual(SQL("foo", parameters: ["bar"]), SQL("foo", binds: [.string("bar")]))
-    }
 }

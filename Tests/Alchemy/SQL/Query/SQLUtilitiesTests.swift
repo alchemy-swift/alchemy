@@ -5,10 +5,10 @@ import XCTest
 final class SQLUtilitiesTests: XCTestCase {
     func testJoined() {
         XCTAssertEqual([
-            SQL("where foo = ?", parameters: [.int(1)]),
+            SQL("where foo = ?", binds: [.int(1)]),
             SQL("bar"),
-            SQL("where baz = ?", parameters: [.string("two")])
-        ].joinedSQL(), SQL("where foo = ? bar where baz = ?", parameters: [.int(1), .string("two")]))
+            SQL("where baz = ?", binds: [.string("two")])
+        ].joinedSQL(), SQL("where foo = ? bar where baz = ?", binds: [.int(1), .string("two")]))
     }
     
     func testDropLeadingBoolean() {

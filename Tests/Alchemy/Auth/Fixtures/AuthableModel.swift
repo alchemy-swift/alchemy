@@ -25,14 +25,17 @@ struct AuthModel: BasicAuthable {
 }
 
 struct TokenModel: Model, TokenAuthable {
-    static var userKey = \TokenModel.$authModel
-    
+    typealias User = AuthModel
+    typealias UserRelation = TokenModel.BelongsTo<AuthModel>
+
     var id: PK<Int> = .new
     var value = UUID()
-    
-    @BelongsTo
-    var authModel: AuthModel
-    
+    var userId: Int
+
+    var user: TokenModel.BelongsTo<AuthModel> {
+        belongsTo()
+    }
+
     struct Migrate: Migration {
         func up(schema: Schema) {
             schema.create(table: TokenModel.table) {

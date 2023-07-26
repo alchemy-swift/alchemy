@@ -1,5 +1,5 @@
 /// A JOIN query builder.
-public struct SQLJoin {
+public struct SQLJoin: Equatable {
     /// The type of the join clause.
     public enum JoinType: String {
         /// INNER JOIN.

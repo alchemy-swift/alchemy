@@ -21,9 +21,9 @@ public struct SQL: Hashable, ExpressibleByStringLiteral {
         precondition(parts.count - 1 == parameters.count, "The number of parameters must match the number of '?'s in the statement.")
         var binds: [SQLValue] = []
         var statement = ""
-        for (index, part) in parts.enumerated() {
+        for (part, parameter) in zip(parts, parameters) {
             statement += part
-            switch parameters[index].sqlParameter {
+            switch parameter.sqlParameter {
             case .expression(let sql):
                 statement.append(sql.statement)
                 binds.append(contentsOf: sql.binds)

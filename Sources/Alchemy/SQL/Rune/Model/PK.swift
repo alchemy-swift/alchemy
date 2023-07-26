@@ -17,7 +17,7 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
         value.map { "\($0)" } ?? "null"
     }
 
-    func callAsFunction() throws -> Identifier {
+    public func callAsFunction() throws -> Identifier {
         guard let value else {
             throw DatabaseError("Object of type \(type(of: self)) had a nil id.")
         }

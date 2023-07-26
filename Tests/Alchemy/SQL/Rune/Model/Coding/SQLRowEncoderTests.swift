@@ -26,12 +26,11 @@ final class SQLRowEncoderTests: XCTestCase {
             uint64: 10,
             nested: EverythingModel.Nested(string: "foo", int: 1),
             date: date,
-            uuid: uuid,
-            belongsTo: .pk(1)
+            uuid: uuid
         )
         
         let jsonData = try EverythingModel.jsonEncoder.encode(json)
-        let expectedFields: [SQLField] = [
+        let expectedFields: [String: SQLParameterConvertible] = [
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
@@ -50,20 +49,20 @@ final class SQLRowEncoderTests: XCTestCase {
             "uint32": 9,
             "uint64": 10,
             "string_optional": "bar",
-            "nested": SQLParameterConvertible.json(jsonData),
-            "date": SQLParameterConvertible.datetime(date),
-            "uuid": SQLParameterConvertible.uuid(uuid),
+            "nested": SQLValue.json(jsonData),
+            "date": SQLValue.date(date),
+            "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1,
-            "belongs_to_optional_id": SQLParameterConvertible.null
+            "belongs_to_optional_id": SQLValue.null
         ]
         
         XCTAssertEqual("everything_models", EverythingModel.table)
-        XCTAssertEqual(expectedFields, try model.toSQLRow().fields)
+        XCTAssertEqual(expectedFields.mapValues(\.sqlParameter), try model.fields().mapValues(\.sqlParameter))
     }
     
     func testKeyMapping() throws {
-        let model = CustomKeyedModel.pk(0)
-        let fields = try model.toSQLRow().fields
+        let model = CustomKeyedModel(id: 0)
+        let fields = try model.fields()
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.table)
         XCTAssertEqual([
             "id",
@@ -71,7 +70,7 @@ final class SQLRowEncoderTests: XCTestCase {
             "valueTwo",
             "valueThreeInt",
             "snake_case"
-        ].sorted(), fields.map { $0.column }.sorted())
+        ].sorted(), fields.keys.sorted())
     }
     
     func testCustomJSONEncoder() throws {
@@ -80,8 +79,8 @@ final class SQLRowEncoderTests: XCTestCase {
         let model = CustomDecoderModel(json: json)
         
         XCTAssertEqual("custom_decoder_models", CustomDecoderModel.table)
-        XCTAssertEqual(try model.toSQLRow().fields, [
-            "json": SQLParameterConvertible.json(jsonData)
+        XCTAssertEqual(try model.fields().mapValues(\.sqlParameter), [
+            "json": .value(.json(jsonData))
         ])
     }
 }
@@ -111,10 +110,4 @@ private struct CustomDecoderModel: Model {
     
     var id: PK<Int> = .new
     var json: DatabaseJSON
-}
-
-extension Array: ExpressibleByDictionaryLiteral where Element == SQLField {
-    public init(dictionaryLiteral elements: (String, SQLParameterConvertible)...) {
-        self = elements.map { SQLField(column: $0, value: $1.sqlValue) }
-    }
 }

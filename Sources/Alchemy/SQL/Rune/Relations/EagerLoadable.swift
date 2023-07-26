@@ -52,6 +52,19 @@ extension EagerLoadable {
         return cached
     }
 
+    public func force() -> To {
+        do {
+            guard let cached = try from.cached(at: cacheKey, To.self) else {
+                preconditionFailure("\(Self.To.self) wasn't eager loaded and must be fetched.")
+            }
+
+            return cached
+        }
+        catch {
+            preconditionFailure("Error forcing relationship: \(error).")
+        }
+    }
+
     public func callAsFunction() async throws -> To {
         try await get()
     }

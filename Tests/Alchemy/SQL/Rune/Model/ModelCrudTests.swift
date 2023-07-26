@@ -22,7 +22,7 @@ final class ModelCrudTests: TestCase<TestApp> {
         
         let model = try await TestModel(foo: "baz", bar: false).insertReturn()
         
-        let findById = try await TestModel.find(model.getID())
+        let findById = try await TestModel.find(model.id())
         XCTAssertEqual(findById, model)
         
         do {
@@ -72,7 +72,7 @@ final class ModelCrudTests: TestCase<TestApp> {
             return
         }
         
-        try await TestModel.delete(first.getID())
+        try await TestModel.delete(first.id())
         
         let count = try await TestModel.all().count
         XCTAssertEqual(count, 4)
@@ -107,17 +107,17 @@ final class ModelCrudTests: TestCase<TestApp> {
     
     func testUpdate() async throws {
         var model = try await TestModel.seed()
-        let id = try model.getID()
+        let id = try model.id()
         model.foo = "baz"
         AssertNotEqual(try await TestModel.find(id), model)
         
         _ = try await model.save()
         AssertEqual(try await TestModel.find(id), model)
         
-        _ = try await model.update(with: ["foo": "foo"])
+        _ = try await model.update(["foo": "foo"])
         AssertEqual(try await TestModel.find(id)?.foo, "foo")
         
-        _ = try await TestModel.update(id, with: ["foo": "qux"])
+        _ = try await TestModel.update(id, fields: ["foo": "qux"])
         AssertEqual(try await TestModel.find(id)?.foo, "qux")
     }
     

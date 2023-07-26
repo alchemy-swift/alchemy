@@ -12,7 +12,7 @@ final class ModelQueryTests: TestCase<TestApp> {
     func testWith() async throws {
         try await TestParent.seed()
         let child = try await TestModel.seed()
-        let fetchedChild = try await TestModel.query().with(\.$testParent).first()
+        let fetchedChild = try await TestModel.query().with(\.testParent).first()
         XCTAssertEqual(fetchedChild, child)
     }
 }
@@ -22,7 +22,7 @@ private struct TestError: Error {}
 private struct TestParent: Model, Seedable, Equatable {
     var id: PK<Int> = .new
     var baz: String
-    
+
     static func generate() async throws -> TestParent {
         TestParent(baz: faker.lorem.word())
     }
@@ -32,9 +32,12 @@ private struct TestModel: Model, Seedable, Equatable {
     var id: PK<Int> = .new
     var foo: String
     var bar: Bool
-    
-    @BelongsTo var testParent: TestParent
-    
+    var testParentId: Int
+
+    var testParent: BelongsTo<TestParent> {
+        belongsTo()
+    }
+
     static func generate() async throws -> TestModel {
         let parent: TestParent
         if let random = try await TestParent.random() {
@@ -43,14 +46,14 @@ private struct TestModel: Model, Seedable, Equatable {
             parent = try await .seed()
         }
         
-        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParent: parent)
+        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParentId: try parent.id())
     }
     
     static func == (lhs: TestModel, rhs: TestModel) -> Bool {
         lhs.id == rhs.id &&
         lhs.foo == rhs.foo &&
         lhs.bar == rhs.bar &&
-        lhs.$testParent.id == rhs.$testParent.id
+        lhs.testParent.force().id == rhs.testParent.force().id
     }
 }
 

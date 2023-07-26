@@ -20,7 +20,7 @@ final class SQLRowTests: XCTestCase {
         let date = Date()
         let uuid = UUID()
         let row: SQLRow = [
-            "id": SQLParameterConvertible.null,
+            "id": SQLValue.null,
             "bool": false,
             "string": "foo",
             "double": 0.0,
@@ -39,14 +39,14 @@ final class SQLRowTests: XCTestCase {
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
-            "nested": SQLParameterConvertible.json("""
+            "nested": SQLValue.json("""
                 {"string":"foo","int":1}
                 """.data(using: .utf8) ?? Data()),
-            "date": SQLParameterConvertible.date(date),
-            "uuid": SQLParameterConvertible.uuid(uuid),
+            "date": SQLValue.date(date),
+            "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1
         ]
-        XCTAssertEqual(try row.decode(EverythingModel.self), EverythingModel(date: date, uuid: uuid, belongsTo: .pk(1)))
+        XCTAssertEqual(try row.decode(EverythingModel.self), EverythingModel(date: date, uuid: uuid))
     }
     
     func testSubscript() {
@@ -92,12 +92,6 @@ struct EverythingModel: Model, Equatable {
     var nested: Nested = Nested(string: "foo", int: 1)
     var date: Date = Date()
     var uuid: UUID = UUID()
-    
-    @HasMany var hasMany: [EverythingModel]
-    @HasOne var hasOne: EverythingModel
-    @HasOne var hasOneOptional: EverythingModel?
-    @BelongsTo var belongsTo: EverythingModel
-    @BelongsTo var belongsToOptional: EverythingModel?
     
     static var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()

@@ -14,7 +14,7 @@
 ///     let priority: TaskPriority // Stored as `Int` in the database.
 /// }
 /// ```
-public protocol ModelEnum: ModelProperty {}
+public protocol ModelEnum: Codable, ModelProperty {}
 
 extension ModelEnum where Self: RawRepresentable, RawValue: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
