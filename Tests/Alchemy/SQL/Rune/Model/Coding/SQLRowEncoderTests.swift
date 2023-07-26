@@ -50,11 +50,11 @@ final class SQLRowEncoderTests: XCTestCase {
             "uint32": 9,
             "uint64": 10,
             "string_optional": "bar",
-            "nested": SQLValue.json(jsonData),
-            "date": SQLValue.datetime(date),
-            "uuid": SQLValue.uuid(uuid),
+            "nested": SQLParameterConvertible.json(jsonData),
+            "date": SQLParameterConvertible.datetime(date),
+            "uuid": SQLParameterConvertible.uuid(uuid),
             "belongs_to_id": 1,
-            "belongs_to_optional_id": SQLValue.null
+            "belongs_to_optional_id": SQLParameterConvertible.null
         ]
         
         XCTAssertEqual("everything_models", EverythingModel.table)
@@ -81,7 +81,7 @@ final class SQLRowEncoderTests: XCTestCase {
         
         XCTAssertEqual("custom_decoder_models", CustomDecoderModel.table)
         XCTAssertEqual(try model.toSQLRow().fields, [
-            "json": SQLValue.json(jsonData)
+            "json": SQLParameterConvertible.json(jsonData)
         ])
     }
 }
@@ -114,7 +114,7 @@ private struct CustomDecoderModel: Model {
 }
 
 extension Array: ExpressibleByDictionaryLiteral where Element == SQLField {
-    public init(dictionaryLiteral elements: (String, SQLValueConvertible)...) {
+    public init(dictionaryLiteral elements: (String, SQLParameterConvertible)...) {
         self = elements.map { SQLField(column: $0, value: $1.sqlValue) }
     }
 }

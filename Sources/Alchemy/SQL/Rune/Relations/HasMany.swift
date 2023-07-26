@@ -36,6 +36,6 @@ public class HasManyRelation<From: Model, M: Model>: Relation<From, [M]> {
 
     public func disconnectAll() async throws {
         let value = try requireFromValue()
-        try await To.M.`where`("\(toKey)" == value).update(["\(toKey)": SQLValue.null])
+        try await To.M.`where`("\(toKey)" == value).update(["\(toKey)": .null])
     }
 }

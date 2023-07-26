@@ -16,6 +16,6 @@ public struct Encrypted: ModelProperty, Codable {
     public func store(key: String, on row: inout SQLRowWriter) throws {
         let encrypted = try Crypt.encrypt(string: wrappedValue)
         let string = encrypted.base64EncodedString()
-        row.put(.string(string), at: key)
+        row.put(.value(.string(string)), at: key)
     }
 }

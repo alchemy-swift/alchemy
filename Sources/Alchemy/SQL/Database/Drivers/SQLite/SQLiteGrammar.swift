@@ -1,5 +1,5 @@
 struct SQLiteDialect: SQLDialect {
-    func insertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+    func insertReturn(_ table: String, values: [[String : SQLParameterConvertible]]) -> [SQL] {
         return values.flatMap { fields -> [SQL] in
             // If the id is already set, search the database for that. Otherwise
             // assume id is autoincrementing and search for the last rowid.
@@ -7,7 +7,7 @@ struct SQLiteDialect: SQLDialect {
             let idString = id == nil ? "last_insert_rowid()" : "?"
             return [
                 insert(table, values: [fields]),
-                SQL("SELECT * FROM \(table) WHERE id = \(idString)", bindings: [id?.sqlValue].compactMap { $0 })
+                SQL("SELECT * FROM \(table) WHERE id = \(idString)", parameters: [id].compactMap { $0 })
             ]
         }
     }

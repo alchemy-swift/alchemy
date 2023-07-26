@@ -113,7 +113,7 @@ public class Query<Result: SQLQueryResult> {
     ///
     /// - Parameter value: A dictionary containing the values to be
     ///   inserted.
-    public func insert(_ value: [String: SQLValueConvertible]) async throws {
+    public func insert(_ value: [String: SQLParameterConvertible]) async throws {
         try await insert([value])
     }
 
@@ -121,7 +121,7 @@ public class Query<Result: SQLQueryResult> {
     ///
     /// - Parameter values: An array of dictionaries containing the values to be
     ///   inserted.
-    public func insert(_ values: [[String: SQLValueConvertible]]) async throws {
+    public func insert(_ values: [[String: SQLParameterConvertible]]) async throws {
         guard !values.isEmpty else {
             return
         }
@@ -130,7 +130,7 @@ public class Query<Result: SQLQueryResult> {
         try await db.query(sql: sql, log: shouldLog)
     }
 
-    public func insertReturn(_ values: [String: SQLValueConvertible]) async throws -> [SQLRow] {
+    public func insertReturn(_ values: [String: SQLParameterConvertible]) async throws -> [SQLRow] {
         try await insertReturn([values])
     }
 
@@ -139,7 +139,7 @@ public class Query<Result: SQLQueryResult> {
     /// - Parameter values: An array of dictionaries containing the values to be
     ///   inserted.
     /// - Returns: The inserted rows.
-    public func insertReturn(_ values: [[String: SQLValueConvertible]]) async throws -> [SQLRow] {
+    public func insertReturn(_ values: [[String: SQLParameterConvertible]]) async throws -> [SQLRow] {
         guard !values.isEmpty else {
             return []
         }
@@ -173,7 +173,7 @@ public class Query<Result: SQLQueryResult> {
     ///
     /// - Parameter fields: An dictionary containing the values to be
     ///   updated.
-    public func update(_ fields: [String: SQLValueConvertible]) async throws {
+    public func update(_ fields: [String: SQLParameterConvertible]) async throws {
         guard !fields.isEmpty else {
             return
         }
@@ -225,11 +225,11 @@ extension Database {
     @discardableResult
     fileprivate func query(sql: SQL, log: Bool) async throws -> [SQLRow] {
         if log || shouldLog {
-            let bindingsString = sql.bindings.isEmpty ? "" : " \(sql.bindings)"
-            Log.info("\(sql.statement);\(bindingsString)")
+            let bindsString = sql.binds.isEmpty ? "" : " \(sql.binds)"
+            Log.info("\(sql.statement);\(bindsString)")
         }
 
-        return try await query(sql.statement, parameters: sql.bindings)
+        return try await query(sql.statement, parameters: sql.binds)
     }
 
     fileprivate var dialect: SQLDialect {

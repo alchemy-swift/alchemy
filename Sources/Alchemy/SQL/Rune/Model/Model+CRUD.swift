@@ -159,11 +159,16 @@ extension Model {
     
     @discardableResult
     public func update(db: Database = DB, _ fields: [String: Any]) async throws -> Self {
-        let values = fields.compactMapValues { $0 as? SQLValueConvertible }
-        try await [self].updateAll(db: db, values)
+        let values = fields.compactMapValues { $0 as? SQLParameterConvertible }
+        return try await update(db: db, values)
+    }
+
+    @discardableResult
+    public func update(db: Database = DB, _ fields: [String: SQLParameterConvertible]) async throws -> Self {
+        try await [self].updateAll(db: db, fields)
         return try await refresh(db: db)
     }
-    
+
     @discardableResult
     public static func update(db: Database = DB, _ id: Identifier, fields: [String: Any]) async throws -> Self? {
         try await Self.find(id, db: db)?.update(db: db, fields)
@@ -298,7 +303,7 @@ extension Array where Element: Model {
         return results
     }
     
-    public func updateAll(db: Database = DB, _ fields: [String: SQLValueConvertible]) async throws {
+    public func updateAll(db: Database = DB, _ fields: [String: SQLParameterConvertible]) async throws {
         let ids = map(\.id)
         let fields = touchUpdatedAt(fields, db: db)
         try await Element.willUpdate(self)
@@ -338,7 +343,7 @@ extension Array where Element: Model {
             .all()
     }
     
-    private func touchUpdatedAt(_ input: [String: SQLValueConvertible], db: Database) -> [String: SQLValueConvertible] {
+    private func touchUpdatedAt(_ input: [String: SQLParameterConvertible], db: Database) -> [String: SQLParameterConvertible] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return input
         }
@@ -348,7 +353,7 @@ extension Array where Element: Model {
         return input
     }
     
-    private func insertableFields(db: Database) throws -> [[String: SQLValueConvertible]] {
+    private func insertableFields(db: Database) throws -> [[String: SQLParameterConvertible]] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return try map { try $0.toSQLRow().fieldDictionary }
         }

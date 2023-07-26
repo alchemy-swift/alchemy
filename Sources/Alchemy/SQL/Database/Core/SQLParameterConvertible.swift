@@ -20,10 +20,6 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
     case data(Data)
     /// A `UUID` value.
     case uuid(UUID)
-    // TODO: Also need to ensure it doesn't end up in a binding in relevant
-    // TODO: places like update or insert
-    /// A raw SQL expression, such as `NOW()`
-    case raw(SQL)
     /// A null value of any type.
     case null
 
@@ -44,8 +40,6 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
             return "\(utf8String ?? "\(data)")"
         case .uuid(let uuid):
             return "\(uuid.uuidString)"
-        case .raw(let sql):
-            return sql.statement
         case .null:
             return "NULL"
         }

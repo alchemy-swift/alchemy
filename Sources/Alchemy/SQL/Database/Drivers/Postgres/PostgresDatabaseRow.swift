@@ -24,8 +24,6 @@ extension PostgresData {
             self = PostgresData(uuid: value)
         case .data(let value):
             self = PostgresData(bytes: value)
-        case .raw:
-            preconditionFailure("Raw SQL values shouldn't be put in a binding.")
         case .null:
             self = .null
         }

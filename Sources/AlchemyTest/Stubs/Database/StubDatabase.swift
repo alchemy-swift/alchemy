@@ -11,7 +11,7 @@ public final class StubDatabase: DatabaseProvider {
     
     init() {}
     
-    public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
+    public func query(_ sql: String, values: [SQLParameterConvertible]) async throws -> [SQLRow] {
         guard !isShutdown else {
             throw StubDatabaseError("This stubbed database has been shutdown.")
         }

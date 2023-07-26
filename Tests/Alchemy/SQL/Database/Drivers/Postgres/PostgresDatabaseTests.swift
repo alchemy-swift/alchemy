@@ -57,8 +57,8 @@ final class PostgresDatabaseTests: TestCase<TestApp> {
         try provider.shutdown()
     }
     
-    func testPositionBindings() {
+    func testPositionBinds() {
         let query = "select * from cats where name = ? and age > ?"
-        XCTAssertEqual(query.positionPostgresBindings(), "select * from cats where name = $1 and age > $2")
+        XCTAssertEqual(query.positionPostgresBinds(), "select * from cats where name = $1 and age > $2")
     }
 }

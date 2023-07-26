@@ -42,8 +42,8 @@ final class PostgresDatabase: DatabaseProvider {
     
     // MARK: Database
     
-    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.query(sql, values: values) }
+    func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection { try await $0.query(sql, parameters: parameters) }
     }
     
     func raw(_ sql: String) async throws -> [SQLRow] {
@@ -143,8 +143,8 @@ extension PostgresConnection: DatabaseProvider {
     public var grammar: Grammar { PostgresGrammar() }
     public var dialect: SQLDialect { PostgresDialect() }
 
-    public func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await query(sql.positionPostgresBindings(), values.map(PostgresData.init))
+    public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+        try await query(sql.positionPostgresBinds(), parameters.map(PostgresData.init))
             .get().rows.map(SQLRow.init)
     }
     
@@ -162,14 +162,14 @@ extension PostgresConnection: DatabaseProvider {
 }
 
 extension String {
-    /// The Alchemy query builder constructs bindings with question
-    /// marks ('?') in the SQL string. PostgreSQL requires bindings
+    /// The Alchemy query builder constructs binds with question
+    /// marks ('?') in the SQL string. PostgreSQL requires binds
     /// to be denoted by $1, $2, etc. This function converts all
-    /// '?'s to strings appropriate for Postgres bindings.
+    /// '?'s to strings appropriate for Postgres binds.
     ///
-    /// - Parameter sql: The SQL string to replace bindings with.
+    /// - Parameter sql: The SQL string to replace binds with.
     /// - Returns: An SQL string appropriate for running in Postgres.
-    func positionPostgresBindings() -> String {
+    func positionPostgresBinds() -> String {
         // TODO: Ensure a user can enter ? into their content?
         replaceAll(matching: "(\\?)") { (index, _) in "$\(index + 1)" }
     }

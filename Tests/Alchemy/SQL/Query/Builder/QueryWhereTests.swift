@@ -53,11 +53,11 @@
 //    
 //    func testWhereRaw() {
 //        let query = DB.table("foo")
-//            .whereRaw("foo", bindings: [1])
-//            .orWhereRaw("bar", bindings: [2])
+//            .whereRaw("foo", binds: [1])
+//            .orWhereRaw("bar", binds: [2])
 //        XCTAssertEqual(query.wheres, [
-//            _andWhere(.raw(SQL("foo", bindings: [.int(1)]))),
-//            _orWhere(.raw(SQL("bar", bindings: [.int(2)]))),
+//            _andWhere(.raw(SQL("foo", binds: [.int(1)]))),
+//            _orWhere(.raw(SQL("bar", binds: [.int(2)]))),
 //        ])
 //    }
 //    
@@ -101,11 +101,11 @@
 //        XCTAssertEqual("foo" ~= 1, _andWhere(op: .like))
 //    }
 //    
-//    private func _andWhere(key: String = "foo", op: SQLQuery.Operator = .equals, value: SQLValueConvertible = 1) -> SQLWhere {
+//    private func _andWhere(key: String = "foo", op: SQLQuery.Operator = .equals, value: SQLParameterConvertible = 1) -> SQLWhere {
 //        _andWhere(.value(key: key, op: op, value: value.sqlValue))
 //    }
 //    
-//    private func _orWhere(key: String = "foo", op: SQLQuery.Operator = .equals, value: SQLValueConvertible = 1) -> SQLWhere {
+//    private func _orWhere(key: String = "foo", op: SQLQuery.Operator = .equals, value: SQLParameterConvertible = 1) -> SQLWhere {
 //        _orWhere(.value(key: key, op: op, value: value.sqlValue))
 //    }
 //    

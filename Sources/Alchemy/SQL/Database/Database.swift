@@ -48,11 +48,11 @@ public final class Database: Service {
     ///
     /// Usage:
     /// ```swift
-    /// // No bindings
+    /// // No binds
     /// let rows = try await db.rawQuery("SELECT * FROM users where id = 1")
     /// print("Got \(rows.count) users.")
     ///
-    /// // Bindings, to protect against SQL injection.
+    /// // Binds, to protect against SQL injection.
     /// let rows = db.rawQuery("SELECT * FROM users where id = ?", values = [.int(1)])
     /// print("Got \(rows.count) users.")
     /// ```
@@ -65,7 +65,7 @@ public final class Database: Service {
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
     public func query(_ sql: String, parameters: [SQLValue] = []) async throws -> [SQLRow] {
-        try await provider.query(sql, values: parameters)
+        try await provider.query(sql, parameters: parameters)
     }
     
     /// Run a raw, not parametrized SQL string.

@@ -4,7 +4,7 @@ import NIO
 /// into SQL strings.
 
 struct MySQLDialect: SQLDialect {
-    func insertReturn(_ table: String, values: [[String : SQLValueConvertible]]) -> [SQL] {
+    func insertReturn(_ table: String, values: [[String : SQLParameterConvertible]]) -> [SQL] {
         values.flatMap {[
             insert(table, values: [$0]),
             SQL("SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()")

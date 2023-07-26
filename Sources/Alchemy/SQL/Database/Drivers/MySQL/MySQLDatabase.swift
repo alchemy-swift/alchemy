@@ -37,8 +37,8 @@ final class MySQLDatabase: DatabaseProvider {
     
     // MARK: Database
     
-    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.query(sql, values: values) }
+    func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection { try await $0.query(sql, parameters: parameters) }
     }
     
     func raw(_ sql: String) async throws -> [SQLRow] {
@@ -71,8 +71,8 @@ private struct MySQLConnectionDatabase: DatabaseProvider {
     let grammar: Grammar
     let dialect: SQLDialect
     
-    func query(_ sql: String, values: [SQLValue]) async throws -> [SQLRow] {
-        try await conn.query(sql, values.map(MySQLData.init)).get().map(SQLRow.init)
+    func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+        try await conn.query(sql, parameters.map(MySQLData.init)).get().map(SQLRow.init)
     }
     
     func raw(_ sql: String) async throws -> [SQLRow] {

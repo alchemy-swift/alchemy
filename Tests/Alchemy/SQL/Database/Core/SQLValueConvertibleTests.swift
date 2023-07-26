@@ -1,18 +1,18 @@
 import Alchemy
 import XCTest
 
-final class SQLValueConvertibleTests: XCTestCase {
-    func testValueLiteral() {
+final class SQLParameterConvertibleTests: XCTestCase {
+    func testRawSQLString() {
         let jsonString = """
         {"foo":"bar"}
         """
         let jsonData = jsonString.data(using: .utf8) ?? Data()
-        XCTAssertEqual(SQLValue.json(jsonData).sqlLiteral, "'\(jsonString)'")
-        XCTAssertEqual(SQLValue.null.sqlLiteral, "NULL")
+        XCTAssertEqual(SQLValue.json(jsonData).rawSQLString, "'\(jsonString)'")
+        XCTAssertEqual(SQLValue.null.rawSQLString, "NULL")
+        XCTAssertEqual(SQLValue.string("foo").rawSQLString, "'foo'")
     }
     
     func testSQL() {
-        XCTAssertEqual(SQLValue.string("foo").sql, SQL("'foo'"))
-        XCTAssertEqual(SQL("foo", bindings: [.string("bar")]).sql, SQL("foo", bindings: [.string("bar")]))
+        XCTAssertEqual(SQL("foo", parameters: ["bar"]), SQL("foo", binds: [.string("bar")]))
     }
 }

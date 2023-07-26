@@ -43,7 +43,7 @@ extension Query {
     ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(key: String, op: SQLWhere.Operator, value: SQLValueConvertible, boolean: SQLWhere.Boolean = .and) -> Self {
-        having(SQLWhere(boolean: boolean, type: .value(key: key, op: op, value: value.sqlValue)))
+    public func having(key: String, op: SQLWhere.Operator, value: SQLParameterConvertible, boolean: SQLWhere.Boolean = .and) -> Self {
+        having(SQLWhere(boolean: boolean, type: .value(key: key, op: op, value: value.sqlParameter)))
     }
 }

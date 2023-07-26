@@ -54,9 +54,9 @@ final class EncryptionTests: XCTestCase {
 }
 
 private struct FakeWriter: SQLRowWriter {
-    var dict: [String: SQLValue] = [:]
+    var dict: [String: SQLParameterConvertible] = [:]
     
-    subscript(column: String) -> SQLValue? {
+    subscript(column: String) -> SQLParameterConvertible? {
         get { dict[column] }
         set { dict[column] = newValue }
     }
@@ -70,7 +70,7 @@ private struct FakeWriter: SQLRowWriter {
 private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
     var row: SQLRow
     
-    init(dictionaryLiteral: (String, SQLValueConvertible)...) {
+    init(dictionaryLiteral: (String, SQLParameterConvertible)...) {
         self.row = SQLRow(fields: dictionaryLiteral.map { SQLField(column: $0, value: $1.sqlValue) })
     }
     
@@ -78,7 +78,7 @@ private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
         return try JSONDecoder().decode(D.self, from: row.require(key).json(key))
     }
     
-    func require(_ key: String) throws -> SQLValue {
+    func require(_ key: String) throws -> SQLParameterConvertible {
         try row.require(key)
     }
     
@@ -86,11 +86,11 @@ private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
         row[column] != nil
     }
     
-    subscript(_ index: Int) -> SQLValue {
+    subscript(_ index: Int) -> SQLParameterConvertible {
         row[index]
     }
     
-    subscript(_ column: String) -> SQLValue? {
+    subscript(_ column: String) -> SQLParameterConvertible? {
         row[column]
     }
 }

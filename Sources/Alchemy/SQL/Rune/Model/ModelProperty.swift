@@ -6,11 +6,11 @@ public protocol ModelProperty {
 
 extension String: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self =  try row.require(key).string(key)
+        self = try row.require(key).string(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.string(self), at: key)
+        row.put(self, at: key)
     }
 }
 
@@ -20,7 +20,7 @@ extension Bool: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.bool(self), at: key)
+        row.put(self, at: key)
     }
 }
 
@@ -30,7 +30,7 @@ extension Float: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.double(Double(self)), at: key)
+        row.put(self, at: key)
     }
 }
 
@@ -40,7 +40,7 @@ extension Double: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.double(self), at: key)
+        row.put(self, at: key)
     }
 }
 
@@ -50,7 +50,7 @@ extension FixedWidthInteger {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.int(Int(self)), at: key)
+        row.put(self, at: key)
     }
 }
 
@@ -71,7 +71,7 @@ extension Date: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.date(self), at: key)
+        row.put(self, at: key)
     }
 }
 
@@ -81,7 +81,7 @@ extension UUID: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(.uuid(self), at: key)
+        row.put(self, at: key)
     }
 }
 

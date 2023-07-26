@@ -34,6 +34,6 @@ public class HasOneRelation<From: Model, To: ModelOrOptional>: Relation<From, To
     private func _disconnect() async throws {
         let value = try requireFromValue()
         let existing = try await To.M.`where`("\(toKey)" == value).first()
-        try await existing?.update(["\(toKey)": SQLValue.null])
+        try await existing?.update(["\(toKey)": .null])
     }
 }

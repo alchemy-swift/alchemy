@@ -8,7 +8,7 @@ protocol ColumnBuilderErased {
 ///
 /// `Default` is a Swift type that can be used to add a default value
 /// to this column.
-public final class CreateColumnBuilder<Default: SQLValueConvertible>: ColumnBuilderErased {
+public final class CreateColumnBuilder<Default: SQLParameterConvertible>: ColumnBuilderErased {
     /// The grammar of this builder.
     private let grammar: Grammar
     
@@ -177,11 +177,11 @@ extension CreateColumnBuilder where Default == SQLJSON {
 /// generic `default` function on `CreateColumnBuilder`. Instead,
 /// opt to use `.default(jsonString:)` or `.default(encodable:)`
 /// to set a default value for a JSON column.
-public struct SQLJSON: SQLValueConvertible {
+public struct SQLJSON: SQLParameterConvertible {
     /// `init()` is kept private to this from ever being instantiated.
     private init() {}
     
     // MARK: SQLConvertible
     
-    public var sqlValue: SQLValue { .null }
+    public var sqlParameter: SQLParameter { .value(.null) }
 }

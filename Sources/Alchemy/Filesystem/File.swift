@@ -97,7 +97,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
             throw RuneError("currently, only files saved in a `Filesystem` can be stored on a `Model`")
         }
 
-        row.put(.string(path), at: key)
+        row.put(path, at: key)
     }
     
     // MARK: - ResponseConvertible

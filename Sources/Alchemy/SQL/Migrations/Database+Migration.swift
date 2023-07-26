@@ -51,7 +51,7 @@ extension Database {
         } else {
             count = try await table("sqlite_master")
                 .where("type" == "table")
-                .where(.and(.value(key: "name", op: .notLike, value: .string("sqlite_%"))))
+                .where(.and(.value(key: "name", op: .notLike, value: .value(.string("sqlite_%")))))
                 .count()
         }
         
@@ -96,7 +96,7 @@ extension Database {
     /// - Parameter statements: The statements to consecutively run.
     private func runStatements(statements: [SQL]) async throws {
         for statement in statements {
-            _ = try await query(statement.statement, parameters: statement.bindings)
+            _ = try await query(statement.statement, parameters: statement.binds)
         }
     }
 }

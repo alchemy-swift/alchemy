@@ -33,7 +33,7 @@ final class SQLiteRowTests: TestCase<TestApp> {
     
     func testDate() {
         let date = Date()
-        let dateString = SQLValue.iso8601DateFormatter.string(from: date)
+        let dateString = SQLParameterConvertible.iso8601DateFormatter.string(from: date)
         XCTAssertEqual(try SQLiteData(.date(date)).toSQLValue(), .string(dateString))
     }
     

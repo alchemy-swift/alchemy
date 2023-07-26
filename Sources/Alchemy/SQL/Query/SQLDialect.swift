@@ -27,15 +27,15 @@ public protocol SQLDialect {
 
     // MARK: Insert
 
-    func insert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL
-    func insertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL]
+    func insert(_ table: String, values: [[String: SQLParameterConvertible]]) -> SQL
+    func insertReturn(_ table: String, values: [[String: SQLParameterConvertible]]) -> [SQL]
 
     // MARK: Update
 
     func update(table: String,
                 joins: [SQLJoin],
                 wheres: [SQLWhere],
-                fields: [String: SQLValueConvertible]) -> SQL
+                fields: [String: SQLParameterConvertible]) -> SQL
 
     // MARK: Delete
 
@@ -76,18 +76,18 @@ extension SQLDialect {
             return nil
         }
 
-        var bindings: [SQLValue] = []
+        var binds: [SQLParameterConvertible] = []
         let query = joins.compactMap { join -> String? in
             guard let whereSQL = compileWheres(join.wheres, isJoin: true) else {
                 return nil
             }
 
-            bindings += whereSQL.bindings
+            binds += whereSQL.binds
             return "\(join.type.rawValue) JOIN \(join.table) \(whereSQL.statement)"
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }.joined(separator: " ")
 
-        return SQL(query, bindings: bindings)
+        return SQL(query, parameters: binds)
     }
 
     public func compileWheres(_ wheres: [SQLWhere], isJoin: Bool = false) -> SQL? {
@@ -97,7 +97,7 @@ extension SQLDialect {
 
         let conjunction = isJoin ? "ON" : "WHERE"
         let sql = wheres.joinedSQL().droppingLeadingBoolean()
-        return SQL("\(conjunction) \(sql.statement)", bindings: sql.bindings)
+        return SQL("\(conjunction) \(sql.statement)", binds: sql.binds)
     }
 
     public func compileGroups(_ groups: [String]) -> SQL? {
@@ -114,7 +114,7 @@ extension SQLDialect {
         }
 
         let sql = havings.joinedSQL().droppingLeadingBoolean()
-        return SQL("HAVING \(sql.statement)", bindings: sql.bindings)
+        return SQL("HAVING \(sql.statement)", binds: sql.binds)
     }
 
     public func compileOrders(_ orders: [SQLOrder]) -> SQL? {
@@ -161,72 +161,68 @@ extension SQLDialect {
         return SQL(string)
     }
 
-    public func insert(_ table: String, values: [[String: SQLValueConvertible]]) -> SQL {
+    public func insert(_ table: String, values: [[String: SQLParameterConvertible]]) -> SQL {
         guard !values.isEmpty else {
             return SQL("INSERT INTO \(table) DEFAULT VALUES")
         }
 
         let columns = values[0].map { $0.key }
-        var parameters: [SQLValue] = []
+        var parameters: [SQLParameterConvertible] = []
         var placeholders: [String] = []
 
         for value in values {
-            let orderedValues = columns.compactMap { value[$0]?.sqlValue }
+            let orderedValues = columns.compactMap { value[$0]?.sqlParameter }
             parameters.append(contentsOf: orderedValues)
             placeholders.append("(\(parameterize(orderedValues)))")
         }
 
         let columnsJoined = columns.joined(separator: ", ")
-        return SQL("INSERT INTO \(table) (\(columnsJoined)) VALUES \(placeholders.joined(separator: ", "))", bindings: parameters)
+        return SQL("INSERT INTO \(table) (\(columnsJoined)) VALUES \(placeholders.joined(separator: ", "))", parameters: parameters)
     }
 
-    public func insertReturn(_ table: String, values: [[String: SQLValueConvertible]]) -> [SQL] {
+    public func insertReturn(_ table: String, values: [[String: SQLParameterConvertible]]) -> [SQL] {
         let insert = insert(table, values: values)
-        return [SQL("\(insert.statement) RETURNING *", bindings: insert.bindings)]
+        return [SQL("\(insert.statement) RETURNING *", binds: insert.binds)]
     }
 
     public func update(table: String,
                        joins: [SQLJoin],
                        wheres: [SQLWhere],
-                       fields: [String: SQLValueConvertible]) -> SQL {
-        var bindings: [SQLValue] = []
-        let columnStatements: [SQL] = fields.map { key, val in
-            if let expression = val as? SQL {
-                return SQL("\(key) = \(expression.statement)")
-            } else {
-                return SQL("\(key) = ?", bindings: [val.sqlValue.sqlValue])
-            }
+                       fields: [String: SQLParameterConvertible]) -> SQL {
+        var binds: [SQLParameterConvertible] = []
+        let columnStatements: [SQL] = fields.map {
+            SQL("\($0) = ?", parameters: [$1.sqlParameter])
         }
 
-        let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), bindings: columnStatements.flatMap(\.bindings))
+        let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), binds: columnStatements.flatMap(\.binds))
 
         var base = "UPDATE \(table)"
         if let joinSQL = compileJoins(joins) {
-            bindings += joinSQL.bindings
+            binds += joinSQL.binds
             base += " \(joinSQL)"
         }
 
-        bindings += columnSQL.bindings
+        binds += columnSQL.binds
         base += " SET \(columnSQL.statement)"
 
         if let whereSQL = compileWheres(wheres) {
-            bindings += whereSQL.bindings
+            binds += whereSQL.binds
             base += " \(whereSQL.statement)"
         }
 
-        return SQL(base, bindings: bindings)
+        return SQL(base, parameters: binds)
     }
 
     public func delete(_ table: String, wheres: [SQLWhere]) -> SQL {
         if let whereSQL = compileWheres(wheres) {
-            return SQL("DELETE FROM \(table) \(whereSQL.statement)", bindings: whereSQL.bindings)
+            return SQL("DELETE FROM \(table) \(whereSQL.statement)", binds: whereSQL.binds)
         } else {
             return SQL("DELETE FROM \(table)")
         }
     }
 
-    private func parameterize(_ values: [SQLValueConvertible]) -> String {
-        values.map { ($0 as? SQL)?.statement ?? "?" }.joined(separator: ", ")
+    private func parameterize(_ values: [SQLParameterConvertible]) -> String {
+        Array(repeating: "?", count: values.count).joined(separator: ", ")
     }
 }
 
@@ -391,10 +387,6 @@ open class Grammar {
     open func jsonLiteral(for jsonString: String) -> String {
         "'\(jsonString)'::jsonb"
     }
-    
-    private func parameterize(_ values: [SQLValueConvertible]) -> String {
-        values.map { ($0 as? SQL)?.statement ?? "?" }.joined(separator: ", ")
-    }
 }
 
 extension String {
@@ -416,40 +408,40 @@ extension SQLWhere {
                     fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
                 }
             } else {
-                return SQL("\(boolean) \(key) \(op) ?", bindings: [value])
+                return SQL("\(boolean) \(key) \(op) ?", parameters: [value])
             }
         case .column(let first, let op, let second):
             return SQL("\(boolean) \(first) \(op) \(second)")
         case .nested(let wheres):
             let nestedSQL = wheres.joinedSQL().droppingLeadingBoolean()
-            return SQL("\(boolean) (\(nestedSQL.statement))", bindings: nestedSQL.bindings)
+            return SQL("\(boolean) (\(nestedSQL.statement))", binds: nestedSQL.binds)
         case .in(let key, let values):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) IN (\(placeholders))", bindings: values)
+            return SQL("\(boolean) \(key) IN (\(placeholders))", parameters: values)
         case .notIn(let key, let values):
             let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) NOT IN (\(placeholders))", bindings: values)
+            return SQL("\(boolean) \(key) NOT IN (\(placeholders))", parameters: values)
         case .raw(let sql):
-            return SQL("\(boolean) \(sql.statement)", bindings: sql.bindings)
+            return SQL("\(boolean) \(sql.statement)", binds: sql.binds)
         }
     }
 }
 
 extension Array where Element == SQL {
     func joinedSQL() -> SQL {
-        return SQL(map(\.statement).joined(separator: " "), bindings: flatMap(\.bindings))
+        return SQL(map(\.statement).joined(separator: " "), parameters: flatMap(\.binds))
     }
 }
 
 extension Array where Element == SQLWhere {
     func joinedSQL() -> SQL {
         let statements = map(\.sql)
-        return SQL(statements.map(\.statement).joined(separator: " "), bindings: statements.flatMap(\.bindings))
+        return SQL(statements.map(\.statement).joined(separator: " "), parameters: statements.flatMap(\.binds))
     }
 }
 
 extension SQL {
     func droppingLeadingBoolean() -> SQL {
-        SQL(statement.droppingPrefix("and ").droppingPrefix("or "), bindings: bindings)
+        SQL(statement.droppingPrefix("and ").droppingPrefix("or "), parameters: binds)
     }
 }

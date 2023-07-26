@@ -28,22 +28,22 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
         _through(table: pivot, from: pivotFrom, to: pivotTo)
     }
 
-    public func connect(_ model: M, pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+    public func connect(_ model: M, pivotFields: [String: SQLParameterConvertible] = [:]) async throws {
         try await connect([model], pivotFields: pivotFields)
     }
 
-    public func connect(_ models: [M], pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+    public func connect(_ models: [M], pivotFields: [String: SQLParameterConvertible] = [:]) async throws {
         let from = try requireFromValue()
         let tos = try models.map { try requireToValue($0) }
         let fieldsArray = tos.map { ["\(fromKey)": from, "\(toKey)": $0] + pivotFields }
         try await db.table(pivot.table).insert(fieldsArray)
     }
 
-    public func connectOrUpdate(_ model: M, pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+    public func connectOrUpdate(_ model: M, pivotFields: [String: SQLParameterConvertible] = [:]) async throws {
         try await connectOrUpdate([model], pivotFields: pivotFields)
     }
 
-    public func connectOrUpdate(_ models: [M], pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+    public func connectOrUpdate(_ models: [M], pivotFields: [String: SQLParameterConvertible] = [:]) async throws {
         let from = try requireFromValue()
         let tos = try models.map { try (requireToValue($0), $0) }
 
@@ -65,7 +65,7 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
         try await connect(notExisting, pivotFields: pivotFields)
     }
 
-    public func replace(_ models: [M], pivotFields: [String: SQLValueConvertible] = [:]) async throws {
+    public func replace(_ models: [M], pivotFields: [String: SQLParameterConvertible] = [:]) async throws {
         try await disconnectAll()
         try await connect(models, pivotFields: pivotFields)
     }
