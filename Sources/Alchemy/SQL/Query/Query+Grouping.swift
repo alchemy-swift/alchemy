@@ -29,7 +29,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func orHaving(_ clause: SQLWhere) -> Self {
-        having(SQLWhere(type: clause.type, boolean: .or))
+        having(.or(clause.type))
     }
 
     /// Add a having clause to filter results from aggregate functions
@@ -44,6 +44,6 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func having(key: String, op: SQLWhere.Operator, value: SQLValueConvertible, boolean: SQLWhere.Boolean = .and) -> Self {
-        having(SQLWhere(type: .value(key: key, op: op, value: value.sqlValue), boolean: boolean))
+        having(SQLWhere(boolean: boolean, type: .value(key: key, op: op, value: value.sqlValue)))
     }
 }

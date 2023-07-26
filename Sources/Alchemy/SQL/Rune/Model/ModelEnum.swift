@@ -14,25 +14,18 @@
 ///     let priority: TaskPriority // Stored as `Int` in the database.
 /// }
 /// ```
-public protocol ModelEnum: ModelProperty, Codable, CaseIterable, AnyModelEnum {}
-
-/// A type erased `ModelEnum`.
-public protocol AnyModelEnum {
-    /// A dummy value for this type. Defaults to `Self.allCases.first`.
-    static var dummyValue: Self { get }
-}
+public protocol ModelEnum: ModelProperty {}
 
 extension ModelEnum where Self: RawRepresentable, RawValue: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self = try Self(rawValue: RawValue(key: key, on: row))
-            .unwrap(or: DatabaseCodingError("Error decoding \(name(of: Self.self)) from \(key)"))
+        guard let value = Self(rawValue: try RawValue(key: key, on: row)) else {
+            throw RuneError("Error decoding \(name(of: Self.self)) from \(key)")
+        }
+
+        self = value
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
         try rawValue.store(key: key, on: &row)
     }
-}
-
-extension ModelEnum {
-    public static var dummyValue: Self { Self.allCases.first! }
 }

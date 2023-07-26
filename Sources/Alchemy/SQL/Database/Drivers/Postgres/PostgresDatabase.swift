@@ -79,10 +79,8 @@ final class PostgresDatabase: DatabaseProvider {
 
 extension SQLRow {
     init(postgres: PostgresRow) throws {
-        self.init(
-            fields: try postgres.map { SQLField(
-                column: $0.columnName,
-                value: try $0.toSQLValue()) })
+        let fields = try postgres.map { SQLField(column: $0.columnName, value: try $0.toSQLValue()) }
+        self.init(fields: fields)
     }
 }
 

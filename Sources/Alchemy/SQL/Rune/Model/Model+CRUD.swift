@@ -22,7 +22,7 @@ extension Model {
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
     public static func find(_ id: Self.Identifier, db: Database = DB) async throws -> Self? {
-        try await Self.firstWhere("id" == id, db: db)
+        try await Self.firstWhere(Self.primaryKey == id, db: db)
     }
     
     /// Fetch the first model that matches the given where clause.
@@ -46,7 +46,7 @@ extension Model {
     ///   - error: An error to throw if the model doesn't exist.
     /// - Returns: A matching model.
     public static func find(db: Database = DB, _ id: Self.Identifier, or error: Error) async throws -> Self {
-        try await Self.firstWhere("id" == id, db: db).unwrap(or: error)
+        try await Self.firstWhere(Self.primaryKey == id, db: db).unwrap(or: error)
     }
     
     /// Fetch the first model of this type.
@@ -216,7 +216,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
     public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
-        try await query(db: db).where("id" == id).delete()
+        try await query(db: db).where(Self.primaryKey == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -243,7 +243,7 @@ extension Model {
     /// - Returns: A freshly synced copy of this model.
     public func refresh(db: Database = DB) async throws -> Self {
         try await Self.query(db: db)
-            .where("id" == id)
+            .where(Self.primaryKey == id)
             .first()
             .unwrap(or: RuneError.syncErrorNoMatch(table: Self.table, id: id))
     }
@@ -299,10 +299,12 @@ extension Array where Element: Model {
     }
     
     public func updateAll(db: Database = DB, _ fields: [String: SQLValueConvertible]) async throws {
+        let ids = map(\.id)
+        let fields = touchUpdatedAt(fields, db: db)
         try await Element.willUpdate(self)
         try await Element.query(db: db)
-            .where("id", in: map(\.id))
-            .update(touchUpdatedAt(fields, db: db))
+            .where(Element.primaryKey, in: ids)
+            .update(fields)
         try await Element.didUpdate(self)
     }
     
@@ -313,18 +315,27 @@ extension Array where Element: Model {
     /// - Parameter db: The database to delete from. Defaults to
     ///   `Database.default`.
     public func deleteAll(db: Database = DB) async throws {
+        let ids = map(\.id)
         try await Element.willDelete(self)
-        _ = try await Element.query(db: db)
-            .where("id", in: self.compactMap { $0.id })
+        try await Element.query(db: db)
+            .where(Element.primaryKey, in: ids)
             .delete()
         try await Element.didDelete(self)
     }
     
-    public func syncAll(db: Database = DB, eagerLoadsQuery: (Query<Element>) -> Query<Element> = { $0 }) async throws -> Self {
-        guard !isEmpty else { return self }
-        guard allSatisfy({ $0.id != nil }) else { throw RuneError.syncErrorNoId }
-        let initialQuery = Element.query(db: db).where("id", in: map(\.id))
-        return try await eagerLoadsQuery(initialQuery).all()
+    public func syncAll(db: Database = DB) async throws -> Self {
+        guard !isEmpty else {
+            return self
+        }
+
+        guard allSatisfy({ $0.id != nil }) else {
+            throw RuneError.syncErrorNoId
+        }
+
+        let ids = map(\.id)
+        return try await db.table(Element.self)
+            .where(Element.primaryKey, in: ids)
+            .all()
     }
     
     private func touchUpdatedAt(_ input: [String: SQLValueConvertible], db: Database) -> [String: SQLValueConvertible] {

@@ -52,7 +52,7 @@ extension Database {
         } else {
             count = try await table("sqlite_master")
                 .where("type" == "table")
-                .where(SQLWhere(type: .value(key: "name", op: .notLike, value: .string("sqlite_%")), boolean: .and))
+                .where(.and(.value(key: "name", op: .notLike, value: .string("sqlite_%"))))
                 .count()
         }
         

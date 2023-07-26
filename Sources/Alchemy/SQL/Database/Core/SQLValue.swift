@@ -68,10 +68,11 @@ extension SQLValue {
     ///   was indeed a non-null `.int`.
     public func int(_ columnName: String? = nil) throws -> Int {
         try ensureNotNull(columnName)
-        
         switch self {
         case .int(let value):
             return value
+        case .date(let value):
+            return Int(value.timeIntervalSince1970)
         default:
             throw typeError("Int", columnName: columnName)
         }
@@ -87,10 +88,25 @@ extension SQLValue {
     ///   it was indeed a non-null `.string`.
     public func string(_ columnName: String? = nil) throws -> String {
         try ensureNotNull(columnName)
-        
         switch self {
         case .string(let value):
             return value
+        case .double(let value):
+            return String(value)
+        case .int(let value):
+            return String(value)
+        case .bool(let value):
+            return String(value)
+        case .date(let value):
+            return value.description
+        case .uuid(let value):
+            return value.uuidString
+        case .json(let data):
+            guard let string = String(data: data, encoding: .utf8) else {
+                throw typeError("String", columnName: columnName)
+            }
+
+            return string
         default:
             throw typeError("String", columnName: columnName)
         }
@@ -106,10 +122,13 @@ extension SQLValue {
     ///   was indeed a non-null `.double`.
     public func double(_ columnName: String? = nil) throws -> Double {
         try ensureNotNull(columnName)
-        
         switch self {
         case .double(let value):
             return value
+        case .int(let value):
+            return Double(value)
+        case .date(let value):
+            return value.timeIntervalSince1970
         default:
             throw typeError("Double", columnName: columnName)
         }
@@ -125,12 +144,13 @@ extension SQLValue {
     ///   was indeed a non-null `.bool`.
     public func bool(_ columnName: String? = nil) throws -> Bool {
         try ensureNotNull(columnName)
-        
         switch self {
         case .bool(let value):
             return value
         case .int(let value):
             return value != 0
+        case .double(let value):
+            return value != 0.0
         default:
             throw typeError("Bool", columnName: columnName)
         }
@@ -146,10 +166,13 @@ extension SQLValue {
     ///   was indeed a non-null `.date`.
     public func date(_ columnName: String? = nil) throws -> Date {
         try ensureNotNull(columnName)
-        
         switch self {
         case .date(let value):
             return value
+        case .int(let value):
+            return Date(timeIntervalSince1970: Double(value))
+        case .double(let value):
+            return Date(timeIntervalSince1970: value)
         case .string(let value):
             guard
                 let date = SQLValue.iso8601DateFormatter.date(from: value)
@@ -157,7 +180,7 @@ extension SQLValue {
             else {
                 throw typeError("Date", columnName: columnName)
             }
-            
+
             return date
         default:
             throw typeError("Date", columnName: columnName)
@@ -174,7 +197,6 @@ extension SQLValue {
     ///   it was indeed a non-null `.json`.
     public func json(_ columnName: String? = nil) throws -> Data {
         try ensureNotNull(columnName)
-        
         switch self {
         case .json(let value):
             return value
@@ -199,7 +221,6 @@ extension SQLValue {
     ///   was indeed a non-null `.uuid`.
     public func uuid(_ columnName: String? = nil) throws -> UUID {
         try ensureNotNull(columnName)
-        
         switch self {
         case .uuid(let value):
             return value
@@ -214,11 +235,6 @@ extension SQLValue {
         }
     }
     
-    /// Generates an error appropriate to throw if the user tries to get a type
-    /// that isn't compatible with this value.
-    ///
-    /// - Parameter typeName: The name of the type the user tried to get.
-    /// - Returns: A `DatabaseError` with a message describing the predicament.
     private func typeError(_ typeName: String, columnName: String? = nil) -> Error {
         if let columnName = columnName {
             return DatabaseError("Unable to coerce \(self) at column `\(columnName)` to \(typeName)")

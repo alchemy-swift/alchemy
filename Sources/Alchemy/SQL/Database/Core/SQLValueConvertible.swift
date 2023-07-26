@@ -12,7 +12,7 @@ extension SQLValueConvertible {
     /// A string appropriate for representing this value in a non-parameterized
     /// query.
     public var sqlLiteral: String {
-        switch self.sqlValue {
+        switch sqlValue {
         case .int(let value):
             return "\(value)"
         case .double(let value):
@@ -20,7 +20,7 @@ extension SQLValueConvertible {
         case .bool(let value):
             return "\(value)"
         case .string(let value):
-            // ' -> '' is escape for MySQL & Postgres... not sure if this will break elsewhere.
+            // ' -> '' escapes in MySQL, Postgres & SQLite
             return "'\(value.replacingOccurrences(of: "'", with: "''"))'"
         case .date(let value):
             return "'\(value)'"
@@ -78,9 +78,7 @@ extension UUID: SQLValueConvertible {
     public var sqlValue: SQLValue { .uuid(self) }
 }
 
-extension Optional: SQLConvertible where Wrapped: SQLValueConvertible {}
-
-extension Optional: SQLValueConvertible where Wrapped: SQLValueConvertible {
+extension Optional: SQLValueConvertible, SQLConvertible where Wrapped: SQLValueConvertible {
     public var sqlValue: SQLValue { self?.sqlValue ?? .null }
 }
 

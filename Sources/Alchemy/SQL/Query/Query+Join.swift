@@ -1,5 +1,5 @@
 /// A JOIN query builder.
-public struct SQLJoin: Equatable {
+public struct SQLJoin {
     /// The type of the join clause.
     public enum JoinType: String {
         /// INNER JOIN.
@@ -33,7 +33,7 @@ public struct SQLJoin: Equatable {
 
     func on(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
         var join = self
-        join.wheres.append(SQLWhere(type: .column(first: first, op: op, second: second), boolean: boolean))
+        join.wheres.append(SQLWhere(boolean: boolean, type: .column(first: first, op: op, second: second)))
         return join
     }
 

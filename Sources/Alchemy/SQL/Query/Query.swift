@@ -38,7 +38,7 @@ public class Query<Result: SQLQueryResult> {
 
     // MARK: - Hooks
 
-    func didLoad(_ then: @escaping(inout [Result]) async throws -> Void) -> Self {
+    public func didLoad(_ then: @escaping(inout [Result]) async throws -> Void) -> Self {
         let _didLoad = didLoad
         didLoad = { rows in
             var results = try await _didLoad(rows)
