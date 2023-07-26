@@ -3,16 +3,6 @@ import Foundation
 /// Used for turning any `Encodable` into an ordered dictionary of columns to
 /// `SQLValue`s based on its stored properties.
 final class SQLRowEncoder: Encoder, SQLRowWriter {
-    private struct Field: Equatable {
-        public let column: String
-        public let parameter: SQLParameter
-
-        public init(column: String, parameter: SQLParameter) {
-            self.column = column
-            self.parameter = parameter
-        }
-    }
-
     /// Used to decode keyed values from a Model.
     private struct _KeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtocol {
         var writer: SQLRowWriter
@@ -54,7 +44,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     
     /// Used for keeping track of the database fields pulled off the
     /// object encoded to this encoder.
-    private var fields: [Field] = []
+    private var fields: [String: SQLParameter] = [:]
 
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.
@@ -73,11 +63,12 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     init(keyMapping: KeyMapping, jsonEncoder: JSONEncoder) {
         self.keyMapping = keyMapping
         self.jsonEncoder = jsonEncoder
+        self.fields = [:]
     }
     
     subscript(column: String) -> SQLParameter? {
-        get { fields.first(where: { $0.column == column })?.parameter }
-        set { fields.append(Field(column: keyMapping.encode(column), parameter: newValue ?? .null)) }
+        get { fields[column] }
+        set { fields[keyMapping.encode(column)] = newValue ?? .null }
     }
     
     func put<E: Encodable>(json: E, at key: String) throws {
@@ -91,10 +82,10 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// - Throws: A `DatabaseCodingError` if there is an error reading
     ///   fields from `value`.
     /// - Returns: An ordered dictionary of the model's columns and values.
-    func sqlRow<E: Encodable>(for value: E) throws -> SQLRow {
+    func fields<E: Encodable>(for value: E) throws -> [String: SQLParameterConvertible] {
         try value.encode(to: self)
-        defer { fields = [] }
-        return SQLRow(fields: readFields)
+        defer { fields = [:] }
+        return fields
     }
     
     func container<Key>(keyedBy: Key.Type) -> KeyedEncodingContainer<Key> {

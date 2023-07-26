@@ -44,8 +44,6 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
             return "NULL"
         }
     }
-    
-    public static var now: SQLValue { .date(Date()) }
 }
 
 /// Extension for easily accessing the unwrapped contents of an `SQLValue`.

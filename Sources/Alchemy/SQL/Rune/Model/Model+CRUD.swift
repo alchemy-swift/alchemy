@@ -145,7 +145,7 @@ extension Model {
     ///   database.
     @discardableResult
     public func update(db: Database = DB) async throws -> Self {
-        let fields = try toSQLRow().fieldDictionary
+        let fields = try fields()
         try await [self].updateAll(db: db, fields)
         return try await refresh(db: db)
     }
@@ -343,26 +343,26 @@ extension Array where Element: Model {
             .all()
     }
     
-    private func touchUpdatedAt(_ input: [String: SQLParameterConvertible], db: Database) -> [String: SQLParameterConvertible] {
+    private func touchUpdatedAt(_ fields: [String: SQLParameterConvertible], db: Database) -> [String: SQLParameterConvertible] {
         guard let timestamps = Element.self as? Timestamps.Type else {
-            return input
+            return fields
         }
         
-        var input = input
-        input[db.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
-        return input
+        var fields = fields
+        fields[db.keyMapping.encode(timestamps.updatedAtKey)] = .now
+        return fields
     }
     
     private func insertableFields(db: Database) throws -> [[String: SQLParameterConvertible]] {
         guard let timestamps = Element.self as? Timestamps.Type else {
-            return try map { try $0.toSQLRow().fieldDictionary }
+            return try map { try $0.fields() }
         }
 
         return try map {
-            var dict = try $0.toSQLRow().fieldDictionary
-            dict[db.keyMapping.encode(timestamps.createdAtKey)] = SQLValue.now
-            dict[db.keyMapping.encode(timestamps.updatedAtKey)] = SQLValue.now
-            return dict
+            var fields = try $0.fields()
+            fields[db.keyMapping.encode(timestamps.createdAtKey)] = .now
+            fields[db.keyMapping.encode(timestamps.updatedAtKey)] = .now
+            return fields
         }
     }
 }

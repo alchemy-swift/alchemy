@@ -52,6 +52,10 @@ extension SQLParameterConvertible where Self == SQLParameter {
     public static var null: Self {
         .value(.null)
     }
+
+    public static var now: Self {
+        .value(.date(Date()))
+    }
 }
 
 extension SQLParameterConvertible {
