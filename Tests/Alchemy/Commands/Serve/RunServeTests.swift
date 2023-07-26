@@ -19,7 +19,6 @@ final class RunServeTests: TestCase<TestApp> {
         
         XCTAssertEqual(Q.workers.count, 0)
         XCTAssertFalse(app.scheduler.isStarted)
-        XCTAssertFalse(DB.didRunMigrations)
     }
     
     func testServeWithSideEffects() async throws {
@@ -32,6 +31,5 @@ final class RunServeTests: TestCase<TestApp> {
         
         XCTAssertEqual(Q.workers.count, 2)
         XCTAssertTrue(app.scheduler.isStarted)
-        XCTAssertTrue(DB.didRunMigrations)
     }
 }

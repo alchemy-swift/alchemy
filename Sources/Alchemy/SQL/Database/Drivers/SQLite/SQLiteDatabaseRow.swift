@@ -39,6 +39,8 @@ extension SQLiteData {
             self = .text(value)
         case .uuid(let value):
             self = .text(value.uuidString)
+        case .raw:
+            preconditionFailure("Raw SQL values shouldn't be put in a binding.")
         case .null:
             self = .null
         }

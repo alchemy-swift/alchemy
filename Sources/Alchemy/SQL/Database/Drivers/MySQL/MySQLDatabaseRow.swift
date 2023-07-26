@@ -41,6 +41,8 @@ extension MySQLData {
             self = MySQLData(string: value.uuidString)
         case .data(let value):
             self = MySQLData(type: .blob, format: .binary, buffer: ByteBuffer(data: value))
+        case .raw:
+            preconditionFailure("Raw SQL values shouldn't be put in a binding.")
         case .null:
             self = .null
         }

@@ -229,7 +229,7 @@ extension Database {
             Log.info("\(sql.statement);\(bindingsString)")
         }
 
-        return try await query(sql.statement, values: sql.bindings)
+        return try await query(sql.statement, parameters: sql.bindings)
     }
 
     fileprivate var dialect: SQLDialect {

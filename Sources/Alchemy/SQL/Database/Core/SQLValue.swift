@@ -3,10 +3,6 @@ import Foundation
 /// Represents the type / value combo of an SQL database field. These
 /// don't necessarily correspond to a specific SQL database's types;
 /// they just represent the types that Alchemy current supports.
-///
-/// All fields are optional by default, it's up to the end user to
-/// decide if a nil value in that field is appropriate and
-/// potentially throw an error.
 public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
     /// An `Int` value.
     case int(Int)
@@ -24,15 +20,12 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
     case data(Data)
     /// A `UUID` value.
     case uuid(UUID)
+    // TODO: Also need to ensure it doesn't end up in a binding in relevant
+    // TODO: places like update or insert
+    /// A raw SQL expression, such as `NOW()`
+    case raw(SQL)
     /// A null value of any type.
     case null
-
-    /*
-     NEW TYPES
-     1. data(Data)
-     2. raw(SQL)?
-     3. look @ arrays? (skip - just serialize, consider a protocol for this & jobs)
-     */
 
     public var description: String {
         switch self {
@@ -51,6 +44,8 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
             return "\(utf8String ?? "\(data)")"
         case .uuid(let uuid):
             return "\(uuid.uuidString)"
+        case .raw(let sql):
+            return sql.statement
         case .null:
             return "NULL"
         }

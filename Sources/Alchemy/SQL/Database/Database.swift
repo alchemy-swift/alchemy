@@ -9,8 +9,7 @@ public final class Database: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
     
-    /// Any migrations associated with this database, whether applied
-    /// yet or not.
+    /// Any migrations associated with this database, whether run yet or not.
     public var migrations: [Migration] = []
     
     /// Any seeders associated with this database.
@@ -22,9 +21,6 @@ public final class Database: Service {
     /// The provider of this database.
     let provider: DatabaseProvider
     
-    /// Indicates whether migrations were run on this database, by this process.
-    var didRunMigrations: Bool = false
-
     /// Whether this database should log all queries at the `debug` level.
     var shouldLog: Bool = false
     
@@ -64,12 +60,12 @@ public final class Database: Service {
     /// - Parameters:
     ///   - sql: The SQL string with '?'s denoting variables that
     ///     should be parameterized.
-    ///   - values: An array, `[SQLValue]`, that will replace the
+    ///   - parameters: An array, `[SQLValue]`, that will replace the
     ///     '?'s in `sql`. Ensure there are the same amount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
-    public func query(_ sql: String, values: [SQLValue] = []) async throws -> [SQLRow] {
-        try await provider.query(sql, values: values)
+    public func query(_ sql: String, parameters: [SQLValue] = []) async throws -> [SQLRow] {
+        try await provider.query(sql, values: parameters)
     }
     
     /// Run a raw, not parametrized SQL string.

@@ -1,5 +1,14 @@
 import Foundation
 
+protocol SQLParameterConvertible {
+    var sqlParameter: SQLParameter { get }
+}
+
+enum SQLParameter {
+    case expression(SQL)
+    case value(SQLValue)
+}
+
 public protocol SQLValueConvertible {
     var sqlValue: SQLValue { get }
 }
@@ -7,7 +16,7 @@ public protocol SQLValueConvertible {
 extension SQLValueConvertible {
     /// A string appropriate for representing this value in a non-parameterized
     /// query.
-    public var sqlLiteral: String {
+    public var rawSQLString: String {
         switch sqlValue {
         case .int(let value):
             return "\(value)"
@@ -28,6 +37,8 @@ extension SQLValueConvertible {
             return "'\(rawString)'"
         case .uuid(let value):
             return "'\(value.uuidString)'"
+        case .raw(let value):
+            return value.rawSQLString
         case .null:
             return "NULL"
         }

@@ -19,7 +19,6 @@ extension Database {
         }
         
         try await upMigrations(migrationsToRun, batch: currentBatch + 1)
-        didRunMigrations = true
     }
     
     /// Rolls back the latest migration batch.
@@ -97,7 +96,7 @@ extension Database {
     /// - Parameter statements: The statements to consecutively run.
     private func runStatements(statements: [SQL]) async throws {
         for statement in statements {
-            _ = try await query(statement.statement, values: statement.bindings)
+            _ = try await query(statement.statement, parameters: statement.bindings)
         }
     }
 }

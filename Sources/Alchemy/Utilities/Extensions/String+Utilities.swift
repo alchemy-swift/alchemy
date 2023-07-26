@@ -16,4 +16,12 @@ extension String {
         guard hasSuffix(suffix) else { return self }
         return String(dropLast(suffix.count))
     }
+
+    func replacingFirstOccurrence(of string: String, with replacement: String) -> String {
+        if let range = range(of: string) {
+            return replacingCharacters(in: range, with: replacement)
+        } else {
+            return self
+        }
+    }
 }
