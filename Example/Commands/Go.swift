@@ -4,31 +4,12 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
+        
+    }
 
-        /*
-
-         1. DONE BelongsTo
-         2. DONE HasOne
-         3. DONE HasMany
-         4. DONE HasManyThrough
-         5. DONE HasOneThrough
-         6. DONE BelongsToMany
-         7. DONE BelongsToThrough
-         8. DONE Add multiple throughs
-         9. DONE Eager Loading
-         10 DONE Nested eager loading
-         11. DONE Add where to Relationship
-         12. DONE Clean up key inference
-         13. DONE Clean up cache keying
-         14. DONE Subscript loading
-
-         LATER
-         1. CRUD
-
-         */
-
-        let user = try await User.query()
-            .with(\.posts.comments.likes)
+    func testRelationships() {
+//        let user = try await User.query()
+//            .with(\.posts.comments.likes)
 //            .with {
 //                $0.posts.with {
 //                    $0.comments.with {
@@ -37,14 +18,13 @@ struct Go: Command {
 //                }
 //            }
 //            .with(\.tokens)
-            .where("id" == "user_1")
-            .first()!
-
-        print("LOADED")
-        let posts = try await user.posts()
-        let comments = try await posts[0].comments()
-        _ = try await comments[0].likes()
-        _ = try await user.posts.comments.likes()
+//            .where("id" == "user_1")
+//            .first()!
+//
+//        let posts = try await user.posts()
+//        let comments = try await posts[0].comments()
+//        _ = try await comments[0].likes()
+//        _ = try await user.posts.comments.likes()
 //        let _comments: [Comment] = try await user.posts.comments.get()
 //        let _likes: [Like] = try await user.posts.comments.likes.get()
 //        let _likes1: [Like] = try await user.posts.comments.likes1.get()
@@ -57,25 +37,6 @@ struct Go: Command {
 //        let friends = try await user.friends()
 //        let likes = try await user.likes()
 //        let owner = try await likes.first!.postOwner()
-
-//        let users = try await User
-//            .query()
-//            .with2(\.tokens)
-//            .with2(\.posts.tokens)
-//            .all()
-//
-//        for user in users {
-//            print("> \(user.name)")
-//            print(">> TOKENS")
-//            for token in try await user.tokens() {
-//                print(">>> \(token.token) of \(try await token.user().id ?? 0)") // try await token.user.posts.fetch().count
-//            }
-//
-//            print(">> POSTS")
-//            for post in try await user.posts() {
-//                print(">>> \(post.title) count \(try await post.tokens().count)")
-//            }
-//        }
     }
 }
 
