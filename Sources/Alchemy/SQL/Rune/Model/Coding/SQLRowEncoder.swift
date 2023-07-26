@@ -79,7 +79,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// Read and return the stored properties of an `Model` object.
     ///
     /// - Parameter value: The `Model` instance to read from.
-    /// - Throws: A `DatabaseCodingError` if there is an error reading
+    /// - Throws: A `DatabaseError` if there is an error reading
     ///   fields from `value`.
     /// - Returns: An ordered dictionary of the model's columns and values.
     func fields<E: Encodable>(for value: E) throws -> [String: SQLParameterConvertible] {

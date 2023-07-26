@@ -46,19 +46,19 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
         }
         
         func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
-            throw DatabaseCodingError("Nested decoding isn't supported.")
+            throw DatabaseError("Nested decoding isn't supported.")
         }
         
         func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-            throw DatabaseCodingError("Nested decoding isn't supported.")
+            throw DatabaseError("Nested decoding isn't supported.")
         }
         
         func superDecoder() throws -> Decoder {
-            throw DatabaseCodingError("Super decoding isn't supported.")
+            throw DatabaseError("Super decoding isn't supported.")
         }
         
         func superDecoder(forKey key: Key) throws -> Decoder {
-            throw DatabaseCodingError("Super decoding isn't supported.")
+            throw DatabaseError("Super decoding isn't supported.")
         }
     }
     
@@ -77,11 +77,11 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
+        throw DatabaseError("This shouldn't be called; top level is keyed.")
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        throw DatabaseCodingError("This shouldn't be called; top level is keyed.")
+        throw DatabaseError("This shouldn't be called; top level is keyed.")
     }
     
     // MARK: SQLRowReader

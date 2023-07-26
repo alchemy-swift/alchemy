@@ -1,6 +1,6 @@
 import Foundation
 
-public enum SQLParameter: Equatable, Hashable, SQLParameterConvertible {
+public enum SQLParameter: Hashable, SQLParameterConvertible {
     /// A raw SQL expression such as "NOW()".
     case expression(SQL)
     /// An value that can be bound to a query parameter, such as `"Josh"` or `26`.

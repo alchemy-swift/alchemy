@@ -31,8 +31,8 @@ final class EncryptionTests: XCTestCase {
     func testEncrypted() throws {
         Env.stub(["APP_KEY": Encrypter.generateKeyString()])
         
-        let value = "FOO"
-        let encryptedValue = try Crypt.encrypt(string: value).base64EncodedString()
+        let string = "FOO"
+        let encryptedValue = try Crypt.encrypt(string: string).base64EncodedString()
         let reader: FakeReader = ["foo": encryptedValue]
         let encrypted = try Encrypted(key: "foo", on: reader)
         XCTAssertEqual(encrypted.wrappedValue, "FOO")
@@ -42,9 +42,14 @@ final class EncryptionTests: XCTestCase {
         guard let storedValue = (writer as? FakeWriter)?.dict["foo"] else {
             return XCTFail("a value wasn't stored")
         }
-        
-        let decrypted = try Crypt.decrypt(base64Encoded: storedValue.string())
-        XCTAssertEqual(decrypted, value)
+
+        switch storedValue {
+        case .value(let value):
+            let decrypted = try Crypt.decrypt(base64Encoded: value.string())
+            XCTAssertEqual(decrypted, string)
+        case .expression:
+            XCTFail()
+        }
     }
     
     func testEncryptedNotBase64Throws() {
@@ -54,23 +59,23 @@ final class EncryptionTests: XCTestCase {
 }
 
 private struct FakeWriter: SQLRowWriter {
-    var dict: [String: SQLParameterConvertible] = [:]
-    
-    subscript(column: String) -> SQLParameterConvertible? {
+    var dict: [String: SQLParameter] = [:]
+
+    subscript(column: String) -> SQLParameter? {
         get { dict[column] }
         set { dict[column] = newValue }
     }
     
     mutating func put<E: Encodable>(json: E, at key: String) throws {
         let jsonData = try JSONEncoder().encode(json)
-        self[key] = .json(jsonData)
+        self[key] = .value(.json(jsonData))
     }
 }
 
 private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
     var row: SQLRow
     
-    init(dictionaryLiteral: (String, SQLParameterConvertible)...) {
+    init(dictionaryLiteral: (String, SQLValueConvertible)...) {
         self.row = SQLRow(fields: dictionaryLiteral.map { SQLField(column: $0, value: $1.sqlValue) })
     }
     
@@ -78,7 +83,7 @@ private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
         return try JSONDecoder().decode(D.self, from: row.require(key).json(key))
     }
     
-    func require(_ key: String) throws -> SQLParameterConvertible {
+    func require(_ key: String) throws -> SQLValue {
         try row.require(key)
     }
     
@@ -86,11 +91,11 @@ private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
         row[column] != nil
     }
     
-    subscript(_ index: Int) -> SQLParameterConvertible {
+    subscript(_ index: Int) -> SQLValue {
         row[index]
     }
     
-    subscript(_ column: String) -> SQLParameterConvertible? {
+    subscript(_ column: String) -> SQLValue? {
         row[column]
     }
 }

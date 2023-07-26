@@ -1,4 +1,4 @@
-public struct SQL: Hashable, Equatable, ExpressibleByStringLiteral {
+public struct SQL: Hashable, ExpressibleByStringLiteral {
     public let statement: String
     public let binds: [SQLValue]
 
@@ -13,6 +13,9 @@ public struct SQL: Hashable, Equatable, ExpressibleByStringLiteral {
         self.binds = binds
     }
 
+    /// Initialize with a statement and a list of parameters. Some of these
+    /// parameters may be SQL expressions themselves and will be inserted
+    /// into the provided statement.
     public init(_ statement: String, parameters: [SQLParameterConvertible] = []) {
         let parts = statement.components(separatedBy: "?")
         precondition(parts.count - 1 == parameters.count, "The number of parameters must match the number of '?'s in the statement.")
@@ -30,8 +33,7 @@ public struct SQL: Hashable, Equatable, ExpressibleByStringLiteral {
             }
         }
 
-        self.statement = statement
-        self.binds = binds
+        self.init(statement, binds: binds)
     }
 
     public init(stringLiteral value: StringLiteralType) {

@@ -3,7 +3,7 @@ import Foundation
 /// Represents the type / value combo of an SQL database field. These
 /// don't necessarily correspond to a specific SQL database's types;
 /// they just represent the types that Alchemy current supports.
-public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
+public enum SQLValue: Hashable, CustomStringConvertible {
     /// An `Int` value.
     case int(Int)
     /// A `Double` value.
@@ -37,7 +37,7 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
             return "\(date)"
         case .json(let data), .data(let data):
             let utf8String = String(data: data, encoding: .utf8)
-            return "\(utf8String ?? "\(data)")"
+            return "\(utf8String ?? "<bytes>")"
         case .uuid(let uuid):
             return "\(uuid.uuidString)"
         case .null:
