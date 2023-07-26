@@ -33,6 +33,8 @@ extension SQLiteData {
             }
             
             self = .text(jsonString)
+        case .data(let value):
+            self = .blob(ByteBuffer(data: value))
         case .string(let value):
             self = .text(value)
         case .uuid(let value):

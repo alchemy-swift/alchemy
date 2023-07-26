@@ -20,11 +20,20 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
     case date(Date)
     /// A JSON value, given as `Data`.
     case json(Data)
+    /// A type for raw bytes.
+    case data(Data)
     /// A `UUID` value.
     case uuid(UUID)
     /// A null value of any type.
     case null
-    
+
+    /*
+     NEW TYPES
+     1. data(Data)
+     2. raw(SQL)?
+     3. look @ arrays? (skip - just serialize, consider a protocol for this & jobs)
+     */
+
     public var description: String {
         switch self {
         case .int(let int):
@@ -37,12 +46,13 @@ public enum SQLValue: Equatable, Hashable, CustomStringConvertible {
             return "'\(string)'"
         case .date(let date):
             return "\(date)"
-        case .json(let data):
-            return "\(String(data: data, encoding: .utf8) ?? "\(data)")"
+        case .json(let data), .data(let data):
+            let utf8String = String(data: data, encoding: .utf8)
+            return "\(utf8String ?? "\(data)")"
         case .uuid(let uuid):
             return "\(uuid.uuidString)"
         case .null:
-            return "null"
+            return "NULL"
         }
     }
     

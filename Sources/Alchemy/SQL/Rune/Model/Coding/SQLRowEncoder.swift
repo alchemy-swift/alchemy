@@ -45,7 +45,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// Used for keeping track of the database fields pulled off the
     /// object encoded to this encoder.
     private var readFields: [SQLField] = []
-    
+
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.
     let keyMapping: KeyMapping

@@ -108,7 +108,7 @@ private final class ModelStorage {
     }
 }
 
-extension Model {
+extension ModelBase {
     public var row: SQLRow {
         id.storage.row
     }

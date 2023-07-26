@@ -1,26 +1,18 @@
-public struct SQL: Equatable {
-    let statement: String
-    let bindings: [SQLValue]
+public struct SQL: Equatable, ExpressibleByStringLiteral, SQLValueConvertible {
+    public let statement: String
+    public let bindings: [SQLValue]
 
-    public init(_ statement: String = "", bindings: [SQLValue] = []) {
+    public var sqlValue: SQLValue {
+        .string(statement)
+    }
+
+    public init(_ statement: String, bindings: [SQLValue] = []) {
         self.statement = statement
         self.bindings = bindings
     }
-}
 
-extension SQL: ExpressibleByStringLiteral {
     public init(stringLiteral value: StringLiteralType) {
         self.statement = value
         self.bindings = []
-    }
-}
-
-extension SQL: SQLConvertible {
-    public var sql: SQL { self }
-}
-
-extension SQL: SQLValueConvertible {
-    public var sqlValue: SQLValue {
-        .string(statement)
     }
 }

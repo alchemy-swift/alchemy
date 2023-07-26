@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0" ..< "3.0.0"),
-        .package(url: "https://github.com/vapor/postgres-kit", from: "2.4.0"),
+        .package(url: "https://github.com/vapor/postgres-kit", from: "2.11.0"),
         .package(url: "https://github.com/vapor/mysql-kit", from: "4.3.0"),
         .package(url: "https://github.com/vapor/sqlite-kit", from: "4.0.0"),
         .package(url: "https://github.com/vapor/multipart-kit", from: "4.5.1"),

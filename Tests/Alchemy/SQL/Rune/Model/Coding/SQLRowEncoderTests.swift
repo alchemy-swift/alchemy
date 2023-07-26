@@ -51,7 +51,7 @@ final class SQLRowEncoderTests: XCTestCase {
             "uint64": 10,
             "string_optional": "bar",
             "nested": SQLValue.json(jsonData),
-            "date": SQLValue.date(date),
+            "date": SQLValue.datetime(date),
             "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1,
             "belongs_to_optional_id": SQLValue.null

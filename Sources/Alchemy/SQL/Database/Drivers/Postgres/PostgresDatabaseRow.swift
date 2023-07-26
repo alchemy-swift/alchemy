@@ -22,11 +22,13 @@ extension PostgresData {
             self = PostgresData(string: value)
         case .uuid(let value):
             self = PostgresData(uuid: value)
+        case .data(let value):
+            self = PostgresData(bytes: value)
         case .null:
             self = .null
         }
     }
-    
+
     /// Converts a `PostgresData` to the Alchemy `SQLValue` type.
     ///
     /// - Parameter column: The name of the column this data is at.

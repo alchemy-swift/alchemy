@@ -403,7 +403,7 @@ extension String {
     }
 }
 
-extension SQLWhere: SQLConvertible {
+extension SQLWhere {
     public var sql: SQL {
         switch type {
         case .value(let key, let op, let value):
@@ -435,7 +435,13 @@ extension SQLWhere: SQLConvertible {
     }
 }
 
-extension Array where Element: SQLConvertible {
+extension Array where Element == SQL {
+    func joinedSQL() -> SQL {
+        return SQL(map(\.statement).joined(separator: " "), bindings: flatMap(\.bindings))
+    }
+}
+
+extension Array where Element == SQLWhere {
     func joinedSQL() -> SQL {
         let statements = map(\.sql)
         return SQL(statements.map(\.statement).joined(separator: " "), bindings: statements.flatMap(\.bindings))

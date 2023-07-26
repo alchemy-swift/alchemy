@@ -1,14 +1,10 @@
 import Foundation
 
-public protocol SQLValueConvertible: SQLConvertible {
+public protocol SQLValueConvertible {
     var sqlValue: SQLValue { get }
 }
 
 extension SQLValueConvertible {
-    public var sql: SQL {
-        (self as? SQL) ?? SQL(sqlLiteral)
-    }
-    
     /// A string appropriate for representing this value in a non-parameterized
     /// query.
     public var sqlLiteral: String {
@@ -26,6 +22,9 @@ extension SQLValueConvertible {
             return "'\(value)'"
         case .json(let value):
             let rawString = String(data: value, encoding: .utf8) ?? ""
+            return "'\(rawString)'"
+        case .data(let value):
+            let rawString = String(data: value, encoding: .utf8) ?? "<bytes>"
             return "'\(rawString)'"
         case .uuid(let value):
             return "'\(value.uuidString)'"
@@ -78,7 +77,7 @@ extension UUID: SQLValueConvertible {
     public var sqlValue: SQLValue { .uuid(self) }
 }
 
-extension Optional: SQLValueConvertible, SQLConvertible where Wrapped: SQLValueConvertible {
+extension Optional: SQLValueConvertible where Wrapped: SQLValueConvertible {
     public var sqlValue: SQLValue { self?.sqlValue ?? .null }
 }
 

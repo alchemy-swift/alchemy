@@ -3,8 +3,8 @@ import Pluralize
 
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
-/// database queries, supporting relationships & much more.
-public protocol Model: Codable, ModelBase, ModelOrOptional {}
+/// database queries, supporting relationships & more.
+public protocol Model: ModelBase, Codable, ModelOrOptional {}
 
 /// The Core Model type, useful if you don't want your model to conform to
 /// Codable.
@@ -13,27 +13,16 @@ public protocol ModelBase: Identifiable, SQLQueryResult {
     associatedtype Identifier: PrimaryKey
 
     /// The identifier / primary key of this type.
-    var id: PK<Self.Identifier> { get set }
+    var id: PK<Identifier> { get set }
 
     /// Convert this to an SQLRow for updating or inserting into a database.
     func toSQLRow() throws -> SQLRow
 
     /// The table with which this object is associated. Defaults to
-    /// the type name, pluralized. Affected by `keyMapping`. This
-    /// can be overridden for custom table names.
-    ///
-    /// ```swift
-    /// struct User: Model {
-    ///     static var tableName: String = "my_user_table"
-    ///
-    ///     var id: Int?
-    ///     let name: String
-    ///     let email: String
-    /// }
-    /// ```
+    /// the type name, pluralized and in snake case.
     static var table: String { get }
 
-    /// The primary key column of this table.
+    /// The primary key column of this table. Defaults to `"id"`.
     static var primaryKey: String { get }
 
     /// The `JSONDecoder` to use when decoding any JSON fields of this
@@ -65,5 +54,18 @@ extension ModelBase where Self: Codable {
 
     public func toSQLRow() throws -> SQLRow {
         try SQLRowEncoder(keyMapping: .snakeCase, jsonEncoder: Self.jsonEncoder).sqlRow(for: self)
+    }
+}
+
+extension SQLRow {
+    /// Decode a `Model` type `M` from this row.
+    public func decode<M: ModelBase>(_ type: M.Type = M.self) throws -> M {
+        try M(row: self)
+    }
+}
+
+extension Array where Element == SQLRow {
+    public func mapDecode<M: ModelBase>(_ type: M.Type) throws -> [M] {
+        try map { try M(row: $0) }
     }
 }

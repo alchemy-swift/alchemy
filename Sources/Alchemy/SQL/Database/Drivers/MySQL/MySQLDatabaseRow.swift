@@ -4,15 +4,16 @@ import NIO
 
 extension SQLRow {
     init(mysql: MySQLRow) throws {
-        self.init(
-            fields: try mysql.columnDefinitions.map {
-                guard let value = mysql.column($0.name) else {
-                    preconditionFailure("MySQLRow had a key but no value for column \($0.name)!")
-                }
-                
-                return SQLField(
-                    column: $0.name,
-                    value: try value.toSQLValue()) })
+        let fields = try mysql.columnDefinitions.map {
+            guard let value = mysql.column($0.name) else {
+                preconditionFailure("MySQLRow had a key but no value for column \($0.name)!")
+            }
+
+            let sqlValue = try value.toSQLValue()
+            return SQLField(column: $0.name, value: sqlValue)
+        }
+
+        self.init(fields: fields)
     }
 }
 
@@ -38,6 +39,8 @@ extension MySQLData {
             self = MySQLData(string: value)
         case .uuid(let value):
             self = MySQLData(string: value.uuidString)
+        case .data(let value):
+            self = MySQLData(type: .blob, format: .binary, buffer: ByteBuffer(data: value))
         case .null:
             self = .null
         }
