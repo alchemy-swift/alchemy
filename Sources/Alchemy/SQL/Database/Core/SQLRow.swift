@@ -2,21 +2,24 @@ import Foundation
 
 /// A row of data returned by an SQL query.
 public struct SQLRow: ExpressibleByDictionaryLiteral {
-    public let fields: [SQLField]
-    public let lookupTable: [String: Int]
+    public let fields: [(column: String, value: SQLValue)]
+    private let lookupTable: [String: Int]
 
     public var fieldDictionary: [String: SQLValue] {
         lookupTable.mapValues { fields[$0].value }
     }
     
-    public init(fields: [SQLField]) {
+    public init(fields: [(column: String, value: SQLValue)]) {
         self.fields = fields
         self.lookupTable = Dictionary(fields.enumerated().map { ($1.column, $0) })
     }
 
+    public init(fields: [(column: String, value: SQLValueConvertible)]) {
+        self.init(fields: fields.map { ($0, $1.sqlValue) })
+    }
+
     public init(dictionaryLiteral elements: (String, SQLValueConvertible)...) {
-        let fields = elements.map { SQLField(column: $0, value: $1.sqlValue) }
-        self.init(fields: fields)
+        self.init(fields: elements)
     }
 
     public func contains(_ column: String) -> Bool {

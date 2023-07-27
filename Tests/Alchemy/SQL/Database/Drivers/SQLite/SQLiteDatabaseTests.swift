@@ -5,13 +5,13 @@ import AlchemyTest
 final class SQLiteDatabaseTests: TestCase<TestApp> {
     func testDatabase() throws {
         let memory = Database.memory
-        guard memory.provider as? Alchemy.SQLiteDatabase != nil else {
+        guard memory.provider as? Alchemy.SQLiteDatabaseProvider != nil else {
             XCTFail("The database provider should be SQLite.")
             return
         }
         
         let path = Database.sqlite(path: "foo")
-        guard path.provider as? Alchemy.SQLiteDatabase != nil else {
+        guard path.provider as? Alchemy.SQLiteDatabaseProvider != nil else {
             XCTFail("The database provider should be SQLite.")
             return
         }
@@ -21,14 +21,14 @@ final class SQLiteDatabaseTests: TestCase<TestApp> {
     }
     
     func testConfigPath() throws {
-        let provider = SQLiteDatabase(config: .file("foo"))
+        let provider = SQLiteDatabaseProvider(config: .file("foo"))
         XCTAssertEqual(provider.config, .file("foo"))
         try provider.shutdown()
     }
     
     func testConfigMemory() throws {
         let id = UUID().uuidString
-        let provider = SQLiteDatabase(config: .memory(identifier: id))
+        let provider = SQLiteDatabaseProvider(config: .memory(identifier: id))
         XCTAssertEqual(provider.config, .memory(identifier: id))
         try provider.shutdown()
     }

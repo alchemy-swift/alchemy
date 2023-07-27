@@ -1,11 +1,11 @@
 import Foundation
 
-public protocol SQLValueConvertible: SQLParameterConvertible {
+public protocol SQLValueConvertible: SQLConvertible {
     var sqlValue: SQLValue { get }
 }
 
 extension SQLValueConvertible {
-    public var sqlParameter: SQLParameter { .value(sqlValue) }
+    public var sql: SQL { .value(sqlValue) }
 }
 
 extension SQLValue: SQLValueConvertible {
@@ -51,10 +51,10 @@ extension UUID: SQLValueConvertible {
     public var sqlValue: SQLValue { .uuid(self) }
 }
 
-extension Optional: SQLValueConvertible, SQLParameterConvertible where Wrapped: SQLValueConvertible {
+extension Optional: SQLValueConvertible, SQLConvertible where Wrapped: SQLValueConvertible {
     public var sqlValue: SQLValue { self?.sqlValue ?? .null }
 }
 
 extension RawRepresentable where RawValue: SQLValueConvertible {
-    public var sqlValue: SQLParameterConvertible { rawValue.sqlValue }
+    public var sqlValue: SQLConvertible { rawValue.sqlValue }
 }

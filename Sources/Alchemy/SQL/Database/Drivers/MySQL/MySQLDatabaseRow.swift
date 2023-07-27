@@ -4,20 +4,19 @@ import NIO
 
 extension SQLRow {
     init(mysql: MySQLRow) throws {
-        let fields = try mysql.columnDefinitions.map {
+        let fields = mysql.columnDefinitions.map {
             guard let value = mysql.column($0.name) else {
-                preconditionFailure("MySQLRow had a key but no value for column \($0.name)!")
+                preconditionFailure("MySQLRow had a key but no value for column `\($0.name)`!")
             }
 
-            let sqlValue = try value.toSQLValue()
-            return SQLField(column: $0.name, value: sqlValue)
+            return (column: $0.name, value: value)
         }
 
         self.init(fields: fields)
     }
 }
 
-extension MySQLData {
+extension MySQLData: SQLValueConvertible {
     /// Initialize from an Alchemy `SQLValue`.
     ///
     /// - Parameter value: The value with which to initialize. Given
@@ -33,27 +32,20 @@ extension MySQLData {
             self = MySQLData(double: value)
         case .int(let value):
             self = MySQLData(int: value)
-        case .json(let value):
-            self = MySQLData(type: .json, format: .text, buffer: ByteBuffer(data: value))
+        case .json(let bytes):
+            self = MySQLData(type: .json, format: .text, buffer: bytes)
         case .string(let value):
             self = MySQLData(string: value)
         case .uuid(let value):
             self = MySQLData(string: value.uuidString)
-        case .data(let value):
-            self = MySQLData(type: .blob, format: .binary, buffer: ByteBuffer(data: value))
+        case .bytes(let bytes):
+            self = MySQLData(type: .blob, format: .binary, buffer: bytes)
         case .null:
             self = .null
         }
     }
-    
-    /// Converts a `MySQLData` to the Alchemy `SQLValue` type.
-    ///
-    /// - Parameter column: The name of the column this data is at.
-    /// - Throws: A `DatabaseError` if there is an issue converting
-    ///   the `MySQLData` to its expected type.
-    /// - Returns: An `SQLValue` with the column, type and value,
-    ///   best representing this `MySQLData`.
-    func toSQLValue(_ column: String? = nil) throws -> SQLValue {
+
+    public var sqlValue: SQLValue {
         switch self.type {
         case .int24, .short, .long, .longlong:
             return int.map { .int($0) } ?? .null
@@ -62,24 +54,15 @@ extension MySQLData {
         case .varchar, .string, .varString, .blob, .tinyBlob, .mediumBlob, .longBlob:
             return string.map { .string($0) } ?? .null
         case .date, .timestamp, .timestamp2, .datetime, .datetime2:
-            guard let date = time?.date else {
-                return .null
-            }
-            
-            return .date(date)
+            return time?.date.map { .date($0) } ?? .null
         case .float, .decimal, .double:
             return double.map { .double($0) } ?? .null
         case .json:
-            guard let data = self.buffer?.data else {
-                return .null
-            }
-            
-            return .json(data)
+            return buffer.map { .json($0) } ?? .null
         case .null:
             return .null
         default:
-            let desc = column.map { "from column `\($0)`" } ?? "from MySQL column"
-            throw DatabaseError("Couldn't parse a `\(type)` from \(desc). That MySQL datatype isn't supported, yet.")
+            return buffer.map { .bytes($0) } ?? .null
         }
     }
 }

@@ -1,7 +1,7 @@
 import Alchemy
 import XCTest
 
-final class SQLParameterConvertibleTests: XCTestCase {
+final class SQLValueConvertibleTests: XCTestCase {
     func testRawSQLString() {
         let jsonString = """
         {"foo":"bar"}

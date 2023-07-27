@@ -46,7 +46,7 @@ extension Database {
     /// - Returns: The migrations that are applied to this database.
     private func getMigrations() async throws -> [AlchemyMigration] {
         let count: Int
-        if provider is PostgresDatabase || provider is MySQLDatabase {
+        if provider is PostgresDatabaseProvider || provider is MySQLDatabaseProvider {
             count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.table).count()
         } else {
             count = try await table("sqlite_master")
@@ -57,7 +57,7 @@ extension Database {
         
         if count == 0 {
             Log.info("[Migration] creating '\(AlchemyMigration.table)' table.")
-            let statements = AlchemyMigration.Migration().upStatements(for: provider.grammar)
+            let statements = AlchemyMigration.Migration().upStatements(for: dialect.grammar)
             try await runStatements(statements: statements)
         }
         
@@ -70,7 +70,7 @@ extension Database {
     ///   database.
     private func downMigrations(_ migrations: [Migration]) async throws {
         for m in migrations.sorted(by: { $0.name > $1.name }) {
-            let statements = m.downStatements(for: provider.grammar)
+            let statements = m.downStatements(for: dialect.grammar)
             try await runStatements(statements: statements)
             try await AlchemyMigration.query(db: self).where("name" == m.name).delete()
         }
@@ -85,7 +85,7 @@ extension Database {
     ///     database.
     private func upMigrations(_ migrations: [Migration], batch: Int) async throws {
         for m in migrations {
-            let statements = m.upStatements(for: provider.grammar)
+            let statements = m.upStatements(for: dialect.grammar)
             try await runStatements(statements: statements)
             _ = try await AlchemyMigration(name: m.name, batch: batch, runAt: Date()).save(db: self)
         }
@@ -96,7 +96,7 @@ extension Database {
     /// - Parameter statements: The statements to consecutively run.
     private func runStatements(statements: [SQL]) async throws {
         for statement in statements {
-            _ = try await query(statement.statement, parameters: statement.binds)
+            _ = try await query(statement.statement, parameters: statement.parameters)
         }
     }
 }

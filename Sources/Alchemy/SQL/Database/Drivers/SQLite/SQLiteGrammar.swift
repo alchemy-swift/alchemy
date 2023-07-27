@@ -1,5 +1,7 @@
 struct SQLiteDialect: SQLDialect {
-    func insertReturn(_ table: String, values: [[String : SQLParameterConvertible]]) -> [SQL] {
+    let grammar: Grammar = SQLiteGrammar()
+
+    func insertReturn(_ table: String, values: [[String : SQLConvertible]]) -> [SQL] {
         return values.flatMap { fields -> [SQL] in
             // If the id is already set, search the database for that. Otherwise
             // assume id is autoincrementing and search for the last rowid.

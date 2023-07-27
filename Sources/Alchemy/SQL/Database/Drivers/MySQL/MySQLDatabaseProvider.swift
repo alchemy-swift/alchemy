@@ -1,14 +1,11 @@
 import MySQLKit
 import NIO
 
-final class MySQLDatabase: DatabaseProvider {
+final class MySQLDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
     
-    var grammar: Grammar = MySQLGrammar()
-    let dialect: SQLDialect = MySQLDialect()
-
     init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
         pool = EventLoopGroupConnectionPool(
             source: MySQLConnectionSource(configuration: {
@@ -56,7 +53,7 @@ final class MySQLDatabase: DatabaseProvider {
 
     private func withConnection<T>(_ action: @escaping (MySQLConnectionDatabase) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
-            try await action(MySQLConnectionDatabase(conn: $0, grammar: self.grammar, dialect: self.dialect))
+            try await action(MySQLConnectionDatabase(conn: $0))
         }
     }
     
@@ -68,9 +65,7 @@ final class MySQLDatabase: DatabaseProvider {
 /// A database to send through on transactions.
 private struct MySQLConnectionDatabase: DatabaseProvider {
     let conn: MySQLConnection
-    let grammar: Grammar
-    let dialect: SQLDialect
-    
+
     func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         try await conn.query(sql, parameters.map(MySQLData.init)).get().map(SQLRow.init)
     }

@@ -159,12 +159,12 @@ extension Model {
     
     @discardableResult
     public func update(db: Database = DB, _ fields: [String: Any]) async throws -> Self {
-        let values = fields.compactMapValues { $0 as? SQLParameterConvertible }
+        let values = fields.compactMapValues { $0 as? SQLConvertible }
         return try await update(db: db, values)
     }
 
     @discardableResult
-    public func update(db: Database = DB, _ fields: [String: SQLParameterConvertible]) async throws -> Self {
+    public func update(db: Database = DB, _ fields: [String: SQLConvertible]) async throws -> Self {
         try await [self].updateAll(db: db, fields)
         return try await refresh(db: db)
     }
@@ -303,7 +303,7 @@ extension Array where Element: Model {
         return results
     }
     
-    public func updateAll(db: Database = DB, _ fields: [String: SQLParameterConvertible]) async throws {
+    public func updateAll(db: Database = DB, _ fields: [String: SQLConvertible]) async throws {
         let ids = map(\.id)
         let fields = touchUpdatedAt(fields, db: db)
         try await Element.willUpdate(self)
@@ -343,7 +343,7 @@ extension Array where Element: Model {
             .all()
     }
     
-    private func touchUpdatedAt(_ fields: [String: SQLParameterConvertible], db: Database) -> [String: SQLParameterConvertible] {
+    private func touchUpdatedAt(_ fields: [String: SQLConvertible], db: Database) -> [String: SQLConvertible] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return fields
         }
@@ -353,7 +353,7 @@ extension Array where Element: Model {
         return fields
     }
     
-    private func insertableFields(db: Database) throws -> [[String: SQLParameterConvertible]] {
+    private func insertableFields(db: Database) throws -> [[String: SQLConvertible]] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return try map { try $0.fields() }
         }

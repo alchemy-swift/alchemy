@@ -6,14 +6,11 @@ import MySQLKit
 
 /// A concrete `Database` for connecting to and querying a PostgreSQL
 /// database.
-final class PostgresDatabase: DatabaseProvider {
+final class PostgresDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
 
-    let grammar: Grammar = PostgresGrammar()
-    let dialect: SQLDialect = PostgresDialect()
-    
     init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
         pool = EventLoopGroupConnectionPool(
             source: PostgresConnectionSource(configuration: {
@@ -79,7 +76,7 @@ final class PostgresDatabase: DatabaseProvider {
 
 extension SQLRow {
     init(postgres: PostgresRow) throws {
-        let fields = try postgres.map { SQLField(column: $0.columnName, value: try $0.toSQLValue()) }
+        let fields = try postgres.map { (column: $0.columnName, value: try $0.toSQLValue()) }
         self.init(fields: fields)
     }
 }
@@ -124,11 +121,7 @@ extension PostgresCell {
 
             return .uuid(uuid)
         case .json, .jsonb:
-            guard let json = try decode(Data?.self, context: .default) else {
-                return .null
-            }
-
-            return .json(json)
+            return bytes.map { .json($0) } ?? .null
         case .null:
             return .null
         default:
@@ -140,9 +133,6 @@ extension PostgresCell {
 /// A database provider that is wrapped around a single connection to with which
 /// to send transactions.
 extension PostgresConnection: DatabaseProvider {
-    public var grammar: Grammar { PostgresGrammar() }
-    public var dialect: SQLDialect { PostgresDialect() }
-
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         try await query(sql.positionPostgresBinds(), parameters.map(PostgresData.init))
             .get().rows.map(SQLRow.init)

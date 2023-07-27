@@ -18,6 +18,10 @@ public final class Database: Service {
     /// The mapping from Swift types to tables and columns in this database.
     public var keyMapping: KeyMapping = .snakeCase
 
+    /// Functions around compiling SQL statments for this database's
+    /// SQL dialect when using the QueryBuilder or Rune.
+    public var dialect: SQLDialect
+
     /// The provider of this database.
     let provider: DatabaseProvider
     
@@ -27,8 +31,9 @@ public final class Database: Service {
     /// Create a database backed by the given provider.
     ///
     /// - Parameter provider: The provider.
-    public init(provider: DatabaseProvider) {
+    public init(provider: DatabaseProvider, dialect: SQLDialect) {
         self.provider = provider
+        self.dialect = dialect
     }
 
     /// Log all executed queries to the `debug` level.
@@ -83,7 +88,9 @@ public final class Database: Service {
     /// - Parameter action: The action to run atomically.
     /// - Returns: The return value of the transaction.
     public func transaction<T>(_ action: @escaping (Database) async throws -> T) async throws -> T {
-        try await provider.transaction { try await action(Database(provider: $0)) }
+        try await provider.transaction {
+            try await action(Database(provider: $0, dialect: self.dialect))
+        }
     }
     
     /// Called when the database connection will shut down.

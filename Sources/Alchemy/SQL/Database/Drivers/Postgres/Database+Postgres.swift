@@ -19,6 +19,15 @@ extension Database {
     
     /// Create a PostgreSQL database configuration.
     public static func postgres(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) -> Database {
-        Database(provider: PostgresDatabase(socket: socket, database: database, username: username, password: password, tlsConfiguration: tlsConfiguration))
+        Database(
+            provider: PostgresDatabaseProvider(
+                socket: socket,
+                database: database,
+                username: username,
+                password: password,
+                tlsConfiguration: tlsConfiguration
+            ),
+            dialect: PostgresDialect()
+        )
     }
 }

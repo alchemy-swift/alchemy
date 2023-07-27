@@ -44,7 +44,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     
     /// Used for keeping track of the database fields pulled off the
     /// object encoded to this encoder.
-    private var fields: [String: SQLParameter] = [:]
+    private var fields: [String: SQLConvertible] = [:]
 
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.
@@ -66,14 +66,15 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
         self.fields = [:]
     }
     
-    subscript(column: String) -> SQLParameter? {
+    subscript(column: String) -> SQLConvertible? {
         get { fields[column] }
         set { fields[keyMapping.encode(column)] = newValue ?? .null }
     }
     
     func put<E: Encodable>(json: E, at key: String) throws {
         let jsonData = try jsonEncoder.encode(json)
-        self[key] = .value(.json(jsonData))
+        let bytes = ByteBuffer(data: jsonData)
+        self[key] = .value(.json(bytes))
     }
     
     /// Read and return the stored properties of an `Model` object.
@@ -82,7 +83,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// - Throws: A `DatabaseError` if there is an error reading
     ///   fields from `value`.
     /// - Returns: An ordered dictionary of the model's columns and values.
-    func fields<E: Encodable>(for value: E) throws -> [String: SQLParameterConvertible] {
+    func fields<E: Encodable>(for value: E) throws -> [String: SQLConvertible] {
         try value.encode(to: self)
         defer { fields = [:] }
         return fields

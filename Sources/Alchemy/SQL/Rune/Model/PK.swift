@@ -35,7 +35,7 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
 
     public func store(key: String, on row: inout SQLRowWriter) throws {
         if let value {
-            row.put(value.sqlParameter, at: key)
+            row.put(value, at: key)
         }
     }
 

@@ -136,7 +136,7 @@ extension CreateTableBuilder {
     /// - Parameter builder: The column builder to add to this table
     ///   builder.
     /// - Returns: The passed in `builder`.
-    private func appendAndReturn<T: SQLParameterConvertible>( builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
+    private func appendAndReturn<T: SQLConvertible>( builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
         self.columnBuilders.append(builder)
         return builder
     }

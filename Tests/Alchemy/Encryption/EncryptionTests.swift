@@ -36,20 +36,16 @@ final class EncryptionTests: XCTestCase {
         let reader: FakeReader = ["foo": encryptedValue]
         let encrypted = try Encrypted(key: "foo", on: reader)
         XCTAssertEqual(encrypted.wrappedValue, "FOO")
-        
-        var writer: SQLRowWriter = FakeWriter()
+
+        var fakeWriter = FakeWriter()
+        var writer: SQLRowWriter = fakeWriter
         try encrypted.store(key: "foo", on: &writer)
-        guard let storedValue = (writer as? FakeWriter)?.dict["foo"] else {
-            return XCTFail("a value wasn't stored")
+        guard let storedValue = fakeWriter.dict["foo"] as? String else {
+            return XCTFail("a String wasn't stored")
         }
 
-        switch storedValue {
-        case .value(let value):
-            let decrypted = try Crypt.decrypt(base64Encoded: value.string())
-            XCTAssertEqual(decrypted, string)
-        case .expression:
-            XCTFail()
-        }
+        let decrypted = try Crypt.decrypt(base64Encoded: storedValue)
+        XCTAssertEqual(decrypted, string)
     }
     
     func testEncryptedNotBase64Throws() {
@@ -58,15 +54,15 @@ final class EncryptionTests: XCTestCase {
     }
 }
 
-private struct FakeWriter: SQLRowWriter {
-    var dict: [String: SQLParameter] = [:]
+private final class FakeWriter: SQLRowWriter {
+    var dict: [String: SQLConvertible] = [:]
 
-    subscript(column: String) -> SQLParameter? {
+    subscript(column: String) -> SQLConvertible? {
         get { dict[column] }
         set { dict[column] = newValue }
     }
     
-    mutating func put<E: Encodable>(json: E, at key: String) throws {
+    func put<E: Encodable>(json: E, at key: String) throws {
         let jsonData = try JSONEncoder().encode(json)
         self[key] = .value(.json(jsonData))
     }
@@ -76,7 +72,7 @@ private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
     var row: SQLRow
     
     init(dictionaryLiteral: (String, SQLValueConvertible)...) {
-        self.row = SQLRow(fields: dictionaryLiteral.map { SQLField(column: $0, value: $1.sqlValue) })
+        self.row = SQLRow(fields: dictionaryLiteral)
     }
     
     func requireJSON<D: Decodable>(_ key: String) throws -> D {

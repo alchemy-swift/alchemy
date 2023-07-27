@@ -14,16 +14,16 @@ public enum SQLValue: Hashable, CustomStringConvertible {
     case string(String)
     /// A `Date` value.
     case date(Date)
-    /// A JSON value, given as `Data`.
-    case json(Data)
+    /// A JSON value, given as a `ByteBuffer`.
+    case json(ByteBuffer)
     /// A type for raw bytes.
-    case data(Data)
+    case bytes(ByteBuffer)
     /// A `UUID` value.
     case uuid(UUID)
     /// A null value of any type.
     case null
 
-    public var description: String {
+    public var rawSQLString: String {
         switch self {
         case .int(let int):
             return "\(int)"
@@ -35,56 +35,37 @@ public enum SQLValue: Hashable, CustomStringConvertible {
             return "'\(string)'"
         case .date(let date):
             return "\(date)"
-        case .json(let data), .data(let data):
-            let utf8String = String(data: data, encoding: .utf8)
-            return "\(utf8String ?? "<bytes>")"
+        case .json(let bytes), .bytes(let bytes):
+            return bytes.string
         case .uuid(let uuid):
             return "\(uuid.uuidString)"
         case .null:
             return "NULL"
         }
     }
-}
 
-/// Extension for easily accessing the unwrapped contents of an `SQLValue`.
-extension SQLValue {
-    static let iso8601DateFormatter = ISO8601DateFormatter()
-    static let simpleFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return formatter
-    }()
+    public var description: String {
+        rawSQLString
+    }
 
-    /// Unwrap and return an `Int` value from this `SQLValue`.
-    /// This throws if the underlying `value` isn't an `.int` or
-    /// the `.int` has a `nil` associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.int` or its contents is nil.
-    /// - Returns: The unwrapped `Int` of this field's value, if it
-    ///   was indeed a non-null `.int`.
+    // MARK: Coercion
+
+    /// Coerce this value to an `Int` or throw an error.
     public func int(_ columnName: String? = nil) throws -> Int {
-        try ensureNotNull(columnName)
         switch self {
         case .int(let value):
             return value
         case .date(let value):
             return Int(value.timeIntervalSince1970)
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("Int", columnName: columnName)
         }
     }
 
-    /// Unwrap and return a `String` value from this `SQLValue`.
-    /// This throws if the underlying `value` isn't a `.string` or
-    /// the `.string` has a nil associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.string` or its contents is nil.
-    /// - Returns: The unwrapped `String` of this field's value, if
-    ///   it was indeed a non-null `.string`.
+    /// Coerce this value to a `String` or throw an error.
     public func string(_ columnName: String? = nil) throws -> String {
-        try ensureNotNull(columnName)
         switch self {
         case .string(let value):
             return value
@@ -98,27 +79,17 @@ extension SQLValue {
             return value.description
         case .uuid(let value):
             return value.uuidString
-        case .json(let data):
-            guard let string = String(data: data, encoding: .utf8) else {
-                throw typeError("String", columnName: columnName)
-            }
-
-            return string
+        case .json(let bytes):
+            return bytes.string
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("String", columnName: columnName)
         }
     }
 
-    /// Unwrap and return a `Double` value from this `SQLValue`.
-    /// This throws if the underlying `value` isn't a `.double` or
-    /// the `.double` has a nil associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.double` or its contents is nil.
-    /// - Returns: The unwrapped `Double` of this field's value, if it
-    ///   was indeed a non-null `.double`.
+    /// Coerce this value to a `Double` or throw an error.
     public func double(_ columnName: String? = nil) throws -> Double {
-        try ensureNotNull(columnName)
         switch self {
         case .double(let value):
             return value
@@ -126,21 +97,15 @@ extension SQLValue {
             return Double(value)
         case .date(let value):
             return value.timeIntervalSince1970
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("Double", columnName: columnName)
         }
     }
 
-    /// Unwrap and return a `Bool` value from this `SQLValue`.
-    /// This throws if the underlying `value` isn't a `.bool` or
-    /// the `.bool` has a nil associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.bool` or its contents is nil.
-    /// - Returns: The unwrapped `Bool` of this field's value, if it
-    ///   was indeed a non-null `.bool`.
+    /// Coerce this value to a `Bool` or throw an error.
     public func bool(_ columnName: String? = nil) throws -> Bool {
-        try ensureNotNull(columnName)
         switch self {
         case .bool(let value):
             return value
@@ -148,21 +113,24 @@ extension SQLValue {
             return value != 0
         case .double(let value):
             return value != 0.0
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("Bool", columnName: columnName)
         }
     }
 
-    /// Unwrap and return a `Date` value from this `SQLValue`.
-    /// This throws if the underlying `value` isn't a `.date` or
-    /// the `.date` has a nil associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.date` or its contents is nil.
-    /// - Returns: The unwrapped `Date` of this field's value, if it
-    ///   was indeed a non-null `.date`.
+    /// Coerce this value to a `Date` or throw an error.
     public func date(_ columnName: String? = nil) throws -> Date {
-        try ensureNotNull(columnName)
+        struct Formatters {
+            static let iso8601DateFormatter = ISO8601DateFormatter()
+            static let simpleFormatter: DateFormatter = {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                return formatter
+            }()
+        }
+
         switch self {
         case .date(let value):
             return value
@@ -172,52 +140,36 @@ extension SQLValue {
             return Date(timeIntervalSince1970: value)
         case .string(let value):
             guard
-                let date = SQLValue.iso8601DateFormatter.date(from: value)
-                    ?? SQLValue.simpleFormatter.date(from: value)
+                let date = Formatters.iso8601DateFormatter.date(from: value)
+                    ?? Formatters.simpleFormatter.date(from: value)
             else {
                 throw typeError("Date", columnName: columnName)
             }
 
             return date
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("Date", columnName: columnName)
         }
     }
 
-    /// Unwrap and return a JSON `Data` value from this
-    /// `SQLValue`. This throws if the underlying `value` isn't
-    /// a `.json` or the `.json` has a nil associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.json` or its contents is nil.
-    /// - Returns: The `Data` of this field's unwrapped json value, if
-    ///   it was indeed a non-null `.json`.
-    public func json(_ columnName: String? = nil) throws -> Data {
-        try ensureNotNull(columnName)
+    /// Coerce this value to JSON `Data` or throw an error.
+    public func json(_ columnName: String? = nil) throws -> ByteBuffer {
         switch self {
-        case .json(let value):
-            return value
+        case .json(let bytes):
+            return bytes
         case .string(let string):
-            guard let data = string.data(using: .utf8) else {
-                throw typeError("JSON", columnName: columnName)
-            }
-
-            return data
+            return ByteBuffer(string: string)
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("JSON", columnName: columnName)
         }
     }
 
-    /// Unwrap and return a `UUID` value from this `SQLValue`.
-    /// This throws if the underlying `value` isn't a `.uuid` or
-    /// the `.uuid` has a nil associated value.
-    ///
-    /// - Throws: A `DatabaseError` if this field's `value` isn't a
-    ///   `SQLValue.uuid` or its contents is nil.
-    /// - Returns: The unwrapped `UUID` of this field's value, if it
-    ///   was indeed a non-null `.uuid`.
+    /// Coerce this value to a `UUID` or throw an error.
     public func uuid(_ columnName: String? = nil) throws -> UUID {
-        try ensureNotNull(columnName)
         switch self {
         case .uuid(let value):
             return value
@@ -227,23 +179,20 @@ extension SQLValue {
             }
 
             return uuid
+        case .null:
+            throw nullError(columnName)
         default:
             throw typeError("UUID", columnName: columnName)
         }
     }
 
-    private func typeError(_ typeName: String, columnName: String? = nil) -> Error {
-        if let columnName = columnName {
-            return DatabaseError("Unable to coerce \(self) at column `\(columnName)` to \(typeName)")
-        }
-
-        return DatabaseError("Unable to coerce \(self) to \(typeName).")
+    private func nullError(_ columnName: String? = nil) -> Error {
+        let desc = columnName.map { "column `\($0)`" } ?? "SQLValue"
+        return DatabaseError("Expected \(desc) to have a value but it was `nil`.")
     }
 
-    private func ensureNotNull(_ columnName: String? = nil) throws {
-        if case .null = self {
-            let desc = columnName.map { "column `\($0)`" } ?? "SQLValue"
-            throw DatabaseError("Expected \(desc) to have a value but it was `nil`.")
-        }
+    private func typeError(_ typeName: String, columnName: String? = nil) -> Error {
+        let detail = columnName.map { "at column `\($0)` " } ?? ""
+        return DatabaseError("Unable to coerce value `\(self)` \(detail)to \(typeName).")
     }
 }

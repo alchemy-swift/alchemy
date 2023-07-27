@@ -30,7 +30,7 @@ final class SQLRowEncoderTests: XCTestCase {
         )
         
         let jsonData = try EverythingModel.jsonEncoder.encode(json)
-        let expectedFields: [String: SQLParameterConvertible] = [
+        let expectedFields: [String: SQLConvertible] = [
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
@@ -57,7 +57,7 @@ final class SQLRowEncoderTests: XCTestCase {
         ]
         
         XCTAssertEqual("everything_models", EverythingModel.table)
-        XCTAssertEqual(expectedFields.mapValues(\.sqlParameter), try model.fields().mapValues(\.sqlParameter))
+        XCTAssertEqual(expectedFields.mapValues(\.sql), try model.fields().mapValues(\.sql))
     }
     
     func testKeyMapping() throws {
@@ -79,7 +79,7 @@ final class SQLRowEncoderTests: XCTestCase {
         let model = CustomDecoderModel(json: json)
         
         XCTAssertEqual("custom_decoder_models", CustomDecoderModel.table)
-        XCTAssertEqual(try model.fields().mapValues(\.sqlParameter), [
+        XCTAssertEqual(try model.fields().mapValues(\.sql), [
             "json": .value(.json(jsonData))
         ])
     }

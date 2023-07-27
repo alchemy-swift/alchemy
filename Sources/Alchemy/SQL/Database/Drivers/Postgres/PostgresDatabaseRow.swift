@@ -16,14 +16,14 @@ extension PostgresData {
             self = PostgresData(double: value)
         case .int(let value):
             self = PostgresData(int: value)
-        case .json(let value):
-            self = PostgresData(json: value)
+        case .json(let bytes):
+            self = PostgresData(type: .json, formatCode: .binary, value: bytes)
         case .string(let value):
             self = PostgresData(string: value)
         case .uuid(let value):
             self = PostgresData(uuid: value)
-        case .data(let value):
-            self = PostgresData(bytes: value)
+        case .bytes(let bytes):
+            self = PostgresData(type: .bytea, formatCode: .binary, value: bytes)
         case .null:
             self = .null
         }
@@ -51,7 +51,7 @@ extension PostgresData {
         case .uuid:
             return uuid.map { .uuid($0) } ?? .null
         case .json, .jsonb:
-            return json.map { .json($0) } ?? .null
+            return json.map { .json(ByteBuffer(data: $0)) } ?? .null
         case .null:
             return .null
         default:

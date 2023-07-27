@@ -4,7 +4,12 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        
+        let sql: SQLConvertible = "Why hello there!"
+        print(sql.rawSQLString)
+        let int = SQLValue.int(1)
+        print(int.rawSQLString)
+        let string = SQLValue.string("Hello!")
+        print(string.rawSQLString)
     }
 
     func testRelationships() {

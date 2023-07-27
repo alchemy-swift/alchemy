@@ -16,7 +16,7 @@ public protocol ModelBase: Identifiable, SQLQueryResult {
     var id: PK<Identifier> { get set }
 
     /// Convert this to an SQLRow for updating or inserting into a database.
-    func fields() throws -> [String: SQLParameterConvertible]
+    func fields() throws -> [String: SQLConvertible]
 
     /// The table with which this object is associated. Defaults to
     /// the type name, pluralized and in snake case.
@@ -52,7 +52,7 @@ extension ModelBase where Self: Codable {
         self = try row.decode(Self.self, keyMapping: .snakeCase, jsonDecoder: Self.jsonDecoder)
     }
 
-    public func fields() throws -> [String: SQLParameterConvertible] {
+    public func fields() throws -> [String: SQLConvertible] {
         try SQLRowEncoder(keyMapping: .snakeCase, jsonEncoder: Self.jsonEncoder).fields(for: self)
     }
 }
