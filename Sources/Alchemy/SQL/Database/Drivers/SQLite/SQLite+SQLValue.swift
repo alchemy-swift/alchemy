@@ -1,11 +1,5 @@
 import SQLiteNIO
 
-extension SQLRow {
-    init(sqlite: SQLiteRow) throws {
-        self.init(fields: sqlite.columns.map { ($0.name, $0.data) })
-    }
-}
-
 extension SQLiteData: SQLValueConvertible {
     /// Initialize from an Alchemy `SQLValue`.
     ///

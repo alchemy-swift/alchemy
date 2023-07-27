@@ -4,33 +4,15 @@ final class SQLiteDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
-    let config: Config
 
-    enum Config: Equatable {
-        case memory(identifier: String = UUID().uuidString)
-        case file(String)
-        
-        static var memory: Config { memory() }
-    }
-    
     /// Initialize with the given configuration. The configuration
     /// will be connected to when a query is run.
     ///
     /// - Parameter config: the info needed to connect to the
     ///   database.
-    init(config: Config) {
-        self.config = config
-        self.pool = EventLoopGroupConnectionPool(
-            source: SQLiteConnectionSource(configuration: {
-                switch config {
-                case .memory(let id):
-                    return SQLiteConfiguration(storage: .memory(identifier: id), enableForeignKeys: true)
-                case .file(let path):
-                    return SQLiteConfiguration(storage: .file(path: path), enableForeignKeys: true)
-                }
-            }(), threadPool: Thread.pool),
-            on: Loop.group
-        )
+    init(config: SQLiteConfiguration) {
+        let source = SQLiteConnectionSource(configuration: config, threadPool: Thread.pool)
+        pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
     }
     
     // MARK: Database
@@ -85,5 +67,11 @@ private struct SQLiteConnectionDatabase: DatabaseProvider {
     
     func shutdown() throws {
         _ = conn.close()
+    }
+}
+
+extension SQLRow {
+    init(sqlite: SQLiteRow) throws {
+        self.init(fields: sqlite.columns.map { ($0.name, $0.data) })
     }
 }

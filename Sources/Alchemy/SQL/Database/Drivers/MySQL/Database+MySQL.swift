@@ -1,33 +1,32 @@
 import NIOSSL
+import MySQLKit
 
 extension Database {
-    /// Creates a PostgreSQL database configuration.
-    ///
-    /// - Parameters:
-    ///   - host: The host the database is running on.
-    ///   - port: The port the database is running on.
-    ///   - database: The name of the database to connect to.
-    ///   - username: The username to authorize with.
-    ///   - password: The password to authorize with.
-    ///   - enableSSL: Should the connection use SSL.
-    /// - Returns: The configuration for connecting to this database.
+    /// Creates a MySQL database.
     public static func mysql(host: String, port: Int = 3306, database: String, username: String, password: String, enableSSL: Bool = false) -> Database {
-        var tlsConfig = enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
-        tlsConfig?.certificateVerification = .none
-        return mysql(socket: .ip(host: host, port: port), database: database, username: username, password: password, tlsConfiguration: tlsConfig)
-    }
-    
-    /// Create a PostgreSQL database configuration.
-    public static func mysql(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) -> Database {
-        Database(
-            provider: MySQLDatabaseProvider(
-                socket: socket,
-                database: database,
-                username: username,
-                password: password,
-                tlsConfiguration: tlsConfiguration
-            ),
-            dialect: MySQLDialect()
+        var tls = enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
+        tls?.certificateVerification = .none
+        let config = MySQLConfiguration(
+            hostname: host,
+            port: port,
+            username: username,
+            password: password,
+            database: database,
+            tlsConfiguration: tls
         )
+        return mysql(config: config)
+    }
+
+    public static func mysql(url: String) -> Database {
+        mysql(config: MySQLConfiguration(url: url)!)
+    }
+
+    public static func mysql(unixPath: String, username: String, password: String, database: String) -> Database {
+        let config = MySQLConfiguration(unixDomainSocketPath: unixPath, username: username, password: password, database: database)
+        return mysql(config: config)
+    }
+
+    public static func mysql(config: MySQLConfiguration) -> Database {
+        Database(provider: MySQLDatabaseProvider(config: config), dialect: MySQLDialect())
     }
 }

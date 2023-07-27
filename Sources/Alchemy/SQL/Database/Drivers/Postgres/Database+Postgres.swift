@@ -1,33 +1,42 @@
 import NIOSSL
+import PostgresKit
 
 extension Database {
-    /// Creates a PostgreSQL database configuration.
-    ///
-    /// - Parameters:
-    ///   - host: The host the database is running on.
-    ///   - port: The port the database is running on.
-    ///   - database: The name of the database to connect to.
-    ///   - username: The username to authorize with.
-    ///   - password: The password to authorize with.
-    ///   - enableSSL: Should the connection use SSL.
-    /// - Returns: The configuration for connecting to this database.
+    /// Creates a PostgreSQL database.
     public static func postgres(host: String, port: Int = 5432, database: String, username: String, password: String, enableSSL: Bool = false) -> Database {
-        var tlsConfig = enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
-        tlsConfig?.certificateVerification = .none
-        return postgres(socket: .ip(host: host, port: port), database: database, username: username, password: password, tlsConfiguration: tlsConfig)
-    }
-    
-    /// Create a PostgreSQL database configuration.
-    public static func postgres(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) -> Database {
-        Database(
-            provider: PostgresDatabaseProvider(
-                socket: socket,
-                database: database,
-                username: username,
-                password: password,
-                tlsConfiguration: tlsConfiguration
-            ),
-            dialect: PostgresDialect()
+        var tls = enableSSL ? TLSConfiguration.makeClientConfiguration() : nil
+        tls?.certificateVerification = .none
+        let config = SQLPostgresConfiguration(
+            hostname: host,
+            port: port,
+            username: username,
+            password: password,
+            database: database,
+            tls: tls?.postgres ?? .disable
         )
+        return postgres(config: config)
+    }
+
+    public static func postgres(url: String) -> Database {
+        postgres(config: try! SQLPostgresConfiguration(url: url))
+    }
+
+    public static func postgres(unixPath: String, username: String, password: String, database: String) -> Database {
+        let config = SQLPostgresConfiguration(unixDomainSocketPath: unixPath, username: username, password: password, database: database)
+        return postgres(config: config)
+    }
+
+    public static func postgres(config: SQLPostgresConfiguration) -> Database {
+        Database(provider: PostgresDatabaseProvider(config: config), dialect: PostgresDialect())
+    }
+}
+
+extension TLSConfiguration {
+    fileprivate var postgres: PostgresConnection.Configuration.TLS {
+        do {
+            return .prefer(try NIOSSLContext(configuration: self))
+        } catch {
+            preconditionFailure("Error initializing Postgres TLS: \(error).")
+        }
     }
 }

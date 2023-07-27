@@ -2,20 +2,6 @@ import MySQLNIO
 import MySQLKit
 import NIO
 
-extension SQLRow {
-    init(mysql: MySQLRow) throws {
-        let fields = mysql.columnDefinitions.map {
-            guard let value = mysql.column($0.name) else {
-                preconditionFailure("MySQLRow had a key but no value for column `\($0.name)`!")
-            }
-
-            return (column: $0.name, value: value)
-        }
-
-        self.init(fields: fields)
-    }
-}
-
 extension MySQLData: SQLValueConvertible {
     /// Initialize from an Alchemy `SQLValue`.
     ///

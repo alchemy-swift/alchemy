@@ -5,33 +5,12 @@ final class MySQLDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
     let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
-    
-    init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
-        pool = EventLoopGroupConnectionPool(
-            source: MySQLConnectionSource(configuration: {
-                switch socket {
-                case .ip(let host, let port):
-                    return MySQLConfiguration(
-                        hostname: host,
-                        port: port,
-                        username: username,
-                        password: password,
-                        database: database,
-                        tlsConfiguration: tlsConfiguration
-                    )
-                case .unix(let name):
-                    return MySQLConfiguration(
-                        unixDomainSocketPath: name,
-                        username: username,
-                        password: password,
-                        database: database
-                    )
-                }
-            }()),
-            on: Loop.group
-        )
+
+    init(config: MySQLConfiguration) {
+        let source = MySQLConnectionSource(configuration: config)
+        pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
     }
-    
+
     // MARK: Database
     
     func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
@@ -80,5 +59,19 @@ private struct MySQLConnectionDatabase: DatabaseProvider {
     
     func shutdown() throws {
         _ = conn.close()
+    }
+}
+
+extension SQLRow {
+    init(mysql: MySQLRow) throws {
+        let fields = mysql.columnDefinitions.map {
+            guard let value = mysql.column($0.name) else {
+                preconditionFailure("MySQLRow had a key but no value for column `\($0.name)`!")
+            }
+
+            return (column: $0.name, value: value)
+        }
+
+        self.init(fields: fields)
     }
 }

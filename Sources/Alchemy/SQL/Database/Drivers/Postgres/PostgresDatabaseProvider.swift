@@ -11,32 +11,11 @@ final class PostgresDatabaseProvider: DatabaseProvider {
     /// database with.
     let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
 
-    init(socket: Socket, database: String, username: String, password: String, tlsConfiguration: TLSConfiguration? = nil) {
-        pool = EventLoopGroupConnectionPool(
-            source: PostgresConnectionSource(configuration: {
-                switch socket {
-                case .ip(let host, let port):
-                    return PostgresConfiguration(
-                        hostname: host,
-                        port: port,
-                        username: username,
-                        password: password,
-                        database: database,
-                        tlsConfiguration: tlsConfiguration
-                    )
-                case .unix(let name):
-                    return PostgresConfiguration(
-                        unixDomainSocketPath: name,
-                        username: username,
-                        password: password,
-                        database: database
-                    )
-                }
-            }()),
-            on: Loop.group
-        )
+    init(config: SQLPostgresConfiguration) {
+        let source = PostgresConnectionSource(sqlConfiguration: config)
+        pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
     }
-    
+
     // MARK: Database
     
     func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
@@ -74,62 +53,6 @@ final class PostgresDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension SQLRow {
-    init(postgres: PostgresRow) throws {
-        let fields = try postgres.map { (column: $0.columnName, value: try $0.toSQLValue()) }
-        self.init(fields: fields)
-    }
-}
-
-extension PostgresCell {
-    func toSQLValue() throws -> SQLValue {
-        switch dataType {
-        case .int2, .int4, .int8:
-            guard let int = try decode(Int?.self, context: .default) else {
-                return .null
-            }
-
-            return .int(int)
-        case .bool:
-            guard let bool = try decode(Bool?.self, context: .default) else {
-                return .null
-            }
-
-            return .bool(bool)
-        case .varchar, .text:
-            guard let str = try decode(String?.self, context: .default) else {
-                return .null
-            }
-
-            return .string(str)
-        case .date, .timestamptz, .timestamp:
-            guard let date = try decode(Date?.self, context: .default) else {
-                return .null
-            }
-
-            return .date(date)
-        case .float4, .float8:
-            guard let double = try decode(Double?.self, context: .default) else {
-                return .null
-            }
-
-            return .double(double)
-        case .uuid:
-            guard let uuid = try decode(UUID?.self, context: .default) else {
-                return .null
-            }
-
-            return .uuid(uuid)
-        case .json, .jsonb:
-            return bytes.map { .json($0) } ?? .null
-        case .null:
-            return .null
-        default:
-            throw DatabaseError("Couldn't parse a `\(dataType)` from \(columnName). That PostgreSQL datatype isn't supported, yet.")
-        }
-    }
-}
-
 /// A database provider that is wrapped around a single connection to with which
 /// to send transactions.
 extension PostgresConnection: DatabaseProvider {
@@ -148,6 +71,12 @@ extension PostgresConnection: DatabaseProvider {
     
     public func shutdown() throws {
         _ = close()
+    }
+}
+
+extension SQLRow {
+    init(postgres: PostgresRow) throws {
+        self.init(fields: postgres.map { ($0.columnName, $0) })
     }
 }
 
