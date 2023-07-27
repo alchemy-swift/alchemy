@@ -11,4 +11,17 @@ extension EventLoopGroupConnectionPool {
             connection.eventLoop.asyncSubmit { try await closure(connection) }
         }.get()
     }
+
+    /// Async wrapper for `shutdownGracefully`.
+    public func asyncShutdownGracefully() async throws {
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
+            shutdownGracefully { error in
+                if let error {
+                    c.resume(throwing: error)
+                } else {
+                    c.resume()
+                }
+            }
+        }
+    }
 }

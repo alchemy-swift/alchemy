@@ -43,5 +43,5 @@ public protocol DatabaseProvider {
     func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T
     
     /// Called when the database connection will shut down.
-    func shutdown() throws
+    func shutdown() async throws
 }

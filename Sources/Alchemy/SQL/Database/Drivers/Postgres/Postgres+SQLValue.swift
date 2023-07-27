@@ -1,28 +1,51 @@
 import PostgresNIO
 
-extension PostgresData {
-    /// Initialize from an Alchemy `SQLValue`.
-    init(_ value: SQLValue) {
+extension PostgresBindings {
+    mutating func append(_ value: SQLValue) {
         switch value {
         case .bool(let value):
-            self = PostgresData(bool: value)
+            append(value, context: .default)
         case .date(let value):
-            self = PostgresData(date: value)
+            append(value, context: .default)
         case .double(let value):
-            self = PostgresData(double: value)
+            append(value, context: .default)
         case .int(let value):
-            self = PostgresData(int: value)
+            append(value, context: .default)
         case .json(let bytes):
-            self = PostgresData(type: .json, formatCode: .binary, value: bytes)
+            append(_JSON(bytes: bytes), context: .default)
         case .string(let value):
-            self = PostgresData(string: value)
+            append(value, context: .default)
         case .uuid(let value):
-            self = PostgresData(uuid: value)
+            append(value, context: .default)
         case .bytes(let bytes):
-            self = PostgresData(type: .bytea, formatCode: .binary, value: bytes)
+            append(_Bytes(bytes: bytes), context: .default)
         case .null:
-            self = .null
+            appendNull()
         }
+    }
+}
+
+private struct _JSON: PostgresNonThrowingEncodable {
+    static var psqlType: PostgresDataType = .json
+    static var psqlFormat: PostgresFormat = .binary
+
+    let bytes: ByteBuffer
+
+    func encode<JSONEncoder: PostgresJSONEncoder>(into byteBuffer: inout NIOCore.ByteBuffer, context: PostgresEncodingContext<JSONEncoder>) {
+        var bytes = bytes
+        byteBuffer.writeBuffer(&bytes)
+    }
+}
+
+private struct _Bytes: PostgresNonThrowingEncodable {
+    static var psqlType: PostgresDataType = .bytea
+    static var psqlFormat: PostgresFormat = .binary
+
+    let bytes: ByteBuffer
+
+    func encode<JSONEncoder: PostgresJSONEncoder>(into byteBuffer: inout NIOCore.ByteBuffer, context: PostgresEncodingContext<JSONEncoder>) {
+        var bytes = bytes
+        byteBuffer.writeBuffer(&bytes)
     }
 }
 

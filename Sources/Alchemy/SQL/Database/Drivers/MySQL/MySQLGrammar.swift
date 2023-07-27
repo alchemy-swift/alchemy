@@ -9,14 +9,14 @@ struct MySQLDialect: SQLDialect {
     func insertReturn(_ table: String, values: [[String : SQLConvertible]]) -> [SQL] {
         values.flatMap {[
             insert(table, values: [$0]),
-            SQL("SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()")
+            "SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()"
         ]}
     }
 }
 
 final class MySQLGrammar: Grammar {
     override func compileDropIndex(on table: String, indexName: String) -> SQL {
-        SQL("DROP INDEX \(indexName) ON \(table)")
+        "DROP INDEX \(indexName) ON \(table)"
     }
     
     override func columnTypeString(for type: ColumnType) -> String {

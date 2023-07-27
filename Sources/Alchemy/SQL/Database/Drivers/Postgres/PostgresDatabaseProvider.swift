@@ -6,44 +6,38 @@ import MySQLKit
 
 /// A concrete `Database` for connecting to and querying a PostgreSQL
 /// database.
-final class PostgresDatabaseProvider: DatabaseProvider {
+public final class PostgresDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
-    let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
+    public let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
 
-    init(config: SQLPostgresConfiguration) {
+    public init(config: SQLPostgresConfiguration) {
         let source = PostgresConnectionSource(sqlConfiguration: config)
         pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
     }
 
     // MARK: Database
     
-    func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.query(sql, parameters: parameters) }
-    }
-    
-    func raw(_ sql: String) async throws -> [SQLRow] {
-        try await withConnection { try await $0.raw(sql) }
-    }
-    
-    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
-        try await withConnection { conn in
-            _ = try await conn.raw("START TRANSACTION;")
-            do {
-                let val = try await action(conn)
-                _ = try await conn.raw("COMMIT;")
-                return val
-            } catch {
-                Log.error("[Database] postgres transaction failed with error \(error). Rolling back.")
-                _ = try await conn.raw("ROLLBACK;")
-                _ = try await conn.raw("COMMIT;")
-                throw error
-            }
+    public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection {
+            try await $0.query(sql, parameters: parameters)
         }
     }
     
-    func shutdown() throws {
-        try pool.syncShutdownGracefully()
+    public func raw(_ sql: String) async throws -> [SQLRow] {
+        try await withConnection {
+            try await $0.raw(sql)
+        }
+    }
+    
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+        try await withConnection {
+            try await $0.postgresTransaction(action)
+        }
+    }
+    
+    public func shutdown() async throws {
+        try await pool.asyncShutdownGracefully()
     }
     
     private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
@@ -53,30 +47,53 @@ final class PostgresDatabaseProvider: DatabaseProvider {
     }
 }
 
-/// A database provider that is wrapped around a single connection to with which
-/// to send transactions.
 extension PostgresConnection: DatabaseProvider {
+    @discardableResult
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
-        try await query(sql.positionPostgresBinds(), parameters.map(PostgresData.init))
-            .get().rows.map(SQLRow.init)
+        let statement = sql.positionPostgresBinds()
+        var binds = PostgresBindings(capacity: parameters.count)
+        for parameter in parameters {
+            binds.append(parameter)
+        }
+
+        let _query = PostgresQuery(unsafeSQL: statement, binds: binds)
+        return try await query(_query, logger: Log.logger).collect().map(\._row)
     }
-    
+
+    @discardableResult
     public func raw(_ sql: String) async throws -> [SQLRow] {
-        try await simpleQuery(sql).get().map(SQLRow.init)
+        try await query(sql, parameters: [])
     }
-    
+
+    @discardableResult
     public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await action(self)
     }
     
-    public func shutdown() throws {
-        _ = close()
+    public func shutdown() async throws {
+        try await close().get()
     }
 }
 
-extension SQLRow {
-    init(postgres: PostgresRow) throws {
-        self.init(fields: postgres.map { ($0.columnName, $0) })
+extension DatabaseProvider {
+    fileprivate func postgresTransaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+        try await raw("START TRANSACTION;")
+        do {
+            let val = try await action(self)
+            try await raw("COMMIT;")
+            return val
+        } catch {
+            Log.error("[Database] transaction failed with error \(error). Rolling back.")
+            try await raw("ROLLBACK;")
+            try await raw("COMMIT;")
+            throw error
+        }
+    }
+}
+
+extension PostgresRow {
+    fileprivate var _row: SQLRow {
+        SQLRow(fields: map { ($0.columnName, $0) })
     }
 }
 
@@ -90,6 +107,7 @@ extension String {
     /// - Returns: An SQL string appropriate for running in Postgres.
     func positionPostgresBinds() -> String {
         // TODO: Ensure a user can enter ? into their content?
+        // TODO: Move this to Grammar
         replaceAll(matching: "(\\?)") { (index, _) in "$\(index + 1)" }
     }
     

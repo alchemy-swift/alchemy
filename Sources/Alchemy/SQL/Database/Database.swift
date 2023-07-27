@@ -23,7 +23,7 @@ public final class Database: Service {
     public var dialect: SQLDialect
 
     /// The provider of this database.
-    let provider: DatabaseProvider
+    public let provider: DatabaseProvider
     
     /// Whether this database should log all queries at the `debug` level.
     var shouldLog: Bool = false
@@ -93,10 +93,10 @@ public final class Database: Service {
         }
     }
     
-    /// Called when the database connection will shut down.
+    /// Shut down the database.
     ///
     /// - Throws: Any error that occurred when shutting down.
-    public func shutdown() throws {
-        try provider.shutdown()
+    public func shutdown() async throws {
+        try await provider.shutdown()
     }
 }

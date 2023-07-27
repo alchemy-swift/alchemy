@@ -1,77 +1,83 @@
 import SQLiteKit
 
-final class SQLiteDatabaseProvider: DatabaseProvider {
+public final class SQLiteDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
-    let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
+    public let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
 
-    /// Initialize with the given configuration. The configuration
-    /// will be connected to when a query is run.
-    ///
-    /// - Parameter config: the info needed to connect to the
-    ///   database.
-    init(config: SQLiteConfiguration) {
+    public init(config: SQLiteConfiguration) {
         let source = SQLiteConnectionSource(configuration: config, threadPool: Thread.pool)
         pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
     }
     
     // MARK: Database
     
-    func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
-        try await withConnection { try await $0.query(sql, parameters: parameters) }
-    }
-    
-    func raw(_ sql: String) async throws -> [SQLRow] {
-        try await withConnection { try await $0.raw(sql) }
-    }
-    
-    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
-        try await withConnection { conn in
-            _ = try await conn.raw("BEGIN;")
-            let val = try await action(conn)
-            _ = try await conn.raw("COMMIT;")
-            return val
+    public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+        try await withConnection {
+            try await $0.query(sql, parameters: parameters)
         }
     }
     
-    func shutdown() throws {
-        try pool.syncShutdownGracefully()
+    public func raw(_ sql: String) async throws -> [SQLRow] {
+        try await withConnection {
+            try await $0.raw(sql)
+        }
+    }
+    
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+        try await withConnection {
+            try await $0.sqliteTransaction(action)
+        }
+    }
+    
+    public func shutdown() async throws {
+        try await pool.asyncShutdownGracefully()
     }
     
     private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
         try await pool.withConnection(logger: Log.logger, on: Loop.current) {
-            try await action(SQLiteConnectionDatabase(conn: $0))
+            try await action($0)
         }
     }
 }
 
-private struct SQLiteConnectionDatabase: DatabaseProvider {
-    let conn: SQLiteConnection
-
-    func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
+extension SQLiteConnection: DatabaseProvider {
+    public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let parameters = parameters.map(SQLiteData.init)
-        return try await conn.query(sql, parameters)
-            .get()
-            .map(SQLRow.init)
+        return try await query(sql, parameters).get().map(\._row)
     }
-    
-    func raw(_ sql: String) async throws -> [SQLRow] {
-        try await conn.query(sql)
-            .get()
-            .map(SQLRow.init)
+
+    public func raw(_ sql: String) async throws -> [SQLRow] {
+        try await query(sql).get().map(\._row)
     }
-    
-    func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
-        try await action(self)
+
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+        try await sqliteTransaction(action)
     }
-    
-    func shutdown() throws {
-        _ = conn.close()
+
+    public func shutdown() async throws {
+        try await close().get()
     }
 }
 
-extension SQLRow {
-    init(sqlite: SQLiteRow) throws {
-        self.init(fields: sqlite.columns.map { ($0.name, $0.data) })
+extension DatabaseProvider {
+    fileprivate func sqliteTransaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+        try await raw("BEGIN;")
+        do {
+            let val = try await action(self)
+            try await raw("COMMIT;")
+            return val
+        } catch {
+            Log.error("[Database] transaction failed with error \(error). Rolling back.")
+            try await raw("ROLLBACK;")
+            try await raw("COMMIT;")
+            throw error
+        }
+    }
+}
+
+extension SQLiteRow {
+    fileprivate var _row: SQLRow {
+        SQLRow(fields: columns.map { ($0.name, $0.data) })
     }
 }

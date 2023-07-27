@@ -61,8 +61,8 @@ extension SQLDialect {
                        lock: SQLLock?) -> SQL {
         let select = isDistinct ? "SELECT DISTINCT" : "SELECT"
         return [
-            SQL("\(select) \(columns.joined(separator: ", "))"),
-            SQL("FROM \(table)"),
+            "\(select) \(columns.joined(separator: ", "))",
+            "FROM \(table)",
             compileJoins(joins),
             compileWheres(wheres),
             compileGroups(groups),
@@ -100,7 +100,7 @@ extension SQLDialect {
 
         let conjunction = isJoin ? "ON" : "WHERE"
         let sql = wheres.joinedSQL().droppingLeadingBoolean()
-        return SQL("\(conjunction) \(sql.statement)", parameters: sql.parameters)
+        return SQL("\(conjunction) \(sql.statement)", values: sql.parameters)
     }
 
     public func compileGroups(_ groups: [String]) -> SQL? {
@@ -445,6 +445,7 @@ extension Array where Element == SQLWhere {
 
 extension SQL {
     func droppingLeadingBoolean() -> SQL {
-        SQL(statement.droppingPrefix("and ").droppingPrefix("or "), parameters: parameters)
+        // TODO: This shouldn't be case sensitive.
+        SQL(statement.droppingPrefix("AND ").droppingPrefix("OR "), values: parameters)
     }
 }

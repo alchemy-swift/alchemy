@@ -279,7 +279,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func whereNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        `where`(SQLWhere(boolean: boolean, type: .raw(SQL("\(key) IS NULL"))))
+        `where`(SQLWhere(boolean: boolean, type: .raw("\(key) IS NULL")))
     }
 
     /// A helper for adding an **or** `whereNull` clause.
@@ -300,7 +300,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func whereNotNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        `where`(SQLWhere(boolean: boolean, type: .raw(SQL("\(key) IS NOT NULL"))))
+        `where`(SQLWhere(boolean: boolean, type: .raw("\(key) IS NOT NULL")))
     }
 
     /// A helper for adding an **or** `whereNotNull` clause.

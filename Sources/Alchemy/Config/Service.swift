@@ -7,7 +7,7 @@ public protocol Service {
     func startup()
     /// Shutdown this service. Will be called when the application your
     /// service is registered to shuts down.
-    func shutdown() throws
+    func shutdown() async throws
 }
 
 public protocol ServiceIdentifier: Hashable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
@@ -34,7 +34,7 @@ extension ServiceIdentifier {
 // By default, startup and shutdown are no-ops.
 extension Service {
     public func startup() {}
-    public func shutdown() throws {}
+    public func shutdown() async throws {}
 }
 
 extension Service {
@@ -64,9 +64,7 @@ extension Service {
         
         // Need to register shutdown before lifecycle starts, but need to shutdown EACH singleton,
         Container.resolveAssert(ServiceLifecycle.self)
-            .registerShutdown(label: "\(name(of: Self.self)):\(identifier)", .sync {
-                try value.shutdown()
-            })
+            .registerShutdown(label: "\(name(of: Self.self)):\(identifier)", .async(value.shutdown))
     }
 }
 

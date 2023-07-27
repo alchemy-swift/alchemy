@@ -17,8 +17,8 @@ public struct RedisClient: Service, RediStack.RedisClient {
     }
     
     /// Shuts down this client, closing it's associated connection pools.
-    public func shutdown() throws {
-        try provider.shutdown()
+    public func shutdown() async throws {
+        try await provider.shutdown()
     }
     
     // MARK: RediStack.RedisClient
@@ -173,13 +173,11 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
         }.get()
     }
 
-    func shutdown() throws {
-        try poolLock.withLock {
-            try poolStorage.values.forEach {
-                let promise: EventLoopPromise<Void> = $0.eventLoop.makePromise()
-                $0.close(promise: promise)
-                try promise.futureResult.wait()
-            }
+    func shutdown() async throws {
+        for pool in poolStorage.values {
+            let promise: EventLoopPromise<Void> = pool.eventLoop.makePromise()
+            pool.close(promise: promise)
+            try await promise.futureResult.get()
         }
     }
 
@@ -259,8 +257,8 @@ extension RedisConnection: RedisProvider {
         self
     }
     
-    public func shutdown() throws {
-        try close().wait()
+    public func shutdown() async throws {
+        try await close().get()
     }
     
     public func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
@@ -269,6 +267,9 @@ extension RedisConnection: RedisProvider {
 }
 
 private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-    do { return try closure() }
-    catch { return Loop.current.makeFailedFuture(error) }
+    do {
+        return try closure()
+    } catch {
+        return Loop.current.makeFailedFuture(error)
+    }
 }

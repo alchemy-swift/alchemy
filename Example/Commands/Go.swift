@@ -4,12 +4,10 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        let sql: SQLConvertible = "Why hello there!"
-        print(sql.rawSQLString)
-        let int = SQLValue.int(1)
-        print(int.rawSQLString)
-        let string = SQLValue.string("Hello!")
-        print(string.rawSQLString)
+        let sql1: SQL = "select * from users where name = '?'"
+        print(sql1.statement)
+        let sql2: SQL = .init("select * from users where name = '??'", parameters: [])
+        print(sql2.statement)
     }
 
     func testRelationships() {
