@@ -1,14 +1,16 @@
-import MySQLKit
-import NIO
+import AsyncKit
+import NIOSSL
+import NIOCore
+import MySQLNIO
+@_implementationOnly import NIOPosix // for inet_pton()
 
 public final class MySQLDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
-    public let pool: EventLoopGroupConnectionPool<MySQLConnectionSource>
+    public let pool: EventLoopGroupConnectionPool<MySQLConfiguration>
 
-    public init(config: MySQLConfiguration) {
-        let source = MySQLConnectionSource(configuration: config)
-        pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
+    public init(configuration: MySQLConfiguration) {
+        pool = EventLoopGroupConnectionPool(source: configuration, on: Loop.group)
     }
 
     // MARK: Database
@@ -42,7 +44,7 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension MySQLConnection: DatabaseProvider {
+extension MySQLConnection: DatabaseProvider, ConnectionPoolItem {
     @discardableResult
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let binds = parameters.map(MySQLData.init)

@@ -1,6 +1,30 @@
 import PostgresNIO
 
 extension PostgresBindings {
+    private struct _JSON: PostgresNonThrowingEncodable {
+        static var psqlType: PostgresDataType = .json
+        static var psqlFormat: PostgresFormat = .binary
+
+        let bytes: ByteBuffer
+
+        func encode<JSONEncoder: PostgresJSONEncoder>(into byteBuffer: inout ByteBuffer, context: PostgresEncodingContext<JSONEncoder>) {
+            var bytes = bytes
+            byteBuffer.writeBuffer(&bytes)
+        }
+    }
+
+    private struct _Bytes: PostgresNonThrowingEncodable {
+        static var psqlType: PostgresDataType = .bytea
+        static var psqlFormat: PostgresFormat = .binary
+
+        let bytes: ByteBuffer
+
+        func encode<JSONEncoder: PostgresJSONEncoder>(into byteBuffer: inout ByteBuffer, context: PostgresEncodingContext<JSONEncoder>) {
+            var bytes = bytes
+            byteBuffer.writeBuffer(&bytes)
+        }
+    }
+
     mutating func append(_ value: SQLValue) {
         switch value {
         case .bool(let value):
@@ -22,30 +46,6 @@ extension PostgresBindings {
         case .null:
             appendNull()
         }
-    }
-}
-
-private struct _JSON: PostgresNonThrowingEncodable {
-    static var psqlType: PostgresDataType = .json
-    static var psqlFormat: PostgresFormat = .binary
-
-    let bytes: ByteBuffer
-
-    func encode<JSONEncoder: PostgresJSONEncoder>(into byteBuffer: inout NIOCore.ByteBuffer, context: PostgresEncodingContext<JSONEncoder>) {
-        var bytes = bytes
-        byteBuffer.writeBuffer(&bytes)
-    }
-}
-
-private struct _Bytes: PostgresNonThrowingEncodable {
-    static var psqlType: PostgresDataType = .bytea
-    static var psqlFormat: PostgresFormat = .binary
-
-    let bytes: ByteBuffer
-
-    func encode<JSONEncoder: PostgresJSONEncoder>(into byteBuffer: inout NIOCore.ByteBuffer, context: PostgresEncodingContext<JSONEncoder>) {
-        var bytes = bytes
-        byteBuffer.writeBuffer(&bytes)
     }
 }
 

@@ -1,6 +1,4 @@
 import MySQLNIO
-import MySQLKit
-import NIO
 
 extension MySQLData: SQLValueConvertible {
     /// Initialize from an Alchemy `SQLValue`.

@@ -17,9 +17,10 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0" ..< "3.0.0"),
-        .package(url: "https://github.com/vapor/postgres-kit", from: "2.11.0"),
-        .package(url: "https://github.com/vapor/mysql-kit", from: "4.3.0"),
-        .package(url: "https://github.com/vapor/sqlite-kit", from: "4.0.0"),
+        .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.17.0"),
+        .package(url: "https://github.com/vapor/mysql-nio.git", from: "1.0.0"),
+        .package(url: "https://github.com/vapor/sqlite-nio.git", from: "1.0.0"),
+        .package(url: "https://github.com/vapor/async-kit.git", from: "1.0.0"),
         .package(url: "https://github.com/vapor/multipart-kit", from: "4.5.1"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
         .package(url: "https://github.com/alchemy-swift/fusion", .upToNextMinor(from: "0.3.0")),
@@ -57,9 +58,13 @@ let package = Package(
 
                 /// Databases
 
-                .product(name: "MySQLKit", package: "mysql-kit"),
-                .product(name: "PostgresKit", package: "postgres-kit"),
-                .product(name: "SQLiteKit", package: "sqlite-kit"),
+                .product(name: "AsyncKit", package: "async-kit"),
+                .product(name: "MySQLNIO", package: "mysql-nio"),
+//                .product(name: "MySQLKit", package: "mysql-kit"),
+//                .product(name: "PostgresKit", package: "postgres-kit"),
+                .product(name: "PostgresNIO", package: "postgres-nio"),
+                .product(name: "SQLiteNIO", package: "sqlite-nio"),
+//                .product(name: "SQLiteKit", package: "sqlite-kit"),
                 .product(name: "RediStack", package: "RediStack"),
 
                 /// Internal dependencies

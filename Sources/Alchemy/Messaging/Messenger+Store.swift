@@ -19,7 +19,7 @@ struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model {
     let message: Message
     let receiver: Receiver
 
-    init<C: Channel>(channel: C.Type, message: Message, receiver: Receiver) throws {
+    init<C: MessageChannel>(channel: C.Type, message: Message, receiver: Receiver) throws {
         self.channel = C.identifier
         self.message = message
         self.receiver = receiver

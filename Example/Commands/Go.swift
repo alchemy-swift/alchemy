@@ -4,10 +4,8 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        let sql1: SQL = "select * from users where name = '?'"
-        print(sql1.statement)
-        let sql2: SQL = .init("select * from users where name = '??'", parameters: [])
-        print(sql2.statement)
+        let url = URL(string: "https://www.foo.bar/baz/bit")!
+        print(url.lastPathComponent)
     }
 
     func testRelationships() {

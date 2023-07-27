@@ -1,17 +1,17 @@
-import SQLiteKit
+import AsyncKit
+import SQLiteNIO
 
 public final class SQLiteDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
-    public let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
+    public let pool: EventLoopGroupConnectionPool<SQLiteConfiguration>
 
-    public init(config: SQLiteConfiguration) {
-        let source = SQLiteConnectionSource(configuration: config, threadPool: Thread.pool)
-        pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
+    public init(configuration: SQLiteConfiguration) {
+        pool = EventLoopGroupConnectionPool(source: configuration, on: Loop.group)
     }
     
     // MARK: Database
-    
+
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         try await withConnection {
             try await $0.query(sql, parameters: parameters)
@@ -41,7 +41,7 @@ public final class SQLiteDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension SQLiteConnection: DatabaseProvider {
+extension SQLiteConnection: DatabaseProvider, ConnectionPoolItem {
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let parameters = parameters.map(SQLiteData.init)
         return try await query(sql, parameters).get().map(\._row)

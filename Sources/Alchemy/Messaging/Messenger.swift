@@ -1,4 +1,4 @@
-public struct Messenger<C: Channel>: Service {
+public struct Messenger<C: MessageChannel>: Service {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
@@ -9,7 +9,7 @@ public struct Messenger<C: Channel>: Service {
     fileprivate(set) var store: Bool
     fileprivate(set) var queue: Bool
     
-    public init<P: ChannelProvider>(provider: P) where P.C == C {
+    public init<P: MessageChannelProvider>(provider: P) where P.C == C {
         self._send = provider.send
         self._shutdown = provider.shutdown
         self.store = false

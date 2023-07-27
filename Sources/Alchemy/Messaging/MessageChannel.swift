@@ -1,11 +1,11 @@
-public protocol Channel {
+public protocol MessageChannel {
     associatedtype Message
     associatedtype Receiver
     
     static var identifier: String { get }
 }
 
-extension Channel {
+extension MessageChannel {
     public static var identifier: String {
         name(of: Self.self)
             .lowercased()
@@ -13,13 +13,13 @@ extension Channel {
     }
 }
 
-public protocol ChannelProvider {
-    associatedtype C: Channel
+public protocol MessageChannelProvider {
+    associatedtype C: MessageChannel
     
     func send(message: C.Message, to receiver: C.Receiver) async throws
     func shutdown() throws
 }
 
-extension ChannelProvider {
+extension MessageChannelProvider {
     public func shutdown() throws {}
 }

@@ -31,7 +31,7 @@ public struct ConfigurableServices {
     }
 }
 
-private struct DummyChannel: Channel {
+private struct DummyChannel: MessageChannel {
     public typealias Message = Void
     public typealias Receiver = Void
 }

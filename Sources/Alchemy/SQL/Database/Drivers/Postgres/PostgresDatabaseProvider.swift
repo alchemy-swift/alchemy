@@ -1,19 +1,15 @@
-import Fusion
-import Foundation
-import PostgresKit
-import NIO
-import MySQLKit
+import AsyncKit
+import PostgresNIO
 
 /// A concrete `Database` for connecting to and querying a PostgreSQL
 /// database.
 public final class PostgresDatabaseProvider: DatabaseProvider {
     /// The connection pool from which to make connections to the
     /// database with.
-    public let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
+    public let pool: EventLoopGroupConnectionPool<PostgresConfiguration>
 
-    public init(config: SQLPostgresConfiguration) {
-        let source = PostgresConnectionSource(sqlConfiguration: config)
-        pool = EventLoopGroupConnectionPool(source: source, on: Loop.group)
+    public init(configuration: PostgresConfiguration) {
+        pool = EventLoopGroupConnectionPool(source: configuration, on: Loop.group)
     }
 
     // MARK: Database
@@ -47,7 +43,7 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension PostgresConnection: DatabaseProvider {
+extension PostgresConnection: DatabaseProvider, ConnectionPoolItem {
     @discardableResult
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let statement = sql.positionPostgresBinds()
@@ -106,7 +102,6 @@ extension String {
     /// - Parameter sql: The SQL string to replace binds with.
     /// - Returns: An SQL string appropriate for running in Postgres.
     func positionPostgresBinds() -> String {
-        // TODO: Ensure a user can enter ? into their content?
         // TODO: Move this to Grammar
         replaceAll(matching: "(\\?)") { (index, _) in "$\(index + 1)" }
     }

@@ -34,7 +34,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
     }
 }
 
-private struct MessageJob<C: Channel>: Job where C.Message: Codable, C.Receiver: Codable {
+private struct MessageJob<C: MessageChannel>: Job where C.Message: Codable, C.Receiver: Codable {
     let message: C.Message
     let receiver: C.Receiver
     
