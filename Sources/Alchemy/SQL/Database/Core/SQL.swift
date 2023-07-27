@@ -20,7 +20,7 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation {
     /// into the provided statement.
     public init(_ statement: String, parameters: [SQLConvertible] = []) {
         // 0. Escape double question marks.
-        let questionmark = "__questionmark"
+        let questionmark = "___questionmark"
         let escapedStatement = statement.replacingOccurrences(of: "??", with: questionmark)
 
         // 1. Replace question marks with corresponding parameter statement.

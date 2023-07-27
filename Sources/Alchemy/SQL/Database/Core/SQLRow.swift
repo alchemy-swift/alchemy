@@ -27,7 +27,10 @@ public struct SQLRow: ExpressibleByDictionaryLiteral {
     }
 
     public func require(_ column: String) throws -> SQLValue {
-        guard let value = self[column] else { throw DatabaseError.missingColumn(column) }
+        guard let value = self[column] else {
+            throw DatabaseError("Missing column named `\(column)`.")
+        }
+
         return value
     }
 

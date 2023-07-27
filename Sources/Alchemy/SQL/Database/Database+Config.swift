@@ -14,12 +14,14 @@ extension Database {
     }
 
     public static func configure(with config: Config) {
-        config.databases.forEach { id, db in
+        for (id, db) in config.databases {
             db.migrations = config.migrations
             db.seeders = config.seeders
             Database.bind(id, db)
         }
-        
-        config.redis.forEach { RedisClient.bind($0, $1) }
+
+        for (id, db) in config.redis {
+            RedisClient.bind(id, db)
+        }
     }
 }
