@@ -58,9 +58,17 @@ extension Database {
     /// Rolls back the latest migration batch.
     public func rollback() async throws {
         let batch = try await getLastBatch()
-        let names = try await getAppliedMigrations(batch: batch).map(\.name)
-        let migrations = Array(migrations.filter { names.contains($0.name) }.reversed())
-        try await rollback(migrations)
+        let migrationsByName = migrations.keyed(by: \.name)
+        var migrationsToRollback: [Migration] = []
+        for applied in try await getAppliedMigrations(batch: batch) {
+            guard let migration = migrationsByName[applied.name] else {
+                throw DatabaseError("The latest migration batch contained `\(applied.name)` but there was no matching `Migration` type registered to your Database.")
+            }
+
+            migrationsToRollback.append(migration)
+        }
+
+        try await rollback(migrationsToRollback)
     }
 
     /// Run the `.up` functions of an array of migrations in order.
@@ -111,8 +119,8 @@ extension Database {
         return try value.isNull() ? 0 : value.int()
     }
 
-    /// Gets any existing migrations. Creates the migration table if
-    /// it doesn't already exist.
+    /// Gets any existing migrations in the order that they were applied. This
+    /// will create the migration table if it doesn't already exist.
     ///
     /// - Parameters
     ///   - batch: An optional batch to get the specific migrations of.
@@ -123,7 +131,7 @@ extension Database {
             Log.info("Migration table created successfully.".green)
         }
 
-        var query = table(AppliedMigration.self)
+        var query = table(AppliedMigration.self).orderBy("id")
         if let batch {
             query = query.where("batch" == batch)
         }
