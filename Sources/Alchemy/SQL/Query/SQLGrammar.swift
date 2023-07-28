@@ -1,9 +1,6 @@
 import Foundation
 
-public protocol SQLDialect {
-
-    // TODO: Kill this
-    var grammar: Grammar { get }
+public protocol SQLGrammar {
 
     // MARK: SELECT
 
@@ -43,11 +40,26 @@ public protocol SQLDialect {
     // MARK: Delete
 
     func delete(_ table: String, wheres: [SQLWhere]) -> SQL
+
+    // MARK: Schema
+
+    func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL
+    func compileRenameTable(_ table: String, to: String) -> SQL
+    func compileDropTable(_ table: String) -> SQL
+    func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL]
+    func compileRenameColumn(on table: String, column: String, to: String) -> SQL
+    func compileCreateIndexes(on table: String, indexes: [CreateIndex]) -> [SQL]
+    func compileDropIndex(on table: String, indexName: String) -> SQL
+
+    func columnTypeString(for type: ColumnType) -> String
+    func createColumnString(for column: CreateColumn) -> (definition: String, constraints: [String])
+    func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String?
+    func jsonLiteral(for jsonString: String) -> String
 }
 
 // MARK: - Defaults
 
-extension SQLDialect {
+extension SQLGrammar {
     public func select(isDistinct: Bool,
                        columns: [String],
                        table: String,
@@ -227,22 +239,17 @@ extension SQLDialect {
     private func parameterize(_ values: [SQLConvertible]) -> String {
         Array(repeating: "?", count: values.count).joined(separator: ", ")
     }
-}
-
-/// Used for compiling query builders into raw SQL statements.
-open class Grammar {
-    public init() {}
 
     // MARK: - Compiling Migrations
-    
-    open func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
+
+    public func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
         var columnStrings: [String] = []
         var constraintStrings: [String] = []
         for (column, constraints) in columns.map({ createColumnString(for: $0) }) {
             columnStrings.append(column)
             constraintStrings.append(contentsOf: constraints)
         }
-        
+
         return SQL(
             """
             CREATE TABLE\(ifNotExists ? " IF NOT EXISTS" : "") \(table) (
@@ -251,62 +258,60 @@ open class Grammar {
             """
         )
     }
-    
-    open func compileRenameTable(_ table: String, to: String) -> SQL {
+
+    public func compileRenameTable(_ table: String, to: String) -> SQL {
         SQL("ALTER TABLE \(table) RENAME TO \(to)")
     }
-    
-    open func compileDropTable(_ table: String) -> SQL {
+
+    public func compileDropTable(_ table: String) -> SQL {
         SQL("DROP TABLE \(table)")
     }
-    
-    open func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], allowConstraints: Bool = true) -> [SQL] {
+
+    public func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
         guard !dropColumns.isEmpty || !addColumns.isEmpty else {
             return []
         }
-        
+
         var adds: [String] = []
         var constraints: [String] = []
         for (sql, tableConstraints) in addColumns.map({ createColumnString(for: $0) }) {
             adds.append("ADD COLUMN \(sql)")
-            if allowConstraints {
-                constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
-            }
+            constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
         }
-        
-        let drops = dropColumns.map { "DROP COLUMN \($0.escapedColumn)" }
+
+        let drops = dropColumns.map { "DROP COLUMN \($0.inQuotes)" }
         return [
             SQL("""
                 ALTER TABLE \(table)
                     \((adds + drops + constraints).joined(separator: ",\n    "))
                 """)]
     }
-    
-    open func compileRenameColumn(on table: String, column: String, to: String) -> SQL {
-        SQL("ALTER TABLE \(table) RENAME COLUMN \(column.escapedColumn) TO \(to.escapedColumn)")
+
+    public func compileRenameColumn(on table: String, column: String, to: String) -> SQL {
+        SQL("ALTER TABLE \(table) RENAME COLUMN \(column.inQuotes) TO \(to.inQuotes)")
     }
-    
+
     /// Compile the given create indexes into SQL.
     ///
     /// - Parameter table: The name of the table this index will be
     ///   created on.
     /// - Returns: SQL objects for creating these indexes on the given table.
-    open func compileCreateIndexes(on table: String, indexes: [CreateIndex]) -> [SQL] {
+    public func compileCreateIndexes(on table: String, indexes: [CreateIndex]) -> [SQL] {
         indexes.map { index in
             let indexType = index.isUnique ? "UNIQUE INDEX" : "INDEX"
             let indexName = index.name(table: table)
-            let indexColumns = "(\(index.columns.map(\.escapedColumn).joined(separator: ", ")))"
+            let indexColumns = "(\(index.columns.map(\.inQuotes).joined(separator: ", ")))"
             return SQL("CREATE \(indexType) \(indexName) ON \(table) \(indexColumns)")
         }
     }
-    
-    open func compileDropIndex(on table: String, indexName: String) -> SQL {
+
+    public func compileDropIndex(on table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName)")
     }
-    
+
     // MARK: - Misc
-    
-    open func columnTypeString(for type: ColumnType) -> String {
+
+    public func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
             return "bool"
@@ -333,21 +338,21 @@ open class Grammar {
             return "uuid"
         }
     }
-    
+
     /// Convert a `CreateColumn` to a `String` for inserting into an SQL
     /// statement.
     ///
     /// - Returns: The SQL `String` describing the column and any table level
     ///   constraints to add.
-    open func createColumnString(for column: CreateColumn) -> (String, [String]) {
-        let columnEscaped = column.name.escapedColumn
+    public func createColumnString(for column: CreateColumn) -> (definition: String, constraints: [String]) {
+        let columnEscaped = column.name.inQuotes
         var baseSQL = "\(columnEscaped) \(columnTypeString(for: column.type))"
         var tableConstraints: [String] = []
         for constraint in column.constraints {
-            guard let constraintString = columnConstraintString(for: constraint, on: column.name.escapedColumn, of: column.type) else {
+            guard let constraintString = columnConstraintString(for: constraint, on: column.name.inQuotes, of: column.type) else {
                 continue
             }
-            
+
             switch constraint {
             case .notNull:
                 baseSQL.append(" \(constraintString)")
@@ -363,11 +368,11 @@ open class Grammar {
                 tableConstraints.append(constraintString)
             }
         }
-        
+
         return (baseSQL, tableConstraints)
     }
-    
-    open func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+
+    public func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
         switch constraint {
         case .notNull:
             return "NOT NULL"
@@ -378,7 +383,7 @@ open class Grammar {
         case .unique:
             return "UNIQUE (\(column))"
         case .foreignKey(let fkColumn, let table, let onDelete, let onUpdate):
-            var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(fkColumn.escapedColumn))"
+            var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(fkColumn.inQuotes))"
             if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
             if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
             return fkBase
@@ -386,15 +391,9 @@ open class Grammar {
             return nil
         }
     }
-    
-    open func jsonLiteral(for jsonString: String) -> String {
-        "'\(jsonString)'::jsonb"
-    }
-}
 
-extension String {
-    fileprivate var escapedColumn: String {
-        "\"\(self)\""
+    public func jsonLiteral(for jsonString: String) -> String {
+        "'\(jsonString)'::jsonb"
     }
 }
 

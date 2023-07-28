@@ -23,6 +23,6 @@ extension Database {
     }
 
     public static func sqlite(configuration: SQLiteConfiguration) -> Database {
-        Database(provider: SQLiteDatabaseProvider(configuration: configuration), dialect: SQLiteDialect())
+        Database(provider: SQLiteDatabaseProvider(configuration: configuration), dialect: SQLiteGrammar())
     }
 }

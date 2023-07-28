@@ -57,7 +57,7 @@ extension Database {
         
         if count == 0 {
             Log.info("[Migration] creating '\(AlchemyMigration.table)' table.")
-            let statements = AlchemyMigration.Migration().upStatements(for: dialect.grammar)
+            let statements = AlchemyMigration.Migration().upStatements(for: dialect)
             try await runStatements(statements: statements)
         }
         
@@ -70,7 +70,7 @@ extension Database {
     ///   database.
     private func downMigrations(_ migrations: [Migration]) async throws {
         for m in migrations.sorted(by: { $0.name > $1.name }) {
-            let statements = m.downStatements(for: dialect.grammar)
+            let statements = m.downStatements(for: dialect)
             try await runStatements(statements: statements)
             try await AlchemyMigration.query(db: self).where("name" == m.name).delete()
         }
@@ -85,7 +85,7 @@ extension Database {
     ///     database.
     private func upMigrations(_ migrations: [Migration], batch: Int) async throws {
         for m in migrations {
-            let statements = m.upStatements(for: dialect.grammar)
+            let statements = m.upStatements(for: dialect)
             try await runStatements(statements: statements)
             _ = try await AlchemyMigration(name: m.name, batch: batch, runAt: Date()).save(db: self)
         }

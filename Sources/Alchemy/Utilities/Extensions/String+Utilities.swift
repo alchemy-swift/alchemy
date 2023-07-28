@@ -1,12 +1,22 @@
+extension StringProtocol {
+    var inQuotes: String {
+        "\"\(self)\""
+    }
+
+    var inSingleQuotes: String {
+        "'\(self)'"
+    }
+}
+
 extension String {
     var trimmingQuotes: String {
-        trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+        trimmingCharacters(in: CharacterSet(charactersIn: #""'"#))
     }
     
     var trimmingForwardSlash: String {
         trimmingCharacters(in: CharacterSet(charactersIn: "/"))
     }
-    
+
     func droppingPrefix(_ prefix: String) -> String {
         guard hasPrefix(prefix) else { return self }
         return String(dropFirst(prefix.count))

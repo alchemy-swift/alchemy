@@ -2,24 +2,19 @@ import NIO
 
 /// A MySQL specific Grammar for compiling QueryBuilder statements
 /// into SQL strings.
-
-struct MySQLDialect: SQLDialect {
-    let grammar: Grammar = MySQLGrammar()
-
+struct MySQLGrammar: SQLGrammar {
     func insertReturn(_ table: String, values: [[String : SQLConvertible]]) -> [SQL] {
         values.flatMap {[
             insert(table, values: [$0]),
             "SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()"
         ]}
     }
-}
 
-final class MySQLGrammar: Grammar {
-    override func compileDropIndex(on table: String, indexName: String) -> SQL {
+    func compileDropIndex(on table: String, indexName: String) -> SQL {
         "DROP INDEX \(indexName) ON \(table)"
     }
-    
-    override func columnTypeString(for type: ColumnType) -> String {
+
+    func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
             return "boolean"
@@ -48,17 +43,28 @@ final class MySQLGrammar: Grammar {
             return "varchar(36)"
         }
     }
-    
-    override func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
+
+    func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String? {
         switch constraint {
+        case .notNull:
+            return "NOT NULL"
+        case .default(let string):
+            return "DEFAULT \(string)"
+        case .primaryKey:
+            return "PRIMARY KEY (\(column))"
+        case .unique:
+            return "UNIQUE (\(column))"
+        case .foreignKey(let fkColumn, let table, let onDelete, let onUpdate):
+            var fkBase = "FOREIGN KEY (\(column)) REFERENCES \(table) (\(fkColumn.inQuotes))"
+            if let delete = onDelete { fkBase.append(" ON DELETE \(delete.rawValue)") }
+            if let update = onUpdate { fkBase.append(" ON UPDATE \(update.rawValue)") }
+            return fkBase
         case .unsigned:
             return "UNSIGNED"
-        default:
-            return super.columnConstraintString(for: constraint, on: column, of: type)
         }
     }
-    
-    override func jsonLiteral(for jsonString: String) -> String {
+
+    func jsonLiteral(for jsonString: String) -> String {
         "('\(jsonString)')"
     }
 }

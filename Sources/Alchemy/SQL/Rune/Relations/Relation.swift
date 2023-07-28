@@ -49,7 +49,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     func _through(table: String, from: SQLKey, to: SQLKey) -> Self {
         if throughs.isEmpty {
             lookupKey = "\(table).\(from)"
-            columns.append("\(lookupKey) as \"\(lookupKey)\"")
+            columns.append("\(lookupKey) as \(lookupKey.inQuotes)")
         }
 
         throughs.append(Through(table: table, from: from, to: to))

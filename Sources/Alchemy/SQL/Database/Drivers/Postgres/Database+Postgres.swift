@@ -26,7 +26,7 @@ extension Database {
     }
 
     public static func postgres(configuration: PostgresConfiguration) -> Database {
-        Database(provider: PostgresDatabaseProvider(configuration: configuration), dialect: PostgresDialect())
+        Database(provider: PostgresDatabaseProvider(configuration: configuration), dialect: PostgresGrammar())
     }
 }
 

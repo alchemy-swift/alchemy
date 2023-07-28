@@ -19,7 +19,7 @@ extension Queue {
         eventLoop.asyncSubmit { try await self.runNext(from: channels, untilEmpty: untilEmpty) }
             .whenComplete { _ in
                 // Run check again in the `pollRate`.
-                let foo = eventLoop.scheduleTask(in: pollRate) {
+                eventLoop.scheduleTask(in: pollRate) {
                     self._startWorker(for: channels, pollRate: pollRate, untilEmpty: untilEmpty, on: eventLoop)
                 }
             }

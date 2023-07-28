@@ -73,8 +73,8 @@ struct MakeMigration: Command {
 
 private extension ColumnData {
     func migrationRowString() throws -> String {
-        var returnString = "$0.\(type)(\"\(name)\")"
-        
+        var returnString = "$0.\(type)(\(name.inQuotes))"
+
         for modifier in modifiers.map({ String($0) }) {
             let splitComponents = modifier.split(separator: ".")
             guard let modifier = splitComponents.first else {
@@ -96,7 +96,7 @@ private extension ColumnData {
                     throw CommandError("Invalid references format `\(modifier)` expected `references.table.key`")
                 }
                 
-                returnString.append(".references(\"\(key)\", on: \"\(table)\")")
+                returnString.append(".references(\(key.inQuotes), on: \(table.inQuotes))")
             default:
                 throw CommandError("Unknown column modifier \(modifier)")
             }

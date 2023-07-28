@@ -10,8 +10,8 @@ protocol ColumnBuilderErased {
 /// to this column.
 public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     /// The grammar of this builder.
-    private let grammar: Grammar
-    
+    private let grammar: SQLGrammar
+
     /// The name of the column.
     private let name: String
     
@@ -29,7 +29,7 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
     ///   - name: The name of the column to create.
     ///   - type: The type of the column to create.
     ///   - modifiers: Any modifiers of the column.
-    init(grammar: Grammar, name: String, type: ColumnType, constraints: [ColumnConstraint] = []) {
+    init(grammar: SQLGrammar, name: String, type: ColumnType, constraints: [ColumnConstraint] = []) {
         self.grammar = grammar
         self.name = name
         self.type = type
@@ -60,11 +60,11 @@ extension CreateColumnBuilder {
     @discardableResult public func `default`(val: Default) -> Self {
         // Janky, but MySQL requires parentheses around text (but not
         // varchar...) literals.
-        if case .string(.unlimited) = self.type, self.grammar is MySQLGrammar {
-            return self.adding(constraint: .default("(\(val.rawSQLString))"))
+        if case .string(.unlimited) = type, grammar is MySQLGrammar {
+            return adding(constraint: .default("(\(val.rawSQLString))"))
         }
         
-        return self.adding(constraint: .default(val.rawSQLString))
+        return adding(constraint: .default(val.rawSQLString))
     }
     
     /// Define this column as not nullable.

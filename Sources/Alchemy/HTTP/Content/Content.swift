@@ -343,16 +343,16 @@ extension Content: CustomStringConvertible {
             } else if let double = value.double {
                 string.append("\(double)")
             } else if let stringVal = value.string {
-                string.append("\"\(stringVal)\"")
+                string.append(stringVal.inQuotes)
             } else {
-                string.append("\(value)")
+                string.append("\(value)".inQuotes)
             }
         case .dict(let dict):
             tabs += "\t"
             string.append("{\n")
             for (index, (key, node)) in dict.enumerated() {
                 let comma = index == dict.count - 1 ? "" : ","
-                string.append(tabs + "\"\(key)\": " + createString(root: node, tabs: tabs) + "\(comma)\n")
+                string.append(tabs + "\(key.inQuotes): " + createString(root: node, tabs: tabs) + "\(comma)\n")
             }
             tabs = String(tabs.dropLast(1))
             string.append("\(tabs)}")

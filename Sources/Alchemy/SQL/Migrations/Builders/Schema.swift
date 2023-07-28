@@ -2,7 +2,7 @@
 public class Schema {
     /// The grammar for how this schema should construct it's SQL
     /// statements.
-    private let grammar: Grammar
+    private let grammar: SQLGrammar
     
     /// The statements to run to create a table matching this schema.
     var statements: [SQL] = []
@@ -11,7 +11,7 @@ public class Schema {
     ///
     /// - Parameter grammar: The grammar by which this schema will
     ///   construct its SQL statements.
-    init(grammar: Grammar) {
+    init(grammar: SQLGrammar) {
         self.grammar = grammar
     }
     

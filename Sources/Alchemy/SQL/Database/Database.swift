@@ -20,7 +20,7 @@ public final class Database: Service {
 
     /// Functions around compiling SQL statments for this database's
     /// SQL dialect when using the QueryBuilder or Rune.
-    public var dialect: SQLDialect
+    public var dialect: SQLGrammar
 
     /// The provider of this database.
     public let provider: DatabaseProvider
@@ -31,7 +31,7 @@ public final class Database: Service {
     /// Create a database backed by the given provider.
     ///
     /// - Parameter provider: The provider.
-    public init(provider: DatabaseProvider, dialect: SQLDialect) {
+    public init(provider: DatabaseProvider, dialect: SQLGrammar) {
         self.provider = provider
         self.dialect = dialect
     }

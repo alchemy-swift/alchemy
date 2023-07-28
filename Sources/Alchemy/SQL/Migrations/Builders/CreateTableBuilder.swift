@@ -4,8 +4,8 @@ import Foundation
 public class CreateTableBuilder {
     /// The grammar with which this builder will compile SQL
     /// statements.
-    let grammar: Grammar
-    
+    let grammar: SQLGrammar
+
     /// Any indexes that should be created.
     var createIndexes: [CreateIndex] = []
     
@@ -23,7 +23,7 @@ public class CreateTableBuilder {
     ///
     /// - Parameter grammar: The grammar with which this builder will
     ///   compile SQL statements.
-    init(grammar: Grammar) {
+    init(grammar: SQLGrammar) {
         self.grammar = grammar
     }
 }

@@ -104,13 +104,13 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     
     public func response() async throws -> Response {
         let content = try await getContent()
-        return Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\"\(name)\""])
+        return Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\(name.inQuotes)"])
             .withBody(content, type: contentType, length: size)
     }
     
     public func download() async throws -> Response {
         let content = try await getContent()
-        return Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\"\(name)\""])
+        return Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\(name.inQuotes)"])
             .withBody(content, type: contentType, length: size)
     }
     

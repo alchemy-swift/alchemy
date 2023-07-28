@@ -28,7 +28,7 @@ extension Migration {
     ///
     /// - Parameter grammar: The grammar to generate statements with.
     /// - Returns: The statements to run to apply this migration.
-    func upStatements(for grammar: Grammar) -> [SQL] {
+    func upStatements(for grammar: SQLGrammar) -> [SQL] {
         let schema = Schema(grammar: grammar)
         up(schema: schema)
         return schema.statements
@@ -39,7 +39,7 @@ extension Migration {
     ///
     /// - Parameter grammar: The grammar to generate statements with.
     /// - Returns: The statements to run to rollback this migration.
-    func downStatements(for grammar: Grammar) -> [SQL] {
+    func downStatements(for grammar: SQLGrammar) -> [SQL] {
         let schema = Schema(grammar: grammar)
         down(schema: schema)
         return schema.statements
