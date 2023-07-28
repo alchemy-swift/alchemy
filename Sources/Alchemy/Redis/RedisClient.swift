@@ -88,10 +88,9 @@ public struct RedisClient: Service, RediStack.RedisClient {
         port: Int = 6379,
         password: String? = nil,
         database: Int? = nil,
-        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1),
-        tlsConfiguration: TLSConfiguration? = nil
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
     ) -> RedisClient {
-        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize, tlsConfiguration: tlsConfiguration)
+        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize)
     }
     
     /// Convenience initializer for creating a redis client with the
@@ -111,8 +110,7 @@ public struct RedisClient: Service, RediStack.RedisClient {
         _ sockets: Socket...,
         password: String? = nil,
         database: Int? = nil,
-        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1),
-        tlsConfiguration: TLSConfiguration? = nil
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
     ) -> RedisClient {
         return .configuration(
             RedisConnectionPool.Configuration(
@@ -121,8 +119,7 @@ public struct RedisClient: Service, RediStack.RedisClient {
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
                     connectionPassword: password,
-                    connectionDefaultLogger: Log.logger,
-                    tlsConfiguration: tlsConfiguration
+                    connectionDefaultLogger: Log.logger
                 )
             ),
             addresses: sockets
@@ -174,10 +171,16 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     }
 
     func shutdown() async throws {
+        print("ITS TIME TO DIE, REDIS!")
         for pool in poolStorage.values {
             let promise: EventLoopPromise<Void> = pool.eventLoop.makePromise()
-            pool.close(promise: promise)
-            try await promise.futureResult.get()
+            pool.close(promise: promise, logger: Log.logger)
+            do {
+                try await promise.futureResult.get()
+            } catch {
+                print("REDIS SHUTDOWN ERROR: \(error)")
+                throw error
+            }
         }
     }
 

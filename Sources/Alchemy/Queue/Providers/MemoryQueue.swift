@@ -44,7 +44,13 @@ public actor MemoryQueue: QueueProvider {
             try await enqueue(job)
         }
     }
-    
+
+    public func shutdown() {
+        jobs = [:]
+        pending = [:]
+        reserved = [:]
+    }
+
     private func append(id: JobID, on channel: String, dict: inout [String: [JobID]]) {
         var array = dict[channel] ?? []
         array.append(id)

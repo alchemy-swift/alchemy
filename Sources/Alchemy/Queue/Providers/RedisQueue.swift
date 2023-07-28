@@ -11,13 +11,15 @@ struct RedisQueue: QueueProvider {
     private let processingKey = RedisKey("jobs:processing")
     /// All backed off jobs. "job_id" : "backoff:channel"
     private let backoffsKey = RedisKey("jobs:backoffs")
-    
+    /// The repeating task used for monitoring backoffs.
+    private var backoffTask: RepeatedTask?
+
     /// Initialize with a Redis instance to persist jobs to.
     ///
     /// - Parameter redis: The Redis instance.
     init(redis: RedisClient = Redis) {
         self.redis = redis
-        monitorBackoffs()
+        backoffTask = monitorBackoffs()
     }
     
     // MARK: - Queue
@@ -54,16 +56,24 @@ struct RedisQueue: QueueProvider {
             }
         }
     }
-    
+
+    func shutdown() async throws {
+        let promise: EventLoopPromise<Void> = Loop.current.makePromise()
+        backoffTask?.cancel(promise: promise)
+        try await promise.futureResult.get()
+    }
+
     // MARK: - Private Helpers
     
     private func key(for channel: String) -> RedisKey {
         RedisKey("jobs:queue:\(channel)")
     }
     
-    private func monitorBackoffs() {
+    private func monitorBackoffs() -> RepeatedTask {
+        // TODO: This is failing to die on shutdown. Is there an easier way?
+        // TODO: for example, if something should back off, pull the next one, then put the backoff one back.
         let loop = Loop.group.next()
-        loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
+        return loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
             loop.asyncSubmit {
                 let result = try await redis
                     // Get and remove backoffs that can be rerun.

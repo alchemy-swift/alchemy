@@ -16,7 +16,7 @@ public final class Queue: Service {
     /// The ids of any workers associated with this queue and running in this
     /// process.
     public var workers: [String] = []
-    
+
     /// The provider backing this queue.
     let provider: QueueProvider
     
@@ -35,6 +35,10 @@ public final class Queue: Service {
     ///     to `Queue.defaultChannel`.
     public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) async throws {
         try await provider.enqueue(JobData(job, channel: channel))
+    }
+
+    public func shutdown() async throws {
+        try await provider.shutdown()
     }
 }
 

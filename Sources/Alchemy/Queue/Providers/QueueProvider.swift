@@ -15,6 +15,9 @@ public protocol QueueProvider {
     /// (such as `attempts`) already updated when it is passed
     /// to this function.
     func complete(_ job: JobData, outcome: JobOutcome) async throws
+
+    /// Called when the Queue will shut down.
+    func shutdown() async throws
 }
 
 /// An outcome of when a job is run. It should either be flagged as

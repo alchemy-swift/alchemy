@@ -48,6 +48,8 @@ final class DatabaseQueue: QueueProvider {
             _ = try await JobModel(jobData: job).update(db: db)
         }
     }
+
+    func shutdown() {}
 }
 
 extension Queue {

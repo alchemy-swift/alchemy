@@ -40,8 +40,7 @@ extension Database: Configurable {
             redis: [
                 .default: .connection(
                     Env.REDIS_HOST ?? "localhost",
-                    port: Env.REDIS_PORT ?? 6379,
-                    tlsConfiguration: Env.REDIS_ENABLE_TLS ?? false ? .makeClientConfiguration() : nil
+                    port: Env.REDIS_PORT ?? 6379
                 ),
             ]
         )

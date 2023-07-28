@@ -26,7 +26,7 @@ let package = Package(
         .package(url: "https://github.com/alchemy-swift/fusion", .upToNextMinor(from: "0.3.0")),
         .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
         .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
-        .package(url: "https://github.com/alchemy-swift/RediStack.git", branch: "ssl-support-1.2.0"),
+        .package(url: "https://github.com/swift-server/RediStack", branch: "1.5.0"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
     ],
@@ -60,11 +60,8 @@ let package = Package(
 
                 .product(name: "AsyncKit", package: "async-kit"),
                 .product(name: "MySQLNIO", package: "mysql-nio"),
-//                .product(name: "MySQLKit", package: "mysql-kit"),
-//                .product(name: "PostgresKit", package: "postgres-kit"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "SQLiteNIO", package: "sqlite-nio"),
-//                .product(name: "SQLiteKit", package: "sqlite-kit"),
                 .product(name: "RediStack", package: "RediStack"),
 
                 /// Internal dependencies
