@@ -66,7 +66,7 @@ public class Schema {
     /// schema.
     ///
     /// - Parameter sql: The raw SQL string to execute.
-    public func raw(sql: String) {
-        statements.append(SQL(sql, values: []))
+    public func raw(sql: String, parameters: [SQLValue] = []) {
+        statements.append(SQL(sql, parameters: parameters))
     }
 }

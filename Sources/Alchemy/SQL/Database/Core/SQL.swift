@@ -9,27 +9,27 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation {
         }
     }
 
-    /// Initialize with a statement and a list of parameters.
-    public init(_ statement: String, values: [SQLValue]) {
+    /// Initialize with a statement and a list of SQLValues.
+    public init(_ statement: String, parameters: [SQLValue]) {
         self.statement = statement
-        self.parameters = values
+        self.parameters = parameters
     }
 
-    /// Initialize with a statement and a list of parameters. Some of these
-    /// parameters may be SQL expressions themselves and will be inserted
-    /// into the provided statement.
-    public init(_ statement: String, parameters: [SQLConvertible] = []) {
+    /// Initialize with a statement and a list of input parameters. Some of the
+    /// inputs may be SQL expressions themselves (such as `NOW()`) and will
+    /// replace '?'s in the provided statement.
+    public init(_ statement: String, input: [SQLConvertible] = []) {
         // 0. Escape double question marks.
         let questionmark = "___questionmark"
         let escapedStatement = statement.replacingOccurrences(of: "??", with: questionmark)
 
         // 1. Replace question marks with corresponding parameter statement.
         let parts = escapedStatement.components(separatedBy: "?")
-        precondition(parts.count - 1 == parameters.count, "The number of parameters must match the number of '?'s in the statement.")
+        precondition(parts.count - 1 == input.count, "The number of parameters must match the number of '?'s in the statement.")
         var values: [SQLValue] = []
         var statement = ""
-        for (index, parameter) in parameters.enumerated() {
-            let sql = parameter.sql
+        for (index, input) in input.enumerated() {
+            let sql = input.sql
             statement += parts[index]
             statement += sql.statement
             values += sql.parameters
@@ -39,14 +39,21 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation {
 
         // 2. Replace escaped question marks.
         statement = statement.replacingOccurrences(of: questionmark, with: "?")
-        self.init(statement, values: values)
+        self.init(statement, parameters: values)
     }
 
     public init(stringLiteral value: StringLiteralType) {
-        self.init(value, values: [])
+        self.statement = value
+        self.parameters = []
     }
 
     public static func value(_ value: SQLValue) -> SQL {
-        SQL("?", values: [value])
+        SQL("?", parameters: [value])
+    }
+}
+
+extension Array where Element == SQL {
+    public func joined() -> SQL {
+        SQL(map(\.statement).joined(separator: " "), parameters: flatMap(\.parameters))
     }
 }

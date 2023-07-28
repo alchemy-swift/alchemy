@@ -4,10 +4,11 @@ struct SQLiteGrammar: SQLGrammar {
             // If the id is already set, search the database for that. Otherwise
             // assume id is autoincrementing and search for the last rowid.
             let id = fields["id"]
-            let idString = id == nil ? "last_insert_rowid()" : "?"
+            let idPlaceholder = id == nil ? "last_insert_rowid()" : "?"
+            let input = id.map { [$0] } ?? []
             return [
                 insert(table, values: [fields]),
-                SQL("SELECT * FROM \(table) WHERE id = \(idString)", parameters: [id].compactMap { $0 })
+                SQL("SELECT * FROM \(table) WHERE id = \(idPlaceholder)", input: input)
             ]
         }
     }

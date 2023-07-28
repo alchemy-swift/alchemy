@@ -1,4 +1,4 @@
-public struct SQLWhere: Hashable {
+public struct SQLWhere: Hashable, SQLConvertible {
     public enum Boolean: String, Hashable {
         case and
         case or
@@ -46,14 +46,54 @@ public struct SQLWhere: Hashable {
     public let boolean: Boolean
     public let type: WhereType
 
-    static func and(_ type: WhereType) -> SQLWhere {
+    public var sql: SQL {
+        switch type {
+        case .value(let key, let op, let sql):
+            if sql == .null {
+                if op == .notEqualTo {
+                    return SQL("\(boolean) \(key) IS NOT NULL")
+                } else if op == .equals {
+                    return SQL("\(boolean) \(key) IS NULL")
+                } else {
+                    fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
+                }
+            } else {
+                return SQL("\(boolean) \(key) \(op) ?", input: [sql])
+            }
+        case .column(let first, let op, let second):
+            return SQL("\(boolean) \(first) \(op) \(second)")
+        case .nested(let wheres):
+            let nestedSQL = wheres.joined()
+            return SQL("\(boolean) (\(nestedSQL.statement))", parameters: nestedSQL.parameters)
+        case .in(let key, let expressions):
+            let placeholders = Array(repeating: "?", count: expressions.count).joined(separator: ", ")
+            return SQL("\(boolean) \(key) IN (\(placeholders))", input: expressions)
+        case .notIn(let key, let expressions):
+            let placeholders = Array(repeating: "?", count: expressions.count).joined(separator: ", ")
+            return SQL("\(boolean) \(key) NOT IN (\(placeholders))", input: expressions)
+        case .raw(let sql):
+            return SQL("\(boolean) \(sql.statement)", parameters: sql.parameters)
+        }
+    }
+
+    public static func and(_ type: WhereType) -> SQLWhere {
         SQLWhere(boolean: .and, type: type)
     }
 
-    static func or(_ type: WhereType) -> SQLWhere {
+    public static func or(_ type: WhereType) -> SQLWhere {
         SQLWhere(boolean: .or, type: type)
     }
 }
+
+extension Array where Element == SQLWhere {
+    public func joined() -> SQL {
+        let sql = map(\.sql).joined()
+        // drop the leading boolean
+        let statement = sql.statement.components(separatedBy: " ").dropFirst().joined(separator: " ")
+        return SQL(statement, parameters: sql.parameters)
+    }
+}
+
 
 // MARK: - Where Operators
 
@@ -222,12 +262,12 @@ extension Query {
     ///
     /// - Parameters:
     ///   - sql: A string representing the SQL where clause to be run.
-    ///   - parameters: Any variables for binding in the SQL.
+    ///   - input: Any variables for binding in the SQL.
     ///   - boolean: How the clause should be appended (`.and` or
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereRaw(_ sql: String, parameters: [SQLConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
+    public func whereRaw(_ sql: String, parameters: [SQLValue], boolean: SQLWhere.Boolean = .and) -> Self {
         `where`(SQLWhere(boolean: boolean, type: .raw(SQL(sql, parameters: parameters))))
     }
 
@@ -238,7 +278,7 @@ extension Query {
     ///   - parameters: Any variables for binding in the SQL.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereRaw(_ sql: String, parameters: [SQLConvertible]) -> Self {
+    public func orWhereRaw(_ sql: String, parameters: [SQLValue]) -> Self {
         whereRaw(sql, parameters: parameters, boolean: .or)
     }
 

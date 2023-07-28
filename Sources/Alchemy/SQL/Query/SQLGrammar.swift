@@ -83,7 +83,7 @@ extension SQLGrammar {
             compileLimit(limit),
             compileOffset(offset),
             compileLock(lock)
-        ].compactMap { $0 }.joinedSQL()
+        ].compactMap { $0 }.joined()
     }
 
     public func compileJoins(_ joins: [SQLJoin]) -> SQL? {
@@ -91,7 +91,7 @@ extension SQLGrammar {
             return nil
         }
 
-        var parameters: [SQLConvertible] = []
+        var parameters: [SQLValue] = []
         let query = joins.compactMap { join -> String? in
             guard let whereSQL = compileWheres(join.wheres, isJoin: true) else {
                 return nil
@@ -111,8 +111,8 @@ extension SQLGrammar {
         }
 
         let conjunction = isJoin ? "ON" : "WHERE"
-        let sql = wheres.joinedSQL().droppingLeadingBoolean()
-        return SQL("\(conjunction) \(sql.statement)", values: sql.parameters)
+        let sql = wheres.joined()
+        return SQL("\(conjunction) \(sql.statement)", parameters: sql.parameters)
     }
 
     public func compileGroups(_ groups: [String]) -> SQL? {
@@ -128,7 +128,7 @@ extension SQLGrammar {
             return nil
         }
 
-        let sql = havings.joinedSQL().droppingLeadingBoolean()
+        let sql = havings.joined()
         return SQL("HAVING \(sql.statement)", parameters: sql.parameters)
     }
 
@@ -182,17 +182,17 @@ extension SQLGrammar {
         }
 
         let columns = values[0].map { $0.key }
-        var parameters: [SQLConvertible] = []
+        var input: [SQLConvertible] = []
         var placeholders: [String] = []
 
         for value in values {
             let orderedValues = columns.compactMap { value[$0]?.sql }
-            parameters.append(contentsOf: orderedValues)
+            input.append(contentsOf: orderedValues)
             placeholders.append("(\(parameterize(orderedValues)))")
         }
 
         let columnsJoined = columns.joined(separator: ", ")
-        return SQL("INSERT INTO \(table) (\(columnsJoined)) VALUES \(placeholders.joined(separator: ", "))", parameters: parameters)
+        return SQL("INSERT INTO \(table) (\(columnsJoined)) VALUES \(placeholders.joined(separator: ", "))", input: input)
     }
 
     public func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL] {
@@ -204,19 +204,15 @@ extension SQLGrammar {
                        joins: [SQLJoin],
                        wheres: [SQLWhere],
                        fields: [String: SQLConvertible]) -> SQL {
-        var parameters: [SQLConvertible] = []
-        let columnStatements: [SQL] = fields.map {
-            SQL("\($0) = ?", parameters: [$1.sql])
-        }
-
-        let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), parameters: columnStatements.flatMap(\.parameters))
-
+        var parameters: [SQLValue] = []
         var base = "UPDATE \(table)"
         if let joinSQL = compileJoins(joins) {
             parameters += joinSQL.parameters
             base += " \(joinSQL)"
         }
 
+        let columnStatements = fields.map { SQL("\($0) = ?", input: [$1.sql]) }
+        let columnSQL = SQL(columnStatements.map(\.statement).joined(separator: ", "), parameters: columnStatements.flatMap(\.parameters))
         parameters += columnSQL.parameters
         base += " SET \(columnSQL.statement)"
 
@@ -394,57 +390,5 @@ extension SQLGrammar {
 
     public func jsonLiteral(for jsonString: String) -> String {
         "'\(jsonString)'::jsonb"
-    }
-}
-
-extension SQLWhere {
-    public var sql: SQL {
-        switch type {
-        case .value(let key, let op, let value):
-            if value == .null {
-                if op == .notEqualTo {
-                    return SQL("\(boolean) \(key) IS NOT NULL")
-                } else if op == .equals {
-                    return SQL("\(boolean) \(key) IS NULL")
-                } else {
-                    fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
-                }
-            } else {
-                return SQL("\(boolean) \(key) \(op) ?", parameters: [value])
-            }
-        case .column(let first, let op, let second):
-            return SQL("\(boolean) \(first) \(op) \(second)")
-        case .nested(let wheres):
-            let nestedSQL = wheres.joinedSQL().droppingLeadingBoolean()
-            return SQL("\(boolean) (\(nestedSQL.statement))", parameters: nestedSQL.parameters)
-        case .in(let key, let values):
-            let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) IN (\(placeholders))", parameters: values)
-        case .notIn(let key, let values):
-            let placeholders = Array(repeating: "?", count: values.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) NOT IN (\(placeholders))", parameters: values)
-        case .raw(let sql):
-            return SQL("\(boolean) \(sql.statement)", parameters: sql.parameters)
-        }
-    }
-}
-
-extension Array where Element == SQL {
-    func joinedSQL() -> SQL {
-        return SQL(map(\.statement).joined(separator: " "), parameters: flatMap(\.parameters))
-    }
-}
-
-extension Array where Element == SQLWhere {
-    func joinedSQL() -> SQL {
-        let statements = map(\.sql)
-        return SQL(statements.map(\.statement).joined(separator: " "), parameters: statements.flatMap(\.parameters))
-    }
-}
-
-extension SQL {
-    func droppingLeadingBoolean() -> SQL {
-        // TODO: This shouldn't be case sensitive.
-        SQL(statement.droppingPrefix("AND ").droppingPrefix("OR "), values: parameters)
     }
 }
