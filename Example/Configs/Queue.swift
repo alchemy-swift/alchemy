@@ -10,7 +10,7 @@ extension Queue: Configurable {
         
         queues: [
             .default: .database,
-            .redis: .redis,
+//            .redis: .redis,
             .memory: .memory,
         ],
         

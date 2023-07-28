@@ -119,9 +119,9 @@ extension Queue {
     /// A Migration for the table used by DatabaseQueue to store jobs.
     public struct AddJobsMigration: Migration {
         public init() {}
-        
-        public func up(schema: Schema) {
-            schema.create(table: "jobs") {
+
+        public func up(db: Database) async throws {
+            try await db.create(table: "jobs") {
                 $0.string("id").primary()
                 $0.string("job_name").notNull()
                 $0.string("channel").notNull()
@@ -136,9 +136,9 @@ extension Queue {
                 $0.timestamps()
             }
         }
-        
-        public func down(schema: Schema) {
-            schema.drop(table: "jobs")
+
+        public func down(db: Database) async throws {
+            try await db.drop(table: "jobs")
         }
     }
 }

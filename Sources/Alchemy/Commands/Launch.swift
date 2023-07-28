@@ -11,8 +11,11 @@ struct Launch: ParsableCommand {
                 // Running
                 RunServe.self,
                 RunMigrate.self,
+                RunRollback.self,
+                RunReset.self,
+                RunRefresh.self,
                 RunWorker.self,
-                
+
                 // Database
                 SeedDatabase.self,
                 

@@ -1,13 +1,13 @@
 import Alchemy
 
 struct CreateApplications: Migration {
-    func up(schema: Schema) {
-        schema.create(table: "applications") {
+    func up(db: Database) async throws {
+        try await db.create(table: "applications") {
             $0.increments("id")
         }
     }
     
-    func down(schema: Schema) {
-        schema.drop(table: "applications")
+    func down(db: Database) async throws {
+        try await db.drop(table: "applications")
     }
 }

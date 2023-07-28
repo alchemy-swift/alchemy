@@ -26,6 +26,6 @@ extension Database {
     }
 
     public static func mysql(configuration: MySQLConfiguration) -> Database {
-        Database(provider: MySQLDatabaseProvider(configuration: configuration), dialect: MySQLGrammar())
+        Database(provider: MySQLDatabaseProvider(configuration: configuration), grammar: MySQLGrammar())
     }
 }

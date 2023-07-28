@@ -16,7 +16,7 @@ public struct Log {
     /// The logger to which all logs will be logged. By default it's a
     /// logger with label `Alchemy`.
     public static var logger = Logger(label: "Alchemy")
-    
+
     /// Log a message with the `Logger.Level.trace` log level.
     ///
     /// - Parameters:

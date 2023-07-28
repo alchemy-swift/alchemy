@@ -29,8 +29,8 @@ struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model {
 public struct AddMessagesMigration: Migration {
     public init() {}
 
-    public func up(schema: Schema) {
-        schema.create(table: "messages") {
+    public func up(db: Database) async throws {
+        try await db.create(table: "messages") {
             $0.increments("id").primary()
             $0.string("channel").notNull()
             $0.json("message").notNull()
@@ -39,7 +39,7 @@ public struct AddMessagesMigration: Migration {
         }
     }
 
-    public func down(schema: Schema) {
-        schema.drop(table: "messages")
+    public func down(db: Database) async throws {
+        try await db.drop(table: "messages")
     }
 }

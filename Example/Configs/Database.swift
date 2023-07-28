@@ -5,19 +5,23 @@ extension Database: Configurable {
     /// Configurations related to your app's databases.
     
     public static var config: Config {
-        Config(
-            
+        let sqlite: Database = .sqlite(path: "../test.db").log()
+        let postgres: Database = .postgres(
+            host: Env.DB_HOST ?? "localhost",
+            port: Env.DB_PORT ?? 5432,
+            database: Env.DB ?? "alchemy",
+            username: Env.DB_USER ?? "josh",
+            password: Env.DB_PASSWORD ?? "password",
+            enableSSL: Env.DB_ENABLE_SSL ?? false
+        ).log()
+
+        return Config(
+
             /// Define your databases here
             
             databases: [
-                .default: Env.isTest ? .sqlite : .postgres(
-                    host: Env.DB_HOST ?? "localhost",
-                    port: Env.DB_PORT ?? 5432,
-                    database: Env.DB ?? "alchemy",
-                    username: Env.DB_USER ?? "josh",
-                    password: Env.DB_PASSWORD ?? "password",
-                    enableSSL: Env.DB_ENABLE_SSL ?? false
-                ).log(),
+                .default: Env.isTest ? .sqlite : sqlite,
+                "sqlite": .sqlite
             ],
             
             /// Migrations for your app

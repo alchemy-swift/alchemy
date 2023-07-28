@@ -50,6 +50,11 @@ public enum SQLValue: Hashable, CustomStringConvertible {
 
     // MARK: Coercion
 
+    /// Detect if this value is null.
+    public func isNull() -> Bool {
+        self == .null
+    }
+
     /// Coerce this value to an `Int` or throw an error.
     public func int(_ columnName: String? = nil) throws -> Int {
         switch self {
@@ -123,7 +128,12 @@ public enum SQLValue: Hashable, CustomStringConvertible {
     /// Coerce this value to a `Date` or throw an error.
     public func date(_ columnName: String? = nil) throws -> Date {
         struct Formatters {
-            static let iso8601DateFormatter = ISO8601DateFormatter()
+            static let iso8601DateFormatter: ISO8601DateFormatter = {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                return formatter
+            }()
+
             static let simpleFormatter: DateFormatter = {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
@@ -187,8 +197,8 @@ public enum SQLValue: Hashable, CustomStringConvertible {
     }
 
     private func nullError(_ columnName: String? = nil) -> Error {
-        let desc = columnName.map { "column `\($0)`" } ?? "SQLValue"
-        return DatabaseError("Expected \(desc) to have a value but it was `nil`.")
+        let desc = columnName.map { "`\($0)`" } ?? "column"
+        return DatabaseError("Expected value at \(desc) to have a value but it was `nil`.")
     }
 
     private func typeError(_ typeName: String, columnName: String? = nil) -> Error {

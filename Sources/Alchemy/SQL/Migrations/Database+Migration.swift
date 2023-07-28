@@ -2,101 +2,143 @@ import Foundation
 import NIO
 
 extension Database {
+    /// Represents a table for storing migration data. Alchemy will use
+    /// this table for keeping track of the various batches of
+    /// migrations that have been run.
+    private struct AppliedMigration: Model {
+        /// A migration for adding the `AlchemyMigration` table.
+        struct Migration: Alchemy.Migration {
+            func up(db: Database) async throws {
+                try await db.create(table: table, ifNotExists: true) {
+                    $0.increments("id").primary()
+                    $0.string("name").notNull()
+                    $0.int("batch").notNull()
+                    $0.date("run_at").notNull()
+                }
+            }
+
+            func down(db: Database) async throws {
+                try await db.drop(table: table)
+            }
+        }
+
+        static let table = "migrations"
+
+        /// Serial primary key.
+        var id: PK<Int> = .new
+
+        /// The name of the migration.
+        let name: String
+
+        /// The batch this migration was run as a part of.
+        let batch: Int
+
+        /// The timestamp when this migration was run.
+        let runAt: Date?
+    }
+
     /// Applies all outstanding migrations to the database in a single
     /// batch. Migrations are read from `database.migrations`.
     public func migrate() async throws {
-        let alreadyMigrated = try await getMigrations()
-        
-        let currentBatch = alreadyMigrated.map(\.batch).max() ?? 0
-        let migrationsToRun = migrations.filter { pendingMigration in
-            !alreadyMigrated.contains(where: { $0.name == pendingMigration.name })
+        let applied = try await getAppliedMigrations()
+        let toApply = migrations.filter { pendingMigration in
+            !applied.contains(where: { $0.name == pendingMigration.name })
         }
         
-        if migrationsToRun.isEmpty {
-            Log.info("[Migration] no new migrations to apply.")
-        } else {
-            Log.info("[Migration] applying \(migrationsToRun.count) migrations.")
-        }
-        
-        try await upMigrations(migrationsToRun, batch: currentBatch + 1)
+        try await migrate(toApply)
     }
-    
+
+    /// Rolls back all migrations from all batches.
+    public func reset() async throws {
+        let names = try await getAppliedMigrations().map(\.name)
+        let migrations = Array(migrations.filter { names.contains($0.name) }.reversed())
+        try await rollback(migrations)
+    }
+
     /// Rolls back the latest migration batch.
-    public func rollbackMigrations() async throws {
-        let alreadyMigrated = try await getMigrations()
-        guard let latestBatch = alreadyMigrated.map({ $0.batch }).max() else {
-            return
-        }
-        
-        let namesToRollback = alreadyMigrated.filter { $0.batch == latestBatch }.map(\.name)
-        let migrationsToRollback = migrations.filter { namesToRollback.contains($0.name) }
-        
-        if migrationsToRollback.isEmpty {
-            Log.info("[Migration] no migrations to roll back.")
-        } else {
-            Log.info("[Migration] rolling back the \(migrationsToRollback.count) migrations from the last batch.")
-        }
-        
-        try await downMigrations(migrationsToRollback)
+    public func rollback() async throws {
+        let batch = try await getLastBatch()
+        let names = try await getAppliedMigrations(batch: batch).map(\.name)
+        let migrations = Array(migrations.filter { names.contains($0.name) }.reversed())
+        try await rollback(migrations)
     }
-    
-    /// Gets any existing migrations. Creates the migration table if
-    /// it doesn't already exist.
-    ///
-    /// - Returns: The migrations that are applied to this database.
-    private func getMigrations() async throws -> [AlchemyMigration] {
-        let count: Int
-        if provider is PostgresDatabaseProvider || provider is MySQLDatabaseProvider {
-            count = try await table("information_schema.tables").where("table_name" == AlchemyMigration.table).count()
-        } else {
-            count = try await table("sqlite_master")
-                .where("type" == "table")
-                .where(.and(.value(key: "name", op: .notLike, value: .value(.string("sqlite_%")))))
-                .count()
-        }
-        
-        if count == 0 {
-            Log.info("[Migration] creating '\(AlchemyMigration.table)' table.")
-            let statements = AlchemyMigration.Migration().upStatements(for: dialect)
-            try await runStatements(statements: statements)
-        }
-        
-        return try await AlchemyMigration.query(db: self).all()
-    }
-    
-    /// Run the `.down` functions of an array of migrations, in order.
-    ///
-    /// - Parameter migrations: The migrations to rollback on this
-    ///   database.
-    private func downMigrations(_ migrations: [Migration]) async throws {
-        for m in migrations.sorted(by: { $0.name > $1.name }) {
-            let statements = m.downStatements(for: dialect)
-            try await runStatements(statements: statements)
-            try await AlchemyMigration.query(db: self).where("name" == m.name).delete()
-        }
-    }
-    
+
     /// Run the `.up` functions of an array of migrations in order.
     ///
     /// - Parameters:
     ///   - migrations: The migrations to apply to this database.
-    ///   - batch: The migration batch of these migrations. Based on
-    ///     any existing batches that have been applied on the
-    ///     database.
-    private func upMigrations(_ migrations: [Migration], batch: Int) async throws {
+    public func migrate(_ migrations: [Migration]) async throws {
+        guard !migrations.isEmpty else {
+            Log.info("Nothing to migrate.".green)
+            return
+        }
+
+        let lastBatch = try await getLastBatch()
         for m in migrations {
-            let statements = m.upStatements(for: dialect)
-            try await runStatements(statements: statements)
-            _ = try await AlchemyMigration(name: m.name, batch: batch, runAt: Date()).save(db: self)
+            let start = Date()
+            Log.info("Migrating: ".yellow + m.name)
+            try await m.up(db: self)
+            try await AppliedMigration(name: m.name, batch: lastBatch + 1, runAt: Date()).insert(db: self)
+            Log.info("Migrated: ".green + m.name + " (\(start.elapsedString))")
         }
     }
-    
-    /// Consecutively run a list of SQL statements on this database.
+
+    /// Run the `.down` functions of an array of migrations, in order.
     ///
-    /// - Parameter statements: The statements to consecutively run.
-    private func runStatements(statements: [SQL]) async throws {
-        for statement in statements {
-            _ = try await query(statement.statement, parameters: statement.parameters)
+    /// - Parameter migrations: The migrations to rollback on this
+    ///   database.
+    public func rollback(_ migrations: [Migration]) async throws {
+        guard !migrations.isEmpty else {
+            Log.info("Nothing to rollback.".green)
+            return
         }
+
+        for m in migrations {
+            let start = Date()
+            Log.info("Rollbacking: ".yellow + m.name)
+            try await m.down(db: self)
+            try await AppliedMigration.delete("name" == m.name)
+            Log.info("Rollbacked: ".green + m.name + " (\(start.elapsedString))")
+        }
+    }
+
+    private func getLastBatch() async throws -> Int {
+        let row = try await table(AppliedMigration.table).select(["MAX(batch)"]).first
+        guard let value = row?.fields.first?.value else {
+            return 0
+        }
+
+        return try value.isNull() ? 0 : value.int()
+    }
+
+    /// Gets any existing migrations. Creates the migration table if
+    /// it doesn't already exist.
+    ///
+    /// - Parameters
+    ///   - batch: An optional batch to get the specific migrations of.
+    /// - Returns: The migrations that are applied to this database.
+    private func getAppliedMigrations(batch: Int? = nil) async throws -> [AppliedMigration] {
+        if try await !hasTable(AppliedMigration.table) {
+            try await AppliedMigration.Migration().up(db: self)
+            Log.info("Migration table created successfully.".green)
+        }
+
+        var query = table(AppliedMigration.self)
+        if let batch {
+            query = query.where("batch" == batch)
+        }
+
+        return try await query.all()
+    }
+}
+
+extension Date {
+    var elapsedString: String {
+        let elapsedms = Date().timeIntervalSince(self) * 1_000
+        let string = "\(elapsedms)"
+        let components = string.components(separatedBy: ".")
+        let whole = components[0]
+        let fraction = components[safe: 1].map { $0.prefix(2) } ?? ""
+        return "\(whole).\(fraction)ms"
     }
 }

@@ -10,7 +10,7 @@ struct MySQLGrammar: SQLGrammar {
         ]}
     }
 
-    func compileDropIndex(on table: String, indexName: String) -> SQL {
+    func dropIndex(on table: String, indexName: String) -> SQL {
         "DROP INDEX \(indexName) ON \(table)"
     }
 

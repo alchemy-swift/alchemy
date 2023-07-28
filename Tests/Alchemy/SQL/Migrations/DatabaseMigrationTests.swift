@@ -8,12 +8,12 @@ final class DatabaseMigrationTests: TestCase<TestApp> {
         try await db.rollbackMigrations()
         db.migrations = [MigrationA()]
         try await db.migrate()
-        AssertEqual(try await AlchemyMigration.all().count, 1)
+        AssertEqual(try await MigrationModel.all().count, 1)
         db.migrations.append(MigrationB())
         try await db.migrate()
-        AssertEqual(try await AlchemyMigration.all().count, 2)
+        AssertEqual(try await MigrationModel.all().count, 2)
         try await db.rollbackMigrations()
-        AssertEqual(try await AlchemyMigration.all().count, 1)
+        AssertEqual(try await MigrationModel.all().count, 1)
     }
 }
 

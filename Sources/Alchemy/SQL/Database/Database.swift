@@ -20,7 +20,7 @@ public final class Database: Service {
 
     /// Functions around compiling SQL statments for this database's
     /// SQL dialect when using the QueryBuilder or Rune.
-    public var dialect: SQLGrammar
+    public var grammar: SQLGrammar
 
     /// The provider of this database.
     public let provider: DatabaseProvider
@@ -31,9 +31,9 @@ public final class Database: Service {
     /// Create a database backed by the given provider.
     ///
     /// - Parameter provider: The provider.
-    public init(provider: DatabaseProvider, dialect: SQLGrammar) {
+    public init(provider: DatabaseProvider, grammar: SQLGrammar) {
         self.provider = provider
-        self.dialect = dialect
+        self.grammar = grammar
     }
 
     /// Log all executed queries to the `debug` level.
@@ -89,7 +89,7 @@ public final class Database: Service {
     /// - Returns: The return value of the transaction.
     public func transaction<T>(_ action: @escaping (Database) async throws -> T) async throws -> T {
         try await provider.transaction {
-            try await action(Database(provider: $0, dialect: self.dialect))
+            try await action(Database(provider: $0, grammar: self.grammar))
         }
     }
     

@@ -82,7 +82,7 @@ public class Query<Result: QueryResult> {
             self.columns = columns
         }
 
-        let sql = db.dialect.select(isDistinct: isDistinct,
+        let sql = db.grammar.select(isDistinct: isDistinct,
                                     columns: self.columns,
                                     table: table,
                                     joins: joins,
@@ -126,7 +126,7 @@ public class Query<Result: QueryResult> {
             return
         }
 
-        let sql = db.dialect.insert(table, values: values)
+        let sql = db.grammar.insert(table, values: values)
         try await db.query(sql: sql, log: shouldLog)
     }
 
@@ -144,7 +144,7 @@ public class Query<Result: QueryResult> {
             return []
         }
 
-        let statements = db.dialect.insertReturn(table, values: values)
+        let statements = db.grammar.insertReturn(table, values: values)
         let shouldLog = shouldLog
         return try await db.transaction { conn in
             var toReturn: [SQLRow] = []
@@ -178,13 +178,13 @@ public class Query<Result: QueryResult> {
             return
         }
 
-        let sql = db.dialect.update(table: table, joins: joins, wheres: wheres, fields: fields)
+        let sql = db.grammar.update(table: table, joins: joins, wheres: wheres, fields: fields)
         try await db.query(sql: sql, log: shouldLog)
     }
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
-        let sql = db.dialect.delete(table, wheres: wheres)
+        let sql = db.grammar.delete(table, wheres: wheres)
         try await db.query(sql: sql, log: shouldLog)
     }
 }
@@ -223,7 +223,7 @@ extension Database {
     }
 
     @discardableResult
-    fileprivate func query(sql: SQL, log: Bool) async throws -> [SQLRow] {
+    func query(sql: SQL, log: Bool = false) async throws -> [SQLRow] {
         if log || shouldLog {
             let bindsString = sql.parameters.isEmpty ? "" : " \(sql.parameters)"
             Log.info("\(sql.statement);\(bindsString)")

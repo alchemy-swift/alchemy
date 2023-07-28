@@ -19,6 +19,26 @@ struct SQLiteGrammar: SQLGrammar {
         return nil
     }
 
+    func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
+        guard !addColumns.isEmpty else { return [] }
+
+        // SQLite ALTER TABLE can't drop columns or add constraints. It also only supports adding one column per statement.
+        let statements = addColumns.map(createColumnString)
+            .map { "ADD COLUMN \($0.definition)" }
+            .joined(separator: ",\n    ")
+
+        return [
+            """
+            ALTER TABLE \(table)
+                \(statements)
+            """
+        ]
+    }
+
+    func hasTable(_ table: String) -> SQL {
+        SQL("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", parameters: [table])
+    }
+
     func columnTypeString(for type: ColumnType) -> String {
         switch type {
         case .bool:
@@ -65,21 +85,5 @@ struct SQLiteGrammar: SQLGrammar {
 
     func jsonLiteral(for jsonString: String) -> String {
         "'\(jsonString)'"
-    }
-
-    func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
-        guard !addColumns.isEmpty else { return [] }
-
-        // SQLite ALTER TABLE can't drop columns or add constraints. It also only supports adding one column per statement.
-        let statements = addColumns.map(createColumnString)
-            .map { "ADD COLUMN \($0.definition)" }
-            .joined(separator: ",\n    ")
-
-        return [
-            """
-            ALTER TABLE \(table)
-                \(statements)
-            """
-        ]
     }
 }

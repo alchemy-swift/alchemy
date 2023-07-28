@@ -13,6 +13,10 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
         pool = EventLoopGroupConnectionPool(source: configuration, on: Loop.group)
     }
 
+    // This is so EventLoopGroupConnectionPool won't crash if a database is
+    // deallocated without calling shutdown first.
+    deinit { pool.shutdown() }
+
     // MARK: Database
     
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {

@@ -8,7 +8,11 @@ extension SQLiteData: SQLValueConvertible {
     ///   initialized with the best corresponding type.
     init(_ value: SQLValue) {
         struct Formatters {
-            static let iso8601DateFormatter = ISO8601DateFormatter()
+            static let iso8601DateFormatter: ISO8601DateFormatter = {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                return formatter
+            }()
         }
 
         switch value {

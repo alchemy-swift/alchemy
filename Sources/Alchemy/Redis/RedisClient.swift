@@ -171,14 +171,12 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     }
 
     func shutdown() async throws {
-        print("ITS TIME TO DIE, REDIS!")
         for pool in poolStorage.values {
             let promise: EventLoopPromise<Void> = pool.eventLoop.makePromise()
             pool.close(promise: promise, logger: Log.logger)
             do {
                 try await promise.futureResult.get()
             } catch {
-                print("REDIS SHUTDOWN ERROR: \(error)")
                 throw error
             }
         }

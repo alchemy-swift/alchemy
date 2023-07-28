@@ -25,31 +25,34 @@ public protocol SQLGrammar {
     func compileOffset(_ offset: Int?) -> SQL?
     func compileLock(_ lock: SQLLock?) -> SQL?
 
-    // MARK: Insert
+    // MARK: INSERT
 
     func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL
     func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL]
 
-    // MARK: Update
+    // MARK: UPDATE
 
     func update(table: String,
                 joins: [SQLJoin],
                 wheres: [SQLWhere],
                 fields: [String: SQLConvertible]) -> SQL
 
-    // MARK: Delete
+    // MARK: DELETE
 
     func delete(_ table: String, wheres: [SQLWhere]) -> SQL
 
     // MARK: Schema
 
-    func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL
-    func compileRenameTable(_ table: String, to: String) -> SQL
-    func compileDropTable(_ table: String) -> SQL
-    func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL]
-    func compileRenameColumn(on table: String, column: String, to: String) -> SQL
-    func compileCreateIndexes(on table: String, indexes: [CreateIndex]) -> [SQL]
-    func compileDropIndex(on table: String, indexName: String) -> SQL
+    func createTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL
+    func renameTable(_ table: String, to: String) -> SQL
+    func dropTable(_ table: String) -> SQL
+    func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL]
+    func renameColumn(on table: String, column: String, to: String) -> SQL
+    func createIndexes(on table: String, indexes: [CreateIndex]) -> [SQL]
+    func dropIndex(on table: String, indexName: String) -> SQL
+    func hasTable(_ table: String) -> SQL
+
+    // MARK: Misc
 
     func columnTypeString(for type: ColumnType) -> String
     func createColumnString(for column: CreateColumn) -> (definition: String, constraints: [String])
@@ -60,6 +63,9 @@ public protocol SQLGrammar {
 // MARK: - Defaults
 
 extension SQLGrammar {
+
+    // MARK: SELECT
+
     public func select(isDistinct: Bool,
                        columns: [String],
                        table: String,
@@ -176,6 +182,8 @@ extension SQLGrammar {
         return SQL(string)
     }
 
+    // MARK: INSERT
+
     public func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL {
         guard !values.isEmpty else {
             return SQL("INSERT INTO \(table) DEFAULT VALUES")
@@ -199,6 +207,8 @@ extension SQLGrammar {
         let insert = insert(table, values: values)
         return [SQL("\(insert.statement) RETURNING *", parameters: insert.parameters)]
     }
+
+    // MARK: UPDATE
 
     public func update(table: String,
                        joins: [SQLJoin],
@@ -224,6 +234,8 @@ extension SQLGrammar {
         return SQL(base, parameters: parameters)
     }
 
+    // MARK: DELETE
+
     public func delete(_ table: String, wheres: [SQLWhere]) -> SQL {
         if let whereSQL = compileWheres(wheres) {
             return SQL("DELETE FROM \(table) \(whereSQL.statement)", parameters: whereSQL.parameters)
@@ -236,9 +248,9 @@ extension SQLGrammar {
         Array(repeating: "?", count: values.count).joined(separator: ", ")
     }
 
-    // MARK: - Compiling Migrations
+    // MARK: Schema
 
-    public func compileCreateTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
+    public func createTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL {
         var columnStrings: [String] = []
         var constraintStrings: [String] = []
         for (column, constraints) in columns.map({ createColumnString(for: $0) }) {
@@ -255,15 +267,15 @@ extension SQLGrammar {
         )
     }
 
-    public func compileRenameTable(_ table: String, to: String) -> SQL {
+    public func renameTable(_ table: String, to: String) -> SQL {
         SQL("ALTER TABLE \(table) RENAME TO \(to)")
     }
 
-    public func compileDropTable(_ table: String) -> SQL {
+    public func dropTable(_ table: String) -> SQL {
         SQL("DROP TABLE \(table)")
     }
 
-    public func compileAlterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
+    public func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
         guard !dropColumns.isEmpty || !addColumns.isEmpty else {
             return []
         }
@@ -283,7 +295,7 @@ extension SQLGrammar {
                 """)]
     }
 
-    public func compileRenameColumn(on table: String, column: String, to: String) -> SQL {
+    public func renameColumn(on table: String, column: String, to: String) -> SQL {
         SQL("ALTER TABLE \(table) RENAME COLUMN \(column.inQuotes) TO \(to.inQuotes)")
     }
 
@@ -292,7 +304,7 @@ extension SQLGrammar {
     /// - Parameter table: The name of the table this index will be
     ///   created on.
     /// - Returns: SQL objects for creating these indexes on the given table.
-    public func compileCreateIndexes(on table: String, indexes: [CreateIndex]) -> [SQL] {
+    public func createIndexes(on table: String, indexes: [CreateIndex]) -> [SQL] {
         indexes.map { index in
             let indexType = index.isUnique ? "UNIQUE INDEX" : "INDEX"
             let indexName = index.name(table: table)
@@ -301,8 +313,12 @@ extension SQLGrammar {
         }
     }
 
-    public func compileDropIndex(on table: String, indexName: String) -> SQL {
+    public func dropIndex(on table: String, indexName: String) -> SQL {
         SQL("DROP INDEX \(indexName)")
+    }
+
+    public func hasTable(_ table: String) -> SQL {
+        SQL("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?", parameters: [table])
     }
 
     // MARK: - Misc

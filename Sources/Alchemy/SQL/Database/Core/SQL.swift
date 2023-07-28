@@ -15,6 +15,12 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation {
         self.parameters = parameters
     }
 
+    /// Initialize with a statement and a list of SQLValueConvertibles.
+    public init(_ statement: String, parameters: [SQLValueConvertible]) {
+        self.statement = statement
+        self.parameters = parameters.map(\.sqlValue)
+    }
+
     /// Initialize with a statement and a list of input parameters. Some of the
     /// inputs may be SQL expressions themselves (such as `NOW()`) and will
     /// replace '?'s in the provided statement.
