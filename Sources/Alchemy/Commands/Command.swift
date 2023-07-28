@@ -53,10 +53,7 @@ public protocol Command: ParsableCommand {
     /// indefinitely running work such as starting a queue
     /// worker or running the server.
     static var shutdownAfterRun: Bool { get }
-    
-    /// Should the start and finish of this command be logged. Defaults to true.
-    static var logStartAndFinish: Bool { get }
-    
+
     /// Run the command. Your command's main logic should be here.
     func start() async throws
     
@@ -68,8 +65,7 @@ public protocol Command: ParsableCommand {
 
 extension Command {
     public static var shutdownAfterRun: Bool { true }
-    public static var logStartAndFinish: Bool { true }
-    
+
     /// Registers this command with the application lifecycle.
     public func run() throws {
         registerWithLifecycle()
@@ -87,10 +83,6 @@ extension Command {
             start: .eventLoopFuture {
                 Loop.group.next()
                     .asyncSubmit {
-                        if Self.logStartAndFinish {
-                            Log.info("[Command] running `\(Self.name)`.")
-                        }
-                        
                         try await start()
                     }
                     .map {
@@ -102,10 +94,6 @@ extension Command {
             shutdown: .eventLoopFuture {
                 Loop.group.next()
                     .asyncSubmit {
-                        if Self.logStartAndFinish {
-                            Log.info("[Command] finished `\(Self.name)`.")
-                        }
-                        
                         try await shutdown()
                     }
             }

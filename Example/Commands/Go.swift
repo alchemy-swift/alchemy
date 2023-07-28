@@ -4,8 +4,7 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        let url = URL(string: "https://www.foo.bar/baz/bit")!
-        print(url.lastPathComponent)
+        
     }
 
     func testRelationships() {

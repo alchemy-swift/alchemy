@@ -32,7 +32,7 @@ extension Database {
         let migrationsToRollback = migrations.filter { namesToRollback.contains($0.name) }
         
         if migrationsToRollback.isEmpty {
-            Log.info("[Migration] no migrations roll back.")
+            Log.info("[Migration] no migrations to roll back.")
         } else {
             Log.info("[Migration] rolling back the \(migrationsToRollback.count) migrations from the last batch.")
         }

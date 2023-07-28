@@ -22,7 +22,7 @@ extension Migration {
     public var name: String {
         Alchemy.name(of: Self.self)
     }
-    
+
     /// Returns SQL statements for running the `.up` function of this
     /// migration.
     ///

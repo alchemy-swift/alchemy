@@ -142,9 +142,9 @@ public struct Env: Equatable, ExpressibleByStringLiteral {
             }
         } else if let values = loadDotEnvFile(path: defaultPath) {
             current.dotEnvVariables = values
-            Log.info("[Environment] loaded env from `\(defaultPath)`.")
+            Log.debug("[Environment] loaded env from `\(defaultPath)`.")
         } else {
-            Log.info("[Environment] .env file found.")
+            Log.debug("[Environment] .env file found.")
         }
     }
     

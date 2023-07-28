@@ -10,31 +10,27 @@ struct RunMigrate: Command {
     
     static var logStartAndFinish: Bool = false
     
-    /// Whether migrations should be run or rolled back. If this is
-    /// false (default) then all new migrations will have their
-    /// `.up` functions applied to `Database.default`. If this is
-    /// true, the last batch will be have their `.down`
-    /// functions applied.
-    @Flag(help: "Should migrations be rolled back")
-    var rollback: Bool = false
-    
-    init() {}
-    init(rollback: Bool) {
-        self.rollback = rollback
-    }
-    
-    // MARK: Command
-    
     func start() async throws {
-        if rollback {
-            try await DB.rollbackMigrations()
-        } else {
-            try await DB.migrate()
-        }
+        try await DB.migrate()
     }
     
     func shutdown() async throws {
-        let action = rollback ? "migration rollback" : "migrations"
-        Log.info("[Migration] \(action) finished, shutting down.")
+        Log.info("[Migration] Successfully applied migrations.")
+    }
+}
+
+struct RunMigrateRollback: Command {
+    static var configuration: CommandConfiguration {
+        CommandConfiguration(commandName: "migrate:rollback")
+    }
+
+    static var logStartAndFinish: Bool = false
+
+    func start() async throws {
+        try await DB.rollbackMigrations()
+    }
+
+    func shutdown() async throws {
+        Log.info("[Migration] Successfully rolled back migrations.")
     }
 }
