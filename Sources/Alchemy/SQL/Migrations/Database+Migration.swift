@@ -50,25 +50,12 @@ extension Database {
 
     /// Rolls back all migrations from all batches.
     public func reset() async throws {
-        let names = try await getAppliedMigrations().map(\.name)
-        let migrations = Array(migrations.filter { names.contains($0.name) }.reversed())
-        try await rollback(migrations)
+        try await rollback(getAppliedMigrations().reversed())
     }
 
     /// Rolls back the latest migration batch.
     public func rollback() async throws {
-        let batch = try await getLastBatch()
-        let migrationsByName = migrations.keyed(by: \.name)
-        var migrationsToRollback: [Migration] = []
-        for applied in try await getAppliedMigrations(batch: batch) {
-            guard let migration = migrationsByName[applied.name] else {
-                throw DatabaseError("The latest migration batch contained `\(applied.name)` but there was no matching `Migration` type registered to your Database.")
-            }
-
-            migrationsToRollback.append(migration)
-        }
-
-        try await rollback(migrationsToRollback)
+        try await rollback(getAppliedMigrations(batch: getLastBatch()).reversed())
     }
 
     /// Run the `.up` functions of an array of migrations in order.
@@ -125,7 +112,7 @@ extension Database {
     /// - Parameters
     ///   - batch: An optional batch to get the specific migrations of.
     /// - Returns: The migrations that are applied to this database.
-    private func getAppliedMigrations(batch: Int? = nil) async throws -> [AppliedMigration] {
+    public func getAppliedMigrations(batch: Int? = nil) async throws -> [Migration] {
         if try await !hasTable(AppliedMigration.table) {
             try await AppliedMigration.Migration().up(db: self)
             Log.info("Migration table created successfully.".green)
@@ -136,7 +123,15 @@ extension Database {
             query = query.where("batch" == batch)
         }
 
+        let registeredByName = migrations.keyed(by: \.name)
         return try await query.all()
+            .map { applied in
+                guard let migration = registeredByName[applied.name] else {
+                    throw DatabaseError("The latest migration batch contained `\(applied.name)` but there was no matching `Migration` type registered to your Database.")
+                }
+
+                return migration
+            }
     }
 }
 
