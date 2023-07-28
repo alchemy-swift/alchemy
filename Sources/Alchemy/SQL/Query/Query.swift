@@ -1,8 +1,8 @@
 import Foundation
 import NIO
 
-// An SQL query.
-public class Query<Result: SQLQueryResult> {
+/// An SQL query.
+public class Query<Result: QueryResult> {
     let db: Database
     var shouldLog: Bool = false
 

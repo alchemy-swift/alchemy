@@ -1,8 +1,8 @@
-public protocol SQLQueryResult {
+public protocol QueryResult {
     init(row: SQLRow) throws
 }
 
-extension SQLRow: SQLQueryResult {
+extension SQLRow: QueryResult {
     public init(row: SQLRow) throws {
         self = row
     }

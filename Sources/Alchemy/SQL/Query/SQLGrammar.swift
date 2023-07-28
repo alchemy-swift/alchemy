@@ -144,11 +144,11 @@ extension SQLGrammar {
     }
 
     public func compileLimit(_ limit: Int?) -> SQL? {
-        limit.map { SQL("LIMIT \($0)") }
+        limit.map { "LIMIT \($0)" }
     }
 
     public func compileOffset(_ offset: Int?) -> SQL? {
-        offset.map { SQL("OFFSET \($0)") }
+        offset.map { "OFFSET \($0)" }
     }
 
     public func compileLock(_ lock: SQLLock?) -> SQL? {

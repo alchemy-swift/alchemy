@@ -1,4 +1,4 @@
-/// Represents the schema of a table in a relational database.
+/// Represents the schema in a relational database.
 public class Schema {
     /// The grammar for how this schema should construct it's SQL
     /// statements.

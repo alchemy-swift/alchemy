@@ -8,7 +8,7 @@ public protocol Model: ModelBase, Codable, ModelOrOptional {}
 
 /// The Core Model type, useful if you don't want your model to conform to
 /// Codable.
-public protocol ModelBase: Identifiable, SQLQueryResult {
+public protocol ModelBase: Identifiable, QueryResult {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
 
