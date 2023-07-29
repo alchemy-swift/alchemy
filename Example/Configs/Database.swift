@@ -5,7 +5,7 @@ extension Database: Configurable {
     /// Configurations related to your app's databases.
     
     public static var config: Config {
-        let sqlite: Database = .sqlite(path: "../test.db").log()
+        let sqlite: Database = .sqlite(path: "../test.db")
         let postgres: Database = .postgres(
             host: Env.DB_HOST ?? "localhost",
             port: Env.DB_PORT ?? 5432,
