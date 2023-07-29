@@ -40,11 +40,8 @@ extension Database {
     /// Applies all outstanding migrations to the database in a single
     /// batch. Migrations are read from `database.migrations`.
     public func migrate() async throws {
-        let applied = try await getAppliedMigrations()
-        let toApply = migrations.filter { pendingMigration in
-            !applied.contains(where: { $0.name == pendingMigration.name })
-        }
-        
+        let applied = try await getAppliedMigrations().map(\.name)
+        let toApply = migrations.filter { !applied.contains($0.name) }
         try await migrate(toApply)
     }
 
@@ -55,7 +52,9 @@ extension Database {
 
     /// Rolls back the latest migration batch.
     public func rollback() async throws {
-        try await rollback(getAppliedMigrations(batch: getLastBatch()).reversed())
+        let lastBatch = try await getLastBatch()
+        let migrations = try await getAppliedMigrations(batch: lastBatch, enforceRegistration: true)
+        try await rollback(migrations.reversed())
     }
 
     /// Run the `.up` functions of an array of migrations in order.
@@ -108,11 +107,13 @@ extension Database {
 
     /// Gets any existing migrations in the order that they were applied. This
     /// will create the migration table if it doesn't already exist.
-    ///
-    /// - Parameters
+    /// 
+    /// - Parameters:
     ///   - batch: An optional batch to get the specific migrations of.
+    ///   - enforceRegistration: If true, this function will throw if a
+    ///     migration in your database isn't registered with the app.
     /// - Returns: The migrations that are applied to this database.
-    public func getAppliedMigrations(batch: Int? = nil) async throws -> [Migration] {
+    public func getAppliedMigrations(batch: Int? = nil, enforceRegistration: Bool = false) async throws -> [Migration] {
         if try await !hasTable(AppliedMigration.table) {
             try await AppliedMigration.Migration().up(db: self)
             Log.info("Migration table created successfully.".green)
@@ -125,9 +126,13 @@ extension Database {
 
         let registeredByName = migrations.keyed(by: \.name)
         return try await query.all()
-            .map { applied in
+            .compactMap { applied in
                 guard let migration = registeredByName[applied.name] else {
-                    throw DatabaseError("The latest migration batch contained `\(applied.name)` but there was no matching `Migration` type registered to your Database.")
+                    if enforceRegistration {
+                        throw DatabaseError("The latest migration batch contained `\(applied.name)` but there was no matching `Migration` type registered to your Database.")
+                    } else {
+                        return nil
+                    }
                 }
 
                 return migration
@@ -136,7 +141,7 @@ extension Database {
 }
 
 extension Date {
-    var elapsedString: String {
+    fileprivate var elapsedString: String {
         let elapsedms = Date().timeIntervalSince(self) * 1_000
         let string = "\(elapsedms)"
         let components = string.components(separatedBy: ".")

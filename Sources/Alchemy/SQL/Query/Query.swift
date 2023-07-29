@@ -59,8 +59,7 @@ public class Query<Result: QueryResult> {
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
     public func get(_ columns: [String]? = nil) async throws -> [Result] {
-        let rows = try await select(columns)
-        let results = try rows.map(Result.init)
+        let results = try await select(columns).map(Result.init)
         return try await didLoad(results)
     }
 
