@@ -15,7 +15,7 @@ import Logging
 public struct Log {
     /// The logger to which all logs will be logged. By default it's a
     /// logger with label `Alchemy`.
-    public static var logger = Logger(label: "Alchemy")
+    public static var logger = Logger(label: "Alchemy", factory: { AlchemyLogger(label: $0) })
 
     /// Log a message with the `Logger.Level.trace` log level.
     ///
@@ -85,5 +85,98 @@ public struct Log {
     ///     `[String: Logger.MetadataType]`) to log.
     public static func critical(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
         Log.logger.critical(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    }
+}
+
+fileprivate struct AlchemyLogger: LogHandler {
+    public var logLevel: Logger.Level = .info
+    public var metadataProvider: Logger.MetadataProvider?
+    public var metadata = Logger.Metadata() {
+        didSet {
+            self.prettyMetadata = self.prettify(self.metadata)
+        }
+    }
+
+    private let label: String
+    private var prettyMetadata: String?
+
+    init(label: String, metadataProvider: Logger.MetadataProvider? = LoggingSystem.metadataProvider) {
+        // Clear out the console on boot.
+        print("")
+        self.label = label
+        self.metadataProvider = metadataProvider
+    }
+
+    public func log(level: Logger.Level,
+                    message: Logger.Message,
+                    metadata explicitMetadata: Logger.Metadata?,
+                    source: String,
+                    file: String,
+                    function: String,
+                    line: UInt) {
+        let effectiveMetadata = AlchemyLogger.prepareMetadata(base: self.metadata, provider: self.metadataProvider, explicit: explicitMetadata)
+
+        let prettyMetadata: String?
+        if let effectiveMetadata = effectiveMetadata {
+            prettyMetadata = self.prettify(effectiveMetadata)
+        } else {
+            prettyMetadata = self.prettyMetadata
+        }
+
+        var _level = " \(level) ".uppercased()
+        switch level {
+        case .trace:
+            _level = _level.black.onLightBlue
+        case .debug:
+            _level = _level.black.onWhite
+        case .info:
+            _level = _level.black.onBlue
+        case .notice:
+            _level = _level.black.onGreen
+        case .warning:
+            _level = _level.black.onYellow
+        case .error:
+            _level = _level.black.onLightRed
+        case .critical:
+            _level = _level.red.onBlack
+        }
+
+        let showSource = Env.SHOW_SOURCE == true
+        let source = showSource ? " [\(source)]" : ""
+        print("  \(_level) \(source)\(message)\(prettyMetadata.map { " \($0)" } ?? "") \n")
+    }
+
+    public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {
+        get { metadata[metadataKey] }
+        set { metadata[metadataKey] = newValue }
+    }
+
+    internal static func prepareMetadata(base: Logger.Metadata, provider: Logger.MetadataProvider?, explicit: Logger.Metadata?) -> Logger.Metadata? {
+        var metadata = base
+
+        let provided = provider?.get() ?? [:]
+
+        guard !provided.isEmpty || !((explicit ?? [:]).isEmpty) else {
+            // all per-log-statement values are empty
+            return nil
+        }
+
+        if !provided.isEmpty {
+            metadata.merge(provided, uniquingKeysWith: { _, provided in provided })
+        }
+
+        if let explicit = explicit, !explicit.isEmpty {
+            metadata.merge(explicit, uniquingKeysWith: { _, explicit in explicit })
+        }
+
+        return metadata
+    }
+
+    private func prettify(_ metadata: Logger.Metadata) -> String? {
+        if metadata.isEmpty {
+            return nil
+        } else {
+            return metadata.lazy.sorted(by: { $0.key < $1.key }).map { "\($0)=\($1)" }.joined(separator: " ")
+        }
     }
 }

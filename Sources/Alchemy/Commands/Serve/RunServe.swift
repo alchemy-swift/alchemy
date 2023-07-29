@@ -88,10 +88,13 @@ final class RunServe: Command {
         
         try server.start()
         if let unixSocket = unixSocket {
-            Log.info("[Server] listening on \(unixSocket).")
+            Log.info("Server running on \(unixSocket).")
         } else {
-            Log.info("[Server] listening on \(host):\(port).")
+            let link = "[http://\(host):\(port)]".bold
+            Log.info("Server running on \(link).")
         }
+
+        print("  Press Ctrl+C to stop the server\n".yellow)
     }
     
     func shutdown() throws {
