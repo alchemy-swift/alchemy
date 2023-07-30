@@ -70,11 +70,17 @@ extension Database {
         let lastBatch = try await getLastBatch()
         for m in migrations {
             let start = Date()
-            Log.info("Migrating: ".yellow + m.name)
             try await m.up(db: self)
             try await AppliedMigration(name: m.name, batch: lastBatch + 1, runAt: Date()).insert(db: self)
-            Log.info("Migrated: ".green + m.name + " (\(start.elapsedString))")
+            let time = start.elapsedString
+            let done = "DONE"
+            let dots = dots(message: m.name, info: "\(time) \(done)")
+            Log.comment("  \(m.name.white) \(dots) \(time) \(done.green)  ")
         }
+    }
+
+    private func dots(message: String, info: String) -> String {
+        String(repeating: ".", count: Terminal.columns - message.count - info.count - 6)
     }
 
     /// Run the `.down` functions of an array of migrations, in order.
@@ -89,10 +95,12 @@ extension Database {
 
         for m in migrations {
             let start = Date()
-            Log.info("Rollbacking: ".yellow + m.name)
             try await m.down(db: self)
             try await AppliedMigration.delete("name" == m.name)
-            Log.info("Rollbacked: ".green + m.name + " (\(start.elapsedString))")
+            let time = start.elapsedString
+            let done = "DONE"
+            let dots = dots(message: m.name, info: "\(time) \(done)")
+            Log.comment("  \(m.name.white) \(dots) \(time) \(done.green)  ")
         }
     }
 

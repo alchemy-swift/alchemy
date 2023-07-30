@@ -126,8 +126,6 @@ extension Cache {
     /// forget to apply this to your database before using a
     /// database backed cache.
     public struct AddCacheMigration: Alchemy.Migration {
-        public var name: String { "AddCacheMigration" }
-        
         public init() {}
         
         public func up(db: Database) async throws {

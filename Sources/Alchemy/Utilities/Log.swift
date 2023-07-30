@@ -12,10 +12,42 @@ import Logging
 /// // In Application.boot...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
+
+struct Terminal {
+    static var columns: Int = {
+        let string = try! safeShell("tput cols").trimmingCharacters(in: .whitespacesAndNewlines)
+        return Int(string) ?? 80
+    }()
+
+    @discardableResult // Add to suppress warnings when you don't want/need a result
+    private static func safeShell(_ command: String) throws -> String {
+        let task = Process()
+        let pipe = Pipe()
+
+        task.standardOutput = pipe
+        task.standardError = pipe
+        task.arguments = ["-c", command]
+        task.executableURL = URL(fileURLWithPath: "/bin/bash") //<--updated
+        task.standardInput = nil
+
+        try task.run() //<--updated
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8)!
+
+        return output
+    }
+}
+
 public struct Log {
     /// The logger to which all logs will be logged. By default it's a
     /// logger with label `Alchemy`.
     public static var logger = Logger(label: "Alchemy", factory: { AlchemyLogger(label: $0) })
+    private static var columns: Int?
+
+    public static func comment(_ message: String) {
+        print(message)
+    }
 
     /// Log a message with the `Logger.Level.trace` log level.
     ///

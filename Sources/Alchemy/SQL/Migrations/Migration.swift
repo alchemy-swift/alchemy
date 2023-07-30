@@ -20,6 +20,6 @@ public protocol Migration {
 extension Migration {
     /// The name of this migration.
     public var name: String {
-        Alchemy.name(of: Self.self)
+        KeyMapping.snakeCase.encode(Alchemy.name(of: Self.self))
     }
 }

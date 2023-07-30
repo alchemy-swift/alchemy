@@ -5,7 +5,6 @@ struct App: Application {
     var commands: [Command.Type] = [Go.self]
 
     func boot() {
-        Log.logger.logLevel = .trace
         useAll(LoggingMiddleware())
     }
 }
