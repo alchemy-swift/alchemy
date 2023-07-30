@@ -4,10 +4,8 @@ struct RunRefresh: Command {
     }
 
     func start() async throws {
-        Log.info("Rolling back migrations.")
         try await DB.reset()
         print()
-        Log.info("Running migrations.")
         try await DB.migrate()
         print()
     }

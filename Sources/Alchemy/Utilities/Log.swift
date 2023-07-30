@@ -158,9 +158,9 @@ fileprivate struct AlchemyLogger: LogHandler {
         var _level = " \(level) ".uppercased()
         switch level {
         case .trace:
-            _level = _level.black.onLightBlue
-        case .debug:
             _level = _level.black.onWhite
+        case .debug:
+            _level = _level.black.onCyan
         case .info:
             _level = _level.black.onBlue
         case .notice:
@@ -170,7 +170,7 @@ fileprivate struct AlchemyLogger: LogHandler {
         case .error:
             _level = _level.black.onLightRed
         case .critical:
-            _level = _level.red.onBlack
+            _level = _level.lightRed.onBlack
         }
 
         let showSource = Env.SHOW_SOURCE == true

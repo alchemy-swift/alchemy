@@ -40,6 +40,7 @@ extension Database {
     /// Applies all outstanding migrations to the database in a single
     /// batch. Migrations are read from `database.migrations`.
     public func migrate() async throws {
+        Log.info("Running migrations.")
         let applied = try await getAppliedMigrations().map(\.name)
         let toApply = migrations.filter { !applied.contains($0.name) }
         try await migrate(toApply)
@@ -75,7 +76,7 @@ extension Database {
             let time = start.elapsedString
             let done = "DONE"
             let dots = dots(message: m.name, info: "\(time) \(done)")
-            Log.comment("  \(m.name.white) \(dots) \(time) \(done.green)  ")
+            Log.comment("  \(m.name.white) \(dots.lightBlack) \(time.lightBlack) \(done.green)  ")
         }
     }
 
@@ -93,6 +94,7 @@ extension Database {
             return
         }
 
+        Log.info("Rolling back migrations.")
         for m in migrations {
             let start = Date()
             try await m.down(db: self)
@@ -100,7 +102,7 @@ extension Database {
             let time = start.elapsedString
             let done = "DONE"
             let dots = dots(message: m.name, info: "\(time) \(done)")
-            Log.comment("  \(m.name.white) \(dots) \(time) \(done.green)  ")
+            Log.comment("  \(m.name.white) \(dots.lightBlack) \(time.lightBlack) \(done.green)  ")
         }
     }
 

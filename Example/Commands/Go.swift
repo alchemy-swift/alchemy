@@ -4,7 +4,7 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        
+
     }
 
     func testRelationships() {
