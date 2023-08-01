@@ -10,7 +10,7 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
     public let pool: EventLoopGroupConnectionPool<MySQLConfiguration>
 
     public init(configuration: MySQLConfiguration) {
-        pool = EventLoopGroupConnectionPool(source: configuration, on: Loop.group)
+        pool = EventLoopGroupConnectionPool(source: configuration, on: LoopGroup)
     }
 
     // This is so EventLoopGroupConnectionPool won't crash if a database is
@@ -42,7 +42,7 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
     }
 
     private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
-        try await pool.withConnection(logger: Log.logger, on: Loop.current) {
+        try await pool.withConnection(logger: Log.logger, on: Loop) {
             try await action($0)
         }
     }

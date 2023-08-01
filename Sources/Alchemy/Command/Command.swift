@@ -81,7 +81,7 @@ extension Command {
         lifecycle.register(
             label: Self.configuration.commandName ?? Alchemy.name(of: Self.self),
             start: .eventLoopFuture {
-                Loop.group.next()
+                LoopGroup.next()
                     .asyncSubmit {
                         try await start()
                     }
@@ -92,7 +92,7 @@ extension Command {
                     }
             },
             shutdown: .eventLoopFuture {
-                Loop.group.next()
+                LoopGroup.next()
                     .asyncSubmit {
                         try await shutdown()
                     }

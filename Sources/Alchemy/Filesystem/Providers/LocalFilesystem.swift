@@ -52,9 +52,9 @@ struct LocalFilesystem: FilesystemProvider {
                     byteCount: fileSizeBytes,
                     chunkSize: NonBlockingFileIO.defaultChunkSize,
                     allocator: bufferAllocator,
-                    eventLoop: Loop.current,
+                    eventLoop: Loop,
                     chunkHandler: { chunk in
-                        Loop.current.asyncSubmit { try await writer.write(chunk) }
+                        Loop.asyncSubmit { try await writer.write(chunk) }
                     }
                 ).get()
             },
@@ -73,7 +73,7 @@ struct LocalFilesystem: FilesystemProvider {
         // Stream and write
         var offset: Int64 = 0
         try await content.stream.readAll { buffer in
-            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop.current).get()
+            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop).get()
             offset += Int64(buffer.writerIndex)
         }
         

@@ -8,14 +8,14 @@ extension Queue {
     ///     queue for new work. Defaults to `Queue.defaultPollRate`.
     ///   - eventLoop: The loop this worker will run on. Defaults to
     ///     your apps next available loop.
-    public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool = true, on eventLoop: EventLoop = Loop.group.next()) {
+    public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool = true, on eventLoop: EventLoop = LoopGroup.next()) {
         let worker = eventLoop.queueId
         Log.info("[Queue] starting worker \(worker)")
         workers.append(worker)
         _startWorker(for: channels, pollRate: pollRate, untilEmpty: untilEmpty, on: eventLoop)
     }
     
-    private func _startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool, on eventLoop: EventLoop = Loop.group.next()) {
+    private func _startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool, on eventLoop: EventLoop = LoopGroup.next()) {
         eventLoop.asyncSubmit { try await self.runNext(from: channels, untilEmpty: untilEmpty) }
             .whenComplete { _ in
                 // Run check again in the `pollRate`.

@@ -2,7 +2,7 @@ import NIOCore
 import RediStack
 
 public final class StubRedis: RedisProvider, RediStack.RedisClient {
-    public var eventLoop: EventLoop { Loop.current }
+    public var eventLoop: EventLoop { Loop }
     private var stubs: [String: RESPValue] = [:]
     private var isShutdown = false
     

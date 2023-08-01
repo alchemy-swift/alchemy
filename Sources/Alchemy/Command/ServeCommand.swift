@@ -54,7 +54,7 @@ final class ServeCommand: Command {
             lifecycle.register(
                 label: "Migrate",
                 start: .eventLoopFuture {
-                    Loop.group.next()
+                    LoopGroup.next()
                         .asyncSubmit(DB.migrate)
                 },
                 shutdown: .none
@@ -68,7 +68,7 @@ final class ServeCommand: Command {
             config = config.with(address: .hostname(host, port: port))
         }
         
-        let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(Loop.group))
+        let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(LoopGroup))
         server.router = Routes
         Container.bind(.singleton, value: server)
         

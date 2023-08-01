@@ -4,12 +4,12 @@ extension Plugin where Self == Databases {
     static var databases: Databases {
         let sqlite: Database = .sqlite(path: "../test.db")
         let postgres: Database = .postgres(
-            host: Environment.DB_HOST ?? "localhost",
-            port: Environment.DB_PORT ?? 5432,
-            database: Environment.DB ?? "alchemy",
-            username: Environment.DB_USER ?? "josh",
-            password: Environment.DB_PASSWORD ?? "password",
-            enableSSL: Environment.DB_ENABLE_SSL ?? false
+            host: Env.DB_HOST ?? "localhost",
+            port: Env.DB_PORT ?? 5432,
+            database: Env.DB ?? "alchemy",
+            username: Env.DB_USER ?? "josh",
+            password: Env.DB_PASSWORD ?? "password",
+            enableSSL: Env.DB_ENABLE_SSL ?? false
         ).log()
 
         return Databases(
@@ -40,8 +40,8 @@ extension Plugin where Self == Databases {
 
             redis: [
                 .default: .connection(
-                    Environment.REDIS_HOST ?? "localhost",
-                    port: Environment.REDIS_PORT ?? 6379
+                    Env.REDIS_HOST ?? "localhost",
+                    port: Env.REDIS_PORT ?? 6379
                 ),
             ]
         )

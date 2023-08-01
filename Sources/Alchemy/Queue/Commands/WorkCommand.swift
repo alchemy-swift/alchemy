@@ -73,7 +73,7 @@ extension ServiceLifecycle {
             register(
                 label: "Worker\(worker)",
                 start: .sync {
-                    queue.startWorker(for: channels, on: Loop.group.next())
+                    queue.startWorker(for: channels, on: LoopGroup.next())
                 },
                 shutdown: .none
             )

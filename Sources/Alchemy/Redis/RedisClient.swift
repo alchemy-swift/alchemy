@@ -24,7 +24,7 @@ public struct RedisClient: RediStack.RedisClient, Service {
     // MARK: RediStack.RedisClient
     
     public var eventLoop: EventLoop {
-        Loop.current
+        Loop
     }
     
     public func logging(to logger: Logger) -> RediStack.RedisClient {
@@ -34,7 +34,7 @@ public struct RedisClient: RediStack.RedisClient, Service {
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
         wrapError {
             try provider.getClient()
-                .send(command: command, with: arguments).hop(to: Loop.current)
+                .send(command: command, with: arguments).hop(to: Loop)
         }
     }
     
@@ -187,7 +187,7 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     /// - Returns: A `RedisConnectionPool` associated with the current
     ///   `EventLoop` for sending commands to.
     private func getPool() throws -> RedisConnectionPool {
-        let loop = Loop.current
+        let loop = Loop
         let key = ObjectIdentifier(loop)
         return try poolLock.withLock {
             if let pool = self.poolStorage[key] {
@@ -228,7 +228,7 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     
     // MARK: RediStack.RedisClient
     
-    var eventLoop: EventLoop { Loop.current }
+    var eventLoop: EventLoop { Loop }
     
     func logging(to logger: Logger) -> RediStack.RedisClient {
         self.logger = logger
@@ -249,7 +249,7 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     
     private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         do { return try closure() }
-        catch { return Loop.current.makeFailedFuture(error) }
+        catch { return Loop.makeFailedFuture(error) }
     }
 }
 
@@ -271,6 +271,6 @@ private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLo
     do {
         return try closure()
     } catch {
-        return Loop.current.makeFailedFuture(error)
+        return Loop.makeFailedFuture(error)
     }
 }

@@ -58,7 +58,7 @@ struct RedisQueue: QueueProvider {
     }
 
     func shutdown() async throws {
-        let promise: EventLoopPromise<Void> = Loop.current.makePromise()
+        let promise: EventLoopPromise<Void> = Loop.makePromise()
         backoffTask?.cancel(promise: promise)
         try await promise.futureResult.get()
     }
@@ -72,7 +72,7 @@ struct RedisQueue: QueueProvider {
     private func monitorBackoffs() -> RepeatedTask {
         // TODO: This is failing to die on shutdown. Is there an easier way?
         // TODO: for example, if something should back off, pull the next one, then put the backoff one back.
-        let loop = Loop.group.next()
+        let loop = LoopGroup.next()
         return loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
             loop.asyncSubmit {
                 let result = try await redis

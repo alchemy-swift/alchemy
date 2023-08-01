@@ -178,7 +178,7 @@ public final class ByteStream: AsyncSequence {
     }
     
     public static func new(startStream: @escaping Closure) -> ByteStream {
-        ByteStream(eventLoop: Loop.current) { stream in
+        ByteStream(eventLoop: Loop) { stream in
             Task {
                 do {
                     try await startStream(Writer(stream: stream))

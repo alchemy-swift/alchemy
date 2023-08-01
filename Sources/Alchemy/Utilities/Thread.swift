@@ -14,6 +14,6 @@ public struct Thread {
     /// - Returns: The result of the expensive work that completes on
     ///   the current `EventLoop`.
     public static func run<T>(_ task: @Sendable @escaping () throws -> T) async throws -> T {
-        try await pool.runIfActive(eventLoop: Loop.current, task).get()
+        try await pool.runIfActive(eventLoop: Loop, task).get()
     }
 }

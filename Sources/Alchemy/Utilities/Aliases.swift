@@ -46,12 +46,9 @@ public func Hash<Algorithm: HashAlgorithm>(_ algorithm: Algorithm) -> Hasher<Alg
 public var Crypt: Encrypter { Encrypter(key: .app) }
 public func Crypt(key: SymmetricKey) -> Encrypter { Encrypter(key: key) }
 
-/// Convenience class for easy access to the running `Application`'s
-/// `EventLoopGroup` and current `EventLoop`.
-public struct Loop {
-    /// The event loop your code is currently running on.
-    @Inject public static var current: EventLoop
+/// The event loop your code is currently running on, or the next available one
+/// if your code isn't running on an `EventLoop`.
+public var Loop: EventLoop { Container.resolveAssert() }
 
-    /// The main `EventLoopGroup` of the Application.
-    @Inject public static var group: EventLoopGroup
-}
+/// The main `EventLoopGroup` of your Application.
+public var LoopGroup: EventLoopGroup { Container.resolveAssert() }

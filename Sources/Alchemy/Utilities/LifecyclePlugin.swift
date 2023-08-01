@@ -16,11 +16,3 @@ extension Application {
         Container.resolveAssert()
     }
 }
-
-extension Logger {
-    fileprivate func withLevel(_ level: Logger.Level) -> Logger {
-        var copy = self
-        copy.logLevel = level
-        return copy
-    }
-}

@@ -25,7 +25,7 @@ struct Commands: Plugin {
 
 extension Application {
     fileprivate var commander: Commander {
-        Container.resolveAssert()
+        container.resolveAssert()
     }
 
     public func registerCommand(_ command: (some Command).Type) {

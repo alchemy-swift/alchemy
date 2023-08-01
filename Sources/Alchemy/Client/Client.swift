@@ -61,7 +61,7 @@ public final class Client: Service {
                         return .byteBuffer(buffer)
                     case .stream(let stream):
                         func writeStream(writer: HTTPClient.Body.StreamWriter) -> EventLoopFuture<Void> {
-                            Loop.current.asyncSubmit {
+                            Loop.asyncSubmit {
                                 try await stream.readAll {
                                     try await writer.write(.byteBuffer($0)).get()
                                 }
@@ -228,7 +228,7 @@ public final class Client: Service {
     
     /// Create a client backed by the given `AsyncHTTPClient` client. Defaults
     /// to a client using the default config and app `EventLoopGroup`.
-    public init(httpClient: HTTPClient = HTTPClient(eventLoopGroupProvider: .shared(Loop.group))) {
+    public init(httpClient: HTTPClient = HTTPClient(eventLoopGroupProvider: .shared(LoopGroup))) {
         self.httpClient = httpClient
         self.stubs = nil
     }
@@ -269,7 +269,7 @@ public final class Client: Service {
             let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
             defer { try? httpClientOverride?.syncShutdown() }
             let _request = try req._request
-            let loop = Loop.group.next()
+            let loop = LoopGroup.next()
             let promise = loop.makePromise(of: Response.self)
             let delegate = ResponseDelegate(request: req, promise: promise, allowStreaming: req.streamResponse)
             let client = httpClientOverride ?? httpClient

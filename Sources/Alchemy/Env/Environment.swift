@@ -161,6 +161,11 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         Environment.get(member)
     }
 
+    /// Required for dynamic member lookup.
+    public subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
+        self.get(member)
+    }
+
     public static var isTesting: Bool {
         Container.main.env.isTesting
     }
