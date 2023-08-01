@@ -1,7 +1,7 @@
 extension Request {
     private var associatedValues: [ObjectIdentifier: Any]? {
-        get { extensions.get(\.associatedValues) }
-        set { extensions.set(\.associatedValues, value: newValue) }
+        get { container.get(\Request.associatedValues) }
+        set { container.set(\Request.associatedValues, value: newValue) }
     }
     
     /// Sets a value associated with this request. Useful for setting

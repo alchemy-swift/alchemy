@@ -29,20 +29,21 @@ public final class Request: RequestInspector {
     public var queryItems: [URLQueryItem]? { urlComponents.queryItems }
     /// The underlying hummingbird request
     public var hbRequest: HBRequest
-    /// Allows for extending storage on this type.
-    public var extensions: Extensions<Request>
+    /// A container for storing associated types and services.
+    public let container: Container
     /// The url components of this request.
     public let urlComponents: URLComponents
     /// Parameters parsed from the path.
     public var parameters: [Parameter] {
-        get { extensions.get(\.parameters) }
-        set { extensions.set(\.parameters, value: newValue) }
+        get { container.get(\Request.parameters) }
+        set { container.set(\Request.parameters, value: newValue) }
     }
-    
+
     init(hbRequest: HBRequest, parameters: [Parameter] = []) {
         self.hbRequest = hbRequest
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
-        self.extensions = Extensions()
+//        self.extensions = Extensions()
+        self.container = Container(parent: .main)
         self.parameters = parameters
     }
     

@@ -40,8 +40,6 @@ public final class Client: Service {
         public var streamResponse: Bool = false
         /// Custom config override when making this request.
         public var config: HTTPClient.Configuration? = nil
-        /// Allows for extending storage on this type.
-        public var extensions = Extensions<Self>()
         
         public init(url: String = "", method: HTTPMethod = .GET, headers: HTTPHeaders = [:], body: ByteContent? = nil, timeout: TimeAmount? = nil) {
             self.urlComponents = URLComponents(string: url) ?? URLComponents()
@@ -95,7 +93,7 @@ public final class Client: Service {
         /// Response body.
         public var body: ByteContent?
         /// Allows for extending storage on this type.
-        public var extensions = Extensions<Self>()
+        public var container = Container()
         
         /// Create a stubbed response with the given info. It will be returned
         /// for any incoming request that matches the stub pattern.

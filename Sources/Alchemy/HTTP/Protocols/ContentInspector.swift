@@ -1,9 +1,10 @@
 import Hummingbird
 import MultipartKit
 
-public protocol ContentInspector: Extendable {
+public protocol ContentInspector {
     var headers: HTTPHeaders { get }
     var body: ByteContent? { get }
+    var container: Container { get }
 }
 
 extension ContentInspector {
@@ -75,8 +76,8 @@ extension ContentInspector {
     }
     
     private var _content: Content? {
-        get { extensions.get(\._content) }
-        nonmutating set { extensions.set(\._content, value: newValue) }
+        get { container.get(\ContentInspector._content) }
+        nonmutating set { container.set(\ContentInspector._content, value: newValue) }
     }
     
     // MARK: Content

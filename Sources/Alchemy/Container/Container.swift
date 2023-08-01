@@ -1,6 +1,9 @@
 import Fusion
 
 extension Container {
+
+    // Simple Registration
+
     func registerSingleton<T>(_ value: @escaping @autoclosure () -> T, as type: T.Type = T.self, id: AnyHashable? = nil) {
         bind(.singleton, to: type, identifier: id, value: value())
     }
@@ -11,6 +14,35 @@ extension Container {
 
     func register<T>(_ value: @escaping (Container) -> T, as type: T.Type = T.self) {
         bind(.transient, to: type, value: value(self))
+    }
+
+    // Key Paths
+
+    /// Get optional extension from a `KeyPath`
+    public func get<Base, Type>(_ key: KeyPath<Base, Type>) -> Type? {
+        resolve(identifier: key)
+    }
+
+    /// Get extension from a `KeyPath`
+    public func get<Base, Type>(_ key: KeyPath<Base, Type>, error: StaticString? = nil) -> Type {
+        guard let value = resolve(Type.self, identifier: key) else {
+            preconditionFailure(error?.description ?? "Cannot get extension of type \(Type.self) without having set it")
+        }
+
+        return value
+    }
+
+    /// Return if extension has been set
+    public func exists<Base, Type>(_ key: KeyPath<Base, Type>) -> Bool {
+        resolve(Type.self, identifier: key) == nil
+    }
+
+    /// Set extension for a `KeyPath`
+    /// - Parameters:
+    ///   - key: KeyPath
+    ///   - value: value to store in extension
+    public func set<Base, Type>(_ key: KeyPath<Base, Type>, value: Type) {
+        registerSingleton(value, id: key)
     }
 }
 
