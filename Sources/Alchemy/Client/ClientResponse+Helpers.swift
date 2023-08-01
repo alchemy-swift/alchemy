@@ -74,7 +74,7 @@ public struct ClientError: Error, CustomStringConvertible {
 
 extension HTTPHeaders {
     fileprivate var debugString: String {
-        if Env.LOG_FULL_CLIENT_ERRORS ?? false {
+        if Environment.LOG_FULL_CLIENT_ERRORS ?? false {
             return map { "\($0): \($1)" }.joined(separator: "\n    ")
         } else {
             return map { "\($0.name)" }.joined(separator: "\n    ")
@@ -84,7 +84,7 @@ extension HTTPHeaders {
 
 extension ByteContent {
     fileprivate var debugString: String {
-        if Env.LOG_FULL_CLIENT_ERRORS ?? false {
+        if Environment.LOG_FULL_CLIENT_ERRORS ?? false {
             switch self {
             case .buffer(let buffer):
                 return buffer.string

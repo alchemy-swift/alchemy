@@ -1,19 +1,35 @@
-import Foundation
+import NIOConcurrencyHelpers
 
 /// An abstraction around local or remote file storage.
-public struct Filesystem: Service {
+public final class Filesystem: Service {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
     
-    private let provider: FilesystemProvider
-    
+    private var provider: FilesystemProvider {
+        get {
+            lock.withLock {
+                if let _provider {
+                    return _provider
+                } else {
+                    let provider = createProvider()
+                    self._provider = provider
+                    return provider
+                }
+            }
+        }
+    }
+
+    private let lock = NIOLock()
+    private var _provider: FilesystemProvider?
+    private let createProvider: () -> FilesystemProvider
+
     /// The root directory for storing and fetching files.
     public var root: String { provider.root }
 
-    public init(provider: FilesystemProvider) {
-        self.provider = provider
+    public init(provider: @escaping @autoclosure () -> FilesystemProvider) {
+        self.createProvider = provider
     }
     
     /// Create a file in this storage.
@@ -62,7 +78,8 @@ public struct Filesystem: Service {
     }
     
     public func directory(_ path: String) -> Filesystem {
-        Filesystem(provider: provider.directory(path))
+        let provider = self.provider.directory(path)
+        return Filesystem(provider: provider)
     }
 }
 

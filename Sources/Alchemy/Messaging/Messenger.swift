@@ -1,9 +1,9 @@
-public struct Messenger<C: MessageChannel>: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
+public struct MessengerIdentifier: ServiceIdentifier {
+    private let hashable: AnyHashable
+    public init(hashable: AnyHashable) { self.hashable = hashable }
+}
 
+public struct Messenger<C: MessageChannel> {
     let _send: (C.Message, C.Receiver) async throws -> Void
     let _shutdown: () throws -> Void
     fileprivate(set) var store: Bool

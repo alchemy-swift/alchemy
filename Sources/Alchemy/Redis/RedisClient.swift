@@ -4,12 +4,12 @@ import NIOSSL
 import RediStack
 
 /// A client for interfacing with a Redis instance.
-public struct RedisClient: Service, RediStack.RedisClient {
+public struct RedisClient: RediStack.RedisClient, Service {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
-    
+
     let provider: RedisProvider
     
     public init(provider: RedisProvider) {

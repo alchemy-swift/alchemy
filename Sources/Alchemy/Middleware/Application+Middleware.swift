@@ -10,7 +10,7 @@ extension Application {
     /// - Returns: This Application for chaining.
     @discardableResult
     public func useAll(_ middlewares: Middleware...) -> Self {
-        router.globalMiddlewares.append(contentsOf: middlewares)
+        Routes.globalMiddlewares.append(contentsOf: middlewares)
         return self
     }
     
@@ -22,7 +22,7 @@ extension Application {
     /// - Returns: This Application for chaining.
     @discardableResult
     public func useAll(_ middleware: @escaping MiddlewareClosure) -> Self {
-        router.globalMiddlewares.append(AnonymousMiddleware(action: middleware))
+        Routes.globalMiddlewares.append(AnonymousMiddleware(action: middleware))
         return self
     }
     
@@ -33,7 +33,7 @@ extension Application {
     /// - Returns: This application for chaining.
     @discardableResult
     public func use(_ middlewares: Middleware...) -> Self {
-        router.middlewares.append(contentsOf: middlewares)
+        Routes.middlewares.append(contentsOf: middlewares)
         return self
     }
     
@@ -44,7 +44,7 @@ extension Application {
     /// - Returns: This application for chaining.
     @discardableResult
     public func use(_ middlewares: [Middleware]) -> Self {
-        router.middlewares.append(contentsOf: middlewares)
+        Routes.middlewares.append(contentsOf: middlewares)
         return self
     }
     
@@ -55,7 +55,7 @@ extension Application {
     /// - Returns: This application for chaining.
     @discardableResult
     public func use(_ middleware: @escaping MiddlewareClosure) -> Self {
-        router.middlewares.append(AnonymousMiddleware(action: middleware))
+        Routes.middlewares.append(AnonymousMiddleware(action: middleware))
         return self
     }
     
@@ -104,9 +104,9 @@ extension Application {
     /// the action.
     @discardableResult
     func snapshotMiddleware(_ action: (Application) -> Void) -> Self {
-        let middlewaresBefore = router.middlewares.count
+        let middlewaresBefore = Routes.middlewares.count
         action(self)
-        router.middlewares = Array(router.middlewares.prefix(middlewaresBefore))
+        Routes.middlewares = Array(Routes.middlewares.prefix(middlewaresBefore))
         return self
     }
 }

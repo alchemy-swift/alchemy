@@ -1,4 +1,3 @@
-import Hummingbird
 import NIO
 import NIOHTTP1
 

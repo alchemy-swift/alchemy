@@ -39,6 +39,6 @@ private struct MessageJob<C: MessageChannel>: Job where C.Message: Codable, C.Re
     let receiver: C.Receiver
     
     func run() async throws {
-        try await Messenger<C>.default._send(message, receiver)
+        try await Container.resolveAssert(Messenger<C>.self)._send(message, receiver)
     }
 }

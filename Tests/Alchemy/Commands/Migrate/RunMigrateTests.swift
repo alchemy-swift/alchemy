@@ -9,7 +9,7 @@ final class RunMigrateTests: TestCase<TestApp> {
         XCTAssertFalse(MigrationA.didUp)
         XCTAssertFalse(MigrationA.didDown)
         
-        try await RunMigrate(rollback: false).start()
+        try await MigrateCommand(rollback: false).start()
         XCTAssertTrue(MigrationA.didUp)
         XCTAssertFalse(MigrationA.didDown)
         

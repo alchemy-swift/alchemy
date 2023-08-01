@@ -18,39 +18,39 @@ final class MakeCommandTests: TestCase<TestApp> {
     }
     
     func testMakeController() throws {
-        try MakeController(name: fileName).start()
+        try ControllerMakeCommand(name: fileName).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Controllers/\(fileName).swift"))
         
-        try MakeController(model: fileName).start()
+        try ControllerMakeCommand(model: fileName).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Controllers/\(fileName)Controller.swift"))
     }
     
     func testMakeJob() throws {
-        try MakeJob(name: fileName).start()
+        try JobMakeCommand(name: fileName).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Jobs/\(fileName).swift"))
     }
     
     func testMakeMiddleware() throws {
-        try MakeMiddleware(name: fileName).start()
+        try MiddlewareMakeCommand(name: fileName).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Middleware/\(fileName).swift"))
     }
     
     func testMakeMigration() throws {
-        try MakeMigration(name: fileName, table: "users", columns: .testData).start()
+        try MigrationMakeCommand(name: fileName, table: "users", columns: .testData).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Database/Migrations/\(fileName).swift"))
-        XCTAssertThrowsError(try MakeMigration(name: fileName + ":", table: "users", columns: .testData).start())
+        XCTAssertThrowsError(try MigrationMakeCommand(name: fileName + ":", table: "users", columns: .testData).start())
     }
     
     func testMakeModel() throws {
-        try MakeModel(name: fileName, columns: .testData, migration: true, controller: true).start()
+        try ModelMakeCommand(name: fileName, columns: .testData, migration: true, controller: true).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Models/\(fileName).swift"))
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Database/Migrations/Create\(fileName)s.swift"))
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Controllers/\(fileName)Controller.swift"))
-        XCTAssertThrowsError(try MakeModel(name: fileName + ":").start())
+        XCTAssertThrowsError(try ModelMakeCommand(name: fileName + ":").start())
     }
     
     func testMakeView() throws {
-        try MakeView(name: fileName).start()
+        try ViewMakeCommand(name: fileName).start()
         XCTAssertTrue(FileCreator.shared.fileExists(at: "Views/\(fileName).swift"))
     }
 }

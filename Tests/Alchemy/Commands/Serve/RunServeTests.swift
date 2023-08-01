@@ -11,7 +11,7 @@ final class RunServeTests: TestCase<TestApp> {
     
     func testServe() async throws {
         app.get("/foo", use: { _ in "hello" })
-        try RunServe(host: "127.0.0.1", port: 1234).run()
+        try ServeCommand(host: "127.0.0.1", port: 1234).run()
         app.lifecycle.start { _ in }
         
         try await Http.get("http://127.0.0.1:1234/foo")
@@ -23,7 +23,7 @@ final class RunServeTests: TestCase<TestApp> {
     
     func testServeWithSideEffects() async throws {
         app.get("/foo", use: { _ in "hello" })
-        try RunServe(host: "127.0.0.1", port: 1234, workers: 2, schedule: true, migrate: true).run()
+        try ServeCommand(host: "127.0.0.1", port: 1234, workers: 2, schedule: true, migrate: true).run()
         app.lifecycle.start { _ in }
         
         try await Http.get("http://127.0.0.1:1234/foo")

@@ -14,62 +14,62 @@ final class EnvTests: TestCase<TestApp> {
         """
     
     func testIsRunningTests() {
-        XCTAssertTrue(Env.isTest)
+        XCTAssertTrue(Environment.isTest)
     }
     
     func testEnvLookup() {
-        let env = Env(name: "test", dotEnvVariables: ["foo": "bar"])
+        let env = Environment(name: "test", dotenvVariables: ["foo": "bar"])
         XCTAssertEqual(env.get("foo"), "bar")
     }
     
     func testStaticLookup() {
-        Env.current = Env(name: "test", dotEnvVariables: [
+        Environment.current = Environment(name: "test", dotenvVariables: [
             "foo": "one",
             "bar": "two",
         ])
-        XCTAssertEqual(Env.get("foo"), "one")
-        XCTAssertEqual(Env.bar, "two")
-        let wrongCase: String? = Env.BAR
+        XCTAssertEqual(Environment.get("foo"), "one")
+        XCTAssertEqual(Environment.bar, "two")
+        let wrongCase: String? = Environment.BAR
         XCTAssertEqual(wrongCase, nil)
     }
     
     func testEnvNameProcess() {
-        Env.boot(processEnv: ["APP_ENV": "foo"])
-        XCTAssertEqual(Env.current.name, "foo")
+        Environment.boot(processEnv: ["APP_ENV": "foo"])
+        XCTAssertEqual(Environment.current.name, "foo")
     }
     
     func testEnvNameArgs() {
-        Env.boot(args: ["-e", "foo"])
-        XCTAssertEqual(Env.current.name, "foo")
-        Env.boot(args: ["--env", "bar"])
-        XCTAssertEqual(Env.current.name, "bar")
-        Env.boot(args: ["--env", "baz"], processEnv: ["APP_ENV": "test"])
-        XCTAssertEqual(Env.current.name, "baz")
+        Environment.boot(args: ["-e", "foo"])
+        XCTAssertEqual(Environment.current.name, "foo")
+        Environment.boot(args: ["--env", "bar"])
+        XCTAssertEqual(Environment.current.name, "bar")
+        Environment.boot(args: ["--env", "baz"], processEnv: ["APP_ENV": "test"])
+        XCTAssertEqual(Environment.current.name, "baz")
     }
     
     func testEnvArgsPrecedence() {
-        Env.boot(args: ["--env", "baz"], processEnv: ["APP_ENV": "test"])
-        XCTAssertEqual(Env.current.name, "baz")
+        Environment.boot(args: ["--env", "baz"], processEnv: ["APP_ENV": "test"])
+        XCTAssertEqual(Environment.current.name, "baz")
     }
     
     func testLoadEnvFile() {
         let path = createTempFile(".env-fake-\(UUID().uuidString)", contents: sampleEnvFile)
-        Env.loadDotEnv(path)
-        XCTAssertEqual(Env.FOO, "1")
-        XCTAssertEqual(Env.BAR, "two")
-        XCTAssertEqual(Env.get("TEST", as: String.self), nil)
-        XCTAssertEqual(Env.get("fake", as: String.self), nil)
-        XCTAssertEqual(Env.get("BAZ", as: String.self), nil)
-        XCTAssertEqual(Env.QUOTES, "three")
+        Environment.loadDotEnv(path)
+        XCTAssertEqual(Environment.FOO, "1")
+        XCTAssertEqual(Environment.BAR, "two")
+        XCTAssertEqual(Environment.get("TEST", as: String.self), nil)
+        XCTAssertEqual(Environment.get("fake", as: String.self), nil)
+        XCTAssertEqual(Environment.get("BAZ", as: String.self), nil)
+        XCTAssertEqual(Environment.QUOTES, "three")
     }
     
     func testProcessPrecedence() {
         let path = createTempFile(".env-fake-\(UUID().uuidString)", contents: sampleEnvFile)
-        Env.boot(args: ["-e", path], processEnv: ["FOO": "2"])
-        XCTAssertEqual(Env.FOO, "2")
+        Environment.boot(args: ["-e", path], processEnv: ["FOO": "2"])
+        XCTAssertEqual(Environment.FOO, "2")
     }
     
     func testWarnDerivedData() {
-        Env.warnIfUsingDerivedData("/Xcode/DerivedData")
+        Environment.warnIfUsingDerivedData("/Xcode/DerivedData")
     }
 }

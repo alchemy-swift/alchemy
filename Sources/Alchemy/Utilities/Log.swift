@@ -173,7 +173,7 @@ fileprivate struct AlchemyLogger: LogHandler {
             _level = _level.lightRed.onBlack
         }
 
-        let showSource = Env.SHOW_SOURCE == true
+        let showSource = Environment.SHOW_SOURCE == true
         let source = showSource ? " [\(source)]" : ""
         print("  \(_level) \(source)\(message)\(prettyMetadata.map { " \($0)" } ?? "") \n")
     }

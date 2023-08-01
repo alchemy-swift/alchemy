@@ -6,7 +6,7 @@ final class SeedDatabaseTests: TestCase<TestApp> {
     func testSeed() async throws {
         let db = try await Database.fake(migrations: [SeedModel.Migrate()])
         db.seeders = [Seeder1(), Seeder2()]
-        try SeedDatabase(db: nil).run()
+        try SeedCommand(db: nil).run()
         try app.lifecycle.startAndWait()
         XCTAssertTrue(Seeder1.didRun)
         XCTAssertTrue(Seeder2.didRun)

@@ -11,7 +11,7 @@ final class RunWorkerTests: TestCase<TestApp> {
     func testRun() throws {
         let exp = expectation(description: "")
         
-        try RunWorker(name: nil, workers: 5, schedule: false).run()
+        try WorkCommand(name: nil, workers: 5, schedule: false).run()
         app.lifecycle.start { _ in
             XCTAssertEqual(Q.workers.count, 5)
             XCTAssertFalse(self.app.scheduler.isStarted)
@@ -24,7 +24,7 @@ final class RunWorkerTests: TestCase<TestApp> {
     func testRunName() throws {
         let exp = expectation(description: "")
         Queue.fake("a")
-        try RunWorker(name: "a", workers: 5, schedule: false).run()
+        try WorkCommand(name: "a", workers: 5, schedule: false).run()
         
         app.lifecycle.start { _ in
             XCTAssertEqual(Q.workers.count, 0)

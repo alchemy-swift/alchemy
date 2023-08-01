@@ -3,7 +3,7 @@ import Foundation
 
 extension SymmetricKey {
     public static var app: SymmetricKey = {
-        guard let appKey: String = Env.APP_KEY else {
+        guard let appKey: String = Environment.APP_KEY else {
             fatalError("Unable to load APP_KEY from Environment. Please set an APP_KEY before encrypting any data with `Crypt` or provide a custom `SymmetricKey` using `Crypt(key:)`.")
         }
         

@@ -1,29 +1,15 @@
-extension Messenger {
-    public struct ChannelConfig: AnyChannelConfig {
-        public let messengers: [Messenger<C>.Identifier: Messenger<C>]
+struct MessengerPlugin: Plugin {
+    // TODO: How to do this with a generic in Messenger?
 
-        public init(messengers: [Messenger<C>.Identifier : Messenger<C>]) {
-            self.messengers = messengers
-        }
-        
-        public func bind() {
-            messengers.forEach { Messenger.bind($0, $1) }
-        }
-    }
-    
-    public struct Config {
-        public let channels: [AnyChannelConfig]
-        
-        public init(channels: [AnyChannelConfig]) {
-            self.channels = channels
-        }
-    }
+//    public let messengers: [MessengerIdentifier: Messenger<C>]
 
-    public static func configure(with config: Config) {
-        config.channels.forEach { $0.bind() }
-    }
-}
+//    init(messengers: [MessengerIdentifier : Messenger<C>]) {
+//        self.messengers = messengers
+//    }
 
-public protocol AnyChannelConfig {
-    func bind()
+    func registerServices(in container: Container) {
+//        for (id, messenger) in messengers {
+//            container.registerSingleton(messenger, id: id)
+//        }
+    }
 }

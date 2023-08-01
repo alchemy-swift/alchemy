@@ -3,14 +3,16 @@ import Foundation
 /// A queue that persists jobs to a database.
 final class DatabaseQueue: QueueProvider {
     /// The database backing this queue.
-    private let db: Database
-    
+
+    private var db: Database { DB(id) }
+    private let id: Database.Identifier
+
     /// Initialize with a database, to which Jobs will be persisted.
     ///
     /// - Parameters:
     ///   - database: The database.
-    init(db: Database = DB) {
-        self.db = db
+    init(id: Database.Identifier = .default) {
+        self.id = id
     }
     
     // MARK: - Queue
@@ -58,8 +60,8 @@ extension Queue {
     /// - Parameter database: A database to drive this queue with.
     ///   Defaults to your default database.
     /// - Returns: The configured queue.
-    public static func database(_ db: Database = DB) -> Queue {
-        Queue(provider: DatabaseQueue(db: db))
+    public static func database(_ id: Database.Identifier = .default) -> Queue {
+        Queue(provider: DatabaseQueue(id: id))
     }
     
     /// A queue backed by the default SQL database.

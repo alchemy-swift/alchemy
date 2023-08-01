@@ -16,7 +16,7 @@ extension Application {
     /// - Returns: This application for building a handler chain.
     @discardableResult
     public func on(_ method: HTTPMethod, at path: String = "", options: Router.RouteOptions = [], use handler: @escaping Handler) -> Self {
-        router.add(handler: handler, for: method, path: path, options: options)
+        Routes.add(handler: handler, for: method, path: path, options: options)
         return self
     }
     
@@ -219,10 +219,10 @@ extension Application {
     @discardableResult
     public func grouped(_ pathPrefix: String, configure: (Application) -> Void) -> Self {
         let prefixes = pathPrefix.split(separator: "/").map(String.init)
-        router.pathPrefixes.append(contentsOf: prefixes)
+        Routes.pathPrefixes.append(contentsOf: prefixes)
         configure(self)
         for _ in prefixes {
-            _ = router.pathPrefixes.popLast()
+            _ = Routes.pathPrefixes.popLast()
         }
         return self
     }
