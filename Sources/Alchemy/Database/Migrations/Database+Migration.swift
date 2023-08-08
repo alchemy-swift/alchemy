@@ -107,7 +107,7 @@ extension Database {
     }
 
     private func getLastBatch() async throws -> Int {
-        let row = try await table(AppliedMigration.table).select(["MAX(batch)"]).first
+        let row = try await table(AppliedMigration.table).select("MAX(batch)").first()
         guard let value = row?.fields.first?.value else {
             return 0
         }

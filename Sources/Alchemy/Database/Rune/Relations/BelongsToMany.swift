@@ -51,7 +51,8 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
         let existing = try await db.table(pivot.table)
             .where("\(fromKey)" == from)
             .where("\(toKey)", in: tos.map(\.0))
-            .get(["\(toKey)"])
+            .select("\(toKey)")
+            .get()
         let existingToKeys = existing.compactMap(\.["\(toKey)"])
 
         // 1. Update existing

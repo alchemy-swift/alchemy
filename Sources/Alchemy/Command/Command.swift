@@ -68,7 +68,16 @@ extension Command {
 
     /// Registers this command with the application lifecycle.
     public func run() throws {
-        registerWithLifecycle()
+        try LoopGroup.next()
+            .asyncSubmit {
+                try await start()
+
+                if Self.shutdownAfterRun {
+                    @Inject var lifecycle: ServiceLifecycle
+                    lifecycle.shutdown()
+                }
+            }
+            .wait()
     }
     
     public func shutdown() {}

@@ -13,21 +13,6 @@ final class Commander {
         // options that will cause `ParsableCommand` parsing to fail.
         let fallbackArgs = env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
         Launch.main(args.isEmpty ? fallbackArgs : args)
-
-        var startupError: Error? = nil
-        let semaphore = DispatchSemaphore(value: 0)
-        Lifecycle.start {
-            startupError = $0
-            semaphore.signal()
-        }
-
-        semaphore.wait()
-        if let startupError = startupError {
-            throw startupError
-        }
-
-        // Blocks until the application receives a shutdown signal.
-        Lifecycle.wait()
     }
 
     func stop() async throws {

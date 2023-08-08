@@ -43,7 +43,7 @@ extension Application {
     public func run() throws {
         setupServices()
         try boot()
-        try start()
+        try lifecycle.startAndWait()
     }
 
     /// Register core services to the application container `Container.default`.
@@ -72,6 +72,10 @@ extension Application {
                 shutdown: .async { try await plugin.shutdownServices(in: container) }
             )
         }
+
+        // 4. Register `start()`.
+
+        lifecycle.register(label: "\(Self.self)", start: .sync { try start() }, shutdown: .none)
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`

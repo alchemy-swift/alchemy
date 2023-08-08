@@ -30,7 +30,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     public func fetch(for models: [From]) async throws -> [To] {
         setJoins()
         let fromKeys = models.map(\.row["\(fromKey)"])
-        let results = try await `where`(lookupKey, in: fromKeys).get(columns)
+        let results = try await `where`(lookupKey, in: fromKeys).select(columns).get()
         let resultsByLookup = results.grouped(by: \.row[lookupKey])
         return try fromKeys
             .map { resultsByLookup[$0, default: []] }

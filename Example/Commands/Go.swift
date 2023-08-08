@@ -4,7 +4,9 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        print("Hello from Go!")
+        print("hey")
+//        let rows = try await DB.table("migrations").select()
+//        print(rows.count)
     }
 
     func testRelationships() {

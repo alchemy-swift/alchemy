@@ -11,7 +11,6 @@ import Hummingbird
 final class ServeCommand: Command {
     static let configuration = CommandConfiguration(commandName: "serve")
     static var shutdownAfterRun: Bool = false
-    static var logStartAndFinish: Bool = false
     
     /// The host to serve at. Defaults to `127.0.0.1`.
     @Option var host = "127.0.0.1"

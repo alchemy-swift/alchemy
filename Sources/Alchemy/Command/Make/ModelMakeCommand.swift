@@ -5,7 +5,6 @@ typealias Flag = ArgumentParser.Flag
 typealias Option = ArgumentParser.Option
 
 final class ModelMakeCommand: Command {
-    static var logStartAndFinish: Bool = false
     static var configuration = CommandConfiguration(
         commandName: "make:model",
         discussion: """

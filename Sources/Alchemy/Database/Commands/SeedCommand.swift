@@ -7,8 +7,6 @@ struct SeedCommand: Command {
         CommandConfiguration(commandName: "db:seed")
     }
     
-    static var logStartAndFinish: Bool = false
-    
     /// Whether specific seeders to run. If this is empty, all seeders
     /// on the database will be run.
     @Argument(help: "The specific seeders to run. If empty, all seeders will be run.")

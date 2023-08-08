@@ -2,7 +2,7 @@ import Foundation
 import NIO
 
 /// An SQL query.
-public class Query<Result: QueryResult> {
+open class Query<Result: QueryResult> {
     let db: Database
     var shouldLog: Bool = false
 
@@ -27,7 +27,7 @@ public class Query<Result: QueryResult> {
         self.columns = ["\(table).*"]
     }
 
-    // MARK: - Logging
+    // MARK: Logging
 
     /// Indicates the entire query should be logged when it's executed. Logs
     /// will occur at the `info` log level.
@@ -36,7 +36,7 @@ public class Query<Result: QueryResult> {
         return self
     }
 
-    // MARK: - Hooks
+    // MARK: Hooks
 
     public func didLoad(_ then: @escaping(inout [Result]) async throws -> Void) -> Self {
         let _didLoad = didLoad
@@ -49,7 +49,7 @@ public class Query<Result: QueryResult> {
         return self
     }
     
-    // MARK: - Get
+    // MARK: SELECT
 
     /// Run a select query and return the database rows.
     ///
@@ -58,29 +58,7 @@ public class Query<Result: QueryResult> {
     /// - Parameter columns: The columns you would like returned.
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
-    public func get(_ columns: [String]? = nil) async throws -> [Result] {
-        let results = try await select(columns).map(Result.init)
-        return try await didLoad(results)
-    }
-
-    /// Run a select query and return the first database row only row.
-    ///
-    /// - Note: Optional columns can be provided that override the
-    ///   original select columns.
-    /// - Parameter columns: The columns you would like returned.
-    ///   Defaults to `nil`.
-    /// - Returns: The first row in the database, if it exists.
-    public func first(_ columns: [String]? = nil) async throws -> Result? {
-        try await limit(1).get(columns).first
-    }
-
-    // MARK: - SQL Statements
-
-    public func select(_ columns: [String]? = nil) async throws -> [SQLRow] {
-        if let columns = columns {
-            self.columns = columns
-        }
-
+    public func get() async throws -> [Result] {
         let sql = db.grammar.select(isDistinct: isDistinct,
                                     columns: self.columns,
                                     table: table,
@@ -92,7 +70,20 @@ public class Query<Result: QueryResult> {
                                     limit: limit,
                                     offset: offset,
                                     lock: lock)
-        return try await db.query(sql: sql, log: shouldLog)
+        let rows = try await db.query(sql: sql, log: shouldLog)
+        let results = try rows.map(Result.init)
+        return try await didLoad(results)
+    }
+
+    /// Run a select query and return the first database row only row.
+    ///
+    /// - Note: Optional columns can be provided that override the
+    ///   original select columns.
+    /// - Parameter columns: The columns you would like returned.
+    ///   Defaults to `nil`.
+    /// - Returns: The first row in the database, if it exists.
+    public func first() async throws -> Result? {
+        try await limit(1).get().first
     }
 
     /// Find the total count of the rows that match the given query.
@@ -106,6 +97,8 @@ public class Query<Result: QueryResult> {
 
         return try field.value.int()
     }
+
+    // MARK: INSERT
 
     /// Perform an insert and create a database row from the provided
     /// data.
@@ -156,6 +149,8 @@ public class Query<Result: QueryResult> {
         }
     }
 
+    // MARK: UPDATE
+
     /// Perform an update on all data matching the query in the
     /// builder with the values provided.
     ///
@@ -180,6 +175,8 @@ public class Query<Result: QueryResult> {
         let sql = db.grammar.update(table: table, joins: joins, wheres: wheres, fields: fields)
         try await db.query(sql: sql, log: shouldLog)
     }
+
+    // MARK: DELETE
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {

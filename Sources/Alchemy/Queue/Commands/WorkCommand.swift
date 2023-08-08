@@ -8,7 +8,6 @@ struct WorkCommand: Command {
     }
     
     static var shutdownAfterRun: Bool = false
-    static var logStartAndFinish: Bool = false
     
     /// The name of the queue the workers should observe. If no name
     /// is given, workers will observe the default queue.
