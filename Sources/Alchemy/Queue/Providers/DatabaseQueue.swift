@@ -123,7 +123,7 @@ extension Queue {
         public init() {}
 
         public func up(db: Database) async throws {
-            try await db.create(table: "jobs") {
+            try await db.createTable("jobs") {
                 $0.string("id").primary()
                 $0.string("job_name").notNull()
                 $0.string("channel").notNull()
@@ -140,7 +140,7 @@ extension Queue {
         }
 
         public func down(db: Database) async throws {
-            try await db.drop(table: "jobs")
+            try await db.dropTable("jobs")
         }
     }
 }

@@ -7,7 +7,7 @@ extension Database {
     ///   - ifNotExists: If the query should silently not be run if
     ///     the table already exists. Defaults to `false`.
     ///   - builder: A closure for building the new table.
-    public func create(table: String, ifNotExists: Bool = false, builder: (inout CreateTableBuilder) -> Void) async throws {
+    public func createTable(_ table: String, ifNotExists: Bool = false, builder: (inout CreateTableBuilder) -> Void) async throws {
         var createBuilder = CreateTableBuilder(grammar: grammar)
         builder(&createBuilder)
         let createColumns = grammar.createTable(table, ifNotExists: ifNotExists, columns: createBuilder.createColumns)
@@ -23,7 +23,7 @@ extension Database {
     ///   - table: The table to alter.
     ///   - builder: A closure passing a builder for defining what
     ///     should be altered.
-    public func alter(table: String, builder: (inout AlterTableBuilder) -> Void) async throws {
+    public func alterTable(_ table: String, builder: (inout AlterTableBuilder) -> Void) async throws {
         var alterBuilder = AlterTableBuilder(grammar: grammar)
         builder(&alterBuilder)
         let changes = grammar.alterTable(table, dropColumns: alterBuilder.dropColumns, addColumns: alterBuilder.createColumns)
@@ -38,7 +38,7 @@ extension Database {
     /// Drop a table.
     ///
     /// - Parameter table: The table to drop.
-    public func drop(table: String) async throws {
+    public func dropTable(_ table: String) async throws {
         try await query(sql: grammar.dropTable(table))
     }
     
@@ -47,7 +47,7 @@ extension Database {
     /// - Parameters:
     ///   - table: The table to rename.
     ///   - to: The new name for the table.
-    public func rename(table: String, to: String) async throws {
+    public func renameTable(_ table: String, to: String) async throws {
         try await query(sql: grammar.renameTable(table, to: to))
     }
 

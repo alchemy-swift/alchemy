@@ -30,7 +30,7 @@ public struct AddMessagesMigration: Migration {
     public init() {}
 
     public func up(db: Database) async throws {
-        try await db.create(table: "messages") {
+        try await db.createTable("messages") {
             $0.increments("id").primary()
             $0.string("channel").notNull()
             $0.json("message").notNull()
@@ -40,6 +40,6 @@ public struct AddMessagesMigration: Migration {
     }
 
     public func down(db: Database) async throws {
-        try await db.drop(table: "messages")
+        try await db.dropTable("messages")
     }
 }

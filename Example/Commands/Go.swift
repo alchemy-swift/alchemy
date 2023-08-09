@@ -134,19 +134,19 @@ struct Like: Model {
 
 struct AddStuffMigration: Migration {
     func up(db: Database) async throws {
-        try await db.create(table: "users") {
+        try await db.createTable("users") {
             $0.string("id").primary()
             $0.string("name")
             $0.int("age")
         }
 
-        try await db.create(table: "posts") {
+        try await db.createTable("posts") {
             $0.string("id").primary()
             $0.string("user_id").references("id", on: "users").notNull()
             $0.string("title")
         }
 
-        try await db.create(table: "user_tokens") {
+        try await db.createTable("user_tokens") {
             $0.string("id").primary()
             $0.string("user_id").references("id", on: "users").notNull()
             $0.string("token")
@@ -154,21 +154,21 @@ struct AddStuffMigration: Migration {
     }
 
     func down(db: Database) async throws {
-        try await db.drop(table: "posts")
-        try await db.drop(table: "user_tokens")
-        try await db.drop(table: "users")
+        try await db.dropTable("posts")
+        try await db.dropTable("user_tokens")
+        try await db.dropTable("users")
     }
 }
 
 struct AddStuff2Migration: Migration {
     func up(db: Database) async throws {
-        try await db.create(table: "friends") {
+        try await db.createTable("friends") {
             $0.increments("id").primary()
             $0.string("user_a").references("id", on: "users").notNull()
             $0.string("user_b").references("id", on: "users").notNull()
         }
 
-        try await db.create(table: "comments") {
+        try await db.createTable("comments") {
             $0.string("id").primary()
             $0.string("post_id").references("id", on: "posts").notNull()
             $0.string("user_id").references("id", on: "users").notNull()
@@ -177,14 +177,14 @@ struct AddStuff2Migration: Migration {
     }
 
     func down(db: Database) async throws {
-        try await db.drop(table: "friends")
-        try await db.drop(table: "comments")
+        try await db.dropTable("friends")
+        try await db.dropTable("comments")
     }
 }
 
 struct AddStuff3Migration: Migration {
     func up(db: Database) async throws {
-        try await db.create(table: "likes") {
+        try await db.createTable("likes") {
             $0.string("id").primary()
             $0.string("comment_id").references("id", on: "comments").notNull()
             $0.string("user_id").references("id", on: "users").notNull()
@@ -192,6 +192,6 @@ struct AddStuff3Migration: Migration {
     }
 
     func down(db: Database) async throws {
-        try await db.drop(table: "likes")
+        try await db.dropTable("likes")
     }
 }

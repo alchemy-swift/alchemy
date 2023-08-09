@@ -9,7 +9,7 @@ extension Database {
         /// A migration for adding the `AlchemyMigration` table.
         struct Migration: Alchemy.Migration {
             func up(db: Database) async throws {
-                try await db.create(table: table, ifNotExists: true) {
+                try await db.createTable(table, ifNotExists: true) {
                     $0.increments("id").primary()
                     $0.string("name").notNull()
                     $0.int("batch").notNull()
@@ -18,7 +18,7 @@ extension Database {
             }
 
             func down(db: Database) async throws {
-                try await db.drop(table: table)
+                try await db.dropTable(table)
             }
         }
 

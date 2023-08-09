@@ -129,7 +129,7 @@ extension Cache {
         public init() {}
         
         public func up(db: Database) async throws {
-            try await db.create(table: "cache") {
+            try await db.createTable("cache") {
                 $0.increments("id").primary()
                 $0.string("_key").notNull().unique()
                 $0.string("text", length: .unlimited).notNull()
@@ -138,7 +138,7 @@ extension Cache {
         }
         
         public func down(db: Database) async throws {
-            try await db.drop(table: "cache")
+            try await db.dropTable("cache")
         }
     }
 }
