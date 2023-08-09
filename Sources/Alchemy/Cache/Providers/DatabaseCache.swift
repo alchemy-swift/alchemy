@@ -112,7 +112,7 @@ private struct CacheItem: Model {
         guard expiration >= 0 else {
             return true
         }
-        
+
         return expiration > Int(Date().timeIntervalSince1970)
     }
     

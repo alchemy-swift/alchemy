@@ -107,12 +107,10 @@ extension Database {
     }
 
     private func getLastBatch() async throws -> Int {
-        let row = try await table(AppliedMigration.table).select("MAX(batch)").first()
-        guard let value = row?.fields.first?.value else {
-            return 0
-        }
-
-        return try value.isNull() ? 0 : value.int()
+        try await table(AppliedMigration.table)
+            .select("MAX(batch)")
+            .first()?
+            .decode(Int?.self) ?? 0
     }
 
     /// Gets any existing migrations in the order that they were applied. This

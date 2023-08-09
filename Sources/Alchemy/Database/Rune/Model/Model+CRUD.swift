@@ -338,7 +338,7 @@ extension Array where Element: Model {
         }
 
         let ids = map(\.id)
-        return try await db.table(Element.self)
+        return try await Element.query()
             .where(Element.primaryKey, in: ids)
             .all()
     }

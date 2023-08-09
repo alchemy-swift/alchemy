@@ -91,11 +91,11 @@ open class Query<Result: QueryResult> {
     /// - Parameter column: What column to count. Defaults to `*`.
     /// - Returns: The count returned by the database.
     public func count(column: String = "*") async throws -> Int {
-        guard let field = try await (select(["COUNT(\(column))"]).first() as? SQLRow)?.fields.first else {
+        guard let row = try await select("COUNT(\(column))").first() as? SQLRow else {
             throw DatabaseError("a COUNT query didn't return any data")
         }
 
-        return try field.value.int()
+        return try row.decode(Int.self)
     }
 
     // MARK: INSERT
