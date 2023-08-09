@@ -4,7 +4,11 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        print("hey")
+        let count = try await DB.table("migrations")
+            .log()
+            .where("name" == "add_cache_migration" && "name" == "add_stuff_migration" || "name" != "add_stuff_migration")
+            .count()
+        print("Got \(count)")
 //        let rows = try await DB.table("migrations").select()
 //        print(rows.count)
     }

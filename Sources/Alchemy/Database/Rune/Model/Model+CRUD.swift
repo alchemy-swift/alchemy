@@ -32,7 +32,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ where: SQLWhere, db: Database = DB) async throws -> Self? {
+    public static func find(_ where: SQLWhere.Clause, db: Database = DB) async throws -> Self? {
         try await Self.firstWhere(`where`, db: db)
     }
     
@@ -72,7 +72,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause, if
     ///   one exists.
-    public static func firstWhere(_ where: SQLWhere, db: Database = DB) async throws -> Self? {
+    public static func firstWhere(_ where: SQLWhere.Clause, db: Database = DB) async throws -> Self? {
         try await Self.query(db: db).where(`where`).first()
     }
     
@@ -83,7 +83,7 @@ extension Model {
     ///     clause.
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: All the models matching the `where` clause.
-    public static func allWhere(_ where: SQLWhere, db: Database = DB) async throws -> [Self] {
+    public static func allWhere(_ where: SQLWhere.Clause, db: Database = DB) async throws -> [Self] {
         try await Self.where(`where`, db: db).all()
     }
     
@@ -97,7 +97,7 @@ extension Model {
     ///   - error: The error to throw if there are no results.
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: The first result matching the `where` clause.
-    public static func unwrapFirstWhere(_ where: SQLWhere, or error: Error, db: Database = DB) async throws -> Self {
+    public static func unwrapFirstWhere(_ where: SQLWhere.Clause, or error: Error, db: Database = DB) async throws -> Self {
         try await Self.where(`where`, db: db).unwrapFirst(or: error)
     }
     
@@ -109,7 +109,7 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A query on the `Model`'s table that matches the
     ///   given where clause.
-    public static func `where`(_ where: SQLWhere, db: Database = DB) -> Query<Self> {
+    public static func `where`(_ where: SQLWhere.Clause, db: Database = DB) -> Query<Self> {
         Self.query(db: db).where(`where`)
     }
     
@@ -210,7 +210,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
-    public static func delete(_ where: SQLWhere, db: Database = DB) async throws {
+    public static func delete(_ where: SQLWhere.Clause, db: Database = DB) async throws {
         try await query(db: db).where(`where`).delete()
     }
     
@@ -231,7 +231,7 @@ extension Model {
     ///     to `Database.default`.
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
-    public static func deleteAll(db: Database = DB, where: SQLWhere? = nil) async throws {
+    public static func deleteAll(db: Database = DB, where: SQLWhere.Clause? = nil) async throws {
         var query = Self.query(db: db)
         if let clause = `where` { query = query.where(clause) }
         try await query.delete()
@@ -266,7 +266,7 @@ extension Model {
     ///   - error: The error that will be thrown, should a query with
     ///     the where clause find a result.
     ///   - db: The database to query. Defaults to `Database.default`.
-    public static func ensureNotExists(_ where: SQLWhere, else error: Error, db: Database = DB) async throws {
+    public static func ensureNotExists(_ where: SQLWhere.Clause, else error: Error, db: Database = DB) async throws {
         try await Self.query(db: db).where(`where`).first()
             .map { _ in throw error }
     }

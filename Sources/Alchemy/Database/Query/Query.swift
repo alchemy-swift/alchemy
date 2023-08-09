@@ -60,7 +60,7 @@ open class Query<Result: QueryResult> {
     /// - Returns: The rows returned by the database.
     public func get() async throws -> [Result] {
         let sql = db.grammar.select(isDistinct: isDistinct,
-                                    columns: self.columns,
+                                    columns: columns,
                                     table: table,
                                     joins: joins,
                                     wheres: wheres,

@@ -16,8 +16,8 @@ extension Query {
     ///   value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(_ clause: SQLWhere) -> Self {
-        havings.append(clause)
+    public func having(_ clause: SQLWhere.Clause) -> Self {
+        havings.append(.and(clause))
         return self
     }
 
@@ -28,8 +28,9 @@ extension Query {
     ///   value.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orHaving(_ clause: SQLWhere) -> Self {
-        having(.or(clause.type))
+    public func orHaving(_ clause: SQLWhere.Clause) -> Self {
+        havings.append(.or(clause))
+        return self
     }
 
     /// Add a having clause to filter results from aggregate functions
@@ -39,11 +40,13 @@ extension Query {
     ///   - key: The column to match against.
     ///   - op: The `Operator` to be used in the comparison.
     ///   - value: The value that the column should  match.
-    ///   - boolean: How the clause should be appended (`.and` or
-    ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(key: String, op: SQLWhere.Operator, value: SQLConvertible, boolean: SQLWhere.Boolean = .and) -> Self {
-        having(SQLWhere(boolean: boolean, type: .value(key: key, op: op, value: value.sql)))
+    public func having(_ key: String, op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+        having(.value(key: key, op: op, value: value.sql))
+    }
+
+    public func orHaving(_ key: String, op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+        orHaving(.value(key: key, op: op, value: value.sql))
     }
 }

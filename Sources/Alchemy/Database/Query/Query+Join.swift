@@ -31,13 +31,13 @@ public struct SQLJoin: Equatable {
         self.table = joinTable
     }
 
-    func on(first: String, op: SQLWhere.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
+    func on(first: String, op: SQLWhere.Clause.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
         var join = self
-        join.wheres.append(SQLWhere(boolean: boolean, type: .column(first: first, op: op, second: second)))
+        join.wheres.append(SQLWhere(boolean: boolean, clause: .column(first: first, op: op, second: second)))
         return join
     }
 
-    func orOn(first: String, op: SQLWhere.Operator, second: String) -> SQLJoin {
+    func orOn(first: String, op: SQLWhere.Clause.Operator, second: String) -> SQLJoin {
         on(first: first, op: op, second: second, boolean: .or)
     }
 }
@@ -63,7 +63,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     @discardableResult
-    public func join(table: String, first: String, op: SQLWhere.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
+    public func join(table: String, first: String, op: SQLWhere.Clause.Operator = .equals, second: String, type: SQLJoin.JoinType = .inner) -> Self {
         join(
             SQLJoin(type: type, joinTable: table)
                 .on(first: first, op: op, second: second)
@@ -93,7 +93,7 @@ extension Query {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func leftJoin(table: String, first: String, op: SQLWhere.Operator = .equals, second: String) -> Self {
+    public func leftJoin(table: String, first: String, op: SQLWhere.Clause.Operator = .equals, second: String) -> Self {
         join(table: table, first: first, op: op, second: second, type: .left)
     }
 
@@ -108,7 +108,7 @@ extension Query {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func rightJoin(table: String, first: String, op: SQLWhere.Operator = .equals, second: String) -> Self {
+    public func rightJoin(table: String, first: String, op: SQLWhere.Clause.Operator = .equals, second: String) -> Self {
         join(table: table, first: first, op: op, second: second, type: .right)
     }
 
@@ -123,7 +123,7 @@ extension Query {
     ///   - second: The column from the joining table to be matched.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func crossJoin(table: String, first: String, op: SQLWhere.Operator = .equals, second: String) -> Self {
+    public func crossJoin(table: String, first: String, op: SQLWhere.Clause.Operator = .equals, second: String) -> Self {
         join(table: table, first: first, op: op, second: second, type: .cross)
     }
 }
