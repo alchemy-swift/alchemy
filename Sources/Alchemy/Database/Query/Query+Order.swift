@@ -15,17 +15,6 @@ public struct SQLOrder: Equatable {
 }
 
 extension Query {
-    /// Order the data from the query based on given clause.
-    ///
-    /// - Parameter order: The `OrderClause` that defines the
-    ///   ordering.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public func orderBy(_ order: SQLOrder) -> Self {
-        orders.append(order)
-        return self
-    }
-
     /// Order the data from the query based on a column and direction.
     ///
     /// - Parameters:
@@ -35,6 +24,7 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func orderBy(_ column: String, direction: SQLOrder.Direction = .asc) -> Self {
-        orderBy(SQLOrder(column: column, direction: direction))
+        orders.append(SQLOrder(column: column, direction: direction))
+        return self
     }
 }
