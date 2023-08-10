@@ -26,6 +26,12 @@ extension SQLConvertible where Self == SQL {
     }
 }
 
+extension SQLConvertible where Self == Query<SQLRow> {
+    public static func select(_ columns: String...) -> Query<SQLRow> {
+        Query(db: DB, columns: columns)
+    }
+}
+
 extension SQLConvertible where Self == SQLValue {
     public static func value(_ value: SQLValue) -> Self {
         value

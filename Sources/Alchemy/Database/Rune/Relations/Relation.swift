@@ -28,7 +28,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     }
 
     public func fetch(for models: [From]) async throws -> [To] {
-        setJoins()
+        try setJoins()
         let fromKeys = models.map(\.row["\(fromKey)"])
         let results = try await `where`(lookupKey, in: fromKeys).select(columns).get()
         let resultsByLookup = results.grouped(by: \.row[lookupKey])
@@ -37,7 +37,11 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
             .map { try To(models: $0) }
     }
 
-    private func setJoins() {
+    private func setJoins() throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - don't manually override the one set by `Relation`.")
+        }
+
         var nextKey = "\(table).\(toKey)"
         for through in throughs.reversed() {
             join(table: through.table, first: "\(through.table).\(through.to)", second: nextKey)

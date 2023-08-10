@@ -36,8 +36,13 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation {
         var statement = ""
         for (index, input) in input.enumerated() {
             let sql = input.sql
+            var sqlStatement = sql.statement
+            if sqlStatement.hasPrefix("SELECT") {
+                sqlStatement = "(\(sqlStatement))"
+            }
+
             statement += parts[index]
-            statement += sql.statement
+            statement += sqlStatement
             values += sql.parameters
         }
 

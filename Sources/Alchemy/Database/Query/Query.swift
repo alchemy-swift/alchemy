@@ -2,12 +2,12 @@ import Foundation
 import NIO
 
 /// An SQL query.
-open class Query<Result: QueryResult> {
+open class Query<Result: QueryResult>: SQLConvertible {
     let db: Database
     var shouldLog: Bool = false
 
     /// The SQL table to be queried.
-    let table: String
+    var table: String?
     var columns: [String]
     var isDistinct = false
     var limit: Int? = nil
@@ -21,10 +21,17 @@ open class Query<Result: QueryResult> {
 
     private var didLoad: ([Result]) async throws -> [Result] = { $0 }
 
-    public init(db: Database, table: String) {
+    public init(db: Database, table: String? = nil, columns: [String] = ["*"]) {
         self.db = db
         self.table = table
-        self.columns = ["\(table).*"]
+        self.columns = columns
+    }
+
+    // MARK: Table
+
+    public func from(_ table: String, as alias: String? = nil) -> Self {
+        self.table = alias.map { "\(table) AS \($0)" } ?? table
+        return self
     }
 
     // MARK: Logging
@@ -59,6 +66,10 @@ open class Query<Result: QueryResult> {
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
     public func get() async throws -> [Result] {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
         let sql = db.grammar.select(isDistinct: isDistinct,
                                     columns: columns,
                                     table: table,
@@ -73,6 +84,20 @@ open class Query<Result: QueryResult> {
         let rows = try await db.query(sql: sql, log: shouldLog)
         let results = try rows.map(Result.init)
         return try await didLoad(results)
+    }
+
+    public var sql: SQL {
+        db.grammar.select(isDistinct: isDistinct,
+                          columns: columns,
+                          table: table ?? "<unset>",
+                          joins: joins,
+                          wheres: wheres,
+                          groups: groups,
+                          havings: havings,
+                          orders: orders,
+                          limit: limit,
+                          offset: offset,
+                          lock: lock)
     }
 
     /// Run a select query and return the first database row only row.
@@ -114,6 +139,10 @@ open class Query<Result: QueryResult> {
     /// - Parameter values: An array of dictionaries containing the values to be
     ///   inserted.
     public func insert(_ values: [[String: SQLConvertible]]) async throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
         guard !values.isEmpty else {
             return
         }
@@ -132,6 +161,10 @@ open class Query<Result: QueryResult> {
     ///   inserted.
     /// - Returns: The inserted rows.
     public func insertReturn(_ values: [[String: SQLConvertible]]) async throws -> [SQLRow] {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
         guard !values.isEmpty else {
             return []
         }
@@ -168,6 +201,10 @@ open class Query<Result: QueryResult> {
     /// - Parameter fields: An dictionary containing the values to be
     ///   updated.
     public func update(_ fields: [String: SQLConvertible]) async throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
         guard !fields.isEmpty else {
             return
         }
@@ -180,6 +217,10 @@ open class Query<Result: QueryResult> {
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
         let sql = db.grammar.delete(table, wheres: wheres)
         try await db.query(sql: sql, log: shouldLog)
     }
@@ -205,17 +246,8 @@ extension Database {
         return Query(db: self, table: tableName)
     }
 
-    /// An alias for `table(_ table: String)` to be used when running.
-    /// a `select` query that also lets you alias the table name.
-    ///
-    /// - Parameters:
-    ///   - table: The table to select data from.
-    ///   - alias: An alias to use in place of table name. Defaults to
-    ///     `nil`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
-    public func from(_ table: String, as alias: String? = nil) -> Query<SQLRow> {
-        self.table(table, as: alias)
+    public func select(_ columns: String...) -> Query<SQLRow> {
+        Query(db: self, table: nil, columns: columns)
     }
 
     @discardableResult

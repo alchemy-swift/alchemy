@@ -22,8 +22,7 @@ extension Query {
     }
 
     public func havingRaw(_ sql: String, parameters: [SQLValue]) -> Self {
-        havings.append(.and(.raw(SQL(sql, parameters: parameters))))
-        return self
+        having(.raw(SQL(sql, parameters: parameters)))
     }
 
     /// An alias for `having(_ clause:) ` that appends an or clause
@@ -39,8 +38,7 @@ extension Query {
     }
 
     public func orHavingRaw(_ sql: String, parameters: [SQLValue]) -> Self {
-        havings.append(.or(.raw(SQL(sql, parameters: parameters))))
-        return self
+        orHaving(.raw(SQL(sql, parameters: parameters)))
     }
 
     /// Add a having clause to filter results from aggregate functions

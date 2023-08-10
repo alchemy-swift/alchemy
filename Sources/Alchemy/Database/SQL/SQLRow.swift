@@ -49,3 +49,11 @@ public struct SQLRow: ExpressibleByDictionaryLiteral {
         return fields[index].value
     }
 }
+
+extension Array<SQLRow> {
+    public func mapDecode<D: Decodable>(_ type: D.Type,
+                                        keyMapping: KeyMapping = .useDefaultKeys,
+                                        jsonDecoder: JSONDecoder = JSONDecoder()) throws -> [D] {
+        try map { try $0.decode(type, keyMapping: keyMapping, jsonDecoder: jsonDecoder) }
+    }
+}

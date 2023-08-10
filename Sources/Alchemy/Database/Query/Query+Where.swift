@@ -68,10 +68,14 @@ public struct SQLWhere: Hashable, SQLConvertible {
             return SQL("\(boolean) (\(nestedSQL.statement))", parameters: nestedSQL.parameters)
         case .in(let key, let expressions):
             let placeholders = Array(repeating: "?", count: expressions.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) IN (\(placeholders))", input: expressions)
+            let isSelect = expressions.first.map { $0.statement.hasPrefix("SELECT") && expressions.count == 1 } ?? false
+            let array = isSelect ? "\(placeholders)" : "(\(placeholders))"
+            return SQL("\(boolean) \(key) IN \(array)", input: expressions)
         case .notIn(let key, let expressions):
             let placeholders = Array(repeating: "?", count: expressions.count).joined(separator: ", ")
-            return SQL("\(boolean) \(key) NOT IN (\(placeholders))", input: expressions)
+            let isSelect = expressions.first.map { $0.statement.hasPrefix("SELECT") && expressions.count == 1 } ?? false
+            let array = isSelect ? "\(placeholders)" : "(\(placeholders))"
+            return SQL("\(boolean) \(key) NOT IN \(array)", input: expressions)
         case .raw(let sql):
             return SQL("\(boolean) \(sql.statement)", parameters: sql.parameters)
         }
@@ -251,6 +255,10 @@ extension Query {
         return `where`(.in(key: key, values: values.map(\.sql)))
     }
 
+    public func `where`(_ key: String, in query: Query<SQLRow>) -> Self {
+        `where`(.in(key: key, values: [query.sql]))
+    }
+
     /// A helper for adding an **or** variant of the `where(key:in:)` clause.
     ///
     /// - Parameters:
@@ -268,6 +276,10 @@ extension Query {
         return orWhere(.in(key: key, values: values.map(\.sql)))
     }
 
+    public func orWhere(_ key: String, in query: Query<SQLRow>) -> Self {
+        orWhere(.in(key: key, values: [query.sql]))
+    }
+
     /// Add a clause requiring that a column not match any values in a
     /// given array. This is a helper method for the where in method.
     ///
@@ -278,12 +290,16 @@ extension Query {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNot(_ key: String, in values: [SQLConvertible], boolean: SQLWhere.Boolean = .and) -> Self {
+    public func whereNot(_ key: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return `where`(.raw("TRUE"))
         }
 
         return `where`(.notIn(key: key, values: values.map(\.sql)))
+    }
+
+    public func whereNot(_ key: String, in query: Query<SQLRow>) -> Self {
+        `where`(.notIn(key: key, values: [query.sql]))
     }
 
     /// A helper for adding an **or** `whereNot` clause.
@@ -299,6 +315,10 @@ extension Query {
         }
 
         return orWhere(.notIn(key: key, values: values.map(\.sql)))
+    }
+
+    public func orWhereNot(_ key: String, in query: Query<SQLRow>) -> Self {
+        orWhere(.notIn(key: key, values: [query.sql]))
     }
 
     /// Add a raw SQL where clause to your query.

@@ -4,8 +4,13 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-//        let rows = try await DB.table("migrations").select()
-//        print(rows.count)
+        let rows = try await DB.table("migrations")
+            .where("batch" > .select("MAX(batch) - 1").from("migrations"))
+            .whereNot("name", in: .select("name").from("migrations"))
+            .select("name")
+            .log()
+            .get()
+        print("\(try rows.mapDecode(String.self))")
     }
 
     func testRelationships() {
