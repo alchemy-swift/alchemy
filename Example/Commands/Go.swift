@@ -132,20 +132,20 @@ struct Like: Model {
 struct AddStuffMigration: Migration {
     func up(db: Database) async throws {
         try await db.createTable("users") {
-            $0.string("id").primary()
+            $0.increments("id").primary()
             $0.string("name")
             $0.int("age")
         }
 
         try await db.createTable("posts") {
-            $0.string("id").primary()
-            $0.string("user_id").references("id", on: "users").notNull()
+            $0.increments("id").primary()
+            $0.bigInt("user_id").references("id", on: "users").notNull()
             $0.string("title")
         }
 
         try await db.createTable("user_tokens") {
-            $0.string("id").primary()
-            $0.string("user_id").references("id", on: "users").notNull()
+            $0.increments("id").primary()
+            $0.bigInt("user_id").references("id", on: "users").notNull()
             $0.string("token")
         }
     }
@@ -161,14 +161,14 @@ struct AddStuff2Migration: Migration {
     func up(db: Database) async throws {
         try await db.createTable("friends") {
             $0.increments("id").primary()
-            $0.string("user_a").references("id", on: "users").notNull()
-            $0.string("user_b").references("id", on: "users").notNull()
+            $0.bigInt("user_a").references("id", on: "users").notNull()
+            $0.bigInt("user_b").references("id", on: "users").notNull()
         }
 
         try await db.createTable("comments") {
-            $0.string("id").primary()
-            $0.string("post_id").references("id", on: "posts").notNull()
-            $0.string("user_id").references("id", on: "users").notNull()
+            $0.increments("id").primary()
+            $0.bigInt("post_id").references("id", on: "posts").notNull()
+            $0.bigInt("user_id").references("id", on: "users").notNull()
             $0.string("text")
         }
     }
@@ -182,9 +182,9 @@ struct AddStuff2Migration: Migration {
 struct AddStuff3Migration: Migration {
     func up(db: Database) async throws {
         try await db.createTable("likes") {
-            $0.string("id").primary()
-            $0.string("comment_id").references("id", on: "comments").notNull()
-            $0.string("user_id").references("id", on: "users").notNull()
+            $0.increments("id").primary()
+            $0.bigInt("comment_id").references("id", on: "comments").notNull()
+            $0.bigInt("user_id").references("id", on: "users").notNull()
         }
     }
 

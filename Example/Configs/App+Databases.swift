@@ -2,23 +2,20 @@ import Alchemy
 
 extension Plugin where Self == Databases {
     static var databases: Databases {
-        let sqlite: Database = .sqlite(path: "../test.db")
-        let postgres: Database = .postgres(
-            host: Env.DB_HOST ?? "localhost",
-            port: Env.DB_PORT ?? 5432,
-            database: Env.DB ?? "alchemy",
-            username: Env.DB_USER ?? "josh",
-            password: Env.DB_PASSWORD ?? "password",
-            enableSSL: Env.DB_ENABLE_SSL ?? false
-        ).log()
-
         return Databases(
 
             /// Define your databases here
 
             databases: [
-                .default: Env.isTesting ? .sqlite : sqlite,
-                "sqlite": .sqlite
+                .default: .postgres(
+                    host: Env.DB_HOST ?? "localhost",
+                    port: Env.DB_PORT ?? 5432,
+                    database: Env.DB ?? "alchemy",
+                    username: Env.DB_USER ?? "josh",
+                    password: Env.DB_PASSWORD ?? "password",
+                    enableSSL: Env.DB_ENABLE_SSL ?? false
+                ),
+                "sqlite": .sqlite(path: "../test.db"),
             ],
 
             /// Migrations for your app

@@ -70,7 +70,11 @@ extension Command {
     public func run() throws {
         try LoopGroup.next()
             .asyncSubmit {
-                try await start()
+                do {
+                    try await start()
+                } catch {
+                    Log.error("\(String(reflecting: error))")
+                }
 
                 if Self.shutdownAfterRun {
                     @Inject var lifecycle: ServiceLifecycle
