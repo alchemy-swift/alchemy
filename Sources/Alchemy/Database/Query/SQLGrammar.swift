@@ -47,7 +47,7 @@ public protocol SQLGrammar {
     func createTable(_ table: String, ifNotExists: Bool, columns: [CreateColumn]) -> SQL
     func renameTable(_ table: String, to: String) -> SQL
     func dropTable(_ table: String) -> SQL
-    func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL]
+    func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], alterColumns: [CreateColumn]) -> [SQL]
     func renameColumn(on table: String, column: String, to: String) -> SQL
     func createIndexes(on table: String, indexes: [CreateIndex]) -> [SQL]
     func dropIndex(on table: String, indexName: String) -> SQL
@@ -280,7 +280,7 @@ extension SQLGrammar {
         SQL("DROP TABLE \(table)")
     }
 
-    public func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
+    public func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], alterColumns: [CreateColumn]) -> [SQL] {
         guard !dropColumns.isEmpty || !addColumns.isEmpty else {
             return []
         }
@@ -291,6 +291,8 @@ extension SQLGrammar {
             adds.append("ADD COLUMN \(sql)")
             constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
         }
+
+        // TODO: Add Update Columns
 
         let drops = dropColumns.map { "DROP COLUMN \($0.inQuotes)" }
         return [

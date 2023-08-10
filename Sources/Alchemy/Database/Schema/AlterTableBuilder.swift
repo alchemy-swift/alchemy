@@ -1,5 +1,3 @@
-import Foundation
-
 /// A builder for altering the columns of an existing table.
 public final class AlterTableBuilder: CreateTableBuilder {
     /// Any columns that should be dropped.
@@ -10,21 +8,29 @@ public final class AlterTableBuilder: CreateTableBuilder {
     
     /// Any indexes that should be dropped.
     var dropIndexes: [String] = []
-}
 
-extension AlterTableBuilder {
+    /// Any columns to update.
+    var alterColumns: [CreateColumn] {
+        super.createColumns.filter(\.isUpdate)
+    }
+
+    /// Any columns to create.
+    override var createColumns: [CreateColumn] {
+        super.createColumns.filter { !$0.isUpdate }
+    }
+
     /// Drop a column.
     ///
     /// - Parameter column: The name of the column to drop.
     public func drop(column: String) {
         dropColumns.append(column)
     }
-    
+
     /// Drop the `created_at` and `updated_at` columns.
     public func dropTimestamps() {
         dropColumns.append(contentsOf: ["created_at", "updated_at"])
     }
-    
+
     /// Rename a column.
     ///
     /// - Parameters:
@@ -33,7 +39,7 @@ extension AlterTableBuilder {
     public func rename(column: String, to: String) {
         renameColumns.append((from: column, to: to))
     }
-    
+
     /// Drop an index.
     ///
     /// - Parameter index: The name of the index to drop.

@@ -24,12 +24,12 @@ extension Database {
     ///   - builder: A closure passing a builder for defining what
     ///     should be altered.
     public func alterTable(_ table: String, builder: (inout AlterTableBuilder) -> Void) async throws {
-        var alterBuilder = AlterTableBuilder(grammar: grammar)
-        builder(&alterBuilder)
-        let changes = grammar.alterTable(table, dropColumns: alterBuilder.dropColumns, addColumns: alterBuilder.createColumns)
-        let renames = alterBuilder.renameColumns.map { grammar.renameColumn(on: table, column: $0.from, to: $0.to) }
-        let dropIndexes = alterBuilder.dropIndexes.map { grammar.dropIndex(on: table, indexName: $0) }
-        let createIndexes = grammar.createIndexes(on: table, indexes: alterBuilder.createIndexes)
+        var alter = AlterTableBuilder(grammar: grammar)
+        builder(&alter)
+        let changes = grammar.alterTable(table, dropColumns: alter.dropColumns, addColumns: alter.createColumns, alterColumns: alter.alterColumns)
+        let renames = alter.renameColumns.map { grammar.renameColumn(on: table, column: $0.from, to: $0.to) }
+        let dropIndexes = alter.dropIndexes.map { grammar.dropIndex(on: table, indexName: $0) }
+        let createIndexes = grammar.createIndexes(on: table, indexes: alter.createIndexes)
         for sql in changes + renames + dropIndexes + createIndexes {
             try await query(sql: sql)
         }

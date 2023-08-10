@@ -26,9 +26,7 @@ public class CreateTableBuilder {
     init(grammar: SQLGrammar) {
         self.grammar = grammar
     }
-}
 
-extension CreateTableBuilder {
     /// Add an index.
     ///
     /// It's name will be `<tableName>_<columnName1>_<columnName2>...`
@@ -40,7 +38,7 @@ extension CreateTableBuilder {
     public func addIndex(columns: [String], isUnique: Bool) {
         self.createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
     }
-    
+
     /// Adds an auto-incrementing `Int` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -48,7 +46,7 @@ extension CreateTableBuilder {
     @discardableResult public func increments(_ column: String) -> CreateColumnBuilder<Int> {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .increments))
     }
-    
+
     /// Adds an `Int` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -56,7 +54,7 @@ extension CreateTableBuilder {
     @discardableResult public func int(_ column: String) -> CreateColumnBuilder<Int> {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .int))
     }
-    
+
     /// Adds a big int column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -64,7 +62,7 @@ extension CreateTableBuilder {
     @discardableResult public func bigInt(_ column: String) -> CreateColumnBuilder<Int> {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .bigInt))
     }
-    
+
     /// Adds a `Double` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -72,7 +70,7 @@ extension CreateTableBuilder {
     @discardableResult public func double(_ column: String) -> CreateColumnBuilder<Double> {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .double))
     }
-    
+
     /// Adds an `String` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -85,7 +83,7 @@ extension CreateTableBuilder {
     ) -> CreateColumnBuilder<String> {
         self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .string(length)))
     }
-    
+
     /// Adds a `UUID` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -94,7 +92,7 @@ extension CreateTableBuilder {
         let builder = CreateColumnBuilder<UUID>(grammar: self.grammar, name: column, type: .uuid)
         return self.appendAndReturn(builder: builder)
     }
-    
+
     /// Adds a `Bool` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -103,7 +101,7 @@ extension CreateTableBuilder {
         let builder = CreateColumnBuilder<Bool>(grammar: self.grammar, name: column, type: .bool)
         return self.appendAndReturn(builder: builder)
     }
-    
+
     /// Adds a `Date` column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -112,7 +110,7 @@ extension CreateTableBuilder {
         let builder = CreateColumnBuilder<Date>(grammar: self.grammar, name: column, type: .date)
         return self.appendAndReturn(builder: builder)
     }
-    
+
     /// Adds a JSON column.
     ///
     /// - Parameter column: The name of the column to add.
@@ -121,7 +119,7 @@ extension CreateTableBuilder {
         let builder = CreateColumnBuilder<SQLJSON>(grammar: self.grammar, name: column, type: .json)
         return self.appendAndReturn(builder: builder)
     }
-    
+
     /// Adds `created_at` and `updated_at` `Date` columns. These will
     /// default to `NOW()`.
     public func timestamps() {
@@ -130,7 +128,7 @@ extension CreateTableBuilder {
         _ = appendAndReturn(builder: createdAt)
         _ = appendAndReturn(builder: updatedAt)
     }
-    
+
     /// Adds a column builder to this table builder & returns it.
     ///
     /// - Parameter builder: The column builder to add to this table

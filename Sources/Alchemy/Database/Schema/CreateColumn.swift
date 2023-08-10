@@ -3,12 +3,15 @@
 public struct CreateColumn {
     /// The name for this column.
     let name: String
-    
+
     /// The type string.
     let type: ColumnType
     
     /// Any constraints.
     let constraints: [ColumnConstraint]
+
+    /// Should this column be updated, rather than created.
+    let isUpdate: Bool
 }
 
 /// An abstraction around various supported SQL column types.

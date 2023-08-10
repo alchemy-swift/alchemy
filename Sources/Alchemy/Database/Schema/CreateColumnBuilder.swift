@@ -8,19 +8,22 @@ protocol ColumnBuilderErased {
 ///
 /// `Default` is a Swift type that can be used to add a default value
 /// to this column.
-public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
+public class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     /// The grammar of this builder.
     private let grammar: SQLGrammar
 
     /// The name of the column.
     private let name: String
-    
+
     /// The type string of the column.
     private let type: ColumnType
     
     /// Any modifiers of the column.
     private var constraints: [ColumnConstraint]
-    
+
+    /// Should this column be updated, rather than created.
+    private var isUpdate: Bool
+
     /// Create with a name, a type, and a modifier array.
     ///
     /// - Parameters:
@@ -34,16 +37,23 @@ public final class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderEr
         self.name = name
         self.type = type
         self.constraints = constraints
+        self.isUpdate = false
     }
     
     // MARK: ColumnBuilderErased
     
     func toCreate() -> CreateColumn {
-        CreateColumn(name: self.name, type: self.type, constraints: self.constraints)
+        CreateColumn(name: self.name, type: self.type, constraints: self.constraints, isUpdate: isUpdate)
     }
-}
 
-extension CreateColumnBuilder {
+    // MARK: Builders
+
+    /// Update the column with the given name to this column schema. This is
+    /// ignored if not in an `AlterTableBuilder`.
+    public func change() {
+        isUpdate = true
+    }
+
     /// Adds an expression as the default value of this column.
     ///
     /// - Parameter expression: An expression for generating the
@@ -52,7 +62,7 @@ extension CreateColumnBuilder {
     @discardableResult public func `default`(expression: String) -> Self {
         self.adding(constraint: .default(expression))
     }
-    
+
     /// Adds a value as the default for this column.
     ///
     /// - Parameter expression: A default value for this column.
@@ -63,17 +73,17 @@ extension CreateColumnBuilder {
         if case .string(.unlimited) = type, grammar is MySQLGrammar {
             return adding(constraint: .default("(\(val.rawSQLString))"))
         }
-        
+
         return adding(constraint: .default(val.rawSQLString))
     }
-    
+
     /// Define this column as not nullable.
     ///
     /// - Returns: This column builder.
     @discardableResult public func notNull() -> Self {
         self.adding(constraint: .notNull)
     }
-    
+
     /// Defines this column as a reference to another column on a
     /// table.
     ///
@@ -93,21 +103,21 @@ extension CreateColumnBuilder {
     ) -> Self {
         self.adding(constraint: .foreignKey(column: column, table: table, onDelete: onDelete, onUpdate: onUpdate))
     }
-    
+
     /// Defines this column as a primary key.
     ///
     /// - Returns: This column builder.
     @discardableResult public func primary() -> Self {
         self.adding(constraint: .primaryKey)
     }
-    
+
     /// Defines this column as unique.
     ///
     /// - Returns: This column builder.
     @discardableResult public func unique() -> Self {
         self.adding(constraint: .unique)
     }
-    
+
     /// Adds a modifier to `self.modifiers` and then returns `self`.
     ///
     /// - Parameter modifier: The modifier to add.

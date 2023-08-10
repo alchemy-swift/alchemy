@@ -86,6 +86,7 @@ public final class Database: Service {
     ///     '?'s in `sql`. Ensure there are the same amount of values
     ///     as there are '?'s in `sql`.
     /// - Returns: The database rows returned by the query.
+    @discardableResult
     public func query(_ sql: String, parameters: [SQLValue] = []) async throws -> [SQLRow] {
         try await provider.query(sql, parameters: parameters)
     }
@@ -93,6 +94,7 @@ public final class Database: Service {
     /// Run a raw, not parametrized SQL string.
     ///
     /// - Returns: The rows returned by the query.
+    @discardableResult
     public func raw(_ sql: String) async throws -> [SQLRow] {
         try await provider.raw(sql)
     }
@@ -104,6 +106,7 @@ public final class Database: Service {
     ///
     /// - Parameter action: The action to run atomically.
     /// - Returns: The return value of the transaction.
+    @discardableResult
     public func transaction<T>(_ action: @escaping (Database) async throws -> T) async throws -> T {
         try await provider.transaction {
             try await action(Database(provider: $0, grammar: self.grammar))
