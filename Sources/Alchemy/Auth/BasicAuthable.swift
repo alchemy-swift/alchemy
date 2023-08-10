@@ -116,7 +116,7 @@ extension BasicAuthable {
             throw error
         }
         
-        return try firstRow.decode(Self.self)
+        return try firstRow.decodeModel(Self.self)
     }
 }
 

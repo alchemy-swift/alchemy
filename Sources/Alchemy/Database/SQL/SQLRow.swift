@@ -51,7 +51,7 @@ public struct SQLRow: ExpressibleByDictionaryLiteral {
 }
 
 extension Array<SQLRow> {
-    public func mapDecode<D: Decodable>(_ type: D.Type,
+    public func decodeEach<D: Decodable>(_ type: D.Type,
                                         keyMapping: KeyMapping = .useDefaultKeys,
                                         jsonDecoder: JSONDecoder = JSONDecoder()) throws -> [D] {
         try map { try $0.decode(type, keyMapping: keyMapping, jsonDecoder: jsonDecoder) }

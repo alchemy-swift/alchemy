@@ -46,7 +46,7 @@ final class SQLRowTests: XCTestCase {
             "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1
         ]
-        XCTAssertEqual(try row.decode(EverythingModel.self), EverythingModel(date: date, uuid: uuid))
+        XCTAssertEqual(try row.decodeModel(EverythingModel.self), EverythingModel(date: date, uuid: uuid))
     }
     
     func testSubscript() {

@@ -85,13 +85,13 @@ extension Database {
 
 extension SQLRow {
     /// Decode a `Model` type `M` from this row.
-    public func decode<M: ModelBase>(_ type: M.Type = M.self) throws -> M {
+    public func decodeModel<M: ModelBase>(_ type: M.Type = M.self) throws -> M {
         try M(row: self)
     }
 }
 
 extension Array where Element == SQLRow {
-    public func mapDecode<M: ModelBase>(_ type: M.Type) throws -> [M] {
+    public func decodeModels<M: ModelBase>(_ type: M.Type) throws -> [M] {
         try map { try M(row: $0) }
     }
 }

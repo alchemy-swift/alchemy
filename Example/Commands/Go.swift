@@ -10,7 +10,7 @@ struct Go: Command {
             .select("name")
             .log()
             .get()
-        print("\(try rows.mapDecode(String.self))")
+        print("\(try rows.decodeEach(String.self))")
     }
 
     func testRelationships() {

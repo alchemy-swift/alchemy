@@ -298,7 +298,7 @@ extension Array where Element: Model {
         try await Element.willCreate(self)
         let results = try await Element.query(db: db)
             .insertReturn(try insertableFields(db: db))
-            .map { try $0.decode(Element.self) }
+            .map { try $0.decodeModel(Element.self) }
         try await Element.didCreate(results)
         return results
     }
