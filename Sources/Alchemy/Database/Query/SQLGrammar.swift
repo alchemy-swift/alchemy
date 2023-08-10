@@ -27,6 +27,7 @@ public protocol SQLGrammar {
 
     // MARK: INSERT
 
+    func insert(_ table: String, columns: [String], sql: SQL) -> SQL
     func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL
     func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL]
 
@@ -183,6 +184,10 @@ extension SQLGrammar {
     }
 
     // MARK: INSERT
+
+    public func insert(_ table: String, columns: [String], sql: SQL) -> SQL {
+        SQL("INSERT INTO \(table)(\(columns.joined(separator: ", "))) \(sql.statement)", parameters: sql.parameters)
+    }
 
     public func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL {
         guard !values.isEmpty else {

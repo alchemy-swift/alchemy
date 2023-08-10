@@ -125,6 +125,15 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     // MARK: INSERT
 
+    public func insert(_ columns: [String], query: Query<SQLRow>) async throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
+        let sql = db.grammar.insert(table, columns: columns, sql: query.sql)
+        try await db.query(sql: sql, log: shouldLog)
+    }
+
     /// Perform an insert and create a database row from the provided
     /// data.
     ///
