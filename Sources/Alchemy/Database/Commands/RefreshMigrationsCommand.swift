@@ -1,7 +1,5 @@
 struct RefreshMigrationsCommand: Command {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(commandName: "migrate:refresh")
-    }
+    static var name = "migrate:refresh"
 
     func start() async throws {
         try await DB.reset()

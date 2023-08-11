@@ -1,7 +1,7 @@
 import Alchemy
 
 struct Go: Command {
-    static var _commandName: String = "go"
+    static let name = "go"
 
     func start() async throws {
         // go

@@ -9,7 +9,7 @@ import Hummingbird
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
 final class ServeCommand: Command {
-    static let configuration = CommandConfiguration(commandName: "serve")
+    static let name = "serve"
     static var shutdownAfterRun: Bool = false
     
     /// The host to serve at. Defaults to `127.0.0.1`.

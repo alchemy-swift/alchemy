@@ -3,10 +3,8 @@ import Lifecycle
 
 /// Command to run queue workers.
 struct WorkCommand: Command {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(commandName: "queue:work")
-    }
-    
+    static var name = "queue:work"
+
     static var shutdownAfterRun: Bool = false
     
     /// The name of the queue the workers should observe. If no name
