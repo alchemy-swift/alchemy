@@ -4,15 +4,7 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        // chunking
-        var all = Set<String>()
-        try await measure("Chunk") {
-            for try await user in User.lazy() {
-                all.insert(user.id())
-            }
-        }
-
-        print("GOT \(all.count)")
+        // go
     }
 
     func testRelationships() {
