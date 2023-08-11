@@ -19,6 +19,20 @@ open class Query<Result: QueryResult>: SQLConvertible {
     var havings: [SQLWhere] = []
     var orders: [SQLOrder] = []
 
+    public var sql: SQL {
+        db.grammar.select(isDistinct: isDistinct,
+                          columns: columns,
+                          table: table ?? "<notset>",
+                          joins: joins,
+                          wheres: wheres,
+                          groups: groups,
+                          havings: havings,
+                          orders: orders,
+                          limit: limit,
+                          offset: offset,
+                          lock: lock)
+    }
+
     private var didLoad: ([Result]) async throws -> [Result] = { $0 }
 
     public init(db: Database, table: String? = nil, columns: [String] = ["*"]) {
@@ -86,18 +100,16 @@ open class Query<Result: QueryResult>: SQLConvertible {
         return try await didLoad(results)
     }
 
-    public var sql: SQL {
-        db.grammar.select(isDistinct: isDistinct,
-                          columns: columns,
-                          table: table ?? "<unset>",
-                          joins: joins,
-                          wheres: wheres,
-                          groups: groups,
-                          havings: havings,
-                          orders: orders,
-                          limit: limit,
-                          offset: offset,
-                          lock: lock)
+    public func chunk(_ chunkSize: Int = 100, handler: ([Result]) async throws -> Void) async throws {
+        try await _chunk(chunkSize, handler: handler)
+    }
+
+    private func _chunk(_ chunkSize: Int, page: Int = 0, handler: ([Result]) async throws -> Void) async throws {
+        let results = try await didLoad(try await limit(chunkSize).offset(page * chunkSize).get())
+        try await handler(results)
+        if results.count == chunkSize {
+            try await _chunk(chunkSize, page: page + 1, handler: handler)
+        }
     }
 
     /// Run a select query and return the first database row only row.

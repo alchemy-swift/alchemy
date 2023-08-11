@@ -72,7 +72,7 @@ final class ModelCrudTests: TestCase<TestApp> {
             return
         }
         
-        try await TestModel.delete(first.id())
+        try await TestModel.delete(first.id.require())
         
         let count = try await TestModel.all().count
         XCTAssertEqual(count, 4)
@@ -107,7 +107,7 @@ final class ModelCrudTests: TestCase<TestApp> {
     
     func testUpdate() async throws {
         var model = try await TestModel.seed()
-        let id = try model.id()
+        let id = try model.id.require()
         model.foo = "baz"
         AssertNotEqual(try await TestModel.find(id), model)
         

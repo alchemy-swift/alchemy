@@ -13,7 +13,15 @@ extension Model {
     public static func all(db: Database = DB) async throws -> [Self] {
         try await Self.query(db: db).all()
     }
-    
+
+    public static func chunk(db: Database = DB, _ chunkSize: Int = 100, handler: ([Self]) async throws -> Void) async throws {
+        try await query(db: db).chunk(chunkSize, handler: handler)
+    }
+
+    public static func lazy(db: Database = DB, _ chunkSize: Int = 100) -> LazyQuerySequence<Self> {
+        query(db: db).lazy(chunkSize)
+    }
+
     /// Fetch the first model with the given id.
     ///
     /// - Parameters:

@@ -4,9 +4,15 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        try await DB.log().alterTable("users") {
-            $0.int("age").default(val: 2).primary().change()
+        // chunking
+        var all = Set<String>()
+        try await measure("Chunk") {
+            for try await user in User.lazy() {
+                all.insert(user.id())
+            }
         }
+
+        print("GOT \(all.count)")
     }
 
     func testRelationships() {

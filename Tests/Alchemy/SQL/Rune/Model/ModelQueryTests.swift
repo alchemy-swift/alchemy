@@ -46,7 +46,7 @@ private struct TestModel: Model, Seedable, Equatable {
             parent = try await .seed()
         }
         
-        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParentId: try parent.id())
+        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParentId: try parent.id.require())
     }
     
     static func == (lhs: TestModel, rhs: TestModel) -> Bool {

@@ -17,12 +17,16 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
         value.map { "\($0)" } ?? "null"
     }
 
-    public func callAsFunction() throws -> Identifier {
+    public func require() throws -> Identifier {
         guard let value else {
             throw DatabaseError("Object of type \(type(of: self)) had a nil id.")
         }
 
         return value
+    }
+
+    public func callAsFunction() -> Identifier {
+        try! require()
     }
 
     // MARK: ModelProperty
