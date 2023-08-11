@@ -34,7 +34,7 @@ public struct LazyQuerySequence<Result: QueryResult>: AsyncSequence {
         }
 
         private mutating func loadNextPage() async throws -> Result? {
-            let nextResults = try await query.log().limit(chunkSize).offset(page * chunkSize).get()
+            let nextResults = try await query.log().page(page, pageSize: chunkSize).get()
             self.results = nextResults
             page += 1
             index = 1

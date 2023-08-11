@@ -31,7 +31,7 @@ extension Query {
     ///     to `25`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func forPage(_ page: Int, perPage: Int = 25) -> Self {
-        offset((page - 1) * perPage).limit(perPage)
+    public func page(_ page: Int, pageSize: Int = 100) -> Self {
+        offset((page - 1) * page).limit(pageSize)
     }
 }

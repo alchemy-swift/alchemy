@@ -1,17 +1,6 @@
 import Foundation
 import NIO
 
-enum QueryLogging {
-    /// Log the SQL query.
-    case log
-    /// Log the SQL query, substituting bindings.
-    case logRawSQL
-    /// Log the SQL query, then fatal without executing the query.
-    case logFatal
-    /// Log the SQL query, substituting bindings, then fataling.
-    case logFatalRawSQL
-}
-
 /// An SQL query.
 open class Query<Result: QueryResult>: SQLConvertible {
     let db: Database
@@ -56,30 +45,6 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     public func from(_ table: String, as alias: String? = nil) -> Self {
         self.table = alias.map { "\(table) AS \($0)" } ?? table
-        return self
-    }
-
-    // MARK: Logging
-
-    /// Indicates the entire query should be logged when it's executed. Logs
-    /// will occur at the `info` log level.
-    public func log() -> Self {
-        logging = .log
-        return self
-    }
-
-    public func logRawSQL() -> Self {
-        logging = .logRawSQL
-        return self
-    }
-
-    public func logf() -> Self {
-        logging = .logFatal
-        return self
-    }
-
-    public func logfRawSQL() -> Self {
-        logging = .logFatalRawSQL
         return self
     }
 
@@ -131,7 +96,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     }
 
     private func _chunk(_ chunkSize: Int, page: Int = 0, handler: ([Result]) async throws -> Void) async throws {
-        let results = try await didLoad(try await limit(chunkSize).offset(page * chunkSize).get())
+        let results = try await didLoad(try await self.page(page, pageSize: chunkSize).get())
         try await handler(results)
         if results.count == chunkSize {
             try await _chunk(chunkSize, page: page + 1, handler: handler)
