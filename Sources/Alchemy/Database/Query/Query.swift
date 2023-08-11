@@ -1,10 +1,21 @@
 import Foundation
 import NIO
 
+enum QueryLogging {
+    /// Log the SQL query.
+    case log
+    /// Log the SQL query, substituting bindings.
+    case logRawSQL
+    /// Log the SQL query, then fatal without executing the query.
+    case logFatal
+    /// Log the SQL query, substituting bindings, then fataling.
+    case logFatalRawSQL
+}
+
 /// An SQL query.
 open class Query<Result: QueryResult>: SQLConvertible {
     let db: Database
-    var shouldLog: Bool = false
+    var logging: QueryLogging? = nil
 
     /// The SQL table to be queried.
     var table: String?
@@ -53,7 +64,22 @@ open class Query<Result: QueryResult>: SQLConvertible {
     /// Indicates the entire query should be logged when it's executed. Logs
     /// will occur at the `info` log level.
     public func log() -> Self {
-        shouldLog = true
+        logging = .log
+        return self
+    }
+
+    public func logRawSQL() -> Self {
+        logging = .logRawSQL
+        return self
+    }
+
+    public func logf() -> Self {
+        logging = .logFatal
+        return self
+    }
+
+    public func logfRawSQL() -> Self {
+        logging = .logFatalRawSQL
         return self
     }
 
@@ -95,7 +121,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
                                     limit: limit,
                                     offset: offset,
                                     lock: lock)
-        let rows = try await db.query(sql: sql, log: shouldLog)
+        let rows = try await db.query(sql: sql, logging: logging)
         let results = try rows.map(Result.init)
         return try await didLoad(results)
     }
@@ -143,7 +169,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
 
         let sql = db.grammar.insert(table, columns: columns, sql: query.sql)
-        try await db.query(sql: sql, log: shouldLog)
+        try await db.query(sql: sql, logging: logging)
     }
 
     /// Perform an insert and create a database row from the provided
@@ -169,7 +195,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
 
         let sql = db.grammar.insert(table, values: values)
-        try await db.query(sql: sql, log: shouldLog)
+        try await db.query(sql: sql, logging: logging)
     }
 
     public func insertReturn(_ values: [String: SQLConvertible]) async throws -> [SQLRow] {
@@ -191,11 +217,10 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
 
         let statements = db.grammar.insertReturn(table, values: values)
-        let shouldLog = shouldLog
         return try await db.transaction { conn in
             var toReturn: [SQLRow] = []
             for sql in statements {
-                let rows = try await conn.query(sql: sql, log: shouldLog)
+                let rows = try await conn.query(sql: sql, logging: self.logging)
                 toReturn += rows
             }
 
@@ -231,7 +256,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
 
         let sql = db.grammar.update(table: table, joins: joins, wheres: wheres, fields: fields)
-        try await db.query(sql: sql, log: shouldLog)
+        try await db.query(sql: sql, logging: logging)
     }
 
     // MARK: DELETE
@@ -243,7 +268,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
 
         let sql = db.grammar.delete(table, wheres: wheres)
-        try await db.query(sql: sql, log: shouldLog)
+        try await db.query(sql: sql, logging: logging)
     }
 }
 
@@ -272,10 +297,20 @@ extension Database {
     }
 
     @discardableResult
-    func query(sql: SQL, log: Bool = false) async throws -> [SQLRow] {
-        if log || shouldLog {
-            let bindsString = sql.parameters.isEmpty ? "" : " \(sql.parameters)"
-            Log.info("\(sql.statement);\(bindsString)")
+    func query(sql: SQL, logging: QueryLogging? = nil) async throws -> [SQLRow] {
+        if let logging = logging ?? self.logging {
+            switch logging {
+            case .log:
+                Log.info(sql.description)
+            case .logRawSQL:
+                Log.info(sql.rawSQLString)
+            case .logFatal:
+                Log.info(sql.description)
+                fatalError("logf")
+            case .logFatalRawSQL:
+                Log.info(sql.rawSQLString)
+                fatalError("logf")
+            }
         }
 
         return try await query(sql.statement, parameters: sql.parameters)

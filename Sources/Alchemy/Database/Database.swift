@@ -43,8 +43,8 @@ public final class Database: Service {
     private let createProvider: () -> DatabaseProvider
 
     /// Whether this database should log all queries at the `debug` level.
-    var shouldLog: Bool = false
-    
+    var logging: QueryLogging? = nil
+
     /// Create a database backed by the given provider.
     ///
     /// - Parameter provider: The provider.
@@ -55,7 +55,12 @@ public final class Database: Service {
 
     /// Log all executed queries to the `debug` level.
     public func log() -> Self {
-        self.shouldLog = true
+        self.logging = .log
+        return self
+    }
+
+    public func logRawSQL() -> Self {
+        self.logging = .logRawSQL
         return self
     }
 

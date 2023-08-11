@@ -1,7 +1,12 @@
 /// A parameterized SQL statement or expression.
-public struct SQL: Hashable, ExpressibleByStringInterpolation {
+public struct SQL: Hashable, ExpressibleByStringInterpolation, CustomStringConvertible {
     public let statement: String
     public let parameters: [SQLValue]
+
+    public var description: String {
+        let binds = parameters.isEmpty ? "" : " \(parameters)"
+        return "\(statement);\(binds)"
+    }
 
     public var rawSQLString: String {
         parameters.reduce(statement) {
