@@ -48,6 +48,8 @@ struct MySQLGrammar: SQLGrammar {
         switch constraint {
         case .notNull:
             return "NOT NULL"
+        case .nullable:
+            return nil
         case .default(let string):
             return "DEFAULT \(string)"
         case .primaryKey:

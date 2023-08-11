@@ -19,10 +19,13 @@ struct SQLiteGrammar: SQLGrammar {
         return nil
     }
 
-    func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn]) -> [SQL] {
-        guard !addColumns.isEmpty else { return [] }
+    func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], alterColumns: [CreateColumn]) -> [SQL] {
+        guard !addColumns.isEmpty else {
+            return []
+        }
 
-        // SQLite ALTER TABLE can't drop columns or add constraints. It also only supports adding one column per statement.
+        // SQLite ALTER TABLE can't drop columns, add constraints, or update
+        // columns. It also only supports adding one column per statement.
         let statements = addColumns.map(createColumnString)
             .map { "ADD COLUMN \($0.definition)" }
             .joined(separator: ",\n    ")
@@ -66,6 +69,8 @@ struct SQLiteGrammar: SQLGrammar {
         switch constraint {
         case .notNull:
             return "NOT NULL"
+        case .nullable:
+            return nil
         case .default(let string):
             return "DEFAULT \(string)"
         case .primaryKey:

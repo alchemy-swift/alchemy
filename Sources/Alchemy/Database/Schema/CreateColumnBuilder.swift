@@ -43,7 +43,7 @@ public class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     // MARK: ColumnBuilderErased
     
     func toCreate() -> CreateColumn {
-        CreateColumn(name: self.name, type: self.type, constraints: self.constraints, isUpdate: isUpdate)
+        CreateColumn(name: name, type: type, constraints: constraints, isUpdate: isUpdate)
     }
 
     // MARK: Builders
@@ -60,7 +60,7 @@ public class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     ///   default value of this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(expression: String) -> Self {
-        self.adding(constraint: .default(expression))
+        adding(constraint: .default(expression))
     }
 
     /// Adds a value as the default for this column.
@@ -81,7 +81,14 @@ public class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     ///
     /// - Returns: This column builder.
     @discardableResult public func notNull() -> Self {
-        self.adding(constraint: .notNull)
+        adding(constraint: .notNull)
+    }
+
+    /// Define this column as nullable.
+    ///
+    /// - Returns: This column builder.
+    @discardableResult public func nullable() -> Self {
+        adding(constraint: .nullable)
     }
 
     /// Defines this column as a reference to another column on a
@@ -101,21 +108,21 @@ public class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
         onDelete: ColumnConstraint.ReferenceOption? = nil,
         onUpdate: ColumnConstraint.ReferenceOption? = nil
     ) -> Self {
-        self.adding(constraint: .foreignKey(column: column, table: table, onDelete: onDelete, onUpdate: onUpdate))
+        adding(constraint: .foreignKey(column: column, table: table, onDelete: onDelete, onUpdate: onUpdate))
     }
 
     /// Defines this column as a primary key.
     ///
     /// - Returns: This column builder.
     @discardableResult public func primary() -> Self {
-        self.adding(constraint: .primaryKey)
+        adding(constraint: .primaryKey)
     }
 
     /// Defines this column as unique.
     ///
     /// - Returns: This column builder.
     @discardableResult public func unique() -> Self {
-        self.adding(constraint: .unique)
+        adding(constraint: .unique)
     }
 
     /// Adds a modifier to `self.modifiers` and then returns `self`.
@@ -123,7 +130,7 @@ public class CreateColumnBuilder<Default: SQLConvertible>: ColumnBuilderErased {
     /// - Parameter modifier: The modifier to add.
     /// - Returns: This column builder.
     private func adding(constraint: ColumnConstraint) -> Self {
-        self.constraints.append(constraint)
+        constraints.append(constraint)
         return self
     }
 }
@@ -135,7 +142,7 @@ extension CreateColumnBuilder where Default == Int {
     ///
     /// - Returns: This column builder.
     @discardableResult public func unsigned() -> Self {
-        self.adding(constraint: .unsigned)
+        adding(constraint: .unsigned)
     }
 }
 
@@ -144,7 +151,7 @@ extension CreateColumnBuilder where Default == Date {
     ///
     /// - Returns: This column builder.
     @discardableResult public func defaultNow() -> Self {
-        self.default(expression: "CURRENT_TIMESTAMP")
+        `default`(expression: "CURRENT_TIMESTAMP")
     }
 }
 
@@ -156,7 +163,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
     ///   for this column.
     /// - Returns: This column builder.
     @discardableResult public func `default`(jsonString: String) -> Self {
-        self.adding(constraint: .default(self.grammar.jsonLiteral(for: jsonString)))
+        adding(constraint: .default(grammar.jsonLiteral(for: jsonString)))
     }
     
     /// Adds an `Encodable` as the default for this column.
@@ -176,7 +183,7 @@ extension CreateColumnBuilder where Default == SQLJSON {
         }
         
         let jsonString = String(decoding: jsonData, as: UTF8.self)
-        return self.adding(constraint: .default(self.grammar.jsonLiteral(for: jsonString)))
+        return adding(constraint: .default(grammar.jsonLiteral(for: jsonString)))
     }
 }
 

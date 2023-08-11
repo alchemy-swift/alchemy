@@ -36,7 +36,7 @@ public class CreateTableBuilder {
     ///   - columns: The names of the column(s) in this index.
     ///   - isUnique: Whether this index will be unique.
     public func addIndex(columns: [String], isUnique: Bool) {
-        self.createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
+        createIndexes.append(CreateIndex(columns: columns, isUnique: isUnique))
     }
 
     /// Adds an auto-incrementing `Int` column.
@@ -44,7 +44,7 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func increments(_ column: String) -> CreateColumnBuilder<Int> {
-        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .increments))
+        appendAndReturn(builder: CreateColumnBuilder(grammar: grammar, name: column, type: .increments))
     }
 
     /// Adds an `Int` column.
@@ -52,7 +52,7 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func int(_ column: String) -> CreateColumnBuilder<Int> {
-        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .int))
+        appendAndReturn(builder: CreateColumnBuilder(grammar: grammar, name: column, type: .int))
     }
 
     /// Adds a big int column.
@@ -60,7 +60,7 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func bigInt(_ column: String) -> CreateColumnBuilder<Int> {
-        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .bigInt))
+        appendAndReturn(builder: CreateColumnBuilder(grammar: grammar, name: column, type: .bigInt))
     }
 
     /// Adds a `Double` column.
@@ -68,7 +68,7 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func double(_ column: String) -> CreateColumnBuilder<Double> {
-        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .double))
+        appendAndReturn(builder: CreateColumnBuilder(grammar: grammar, name: column, type: .double))
     }
 
     /// Adds an `String` column.
@@ -81,7 +81,7 @@ public class CreateTableBuilder {
         _ column: String,
         length: ColumnType.StringLength = .limit(255)
     ) -> CreateColumnBuilder<String> {
-        self.appendAndReturn(builder: CreateColumnBuilder(grammar: self.grammar, name: column, type: .string(length)))
+        appendAndReturn(builder: CreateColumnBuilder(grammar: grammar, name: column, type: .string(length)))
     }
 
     /// Adds a `UUID` column.
@@ -89,8 +89,8 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func uuid(_ column: String) -> CreateColumnBuilder<UUID> {
-        let builder = CreateColumnBuilder<UUID>(grammar: self.grammar, name: column, type: .uuid)
-        return self.appendAndReturn(builder: builder)
+        let builder = CreateColumnBuilder<UUID>(grammar: grammar, name: column, type: .uuid)
+        return appendAndReturn(builder: builder)
     }
 
     /// Adds a `Bool` column.
@@ -98,8 +98,8 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func bool(_ column: String) -> CreateColumnBuilder<Bool> {
-        let builder = CreateColumnBuilder<Bool>(grammar: self.grammar, name: column, type: .bool)
-        return self.appendAndReturn(builder: builder)
+        let builder = CreateColumnBuilder<Bool>(grammar: grammar, name: column, type: .bool)
+        return appendAndReturn(builder: builder)
     }
 
     /// Adds a `Date` column.
@@ -107,8 +107,8 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func date(_ column: String) -> CreateColumnBuilder<Date> {
-        let builder = CreateColumnBuilder<Date>(grammar: self.grammar, name: column, type: .date)
-        return self.appendAndReturn(builder: builder)
+        let builder = CreateColumnBuilder<Date>(grammar: grammar, name: column, type: .date)
+        return appendAndReturn(builder: builder)
     }
 
     /// Adds a JSON column.
@@ -116,8 +116,8 @@ public class CreateTableBuilder {
     /// - Parameter column: The name of the column to add.
     /// - Returns: A builder for adding modifiers to the column.
     @discardableResult public func json(_ column: String) -> CreateColumnBuilder<SQLJSON> {
-        let builder = CreateColumnBuilder<SQLJSON>(grammar: self.grammar, name: column, type: .json)
-        return self.appendAndReturn(builder: builder)
+        let builder = CreateColumnBuilder<SQLJSON>(grammar: grammar, name: column, type: .json)
+        return appendAndReturn(builder: builder)
     }
 
     /// Adds `created_at` and `updated_at` `Date` columns. These will
@@ -135,7 +135,7 @@ public class CreateTableBuilder {
     ///   builder.
     /// - Returns: The passed in `builder`.
     private func appendAndReturn<T: SQLConvertible>( builder: CreateColumnBuilder<T>) -> CreateColumnBuilder<T> {
-        self.columnBuilders.append(builder)
+        columnBuilders.append(builder)
         return builder
     }
 }

@@ -63,6 +63,8 @@ public enum ColumnConstraint {
         case setDefault = "SET DEFAULT"
     }
     
+    /// This column can be null.
+    case nullable
     /// This column shouldn't be null.
     case notNull
     /// The default value for this column.
@@ -72,11 +74,10 @@ public enum ColumnConstraint {
     /// This column is unique on this table.
     case unique
     /// This column references a `column` on another `table`.
-    case foreignKey(
-            column: String,
-            table: String,
-            onDelete: ReferenceOption? = nil,
-            onUpdate: ReferenceOption? = nil)
+    case foreignKey(column: String,
+                    table: String,
+                    onDelete: ReferenceOption? = nil,
+                    onUpdate: ReferenceOption? = nil)
     /// This int column is unsigned.
     case unsigned
 }

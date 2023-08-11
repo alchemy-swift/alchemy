@@ -4,24 +4,9 @@ struct Go: Command {
     static var _commandName: String = "go"
 
     func start() async throws {
-        try await DB.raw("""
-        ALTER TABLE users
-        ALTER COLUMN age set not null
-        """)
-
-        /*
-         
-         1. type (including varchar length)
-         2. nullable
-         3. unsigned
-         4. unique
-         5. default
-         6. foreign key
-         7. comment
-
-         */
-
-//        print("\(try rows.decodeEach(String.self))")
+        try await DB.log().alterTable("users") {
+            $0.int("age").default(val: 2).primary().change()
+        }
     }
 
     func testRelationships() {

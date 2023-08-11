@@ -281,7 +281,7 @@ extension SQLGrammar {
     }
 
     public func alterTable(_ table: String, dropColumns: [String], addColumns: [CreateColumn], alterColumns: [CreateColumn]) -> [SQL] {
-        guard !dropColumns.isEmpty || !addColumns.isEmpty else {
+        guard !dropColumns.isEmpty || !addColumns.isEmpty || !alterColumns.isEmpty else {
             return []
         }
 
@@ -292,13 +292,29 @@ extension SQLGrammar {
             constraints.append(contentsOf: tableConstraints.map { "ADD \($0)" })
         }
 
-        // TODO: Add Update Columns
+        var updates: [String] = []
+        for alter in alterColumns {
+            updates.append("ALTER COLUMN \(alter.name) TYPE \(columnTypeString(for: alter.type))")
+            for constraint in alter.constraints {
+                switch constraint {
+                case .nullable:
+                    updates.append("ALTER COLUMN \(alter.name) DROP NOT NULL")
+                case .notNull:
+                    updates.append("ALTER COLUMN \(alter.name) SET NOT NULL")
+                case let .default(value):
+                    updates.append("ALTER COLUMN \(alter.name) SET DEFAULT \(value)")
+                case .unsigned, .unique, .foreignKey, .primaryKey:
+                    Log.warning("Changing UNSIGNED, UNIQUE, FOREIGN KEY, and PRIMARY KEY aren't available in ALTER TABLE, yet.")
+                    continue
+                }
+            }
+        }
 
         let drops = dropColumns.map { "DROP COLUMN \($0.inQuotes)" }
         return [
             SQL("""
                 ALTER TABLE \(table)
-                    \((adds + drops + constraints).joined(separator: ",\n    "))
+                    \((adds + updates + drops + constraints).joined(separator: ",\n    "))
                 """)]
     }
 
@@ -375,6 +391,8 @@ extension SQLGrammar {
             switch constraint {
             case .notNull:
                 baseSQL.append(" \(constraintString)")
+            case .nullable:
+                continue
             case .default:
                 baseSQL.append(" \(constraintString)")
             case .unsigned:
@@ -395,6 +413,8 @@ extension SQLGrammar {
         switch constraint {
         case .notNull:
             return "NOT NULL"
+        case .nullable:
+            return nil
         case .default(let string):
             return "DEFAULT \(string)"
         case .primaryKey:
