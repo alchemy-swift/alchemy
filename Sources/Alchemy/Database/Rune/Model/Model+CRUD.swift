@@ -30,7 +30,7 @@ extension Model {
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
     public static func find(_ id: Self.Identifier, db: Database = DB) async throws -> Self? {
-        try await Self.firstWhere(Self.primaryKey == id, db: db)
+        try await Self.where(Self.primaryKey == id, db: db).first()
     }
     
     /// Fetch the first model that matches the given where clause.
@@ -40,23 +40,10 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ where: SQLWhere.Clause, db: Database = DB) async throws -> Self? {
-        try await Self.firstWhere(`where`, db: db)
+    public static func first(_ where: SQLWhere.Clause, db: Database = DB) async throws -> Self? {
+        try await Self.where(`where`, db: db).first()
     }
-    
-    /// Fetch the first model with the given id, throwing the given
-    /// error if it doesn't exist.
-    ///
-    /// - Parameters:
-    ///   - db: The database to delete the model from. Defaults to
-    ///     `Database.default`.
-    ///   - id: The id of the model to delete.
-    ///   - error: An error to throw if the model doesn't exist.
-    /// - Returns: A matching model.
-    public static func find(db: Database = DB, _ id: Self.Identifier, or error: Error) async throws -> Self {
-        try await Self.firstWhere(Self.primaryKey == id, db: db).unwrap(or: error)
-    }
-    
+
     /// Fetch the first model of this type.
     ///
     /// - Parameters: db: The database to search the model for.
@@ -70,43 +57,6 @@ extension Model {
     public static func random(db: Database = DB) async throws -> Self? {
         // Note; MySQL should be `RAND()`
         try await Self.query(db: db).random()
-    }
-    
-    /// Gets the first element that meets the given where value.
-    ///
-    /// - Parameters:
-    ///   - where: The table will be queried for a row matching this
-    ///     clause.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    /// - Returns: The first result matching the `where` clause, if
-    ///   one exists.
-    public static func firstWhere(_ where: SQLWhere.Clause, db: Database = DB) async throws -> Self? {
-        try await Self.query(db: db).where(`where`).first()
-    }
-    
-    /// Gets all elements that meets the given where value.
-    ///
-    /// - Parameters:
-    ///   - where: The table will be queried for a row matching this
-    ///     clause.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    /// - Returns: All the models matching the `where` clause.
-    public static func allWhere(_ where: SQLWhere.Clause, db: Database = DB) async throws -> [Self] {
-        try await Self.where(`where`, db: db).all()
-    }
-    
-    /// Gets the first element that meets the given where value.
-    /// Throws an error if no results match. The opposite of
-    /// `ensureNotExists(...)`.
-    ///
-    /// - Parameters:
-    ///   - where: The table will be queried for a row matching this
-    ///     clause.
-    ///   - error: The error to throw if there are no results.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    /// - Returns: The first result matching the `where` clause.
-    public static func unwrapFirstWhere(_ where: SQLWhere.Clause, or error: Error, db: Database = DB) async throws -> Self {
-        try await Self.where(`where`, db: db).unwrapFirst(or: error)
     }
     
     /// Creates a query on the given model with the given where

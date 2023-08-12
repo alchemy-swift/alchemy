@@ -14,7 +14,7 @@
 ///     let priority: TaskPriority // Stored as `Int` in the database.
 /// }
 /// ```
-public protocol ModelEnum: Codable, ModelProperty {}
+public protocol ModelEnum: ModelProperty, SQLValueConvertible {}
 
 extension ModelEnum where Self: RawRepresentable, RawValue: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
@@ -27,5 +27,11 @@ extension ModelEnum where Self: RawRepresentable, RawValue: ModelProperty {
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
         try rawValue.store(key: key, on: &row)
+    }
+}
+
+extension ModelEnum where Self: RawRepresentable, RawValue: SQLValueConvertible {
+    public var sqlValue: SQLValue {
+        rawValue.sqlValue
     }
 }

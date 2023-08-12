@@ -6,7 +6,7 @@ extension Query: AsyncSequence {
 
         public mutating func next() async throws -> Result? {
             guard let results else {
-                results = try await query.log().get()
+                results = try await query.get()
                 return try await next()
             }
 
