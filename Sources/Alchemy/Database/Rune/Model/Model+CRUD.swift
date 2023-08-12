@@ -70,7 +70,11 @@ extension Model {
     public static func `where`(_ where: SQLWhere.Clause, db: Database = DB) -> Query<Self> {
         Self.query(db: db).where(`where`)
     }
-    
+
+    public static func select(db: Database = DB, _ columns: String...) -> Query<Self> {
+        Self.query(db: db).select(columns)
+    }
+
     // MARK: - Insert
     
     /// Inserts this model to a database.

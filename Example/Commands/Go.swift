@@ -5,6 +5,9 @@ struct Go: Command {
 
     func start() async throws {
         // go
+        let names1 = try await User.select("name").limit(5).get(String.self)
+        let names2 = try await DB.table("users").select("name").limit(5).get().decodeEach(String.self)
+        print(names1, names2)
     }
 
     func testRelationships() {

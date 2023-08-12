@@ -71,6 +71,18 @@ open class Query<Result: QueryResult>: SQLConvertible {
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
     public func get() async throws -> [Result] {
+        try await didLoad(rows().map(Result.init))
+    }
+
+    /// Gets the results of this query, decoded to the given type. Doesn't run
+    /// any eager loads or other query hooks.
+    public func get<D: Decodable>(_ type: D.Type) async throws -> [D] {
+        try await rows().decodeEach(type)
+    }
+
+    /// Gets the raw SQLRows for this Query. Doesn't convert those to the
+    /// `Result` or run any eager loads or other query hooks.
+    public func rows() async throws -> [SQLRow] {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
@@ -86,9 +98,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
                                     limit: limit,
                                     offset: offset,
                                     lock: lock)
-        let rows = try await db.query(sql: sql, logging: logging)
-        let results = try rows.map(Result.init)
-        return try await didLoad(results)
+        return try await db.query(sql: sql, logging: logging)
     }
 
     public func chunk(_ chunkSize: Int = 100, handler: ([Result]) async throws -> Void) async throws {
@@ -96,7 +106,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     }
 
     private func _chunk(_ chunkSize: Int, page: Int = 0, handler: ([Result]) async throws -> Void) async throws {
-        let results = try await didLoad(try await self.page(page, pageSize: chunkSize).get())
+        let results = try await self.page(page, pageSize: chunkSize).get()
         try await handler(results)
         if results.count == chunkSize {
             try await _chunk(chunkSize, page: page + 1, handler: handler)

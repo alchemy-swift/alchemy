@@ -103,7 +103,7 @@ struct JobModel: Model, Codable {
     
     func toJobData() throws -> JobData {
         JobData(
-            id: try id(),
+            id: try id.require(),
             json: json,
             jobName: jobName,
             channel: channel,

@@ -88,7 +88,7 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
-        throw DatabaseError("This shouldn't be called; top level is keyed.")
+        throw DatabaseError("This should not be called; top level is keyed.")
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
