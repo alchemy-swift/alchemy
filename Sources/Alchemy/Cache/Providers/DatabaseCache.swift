@@ -14,13 +14,13 @@ final class DatabaseCache: CacheProvider {
     
     /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) async throws -> CacheItem? {
-        let item = try await CacheItem.query(db: db).where("_key" == key).first()
+        let item = try await CacheItem.query(on: db).where("_key" == key).first()
         guard let item = item else {
             return nil
         }
         
         guard item.isValid else {
-            try await CacheItem.query(db: db).where("_key" == key).delete()
+            try await CacheItem.query(on: db).where("_key" == key).delete()
             return nil
         }
         
@@ -39,9 +39,9 @@ final class DatabaseCache: CacheProvider {
         if var item = item {
             item.text = value.description
             item.expiration = expiration ?? -1
-            _ = try await item.save(db: db)
+            _ = try await item.save(on: db)
         } else {
-            _ = try await CacheItem(_key: key, text: value.description, expiration: expiration ?? -1).save(db: db)
+            _ = try await CacheItem(_key: key, text: value.description, expiration: expiration ?? -1).save(on: db)
         }
     }
     
@@ -60,7 +60,7 @@ final class DatabaseCache: CacheProvider {
     }
     
     func delete(_ key: String) async throws {
-        _ = try await CacheItem.query(db: db).where("_key" == key).delete()
+        _ = try await CacheItem.query(on: db).where("_key" == key).delete()
     }
     
     func increment(_ key: String, by amount: Int) async throws -> Int {
@@ -70,7 +70,7 @@ final class DatabaseCache: CacheProvider {
             return newVal
         }
         
-        _ = try await CacheItem(_key: key, text: "\(amount)").save(db: db)
+        _ = try await CacheItem(_key: key, text: "\(amount)").save(on: db)
         return amount
     }
     
@@ -79,7 +79,7 @@ final class DatabaseCache: CacheProvider {
     }
     
     func wipe() async throws {
-        try await CacheItem.truncate(db: db)
+        try await CacheItem.truncate(on: db)
     }
 }
 

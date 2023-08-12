@@ -14,6 +14,9 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// Convert this to an SQLRow for updating or inserting into a database.
     func fields() throws -> [String: SQLConvertible]
 
+    /// The database on which this model is saved & queried by default.
+    static var database: Database { get }
+
     /// The table with which this object is associated. Defaults to
     /// the type name, pluralized and in snake case.
     static var table: String { get }
@@ -36,10 +39,11 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     static var jsonEncoder: JSONEncoder { get }
 
     /// The default scope of this Model. Defaults to all rows on `table`.
-    static func query(db: Database) -> Query<Self>
+    static func query(on db: Database) -> Query<Self>
 }
 
 extension Model {
+    public static var database: Database { DB }
     public static var table: String { KeyMapping.snakeCase.encode("\(Self.self)").pluralized }
     public static var primaryKey: String { "id" }
     public static var jsonDecoder: JSONDecoder { JSONDecoder() }
@@ -50,8 +54,12 @@ extension Model {
     /// - Parameter database: The database to run the query on.
     ///   Defaults to `Database.default`.
     /// - Returns: A builder for building your query.
-    public static func query(db: Database = DB) -> Query<Self> {
+    public static func query(on db: Database = database) -> Query<Self> {
         db.table(Self.self)
+    }
+
+    public static func on(_ database: Database) -> Query<Self> {
+        query(on: database)
     }
 }
 

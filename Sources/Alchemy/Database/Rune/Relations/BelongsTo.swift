@@ -2,7 +2,7 @@ extension Model {
     public typealias BelongsTo<To: ModelOrOptional> = BelongsToRelation<Self, To>
 
     public func belongsTo<To: ModelOrOptional>(_ type: To.Type = To.self,
-                                               db: Database = DB,
+                                               on db: Database = To.M.database,
                                                from fromKey: String? = nil,
                                                to toKey: String? = nil) -> BelongsTo<To> {
         BelongsTo(db: db, from: self, fromKey: fromKey, toKey: toKey)

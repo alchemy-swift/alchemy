@@ -72,7 +72,7 @@ extension Database {
         for m in migrations {
             let start = Date()
             try await m.up(db: self)
-            try await AppliedMigration(name: m.name, batch: lastBatch + 1, runAt: Date()).insert(db: self)
+            try await AppliedMigration(name: m.name, batch: lastBatch + 1, runAt: Date()).insert(on: self)
             let time = start.elapsedString
             let done = "DONE"
             let dots = dots(message: m.name, info: "\(time) \(done)")

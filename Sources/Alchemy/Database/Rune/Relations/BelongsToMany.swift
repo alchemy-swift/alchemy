@@ -2,7 +2,7 @@ extension Model {
     public typealias BelongsToMany<To: Model> = BelongsToManyRelation<Self, To>
 
     public func belongsToMany<To: ModelOrOptional>(_ type: To.Type = To.self,
-                                                   db: Database = DB,
+                                                   on db: Database = To.M.database,
                                                    from fromKey: String? = nil,
                                                    to toKey: String? = nil,
                                                    pivot: String? = nil,

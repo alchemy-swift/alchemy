@@ -13,16 +13,16 @@ extension Model {
     ///   - db: The database to query. Defaults to `Database.default`.
     /// - Returns: A query on the `Model`'s table that matches the
     ///   given where clause.
-    public static func `where`(_ where: SQLWhere.Clause, db: Database = DB) -> Query<Self> {
-        query(db: db).where(`where`)
+    public static func `where`(on db: Database = database, _ where: SQLWhere.Clause) -> Query<Self> {
+        query(on: db).where(`where`)
     }
 
-    public static func select(db: Database = DB, _ columns: String...) -> Query<Self> {
-        query(db: db).select(columns)
+    public static func select(on db: Database = database, _ columns: String...) -> Query<Self> {
+        query(on: db).select(columns)
     }
 
-    public static func with<E: EagerLoadable>(db: Database = DB, _ loader: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
-        query(db: db).didLoad { models in
+    public static func with<E: EagerLoadable>(on db: Database = database, _ loader: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
+        query(on: db).didLoad { models in
             guard let first = models.first else { return }
             try await loader(first).load(on: models)
         }
@@ -35,16 +35,16 @@ extension Model {
     /// - Parameter db: The database to load models from. Defaults to
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
-    public static func all(db: Database = DB) async throws -> [Self] {
-        try await query(db: db).get()
+    public static func all(on db: Database = database) async throws -> [Self] {
+        try await query(on: db).get()
     }
 
-    public static func chunk(db: Database = DB, _ chunkSize: Int = 100, handler: ([Self]) async throws -> Void) async throws {
-        try await query(db: db).chunk(chunkSize, handler: handler)
+    public static func chunk(on db: Database = database, _ chunkSize: Int = 100, handler: ([Self]) async throws -> Void) async throws {
+        try await query(on: db).chunk(chunkSize, handler: handler)
     }
 
-    public static func lazy(db: Database = DB, _ chunkSize: Int = 100) -> LazyQuerySequence<Self> {
-        query(db: db).lazy(chunkSize)
+    public static func lazy(on db: Database = database, _ chunkSize: Int = 100) -> LazyQuerySequence<Self> {
+        query(on: db).lazy(chunkSize)
     }
 
     /// Fetch the first model with the given id.
@@ -54,8 +54,8 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ id: Identifier, db: Database = DB) async throws -> Self? {
-        try await `where`(primaryKey == id, db: db).first()
+    public static func find(on db: Database = database, _ id: Identifier) async throws -> Self? {
+        try await `where`(on: db, primaryKey == id).first()
     }
     
     /// Fetch the first model that matches the given where clause.
@@ -65,8 +65,8 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     /// - Returns: A matching model, if one exists.
-    public static func first(_ where: SQLWhere.Clause, db: Database = DB) async throws -> Self? {
-        try await Self.where(`where`, db: db).first()
+    public static func first(on db: Database = database, _ where: SQLWhere.Clause) async throws -> Self? {
+        try await Self.where(on: db, `where`).first()
     }
 
     /// Fetch the first model of this type.
@@ -74,8 +74,8 @@ extension Model {
     /// - Parameters: db: The database to search the model for.
     ///   Defaults to `Database.default`.
     /// - Returns: The first model, if one exists.
-    public static func first(db: Database = DB) async throws -> Self? {
-        try await query(db: db).first()
+    public static func first(db: Database = database) async throws -> Self? {
+        try await query(on: db).first()
     }
 
     /// Similar to `firstModel`. Gets the first result of a query, but
@@ -85,13 +85,13 @@ extension Model {
     ///   found. Defaults to `RuneError.notFound`.
     /// - Returns: The unwrapped first result of this query, or the
     ///   supplied error if no result was found.
-    public static func require(_ id: Identifier, error: Error = RuneError.notFound) async throws -> Self {
-        try await find(id).unwrap(or: error)
+    public static func require(_ id: Identifier, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
+        try await find(on: db, id).unwrap(or: error)
     }
 
     /// Returns a random model of this type, if one exists.
-    public static func random(db: Database = DB) async throws -> Self? {
-        try await query(db: db).random()
+    public static func random(on db: Database = database) async throws -> Self? {
+        try await query(on: db).random()
     }
 
     // MARK: - INSERT
@@ -100,8 +100,8 @@ extension Model {
     ///
     /// - Parameter db: The database to insert this model to. Defaults
     ///   to `Database.default`.
-    public func insert(db: Database = DB) async throws {
-        try await [self].insertAll(db: db)
+    public func insert(on db: Database = database) async throws {
+        try await [self].insertAll(on: db)
     }
     
     /// Inserts this model to a database. Return the newly created model.
@@ -111,8 +111,8 @@ extension Model {
     /// - Returns: An updated version of this model, reflecting any
     ///   changes that may have occurred saving this object to the
     ///   database. (an `id` being populated, for example).
-    public func insertReturn(db: Database = DB) async throws -> Self {
-        try await [self].insertReturnAll(db: db).first.unwrap(or: RuneError.notFound)
+    public func insertReturn(on db: Database = database) async throws -> Self {
+        try await [self].insertReturnAll(on: db).first.unwrap(or: RuneError.notFound)
     }
     
     // MARK: - UPDATE
@@ -125,29 +125,29 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database.
     @discardableResult
-    public func update(db: Database = DB) async throws -> Self {
+    public func update(on db: Database = database) async throws -> Self {
         let fields = try fields()
-        try await [self].updateAll(db: db, fields)
-        return try await refresh(db: db)
+        try await [self].updateAll(on: db, fields)
+        return try await refresh(on: db)
     }
     
     @discardableResult
-    public func update(db: Database = DB, updateClosure: (inout Self) -> Void) async throws -> Self {
+    public func update(on db: Database = database, updateClosure: (inout Self) -> Void) async throws -> Self {
         var copy = self
         updateClosure(&copy)
-        return try await copy.update(db: db)
+        return try await copy.update(on: db)
     }
     
     @discardableResult
-    public func update(db: Database = DB, _ fields: [String: Any]) async throws -> Self {
+    public func update(on db: Database = database, _ fields: [String: Any]) async throws -> Self {
         let values = fields.compactMapValues { $0 as? SQLConvertible }
-        return try await update(db: db, values)
+        return try await update(on: db, values)
     }
 
     @discardableResult
-    public func update(db: Database = DB, _ fields: [String: SQLConvertible]) async throws -> Self {
-        try await [self].updateAll(db: db, fields)
-        return try await refresh(db: db)
+    public func update(on db: Database = database, _ fields: [String: SQLConvertible]) async throws -> Self {
+        try await [self].updateAll(on: db, fields)
+        return try await refresh(on: db)
     }
 
     // MARK: - Save
@@ -161,12 +161,12 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database (an `id` being populated, for example).
     @discardableResult
-    public func save(db: Database = DB) async throws -> Self {
+    public func save(on db: Database = database) async throws -> Self {
         guard id.value != nil else {
-            return try await insertReturn(db: db)
+            return try await insertReturn(on: db)
         }
         
-        return try await update(db: db)
+        return try await update(on: db)
     }
     
     // MARK: - DELETE
@@ -176,8 +176,8 @@ extension Model {
     ///
     /// - Parameter db: The database to remove this model from.
     ///   Defaults to `Database.default`.
-    public func delete(db: Database = DB) async throws {
-        try await [self].deleteAll(db: db)
+    public func delete(on db: Database = database) async throws {
+        try await [self].deleteAll(on: db)
     }
     
     /// Delete all models that match the given where clause.
@@ -186,8 +186,8 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     ///   - where: A where clause to filter models.
-    public static func delete(_ where: SQLWhere.Clause, db: Database = DB) async throws {
-        try await query(db: db).where(`where`).delete()
+    public static func delete(on db: Database = database, _ where: SQLWhere.Clause) async throws {
+        try await query(on: db).where(`where`).delete()
     }
     
     /// Delete the first model with the given id.
@@ -196,8 +196,8 @@ extension Model {
     ///   - db: The database to delete the model from. Defaults to
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
-    public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
-        try await query(db: db).where(primaryKey == id).delete()
+    public static func delete(on db: Database = database, _ id: Self.Identifier) async throws {
+        try await query(on: db).where(primaryKey == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -207,8 +207,8 @@ extension Model {
     ///     to `Database.default`.
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
-    public static func truncate(db: Database = DB) async throws {
-        try await query(db: db).delete()
+    public static func truncate(on db: Database = database) async throws {
+        try await query(on: db).delete()
     }
 
     // MARK: - Refresh
@@ -220,7 +220,7 @@ extension Model {
     /// - Parameter db: The database to load from. Defaults to
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
-    public func refresh(db: Database = DB) async throws -> Self {
+    public func refresh(on db: Database = database) async throws -> Self {
         try await Self.require(id.require())
     }
 }
@@ -235,9 +235,9 @@ extension Array where Element: Model {
     ///   Defaults to `Database.default`.
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
-    public func insertAll(db: Database = DB) async throws {
+    public func insertAll(on db: Database = Element.database) async throws {
         try await Element.willCreate(self)
-        try await Element.query(db: db).insert(try insertableFields(db: db))
+        try await Element.query(on: db).insert(try insertableFields(on: db))
         try await Element.didCreate(self)
     }
     
@@ -247,26 +247,26 @@ extension Array where Element: Model {
     ///   Defaults to `Database.default`.
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
-    public func insertReturnAll(db: Database = DB) async throws -> Self {
+    public func insertReturnAll(on db: Database = Element.database) async throws -> Self {
         try await Element.willCreate(self)
-        let results = try await Element.query(db: db)
-            .insertReturn(try insertableFields(db: db))
+        let results = try await Element.query(on: db)
+            .insertReturn(try insertableFields(on: db))
             .map { try $0.decodeModel(Element.self) }
         try await Element.didCreate(results)
         return results
     }
 
     @discardableResult
-    public func updateAll(db: Database = DB, _ fields: [String: Any]) async throws -> Self {
+    public func updateAll(on db: Database = Element.database, _ fields: [String: Any]) async throws -> Self {
         let values = fields.compactMapValues { $0 as? SQLConvertible }
-        return try await updateAll(db: db, values)
+        return try await updateAll(on: db, values)
     }
 
-    public func updateAll(db: Database = DB, _ fields: [String: SQLConvertible]) async throws {
+    public func updateAll(on db: Database = Element.database, _ fields: [String: SQLConvertible]) async throws {
         let ids = map(\.id)
-        let fields = touchUpdatedAt(fields, db: db)
+        let fields = touchUpdatedAt(on: db, fields)
         try await Element.willUpdate(self)
-        try await Element.query(db: db)
+        try await Element.query(on: db)
             .where(Element.primaryKey, in: ids)
             .update(fields)
         try await Element.didUpdate(self)
@@ -278,16 +278,16 @@ extension Array where Element: Model {
     ///
     /// - Parameter db: The database to delete from. Defaults to
     ///   `Database.default`.
-    public func deleteAll(db: Database = DB) async throws {
+    public func deleteAll(on db: Database = Element.database) async throws {
         let ids = map(\.id)
         try await Element.willDelete(self)
-        try await Element.query(db: db)
+        try await Element.query(on: db)
             .where(Element.primaryKey, in: ids)
             .delete()
         try await Element.didDelete(self)
     }
     
-    public func refreshAll(db: Database = DB) async throws -> Self {
+    public func refreshAll(on db: Database = Element.database) async throws -> Self {
         guard !isEmpty else {
             return self
         }
@@ -302,7 +302,7 @@ extension Array where Element: Model {
             .get()
     }
     
-    private func touchUpdatedAt(_ fields: [String: SQLConvertible], db: Database) -> [String: SQLConvertible] {
+    private func touchUpdatedAt(on db: Database, _ fields: [String: SQLConvertible]) -> [String: SQLConvertible] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return fields
         }
@@ -312,7 +312,7 @@ extension Array where Element: Model {
         return fields
     }
     
-    private func insertableFields(db: Database) throws -> [[String: SQLConvertible]] {
+    private func insertableFields(on db: Database) throws -> [[String: SQLConvertible]] {
         guard let timestamps = Element.self as? Timestamps.Type else {
             return try map { try $0.fields() }
         }

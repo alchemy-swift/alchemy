@@ -18,12 +18,12 @@ final class DatabaseQueue: QueueProvider {
     // MARK: - Queue
     
     func enqueue(_ job: JobData) async throws {
-        _ = try await JobModel(jobData: job).insertReturn(db: db)
+        _ = try await JobModel(jobData: job).insertReturn(on: db)
     }
 
     func dequeue(from channel: String) async throws -> JobData? {
         return try await db.transaction { conn in
-            let job = try await JobModel.query(db: conn)
+            let job = try await JobModel.query(on: conn)
                 .where("reserved" != true)
                 .where("channel" == channel)
                 .where { $0.whereNull("backoff_until").orWhere("backoff_until" < Date()) }
@@ -32,7 +32,7 @@ final class DatabaseQueue: QueueProvider {
                 .lock(for: .update, option: .skipLocked)
                 .first()
             
-            return try await job?.update(db: conn) {
+            return try await job?.update(on: conn) {
                 $0.reserved = true
                 $0.reservedAt = Date()
             }.toJobData()
@@ -42,12 +42,12 @@ final class DatabaseQueue: QueueProvider {
     func complete(_ job: JobData, outcome: JobOutcome) async throws {
         switch outcome {
         case .success, .failed:
-            _ = try await JobModel.query(db: db)
+            _ = try await JobModel.query(on: db)
                 .where("id" == job.id)
                 .where("channel" == job.channel)
                 .delete()
         case .retry:
-            _ = try await JobModel(jobData: job).update(db: db)
+            _ = try await JobModel(jobData: job).update(on: db)
         }
     }
 

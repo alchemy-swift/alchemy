@@ -6,7 +6,16 @@ struct Go: Command {
     func start() async throws {
         // go
 
-        try await User.where("name" == "add_cache_migration").decrement("age", by: 10)
+        /*
+         
+         JSON
+
+         1. Data / ByteBuffer
+         2. Codable
+         3. String
+
+         */
+
 //        let names1 = try await User.select("name").limit(5).get(String.self)
 //        let names2 = try await DB.table("users").select("name").limit(5).get().decodeEach(String.self)
 //        print(names1, names2)
