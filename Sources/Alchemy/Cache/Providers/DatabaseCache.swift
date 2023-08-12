@@ -79,7 +79,7 @@ final class DatabaseCache: CacheProvider {
     }
     
     func wipe() async throws {
-        try await CacheItem.deleteAll(db: db)
+        try await CacheItem.truncate(db: db)
     }
 }
 

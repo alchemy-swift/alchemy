@@ -17,6 +17,10 @@ extension SQL: SQLConvertible {
 }
 
 extension SQLConvertible where Self == SQL {
+    public static func raw(_ statement: String, input: [SQLValueConvertible]) -> SQLConvertible {
+        SQL(statement, input: input)
+    }
+
     public static func raw(_ sql: SQL) -> SQLConvertible {
         sql
     }

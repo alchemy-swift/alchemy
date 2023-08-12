@@ -23,8 +23,7 @@ struct ApplicationsController: Controller {
     }
     
     private func update(req: Request) async throws -> Applications {
-        try await Applications.update(req.parameter("id"), fields: req.body?.decodeJSONDictionary() ?? [:])
-            .unwrap(or: HTTPError(.notFound))
+        try await Applications.require(req.parameter("id")).update(req.body?.decodeJSONDictionary() ?? [:])
     }
     
     private func delete(req: Request) async throws {

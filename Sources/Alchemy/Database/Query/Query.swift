@@ -249,6 +249,16 @@ open class Query<Result: QueryResult>: SQLConvertible {
         try await db.query(sql: sql, logging: logging)
     }
 
+    public func increment(_ column: String, by amount: Int = 1) async throws {
+        let input: SQLConvertible = .raw(column + " + ?", input: [amount])
+        try await update([column: input])
+    }
+
+    public func decrement(_ column: String, by amount: Int = 1) async throws {
+        let input: SQLConvertible = .raw(column + " - ?", input: [amount])
+        try await update([column: input])
+    }
+
     // MARK: DELETE
 
     /// Perform a deletion on all data matching the given query.

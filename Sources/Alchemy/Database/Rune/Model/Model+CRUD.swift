@@ -2,16 +2,41 @@ import NIO
 
 /// Useful extensions for various CRUD operations of a `Model`.
 extension Model {
-    
-    // MARK: - Fetch
-    
+
+    // MARK: Query
+
+    /// Creates a query on the given model with the given where
+    /// clause.
+    ///
+    /// - Parameters:
+    ///   - where: A clause to match.
+    ///   - db: The database to query. Defaults to `Database.default`.
+    /// - Returns: A query on the `Model`'s table that matches the
+    ///   given where clause.
+    public static func `where`(_ where: SQLWhere.Clause, db: Database = DB) -> Query<Self> {
+        query(db: db).where(`where`)
+    }
+
+    public static func select(db: Database = DB, _ columns: String...) -> Query<Self> {
+        query(db: db).select(columns)
+    }
+
+    public static func with<E: EagerLoadable>(db: Database = DB, _ loader: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
+        query(db: db).didLoad { models in
+            guard let first = models.first else { return }
+            try await loader(first).load(on: models)
+        }
+    }
+
+    // MARK: - SELECT
+
     /// Load all models of this type from a database.
     ///
     /// - Parameter db: The database to load models from. Defaults to
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
     public static func all(db: Database = DB) async throws -> [Self] {
-        try await Self.query(db: db).get()
+        try await query(db: db).get()
     }
 
     public static func chunk(db: Database = DB, _ chunkSize: Int = 100, handler: ([Self]) async throws -> Void) async throws {
@@ -29,8 +54,8 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
-    public static func find(_ id: Self.Identifier, db: Database = DB) async throws -> Self? {
-        try await Self.where(Self.primaryKey == id, db: db).first()
+    public static func find(_ id: Identifier, db: Database = DB) async throws -> Self? {
+        try await `where`(primaryKey == id, db: db).first()
     }
     
     /// Fetch the first model that matches the given where clause.
@@ -50,7 +75,7 @@ extension Model {
     ///   Defaults to `Database.default`.
     /// - Returns: The first model, if one exists.
     public static func first(db: Database = DB) async throws -> Self? {
-        try await Self.query(db: db).first()
+        try await query(db: db).first()
     }
 
     /// Similar to `firstModel`. Gets the first result of a query, but
@@ -60,33 +85,17 @@ extension Model {
     ///   found. Defaults to `RuneError.notFound`.
     /// - Returns: The unwrapped first result of this query, or the
     ///   supplied error if no result was found.
-    public static func require(_ id: Self.Identifier, error: Error = RuneError.notFound) async throws -> Self? {
+    public static func require(_ id: Identifier, error: Error = RuneError.notFound) async throws -> Self {
         try await find(id).unwrap(or: error)
     }
 
     /// Returns a random model of this type, if one exists.
     public static func random(db: Database = DB) async throws -> Self? {
-        try await Self.query(db: db).random()
-    }
-    
-    /// Creates a query on the given model with the given where
-    /// clause.
-    ///
-    /// - Parameters:
-    ///   - where: A clause to match.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    /// - Returns: A query on the `Model`'s table that matches the
-    ///   given where clause.
-    public static func `where`(_ where: SQLWhere.Clause, db: Database = DB) -> Query<Self> {
-        Self.query(db: db).where(`where`)
+        try await query(db: db).random()
     }
 
-    public static func select(db: Database = DB, _ columns: String...) -> Query<Self> {
-        Self.query(db: db).select(columns)
-    }
+    // MARK: - INSERT
 
-    // MARK: - Insert
-    
     /// Inserts this model to a database.
     ///
     /// - Parameter db: The database to insert this model to. Defaults
@@ -106,8 +115,8 @@ extension Model {
         try await [self].insertReturnAll(db: db).first.unwrap(or: RuneError.notFound)
     }
     
-    // MARK: - Update
-    
+    // MARK: - UPDATE
+
     /// Update this model in a database.
     ///
     /// - Parameter db: The database to update this model to. Defaults
@@ -141,11 +150,6 @@ extension Model {
         return try await refresh(db: db)
     }
 
-    @discardableResult
-    public static func update(db: Database = DB, _ id: Identifier, fields: [String: Any]) async throws -> Self? {
-        try await Self.find(id, db: db)?.update(db: db, fields)
-    }
-    
     // MARK: - Save
     
     /// Saves this model to a database. If this model's `id` is nil,
@@ -158,15 +162,15 @@ extension Model {
     ///   database (an `id` being populated, for example).
     @discardableResult
     public func save(db: Database = DB) async throws -> Self {
-        guard id != nil else {
+        guard id.value != nil else {
             return try await insertReturn(db: db)
         }
         
         return try await update(db: db)
     }
     
-    // MARK: - Delete
-    
+    // MARK: - DELETE
+
     /// Deletes this model from a database. This will fail if the
     /// model has a nil `id` field.
     ///
@@ -193,7 +197,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
     public static func delete(db: Database = DB, _ id: Self.Identifier) async throws {
-        try await query(db: db).where(Self.primaryKey == id).delete()
+        try await query(db: db).where(primaryKey == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -203,12 +207,10 @@ extension Model {
     ///     to `Database.default`.
     ///   - where: An optional where clause to specify the elements
     ///     to delete.
-    public static func deleteAll(db: Database = DB, where: SQLWhere.Clause? = nil) async throws {
-        var query = Self.query(db: db)
-        if let clause = `where` { query = query.where(clause) }
-        try await query.delete()
+    public static func truncate(db: Database = DB) async throws {
+        try await query(db: db).delete()
     }
-    
+
     // MARK: - Refresh
 
     /// Fetches an copy of this model from a database, with any
@@ -219,10 +221,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
     public func refresh(db: Database = DB) async throws -> Self {
-        try await Self.query(db: db)
-            .where(Self.primaryKey == id)
-            .first()
-            .unwrap(or: RuneError.syncErrorNoMatch(table: Self.table, id: id))
+        try await Self.require(id.require())
     }
 }
 
@@ -256,7 +255,13 @@ extension Array where Element: Model {
         try await Element.didCreate(results)
         return results
     }
-    
+
+    @discardableResult
+    public func updateAll(db: Database = DB, _ fields: [String: Any]) async throws -> Self {
+        let values = fields.compactMapValues { $0 as? SQLConvertible }
+        return try await updateAll(db: db, values)
+    }
+
     public func updateAll(db: Database = DB, _ fields: [String: SQLConvertible]) async throws {
         let ids = map(\.id)
         let fields = touchUpdatedAt(fields, db: db)
@@ -282,12 +287,12 @@ extension Array where Element: Model {
         try await Element.didDelete(self)
     }
     
-    public func syncAll(db: Database = DB) async throws -> Self {
+    public func refreshAll(db: Database = DB) async throws -> Self {
         guard !isEmpty else {
             return self
         }
 
-        guard allSatisfy({ $0.id != nil }) else {
+        guard allSatisfy({ $0.id.value != nil }) else {
             throw RuneError.syncErrorNoId
         }
 
@@ -324,6 +329,11 @@ extension Array where Element: Model {
 // MARK: Model Events
 
 extension Model {
+    fileprivate static func didFetch(_ models: [Self]) async throws {
+        // TODO: Reenable this
+        try await ModelDidFetch(models: models).fire()
+    }
+
     fileprivate static func willCreate(_ models: [Self]) async throws {
         try await ModelWillCreate(models: models).fire()
         try await willSave(models)

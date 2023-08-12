@@ -53,11 +53,6 @@ extension Model {
     public static func query(db: Database = DB) -> Query<Self> {
         db.table(Self.self)
     }
-
-    // TODO: Re-enable this
-    fileprivate static func didFetch(_ models: [Self]) async throws {
-        try await ModelDidFetch(models: models).fire()
-    }
 }
 
 extension Model where Self: Codable {
