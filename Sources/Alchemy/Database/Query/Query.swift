@@ -254,7 +254,17 @@ open class Query<Result: QueryResult>: SQLConvertible {
         try await update([column: input])
     }
 
+    public func increment(_ column: String, by amount: Double = 1.0) async throws {
+        let input: SQLConvertible = .raw(column + " + ?", input: [amount])
+        try await update([column: input])
+    }
+
     public func decrement(_ column: String, by amount: Int = 1) async throws {
+        let input: SQLConvertible = .raw(column + " - ?", input: [amount])
+        try await update([column: input])
+    }
+
+    public func decrement(_ column: String, by amount: Double = 1.0) async throws {
         let input: SQLConvertible = .raw(column + " - ?", input: [amount])
         try await update([column: input])
     }
