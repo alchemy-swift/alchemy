@@ -11,7 +11,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: An array of this model, loaded from the database.
     public static func all(db: Database = DB) async throws -> [Self] {
-        try await Self.query(db: db).all()
+        try await Self.query(db: db).get()
     }
 
     public static func chunk(db: Database = DB, _ chunkSize: Int = 100, handler: ([Self]) async throws -> Void) async throws {
@@ -52,10 +52,20 @@ extension Model {
     public static func first(db: Database = DB) async throws -> Self? {
         try await Self.query(db: db).first()
     }
-    
+
+    /// Similar to `firstModel`. Gets the first result of a query, but
+    /// unwraps the element, throwing an error if it doesn't exist.
+    ///
+    /// - Parameter error: The error to throw should no element be
+    ///   found. Defaults to `RuneError.notFound`.
+    /// - Returns: The unwrapped first result of this query, or the
+    ///   supplied error if no result was found.
+    public static func require(_ id: Self.Identifier, error: Error = RuneError.notFound) async throws -> Self? {
+        try await find(id).unwrap(or: error)
+    }
+
     /// Returns a random model of this type, if one exists.
     public static func random(db: Database = DB) async throws -> Self? {
-        // Note; MySQL should be `RAND()`
         try await Self.query(db: db).random()
     }
     
@@ -214,24 +224,6 @@ extension Model {
             .first()
             .unwrap(or: RuneError.syncErrorNoMatch(table: Self.table, id: id))
     }
-    
-    // MARK: - Misc
-    
-    /// Throws an error if a query with the specified where clause
-    /// returns a value. The opposite of `unwrapFirstWhere(...)`.
-    ///
-    /// Useful for detecting if a value with a key that may conflict
-    /// (such as a unique email) already exists on a table.
-    ///
-    /// - Parameters:
-    ///   - where: The where clause to attempt to match.
-    ///   - error: The error that will be thrown, should a query with
-    ///     the where clause find a result.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    public static func ensureNotExists(_ where: SQLWhere.Clause, else error: Error, db: Database = DB) async throws {
-        try await Self.query(db: db).where(`where`).first()
-            .map { _ in throw error }
-    }
 }
 
 // MARK: - Array Extensions
@@ -302,7 +294,7 @@ extension Array where Element: Model {
         let ids = map(\.id)
         return try await Element.query()
             .where(Element.primaryKey, in: ids)
-            .all()
+            .get()
     }
     
     private func touchUpdatedAt(_ fields: [String: SQLConvertible], db: Database) -> [String: SQLConvertible] {

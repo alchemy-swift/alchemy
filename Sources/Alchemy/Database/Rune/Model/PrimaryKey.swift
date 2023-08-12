@@ -3,7 +3,7 @@ import Foundation
 /// Represents a type that may be a primary key in a database. Out of
 /// the box `UUID`, `String` and `Int` are supported but you can
 /// easily support your own by conforming to this protocol.
-public protocol PrimaryKey: Hashable, SQLValueConvertible, Codable, LosslessStringConvertible {
+public protocol PrimaryKey: Hashable, Codable, LosslessStringConvertible, SQLValueConvertible {
     /// Initialize this value from an `SQLValue`.
     ///
     /// - Throws: If there is an error decoding this type from the

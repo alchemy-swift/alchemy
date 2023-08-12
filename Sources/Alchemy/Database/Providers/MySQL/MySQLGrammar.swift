@@ -69,4 +69,8 @@ struct MySQLGrammar: SQLGrammar {
     func jsonLiteral(for jsonString: String) -> String {
         "('\(jsonString)')"
     }
+
+    func random() -> String {
+        "RAND()"
+    }
 }

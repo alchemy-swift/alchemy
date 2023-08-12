@@ -133,7 +133,7 @@ extension Database {
         }
 
         let registeredByName = migrations.keyed(by: \.name)
-        return try await query.all()
+        return try await query.get()
             .compactMap { applied in
                 guard let migration = registeredByName[applied.name] else {
                     if enforceRegistration {

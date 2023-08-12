@@ -59,6 +59,7 @@ public protocol SQLGrammar {
     func createColumnString(for column: CreateColumn) -> (definition: String, constraints: [String])
     func columnConstraintString(for constraint: ColumnConstraint, on column: String, of type: ColumnType) -> String?
     func jsonLiteral(for jsonString: String) -> String
+    func random() -> String
 }
 
 // MARK: - Defaults
@@ -433,5 +434,9 @@ extension SQLGrammar {
 
     public func jsonLiteral(for jsonString: String) -> String {
         "'\(jsonString)'::jsonb"
+    }
+
+    public func random() -> String {
+        "RANDOM()"
     }
 }

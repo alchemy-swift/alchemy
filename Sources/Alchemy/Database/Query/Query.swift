@@ -124,6 +124,13 @@ open class Query<Result: QueryResult>: SQLConvertible {
         try await limit(1).get().first
     }
 
+    /// Returns a model of this query, if one exists.
+    public func random() async throws -> Result? {
+        try await orderBy(db.grammar.random()).first()
+    }
+
+    // MARK: Aggregates
+
     /// Find the total count of the rows that match the given query.
     ///
     /// - Parameter column: What column to count. Defaults to `*`.
@@ -134,6 +141,14 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
 
         return try row.decode(Int.self)
+    }
+
+    public func exists() async throws -> Bool {
+        try await count() != 0
+    }
+
+    public func doesntExist() async throws -> Bool {
+        try await !exists()
     }
 
     // MARK: INSERT
