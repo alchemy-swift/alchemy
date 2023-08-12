@@ -73,7 +73,7 @@ extension Queue {
 // MARK: - Models
 
 /// Represents the table of jobs backing a `DatabaseQueue`.
-struct JobModel: Model {
+struct JobModel: Model, Codable {
     static var table = "jobs"
 
     var id: PK<String> = .new

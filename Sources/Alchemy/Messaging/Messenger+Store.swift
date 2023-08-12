@@ -11,7 +11,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
     }
 }
 
-struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model {
+struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model, Codable {
     static var table: String { "messages" }
 
     var id: PK<Int> = .new

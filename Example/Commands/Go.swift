@@ -40,7 +40,7 @@ struct Go: Command {
     }
 }
 
-struct User: Model {
+struct User: Model, Codable {
     var id: PK<String> = .new
     let name: String
     let age: Int
@@ -66,7 +66,7 @@ struct User: Model {
     }
 }
 
-struct UserToken: Model {
+struct UserToken: Model, Codable {
     var id: PK<String> = .new
     let token: String
     let userId: String
@@ -76,7 +76,7 @@ struct UserToken: Model {
     }
 }
 
-struct Post: Model {
+struct Post: Model, Codable {
     var id: PK<String> = .new
     let title: String
     let userId: String
@@ -94,7 +94,7 @@ struct Post: Model {
     }
 }
 
-struct Comment: Model {
+struct Comment: Model, Codable {
     var id: PK<String> = .new
     let text: String
     let userId: String
@@ -116,7 +116,7 @@ struct Comment: Model {
     }
 }
 
-struct Like: Model {
+struct Like: Model, Codable {
     var id: PK<String> = .new
     let commentId: String
     let userId: String

@@ -4,11 +4,7 @@ import Pluralize
 /// An ActiveRecord-esque type used for modeling a table in a
 /// relational database. Contains many extensions for making
 /// database queries, supporting relationships & more.
-public protocol Model: ModelBase, Codable, ModelOrOptional {}
-
-/// The Core Model type, useful if you don't want your model to conform to
-/// Codable.
-public protocol ModelBase: Identifiable, QueryResult {
+public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// The type of this object's primary key.
     associatedtype Identifier: PrimaryKey
 
@@ -43,7 +39,7 @@ public protocol ModelBase: Identifiable, QueryResult {
     static func query(db: Database) -> Query<Self>
 }
 
-extension ModelBase {
+extension Model {
     public static var table: String { KeyMapping.snakeCase.encode("\(Self.self)").pluralized }
     public static var primaryKey: String { "id" }
     public static var jsonDecoder: JSONDecoder { JSONDecoder() }
@@ -57,9 +53,14 @@ extension ModelBase {
     public static func query(db: Database = DB) -> Query<Self> {
         db.table(Self.self)
     }
+
+    // TODO: Re-enable this
+    fileprivate static func didFetch(_ models: [Self]) async throws {
+        try await ModelDidFetch(models: models).fire()
+    }
 }
 
-extension ModelBase where Self: Codable {
+extension Model where Self: Codable {
     public init(row: SQLRow) throws {
         self = try row.decode(Self.self, keyMapping: .snakeCase, jsonDecoder: Self.jsonDecoder)
     }
@@ -69,15 +70,8 @@ extension ModelBase where Self: Codable {
     }
 }
 
-extension Model {
-    // TODO: Re-enable this
-    fileprivate static func didFetch(_ models: [Self]) async throws {
-        try await ModelDidFetch(models: models).fire()
-    }
-}
-
 extension Database {
-    public func table<M: ModelBase>(_ model: M.Type, as alias: String? = nil) -> Query<M> {
+    public func table<M: Model>(_ model: M.Type, as alias: String? = nil) -> Query<M> {
         let tableName = alias.map { "\(model.table) AS \($0)" } ?? model.table
         return Query(db: self, table: tableName)
     }
@@ -85,13 +79,13 @@ extension Database {
 
 extension SQLRow {
     /// Decode a `Model` type `M` from this row.
-    public func decodeModel<M: ModelBase>(_ type: M.Type = M.self) throws -> M {
+    public func decodeModel<M: Model>(_ type: M.Type = M.self) throws -> M {
         try M(row: self)
     }
 }
 
 extension Array where Element == SQLRow {
-    public func decodeModels<M: ModelBase>(_ type: M.Type) throws -> [M] {
+    public func decodeModels<M: Model>(_ type: M.Type) throws -> [M] {
         try map { try M(row: $0) }
     }
 }

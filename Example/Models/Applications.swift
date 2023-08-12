@@ -1,5 +1,5 @@
 import Alchemy
 
-struct Applications: Model {
+struct Applications: Model, Codable {
     var id: PK<Int> = .new
 }

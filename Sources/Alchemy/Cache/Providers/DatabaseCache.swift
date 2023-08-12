@@ -100,7 +100,7 @@ extension Cache {
 }
 
 /// Model for storing cache data
-private struct CacheItem: Model {
+private struct CacheItem: Model, Codable {
     static let table = "cache"
     
     var id: PK<Int> = .new
