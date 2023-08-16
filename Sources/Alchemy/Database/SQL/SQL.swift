@@ -73,3 +73,9 @@ extension Array where Element == SQL {
         SQL(map(\.statement).joined(separator: " "), parameters: flatMap(\.parameters))
     }
 }
+
+extension SQL {
+    public static func + (lhs: SQL, rhs: String) -> SQL {
+        SQL(lhs.statement + rhs, parameters: lhs.parameters)
+    }
+}

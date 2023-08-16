@@ -78,7 +78,7 @@ extension DatabaseProvider {
             try await raw("COMMIT;")
             return val
         } catch {
-            Log.error("[Database] transaction failed with error \(error). Rolling back.")
+            Log.debug("Transaction failed. Rolling back.")
             try await raw("ROLLBACK;")
             try await raw("COMMIT;")
             throw error

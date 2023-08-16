@@ -87,7 +87,10 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database. (an `id` being populated, for example).
     public func insertReturn(on db: Database = database) async throws -> Self {
-        let model = try await [self].insertReturnAll(on: db).first.unwrap(or: RuneError.notFound)
+        guard let model = try await [self].insertReturnAll(on: db).first else {
+            throw RuneError.notFound
+        }
+
         self.row = model.row
         self.id.value = model.id.value
         return model
@@ -127,6 +130,23 @@ extension Model {
         try await [self].updateAll(on: db, fields)
         return try await refresh(on: db)
     }
+
+    // MARK: UPSERT
+
+    public func upsert(on db: Database = database, conflicts: [String] = upsertConflictKeys) async throws {
+        try await [self].upsertAll(on: db, conflicts: conflicts)
+    }
+
+    public func upsertReturn(on db: Database = database, conflicts: [String] = upsertConflictKeys) async throws -> Self {
+        guard let model = try await [self].upsertReturnAll(on: db, conflicts: conflicts).first else {
+            throw RuneError.notFound
+        }
+
+        self.row = model.row
+        self.id.value = model.id.value
+        return model
+    }
+
 
     // MARK: - Save
     
@@ -235,6 +255,9 @@ extension Model {
 
 /// Usefuly extensions for CRUD operations on an array of `Model`s.
 extension Array where Element: Model {
+
+    // MARK: INSERT
+
     /// Inserts each element in this array to a database.
     ///
     /// - Parameter db: The database to insert the models into.
@@ -262,6 +285,8 @@ extension Array where Element: Model {
         return results
     }
 
+    // MARK: UPDATE
+
     @discardableResult
     public func updateAll(on db: Database = Element.database, _ fields: [String: Any]) async throws -> Self {
         let values = fields.compactMapValues { $0 as? SQLConvertible }
@@ -277,7 +302,26 @@ extension Array where Element: Model {
             .update(fields)
         try await Element.didUpdate(self)
     }
-    
+
+    // MARK: UPSERT
+
+    public func upsertAll(on db: Database = Element.database, conflicts: [String] = Element.upsertConflictKeys) async throws {
+        try await Element.willUpsert(self)
+        try await Element.query(on: db).upsert(try insertableFields(on: db), conflicts: conflicts)
+        try await Element.didUpsert(self)
+    }
+
+    public func upsertReturnAll(on db: Database = Element.database, conflicts: [String] = Element.upsertConflictKeys) async throws -> Self {
+        try await Element.willUpsert(self)
+        let results = try await Element.query(on: db)
+            .upsertReturn(try insertableFields(on: db), conflicts: conflicts)
+            .map { try $0.decodeModel(Element.self) }
+        try await Element.didUpsert(results)
+        return results
+    }
+
+    // MARK: DELETE
+
     /// Deletes all objects in this array from a database. If an
     /// object in this array isn't actually in the database, it
     /// will be ignored.
@@ -292,7 +336,9 @@ extension Array where Element: Model {
             .delete()
         try await Element.didDelete(self)
     }
-    
+
+    // MARK: Refresh
+
     public func refreshAll(on db: Database = Element.database) async throws -> Self {
         guard !isEmpty else {
             return self
@@ -357,7 +403,17 @@ extension Model {
         try await ModelDidCreate(models: models).fire()
         try await didSave(models)
     }
-    
+
+    fileprivate static func willUpsert(_ models: [Self]) async throws {
+        try await ModelWillUpsert(models: models).fire()
+        try await willSave(models)
+    }
+
+    fileprivate static func didUpsert(_ models: [Self]) async throws {
+        try await ModelDidUpsert(models: models).fire()
+        try await didSave(models)
+    }
+
     fileprivate static func willUpdate(_ models: [Self]) async throws {
         try await ModelWillUpdate(models: models).fire()
         try await willSave(models)

@@ -11,7 +11,15 @@ extension EventBus {
     public func onDidCreate<M: Model>(_ type: M.Type, action: @escaping (ModelDidCreate<M>) async throws -> Void) {
         on(ModelDidCreate<M>.self, action: action)
     }
-    
+
+    public func onWillUpsert<M: Model>(_ type: M.Type, action: @escaping (ModelWillUpsert<M>) async throws -> Void) {
+        on(ModelWillUpsert<M>.self, action: action)
+    }
+
+    public func onDidUpsert<M: Model>(_ type: M.Type, action: @escaping (ModelDidUpsert<M>) async throws -> Void) {
+        on(ModelDidUpsert<M>.self, action: action)
+    }
+
     public func onWillUpdate<M: Model>(_ type: M.Type, action: @escaping (ModelWillUpdate<M>) async throws -> Void) {
         on(ModelWillUpdate<M>.self, action: action)
     }
@@ -46,6 +54,14 @@ public struct ModelWillCreate<M: Model>: Event {
 }
 
 public struct ModelDidCreate<M: Model>: Event {
+    public let models: [M]
+}
+
+public struct ModelWillUpsert<M: Model>: Event {
+    public let models: [M]
+}
+
+public struct ModelDidUpsert<M: Model>: Event {
     public let models: [M]
 }
 

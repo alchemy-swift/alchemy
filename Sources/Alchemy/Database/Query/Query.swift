@@ -235,6 +235,51 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
     }
 
+    // MARK: UPSERT
+
+    public func upsert(_ value: [String: SQLConvertible], conflicts: [String] = ["id"]) async throws {
+        try await upsert([value], conflicts: conflicts)
+    }
+
+    public func upsert(_ values: [[String: SQLConvertible]], conflicts: [String] = ["id"]) async throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
+        guard !values.isEmpty else {
+            return
+        }
+
+        let sql = db.grammar.upsert(table, values: values, conflictKeys: conflicts)
+        try await db.query(sql: sql, logging: logging)
+    }
+
+    public func upsertReturn(_ values: [String: SQLConvertible], conflicts: [String] = ["id"]) async throws -> [SQLRow] {
+        try await upsertReturn([values], conflicts: conflicts)
+    }
+
+    public func upsertReturn(_ values: [[String: SQLConvertible]], conflicts: [String] = ["id"]) async throws -> [SQLRow] {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
+        guard !values.isEmpty else {
+            return []
+        }
+
+        let statements = db.grammar.upsertReturn(table, values: values, conflictKeys: conflicts)
+        return try await db.transaction { conn in
+            var toReturn: [SQLRow] = []
+            for sql in statements {
+                let rows = try await conn.query(sql: sql, logging: self.logging)
+                toReturn += rows
+            }
+
+            return toReturn
+        }
+    }
+
+
     // MARK: UPDATE
 
     /// Perform an update on all data matching the query in the
@@ -330,12 +375,12 @@ extension Database {
             case .log:
                 Log.info(sql.description)
             case .logRawSQL:
-                Log.info(sql.rawSQLString)
+                Log.info(sql.rawSQLString + ";")
             case .logFatal:
                 Log.info(sql.description)
                 fatalError("logf")
             case .logFatalRawSQL:
-                Log.info(sql.rawSQLString)
+                Log.info(sql.rawSQLString + ";")
                 fatalError("logf")
             }
         }

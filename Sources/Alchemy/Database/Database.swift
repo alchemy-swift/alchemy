@@ -48,9 +48,14 @@ public final class Database: Service {
     /// Create a database backed by the given provider.
     ///
     /// - Parameter provider: The provider.
-    public init(provider: @escaping @autoclosure () -> DatabaseProvider, grammar: SQLGrammar) {
+    convenience init(provider: @escaping @autoclosure () -> DatabaseProvider, grammar: SQLGrammar) {
+        self.init(provider: provider(), grammar: grammar, logging: nil)
+    }
+
+    init(provider: @escaping @autoclosure () -> DatabaseProvider, grammar: SQLGrammar, logging: QueryLogging? = nil) {
         self.createProvider = provider
         self.grammar = grammar
+        self.logging = logging
     }
 
     /// Log all executed queries to the `debug` level.
@@ -95,7 +100,7 @@ public final class Database: Service {
     public func query(_ sql: String, parameters: [SQLValue] = []) async throws -> [SQLRow] {
         try await provider.query(sql, parameters: parameters)
     }
-    
+
     /// Run a raw, not parametrized SQL string.
     ///
     /// - Returns: The rows returned by the query.
@@ -114,7 +119,7 @@ public final class Database: Service {
     @discardableResult
     public func transaction<T>(_ action: @escaping (Database) async throws -> T) async throws -> T {
         try await provider.transaction {
-            try await action(Database(provider: $0, grammar: self.grammar))
+            try await action(Database(provider: $0, grammar: self.grammar, logging: self.logging))
         }
     }
     

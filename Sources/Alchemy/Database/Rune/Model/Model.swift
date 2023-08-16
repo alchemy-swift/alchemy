@@ -24,6 +24,10 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// The primary key column of this table. Defaults to `"id"`.
     static var primaryKey: String { get }
 
+    /// The keys to to check for conflicts on when UPSERTing. Defaults to 
+    /// `[Self.primaryKey]`.
+    static var upsertConflictKeys: [String] { get }
+
     /// The `JSONDecoder` to use when decoding any JSON fields of this
     /// type. A JSON field is any `Codable` field that doesn't have a
     /// corresponding `SQLValue`.
@@ -46,6 +50,7 @@ extension Model {
     public static var database: Database { DB }
     public static var table: String { KeyMapping.snakeCase.encode("\(Self.self)").pluralized }
     public static var primaryKey: String { "id" }
+    public static var upsertConflictKeys: [String] { [primaryKey] }
     public static var jsonDecoder: JSONDecoder { JSONDecoder() }
     public static var jsonEncoder: JSONEncoder { JSONEncoder() }
 

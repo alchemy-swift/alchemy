@@ -6,14 +6,18 @@ struct Go: Command {
     func start() async throws {
         // go
 
-        var user = try await User.find(1)!
-        Log.warning("Dirty: \(try user.dirtyFields().keys)")
-        user.age = Int.random(in: 0...100)
-        user.pet = UUID().uuidString
-        Log.warning("Dirty: \(try user.dirtyFields().keys)")
-        Log.warning("Pet dirty: \(user.isDirty(\.pet))")
-        try await user.save()
-        Log.warning("Dirty: \(try user.dirtyFields().keys)")
+        var user1 = try await User.find(1)!
+        var user2 = try await User.find(2)!
+//        Log.warning("Dirty: \(try user.dirtyFields().keys)")
+//        user.age = Int.random(in: 0...100)
+//        user.pet = UUID().uuidString
+//        Log.warning("Dirty: \(try user.dirtyFields().keys)")
+//        Log.warning("Pet dirty: \(user.isDirty(\.pet))")
+//        try await user.save()
+//        Log.warning("Dirty: \(try user.dirtyFields().keys)")
+
+        let things = try await [user1, user2].upsertReturnAll()
+        print("GOT \(things.count)")
 
         /*
          

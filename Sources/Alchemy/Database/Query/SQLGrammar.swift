@@ -31,6 +31,11 @@ public protocol SQLGrammar {
     func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL
     func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL]
 
+    // MARK: UPSERT
+
+    func upsert(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> SQL
+    func upsertReturn(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> [SQL]
+
     // MARK: UPDATE
 
     func update(table: String,
@@ -195,12 +200,12 @@ extension SQLGrammar {
             return SQL("INSERT INTO \(table) DEFAULT VALUES")
         }
 
-        let columns = values[0].map { $0.key }
+        let columns = Set(values.flatMap(\.keys)).array
         var input: [SQLConvertible] = []
         var placeholders: [String] = []
 
         for value in values {
-            let orderedValues = columns.compactMap { value[$0]?.sql }
+            let orderedValues = columns.map { value[$0]?.sql ?? .null }
             input.append(contentsOf: orderedValues)
             placeholders.append("(\(parameterize(orderedValues)))")
         }
@@ -210,8 +215,34 @@ extension SQLGrammar {
     }
 
     public func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL] {
-        let insert = insert(table, values: values)
-        return [SQL("\(insert.statement) RETURNING *", parameters: insert.parameters)]
+        [insert(table, values: values) + " RETURNING *"]
+    }
+
+    // MARK: UPSERT
+
+    public func upsert(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> SQL {
+        var upsert = insert(table, values: values)
+        guard !values.isEmpty else {
+            return upsert
+        }
+
+        let uniqueColumns = Set(values.flatMap(\.keys)).array
+        let updateColumns = uniqueColumns.filter { !conflictKeys.contains($0) }
+
+        let conflicts = conflictKeys.joined(separator: ", ")
+        upsert = upsert + " ON CONFLICT (\(conflicts)) DO"
+        if updateColumns.isEmpty {
+            upsert = upsert + " NOTHING"
+        } else {
+            let updates = updateColumns.map { "\($0.inQuotes) = EXCLUDED.\($0.inQuotes)" }.joined(separator: ", ")
+            upsert = upsert + " UPDATE SET \(updates)"
+        }
+
+        return upsert
+    }
+
+    public func upsertReturn(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> [SQL] {
+        [upsert(table, values: values, conflictKeys: conflictKeys) + " RETURNING *"]
     }
 
     // MARK: UPDATE
