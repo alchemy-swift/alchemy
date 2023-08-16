@@ -3,31 +3,6 @@ import NIO
 /// Useful extensions for various CRUD operations of a `Model`.
 extension Model {
 
-    // MARK: Query
-
-    /// Creates a query on the given model with the given where
-    /// clause.
-    ///
-    /// - Parameters:
-    ///   - where: A clause to match.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    /// - Returns: A query on the `Model`'s table that matches the
-    ///   given where clause.
-    public static func `where`(on db: Database = database, _ where: SQLWhere.Clause) -> Query<Self> {
-        query(on: db).where(`where`)
-    }
-
-    public static func select(on db: Database = database, _ columns: String...) -> Query<Self> {
-        query(on: db).select(columns)
-    }
-
-    public static func with<E: EagerLoadable>(on db: Database = database, _ loader: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
-        query(on: db).didLoad { models in
-            guard let first = models.first else { return }
-            try await loader(first).load(on: models)
-        }
-    }
-
     // MARK: - SELECT
 
     /// Load all models of this type from a database.
@@ -228,6 +203,31 @@ extension Model {
         self.row = model.row
         return model
     }
+
+    // MARK: Query
+
+    /// Creates a query on the given model with the given where
+    /// clause.
+    ///
+    /// - Parameters:
+    ///   - where: A clause to match.
+    ///   - db: The database to query. Defaults to `Database.default`.
+    /// - Returns: A query on the `Model`'s table that matches the
+    ///   given where clause.
+    public static func `where`(on db: Database = database, _ where: SQLWhere.Clause) -> Query<Self> {
+        query(on: db).where(`where`)
+    }
+
+    public static func select(on db: Database = database, _ columns: String...) -> Query<Self> {
+        query(on: db).select(columns)
+    }
+
+    public static func with<E: EagerLoadable>(on db: Database = database, _ loader: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
+        query(on: db).didLoad { models in
+            guard let first = models.first else { return }
+            try await loader(first).load(on: models)
+        }
+    }
 }
 
 // MARK: - Array Extensions
@@ -334,8 +334,7 @@ extension Array where Element: Model {
 // MARK: Model Events
 
 extension Model {
-    fileprivate static func didFetch(_ models: [Self]) async throws {
-        // TODO: Reenable this
+    static func didFetch(_ models: [Self]) async throws {
         try await ModelDidFetch(models: models).fire()
     }
 

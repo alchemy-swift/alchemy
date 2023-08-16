@@ -17,3 +17,21 @@ extension Timestamped where Self: Model {
         try? row?[Self.updatedAtKey]?.date()
     }
 }
+
+extension Query where Result: Timestamped {
+    public func createdBefore(_ date: Date)-> Self {
+        `where`(Result.createdAtKey < date)
+    }
+
+    public func createdAfter(_ date: Date)-> Self {
+        `where`(Result.createdAtKey > date)
+    }
+
+    public func updatedBefore(_ date: Date)-> Self {
+        `where`(Result.updatedAtKey < date)
+    }
+
+    public func updatedAfter(_ date: Date)-> Self {
+        `where`(Result.updatedAtKey > date)
+    }
+}
