@@ -1,36 +1,33 @@
 extension Model {
+
+    // MARK: Dirty
+
     public var isDirty: Bool {
-        !dirtyFields().isEmpty
+        (try? !dirtyFields().isEmpty) ?? false
     }
 
-    public func isDirty<M: ModelProperty & Equatable>(_ keyPath: WritableKeyPath<Self, M>) -> Bool {
-        guard let column = Self.column(for: keyPath) else {
-            return false
+    public func isDirty(_ column: String) -> Bool {
+        (try? dirtyFields()[column]) != nil
+    }
+
+    public func dirtyFields() throws -> [String: SQL] {
+        let oldFields = row?.fieldDictionary.filter { $0.value != .null }.mapValues(\.sql) ?? [:]
+        let newFields = try fields().mapValues(\.sql)
+        var dirtyFields = newFields.filter { $0.value != oldFields[$0.key] }
+        for key in Set(oldFields.keys).subtracting(newFields.keys) {
+            dirtyFields[key] = .null
         }
-
-        return dirtyFields()[column] != nil
+        
+        return dirtyFields
     }
 
-    public func dirtyFields() -> [String: SQL] {
-        guard let fields = try? fields() else {
-            return [:]
-        }
+    // MARK: Clean
 
-        let oldValues = row?.fieldDictionary.mapValues(\.sql) ?? [:]
-        let newValues = fields.mapValues(\.sql)
-        let newKeys = newValues.keys
-        let removed = oldValues
-            .filter { $0.value == SQL.null }
-            .filter { !newKeys.contains($0.key) }
-            .mapValues { _ in SQL.value(.null) }
-        return newValues.filter { $0.value != oldValues[$0.key] } + removed
+    public var isClean: Bool {
+        !isDirty
     }
-}
 
-extension ModelProperty where Self: Equatable {
-    func compare(row: SQLRow, column: String) -> Bool {
-        let reader = GenericRowReader(row: row, keyMapping: .snakeCase, jsonDecoder: JSONDecoder())
-        let old = try! Self(key: column, on: reader)
-        return self == old
+    public func isClean(_ column: String) -> Bool {
+        !isDirty(column)
     }
 }

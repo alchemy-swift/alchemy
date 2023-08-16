@@ -112,7 +112,10 @@ extension Model {
     ///   changes that may have occurred saving this object to the
     ///   database. (an `id` being populated, for example).
     public func insertReturn(on db: Database = database) async throws -> Self {
-        try await [self].insertReturnAll(on: db).first.unwrap(or: RuneError.notFound)
+        let model = try await [self].insertReturnAll(on: db).first.unwrap(or: RuneError.notFound)
+        self.row = model.row
+        self.id.value = model.id.value
+        return model
     }
     
     // MARK: - UPDATE
@@ -126,7 +129,7 @@ extension Model {
     ///   database.
     @discardableResult
     public func update(on db: Database = database) async throws -> Self {
-        let fields = try fields()
+        let fields = try dirtyFields()
         try await [self].updateAll(on: db, fields)
         return try await refresh(on: db)
     }
@@ -221,7 +224,9 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
     public func refresh(on db: Database = database) async throws -> Self {
-        try await Self.require(id.require())
+        let model = try await Self.require(id.require())
+        self.row = model.row
+        return model
     }
 }
 

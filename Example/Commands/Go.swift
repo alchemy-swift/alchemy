@@ -7,12 +7,13 @@ struct Go: Command {
         // go
 
         var user = try await User.find(1)!
-        print("Dirty: \(user.dirtyFields().keys)")
+        Log.warning("Dirty: \(try user.dirtyFields().keys)")
         user.age = Int.random(in: 0...100)
         user.pet = UUID().uuidString
-        print("Dirty: \(user.dirtyFields().keys)")
-        user = try await user.save()
-        print("Dirty: \(user.dirtyFields().keys)")
+        Log.warning("Dirty: \(try user.dirtyFields().keys)")
+        Log.warning("Pet dirty: \(user.isDirty(\.pet))")
+        try await user.save()
+        Log.warning("Dirty: \(try user.dirtyFields().keys)")
 
         /*
          
@@ -62,7 +63,7 @@ struct Go: Command {
     }
 }
 
-struct User: Model, Codable {
+struct User: Model, Codable, KeyPathQueryable {
     static var storedProperties = [
         \Self.id: "id",
         \Self.name: "name",
@@ -97,12 +98,6 @@ struct User: Model, Codable {
 }
 
 struct UserToken: Model, Codable {
-    static var storedProperties = [
-        \Self.id: "id",
-        \Self.token: "token",
-        \Self.userId: "userId",
-    ]
-
     var id: PK<String> = .new
     let token: String
     let userId: String
@@ -113,12 +108,6 @@ struct UserToken: Model, Codable {
 }
 
 struct Post: Model, Codable {
-    static var storedProperties = [
-        \Self.id: "id",
-        \Self.title: "title",
-        \Self.userId: "userId",
-    ]
-
     var id: PK<String> = .new
     let title: String
     let userId: String
@@ -137,12 +126,6 @@ struct Post: Model, Codable {
 }
 
 struct Comment: Model, Codable {
-    static var storedProperties = [
-        \Self.id: "id",
-        \Self.text: "text",
-        \Self.userId: "userId",
-    ]
-
     var id: PK<String> = .new
     let text: String
     let userId: String
@@ -165,12 +148,6 @@ struct Comment: Model, Codable {
 }
 
 struct Like: Model, Codable {
-    static var storedProperties = [
-        \Self.id: "id",
-        \Self.commentId: "commentId",
-        \Self.userId: "userId",
-    ]
-
     var id: PK<String> = .new
     let commentId: String
     let userId: String

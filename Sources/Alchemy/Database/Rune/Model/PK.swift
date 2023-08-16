@@ -119,8 +119,9 @@ private final class ModelStorage {
 }
 
 extension Model {
-    public var row: SQLRow? {
-        id.storage.row
+    public internal(set) var row: SQLRow? {
+        get { id.storage.row }
+        nonmutating set { id.storage.row = newValue }
     }
 
     func cache<To>(_ value: To, at key: String) {
