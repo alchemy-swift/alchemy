@@ -397,6 +397,14 @@ extension Model {
         try await ModelDidFetch(models: models).fire()
     }
 
+    static func willDelete(_ models: [Self]) async throws {
+        try await ModelWillDelete(models: models).fire()
+    }
+
+    static func didDelete(_ models: [Self]) async throws {
+        try await ModelDidDelete(models: models).fire()
+    }
+
     fileprivate static func willCreate(_ models: [Self]) async throws {
         try await ModelWillCreate(models: models).fire()
         try await willSave(models)
@@ -425,14 +433,6 @@ extension Model {
     fileprivate static func didUpdate(_ models: [Self]) async throws {
         try await ModelDidUpdate(models: models).fire()
         try await didSave(models)
-    }
-    
-    fileprivate static func willDelete(_ models: [Self]) async throws {
-        try await ModelWillDelete(models: models).fire()
-    }
-    
-    fileprivate static func didDelete(_ models: [Self]) async throws {
-        try await ModelDidDelete(models: models).fire()
     }
     
     private static func willSave(_ models: [Self]) async throws {

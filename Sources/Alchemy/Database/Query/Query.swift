@@ -67,12 +67,12 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     // MARK: Hooks
 
-    public func didLoad(_ then: @escaping(inout [Result]) async throws -> Void) -> Self {
-        let _didLoad = didLoad
+    public func didLoad(_ action: @escaping(inout [Result]) async throws -> Void) -> Self {
+        let previous = didLoad
         didLoad = { rows in
-            var results = try await _didLoad(rows)
-            try await then(&results)
-            return results
+            var rows = rows
+            try await action(&rows)
+            return try await previous(rows)
         }
 
         return self
