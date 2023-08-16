@@ -1,6 +1,6 @@
 import Foundation
 
-public final class PK<Identifier: PrimaryKey>: Codable, Hashable, Uniqueable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
+public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
     public var value: Identifier?
     fileprivate var storage: ModelStorage
 
@@ -65,12 +65,6 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, Uniqueable, SQ
 
     public func hash(into hasher: inout Swift.Hasher) {
         hasher.combine(value)
-    }
-
-    // MARK: Uniqueable
-
-    public static func unique(id: Int) -> Self {
-        Self(Identifier.unique(id: id))
     }
 
     public static var new: Self { .init(nil) }
