@@ -23,6 +23,10 @@ public enum SQLValue: Hashable, CustomStringConvertible {
     /// A null value of any type.
     case null
 
+    public static func json(_ string: String) -> SQLValue {
+        .json(ByteBuffer(string: string))
+    }
+
     public var rawSQLString: String {
         switch self {
         case .int(let int):

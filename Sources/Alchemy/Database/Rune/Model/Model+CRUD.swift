@@ -65,7 +65,7 @@ extension Model {
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
     /// - Returns: A matching model, if one exists.
-    public static func first(on db: Database = database, _ where: SQLWhere.Clause) async throws -> Self? {
+    public static func first(on db: Database = database, where: SQLWhere.Clause) async throws -> Self? {
         try await Self.where(on: db, `where`).first()
     }
 
@@ -162,11 +162,11 @@ extension Model {
     ///   database (an `id` being populated, for example).
     @discardableResult
     public func save(on db: Database = database) async throws -> Self {
-        guard id.value != nil else {
+        if row == nil {
             return try await insertReturn(on: db)
+        } else {
+            return try await update(on: db)
         }
-        
-        return try await update(on: db)
     }
     
     // MARK: - DELETE
@@ -303,7 +303,7 @@ extension Array where Element: Model {
     }
     
     private func touchUpdatedAt(on db: Database, _ fields: [String: SQLConvertible]) -> [String: SQLConvertible] {
-        guard let timestamps = Element.self as? Timestamps.Type else {
+        guard let timestamps = Element.self as? Timestamped.Type else {
             return fields
         }
         
@@ -313,7 +313,7 @@ extension Array where Element: Model {
     }
     
     private func insertableFields(on db: Database) throws -> [[String: SQLConvertible]] {
-        guard let timestamps = Element.self as? Timestamps.Type else {
+        guard let timestamps = Element.self as? Timestamped.Type else {
             return try map { try $0.fields() }
         }
 

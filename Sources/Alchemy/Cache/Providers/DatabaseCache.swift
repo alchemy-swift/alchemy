@@ -102,7 +102,14 @@ extension Cache {
 /// Model for storing cache data
 private struct CacheItem: Model, Codable {
     static let table = "cache"
-    
+
+    static let storedProperties = [
+        \CacheItem.id: "id",
+        \CacheItem._key: "key",
+        \CacheItem.text: "text",
+        \CacheItem.expiration: "expiration",
+    ]
+
     var id: PK<Int> = .new
     let _key: String
     var text: String

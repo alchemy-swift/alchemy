@@ -24,6 +24,13 @@ extension Database {
 
         static let table = "migrations"
 
+        static let storedProperties = [
+            \AppliedMigration.id: "id",
+            \AppliedMigration.name: "name",
+            \AppliedMigration.batch: "batch",
+            \AppliedMigration.runAt: "runAt",
+        ]
+
         /// Serial primary key.
         var id: PK<Int> = .new
 

@@ -14,7 +14,7 @@ extension Plugin where Self == Databases {
                     username: Env.DB_USER ?? "josh",
                     password: Env.DB_PASSWORD ?? "password",
                     enableSSL: Env.DB_ENABLE_SSL ?? false
-                ),
+                ).log(),
                 "sqlite": .sqlite(path: "../test.db"),
             ],
 

@@ -14,6 +14,15 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
 struct DatabaseMessage<Message: Codable, Receiver: Codable>: Model, Codable {
     static var table: String { "messages" }
 
+    static var storedProperties: [PartialKeyPath<Self>: String] {
+        [
+            \Self.id: "id",
+            \Self.channel: "channel",
+            \Self.message: "message",
+            \Self.receiver: "receiver",
+        ]
+    }
+
     var id: PK<Int> = .new
     let channel: String
     let message: Message

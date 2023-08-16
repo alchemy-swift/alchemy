@@ -76,6 +76,20 @@ extension Queue {
 struct JobModel: Model, Codable {
     static var table = "jobs"
 
+    static let storedProperties = [
+        \JobModel.id: "id",
+        \JobModel.jobName: "jobName",
+        \JobModel.channel: "channel",
+        \JobModel.json: "json",
+        \JobModel.recoveryStrategy: "recoveryStrategy",
+        \JobModel.backoffSeconds: "backoffSeconds",
+        \JobModel.attempts: "attempts",
+        \JobModel.reserved: "reserved",
+        \JobModel.reservedAt: "reservedAt",
+        \JobModel.queuedAt: "queuedAt",
+        \JobModel.backoffUntil: "backoffUntil",
+    ]
+
     var id: PK<String> = .new
     let jobName: String
     let channel: String

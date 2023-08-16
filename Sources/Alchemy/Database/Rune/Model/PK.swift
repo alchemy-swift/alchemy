@@ -1,6 +1,6 @@
 import Foundation
 
-public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
+public final class PK<Identifier: PrimaryKey>: Codable, Hashable, Uniqueable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
     public var value: Identifier?
     fileprivate var storage: ModelStorage
 
@@ -67,6 +67,12 @@ public final class PK<Identifier: PrimaryKey>: Codable, Hashable, SQLValueConver
         hasher.combine(value)
     }
 
+    // MARK: Uniqueable
+
+    public static func unique(id: Int) -> Self {
+        Self(Identifier.unique(id: id))
+    }
+
     public static var new: Self { .init(nil) }
     public static func new(_ value: Identifier) -> Self { .init(value) }
     public static func existing(_ value: Identifier) -> Self { .init(value) }
@@ -99,12 +105,12 @@ extension PK<String>: ExpressibleByStringLiteral, ExpressibleByExtendedGraphemeC
 }
 
 private final class ModelStorage {
-    var row: SQLRow
+    var row: SQLRow?
     var relationships: [String: Any]
 
     init() {
         self.relationships = [:]
-        self.row = SQLRow()
+        self.row = nil
     }
 
     static var new: ModelStorage {
@@ -113,7 +119,7 @@ private final class ModelStorage {
 }
 
 extension Model {
-    public var row: SQLRow {
+    public var row: SQLRow? {
         id.storage.row
     }
 

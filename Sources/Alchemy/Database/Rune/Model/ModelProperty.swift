@@ -87,7 +87,7 @@ extension UUID: ModelProperty {
 
 extension Optional: ModelProperty where Wrapped: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        guard row.contains(key) else {
+        guard row.contains(key), row[key] != .null else {
             self = nil
             return
         }

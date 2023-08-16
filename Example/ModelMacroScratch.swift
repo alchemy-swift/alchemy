@@ -15,11 +15,14 @@ struct Context<M> {
 }
 
 /*
+ 
  A Model has
+
  1. A context, describing the row and database it came from as well as eager loaded relationships.
  2. A mapping of keyPaths to column names of stored properties.
  3. An initializer that creates the model given an `SQLRow`.
- 4. A function that generates an SQLRow to be saved to the database.
+ 4. A serializer function that generates an SQLRow to be saved to the database.
+
  */
 
 final class User2 {

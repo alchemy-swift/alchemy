@@ -29,9 +29,9 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
 
     public func fetch(for models: [From]) async throws -> [To] {
         try setJoins()
-        let fromKeys = models.map(\.row["\(fromKey)"])
+        let fromKeys = models.map(\.row?["\(fromKey)"])
         let results = try await `where`(lookupKey, in: fromKeys).select(columns).get()
-        let resultsByLookup = results.grouped(by: \.row[lookupKey])
+        let resultsByLookup = results.grouped(by: \.row?[lookupKey])
         return try fromKeys
             .map { resultsByLookup[$0, default: []] }
             .map { try To(models: $0) }
@@ -61,7 +61,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     }
 
     func requireFromValue() throws -> SQLValue {
-        guard let value = from.row["\(fromKey)"] else {
+        guard let value = from.row?["\(fromKey)"] else {
             throw RuneError("Missing key `\(fromKey)` on `\(From.self)`.")
         }
 
@@ -69,7 +69,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     }
 
     func requireToValue<M: Model>(_ model: M) throws -> SQLValue {
-        guard let value = model.row["\(toKey)"] else {
+        guard let value = model.row?["\(toKey)"] else {
             throw RuneError("Missing key `\(toKey)` on `\(M.self)`.")
         }
 

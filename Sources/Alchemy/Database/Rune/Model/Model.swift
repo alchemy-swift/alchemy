@@ -38,6 +38,9 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// Defaults to `JSONEncoder()`.
     static var jsonEncoder: JSONEncoder { get }
 
+    /// The stored properties on this type, mapped to corresponding columns.
+    static var storedProperties: [PartialKeyPath<Self>: String] { get }
+
     /// The default scope of this Model. Defaults to all rows on `table`.
     static func query(on db: Database) -> Query<Self>
 }
@@ -60,6 +63,10 @@ extension Model {
 
     public static func on(_ database: Database) -> Query<Self> {
         query(on: database)
+    }
+
+    public static func column<M>(for keyPath: WritableKeyPath<Self, M>) -> String? {
+        storedProperties[keyPath]
     }
 }
 
