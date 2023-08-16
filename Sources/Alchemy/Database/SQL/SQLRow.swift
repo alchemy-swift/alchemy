@@ -22,6 +22,10 @@ public struct SQLRow: ExpressibleByDictionaryLiteral {
         self.init(fields: elements)
     }
 
+    public init(dictionary: [String: SQLValueConvertible]) {
+        self.init(fields: dictionary.map { (column: $0.key, value: $0.value) })
+    }
+
     public func contains(_ column: String) -> Bool {
         lookupTable[column] != nil
     }

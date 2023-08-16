@@ -334,6 +334,9 @@ extension Array where Element: Model {
         try await Element.query(on: db)
             .where(Element.primaryKey, in: ids)
             .delete()
+
+        forEach { ($0 as? any Model & SoftDeletes)?.deletedAt = Date() }
+
         try await Element.didDelete(self)
     }
 

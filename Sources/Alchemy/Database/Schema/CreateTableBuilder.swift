@@ -120,13 +120,15 @@ public class CreateTableBuilder {
         return appendAndReturn(builder: builder)
     }
 
-    /// Adds `created_at` and `updated_at` `Date` columns. These will
-    /// default to `NOW()`.
+    /// Adds `created_at` and `updated_at` columns. Default both to `NOW()`.
     public func timestamps() {
-        let createdAt = CreateColumnBuilder<Date>(grammar: grammar, name: "created_at", type: .date).defaultNow()
-        let updatedAt = CreateColumnBuilder<Date>(grammar: grammar, name: "updated_at", type: .date).defaultNow()
-        _ = appendAndReturn(builder: createdAt)
-        _ = appendAndReturn(builder: updatedAt)
+        date("created_at").defaultNow()
+        date("updated_at").defaultNow()
+    }
+
+    /// Adds a `deleted_at` date columns.
+    public func softDeletes() {
+        date("deleted_at")
     }
 
     /// Adds a column builder to this table builder & returns it.

@@ -19,19 +19,19 @@ extension Timestamped where Self: Model {
 }
 
 extension Query where Result: Timestamped {
-    public func createdBefore(_ date: Date)-> Self {
+    public func createdBefore(_ date: Date) -> Self {
         `where`(Result.createdAtKey < date)
     }
 
-    public func createdAfter(_ date: Date)-> Self {
+    public func createdAfter(_ date: Date) -> Self {
         `where`(Result.createdAtKey > date)
     }
 
-    public func updatedBefore(_ date: Date)-> Self {
+    public func updatedBefore(_ date: Date) -> Self {
         `where`(Result.updatedAtKey < date)
     }
 
-    public func updatedAfter(_ date: Date)-> Self {
+    public func updatedAfter(_ date: Date) -> Self {
         `where`(Result.updatedAtKey > date)
     }
 }

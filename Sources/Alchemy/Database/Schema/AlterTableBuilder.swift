@@ -31,6 +31,11 @@ public final class AlterTableBuilder: CreateTableBuilder {
         dropColumns.append(contentsOf: ["created_at", "updated_at"])
     }
 
+    /// Drop the `deleted_at` column.
+    public func dropSoftDeletes() {
+        dropColumns.append(contentsOf: ["deleted_at"])
+    }
+
     /// Rename a column.
     ///
     /// - Parameters:

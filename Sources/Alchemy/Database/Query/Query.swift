@@ -339,8 +339,12 @@ open class Query<Result: QueryResult>: SQLConvertible {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
 
-        let sql = db.grammar.delete(table, wheres: wheres)
-        try await db.query(sql: sql, logging: logging)
+        if let type = Result.self as? SoftDeletes.Type {
+            try await update([type.deletedAtKey: Date()])
+        } else {
+            let sql = db.grammar.delete(table, wheres: wheres)
+            try await db.query(sql: sql, logging: logging)
+        }
     }
 }
 
