@@ -36,4 +36,8 @@ extension Sequence {
 
         return Dictionary(grouping: tuples, by: { $0.0 }).mapValues { $0.map(\.1) }
     }
+
+    public var array: [Element] {
+        map { $0 }
+    }
 }

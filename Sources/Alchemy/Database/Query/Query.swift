@@ -40,6 +40,23 @@ open class Query<Result: QueryResult>: SQLConvertible {
         self.table = table
         self.columns = columns
     }
+    
+    public func convert<Q: QueryResult>(_ resultType: Q.Type = Q.self) -> Query<Q> {
+        let q = Query<Q>(db: db)
+        q.logging = logging
+        q.table = table
+        q.columns = columns
+        q.isDistinct = isDistinct
+        q.limit = limit
+        q.offset = offset
+        q.lock = lock
+        q.joins = joins
+        q.wheres = wheres
+        q.groups = groups
+        q.havings = havings
+        q.orders = orders
+        return q
+    }
 
     // MARK: Table
 

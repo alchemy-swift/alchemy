@@ -124,6 +124,10 @@ extension Model {
         nonmutating set { id.storage.row = newValue }
     }
 
+    func mergeCache(_ otherModel: Self) {
+        id.storage.relationships = otherModel.id.storage.relationships
+    }
+
     func cache<To>(_ value: To, at key: String) {
         id.storage.relationships[key] = value
     }

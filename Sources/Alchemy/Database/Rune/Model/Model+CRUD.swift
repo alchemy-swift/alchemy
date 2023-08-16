@@ -201,6 +201,7 @@ extension Model {
     public func refresh(on db: Database = database) async throws -> Self {
         let model = try await Self.require(id.require())
         self.row = model.row
+        model.mergeCache(self)
         return model
     }
 
@@ -301,10 +302,19 @@ extension Array where Element: Model {
             throw RuneError.syncErrorNoId
         }
 
-        let ids = map(\.id)
-        return try await Element.query()
-            .where(Element.primaryKey, in: ids)
+        let byId = keyed(by: \.id)
+        let refreshed = try await Element.query()
+            .where(Element.primaryKey, in: byId.keys.array)
             .get()
+
+        // Transfer over any loaded relationships.
+        for refresh in refreshed {
+            if let initial = byId[refresh.id] {
+                refresh.mergeCache(initial)
+            }
+        }
+
+        return refreshed
     }
     
     private func touchUpdatedAt(on db: Database, _ fields: [String: SQLConvertible]) -> [String: SQLConvertible] {
