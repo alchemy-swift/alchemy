@@ -6,8 +6,9 @@ struct Go: Command {
     func start() async throws {
         // go
 
-        let user = try await DB.table(User.self).whereNull(\.pet).first()!
-        print("user: \(user)")
+        let user = try await User.find(1)!
+        Log.info("Posts: " + user.posts.rawSQLString)
+        Log.info("Comments: " + user.comments.rawSQLString)
     }
 
     func testRelationships() {

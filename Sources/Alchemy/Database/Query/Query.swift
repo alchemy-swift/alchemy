@@ -20,20 +20,24 @@ open class Query<Result: QueryResult>: SQLConvertible {
     var orders: [SQLOrder] = []
 
     public var sql: SQL {
-        db.grammar.select(isDistinct: isDistinct,
-                          columns: columns,
-                          table: table ?? "<notset>",
-                          joins: joins,
-                          wheres: wheres,
-                          groups: groups,
-                          havings: havings,
-                          orders: orders,
-                          limit: limit,
-                          offset: offset,
-                          lock: lock)
+        guard let table else {
+            preconditionFailure("Table required to run query - use `.from(...)` to set one.")
+        }
+
+        return db.grammar.select(isDistinct: isDistinct,
+                                 columns: columns,
+                                 table: table,
+                                 joins: joins,
+                                 wheres: wheres,
+                                 groups: groups,
+                                 havings: havings,
+                                 orders: orders,
+                                 limit: limit,
+                                 offset: offset,
+                                 lock: lock)
     }
 
-    private var didLoad: ([Result]) async throws -> [Result] = { $0 }
+    var _didLoad: ([Result]) async throws -> [Result] = { $0 }
 
     public init(db: Database, table: String? = nil, columns: [String] = ["*"]) {
         self.db = db
@@ -68,8 +72,8 @@ open class Query<Result: QueryResult>: SQLConvertible {
     // MARK: Hooks
 
     public func didLoad(_ action: @escaping(inout [Result]) async throws -> Void) -> Self {
-        let previous = didLoad
-        didLoad = { rows in
+        let previous = _didLoad
+        _didLoad = { rows in
             var rows = rows
             try await action(&rows)
             return try await previous(rows)
@@ -88,7 +92,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     ///   Defaults to `nil`.
     /// - Returns: The rows returned by the database.
     public func get() async throws -> [Result] {
-        try await didLoad(rows().map(Result.init))
+        try await _didLoad(rows().map(Result.init))
     }
 
     /// Gets the results of this query, decoded to the given type. Doesn't run
@@ -100,22 +104,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     /// Gets the raw SQLRows for this Query. Doesn't convert those to the
     /// `Result` or run any eager loads or other query hooks.
     public func rows() async throws -> [SQLRow] {
-        guard let table else {
-            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
-        }
-
-        let sql = db.grammar.select(isDistinct: isDistinct,
-                                    columns: columns,
-                                    table: table,
-                                    joins: joins,
-                                    wheres: wheres,
-                                    groups: groups,
-                                    havings: havings,
-                                    orders: orders,
-                                    limit: limit,
-                                    offset: offset,
-                                    lock: lock)
-        return try await db.query(sql: sql, logging: logging)
+        try await db.query(sql: sql, logging: logging)
     }
 
     public func chunk(_ chunkSize: Int = 100, handler: ([Result]) async throws -> Void) async throws {

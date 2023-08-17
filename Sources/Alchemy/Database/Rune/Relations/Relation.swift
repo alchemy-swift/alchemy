@@ -11,6 +11,17 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     var lookupKey: String
     var throughs: [Through]
 
+    public override var sql: SQL {
+        sql(for: [from])
+    }
+
+    private func sql(for models: [From]) -> SQL {
+        let copy: Query<SQLRow> = convert()
+        setJoins(on: copy)
+        let fromKeys = models.map(\.row?["\(fromKey)"])
+        return copy.`where`(lookupKey, in: fromKeys).sql
+    }
+
     public var cacheKey: String {
         let key = "\(name(of: Self.self))_\(fromKey)_\(toKey)"
         let throughKeys = throughs.map { "\($0.table)_\($0.from)_\($0.to)" }
@@ -24,27 +35,28 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         self.toKey = toKey
         self.throughs = []
         self.lookupKey = "\(toKey)"
-        super.init(db: db, table: To.M.table)
+        super.init(db: db, table: To.M.table, columns: ["\(To.M.table).*"])
     }
 
     public func fetch(for models: [From]) async throws -> [To] {
-        try setJoins()
         let fromKeys = models.map(\.row?["\(fromKey)"])
-        let results = try await `where`(lookupKey, in: fromKeys).select(columns).get()
+        let sql = sql(for: models)
+        let rows = try await db.query(sql: sql, logging: logging)
+        let results = try await _didLoad(rows.map(To.M.init))
         let resultsByLookup = results.grouped(by: \.row?[lookupKey])
         return try fromKeys
             .map { resultsByLookup[$0, default: []] }
             .map { try To(models: $0) }
     }
 
-    private func setJoins() throws {
+    private func setJoins<Result: QueryResult>(on query: Query<Result>) {
         guard let table else {
-            throw DatabaseError("Table required to run query - don't manually override the one set by `Relation`.")
+            preconditionFailure("Table required to run a query - don't manually override the one set by `Relation`.")
         }
 
         var nextKey = "\(table).\(toKey)"
         for through in throughs.reversed() {
-            join(table: through.table, first: "\(through.table).\(through.to)", second: nextKey)
+            query.join(table: through.table, first: "\(through.table).\(through.to)", second: nextKey)
             nextKey = "\(through.table).\(through.from)"
         }
     }
