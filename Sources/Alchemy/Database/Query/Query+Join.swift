@@ -33,7 +33,7 @@ public struct SQLJoin: Equatable {
 
     func on(first: String, op: SQLWhere.Clause.Operator, second: String, boolean: SQLWhere.Boolean = .and) -> Self {
         var join = self
-        join.wheres.append(SQLWhere(boolean: boolean, clause: .column(first: first, op: op, second: second)))
+        join.wheres.append(SQLWhere(boolean: boolean, clause: .column(column: first, op: op, otherColumn: second)))
         return join
     }
 

@@ -31,12 +31,12 @@ public struct SQLWhere: Hashable, SQLConvertible {
             }
         }
 
-        case value(key: String, op: Operator, value: SQL)
-        case column(first: String, op: Operator, second: String)
-        case nested(wheres: [SQLWhere])
-        case `in`(key: String, values: [SQL])
-        case notIn(key: String, values: [SQL])
         case raw(SQL)
+        case value(column: String, op: Operator, value: SQL)
+        case column(column: String, op: Operator, otherColumn: String)
+        case nested(wheres: [SQLWhere])
+        case `in`(column: String, values: [SQL])
+        case notIn(column: String, values: [SQL])
 
         public func hash(into hasher: inout Swift.Hasher) {
             hasher.combine("\(self)")
@@ -91,7 +91,7 @@ public struct SQLWhere: Hashable, SQLConvertible {
 }
 
 extension Array where Element == SQLWhere {
-    public func joined() -> SQL {
+    func joined() -> SQL {
         let sql = map(\.sql).joined()
         // drop the leading boolean
         let statement = sql.statement.components(separatedBy: " ").dropFirst().joined(separator: " ")
@@ -99,36 +99,35 @@ extension Array where Element == SQLWhere {
     }
 }
 
-
-// MARK: - Where Operators
+// MARK: - Operators
 
 extension String {
     public static func == (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .equals, value: rhs.sql)
+        .value(column: lhs, op: .equals, value: rhs.sql)
     }
 
     public static func != (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .notEqualTo, value: rhs.sql)
+        .value(column: lhs, op: .notEqualTo, value: rhs.sql)
     }
 
     public static func < (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .lessThan, value: rhs.sql)
+        .value(column: lhs, op: .lessThan, value: rhs.sql)
     }
 
     public static func > (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .greaterThan, value: rhs.sql)
+        .value(column: lhs, op: .greaterThan, value: rhs.sql)
     }
 
     public static func <= (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .lessThanOrEqualTo, value: rhs.sql)
+        .value(column: lhs, op: .lessThanOrEqualTo, value: rhs.sql)
     }
 
     public static func >= (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .greaterThanOrEqualTo, value: rhs.sql)
+        .value(column: lhs, op: .greaterThanOrEqualTo, value: rhs.sql)
     }
 
     public static func ~= (lhs: String, rhs: SQLConvertible) -> SQLWhere.Clause {
-        .value(key: lhs, op: .like, value: rhs.sql)
+        .value(column: lhs, op: .like, value: rhs.sql)
     }
 }
 
@@ -167,6 +166,9 @@ extension SQLWhere.Clause {
 // MARK: - Builders
 
 extension Query {
+
+    // MARK: Value
+
     /// Add a basic where clause to the query to filter down results.
     ///
     /// - Parameters:
@@ -191,6 +193,16 @@ extension Query {
         wheres.append(.or(clause))
         return self
     }
+
+    public func `where`(_ column: String, _ op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+        `where`(.value(column: column, op: op, value: value.sql))
+    }
+
+    public func orWhere(_ column: String, _ op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+        orWhere(.value(column: column, op: op, value: value.sql))
+    }
+
+    // MARK: Nested
 
     /// Add a nested where clause that is a group of combined clauses.
     /// This can be used for logically grouping where clauses like
@@ -235,11 +247,13 @@ extension Query {
         return orWhere(.nested(wheres: query.wheres))
     }
 
+    // MARK: IN Array
+
     /// Add a clause requiring that a column match any values in a
     /// given array.
     ///
     /// - Parameters:
-    ///   - key: The column to match against.
+    ///   - column: The column to match against.
     ///   - values: The values that the column should not match.
     ///   - type: How the match should happen (*in* or *notIn*).
     ///     Defaults to `.in`.
@@ -247,79 +261,83 @@ extension Query {
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func `where`(_ key: String, in values: [SQLConvertible]) -> Self {
+    public func `where`(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return `where`(.raw("FALSE"))
         }
 
-        return `where`(.in(key: key, values: values.map(\.sql)))
+        return `where`(.in(column: column, values: values.map(\.sql)))
     }
 
-    public func `where`(_ key: String, in query: Query<SQLRow>) -> Self {
-        `where`(.in(key: key, values: [query.sql]))
-    }
-
-    /// A helper for adding an **or** variant of the `where(key:in:)` clause.
+    /// A helper for adding an **or** variant of the `where(column:in:)` clause.
     ///
     /// - Parameters:
-    ///   - key: The column to match against.
+    ///   - column: The column to match against.
     ///   - values: The values that the column should not match.
     ///   - type: How the match should happen (`.in` or `.notIn`).
     ///     Defaults to `.in`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhere(_ key: String, in values: [SQLConvertible]) -> Self {
+    public func orWhere(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return orWhere(.raw("FALSE"))
         }
 
-        return orWhere(.in(key: key, values: values.map(\.sql)))
-    }
-
-    public func orWhere(_ key: String, in query: Query<SQLRow>) -> Self {
-        orWhere(.in(key: key, values: [query.sql]))
+        return orWhere(.in(column: column, values: values.map(\.sql)))
     }
 
     /// Add a clause requiring that a column not match any values in a
     /// given array. This is a helper method for the where in method.
     ///
     /// - Parameters:
-    ///   - key: The column to match against.
+    ///   - column: The column to match against.
     ///   - values: The values that the column should not match.
     ///   - boolean: How the clause should be appended (`.and` or
     ///     `.or`). Defaults to `.and`.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNot(_ key: String, in values: [SQLConvertible]) -> Self {
+    public func whereNot(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return `where`(.raw("TRUE"))
         }
 
-        return `where`(.notIn(key: key, values: values.map(\.sql)))
-    }
-
-    public func whereNot(_ key: String, in query: Query<SQLRow>) -> Self {
-        `where`(.notIn(key: key, values: [query.sql]))
+        return `where`(.notIn(column: column, values: values.map(\.sql)))
     }
 
     /// A helper for adding an **or** `whereNot` clause.
     ///
     /// - Parameters:
-    ///   - key: The column to match against.
+    ///   - column: The column to match against.
     ///   - values: The values that the column should not match.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNot(_ key: String, in values: [SQLConvertible]) -> Self {
+    public func orWhereNot(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return orWhere(.raw("TRUE"))
         }
 
-        return orWhere(.notIn(key: key, values: values.map(\.sql)))
+        return orWhere(.notIn(column: column, values: values.map(\.sql)))
     }
 
-    public func orWhereNot(_ key: String, in query: Query<SQLRow>) -> Self {
-        orWhere(.notIn(key: key, values: [query.sql]))
+    // MARK: IN Query
+
+    public func `where`(_ column: String, in query: Query<SQLRow>) -> Self {
+        `where`(.in(column: column, values: [query.sql]))
     }
+
+    public func orWhere(_ column: String, in query: Query<SQLRow>) -> Self {
+        orWhere(.in(column: column, values: [query.sql]))
+    }
+
+    public func whereNot(_ column: String, in query: Query<SQLRow>) -> Self {
+        `where`(.notIn(column: column, values: [query.sql]))
+    }
+
+    public func orWhereNot(_ column: String, in query: Query<SQLRow>) -> Self {
+        orWhere(.notIn(column: column, values: [query.sql]))
+    }
+
+    // MARK: Raw
 
     /// Add a raw SQL where clause to your query.
     ///
@@ -345,6 +363,8 @@ extension Query {
         orWhere(.raw(SQL(sql, parameters: parameters)))
     }
 
+    // MARK: Column
+
     /// Add a where clause requiring that two columns match each other
     ///
     /// - Parameters:
@@ -355,9 +375,8 @@ extension Query {
     ///     or `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    @discardableResult
-    public func whereColumn(first: String, op: SQLWhere.Clause.Operator, second: String) -> Self {
-        `where`(.column(first: first, op: op, second: second))
+    public func whereColumn(_ column: String, _ op: SQLWhere.Clause.Operator, _ otherColumn: String) -> Self {
+        `where`(.column(column: column, op: op, otherColumn: otherColumn))
     }
 
     /// A helper for adding an **or** `whereColumn` clause.
@@ -368,50 +387,52 @@ extension Query {
     ///   - second: The second column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereColumn(first: String, op: SQLWhere.Clause.Operator, second: String) -> Self {
-        orWhere(.column(first: first, op: op, second: second))
+    public func orWhereColumn(_ column: String, _ op: SQLWhere.Clause.Operator, _ otherColumn: String) -> Self {
+        orWhere(.column(column: column, op: op, otherColumn: otherColumn))
     }
+
+    // MARK: NULL
 
     /// Add a where clause requiring that a column be null.
     ///
     /// - Parameters:
-    ///   - key: The column to match against.
+    ///   - column: The column to match against.
     ///   - boolean: How the clause should be appended (`.and` or
     ///     `.or`).
     ///   - not: Should the value be null or not null.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNull(_ key: String) -> Self {
-        `where`(.raw("\(key) IS NULL"))
+    public func whereNull(_ column: String) -> Self {
+        `where`(.raw("\(column) IS NULL"))
     }
 
     /// A helper for adding an **or** `whereNull` clause.
     ///
-    /// - Parameter key: The column to match against.
+    /// - Parameter column: The column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNull(_ key: String) -> Self {
-        orWhere(.raw("\(key) IS NULL"))
+    public func orWhereNull(_ column: String) -> Self {
+        orWhere(.raw("\(column) IS NULL"))
     }
 
     /// Add a where clause requiring that a column not be null.
     ///
     /// - Parameters:
-    ///   - key: The column to match against.
+    ///   - column: The column to match against.
     ///   - boolean: How the clause should be appended (`.and` or
     ///     `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereNotNull(_ key: String, boolean: SQLWhere.Boolean = .and) -> Self {
-        `where`(.raw("\(key) IS NOT NULL"))
+    public func whereNotNull(_ column: String) -> Self {
+        `where`(.raw("\(column) IS NOT NULL"))
     }
 
     /// A helper for adding an **or** `whereNotNull` clause.
     ///
-    /// - Parameter key: The column to match against.
+    /// - Parameter column: The column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereNotNull(_ key: String) -> Self {
-        orWhere(.raw("\(key) IS NOT NULL"))
+    public func orWhereNotNull(_ column: String) -> Self {
+        orWhere(.raw("\(column) IS NOT NULL"))
     }
 }

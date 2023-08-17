@@ -6,32 +6,8 @@ struct Go: Command {
     func start() async throws {
         // go
 
-        var user1 = try await User.find(1)!
-        var user2 = try await User.find(2)!
-//        Log.warning("Dirty: \(try user.dirtyFields().keys)")
-//        user.age = Int.random(in: 0...100)
-//        user.pet = UUID().uuidString
-//        Log.warning("Dirty: \(try user.dirtyFields().keys)")
-//        Log.warning("Pet dirty: \(user.isDirty(\.pet))")
-//        try await user.save()
-//        Log.warning("Dirty: \(try user.dirtyFields().keys)")
-
-        let things = try await [user1, user2].upsertReturnAll()
-        print("GOT \(things.count)")
-
-        /*
-         
-         JSON
-
-         1. Data / ByteBuffer
-         2. Codable
-         3. String
-
-         */
-
-//        let names1 = try await User.select("name").limit(5).get(String.self)
-//        let names2 = try await DB.table("users").select("name").limit(5).get().decodeEach(String.self)
-//        print(names1, names2)
+        let user = try await DB.table(User.self).whereNull(\.pet).first()!
+        print("user: \(user)")
     }
 
     func testRelationships() {
