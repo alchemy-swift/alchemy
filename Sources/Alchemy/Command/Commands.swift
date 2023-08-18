@@ -37,12 +37,12 @@ extension Application {
     }
 
     /// Starts the application with the given arguments.
-    public func start(_ args: String...) throws {
-        try start(args: args)
+    public func start(_ args: String...) async throws {
+        try await start(args: args)
     }
 
-    public func start(args: [String]) throws {
-        try commander.start(args: args)
+    public func start(args: [String]) async throws {
+        try await commander.start(args: args)
     }
 
     /// Stops your application from running.

@@ -32,7 +32,11 @@ final class ServeCommand: Command {
     
     /// Should migrations be run before booting. Defaults to `false`.
     @Flag var migrate: Bool = false
-    
+
+    private var scheduler: Scheduler {
+        Container.resolveAssert()
+    }
+
     init() {}
     init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
         self.host = host
@@ -45,21 +49,22 @@ final class ServeCommand: Command {
     
     // MARK: Command
 
-    func run() throws {
+    func run() async throws {
         @Inject var lifecycle: ServiceLifecycle
         @Inject var app: Application
         
         if migrate {
-            lifecycle.register(
-                label: "Migrate",
-                start: .eventLoopFuture {
-                    LoopGroup.next()
-                        .asyncSubmit(DB.migrate)
-                },
-                shutdown: .none
-            )
+            try await DB.migrate()
         }
-        
+
+        if schedule {
+            scheduler.start()
+        }
+
+        for _ in 0..<workers {
+            Q.startWorker()
+        }
+
         var config = app.configuration.hbConfiguration
         if let unixSocket = unixSocket {
             config = config.with(address: .unixDomainSocket(path: unixSocket))
@@ -71,20 +76,6 @@ final class ServeCommand: Command {
         server.router = Routes
         Container.bind(.singleton, value: server)
         
-        registerWithLifecycle()
-        
-        if schedule {
-            lifecycle.registerScheduler()
-        }
-        
-        if workers > 0 {
-            lifecycle.registerWorkers(workers, on: Q)
-        }
-    }
-    
-    func start() throws {
-        @Inject var server: HBApplication
-        
         try server.start()
         if let unixSocket = unixSocket {
             Log.info("Server running on \(unixSocket).")
@@ -95,7 +86,9 @@ final class ServeCommand: Command {
 
         print("  Press Ctrl+C to stop the server\n".yellow)
     }
-    
+
+    func start() async throws {}
+
     func shutdown() throws {
         @Inject var server: HBApplication
         

@@ -48,7 +48,8 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
 
 extension Model {
     public static var database: Database { DB }
-    public static var table: String { KeyMapping.snakeCase.encode("\(Self.self)").pluralized }
+    public static var keyMapping: KeyMapping { DB.keyMapping }
+    public static var table: String { keyMapping.encode("\(Self.self)").pluralized }
     public static var primaryKey: String { "id" }
     public static var upsertConflictKeys: [String] { [primaryKey] }
     public static var jsonDecoder: JSONDecoder { JSONDecoder() }
@@ -70,11 +71,17 @@ extension Model {
 
 extension Model where Self: Codable {
     public init(row: SQLRow) throws {
-        self = try row.decode(Self.self, keyMapping: .snakeCase, jsonDecoder: Self.jsonDecoder)
+        self = try row.decode(Self.self, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)
     }
 
     public func fields() throws -> [String: SQLConvertible] {
-        try SQLRowEncoder(keyMapping: .snakeCase, jsonEncoder: Self.jsonEncoder).fields(for: self)
+        try sqlFields(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)
+    }
+}
+
+extension Encodable {
+    func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> [String: SQLConvertible] {
+        try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder).fields(for: self)
     }
 }
 

@@ -75,7 +75,7 @@ extension Application {
 
         // 4. Register `start()`.
 
-        lifecycle.register(label: "\(Self.self)", start: .sync { try start() }, shutdown: .none)
+        lifecycle.register(label: "\(Self.self)", start: .async { try await start() }, shutdown: .none)
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`

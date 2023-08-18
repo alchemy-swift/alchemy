@@ -7,12 +7,13 @@ final class Commander {
     var commands: [Command.Type] = []
     var defaultCommand: Command.Type = ServeCommand.self
 
-    func start(args: [String] = []) throws {
+    func start(args: [String] = []) async throws {
         // When running tests, don't use the command line args as the default;
         // they are irrelevant to running the app and may contain a bunch of
-        // options that will cause `ParsableCommand` parsing to fail.
+        // options that will cause `AsyncParsableCommand` parsing to fail.
         let fallbackArgs = env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
-        Launch.main(args.isEmpty ? fallbackArgs : args)
+        // TODO: how to override args like sync version of main? args.isEmpty ? fallbackArgs : args
+        await Launch.main()
     }
 
     func stop() async throws {
@@ -37,7 +38,7 @@ final class Commander {
 }
 
 /// Command to launch a given application.
-private struct Launch: ParsableCommand {
+private struct Launch: AsyncParsableCommand {
     static var configuration: CommandConfiguration {
         Container.resolveAssert(Commander.self).launchConfiguration()
     }

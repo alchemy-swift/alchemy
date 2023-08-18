@@ -4,6 +4,11 @@ import Alchemy
 struct App: Application {
     func boot() {
         useAll(LoggingMiddleware())
+
+        post("user") {
+            print("SUP \($0.content)")
+//            DB.table("users").insert($0.content)
+        }
     }
 }
 

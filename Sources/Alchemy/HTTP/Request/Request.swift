@@ -42,7 +42,6 @@ public final class Request: RequestInspector {
     init(hbRequest: HBRequest, parameters: [Parameter] = []) {
         self.hbRequest = hbRequest
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
-//        self.extensions = Extensions()
         self.container = Container(parent: .main)
         self.parameters = parameters
     }

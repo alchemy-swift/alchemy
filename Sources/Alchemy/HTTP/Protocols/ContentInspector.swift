@@ -23,11 +23,11 @@ extension ContentInspector {
     /// Async since the request may need to finish streaming before we get the
     /// files.
     public func files() -> [String: File] {
-        guard !content().allKeys.isEmpty else {
+        let content = content
+        guard !content.allKeys.isEmpty else {
             return [:]
         }
         
-        let content = content()
         let files = Set(content.allKeys).compactMap { key -> (String, File)? in
             guard let file = content[key].value?.file else {
                 return nil
@@ -50,26 +50,27 @@ extension ContentInspector {
     }
     
     public subscript(index: Int) -> Content {
-        content()[index]
+        content[index]
     }
     
     public subscript(field: String) -> Content {
-        content()[field]
+        content[field]
     }
     
-    func content() -> Content {
+    public var content: Content {
         if let content = _content {
             return content
         } else {
-            guard let body = body else {
-                return Content(error: ContentError.emptyBody)
+            let content: Content
+            switch (body, preferredDecoder()) {
+            case (.none, _):
+                content = Content(error: ContentError.emptyBody)
+            case (_, .none):
+                content = Content(error: ContentError.unknownContentType(headers.contentType))
+            case (.some(let body), .some(let decoder)):
+                content = decoder.content(from: body.buffer, contentType: headers.contentType)
             }
-            
-            guard let decoder = preferredDecoder() else {
-                return Content(error: ContentError.unknownContentType(headers.contentType))
-            }
-            
-            let content = decoder.content(from: body.buffer, contentType: headers.contentType)
+
             _content = content
             return content
         }

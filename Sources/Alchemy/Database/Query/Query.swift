@@ -159,15 +159,6 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     // MARK: INSERT
 
-    public func insert(_ columns: [String], query: Query<SQLRow>) async throws {
-        guard let table else {
-            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
-        }
-
-        let sql = db.grammar.insert(table, columns: columns, sql: query.sql)
-        try await db.query(sql: sql, logging: logging)
-    }
-
     /// Perform an insert and create a database row from the provided
     /// data.
     ///
@@ -192,6 +183,14 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
         let sql = db.grammar.insert(table, values: values)
         try await db.query(sql: sql, logging: logging)
+    }
+
+    public func insert<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws {
+        try await insert(try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+    }
+
+    public func insert<E: Encodable>(_ encodables: [E], keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws {
+        try await insert(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
     }
 
     public func insertReturn(_ values: [String: SQLConvertible]) async throws -> [SQLRow] {
@@ -224,6 +223,25 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
     }
 
+    public func insertReturn<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> [SQLRow] {
+        try await insertReturn(try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+    }
+
+    public func insertReturn<E: Encodable>(_ encodables: [E], keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> [SQLRow] {
+        try await insertReturn(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
+    }
+
+    /// Inserts the result of a query into this table, mapping results to the
+    /// given columns.
+    public func insert(_ columns: [String], query: Query<SQLRow>) async throws {
+        guard let table else {
+            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
+        }
+
+        let sql = db.grammar.insert(table, columns: columns, sql: query.sql)
+        try await db.query(sql: sql, logging: logging)
+    }
+
     // MARK: UPSERT
 
     public func upsert(_ value: [String: SQLConvertible], conflicts: [String] = ["id"]) async throws {
@@ -241,6 +259,14 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
         let sql = db.grammar.upsert(table, values: values, conflictKeys: conflicts)
         try await db.query(sql: sql, logging: logging)
+    }
+
+    public func upsert<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws {
+        try await upsert(try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+    }
+
+    public func upsert<E: Encodable>(_ encodables: [E], keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws {
+        try await upsert(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
     }
 
     public func upsertReturn(_ values: [String: SQLConvertible], conflicts: [String] = ["id"]) async throws -> [SQLRow] {
@@ -268,6 +294,13 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
     }
 
+    public func upsertReturn<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> [SQLRow] {
+        try await upsertReturn(try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+    }
+
+    public func upsertReturn<E: Encodable>(_ encodables: [E], keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> [SQLRow] {
+        try await upsertReturn(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
+    }
 
     // MARK: UPDATE
 
@@ -298,6 +331,10 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
         let sql = db.grammar.update(table: table, joins: joins, wheres: wheres, fields: fields)
         try await db.query(sql: sql, logging: logging)
+    }
+
+    public func update<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws {
+        try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
     }
 
     public func increment(_ column: String, by amount: Int = 1) async throws {

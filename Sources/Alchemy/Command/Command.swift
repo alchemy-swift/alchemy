@@ -40,7 +40,7 @@ import ArgumentParser
 /// ```bash
 /// $ swift run MyApp sync --id 2 --dry
 /// ```
-public protocol Command: ParsableCommand {
+public protocol Command: AsyncParsableCommand {
     /// The name of this command. Run it in the command line by passing this
     /// name as an argument. Defaults to the type name.
     static var name: String { get }
@@ -86,33 +86,6 @@ extension Command {
     
     public func shutdown() {}
 
-    /// Registers this command to the application lifecycle; useful
-    /// for running the app with this command.
-    func registerWithLifecycle() {
-        @Inject var lifecycle: ServiceLifecycle
-        
-        lifecycle.register(
-            label: Self.configuration.commandName ?? Alchemy.name(of: Self.self),
-            start: .eventLoopFuture {
-                LoopGroup.next()
-                    .asyncSubmit {
-                        try await start()
-                    }
-                    .map {
-                        if Self.shutdownAfterRun {
-                            lifecycle.shutdown()
-                        }
-                    }
-            },
-            shutdown: .eventLoopFuture {
-                LoopGroup.next()
-                    .asyncSubmit {
-                        try await shutdown()
-                    }
-            }
-        )
-    }
-    
     public static var name: String {
         Alchemy.name(of: Self.self)
     }

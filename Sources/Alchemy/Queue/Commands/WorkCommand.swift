@@ -23,7 +23,11 @@ struct WorkCommand: Command {
     /// Should the scheduler run in process, scheduling any recurring
     /// work.
     @Flag var schedule: Bool = false
-    
+
+    private var scheduler: Scheduler {
+        Container.resolveAssert()
+    }
+
     init() {}
     init(name: String?, channels: String = Queue.defaultChannel, workers: Int = 1, schedule: Bool = false) {
         self.name = name
@@ -37,10 +41,12 @@ struct WorkCommand: Command {
     func run() throws {
         let queue: Queue = name.map { Container.resolveAssert(identifier: $0) } ?? Q
 
-        @Inject var lifecycle: ServiceLifecycle
-        lifecycle.registerWorkers(workers, on: queue, channels: channels.components(separatedBy: ","))
+        for _ in 0..<workers {
+            queue.startWorker(for: channels.components(separatedBy: ","))
+        }
+
         if schedule {
-            lifecycle.registerScheduler()
+            scheduler.start()
         }
         
         let schedulerText = schedule ? "scheduler and " : ""
@@ -49,32 +55,3 @@ struct WorkCommand: Command {
     
     func start() {}
 }
-
-extension ServiceLifecycle {
-    private var scheduler: Scheduler { Container.resolveAssert() }
-    
-    /// Start the scheduler when the app starts.
-    func registerScheduler() {
-        register(label: "Scheduler", start: .sync { scheduler.start() }, shutdown: .none)
-    }
-    
-    /// Start queue workers when the app starts.
-    ///
-    /// - Parameters:
-    ///   - count: The number of workers to start.
-    ///   - queue: The queue they should monitor for jobs.
-    ///   - channels: The channels they should monitor for jobs.
-    ///     Defaults to `[Queue.defaultChannel]`.
-    func registerWorkers(_ count: Int, on queue: Queue, channels: [String] = [Queue.defaultChannel]) {
-        for worker in 0..<count {
-            register(
-                label: "Worker\(worker)",
-                start: .sync {
-                    queue.startWorker(for: channels, on: LoopGroup.next())
-                },
-                shutdown: .none
-            )
-        }
-    }
-}
-

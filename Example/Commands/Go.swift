@@ -1,11 +1,18 @@
 import Alchemy
 
+struct UserDTO: Codable {
+    let id: Int
+    let name: String
+    let age: Int
+}
+
 struct Go: Command {
     static let name = "go"
 
     func start() async throws {
         // go
 
+        try await DB.table("users").where("id" == 1).update(UserDTO(id: 1, name: "Jenkins", age: 26))
         let user = try await User.find(1)!
         Log.info("Posts: " + user.posts.rawSQLString)
         Log.info("Comments: " + user.comments.rawSQLString)
