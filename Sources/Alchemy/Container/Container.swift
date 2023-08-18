@@ -34,7 +34,7 @@ extension Container {
 
     /// Return if extension has been set
     public func exists<Base, Type>(_ key: KeyPath<Base, Type>) -> Bool {
-        resolve(Type.self, identifier: key) == nil
+        resolve(Type.self, identifier: key) != nil
     }
 
     /// Set extension for a `KeyPath`

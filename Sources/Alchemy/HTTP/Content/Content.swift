@@ -214,6 +214,43 @@ public final class Content: Buildable {
     }
 }
 
+extension Content.Node: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .array(let array):
+            var container = encoder.unkeyedContainer()
+            try container.encode(contentsOf: array)
+        case .dict(let dict):
+            var container = encoder.container(keyedBy: GenericCodingKey.self)
+            for (key, value) in dict {
+                let key = GenericCodingKey(stringValue: key)
+                try container.encode(value, forKey: key)
+            }
+        case .value(let value):
+            var container = encoder.singleValueContainer()
+            if let bool = value.bool { try container.encode(bool) }
+            if let string = value.string { try container.encode(string) }
+            if let double = value.double { try container.encode(double) }
+            if let int = value.int { try container.encode(int) }
+            if let file = value.file { try container.encode(file.content?.data())}
+        case .null:
+            var container = encoder.singleValueContainer()
+            try container.encodeNil()
+        }
+    }
+}
+
+extension Content: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        switch state {
+        case .error(let error):
+            throw error
+        case .node(let node):
+            try node.encode(to: encoder)
+        }
+    }
+}
+
 enum ContentError: Error {
     case unknownContentType(ContentType?)
     case emptyBody

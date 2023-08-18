@@ -98,15 +98,15 @@ struct GenericDecoder: Decoder {
 }
 
 struct GenericCodingKey: CodingKey {
-    var stringValue: String
-    var intValue: Int?
-    
-    init?(stringValue: String) {
+    let stringValue: String
+    let intValue: Int?
+
+    init(stringValue: String) {
         self.stringValue = stringValue
         self.intValue = Int(stringValue)
     }
     
-    init?(intValue: Int) {
+    init(intValue: Int) {
         self.stringValue = "\(intValue)"
         self.intValue = intValue
     }

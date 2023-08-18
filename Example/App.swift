@@ -6,8 +6,7 @@ struct App: Application {
         useAll(LoggingMiddleware())
 
         post("user") {
-            print("SUP \($0.content)")
-//            DB.table("users").insert($0.content)
+            try await DB.table("users").insert($0.content)
         }
     }
 }

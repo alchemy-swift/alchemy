@@ -361,16 +361,20 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     /// Perform a deletion on all data matching the given query.
     public func delete() async throws {
+        if let type = Result.self as? SoftDeletes.Type {
+            try await update([type.deletedAtKey: Date()])
+        } else {
+            try await _delete()
+        }
+    }
+
+    func _delete() async throws {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
 
-        if let type = Result.self as? SoftDeletes.Type {
-            try await update([type.deletedAtKey: Date()])
-        } else {
-            let sql = db.grammar.delete(table, wheres: wheres)
-            try await db.query(sql: sql, logging: logging)
-        }
+        let sql = db.grammar.delete(table, wheres: wheres)
+        try await db.query(sql: sql, logging: logging)
     }
 }
 

@@ -77,7 +77,10 @@ extension ContentInspector {
     }
     
     private var _content: Content? {
-        get { container.get(\ContentInspector._content) }
+        get {
+            guard container.exists(\ContentInspector._content) else { return nil }
+            return container.get(\ContentInspector._content)
+        }
         nonmutating set { container.set(\ContentInspector._content, value: newValue) }
     }
     

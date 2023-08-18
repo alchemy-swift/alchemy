@@ -33,10 +33,6 @@ final class ServeCommand: Command {
     /// Should migrations be run before booting. Defaults to `false`.
     @Flag var migrate: Bool = false
 
-    private var scheduler: Scheduler {
-        Container.resolveAssert()
-    }
-
     init() {}
     init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
         self.host = host
@@ -50,9 +46,9 @@ final class ServeCommand: Command {
     // MARK: Command
 
     func run() async throws {
-        @Inject var lifecycle: ServiceLifecycle
         @Inject var app: Application
-        
+        @Inject var scheduler: Scheduler
+
         if migrate {
             try await DB.migrate()
         }
@@ -74,7 +70,7 @@ final class ServeCommand: Command {
         
         let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(LoopGroup))
         server.router = Routes
-        Container.bind(.singleton, value: server)
+        Container.main.registerSingleton(server)
         
         try server.start()
         if let unixSocket = unixSocket {
@@ -89,9 +85,9 @@ final class ServeCommand: Command {
 
     func start() async throws {}
 
-    func shutdown() throws {
+    func shutdown() async throws {
         @Inject var server: HBApplication
-        
+
         let promise = server.eventLoopGroup.next().makePromise(of: Void.self)
         server.lifecycle.shutdown { error in
             if let error = error {
@@ -101,7 +97,7 @@ final class ServeCommand: Command {
             }
         }
         
-        try promise.futureResult.wait()
+        try await promise.futureResult.get()
     }
 }
 

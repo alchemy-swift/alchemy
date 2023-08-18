@@ -73,11 +73,6 @@ extension Query where Result: SoftDeletes {
     }
 
     public func forceDelete() async throws {
-        guard let table else {
-            throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
-        }
-
-        let sql = db.grammar.delete(table, wheres: wheres)
-        try await db.query(sql: sql, logging: logging)
+        try await _delete()
     }
 }

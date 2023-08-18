@@ -81,7 +81,11 @@ extension Model where Self: Codable {
 
 extension Encodable {
     func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> [String: SQLConvertible] {
-        try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder).fields(for: self)
+        try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder)
+            .fields(for: self)
+            // Automatically escape fields pulled of Encodable types, so that
+            // reserved keywords won't create issues in SQL queries.
+            .mapKeys(\.inQuotes)
     }
 }
 

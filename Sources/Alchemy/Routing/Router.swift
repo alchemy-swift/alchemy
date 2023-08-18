@@ -150,7 +150,7 @@ public final class Router {
     /// The default error handler if an error is encountered while handling a
     /// request.
     private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
-        Log.error("[Server] encountered internal error: \(error).")
+        Log.error("[Server] encountered internal error: \(String(reflecting: error)).")
         return Response(status: .internalServerError)
             .withString(HTTPResponseStatus.internalServerError.reasonPhrase)
     }
