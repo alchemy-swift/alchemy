@@ -6,10 +6,10 @@ import Pluralize
 /// database queries, supporting relationships & more.
 public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// The type of this object's primary key.
-    associatedtype Identifier: PrimaryKey
+    associatedtype PrimaryKey: PrimaryKeyProtocol
 
     /// The identifier / primary key of this type.
-    var id: PK<Identifier> { get set }
+    var id: PK<PrimaryKey> { get set }
 
     /// Convert this to an SQLRow for updating or inserting into a database.
     func fields() throws -> [String: SQLConvertible]

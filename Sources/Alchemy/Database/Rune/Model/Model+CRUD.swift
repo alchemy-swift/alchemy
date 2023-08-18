@@ -29,7 +29,7 @@ extension Model {
     ///     `Database.default`.
     ///   - id: The id of the model to find.
     /// - Returns: A matching model, if one exists.
-    public static func find(on db: Database = database, _ id: Identifier) async throws -> Self? {
+    public static func find(on db: Database = database, _ id: PrimaryKey) async throws -> Self? {
         try await `where`(on: db, primaryKey == id).first()
     }
     
@@ -60,7 +60,7 @@ extension Model {
     ///   found. Defaults to `RuneError.notFound`.
     /// - Returns: The unwrapped first result of this query, or the
     ///   supplied error if no result was found.
-    public static func require(_ id: Identifier, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
+    public static func require(_ id: PrimaryKey, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
         try await find(on: db, id).unwrap(or: error)
     }
 
@@ -194,7 +194,7 @@ extension Model {
     ///   - db: The database to delete the model from. Defaults to
     ///     `Database.default`.
     ///   - id: The id of the model to delete.
-    public static func delete(on db: Database = database, _ id: Self.Identifier) async throws {
+    public static func delete(on db: Database = database, _ id: Self.PrimaryKey) async throws {
         try await query(on: db).where(primaryKey == id).delete()
     }
     
@@ -277,9 +277,14 @@ extension Array where Element: Model {
     /// - Returns: All models in array, updated to reflect any changes
     ///   in the model caused by inserting.
     public func insertReturnAll(on db: Database = Element.database) async throws -> Self {
+        try await _insertReturnAll(on: db)
+    }
+
+    func _insertReturnAll(on db: Database = Element.database, fieldOverrides: [String: SQLConvertible] = [:]) async throws -> Self {
+        let fields = try insertableFields(on: db).map { $0 + fieldOverrides }
         try await Element.willCreate(self)
         let results = try await Element.query(on: db)
-            .insertReturn(try insertableFields(on: db))
+            .insertReturn(fields)
             .map { try $0.decodeModel(Element.self) }
         try await Element.didCreate(results)
         return results
@@ -348,7 +353,7 @@ extension Array where Element: Model {
         }
 
         guard allSatisfy({ $0.id.value != nil }) else {
-            throw RuneError.syncErrorNoId
+            throw RuneError("Can't .refresh() an object with a nil `id`.")
         }
 
         let byId = keyed(by: \.id)

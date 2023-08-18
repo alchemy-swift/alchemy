@@ -9,27 +9,47 @@ public protocol Seedable {
 }
 
 extension Seedable where Self: Model {
-    @discardableResult
-    public static func seed() async throws -> Self {
-        try await generate().save()
-    }
-    
-    @discardableResult
-    public static func seed(_ count: Int) async throws -> [Self] {
-        var rows: [Self] = []
-        for _ in 1...count {
-            rows.append(try await generate())
-        }
-        
-        return try await rows.insertReturnAll()
-    }
-    
     public static func randomOrSeed() async throws -> Self {
         guard let random = try await random() else {
             return try await seed()
         }
-        
+
         return random
+    }
+
+    @discardableResult
+    public static func seed(_ modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
+        try await _seed(1, modifier: modifier).first!
+    }
+
+    @discardableResult
+    public static func seed(_ fieldOverrides: [String: SQLConvertible]) async throws -> Self {
+        try await _seed(1, fieldOverrides: fieldOverrides).first!
+    }
+
+    @discardableResult
+    public static func seed(_ count: Int, _ modifier: ((inout Self) async throws -> Void)? = nil) async throws -> [Self] {
+        try await _seed(count, modifier: modifier)
+    }
+
+    @discardableResult
+    public static func seed(_ count: Int, _ fieldOverrides: [String: SQLConvertible] = [:]) async throws -> [Self] {
+        try await _seed(count, fieldOverrides: fieldOverrides)
+    }
+
+    @discardableResult
+    private static func _seed(_ count: Int, 
+                              modifier: ((inout Self) async throws -> Void)? = nil,
+                              fieldOverrides: [String: SQLConvertible] = [:]
+    ) async throws -> [Self] {
+        var models: [Self] = []
+        for _ in 1...count {
+            var model = try await generate()
+            try await modifier?(&model)
+            models.append(model)
+        }
+
+        return try await models._insertReturnAll(fieldOverrides: fieldOverrides)
     }
 }
 
@@ -48,12 +68,14 @@ extension Database {
 
     func seed(names seederNames: [String]) async throws {
         let toRun = try seederNames.map { name in
-            return try seeders
-                .first(where: {
-                    $0.name.lowercased() == name.lowercased() ||
-                    $0.name.lowercased().droppingSuffix("seeder") == name.lowercased()
-                })
-                .unwrap(or: DatabaseError("Unable to find a seeder on this database named \(name) or \(name)Seeder."))
+            guard let match = seeders.first(where: {
+                $0.name.lowercased() == name.lowercased() ||
+                $0.name.lowercased().droppingSuffix("seeder") == name.lowercased()
+            }) else {
+                throw DatabaseError("Unable to find a seeder on this database named \(name) or \(name)Seeder.")
+            }
+
+            return match
         }
 
         for seeder in toRun {

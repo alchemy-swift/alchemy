@@ -21,6 +21,7 @@ extension KeyPathQueryable {
  1. GROUP BY
  2. SELECT (esp with variadic generics merged)
  3. ORDER BY
+ 4. Seeding field overrides
 
  There's also a lot of opportunities to reduce repeated code & allow for mixed
  usage of typed and untyped APIs.
