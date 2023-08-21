@@ -22,8 +22,23 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     /// line arguments.
     public let name: String
 
-    /// Indicates if the current application environment is a test.
-    public let isTesting: Bool
+    /// Indicates if the application is running in tests.
+    public let isTest: Bool
+
+    /// Indicates if the application is running in prod.
+    public let isProd: Bool
+
+    /// Whether the current program is running in a test suite. This is not the
+    /// same as `isTest` which returns whether the current env is meant for
+    /// testing.
+    public var isRunningTests: Bool {
+        Environment.isRunningTests
+    }
+
+    /// Is this running from inside Xcode (vs the CLI).
+    public var isXcode: Bool {
+        Environment.isXcode
+    }
 
     /// The paths from which the dotenv file should be loaded.
     public let dotenvPaths: [String]
@@ -34,9 +49,10 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     /// All environment variables available loaded from the process.
     public var processVariables: [String: String]
 
-    public init(name: String, isTesting: Bool = false, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
+    public init(name: String, isTest: Bool = false, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
         self.name = name
-        self.isTesting = isTesting
+        self.isTest = isTest
+        self.isProd = false
         self.dotenvPaths = dotenvPaths ?? [".env.\(name)"]
         self.dotenvVariables = dotenvVariables
         self.processVariables = processVariables
@@ -78,12 +94,15 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
 
         guard let pathString = absolutePath else {
-            Log.debug("[Environment] No environment file found at `\(path)`.")
+            Log.debug("No environment file found at `\(path)`.")
             return nil
         }
 
-        guard let contents = try? String(contentsOfFile: pathString, encoding: .utf8) else {
-            Log.warning("[Environment] unable to load contents of file at '\(pathString)'")
+        let contents: String
+        do {
+            contents = try String(contentsOfFile: pathString, encoding: .utf8)
+        } catch {
+            Log.warning("Error loading contents of file at '\(pathString)': \(error).")
             return [:]
         }
 
@@ -117,7 +136,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
             values[key] = value
         }
 
-        Log.debug("[Environment] Loaded environment variables from `\(path)`.")
+        Log.debug("Loaded environment variables from `\(path)`.")
         return values
     }
 
@@ -130,12 +149,14 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     ///   exists.
     private func getAbsolutePath(relativePath: String) -> String? {
         if relativePath.contains("/DerivedData") {
-            Log.warning("""
+            Log.comment("""
                 **WARNING**
 
-                Your project is running in Xcode's `DerivedData` data directory. It's _highly_ recommend that you set a custom working directory instead, otherwise files like `.env` and `Public/` won't be accessible.
+                Your project is running in Xcode's `DerivedData` data directory. It's _highly_ recommend that you set a custom working directory instead, otherwise files like `.env` and folders like `Public/` won't be accessible.
 
-                It takes ~9 seconds to fix. Here's how: https://github.com/alchemy-swift/alchemy/blob/main/Docs/1_Configuration.md#setting-a-custom-working-directory.
+                It takes ~9 seconds to fix:
+
+                Product -> Scheme -> Edit Scheme -> Run -> Options -> check 'use custom working directory' & choose the root directory of your project.
                 """.yellow)
         }
 
@@ -153,12 +174,12 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     ///   provided and the variable doesn't exist or cannot be converted as
     ///   `S`.
     public static func get<L: LosslessStringConvertible>(_ key: String, as type: L.Type = L.self) -> L? {
-        Container.main.env.get(key, as: type)
+        Env.get(key, as: type)
     }
 
     /// Required for dynamic member lookup.
     public static subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
-        Environment.get(member)
+        Env.get(member)
     }
 
     /// Required for dynamic member lookup.
@@ -166,19 +187,17 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         self.get(member)
     }
 
-    public static var isTesting: Bool {
-        Container.main.env.isTesting
-    }
-
-    /// Whether the current program is running in a test suite. This is not the
-    /// same as `isTest` which returns whether the current env is for testing.
     public static var isRunningTests: Bool {
         CommandLine.arguments.contains { $0.contains("xctest") }
     }
 
+    public static var isXcode: Bool {
+        CommandLine.arguments.contains { $0.contains("/Xcode/DerivedData") }
+    }
+
     public static var `default`: Environment {
         isRunningTests
-            ? Environment(name: "test", isTesting: true)
+            ? Environment(name: "test", isTest: true)
             : Environment(name: "dev", dotenvPaths: [".env"])
     }
 

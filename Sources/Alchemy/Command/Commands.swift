@@ -1,7 +1,7 @@
 struct Commands: Plugin {
     func registerServices(in container: Container) {
         container.bind(.singleton, value: Commander())
-        if container.env.isTesting {
+        if container.env.isTest {
             FileCreator.mock()
         }
     }
@@ -38,10 +38,10 @@ extension Application {
 
     /// Starts the application with the given arguments.
     public func start(_ args: String...) async throws {
-        try await start(args: args)
+        try await start(args: args.isEmpty ? nil : args)
     }
 
-    public func start(args: [String]) async throws {
+    public func start(args: [String]? = nil) async throws {
         try await commander.start(args: args)
     }
 

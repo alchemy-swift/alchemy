@@ -10,7 +10,7 @@ extension Queue {
     ///     your apps next available loop.
     public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool = true, on eventLoop: EventLoop = LoopGroup.next()) {
         let worker = eventLoop.queueId
-        Log.info("[Queue] starting worker \(worker)")
+        Log.info("Starting worker \(worker)")
         workers.append(worker)
         _startWorker(for: channels, pollRate: pollRate, untilEmpty: untilEmpty, on: eventLoop)
     }
@@ -31,14 +31,14 @@ extension Queue {
                 return
             }
             
-            Log.info("[Queue] dequeued job \(jobData.jobName) from queue \(jobData.channel)")
+            Log.info("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
             try await execute(jobData)
             
             if untilEmpty {
                 try await runNext(from: channels, untilEmpty: untilEmpty)
             }
         } catch {
-            Log.error("[Queue] error running job \(name(of: Self.self)) from `\(channels)`. \(error)")
+            Log.error("Error running job \(name(of: Self.self)) from `\(channels)`. \(error)")
             throw error
         }
     }

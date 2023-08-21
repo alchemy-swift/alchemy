@@ -44,7 +44,7 @@ struct JobDecoding {
             do {
                 return try decoder(jobData)
             } catch {
-                Log.error("[Queue] error decoding job named \(jobData.jobName). Error was: \(error).")
+                Log.error("Error decoding job named \(jobData.jobName). Error was: \(error).")
                 throw error
             }
         }

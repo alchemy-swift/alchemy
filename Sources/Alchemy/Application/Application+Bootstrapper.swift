@@ -1,17 +1,12 @@
 import NIO
 
 /// Sets up core application services that other plugins may depend on.
-struct ApplicationBootstrapper: Plugin {
+struct CoreServices: Plugin {
     let app: Application
 
     func registerServices(in container: Container) {
 
-        // 0. Register app to container
-
-        container.registerSingleton(app)
-        container.registerSingleton(app, as: Application.self)
-
-        // 1. Setup Environment
+        // 0. Register Environment
 
         let env: Environment
         let args = CommandLine.arguments
@@ -25,16 +20,25 @@ struct ApplicationBootstrapper: Plugin {
             env = .default
         }
 
-        env.loadVariables()
         container.registerSingleton(env)
 
-        // 2. Setup NIO
+        // 1. Setup Logger
 
-        let threads = container.env.isTesting ? 1 : System.coreCount
+        if let index = args.firstIndex(of: "--log"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
+            Log.logger.logLevel = level
+        } else if let index = args.firstIndex(of: "-l"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
+            Log.logger.logLevel = level
+        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
+            Log.logger.logLevel = level
+        }
+
+        // 2. Register NIO services
+
+        let threads = env.isTest ? 1 : System.coreCount
         container.registerSingleton(MultiThreadedEventLoopGroup(numberOfThreads: threads), as: EventLoopGroup.self)
         container.registerSingleton(NIOThreadPool(numberOfThreads: threads))
         container.register { container in
-            guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !container.env.isTesting else {
+            guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !env.isTest else {
                 // With async/await there is no guarantee that you'll
                 // be running on an event loop. When one is needed,
                 // return a random one for now.
@@ -43,10 +47,16 @@ struct ApplicationBootstrapper: Plugin {
 
             return current
         }
+
+        // 3. Register the Application
+
+        container.registerSingleton(app)
+        container.registerSingleton(app, as: Application.self)
     }
 
     func boot(app: Application) {
         app.container.resolve(NIOThreadPool.self)?.start()
+        app.container.resolve(Environment.self)?.loadVariables()
     }
 
     func shutdownServices(in container: Container) async throws {

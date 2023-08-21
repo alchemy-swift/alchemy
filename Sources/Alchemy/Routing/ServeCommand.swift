@@ -8,7 +8,7 @@ import Hummingbird
 
 /// Command to serve on launched. This is a subcommand of `Launch`.
 /// The app will route with the singleton `HTTPRouter`.
-final class ServeCommand: Command {
+struct ServeCommand: Command {
     static let name = "serve"
     static var shutdownAfterRun: Bool = false
     
@@ -32,6 +32,9 @@ final class ServeCommand: Command {
     
     /// Should migrations be run before booting. Defaults to `false`.
     @Flag var migrate: Bool = false
+
+    /// If enabled, handled requests won't be logged.
+    @Flag var quiet: Bool = false
 
     init() {}
     init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
@@ -67,7 +70,11 @@ final class ServeCommand: Command {
         } else {
             config = config.with(address: .hostname(host, port: port))
         }
-        
+
+        if !quiet {
+            Routes.didHandle(commentHandled)
+        }
+
         let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(LoopGroup))
         server.router = Routes
         Container.main.registerSingleton(server)
@@ -80,7 +87,8 @@ final class ServeCommand: Command {
             Log.info("Server running on \(link).")
         }
 
-        print("  Press Ctrl+C to stop the server\n".yellow)
+        let stop = Env.isXcode ? "Cmd+Period" : "Ctrl+C"
+        print("  Press \(stop) to stop the server\n".yellow)
     }
 
     func start() async throws {}
@@ -98,6 +106,42 @@ final class ServeCommand: Command {
         }
         
         try await promise.futureResult.get()
+    }
+
+    private func commentHandled(req: Request, res: Response) {
+        enum Formatters {
+            static let date: DateFormatter = {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                return formatter
+            }()
+            static let time: DateFormatter = {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                return formatter
+            }()
+        }
+
+        let finishedAt = Date()
+        let dateString = Formatters.date.string(from: finishedAt)
+        let timeString = Formatters.time.string(from: finishedAt)
+        let left = "  \(dateString) \(timeString) \(req.path)"
+        let right = "\(req.createdAt.elapsedString) \(res.status.code)  "
+        let dots = Log.dots(left: left, right: right)
+        let code: String = {
+            switch res.status.code {
+            case 200...299:
+                return "\(res.status.code)".green
+            case 400...499:
+                return "\(res.status.code)".yellow
+            case 500...599:
+                return "\(res.status.code)".red
+            default:
+                return "\(res.status.code)".white
+            }
+        }()
+
+        Log.comment("  \(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)  ")
     }
 }
 

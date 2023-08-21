@@ -34,6 +34,6 @@ struct SeedCommand: Command {
     }
     
     func shutdown() async throws {
-        Log.info("[Seed] database seeding complete.")
+        Log.info("Database seeding complete.")
     }
 }

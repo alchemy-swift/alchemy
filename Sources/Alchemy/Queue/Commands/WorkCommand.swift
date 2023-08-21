@@ -50,7 +50,7 @@ struct WorkCommand: Command {
         }
         
         let schedulerText = schedule ? "scheduler and " : ""
-        Log.info("[Queue] started \(schedulerText)\(workers) workers.")
+        Log.info("Started \(schedulerText)\(workers) Queue workers.")
     }
     
     func start() {}

@@ -33,6 +33,8 @@ public final class Request: RequestInspector {
     public let container: Container
     /// The url components of this request.
     public let urlComponents: URLComponents
+    /// When the request was received by the server.
+    public var createdAt: Date
     /// Parameters parsed from the path.
     public var parameters: [Parameter] {
         get { container.get(\Request.parameters) }
@@ -43,6 +45,7 @@ public final class Request: RequestInspector {
         self.hbRequest = hbRequest
         self.urlComponents = URLComponents(string: hbRequest.uri.string) ?? URLComponents()
         self.container = Container(parent: .main)
+        self.createdAt = Date()
         self.parameters = parameters
     }
     

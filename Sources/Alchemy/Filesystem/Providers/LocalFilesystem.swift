@@ -36,7 +36,7 @@ struct LocalFilesystem: FilesystemProvider {
         let url = try url(for: filepath)
         let fileInfo = try FileManager.default.attributesOfItem(atPath: url.path)
         guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
-            Log.error("[Storage] attempted to access file at `\(url.path)` but it didn't have a size.")
+            Log.error("Attempted to access file at `\(url.path)` but it didn't have a size.")
             throw HTTPError(.internalServerError)
         }
         

@@ -27,18 +27,7 @@ public protocol Application {
 extension Application {
     public var configuration: Configuration { .default }
 
-    private var defaultPlugins: [Plugin] {
-        [
-            LifecyclePlugin(),
-            EventsPlugin(),
-            RoutingPlugin(),
-            SchedulingPlugin(),
-            Commands(),
-            Clients(),
-        ]
-    }
-
-    public func boot() { /* no-op */ }
+    public func boot() { /* default to no-op */ }
 
     public func run() throws {
         setupServices()
@@ -53,19 +42,26 @@ extension Application {
 
         Container.main = Container()
 
-        // 1. Bootstrap core services.
+        // 1. Boot CoreServices.
 
-        let core = ApplicationBootstrapper(app: self)
+        let core = CoreServices(app: self)
         core.registerServices(in: container)
+        core.boot(app: self)
 
         // 2. Register Plugins.
 
-        let plugins = defaultPlugins + configuration.plugins
+        let plugins = .defaultPlugins + configuration.plugins
         plugins.forEach { $0.registerServices(in: container) }
 
         // 3. Register Plugin Lifecyle events.
 
-        for plugin in [core] + plugins {
+        lifecycle.register(
+            label: core.label,
+            start: .none,
+            shutdown: .async { try await core.shutdownServices(in: container) }
+        )
+
+        for plugin in plugins {
             lifecycle.register(
                 label: plugin.label,
                 start: .async { try await plugin.boot(app: self) },

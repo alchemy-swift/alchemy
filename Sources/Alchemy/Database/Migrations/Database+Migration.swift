@@ -80,15 +80,8 @@ extension Database {
             let start = Date()
             try await m.up(db: self)
             try await AppliedMigration(name: m.name, batch: lastBatch + 1, runAt: Date()).insert(on: self)
-            let time = start.elapsedString
-            let done = "DONE"
-            let dots = dots(message: m.name, info: "\(time) \(done)")
-            Log.comment("  \(m.name.white) \(dots.lightBlack) \(time.lightBlack) \(done.green)  ")
+            commentMigrationDone(m, startedAt: start)
         }
-    }
-
-    private func dots(message: String, info: String) -> String {
-        String(repeating: ".", count: Terminal.columns - message.count - info.count - 6)
     }
 
     /// Run the `.down` functions of an array of migrations, in order.
@@ -106,10 +99,7 @@ extension Database {
             let start = Date()
             try await m.down(db: self)
             try await AppliedMigration.delete("name" == m.name)
-            let time = start.elapsedString
-            let done = "DONE"
-            let dots = dots(message: m.name, info: "\(time) \(done)")
-            Log.comment("  \(m.name.white) \(dots.lightBlack) \(time.lightBlack) \(done.green)  ")
+            commentMigrationDone(m, startedAt: start)
         }
     }
 
@@ -118,6 +108,14 @@ extension Database {
             .select("MAX(batch)")
             .first()?
             .decode(Int?.self) ?? 0
+    }
+
+    private func commentMigrationDone(_ migration: Migration, startedAt: Date) {
+        let time = startedAt.elapsedString
+        let done = "DONE"
+        let left = "  \(migration.name)"
+        let dots = Log.dots(left: left, right: "\(time) \(done)  ")
+        Log.comment("\(left.white) \(dots.lightBlack) \(time.lightBlack) \(done.green)")
     }
 
     /// Gets any existing migrations in the order that they were applied. This

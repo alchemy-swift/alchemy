@@ -21,3 +21,14 @@ extension Plugin {
     public func boot(app: Application) async throws { /* no-op */ }
     public func shutdownServices(in container: Container) async throws { /* no-op */ }
 }
+
+extension Array where Element == Plugin {
+    static var defaultPlugins: [Plugin] = [
+        LifecyclePlugin(),
+        EventsPlugin(),
+        RoutingPlugin(),
+        SchedulingPlugin(),
+        Commands(),
+        Clients(),
+    ]
+}

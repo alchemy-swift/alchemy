@@ -14,7 +14,7 @@ extension Scheduler {
                 do {
                     try await job().dispatch(on: queue, channel: channel)
                 } catch {
-                    Log.error("[Scheduler] error scheduling Job: \(error)")
+                    Log.error("Error scheduling Job: \(error)")
                     throw error
                 }
             }

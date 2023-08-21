@@ -25,7 +25,7 @@ public final class Scheduler {
     ///   to the next available `EventLoop`.
     public func start(on scheduleLoop: EventLoop = LoopGroup.next()) {
         guard !isStarted else {
-            return Log.warning("[Scheduler] this scheduler has already been started.")
+            return Log.warning("This scheduler has already been started.")
         }
         
         isStarted = true
@@ -47,7 +47,7 @@ public final class Scheduler {
     
     private func schedule(schedule: Schedule, task: @escaping () async throws -> Void, on loop: EventLoop) {
         guard let delay = schedule.next() else {
-            return Log.info("[Scheduler] scheduling finished; there's no future date to run.")
+            return Log.info("Scheduling finished; there's no future date to run.")
         }
         
         loop.flatScheduleTask(in: delay) {

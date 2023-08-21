@@ -33,7 +33,7 @@ public final class Router {
     /// A handler for returning a response after an error is
     /// encountered while initially handling the request.
     public typealias ErrorHandler = (Request, Error) async throws -> ResponseConvertible
-    
+
     /// The default response for when there is an error along the
     /// routing chain that does not conform to
     /// `ResponseConvertible`.
@@ -58,7 +58,10 @@ public final class Router {
     
     /// A trie that holds all the handlers.
     private let trie = Trie<HandlerEntry>()
-    
+
+    /// Internal hook for logging the result of each request.
+    private var _didHandle: (Request, Response) -> Void = { _, _ in }
+
     /// Creates a new router.
     init() {}
     
@@ -120,9 +123,19 @@ public final class Router {
             }
         }
         
-        return await handler(request)
+        let response = await handler(request)
+        _didHandle(request, response)
+        return response
     }
-    
+
+    func didHandle(_ hook: @escaping (Request, Response) -> Void) {
+        let previous = _didHandle
+        _didHandle = {
+            previous($0, $1)
+            hook($0, $1)
+        }
+    }
+
     /// Converts a throwing, ResponseConvertible handler into a
     /// non-throwing Response handler.
     private func cleanHandler(_ handler: @escaping Handler) -> (Request) async -> Response {
@@ -150,7 +163,7 @@ public final class Router {
     /// The default error handler if an error is encountered while handling a
     /// request.
     private static func uncaughtErrorHandler(req: Request, error: Error) -> Response {
-        Log.error("[Server] encountered internal error: \(String(reflecting: error)).")
+        Log.error("Encountered internal error: \(String(reflecting: error)).")
         return Response(status: .internalServerError)
             .withString(HTTPResponseStatus.internalServerError.reasonPhrase)
     }
