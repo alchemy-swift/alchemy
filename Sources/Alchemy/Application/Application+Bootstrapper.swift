@@ -5,11 +5,24 @@ struct CoreServices: Plugin {
     let app: Application
 
     func registerServices(in container: Container) {
+        let args = CommandLine.arguments
 
-        // 0. Register Environment
+        // 0. Register Logger
+
+        var logger: Logger = .alchemyDefault
+        if let index = args.firstIndex(of: "--log"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
+            logger.logLevel = level
+        } else if let index = args.firstIndex(of: "-l"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
+            logger.logLevel = level
+        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
+            logger.logLevel = level
+        }
+
+        container.registerSingleton(logger)
+
+        // 1. Register Environment
 
         let env: Environment
-        let args = CommandLine.arguments
         if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
             env = Environment(name: value)
         } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
@@ -21,16 +34,6 @@ struct CoreServices: Plugin {
         }
 
         container.registerSingleton(env)
-
-        // 1. Setup Logger
-
-        if let index = args.firstIndex(of: "--log"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
-            Log.logger.logLevel = level
-        } else if let index = args.firstIndex(of: "-l"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
-            Log.logger.logLevel = level
-        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
-            Log.logger.logLevel = level
-        }
 
         // 2. Register NIO services
 

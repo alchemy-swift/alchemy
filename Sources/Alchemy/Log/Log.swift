@@ -12,10 +12,43 @@ import Logging
 /// // In Application.boot...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
-public struct Log {
-    /// The logger to which all logs will be logged. By default it's a
-    /// logger with label `Alchemy`.
-    public static var logger = Logger(label: "Alchemy", factory: { AlchemyLogger(label: $0) })
+
+/*
+ Conveniences around...
+
+ 1. Destination.
+ 2. Multiple destinations (MultiplexLogHandler).
+ 3. Built in destinations.
+ 4. Output Format.
+ 5. Using combos of the above depending on the environment.
+ 6. Sensible Defaults - prod = syslog? dev = local?
+ 7. Filtering (level, metadata?)
+ 8. Metadata
+ 9. Source & Service?
+
+ */
+
+extension Logger: Service {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+
+    /// Logs a "comment". Internal function intended for useful context during
+    /// local dev only.
+    func comment(_ message: String) {
+        if !Env.isTest && !Env.isProd {
+            print(message)
+        }
+    }
+
+    func dots(left: String, right: String) -> String {
+        String(repeating: ".", count: Terminal.columns - left.count - right.count - 2)
+    }
+
+    func with(handler: LogHandler) {
+        
+    }
 
     /// Log a message with the `Logger.Level.trace` log level.
     ///
@@ -23,86 +56,81 @@ public struct Log {
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func trace(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.trace(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func trace(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        trace(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
-    
+
     /// Log a message with the `Logger.Level.debug` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func debug(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.debug(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func debug(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        debug(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
-    
+
     /// Log a message with the `Logger.Level.info` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func info(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.info(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func info(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        info(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
-    
+
     /// Log a message with the `Logger.Level.notice` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func notice(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.notice(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func notice(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        notice(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
-    
+
     /// Log a message with the `Logger.Level.warning` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func warning(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.warning(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func warning(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        warning(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
-    
+
     /// Log a message with the `Logger.Level.error` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func error(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.error(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func error(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        error(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
-    
+
     /// Log a message with the `Logger.Level.critical` log level.
     ///
     /// - Parameters:
     ///   - message: the message to log.
     ///   - metadata: any metadata (a typealias of
     ///     `[String: Logger.MetadataType]`) to log.
-    public static func critical(_ message: String, metadata: Logger.Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
-        Log.logger.critical(.init(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    public func critical(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
+        critical(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
 
-    /// Logs a "comment". Internal function intended for useful context during
-    /// local dev only.
-    static func comment(_ message: String) {
-        if !Env.isTest && !Env.isProd {
-            print(message)
-        }
-    }
-
-    static func dots(left: String, right: String) -> String {
-        String(repeating: ".", count: Terminal.columns - left.count - right.count - 2)
-    }
+    public static let alchemyDefault = Logging.Logger(label: "Alchemy", factory: { AlchemyLogger(label: $0) })
 }
 
 fileprivate struct AlchemyLogger: LogHandler {
+    typealias Level = Logger.Level
+    typealias Message = Logger.Message
+    typealias Metadata = Logger.Metadata
+    typealias MetadataProvider = Logger.MetadataProvider
+
     public var logLevel: Logger.Level = .info
-    public var metadataProvider: Logger.MetadataProvider?
+    public var metadataProvider: MetadataProvider?
     public var metadata = Logger.Metadata() {
         didSet {
             self.prettyMetadata = self.prettify(self.metadata)
@@ -112,16 +140,16 @@ fileprivate struct AlchemyLogger: LogHandler {
     private let label: String
     private var prettyMetadata: String?
 
-    init(label: String, metadataProvider: Logger.MetadataProvider? = LoggingSystem.metadataProvider) {
+    init(label: String, metadataProvider: MetadataProvider? = LoggingSystem.metadataProvider) {
         // Clear out the console on boot.
         print("")
         self.label = label
         self.metadataProvider = metadataProvider
     }
 
-    public func log(level: Logger.Level,
-                    message: Logger.Message,
-                    metadata explicitMetadata: Logger.Metadata?,
+    public func log(level: Level,
+                    message: Message,
+                    metadata explicitMetadata: Metadata?,
                     source: String,
                     file: String,
                     function: String,
@@ -163,7 +191,7 @@ fileprivate struct AlchemyLogger: LogHandler {
         set { metadata[metadataKey] = newValue }
     }
 
-    internal static func prepareMetadata(base: Logger.Metadata, provider: Logger.MetadataProvider?, explicit: Logger.Metadata?) -> Logger.Metadata? {
+    internal static func prepareMetadata(base: Metadata, provider: MetadataProvider?, explicit: Metadata?) -> Metadata? {
         var metadata = base
 
         let provided = provider?.get() ?? [:]

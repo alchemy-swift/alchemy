@@ -119,7 +119,7 @@ public struct RedisClient: RediStack.RedisClient, Service {
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
                     connectionPassword: password,
-                    connectionDefaultLogger: Log.logger
+                    connectionDefaultLogger: Log
                 )
             ),
             addresses: sockets
@@ -173,7 +173,7 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     func shutdown() async throws {
         for pool in poolStorage.values {
             let promise: EventLoopPromise<Void> = pool.eventLoop.makePromise()
-            pool.close(promise: promise, logger: Log.logger)
+            pool.close(promise: promise, logger: Log)
             do {
                 try await promise.futureResult.get()
             } catch {

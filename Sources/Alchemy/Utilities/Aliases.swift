@@ -15,6 +15,13 @@ public var Lifecycle: ServiceLifecycle { Container.resolveAssert() }
 /// The application Environment
 public var Env: Environment { Container.resolveAssert() }
 
+/// The application Logger
+public var Log: Logger {
+    get { Container.resolveAssert() }
+    set { Container.main.registerSingleton(newValue) }
+}
+public func Log(_ id: Logger.Identifier) -> Logger { Container.resolveAssert(identifier: id) }
+
 /// The appliation Router
 public var Routes: Router { Container.resolveAssert() }
 

@@ -39,7 +39,7 @@ public final class SQLiteDatabaseProvider: DatabaseProvider {
     }
     
     private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
-        try await pool.withConnection(logger: Log.logger, on: Loop) {
+        try await pool.withConnection(logger: Log, on: Loop) {
             try await action($0)
         }
     }

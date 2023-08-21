@@ -271,7 +271,7 @@ public final class Client: Service {
             let promise = loop.makePromise(of: Response.self)
             let delegate = ResponseDelegate(request: req, promise: promise, allowStreaming: req.streamResponse)
             let client = httpClientOverride ?? httpClient
-            _ = client.execute(request: _request, delegate: delegate, eventLoop: .delegateAndChannel(on: loop), deadline: deadline, logger: Log.logger)
+            _ = client.execute(request: _request, delegate: delegate, eventLoop: .delegateAndChannel(on: loop), deadline: deadline, logger: Log)
             return try await promise.futureResult.get()
         }
     }

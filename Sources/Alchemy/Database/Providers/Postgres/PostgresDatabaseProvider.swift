@@ -44,7 +44,7 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
     }
     
     private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
-        try await pool.withConnection(logger: Log.logger, on: Loop) {
+        try await pool.withConnection(logger: Log, on: Loop) {
             try await action($0)
         }
     }
@@ -60,7 +60,7 @@ extension PostgresConnection: DatabaseProvider, ConnectionPoolItem {
         }
 
         let _query = PostgresQuery(unsafeSQL: statement, binds: binds)
-        return try await query(_query, logger: Log.logger).collect().map(\._row)
+        return try await query(_query, logger: Log).collect().map(\._row)
     }
 
     @discardableResult

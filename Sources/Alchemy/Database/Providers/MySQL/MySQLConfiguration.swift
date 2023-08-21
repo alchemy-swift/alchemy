@@ -2,6 +2,7 @@ import AsyncKit
 import NIOSSL
 import NIOCore
 import MySQLNIO
+import Logging
 
 public struct MySQLConfiguration: ConnectionPoolSource {
     public static let defaultPort = 3306
@@ -86,7 +87,7 @@ public struct MySQLConfiguration: ConnectionPoolSource {
 
     // MARK: ConnectionPoolSource
 
-    public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<MySQLConnection> {
+    public func makeConnection(logger: Logging.Logger, on eventLoop: EventLoop) -> EventLoopFuture<MySQLConnection> {
         do {
             return MySQLConnection.connect(
                 to: try address(),

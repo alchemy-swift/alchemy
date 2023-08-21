@@ -4,7 +4,7 @@ struct LifecyclePlugin: Plugin {
             ServiceLifecycle(
                 configuration: ServiceLifecycle.Configuration(
                     logger: {
-                        var logger = Log.logger
+                        var logger = Log
 
                         // ServiceLifecycle is pretty noisy. Let's default it to
                         // logging @ .notice or above, unless the user has set
