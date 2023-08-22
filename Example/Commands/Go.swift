@@ -10,6 +10,15 @@ struct Go: Command {
     static let name = "go"
 
     func start() async throws {
+        let one = Logger {
+            print("[ONE] \($0.message)")
+        }
+        let two = Logger {
+            print("[TWO] \($0.message)")
+        }
+
+        let both = Logger(loggers: [one, two, Log(.default)])
+        both.warning("sup".red)
         // go
     }
 

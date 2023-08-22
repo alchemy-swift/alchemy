@@ -14,6 +14,7 @@ import Logging
 /// ```
 
 /*
+ 
  Conveniences around...
 
  1. Destination.
@@ -34,21 +35,7 @@ extension Logger: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
 
-    /// Logs a "comment". Internal function intended for useful context during
-    /// local dev only.
-    func comment(_ message: String) {
-        if !Env.isTest && !Env.isProd {
-            print(message)
-        }
-    }
-
-    func dots(left: String, right: String) -> String {
-        String(repeating: ".", count: Terminal.columns - left.count - right.count - 2)
-    }
-
-    func with(handler: LogHandler) {
-        
-    }
+    // MARK: Conveniences
 
     /// Log a message with the `Logger.Level.trace` log level.
     ///
@@ -120,103 +107,17 @@ extension Logger: Service {
         critical(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
     }
 
-    public static let alchemyDefault = Logging.Logger(label: "Alchemy", factory: { AlchemyLogger(label: $0) })
-}
+    // MARK: Comments
 
-fileprivate struct AlchemyLogger: LogHandler {
-    typealias Level = Logger.Level
-    typealias Message = Logger.Message
-    typealias Metadata = Logger.Metadata
-    typealias MetadataProvider = Logger.MetadataProvider
-
-    public var logLevel: Logger.Level = .info
-    public var metadataProvider: MetadataProvider?
-    public var metadata = Logger.Metadata() {
-        didSet {
-            self.prettyMetadata = self.prettify(self.metadata)
+    /// Logs a "comment". Internal function intended for useful context during
+    /// local dev only.
+    func comment(_ message: String) {
+        if !Env.isTest && !Env.isProd {
+            print(message)
         }
     }
 
-    private let label: String
-    private var prettyMetadata: String?
-
-    init(label: String, metadataProvider: MetadataProvider? = LoggingSystem.metadataProvider) {
-        // Clear out the console on boot.
-        print("")
-        self.label = label
-        self.metadataProvider = metadataProvider
-    }
-
-    public func log(level: Level,
-                    message: Message,
-                    metadata explicitMetadata: Metadata?,
-                    source: String,
-                    file: String,
-                    function: String,
-                    line: UInt) {
-        let effectiveMetadata = AlchemyLogger.prepareMetadata(base: self.metadata, provider: self.metadataProvider, explicit: explicitMetadata)
-
-        let prettyMetadata: String?
-        if let effectiveMetadata = effectiveMetadata {
-            prettyMetadata = self.prettify(effectiveMetadata)
-        } else {
-            prettyMetadata = self.prettyMetadata
-        }
-
-        var _level = " \(level) ".uppercased()
-        switch level {
-        case .trace:
-            _level = _level.black.onWhite
-        case .debug:
-            _level = _level.black.onCyan
-        case .info:
-            _level = _level.black.onBlue
-        case .notice:
-            _level = _level.black.onGreen
-        case .warning:
-            _level = _level.black.onYellow
-        case .error:
-            _level = _level.black.onLightRed
-        case .critical:
-            _level = _level.lightRed.onBlack
-        }
-
-        let showSource = Environment.SHOW_SOURCE == true
-        let source = showSource ? " [\(source)]" : ""
-        print("  \(_level) \(source)\(message)\(prettyMetadata.map { " \($0)" } ?? "") \n")
-    }
-
-    public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {
-        get { metadata[metadataKey] }
-        set { metadata[metadataKey] = newValue }
-    }
-
-    internal static func prepareMetadata(base: Metadata, provider: MetadataProvider?, explicit: Metadata?) -> Metadata? {
-        var metadata = base
-
-        let provided = provider?.get() ?? [:]
-
-        guard !provided.isEmpty || !((explicit ?? [:]).isEmpty) else {
-            // all per-log-statement values are empty
-            return nil
-        }
-
-        if !provided.isEmpty {
-            metadata.merge(provided, uniquingKeysWith: { _, provided in provided })
-        }
-
-        if let explicit = explicit, !explicit.isEmpty {
-            metadata.merge(explicit, uniquingKeysWith: { _, explicit in explicit })
-        }
-
-        return metadata
-    }
-
-    private func prettify(_ metadata: Logger.Metadata) -> String? {
-        if metadata.isEmpty {
-            return nil
-        } else {
-            return metadata.lazy.sorted(by: { $0.key < $1.key }).map { "\($0)=\($1)" }.joined(separator: " ")
-        }
+    func dots(left: String, right: String) -> String {
+        String(repeating: ".", count: Terminal.columns - left.count - right.count - 2)
     }
 }

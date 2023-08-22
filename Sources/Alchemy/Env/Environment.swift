@@ -73,7 +73,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         guard let val = processVariables[key] ?? dotenvVariables[key] else {
             return nil
         }
-        
+
         return L(val)
     }
     

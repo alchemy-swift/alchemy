@@ -21,6 +21,9 @@ public var Log: Logger {
     set { Container.main.registerSingleton(newValue) }
 }
 public func Log(_ id: Logger.Identifier) -> Logger { Container.resolveAssert(id: id) }
+public func Log(_ ids: Logger.Identifier...) -> Logger {
+    Logger(loggers: ids.map { Container.resolveAssert(id: $0) })
+}
 
 /// The appliation Router
 public var Routes: Router { Container.resolveAssert() }
