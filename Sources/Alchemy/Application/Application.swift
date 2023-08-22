@@ -17,6 +17,9 @@ public protocol Application {
     /// The configuration of the underlying application.
     var configuration: Configuration { get }
 
+    /// The logging configuration of the application.
+    var loggers: Loggers { get }
+
     /// Setup your application here. Called after all services are loaded.
     func boot() throws
 
@@ -25,7 +28,8 @@ public protocol Application {
 }
 
 extension Application {
-    public var configuration: Configuration { .default }
+    public var configuration: Configuration { ApplicationConfiguration() }
+    public var loggers: Loggers { Loggers() }
 
     public func boot() { /* default to no-op */ }
 

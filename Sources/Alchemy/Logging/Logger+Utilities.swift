@@ -35,6 +35,18 @@ extension Logger: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
 
+    public static let alchemyDefault = Logger(label: "Alchemy", destination: {
+        if Env.isProd {
+            return .debug
+        } else if Env.isTest {
+            return .debug
+        } else if Env.isXcode {
+            return .xcode
+        } else {
+            return .debug
+        }
+    }())
+
     // MARK: Conveniences
 
     /// Log a message with the `Logger.Level.trace` log level.

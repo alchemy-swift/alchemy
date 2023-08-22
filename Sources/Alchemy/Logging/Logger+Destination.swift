@@ -39,7 +39,7 @@ private struct DestinationLogHandler: LogHandler {
 }
 
 extension Logger.Metadata? {
-    fileprivate static func + (lhs: Logger.Metadata?, rhs: Logger.Metadata?) -> Logger.Metadata? {
+    static func + (lhs: Logger.Metadata?, rhs: Logger.Metadata?) -> Logger.Metadata? {
         guard let lhs else { return rhs }
         guard let rhs else { return lhs }
         return lhs + rhs

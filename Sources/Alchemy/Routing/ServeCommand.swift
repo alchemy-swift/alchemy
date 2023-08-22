@@ -90,7 +90,7 @@ struct ServeCommand: Command {
         }
 
         let stop = Env.isXcode ? "Cmd+Period" : "Ctrl+C"
-        print("  Press \(stop) to stop the server\n".yellow)
+        Log.info("Press \(stop) to stop the server\n".yellow)
     }
 
     func start() async throws {}

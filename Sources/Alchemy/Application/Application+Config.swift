@@ -18,6 +18,4 @@ public struct ApplicationConfiguration {
         self.commands = commands
         self.hbConfiguration = hbConfiguration
     }
-
-    public static let `default` = ApplicationConfiguration()
 }

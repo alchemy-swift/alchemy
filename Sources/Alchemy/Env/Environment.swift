@@ -21,12 +21,18 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     /// defaults to `env`, `APP_ENV`, or `-e` / `--env` command
     /// line arguments.
     public let name: String
-
     /// Indicates if the application is running in tests.
     public let isTest: Bool
-
     /// Indicates if the application is running in prod.
     public let isProd: Bool
+    /// The paths from which the dotenv file should be loaded.
+    public let dotenvPaths: [String]
+    /// All variables loaded from an environment file.
+    public var dotenvVariables: [String: String]
+    /// All environment variables available loaded from the process.
+    public var processVariables: [String: String]
+    /// Env is set up before application
+    private let logger: Logger = Logger(label: "Alchemy", destination: DebugLogger())
 
     /// Whether the current program is running in a test suite. This is not the
     /// same as `isTest` which returns whether the current env is meant for
@@ -39,15 +45,6 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     public var isXcode: Bool {
         Environment.isXcode
     }
-
-    /// The paths from which the dotenv file should be loaded.
-    public let dotenvPaths: [String]
-
-    /// All variables loaded from an environment file.
-    public var dotenvVariables: [String: String]
-
-    /// All environment variables available loaded from the process.
-    public var processVariables: [String: String]
 
     public init(name: String, isTest: Bool = false, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
         self.name = name
@@ -94,7 +91,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
 
         guard let pathString = absolutePath else {
-            Log.debug("No environment file found at `\(path)`.")
+            logger.debug("No environment file found at `\(path)`.")
             return nil
         }
 
@@ -102,7 +99,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         do {
             contents = try String(contentsOfFile: pathString, encoding: .utf8)
         } catch {
-            Log.warning("Error loading contents of file at '\(pathString)': \(error).")
+            logger.warning("Error loading contents of file at '\(pathString)': \(error).")
             return [:]
         }
 
@@ -136,7 +133,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
             values[key] = value
         }
 
-        Log.debug("Loaded environment variables from `\(path)`.")
+        logger.debug("Loaded environment variables from `\(path)`.")
         return values
     }
 
@@ -149,7 +146,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     ///   exists.
     private func getAbsolutePath(relativePath: String) -> String? {
         if relativePath.contains("/DerivedData") {
-            Log.comment("""
+            logger.comment("""
                 **WARNING**
 
                 Your project is running in Xcode's `DerivedData` data directory. It's _highly_ recommend that you set a custom working directory instead, otherwise files like `.env` and folders like `Public/` won't be accessible.

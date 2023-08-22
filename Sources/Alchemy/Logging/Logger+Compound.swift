@@ -13,7 +13,6 @@ public struct CompoundLogHandler: LogHandler {
     private var effectiveLogLevel: Logger.Level
 
     public init(_ loggers: [Logger]) {
-        assert(!loggers.isEmpty, "Need at least one logger.")
         self.loggers = loggers
         self.effectiveLogLevel = loggers.map { $0.logLevel }.min() ?? .trace
     }
