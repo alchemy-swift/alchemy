@@ -24,7 +24,7 @@ struct SeedCommand: Command {
     // MARK: Command
     
     func start() async throws {
-        let db = Container.resolveAssert(Database.self, identifier: db)
+        let db = Container.resolveAssert(Database.self, id: db)
         guard seeders.isEmpty else {
             try await db.seed(names: seeders)
             return

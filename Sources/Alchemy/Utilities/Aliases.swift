@@ -3,11 +3,11 @@ import Fusion
 
 /// The default configured Client
 public var Http: Client.Builder { Container.resolveAssert(Client.self).builder() }
-public func Http(_ id: Client.Identifier) -> Client.Builder { Container.resolveAssert(Client.self, identifier: id).builder() }
+public func Http(_ id: Client.Identifier) -> Client.Builder { Container.resolveAssert(Client.self, id: id).builder() }
 
 /// The default configured Database
-public var DB: Database { Container.resolveAssert(identifier: nil) }
-public func DB(_ id: Database.Identifier?) -> Database { Container.resolveAssert(identifier: id) }
+public var DB: Database { Container.resolveAssert(id: nil) }
+public func DB(_ id: Database.Identifier?) -> Database { Container.resolveAssert(id: id) }
 
 /// The application Lifecycle
 public var Lifecycle: ServiceLifecycle { Container.resolveAssert() }
@@ -20,30 +20,30 @@ public var Log: Logger {
     get { Container.resolveAssert() }
     set { Container.main.registerSingleton(newValue) }
 }
-public func Log(_ id: Logger.Identifier) -> Logger { Container.resolveAssert(identifier: id) }
+public func Log(_ id: Logger.Identifier) -> Logger { Container.resolveAssert(id: id) }
 
 /// The appliation Router
 public var Routes: Router { Container.resolveAssert() }
 
 /// The default configured Filesystem
-public var Storage: Filesystem { Container.resolveAssert(identifier: nil) }
-public func Storage(_ id: Filesystem.Identifier) -> Filesystem { Container.resolveAssert(identifier: id) }
+public var Storage: Filesystem { Container.resolveAssert(id: nil) }
+public func Storage(_ id: Filesystem.Identifier) -> Filesystem { Container.resolveAssert(id: id) }
 
 /// Your app's default Cache.
-public var Stash: Cache { Container.resolveAssert(identifier: nil) }
-public func Stash(_ id: Cache.Identifier) -> Cache { Container.resolveAssert(identifier: id) }
+public var Stash: Cache { Container.resolveAssert(id: nil) }
+public func Stash(_ id: Cache.Identifier) -> Cache { Container.resolveAssert(id: id) }
 
 /// Your app's default Queue
-public var Q: Queue { Container.resolveAssert(identifier: nil) }
-public func Q(_ id: Queue.Identifier) -> Queue { Container.resolveAssert(identifier: id) }
+public var Q: Queue { Container.resolveAssert(id: nil) }
+public func Q(_ id: Queue.Identifier) -> Queue { Container.resolveAssert(id: id) }
 
 /// Your app's default RedisClient
-public var Redis: RedisClient { Container.resolveAssert(identifier: nil) }
-public func Redis(_ id: RedisClient.Identifier) -> RedisClient { Container.resolveAssert(identifier: id) }
+public var Redis: RedisClient { Container.resolveAssert(id: nil) }
+public func Redis(_ id: RedisClient.Identifier) -> RedisClient { Container.resolveAssert(id: id) }
 
 /// Accessor for firing events; applications should listen to events via
 /// `Application.schedule(events: EventBus)`.
-public var Events: EventBus { Container.resolveAssert(identifier: nil) }
+public var Events: EventBus { Container.resolveAssert(id: nil) }
 
 /// Accessors for Hashing
 public var Hash: Hasher<BCryptHasher> { Hasher(algorithm: .bcrypt) }

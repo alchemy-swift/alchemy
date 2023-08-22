@@ -38,11 +38,11 @@ public struct Databases: Plugin {
 
     public func shutdownServices(in container: Container) async throws {
         for id in databases.keys {
-            try await container.resolve(Database.self, identifier: id)?.shutdown()
+            try await container.resolve(Database.self, id: id)?.shutdown()
         }
 
         for id in redis.keys {
-            try await container.resolve(RedisClient.self, identifier: id)?.shutdown()
+            try await container.resolve(RedisClient.self, id: id)?.shutdown()
         }
     }
 }

@@ -5,7 +5,7 @@ extension Container {
     // Simple Registration
 
     func registerSingleton<T>(_ value: @escaping @autoclosure () -> T, as type: T.Type = T.self, id: AnyHashable? = nil) {
-        bind(.singleton, to: type, identifier: id, value: value())
+        bind(.singleton, to: type, id: id, value: value())
     }
 
     func register<T>(_ value: @escaping @autoclosure () -> T, as type: T.Type = T.self) {
@@ -20,12 +20,12 @@ extension Container {
 
     /// Get optional extension from a `KeyPath`
     public func get<Base, Type>(_ key: KeyPath<Base, Type>) -> Type? {
-        resolve(identifier: key)
+        resolve(id: key)
     }
 
     /// Get extension from a `KeyPath`
     public func get<Base, Type>(_ key: KeyPath<Base, Type>, error: StaticString? = nil) -> Type {
-        guard let value = resolve(Type.self, identifier: key) else {
+        guard let value = resolve(Type.self, id: key) else {
             preconditionFailure(error?.description ?? "Cannot get extension of type \(Type.self) without having set it")
         }
 
@@ -34,7 +34,7 @@ extension Container {
 
     /// Return if extension has been set
     public func exists<Base, Type>(_ key: KeyPath<Base, Type>) -> Bool {
-        resolve(Type.self, identifier: key) != nil
+        resolve(Type.self, id: key) != nil
     }
 
     /// Set extension for a `KeyPath`

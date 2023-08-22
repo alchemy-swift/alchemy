@@ -26,6 +26,6 @@ extension ServiceIdentifier {
 
 extension Inject where Service: Alchemy.Service {
     public convenience init(_ identifier: Service.Identifier) {
-        self.init(identifier: identifier)
+        self.init(id: identifier)
     }
 }

@@ -76,7 +76,9 @@ struct ServeCommand: Command {
         }
 
         let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(LoopGroup))
-        server.router = Routes
+        let builder = HBRouterBuilder()
+        builder.middlewares.add(Routes)
+        server.router = builder
         Container.main.registerSingleton(server)
         
         try server.start()
@@ -145,14 +147,12 @@ struct ServeCommand: Command {
     }
 }
 
-extension Router: HBRouter {
-    public func respond(to request: HBRequest) -> EventLoopFuture<HBResponse> {
+extension Router: HBMiddleware {
+    public func apply(to request: HBRequest, next: HBResponder) -> EventLoopFuture<HBResponse> {
         request.eventLoop
             .asyncSubmit { await self.handle(request: Request(hbRequest: request)) }
             .map { HBResponse(status: $0.status, headers: $0.headers, body: $0.hbResponseBody) }
     }
-    
-    public func add(_ path: String, method: HTTPMethod, responder: HBResponder) { /* using custom router funcs */ }
 }
 
 extension Response {
@@ -168,7 +168,7 @@ extension Response {
     }
 }
 
-extension ByteStream: HBResponseBodyStreamer {
+extension ByteStream: HBResponseBodyStreamer, @unchecked Sendable {
     public func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
         _read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
     }
