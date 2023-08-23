@@ -19,7 +19,7 @@ import ArgumentParser
 ///     @Flag(help: "Should data be loaded but not saved.")
 ///     var dry: Bool = false
 ///
-///     func start() async throws {
+///     func run() async throws {
 ///         if let userId = id {
 ///             // sync only a specific user's data
 ///         } else {
@@ -53,38 +53,10 @@ public protocol Command: AsyncParsableCommand {
     /// indefinitely running work such as starting a queue
     /// worker or running the server.
     static var shutdownAfterRun: Bool { get }
-
-    /// Run the command. Your command's main logic should be here.
-    func start() async throws
-    
-    /// An optional function to run when your command receives a
-    /// shutdown signal. You likely don't need this unless your
-    /// command runs indefinitely. Defaults to a no-op.
-    func shutdown() async throws
 }
 
 extension Command {
     public static var shutdownAfterRun: Bool { true }
-
-    /// Registers this command with the application lifecycle.
-    public func run() throws {
-        try LoopGroup.next()
-            .asyncSubmit {
-                do {
-                    try await start()
-                } catch {
-                    Log.error("\(String(reflecting: error))")
-                }
-
-                if Self.shutdownAfterRun {
-                    @Inject var lifecycle: ServiceLifecycle
-                    lifecycle.shutdown()
-                }
-            }
-            .wait()
-    }
-    
-    public func shutdown() {}
 
     public static var name: String {
         Alchemy.name(of: Self.self)

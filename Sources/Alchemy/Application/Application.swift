@@ -33,14 +33,15 @@ extension Application {
 
     public func boot() { /* default to no-op */ }
 
-    public func run() throws {
-        setupServices()
+    public func run() async throws {
+        registerServices()
+        try await Lifecycle.start()
         try boot()
-        try lifecycle.startAndWait()
+        try await start()
     }
 
     /// Register core services to the application container `Container.default`.
-    public func setupServices() {
+    public func registerServices() {
 
         // 0. Setup the main Container.
 
@@ -72,16 +73,12 @@ extension Application {
                 shutdown: .async { try await plugin.shutdownServices(in: container) }
             )
         }
-
-        // 4. Register `start()`.
-
-        lifecycle.register(label: "\(Self.self)", start: .async { try await start() }, shutdown: .none)
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`
     /// for subcommands and options. This is so the app can be started with
     /// @main.
-    public static func main() throws {
-        try Self().run()
+    public static func main() async throws {
+        try await Self().run()
     }
 }

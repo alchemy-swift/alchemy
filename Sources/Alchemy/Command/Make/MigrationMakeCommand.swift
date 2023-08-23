@@ -24,7 +24,7 @@ struct MigrationMakeCommand: Command {
         self.fields = []
     }
     
-    func start() throws {
+    func run() throws {
         guard !name.contains(":") else {
             throw CommandError("Invalid migration name `\(name)`. Perhaps you forgot to pass a name?")
         }

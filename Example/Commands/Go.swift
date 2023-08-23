@@ -9,7 +9,7 @@ struct UserDTO: Codable {
 struct Go: Command {
     static let name = "go"
 
-    func start() async throws {
+    func run() async throws {
         Log.trace("Trace")
         Log.debug("Debug")
         Log.info("Info", metadata: ["foo": "1", "bar": "2"])

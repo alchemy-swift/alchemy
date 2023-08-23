@@ -5,7 +5,7 @@ final class CommandTests: TestCase<TestApp> {
         struct TestCommand: Command {
             static var action: (() async -> Void)? = nil
             
-            func start() async throws {
+            func run() async throws {
                 await TestCommand.action?()
             }
         }

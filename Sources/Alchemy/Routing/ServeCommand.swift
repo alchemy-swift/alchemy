@@ -76,6 +76,7 @@ struct ServeCommand: Command {
         }
 
         let server = HBApplication(configuration: config, eventLoopGroupProvider: .shared(LoopGroup))
+        server.logger = Log.withLevel(.notice)
         let builder = HBRouterBuilder()
         builder.middlewares.add(Routes)
         server.router = builder
@@ -90,24 +91,7 @@ struct ServeCommand: Command {
         }
 
         let stop = Env.isXcode ? "Cmd+Period" : "Ctrl+C"
-        Log.info("Press \(stop) to stop the server\n".yellow)
-    }
-
-    func start() async throws {}
-
-    func shutdown() async throws {
-        @Inject var server: HBApplication
-
-        let promise = server.eventLoopGroup.next().makePromise(of: Void.self)
-        server.lifecycle.shutdown { error in
-            if let error = error {
-                promise.fail(error)
-            } else {
-                promise.succeed(())
-            }
-        }
-        
-        try await promise.futureResult.get()
+        Log.comment("Press \(stop) to stop the server\n".yellow)
     }
 
     private func commentHandled(req: Request, res: Response) {
@@ -127,8 +111,8 @@ struct ServeCommand: Command {
         let finishedAt = Date()
         let dateString = Formatters.date.string(from: finishedAt)
         let timeString = Formatters.time.string(from: finishedAt)
-        let left = "  \(dateString) \(timeString) \(req.path)"
-        let right = "\(req.createdAt.elapsedString) \(res.status.code)  "
+        let left = "\(dateString) \(timeString) \(req.path)"
+        let right = "\(req.createdAt.elapsedString) \(res.status.code)"
         let dots = Log.dots(left: left, right: right)
         let code: String = {
             switch res.status.code {
@@ -143,7 +127,7 @@ struct ServeCommand: Command {
             }
         }()
 
-        Log.comment("  \(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)  ")
+        Log.comment("\(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)")
     }
 }
 

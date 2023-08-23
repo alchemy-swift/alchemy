@@ -47,6 +47,12 @@ extension Logger: Service {
         }
     }()
 
+    public func withLevel(_ level: Logger.Level) -> Logger {
+        var logger = self
+        logger.logLevel = level
+        return logger
+    }
+
     // MARK: Conveniences
 
     /// Log a message with the `Logger.Level.trace` log level.
@@ -125,11 +131,13 @@ extension Logger: Service {
     /// local dev only.
     func comment(_ message: String) {
         if !Env.isTest && !Env.isProd {
-            print(message)
+            let padding = Env.isXcode ? "" : "  "
+            print("\(padding)\(message)")
         }
     }
 
     func dots(left: String, right: String) -> String {
-        String(repeating: ".", count: Terminal.columns - left.count - right.count - 2)
+        let padding = Env.isXcode ? 0 : 4
+        return String(repeating: ".", count: Terminal.columns - left.count - right.count - 2 - padding)
     }
 }

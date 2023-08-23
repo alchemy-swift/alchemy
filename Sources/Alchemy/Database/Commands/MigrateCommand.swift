@@ -2,7 +2,7 @@
 struct MigrateCommand: Command {
     static var name = "migrate"
 
-    func start() async throws {
+    func run() async throws {
         try await DB.migrate()
     }
 }

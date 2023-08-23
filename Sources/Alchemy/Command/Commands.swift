@@ -47,6 +47,6 @@ extension Application {
 
     /// Stops your application from running.
     public func stop() async throws {
-        try await commander.stop()
+        try await Lifecycle.shutdown()
     }
 }

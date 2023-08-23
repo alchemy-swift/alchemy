@@ -17,7 +17,7 @@ struct ControllerMakeCommand: Command {
         self.model = model
     }
     
-    func start() throws {
+    func run() throws {
         let template = model.map(modelControllerTemplate) ?? controllerTemplate()
         let fileName = model.map { "\($0)Controller" } ?? name
         try FileCreator.shared.create(fileName: "\(fileName)", contents: template, in: "Controllers")

@@ -13,7 +13,7 @@ struct ViewMakeCommand: Command {
         self.name = name
     }
     
-    func start() throws {
+    func run() throws {
         try FileCreator.shared.create(fileName: name, contents: viewTemplate(), in: "Views")
     }
     

@@ -38,7 +38,7 @@ final class ModelMakeCommand: Command {
         self.controller = controller
     }
     
-    func start() throws {
+    func run() throws {
         guard !name.contains(":") else {
             throw CommandError("Invalid model name `\(name)`. Perhaps you forgot to pass a name?")
         }
@@ -58,11 +58,11 @@ final class ModelMakeCommand: Command {
                 name: "Create\(name.pluralized)",
                 table: KeyMapping.snakeCase.encode(name).pluralized,
                 columns: columns ?? []
-            ).start()
+            ).run()
         }
         
         if controller {
-            try ControllerMakeCommand(model: name).start()
+            try ControllerMakeCommand(model: name).run()
         }
     }
     

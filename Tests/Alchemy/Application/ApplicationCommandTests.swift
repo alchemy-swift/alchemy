@@ -19,5 +19,5 @@ struct CommandApp: Application {
 private struct TestCommand: Command {
     static var name = "command:test"
     
-    func start() async throws {}
+    func run() async throws {}
 }

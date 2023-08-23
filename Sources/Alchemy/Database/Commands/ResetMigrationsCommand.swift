@@ -2,7 +2,7 @@
 struct ResetMigrationsCommand: Command {
     static var name = "migrate:reset"
 
-    func start() async throws {
+    func run() async throws {
         try await DB.reset()
     }
 }

@@ -113,8 +113,8 @@ extension Database {
     private func commentMigrationDone(_ migration: Migration, startedAt: Date) {
         let time = startedAt.elapsedString
         let done = "DONE"
-        let left = "  \(migration.name)"
-        let dots = Log.dots(left: left, right: "\(time) \(done)  ")
+        let left = "\(migration.name)"
+        let dots = Log.dots(left: left, right: "\(time) \(done)")
         Log.comment("\(left.white) \(dots.lightBlack) \(time.lightBlack) \(done.green)")
     }
 

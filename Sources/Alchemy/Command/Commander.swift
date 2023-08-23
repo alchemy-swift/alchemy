@@ -20,35 +20,6 @@ final class Commander {
     var commands: [Command.Type] = []
     var defaultCommand: Command.Type = ServeCommand.self
 
-    func start(args: [String]? = nil) async throws {
-        do {
-            // When running tests, don't use the command line args as the default;
-            // they are irrelevant to running the app and may contain a bunch of
-            // options that will cause `AsyncParsableCommand` parsing to fail.
-            let fallbackArgs = env.isTest ? [] : Array(CommandLine.arguments.dropFirst())
-            var command = try Launch.parseAsRoot(args ?? fallbackArgs)
-            if var asyncCommand = command as? AsyncParsableCommand {
-                try await asyncCommand.run()
-            } else {
-                try command.run()
-            }
-        } catch {
-            Launch.exit(withError: error)
-        }
-    }
-
-    func stop() async throws {
-        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
-            Lifecycle.shutdown { error in
-                if let error {
-                    c.resume(throwing: error)
-                } else {
-                    c.resume()
-                }
-            }
-        }
-    }
-
     func register(command: (some Command).Type) {
         commands.append(command)
     }
@@ -56,6 +27,39 @@ final class Commander {
     func launchConfiguration() -> CommandConfiguration {
         CommandConfiguration(abstract: "Launch your app.", subcommands: commands, defaultSubcommand: defaultCommand)
     }
+
+    func start(args: [String]? = nil) async throws {
+        do {
+            // When running tests, don't use the command line args as the default;
+            // they are irrelevant to running the app and may contain a bunch of
+            // options that will cause `AsyncParsableCommand` parsing to fail.
+            let fallbackArgs = env.isTest ? [] : Array(CommandLine.arguments.dropFirst())
+            var command = try Launch.parseAsRoot(args ?? fallbackArgs)
+            try await LoopGroup.next()
+                .asyncSubmit {
+                    if var asyncCommand = command as? AsyncParsableCommand {
+                        try await asyncCommand.run()
+                    } else {
+                        try command.run()
+                    }
+                }
+                .get()
+
+            if command.waitForLifecycle {
+                Lifecycle.wait()
+            } else {
+                try await Lifecycle.shutdown()
+            }
+        } catch {
+            Launch.exit(withError: error)
+        }
+    }
 }
 
 extension Logger.Level: ExpressibleByArgument {}
+
+extension ParsableCommand {
+    fileprivate var waitForLifecycle: Bool {
+        !((Self.self as? Command.Type)?.shutdownAfterRun ?? true)
+    }
+}
