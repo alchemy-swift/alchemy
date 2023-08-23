@@ -2,8 +2,8 @@ import Cron
 import NIOCore
 
 /// Used to help build schedule frequencies for scheduled tasks.
-public final class Schedule {
-    private let buildingFinished: (Schedule) -> Void
+public final class Interval {
+    private let buildingFinished: (Interval) -> Void
     private var pattern: DatePattern? = nil {
         didSet {
             if pattern != nil {
@@ -17,7 +17,7 @@ public final class Schedule {
         pattern?.string
     }
     
-    init(_ buildingFinished: @escaping (Schedule) -> Void) {
+    init(_ buildingFinished: @escaping (Interval) -> Void) {
         self.buildingFinished = buildingFinished
     }
     

@@ -72,10 +72,10 @@ final class SchedulerTests: TestCase<TestApp> {
         waitForExpectations(timeout: kMinTimeout)
     }
     
-    private func makeSchedule(invertExpect: Bool = false) -> Schedule {
+    private func makeSchedule(invertExpect: Bool = false) -> Interval {
         let exp = expectation(description: "")
         exp.isInverted = invertExpect
-        return Schedule {
+        return Interval {
             self.scheduler.addWork(schedule: $0) {
                 exp.fulfill()
             }

@@ -1,22 +1,28 @@
 import NIOCore
+import NIOConcurrencyHelpers
 
 /// A service for scheduling recurring work, in lieu of a separate
 /// cron task running apart from your server.
 public final class Scheduler {
     private struct WorkItem {
-        let schedule: Schedule
+        let interval: Interval
         let work: () async throws -> Void
     }
 
     public private(set) var isStarted: Bool = false
+    public private(set) var isShutdown: Bool = false
     private var workItems: [WorkItem] = []
     private let isTesting: Bool
-    
+    private var scheduled: [Scheduled<Void>]
+    private let lock: NIOLock
+
     /// Initialize this Scheduler, potentially flagging it for testing. If
     /// testing is enabled, work items will only be run once, and not
     /// rescheduled.
     init(isTesting: Bool = false) {
         self.isTesting = isTesting
+        self.scheduled = []
+        self.lock = NIOLock()
     }
     
     /// Start scheduling with the given loop.
@@ -25,15 +31,24 @@ public final class Scheduler {
     ///   to the next available `EventLoop`.
     public func start(on scheduleLoop: EventLoop = LoopGroup.next()) {
         guard !isStarted else {
-            return Log.warning("This scheduler has already been started.")
+            Log.warning("This scheduler has already been started.")
+            return
         }
         
         isStarted = true
         for item in workItems {
-            schedule(schedule: item.schedule, task: item.work, on: scheduleLoop)
+            schedule(interval: item.interval, task: item.work, on: scheduleLoop)
         }
     }
-    
+
+    public func shutdown() async throws {
+        lock.withLock {
+            isShutdown = true
+            scheduled.forEach { $0.cancel() }
+            scheduled = []
+        }
+    }
+
     /// Add a work item to this scheduler. When the schedule is
     /// started, it will begin running each of it's work items
     /// at their given frequency.
@@ -41,24 +56,34 @@ public final class Scheduler {
     /// - Parameters:
     ///   - schedule: The schedule to run this work.
     ///   - work: The work to run.
-    func addWork(schedule: Schedule, work: @escaping () async throws -> Void) {
-        workItems.append(WorkItem(schedule: schedule, work: work))
+    func addWork(interval: Interval, work: @escaping () async throws -> Void) {
+        workItems.append(WorkItem(interval: interval, work: work))
     }
     
-    private func schedule(schedule: Schedule, task: @escaping () async throws -> Void, on loop: EventLoop) {
-        guard let delay = schedule.next() else {
-            return Log.info("Scheduling finished; there's no future date to run.")
+    private func schedule(interval: Interval, task: @escaping () async throws -> Void, on loop: EventLoop) {
+        guard let delay = interval.next() else {
+            Log.info("Interval complete; there is no future date to run.")
+            return
         }
-        
-        loop.flatScheduleTask(in: delay) {
-            loop.asyncSubmit {
-                // Schedule next and run
-                if !self.isTesting {
-                    self.schedule(schedule: schedule, task: task, on: loop)
-                }
-                
-                try await task()
+
+        lock.withLock {
+            guard !isShutdown else {
+                Log.debug("Not scheduling work, the Scheduler has been shut down.")
+                return
             }
+
+            let scheduledTask = loop.flatScheduleTask(in: delay) {
+                loop.asyncSubmit {
+                    // Schedule next and run
+                    if !self.isTesting {
+                        self.schedule(interval: interval, task: task, on: loop)
+                    }
+
+                    try await task()
+                }
+            }
+
+            scheduled.append(scheduledTask)
         }
     }
 }

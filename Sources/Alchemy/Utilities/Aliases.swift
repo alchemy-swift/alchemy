@@ -36,6 +36,9 @@ public func Log(_ ids: Logger.Identifier...) -> Logger {
 /// The appliation Router
 public var Routes: Router { Container.resolveAssert() }
 
+/// The appliation Router
+public var Schedule: Scheduler { Container.resolveAssert() }
+
 /// The default configured Filesystem
 public var Storage: Filesystem { Container.resolveAssert() }
 public func Storage(_ id: Filesystem.Identifier) -> Filesystem { Container.resolveAssert(id: id) }

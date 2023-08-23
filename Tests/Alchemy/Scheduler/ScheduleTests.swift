@@ -14,45 +14,45 @@ final class ScheduleTests: XCTestCase {
     }
     
     func testScheduleSecondly() {
-        Schedule("* * * * * * *").secondly()
+        Interval("* * * * * * *").secondly()
     }
     
     func testScheduleMinutely() {
-        Schedule("0 * * * * * *").minutely()
-        Schedule("1 * * * * * *").minutely(sec: 1)
+        Interval("0 * * * * * *").minutely()
+        Interval("1 * * * * * *").minutely(sec: 1)
     }
     
     func testScheduleHourly() {
-        Schedule("0 0 * * * * *").hourly()
-        Schedule("1 2 * * * * *").hourly(min: 2, sec: 1)
+        Interval("0 0 * * * * *").hourly()
+        Interval("1 2 * * * * *").hourly(min: 2, sec: 1)
     }
     
     func testScheduleDaily() {
-        Schedule("0 0 0 * * * *").daily()
-        Schedule("1 2 3 * * * *").daily(hr: 3, min: 2, sec: 1)
+        Interval("0 0 0 * * * *").daily()
+        Interval("1 2 3 * * * *").daily(hr: 3, min: 2, sec: 1)
     }
     
     func testScheduleWeekly() {
-        Schedule("0 0 0 * * 0 *").weekly()
-        Schedule("1 2 3 * * 4 *").weekly(day: .thu, hr: 3, min: 2, sec: 1)
+        Interval("0 0 0 * * 0 *").weekly()
+        Interval("1 2 3 * * 4 *").weekly(day: .thu, hr: 3, min: 2, sec: 1)
     }
     
     func testScheduleMonthly() {
-        Schedule("0 0 0 1 * * *").monthly()
-        Schedule("1 2 3 4 * * *").monthly(day: 4, hr: 3, min: 2, sec: 1)
+        Interval("0 0 0 1 * * *").monthly()
+        Interval("1 2 3 4 * * *").monthly(day: 4, hr: 3, min: 2, sec: 1)
     }
     
     func testScheduleYearly() {
-        Schedule("0 0 0 1 1 * *").yearly()
-        Schedule("1 2 3 4 5 * *").yearly(month: .may, day: 4, hr: 3, min: 2, sec: 1)
+        Interval("0 0 0 1 1 * *").yearly()
+        Interval("1 2 3 4 5 * *").yearly(month: .may, day: 4, hr: 3, min: 2, sec: 1)
     }
     
     func testCustomSchedule() {
-        Schedule("0 0 22 * * 1-5 *").expression("0 0 22 * * 1-5 *")
+        Interval("0 0 22 * * 1-5 *").expression("0 0 22 * * 1-5 *")
     }
     
     func testNext() {
-        Schedule { schedule in
+        Interval { schedule in
             let next = schedule.next()
             XCTAssertNotNil(next)
             if let next = next {
@@ -60,7 +60,7 @@ final class ScheduleTests: XCTestCase {
             }
         }.secondly()
         
-        Schedule { schedule in
+        Interval { schedule in
             let next = schedule.next()
             XCTAssertNotNil(next)
             if let next = next {
@@ -70,11 +70,11 @@ final class ScheduleTests: XCTestCase {
     }
     
     func testNoNext() {
-        Schedule { XCTAssertNil($0.next()) }.expression("0 0 0 11 9 * 1993")
+        Interval { XCTAssertNil($0.next()) }.expression("0 0 0 11 9 * 1993")
     }
 }
 
-extension Schedule {
+extension Interval {
     fileprivate convenience init(_ expectedExpression: String) {
         self.init { XCTAssertEqual($0.cronExpression, expectedExpression) }
     }
