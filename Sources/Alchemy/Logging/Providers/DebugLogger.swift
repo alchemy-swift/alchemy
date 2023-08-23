@@ -1,7 +1,7 @@
 import Logging
 
 extension Logger {
-    static var debug: Logger {
+    public static var debug: Logger {
         Logger(label: "Alchemy", destination: DebugLogger())
     }
 }

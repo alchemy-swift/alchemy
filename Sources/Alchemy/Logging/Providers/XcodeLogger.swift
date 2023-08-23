@@ -2,7 +2,7 @@ import Logging
 import OSLog
 
 extension Logging.Logger {
-    static var xcode: Logging.Logger {
+    public static var xcode: Logging.Logger {
         Logger(label: "Alchemy", destination: XcodeLogger())
     }
 }

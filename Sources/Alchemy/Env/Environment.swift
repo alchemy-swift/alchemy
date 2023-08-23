@@ -15,30 +15,34 @@
 /// let otherVariable: Int? = Env.OTHER_KEY
 /// ```
 @dynamicMemberLookup
-public final class Environment: Equatable, ExpressibleByStringLiteral {
+public final class Environment: ExpressibleByStringLiteral {
     /// The environment file location of this application. Additional
     /// env variables are pulled from the file at '.{name}'. This
     /// defaults to `env`, `APP_ENV`, or `-e` / `--env` command
     /// line arguments.
     public let name: String
-    /// Indicates if the application is running in tests.
-    public let isTest: Bool
-    /// Indicates if the application is running in prod.
-    public let isProd: Bool
     /// The paths from which the dotenv file should be loaded.
     public let dotenvPaths: [String]
     /// All variables loaded from an environment file.
     public var dotenvVariables: [String: String]
     /// All environment variables available loaded from the process.
     public var processVariables: [String: String]
-    /// Env is set up before application
-    private let logger: Logger = Logger(label: "Alchemy", destination: DebugLogger())
+    /// Env is set up before loggers.
+    private let logger = Logger(label: "Alchemy", destination: DebugLogger())
+
+    public var isDebug: Bool {
+        self.APP_DEBUG != false
+    }
+
+    public var isTesting: Bool {
+        (isRunFromTests && self.APP_TEST != false) || self.APP_TEST == true
+    }
 
     /// Whether the current program is running in a test suite. This is not the
-    /// same as `isTest` which returns whether the current env is meant for
+    /// same as `isTesting` which returns whether the current env is meant for
     /// testing.
-    public var isRunningTests: Bool {
-        Environment.isRunningTests
+    public var isRunFromTests: Bool {
+        Environment.isRunFromTests
     }
 
     /// Is this running from inside Xcode (vs the CLI).
@@ -46,10 +50,8 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         Environment.isXcode
     }
 
-    public init(name: String, isTest: Bool = false, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
+    public init(name: String, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
         self.name = name
-        self.isTest = isTest
-        self.isProd = name.lowercased() == "prod"
         self.dotenvPaths = dotenvPaths ?? [".env.\(name)"]
         self.dotenvVariables = dotenvVariables
         self.processVariables = processVariables
@@ -184,7 +186,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
         self.get(member)
     }
 
-    public static var isRunningTests: Bool {
+    public static var isRunFromTests: Bool {
         CommandLine.arguments.contains { $0.contains("xctest") }
     }
 
@@ -193,14 +195,8 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     }
 
     public static var `default`: Environment {
-        isRunningTests
-            ? Environment(name: "test", isTest: true)
+        isRunFromTests
+            ? Environment(name: "test")
             : Environment(name: "dev", dotenvPaths: [".env"])
-    }
-
-    // MARK: Equatable
-
-    public static func == (lhs: Environment, rhs: Environment) -> Bool {
-        lhs.name == rhs.name
     }
 }

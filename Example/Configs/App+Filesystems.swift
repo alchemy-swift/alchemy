@@ -1,6 +1,9 @@
 import Alchemy
 
 extension Applications {
+
+    /// Configurations related to your app's filesystems.
+
     var filesystems: Filesystems {
         Filesystems(
 

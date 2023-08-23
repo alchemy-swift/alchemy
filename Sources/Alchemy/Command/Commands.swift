@@ -1,7 +1,7 @@
 struct Commands: Plugin {
     func registerServices(in app: Application) {
         app.container.registerSingleton(Commander())
-        if app.container.env.isTest {
+        if app.container.env.isTesting {
             FileCreator.mock()
         }
     }

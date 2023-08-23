@@ -33,7 +33,7 @@ final class Commander {
             // When running tests, don't use the command line args as the default;
             // they are irrelevant to running the app and may contain a bunch of
             // options that will cause `AsyncParsableCommand` parsing to fail.
-            let fallbackArgs = env.isTest ? [] : Array(CommandLine.arguments.dropFirst())
+            let fallbackArgs = env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
             var command = try Launch.parseAsRoot(args ?? fallbackArgs)
             try await LoopGroup.next()
                 .asyncSubmit {

@@ -35,15 +35,15 @@ extension Logger: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
 
-    public static let alchemyDefault: Logger = {
-        if Env.isProd {
-            return .stdout
-        } else if Env.isTest {
+    static let alchemyDefault: Logger = {
+        if Env.isDebug {
+            return .debug
+        } else if Env.isTesting {
             return .null
         } else if Env.isXcode {
             return .xcode
         } else {
-            return .debug
+            return .stdout
         }
     }()
 
@@ -130,7 +130,7 @@ extension Logger: Service {
     /// Logs a "comment". Internal function intended for useful context during
     /// local dev only.
     func comment(_ message: String) {
-        if !Env.isTest && !Env.isProd {
+        if !Env.isTesting || Env.isDebug {
             let padding = Env.isXcode ? "" : "  "
             print("\(padding)\(message)")
         }

@@ -43,7 +43,7 @@ struct CoreServices: Plugin {
 
         // 2. Register Loggers
 
-        if !Env.isXcode {
+        if !Env.isXcode && Env.isDebug {
             print() // Clear out the console on boot.
         }
 
@@ -53,11 +53,11 @@ struct CoreServices: Plugin {
 
         // 3. Register NIO services
 
-        let threads = env.isTest ? 1 : System.coreCount
+        let threads = env.isTesting ? 1 : System.coreCount
         app.container.registerSingleton(MultiThreadedEventLoopGroup(numberOfThreads: threads), as: EventLoopGroup.self)
         app.container.registerSingleton(NIOThreadPool(numberOfThreads: threads))
         app.container.register { container in
-            guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !env.isTest else {
+            guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !env.isTesting else {
                 // With async/await there is no guarantee that you'll
                 // be running on an event loop. When one is needed,
                 // return a random one for now.
@@ -84,7 +84,7 @@ struct CoreServices: Plugin {
 
                         return logger
                     }(),
-                    installBacktrace: !app.container.env.isTest
+                    installBacktrace: !app.container.env.isTesting
                 )
             )
         )

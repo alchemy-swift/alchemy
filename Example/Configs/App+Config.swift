@@ -1,6 +1,9 @@
 import Alchemy
 
 extension App {
+
+    /// Configurations related to your app.
+
     var configuration: Configuration {
         Configuration(
 

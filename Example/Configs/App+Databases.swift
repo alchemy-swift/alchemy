@@ -1,12 +1,15 @@
 import Alchemy
 
 extension Application {
+
+    /// Configurations related to your app's databases.
+
     var databases: Databases {
         Databases(
 
             /// Your default Database
 
-            default: Env.isTest ? "sqlite" : "postgres",
+            default: Env.isTesting ? "sqlite" : "postgres",
 
             /// Define your databases here
 
