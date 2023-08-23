@@ -1,7 +1,7 @@
 import Alchemy
 
-extension Plugin where Self == Caches {
-    static var caches: Caches {
+extension Application {
+    var caches: Caches {
         Caches(
 
             /// Your app's default Cache

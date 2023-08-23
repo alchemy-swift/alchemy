@@ -12,7 +12,7 @@ public struct Filesystems: Plugin {
             app.container.registerSingleton(disk, id: id)
         }
 
-        if let _default = `default` {
+        if let _default = `default` ?? disks.keys.first {
             app.container.registerSingleton(Storage(_default))
         }
     }

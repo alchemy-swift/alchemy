@@ -1,7 +1,7 @@
 import Alchemy
 
-extension Plugin where Self == Databases {
-    static var databases: Databases {
+extension Application {
+    var databases: Databases {
         Databases(
 
             /// Your default Database
@@ -18,7 +18,7 @@ extension Plugin where Self == Databases {
                     username: Env.DB_USER ?? "josh",
                     password: Env.DB_PASSWORD ?? "password",
                     enableSSL: Env.DB_ENABLE_SSL ?? false
-                ).log(),
+                ),
                 "sqlite": .sqlite(path: "../test.db"),
             ],
 

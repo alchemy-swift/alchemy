@@ -4,7 +4,7 @@ extension Application {
 
     /// Configurations related to your app's queues.
 
-    var queues2: Queues {
+    var queues: Queues {
         Queues(
 
             /// Your app's default Queue.

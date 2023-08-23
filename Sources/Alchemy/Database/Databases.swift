@@ -29,7 +29,7 @@ public struct Databases: Plugin {
             app.container.registerSingleton(db, id: id)
         }
 
-        if let _default = `default` {
+        if let _default = `default` ?? databases.keys.first {
             app.container.registerSingleton(DB(_default))
         }
 
@@ -37,7 +37,7 @@ public struct Databases: Plugin {
             app.container.registerSingleton(db, id: id)
         }
 
-        if let _default = defaultRedis {
+        if let _default = defaultRedis ?? redis.keys.first {
             app.container.registerSingleton(Redis(_default))
         }
     }

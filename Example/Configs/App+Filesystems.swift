@@ -1,7 +1,7 @@
 import Alchemy
 
-extension Plugin where Self == Filesystems {
-    static var filesystems: Filesystems {
+extension Applications {
+    var filesystems: Filesystems {
         Filesystems(
 
             /// Your app's default filesystem.

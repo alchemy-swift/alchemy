@@ -59,9 +59,9 @@ extension Application {
             SchedulingPlugin(),
             Commands(),
             Clients(),
-            caches,
-            databases,
             filesystems,
+            databases,
+            caches,
             queues,
         ]
     }
@@ -90,8 +90,11 @@ extension Application {
 
         // 2. Register Plugins.
 
-        let plugins = defaultPlugins + configuration.plugins
-        plugins.forEach { $0.registerServices(in: self) }
+
+        let defaultPlugins = defaultPlugins
+        defaultPlugins.forEach { $0.registerServices(in: self) }
+        let userPlugins = configuration.plugins()
+        userPlugins.forEach { $0.registerServices(in: self) }
 
         // 3. Register Plugin Lifecyle events.
 
@@ -101,7 +104,7 @@ extension Application {
             shutdown: .async { try await core.shutdownServices(in: self) }
         )
 
-        for plugin in plugins {
+        for plugin in defaultPlugins + userPlugins {
             lifecycle.register(
                 label: plugin.label,
                 start: .async { try await plugin.boot(app: self) },

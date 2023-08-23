@@ -4,12 +4,10 @@ public protocol Service {
 }
 
 public protocol ServiceIdentifier: Hashable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
-    static var `default`: Self { get }
     init(hashable: AnyHashable)
 }
 
 extension ServiceIdentifier {
-    public static var `default`: Self { Self(hashable: AnyHashable(nil as AnyHashable?)) }
 
     // MARK: - ExpressibleByStringLiteral
 

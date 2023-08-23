@@ -6,7 +6,7 @@ public var Http: Client.Builder { Container.resolveAssert(Client.self).builder()
 public func Http(_ id: Client.Identifier) -> Client.Builder { Container.resolveAssert(Client.self, id: id).builder() }
 
 /// The default configured Database
-public var DB: Database { Container.resolveAssert(id: nil) }
+public var DB: Database { Container.resolveAssert() }
 public func DB(_ id: Database.Identifier?) -> Database { Container.resolveAssert(id: id) }
 
 /// The application Lifecycle
@@ -29,24 +29,24 @@ public func Log(_ ids: Logger.Identifier...) -> Logger {
 public var Routes: Router { Container.resolveAssert() }
 
 /// The default configured Filesystem
-public var Storage: Filesystem { Container.resolveAssert(id: nil) }
+public var Storage: Filesystem { Container.resolveAssert() }
 public func Storage(_ id: Filesystem.Identifier) -> Filesystem { Container.resolveAssert(id: id) }
 
 /// Your app's default Cache.
-public var Stash: Cache { Container.resolveAssert(id: nil) }
+public var Stash: Cache { Container.resolveAssert() }
 public func Stash(_ id: Cache.Identifier) -> Cache { Container.resolveAssert(id: id) }
 
 /// Your app's default Queue
-public var Q: Queue { Container.resolveAssert(id: nil) }
+public var Q: Queue { Container.resolveAssert() }
 public func Q(_ id: Queue.Identifier) -> Queue { Container.resolveAssert(id: id) }
 
 /// Your app's default RedisClient
-public var Redis: RedisClient { Container.resolveAssert(id: nil) }
+public var Redis: RedisClient { Container.resolveAssert() }
 public func Redis(_ id: RedisClient.Identifier) -> RedisClient { Container.resolveAssert(id: id) }
 
 /// Accessor for firing events; applications should listen to events via
 /// `Application.schedule(events: EventBus)`.
-public var Events: EventBus { Container.resolveAssert(id: nil) }
+public var Events: EventBus { Container.resolveAssert() }
 
 /// Accessors for Hashing
 public var Hash: Hasher<BCryptHasher> { Hasher(algorithm: .bcrypt) }

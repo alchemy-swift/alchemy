@@ -70,7 +70,7 @@ extension Queue {
     ///   `default`.
     /// - Returns: A `MemoryQueue` for verifying test expectations.
     @discardableResult
-    public static func fake(_ identifier: Identifier = .default) -> MemoryQueue {
+    public static func fake(_ identifier: Identifier? = nil) -> MemoryQueue {
         let mock = MemoryQueue()
         Container.main.registerSingleton(mock, id: identifier)
         return mock
