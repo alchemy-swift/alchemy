@@ -7,9 +7,7 @@ extension App {
             // Define plugins your app uses here.
 
             plugins: [
-                .databases,
-                .filesystems,
-                .queues,
+                //
             ],
 
             // Define any custom commands here.

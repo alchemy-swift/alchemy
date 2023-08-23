@@ -6,29 +6,18 @@ public protocol Plugin {
     var label: String { get }
 
     /// Register any services in a Container.
-    func registerServices(in container: Container)
+    func registerServices(in app: Application)
 
     /// Setup this plugin for the given app.
     func boot(app: Application) async throws
 
     /// Any shutdown logic before services are deallocated from the container.
-    func shutdownServices(in container: Container) async throws
+    func shutdownServices(in app: Application) async throws
 }
 
 extension Plugin {
     public var label: String { name(of: Self.self) }
-    public func registerServices(in container: Container) { /* no-op */ }
+    public func registerServices(in app: Application) { /* no-op */ }
     public func boot(app: Application) async throws { /* no-op */ }
-    public func shutdownServices(in container: Container) async throws { /* no-op */ }
-}
-
-extension Array where Element == Plugin {
-    static var defaultPlugins: [Plugin] = [
-        LifecyclePlugin(),
-        EventsPlugin(),
-        RoutingPlugin(),
-        SchedulingPlugin(),
-        Commands(),
-        Clients(),
-    ]
+    public func shutdownServices(in app: Application) async throws { /* no-op */ }
 }

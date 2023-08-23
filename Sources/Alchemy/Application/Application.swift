@@ -14,22 +14,57 @@ import NIO
 ///     }
 ///
 public protocol Application {
-    /// The configuration of the underlying application.
-    var configuration: Configuration { get }
-
-    /// The logging configuration of the application.
-    var loggers: Loggers { get }
-
     /// Setup your application here. Called after all services are loaded.
     func boot() throws
 
     /// Required empty initializer.
     init()
+
+    // MARK: Configs
+
+    /// The cache configuration of the application.
+    var caches: Caches { get }
+
+    /// The core configuration of the application.
+    var configuration: Configuration { get }
+
+    /// The database configuration of the application.
+    var databases: Databases { get }
+
+    /// The filesystem configuration of the application.
+    var filesystems: Filesystems { get }
+
+    /// The loggers of you application.
+    var loggers: Loggers { get }
+
+    /// The queue configuration of the application.
+    var queues: Queues { get }
+
+    /// The default plugins to use for this application.
+    var defaultPlugins: [Plugin] { get }
 }
 
 extension Application {
-    public var configuration: Configuration { ApplicationConfiguration() }
+    public var caches: Caches { Caches() }
+    public var configuration: Configuration { Configuration() }
+    public var databases: Databases { Databases() }
+    public var filesystems: Filesystems { Filesystems() }
     public var loggers: Loggers { Loggers() }
+    public var queues: Queues { Queues() }
+
+    public var defaultPlugins: [Plugin] {
+        [
+            EventsPlugin(),
+            RoutingPlugin(),
+            SchedulingPlugin(),
+            Commands(),
+            Clients(),
+            caches,
+            databases,
+            filesystems,
+            queues,
+        ]
+    }
 
     public func boot() { /* default to no-op */ }
 
@@ -49,28 +84,28 @@ extension Application {
 
         // 1. Boot CoreServices.
 
-        let core = CoreServices(app: self)
-        core.registerServices(in: container)
+        let core = CoreServices()
+        core.registerServices(in: self)
         core.boot(app: self)
 
         // 2. Register Plugins.
 
-        let plugins = .defaultPlugins + configuration.plugins
-        plugins.forEach { $0.registerServices(in: container) }
+        let plugins = defaultPlugins + configuration.plugins
+        plugins.forEach { $0.registerServices(in: self) }
 
         // 3. Register Plugin Lifecyle events.
 
         lifecycle.register(
             label: core.label,
             start: .none,
-            shutdown: .async { try await core.shutdownServices(in: container) }
+            shutdown: .async { try await core.shutdownServices(in: self) }
         )
 
         for plugin in plugins {
             lifecycle.register(
                 label: plugin.label,
                 start: .async { try await plugin.boot(app: self) },
-                shutdown: .async { try await plugin.shutdownServices(in: container) }
+                shutdown: .async { try await plugin.shutdownServices(in: self) }
             )
         }
     }

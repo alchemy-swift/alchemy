@@ -29,7 +29,7 @@ struct DebugLogger: LogDestination {
         }
 
         let showSource = Environment.SHOW_SOURCE == true
-        let source = showSource ? " [\(payload.source)]" : ""
+        let source = showSource ? " [\(payload.source)] " : ""
         print("  \(_level) \(source)\(payload.message)\(metadataString) \n")
     }
 

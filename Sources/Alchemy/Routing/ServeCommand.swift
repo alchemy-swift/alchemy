@@ -64,7 +64,7 @@ struct ServeCommand: Command {
             Q.startWorker()
         }
 
-        var config = app.configuration.hbConfiguration
+        var config = app.configuration.hummingbirdConfiguration
         if let unixSocket = unixSocket {
             config = config.with(address: .unixDomainSocket(path: unixSocket))
         } else {

@@ -2,9 +2,7 @@ import NIO
 
 /// Sets up core application services that other plugins may depend on.
 struct CoreServices: Plugin {
-    let app: Application
-
-    func registerServices(in container: Container) {
+    func registerServices(in app: Application) {
 
         // 0. Get relevant command line arguments
 
@@ -41,7 +39,7 @@ struct CoreServices: Plugin {
         }
 
         env.loadVariables()
-        container.registerSingleton(env)
+        app.container.registerSingleton(env)
 
         // 2. Register Loggers
 
@@ -49,20 +47,16 @@ struct CoreServices: Plugin {
             print() // Clear out the console on boot.
         }
 
-        for (id, var logger) in app.loggers.loggers {
-            if let logLevel {
-                logger.logLevel = logLevel
-            }
-
-            container.registerSingleton(logger, id: id)
-        }
+        var loggers = app.loggers
+        loggers.logLevelOverride = logLevel
+        loggers.registerServices(in: app)
 
         // 3. Register NIO services
 
         let threads = env.isTest ? 1 : System.coreCount
-        container.registerSingleton(MultiThreadedEventLoopGroup(numberOfThreads: threads), as: EventLoopGroup.self)
-        container.registerSingleton(NIOThreadPool(numberOfThreads: threads))
-        container.register { container in
+        app.container.registerSingleton(MultiThreadedEventLoopGroup(numberOfThreads: threads), as: EventLoopGroup.self)
+        app.container.registerSingleton(NIOThreadPool(numberOfThreads: threads))
+        app.container.register { container in
             guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !env.isTest else {
                 // With async/await there is no guarantee that you'll
                 // be running on an event loop. When one is needed,
@@ -73,19 +67,41 @@ struct CoreServices: Plugin {
             return current
         }
 
-        // 3. Register the Application
+        // 4. Register Lifecycle
 
-        container.registerSingleton(app)
-        container.registerSingleton(app, as: Application.self)
+        app.container.registerSingleton(
+            ServiceLifecycle(
+                configuration: ServiceLifecycle.Configuration(
+                    logger: {
+                        var logger = Log
+
+                        // ServiceLifecycle is pretty noisy. Let's default it to
+                        // logging @ .notice or above, unless the user has set
+                        // the default log level to .debug or below.
+                        if logger.logLevel > .debug {
+                            logger.logLevel = .notice
+                        }
+
+                        return logger
+                    }(),
+                    installBacktrace: !app.container.env.isTest
+                )
+            )
+        )
+
+        // 5. Register the Application
+
+        app.container.registerSingleton(app)
+        app.container.registerSingleton(app, as: Application.self)
     }
 
     func boot(app: Application) {
         app.container.resolve(NIOThreadPool.self)?.start()
     }
 
-    func shutdownServices(in container: Container) async throws {
-        try await container.resolve(EventLoopGroup.self)?.shutdownGracefully()
-        try await container.resolve(NIOThreadPool.self)?.shutdownGracefully()
+    func shutdownServices(in app: Application) async throws {
+        try await app.container.resolve(EventLoopGroup.self)?.shutdownGracefully()
+        try await app.container.resolve(NIOThreadPool.self)?.shutdownGracefully()
     }
 }
 
@@ -98,5 +114,9 @@ extension Container {
 extension Application {
     public var env: Environment {
         container.env
+    }
+
+    public var lifecycle: ServiceLifecycle {
+        Container.resolveAssert()
     }
 }

@@ -1,5 +1,5 @@
 struct SchedulingPlugin: Plugin {
-    func registerServices(in container: Container) {
-        container.bind(.singleton, value: Scheduler())
+    func registerServices(in app: Application) {
+        app.container.registerSingleton(Scheduler())
     }
 }

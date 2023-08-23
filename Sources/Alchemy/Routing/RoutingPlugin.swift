@@ -1,5 +1,5 @@
 struct RoutingPlugin: Plugin {
-    func registerServices(in container: Container) {
-        container.registerSingleton(Router())
+    func registerServices(in app: Application) {
+        app.container.registerSingleton(Router())
     }
 }

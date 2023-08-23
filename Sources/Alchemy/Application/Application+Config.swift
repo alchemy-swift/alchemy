@@ -7,15 +7,15 @@ extension Application {
 public struct ApplicationConfiguration {
     public let plugins: [Plugin]
     public let commands: [Command.Type]
-    public let hbConfiguration: HBApplication.Configuration
+    public let hummingbirdConfiguration: HBApplication.Configuration
 
     public init(
         plugins: [Plugin] = [],
         commands: [Command.Type] = [],
-        hbConfiguration: HBApplication.Configuration = .init(logLevel: .notice)
+        hummingbirdConfiguration: HBApplication.Configuration = .init(logLevel: .notice)
     ) {
         self.plugins = plugins
         self.commands = commands
-        self.hbConfiguration = hbConfiguration
+        self.hummingbirdConfiguration = hummingbirdConfiguration
     }
 }

@@ -7,7 +7,7 @@ struct MessengerPlugin: Plugin {
 //        self.messengers = messengers
 //    }
 
-    func registerServices(in container: Container) {
+    func registerServices(in app: Application) {
 //        for (id, messenger) in messengers {
 //            container.registerSingleton(messenger, id: id)
 //        }
