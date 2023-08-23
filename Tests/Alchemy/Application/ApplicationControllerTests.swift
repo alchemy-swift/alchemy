@@ -48,7 +48,7 @@ final class ApplicationControllerTests: TestCase<TestApp> {
 struct ActionMiddleware: Middleware {
     let action: () async -> Void
     
-    func intercept(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
+    func handle(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
         await action()
         return try await next(request)
     }

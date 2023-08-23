@@ -1,7 +1,7 @@
 import Foundation
 
 extension Date {
-    public var elapsedString: String {
+    var elapsedString: String {
         let elapsedms = Date().timeIntervalSince(self) * 1_000
         let string = "\(elapsedms)"
         let components = string.components(separatedBy: ".")

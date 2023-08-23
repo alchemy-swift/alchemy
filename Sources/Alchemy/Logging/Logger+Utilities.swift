@@ -12,40 +12,11 @@ import Logging
 /// // In Application.boot...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
-
-/*
- 
- Conveniences around...
-
- 1. Destination.
- 2. Multiple destinations (MultiplexLogHandler).
- 3. Built in destinations.
- 4. Output Format.
- 5. Using combos of the above depending on the environment.
- 6. Sensible Defaults - prod = syslog? dev = local?
- 7. Filtering (level, metadata?)
- 8. Metadata
- 9. Source & Service?
-
- */
-
 extension Logger: Service {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
-
-    static let alchemyDefault: Logger = {
-        if Env.isDebug {
-            return .debug
-        } else if Env.isTesting {
-            return .null
-        } else if Env.isXcode {
-            return .xcode
-        } else {
-            return .stdout
-        }
-    }()
 
     public func withLevel(_ level: Logger.Level) -> Logger {
         var logger = self
@@ -140,4 +111,12 @@ extension Logger: Service {
         let padding = Env.isXcode ? 0 : 4
         return String(repeating: ".", count: Terminal.columns - left.count - right.count - 2 - padding)
     }
+
+    static let `default`: Logger = {
+        if Environment.isXcode {
+            return .xcode
+        } else {
+            return .debug
+        }
+    }()
 }

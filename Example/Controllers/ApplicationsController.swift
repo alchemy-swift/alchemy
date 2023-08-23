@@ -19,7 +19,7 @@ struct ApplicationsController: Controller {
     }
     
     private func show(req: Request) async throws -> Applications {
-        try await Applications.find(req.parameter("id")).unwrap(or: HTTPError(.notFound))
+        try await Applications.require(req.parameter("id"))
     }
     
     private func update(req: Request) async throws -> Applications {

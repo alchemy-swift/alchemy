@@ -1,7 +1,7 @@
 import NIO
 
 /// Sets up core application services that other plugins may depend on.
-struct CoreServices: Plugin {
+struct CorePlugin: Plugin {
     func registerServices(in app: Application) {
 
         // 0. Get relevant command line arguments
@@ -42,10 +42,6 @@ struct CoreServices: Plugin {
         app.container.registerSingleton(env)
 
         // 2. Register Loggers
-
-        if !Env.isXcode && Env.isDebug {
-            print() // Clear out the console on boot.
-        }
 
         var loggers = app.loggers
         loggers.logLevelOverride = logLevel

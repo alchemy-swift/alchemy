@@ -8,8 +8,11 @@ extension Encodable {
     /// - Throws: Any error encountered when encoding.
     /// - Returns: A JSON string representing this object.
     func jsonString(using encoder: JSONEncoder = JSONEncoder()) throws -> String {
-        try String(data: encoder.encode(self), encoding: .utf8)
-            .unwrap(or: JobError("Unable to encode `\(Self.self)` to a JSON string."))
+        guard let string = try String(data: encoder.encode(self), encoding: .utf8) else {
+            throw JobError("Unable to encode `\(Self.self)` to a JSON string.")
+        }
+
+        return string
     }
 }
 
@@ -22,8 +25,10 @@ extension Decodable {
     ///     `JSONDecoder()`.
     /// - Throws: Any error encountered when decoding this type.
     init(jsonString: String, using decoder: JSONDecoder = JSONDecoder()) throws {
-        let data = try jsonString.data(using: .utf8)
-            .unwrap(or: JobError("Unable to initialize `\(Self.self)` from JSON string `\(jsonString)`."))
+        guard let data = jsonString.data(using: .utf8) else {
+            throw JobError("Unable to initialize `\(Self.self)` from JSON string `\(jsonString)`.")
+        }
+
         self = try decoder.decode(Self.self, from: data)
     }
 }

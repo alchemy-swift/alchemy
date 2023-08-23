@@ -3,12 +3,6 @@ public protocol FilesystemProvider {
     var root: String { get }
     
     /// Create a file in this filesystem.
-    ///
-    /// - Parameters:
-    ///  - filename: The name of the file, including extension, to create.
-    ///  - directory: The directory to put the file in. If nil, goes in root.
-    ///  - contents: the binary contents of the file.
-    /// - Returns: The newly created file.
     @discardableResult
     func create(_ filepath: String, content: ByteContent) async throws -> File
     
@@ -21,9 +15,12 @@ public protocol FilesystemProvider {
     /// Delete a file at the given path.
     func delete(_ filepath: String) async throws
     
+    /// Create a temporary URL to a file at the given path.
     func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders) async throws -> URL
     
+    /// Get a URL for the file at the given path.
     func url(_ filepath: String) throws -> URL
     
+    /// Return a new FilesystemProvider with the given root directory.
     func directory(_ path: String) -> FilesystemProvider
 }

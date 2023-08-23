@@ -33,7 +33,7 @@ public final class MemoryCache: CacheProvider {
     }
     
     public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) {
-        data[key] = MemoryCacheItem(text: value.description, expiration: time.map { Date().adding(time: $0) })
+        data[key] = MemoryCacheItem(value: value.description, expiration: time.map { Date().adding(time: $0) })
     }
     
     public func has(_ key: String) -> Bool {
@@ -52,14 +52,14 @@ public final class MemoryCache: CacheProvider {
     
     public func increment(_ key: String, by amount: Int) throws -> Int {
         guard let existing = getItem(key) else {
-            self.data[key] = .init(text: "\(amount)")
+            self.data[key] = .init(value: "\(amount)")
             return amount
         }
         
         
         let currentVal: Int = try existing.cast()
         let newVal = currentVal + amount
-        self.data[key]?.text = "\(newVal)"
+        self.data[key]?.value = "\(newVal)"
         return newVal
     }
     
@@ -74,7 +74,7 @@ public final class MemoryCache: CacheProvider {
 
 /// An in memory cache item.
 public struct MemoryCacheItem {
-    fileprivate var text: String
+    fileprivate var value: String
     fileprivate var expiration: Int?
     
     fileprivate var isValid: Bool {
@@ -91,13 +91,17 @@ public struct MemoryCacheItem {
     ///   - text: The text of the item.
     ///   - expiration: An optional expiration time, in seconds since
     ///     epoch.
-    public init(text: String, expiration: Int? = nil) {
-        self.text = text
+    public init(value: String, expiration: Int? = nil) {
+        self.value = value
         self.expiration = expiration
     }
     
     fileprivate func cast<L: LosslessStringConvertible>() throws -> L {
-        try L(text).unwrap(or: CacheError("Unable to cast '\(text)' to \(L.self)"))
+        guard let converted = L(value) else {
+            throw CacheError("Unable to cast '\(value)' to \(L.self)")
+        }
+
+        return converted
     }
 }
 

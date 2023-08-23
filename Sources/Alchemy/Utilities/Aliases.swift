@@ -17,7 +17,15 @@ public var Env: Environment { Container.resolveAssert() }
 
 /// The application Logger
 public var Log: Logger {
-    get { Container.resolveAssert() }
+    get {
+        guard let logger: Logger = Container.resolve() else {
+            let logger = Logger.default
+            Container.main.registerSingleton(logger)
+            return logger
+        }
+
+        return logger
+    }
     set { Container.main.registerSingleton(newValue) }
 }
 public func Log(_ id: Logger.Identifier) -> Logger { Container.resolveAssert(id: id) }
@@ -62,3 +70,6 @@ public var Loop: EventLoop { Container.resolveAssert() }
 
 /// The main `EventLoopGroup` of your Application.
 public var LoopGroup: EventLoopGroup { Container.resolveAssert() }
+
+/// A thread pool to run expensive work on.
+public var Thread: NIOThreadPool { Container.resolveAssert() }

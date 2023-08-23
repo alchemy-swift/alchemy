@@ -35,9 +35,11 @@ struct RedisQueue: QueueProvider {
             return nil
         }
         
-        let jobString = try await redis.hget(jobId, from: dataKey, as: String.self).get()
-        let unwrappedJobString = try jobString.unwrap(or: JobError("Missing job data for key `\(jobId)`."))
-        return try JobData(jsonString: unwrappedJobString)
+        guard let jobString = try await redis.hget(jobId, from: dataKey, as: String.self).get() else {
+            throw JobError("Missing job data for key `\(jobId)`.")
+        }
+
+        return try JobData(jsonString: jobString)
     }
     
     func complete(_ job: JobData, outcome: JobOutcome) async throws {

@@ -61,7 +61,11 @@ extension Model {
     /// - Returns: The unwrapped first result of this query, or the
     ///   supplied error if no result was found.
     public static func require(_ id: PrimaryKey, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
-        try await find(on: db, id).unwrap(or: error)
+        guard let model = try await find(on: db, id) else {
+            throw error
+        }
+
+        return model
     }
 
     /// Returns a random model of this type, if one exists.

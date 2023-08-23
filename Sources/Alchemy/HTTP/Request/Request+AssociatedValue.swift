@@ -10,7 +10,7 @@ extension Request {
     /// Usage:
     ///
     ///     struct ExampleMiddleware: Middleware {
-    ///         func intercept(_ request: Request, next: Next) async throws -> Response {
+    ///         func handle(_ request: Request, next: Next) async throws -> Response {
     ///             let someData: SomeData = ...
     ///             return try await next(request.set(someData))
     ///         }

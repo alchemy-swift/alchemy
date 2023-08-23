@@ -51,14 +51,13 @@ extension Application {
     public var filesystems: Filesystems { Filesystems() }
     public var loggers: Loggers { Loggers() }
     public var queues: Queues { Queues() }
-
     public var defaultPlugins: [Plugin] {
         [
             EventsPlugin(),
             RoutingPlugin(),
             SchedulingPlugin(),
+            HTTPClients(),
             Commands(),
-            Clients(),
             filesystems,
             databases,
             caches,
@@ -75,7 +74,6 @@ extension Application {
         try await start()
     }
 
-    /// Register core services to the application container `Container.default`.
     public func registerServices() {
 
         // 0. Setup the main Container.
@@ -84,12 +82,11 @@ extension Application {
 
         // 1. Boot CoreServices.
 
-        let core = CoreServices()
+        let core = CorePlugin()
         core.registerServices(in: self)
         core.boot(app: self)
 
         // 2. Register Plugins.
-
 
         let defaultPlugins = defaultPlugins
         defaultPlugins.forEach { $0.registerServices(in: self) }

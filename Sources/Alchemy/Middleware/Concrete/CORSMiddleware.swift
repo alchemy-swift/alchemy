@@ -165,7 +165,7 @@ public final class CORSMiddleware: Middleware {
 
     // MARK: Middleware
     
-    public func intercept(_ request: Request, next: Next) async throws -> Response {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
         // Check if it's valid CORS request
         guard let origin = request.headers["Origin"].first else {
             return try await next(request)

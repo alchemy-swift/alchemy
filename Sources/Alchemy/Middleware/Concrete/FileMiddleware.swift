@@ -27,7 +27,7 @@ public struct FileMiddleware: Middleware {
     
     // MARK: Middleware
     
-    public func intercept(_ request: Request, next: Next) async throws -> Response {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
         // Ignore non `GET` requests.
         guard request.method == .GET else {
             return try await next(request)

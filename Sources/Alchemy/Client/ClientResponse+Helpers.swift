@@ -1,8 +1,9 @@
 import AsyncHTTPClient
 
 extension Client.Response {
-    // MARK: Status Information
     
+    // MARK: Status Information
+
     public var isOk: Bool { status == .ok }
     public var isSuccessful: Bool { (200...299).contains(status.code) }
     public var isFailed: Bool { isClientError || isServerError }
@@ -58,41 +59,41 @@ public struct ClientError: Error, CustomStringConvertible {
             *** Request ***
             URL: \(request.method.rawValue) \(request.url.absoluteString)
             Headers: [
-                \(request.headers.debugString)
+                \(debugString(for: request.headers))
             ]
-            Body: \(request.body?.debugString ?? "nil")
-            
+            Body: \(debugString(for: request.body))
+
             *** Response ***
             Status: \(response.status.code) \(response.status.reasonPhrase)
             Headers: [
-                \(response.headers.debugString)
+                \(debugString(for: response.headers))
             ]
-            Body: \(response.body?.debugString ?? "nil")
+            Body: \(debugString(for: response.body))
             """
     }
-}
 
-extension HTTPHeaders {
-    fileprivate var debugString: String {
-        if Environment.LOG_FULL_CLIENT_ERRORS ?? false {
-            return map { "\($0): \($1)" }.joined(separator: "\n    ")
+    private func debugString(for headers: HTTPHeaders) -> String {
+        if Env.LOG_FULL_CLIENT_ERRORS == true || Env.isDebug {
+            return headers.map { "\($0): \($1)" }.joined(separator: "\n    ")
         } else {
-            return map { "\($0.name)" }.joined(separator: "\n    ")
+            return headers.map { "\($0.name)" }.joined(separator: "\n    ")
         }
     }
-}
 
-extension ByteContent {
-    fileprivate var debugString: String {
-        if Environment.LOG_FULL_CLIENT_ERRORS ?? false {
-            switch self {
+    private func debugString(for content: ByteContent?) -> String {
+        guard let content else {
+            return "<empty>"
+        }
+
+        if Env.LOG_FULL_CLIENT_ERRORS == true || Env.isDebug {
+            switch content {
             case .buffer(let buffer):
                 return buffer.string
             case .stream:
                 return "<stream>"
             }
         } else {
-            switch self {
+            switch content {
             case .buffer(let buffer):
                 return "<\(buffer.readableBytes) bytes>"
             case .stream:

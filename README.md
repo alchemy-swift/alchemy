@@ -269,11 +269,11 @@ struct User: Model {
 
 ## Middleware
 
-Middleware lets you intercept requests coming in and responses coming out of your server. Use it to log, authenticate, or modify incoming `Request`s and outgoing `Response`s. Add one to your app with `use()` or `useAll()`.
+Middleware lets you handle requests coming in and responses coming out of your server. Use it to log, authenticate, or modify incoming `Request`s and outgoing `Response`s. Add one to your app with `use()` or `useAll()`.
 
 ```swift
 struct LoggingMiddleware: Middleware {
-    func intercept(_ request: Request, next: @escaping Next) async throws -> Response {
+    func handle(_ request: Request, next: @escaping Next) async throws -> Response {
         let start = Date()
         let requestInfo = "\(request.head.method) \(request.path)"
         Log.info("Received request: \(requestInfo)")

@@ -4,11 +4,11 @@ import Foundation
 extension SymmetricKey {
     public static var app: SymmetricKey = {
         guard let appKey: String = Environment.APP_KEY else {
-            fatalError("Unable to load APP_KEY from Environment. Please set an APP_KEY before encrypting any data with `Crypt` or provide a custom `SymmetricKey` using `Crypt(key:)`.")
+            preconditionFailure("Unable to load APP_KEY from Environment. Please set an APP_KEY before encrypting any data with `Crypt` or provide a custom `SymmetricKey` using `Crypt(key:)`.")
         }
         
         guard let data = Data(base64Encoded: appKey) else {
-            fatalError("Unable to create encryption key from APP_KEY. Please ensure APP_KEY is a base64 encoded String.")
+            preconditionFailure("Unable to create encryption key from APP_KEY. Please ensure APP_KEY is a base64 encoded String.")
         }
         
         return SymmetricKey(data: data)

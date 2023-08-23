@@ -17,31 +17,31 @@ final class FileMiddlewareTests: TestCase<TestApp> {
         try FileCreator.shared.create(fileName: fileName, extension: "html", contents: "foo;bar;baz", in: "Public")
         
         try await middleware
-            .intercept(.get(fileName), next: { _ in .default })
+            .handle(.get(fileName), next: { _ in .default })
             .collect()
             .assertBody("foo;bar;baz")
         
         try await middleware
-            .intercept(.get("//////\(fileName)"), next: { _ in .default })
+            .handle(.get("//////\(fileName)"), next: { _ in .default })
             .collect()
             .assertBody("foo;bar;baz")
         
         do {
-            _ = try await middleware.intercept(.get("../foo"), next: { _ in .default })
+            _ = try await middleware.handle(.get("../foo"), next: { _ in .default })
             XCTFail("An error should be thrown")
         } catch {}
     }
     
     func testGetOnly() async throws {
         try await middleware
-            .intercept(.post(fileName), next: { _ in .default })
+            .handle(.post(fileName), next: { _ in .default })
             .assertBody("bar")
     }
     
     func testRedirectIndex() async throws {
         try FileCreator.shared.create(fileName: "index", extension: "html", contents: "foo;bar;baz", in: "Public")
         try await middleware
-            .intercept(.get(""), next: { _ in .default })
+            .handle(.get(""), next: { _ in .default })
             .collect()
             .assertBody("foo;bar;baz")
     }
@@ -50,12 +50,12 @@ final class FileMiddlewareTests: TestCase<TestApp> {
         try FileCreator.shared.create(fileName: fileName, extension: "txt", contents: "foo;bar;baz", in: "Public")
         
         try await middleware
-            .intercept(.get("\(fileName).txt"), next: { _ in .default })
+            .handle(.get("\(fileName).txt"), next: { _ in .default })
             .collect()
             .assertBody("foo;bar;baz")
         
         try await middleware
-            .intercept(.get(fileName), next: { _ in .default })
+            .handle(.get(fileName), next: { _ in .default })
             .assertBody("bar")
     }
     
@@ -63,12 +63,12 @@ final class FileMiddlewareTests: TestCase<TestApp> {
         try FileCreator.shared.create(fileName: fileName, extension: "html", contents: "foo;bar;baz", in: "Public")
         
         try await middleware
-            .intercept(.get(fileName), next: { _ in .default })
+            .handle(.get(fileName), next: { _ in .default })
             .collect()
             .assertBody("foo;bar;baz")
         
         try await middleware
-            .intercept(.get("\(fileName).html"), next: { _ in .default })
+            .handle(.get("\(fileName).html"), next: { _ in .default })
             .collect()
             .assertBody("foo;bar;baz")
     }

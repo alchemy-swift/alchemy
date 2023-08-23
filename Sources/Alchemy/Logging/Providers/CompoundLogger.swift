@@ -1,6 +1,14 @@
 import Logging
 
 extension Logger {
+    public static func compound(_ loggers: Logger...) -> Logger {
+        compound(loggers)
+    }
+
+    public static func compound(_ loggers: [Logger]) -> Logger {
+        Logger(loggers: loggers)
+    }
+
     public init(loggers: [Logger]) {
         self.init(label: "Alchemy") { _ in
             CompoundLogHandler(loggers)

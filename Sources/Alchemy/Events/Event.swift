@@ -8,10 +8,3 @@ public protocol Event {
 extension Event {
     public static var registrationKey: String { name(of: Self.self) }
 }
-
-extension Event {
-    /// Fire this event on an `EventBus`.
-    public func fire(on events: EventBus = Events) async throws {
-        try await events.fire(self)
-    }
-}

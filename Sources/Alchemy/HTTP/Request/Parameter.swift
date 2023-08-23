@@ -5,13 +5,6 @@ import Foundation
 /// the route string. Something like `:user_id` in the
 /// path `/v1/users/:user_id`.
 public struct Parameter: Equatable {
-    /// An error encountered while decoding a path parameter value
-    /// string to a specific type such as `UUID` or `Int`.
-    public struct DecodingError: Error {
-        public let message: String
-        init(_ message: String) { self.message = message }
-    }
-    
     /// The escaped parameter that was matched, _without_ the colon.
     /// Something like `user_id` if `:user_id` was in the path.
     public let key: String
@@ -25,8 +18,11 @@ public struct Parameter: Equatable {
     ///   is not convertible to a `UUID`.
     /// - Returns: The decoded `UUID`.
     public func uuid() throws -> UUID {
-        try UUID(uuidString: value)
-            .unwrap(or: DecodingError("Unable to decode UUID for '\(key)'. Value was '\(value)'."))
+        guard let uuid = UUID(uuidString: value) else {
+            throw ValidationError("Unable to decode UUID for '\(key)'. Value was '\(value)'.")
+        }
+
+        return uuid
     }
 
     /// Returns the `String` value of this parameter.
@@ -43,7 +39,10 @@ public struct Parameter: Equatable {
     ///   is not convertible to a `Int`.
     /// - Returns: the decoded `Int`.
     public func int() throws -> Int {
-        try Int(value)
-            .unwrap(or: DecodingError("Unable to decode Int for '\(key)'. Value was '\(value)'."))
+        guard let int = Int(value) else {
+            throw ValidationError("Unable to decode Int for '\(key)'. Value was '\(value)'.")
+        }
+
+        return int
     }
 }

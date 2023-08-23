@@ -66,28 +66,30 @@ extension TokenAuthable {
 }
 
 /// A `Middleware` type configured to work with `TokenAuthable`. This
-/// middleware will intercept requests and queries the table backing
+/// middleware will handle requests and queries the table backing
 /// `T` for a row matching the token auth headers of the request.
 /// If a matching row is found, that value will be associated
 /// with the request. If there is no `Authentication: Token ...`
 /// header, or the token value isn't valid, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
-    public func intercept(_ request: Request, next: Next) async throws -> Response {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
         guard let bearerAuth = request.bearerAuth() else {
             throw HTTPError(.unauthorized)
         }
         
-        let model = try await T.query()
+        guard let model = try await T
             .where(T.valueKeyString == bearerAuth.token)
-            .with { $0.user }
+            .with(\.user)
             .first()
-            .unwrap(or: HTTPError(.unauthorized))
-        let user = try await model.user.get()
+        else {
+            throw HTTPError(.unauthorized)
+        }
+
         return try await next(
             request
                 .set(model)
-                .set(user)
+                .set(model.user.get())
         )
     }
 }

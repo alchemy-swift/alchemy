@@ -27,8 +27,6 @@ public final class Environment: ExpressibleByStringLiteral {
     public var dotenvVariables: [String: String]
     /// All environment variables available loaded from the process.
     public var processVariables: [String: String]
-    /// Env is set up before loggers.
-    private let logger = Logger(label: "Alchemy", destination: DebugLogger())
 
     public var isDebug: Bool {
         self.APP_DEBUG != false
@@ -93,7 +91,7 @@ public final class Environment: ExpressibleByStringLiteral {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
 
         guard let pathString = absolutePath else {
-            logger.debug("No environment file found at `\(path)`.")
+            Log.debug("No environment file found at `\(path)`.")
             return nil
         }
 
@@ -101,7 +99,7 @@ public final class Environment: ExpressibleByStringLiteral {
         do {
             contents = try String(contentsOfFile: pathString, encoding: .utf8)
         } catch {
-            logger.warning("Error loading contents of file at '\(pathString)': \(error).")
+            Log.warning("Error loading contents of file at '\(pathString)': \(error).")
             return [:]
         }
 
@@ -135,7 +133,7 @@ public final class Environment: ExpressibleByStringLiteral {
             values[key] = value
         }
 
-        logger.debug("Loaded environment variables from `\(path)`.")
+        Log.debug("Loaded environment variables from `\(path)`.")
         return values
     }
 
@@ -148,7 +146,7 @@ public final class Environment: ExpressibleByStringLiteral {
     ///   exists.
     private func getAbsolutePath(relativePath: String) -> String? {
         if relativePath.contains("/DerivedData") {
-            logger.comment("""
+            Log.comment("""
                 **WARNING**
 
                 Your project is running in Xcode's `DerivedData` data directory. It's _highly_ recommend that you set a custom working directory instead, otherwise files like `.env` and folders like `Public/` won't be accessible.

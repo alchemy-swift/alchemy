@@ -5,7 +5,7 @@ extension Application {
     /// Applies a middleware to all requests that come through the
     /// application, whether they are handled or not.
     ///
-    /// - Parameter middlewares: The middlewares which will intercept
+    /// - Parameter middlewares: The middlewares which will handle
     ///   all requests to this application.
     /// - Returns: This Application for chaining.
     @discardableResult
@@ -17,7 +17,7 @@ extension Application {
     /// Applies an middleware to all requests that come through the
     /// application, whether they are handled or not.
     ///
-    /// - Parameter middleware: The middleware closure which will intercept
+    /// - Parameter middleware: The middleware closure which will handle
     ///   all requests to this application.
     /// - Returns: This Application for chaining.
     @discardableResult
@@ -26,7 +26,7 @@ extension Application {
         return self
     }
     
-    /// Adds middleware that will intercept before all subsequent
+    /// Adds middleware that will handle before all subsequent
     /// handlers.
     ///
     /// - Parameter middlewares: The middlewares.
@@ -37,7 +37,7 @@ extension Application {
         return self
     }
     
-    /// Adds middleware that will intercept before all subsequent
+    /// Adds middleware that will handle before all subsequent
     /// handlers.
     ///
     /// - Parameter middlewares: The middlewares.
@@ -48,9 +48,9 @@ extension Application {
         return self
     }
     
-    /// Adds a middleware that will intercept before all subsequent handlers.
+    /// Adds a middleware that will handle before all subsequent handlers.
     ///
-    /// - Parameter middlewares: The middleware closure which will intercept
+    /// - Parameter middlewares: The middleware closure which will handle
     ///   all requests to this application.
     /// - Returns: This application for chaining.
     @discardableResult
@@ -60,7 +60,7 @@ extension Application {
     }
     
     /// Groups a set of endpoints by a middleware. This middleware
-    /// will intercept all endpoints added in the `configure`
+    /// will handle all endpoints added in the `configure`
     /// closure, but none in the handler chain that
     /// continues after the `.group`.
     ///
@@ -79,12 +79,12 @@ extension Application {
     }
     
     /// Groups a set of endpoints by a middleware. This middleware
-    /// will intercept all endpoints added in the `configure`
+    /// will handle all endpoints added in the `configure`
     /// closure, but none in the handler chain that
     /// continues after the `.group`.
     ///
     /// - Parameters:
-    ///   - middleware: The middleware closure which will intercept
+    ///   - middleware: The middleware closure which will handle
     ///   all requests to this application.
     ///   - configure: A closure for adding endpoints that will be
     ///     intercepted by the given `Middleware`.
@@ -114,7 +114,7 @@ extension Application {
 fileprivate struct AnonymousMiddleware: Middleware {
     let action: Application.MiddlewareClosure
     
-    func intercept(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
+    func handle(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
         try await action(request, next)
     }
 }

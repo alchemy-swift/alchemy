@@ -5,6 +5,13 @@ import RediStack
 
 /// A client for interfacing with a Redis instance.
 public struct RedisClient: RediStack.RedisClient, Service {
+    public enum Socket: Equatable {
+        /// An ip address `host` at port `port`.
+        case ip(host: String, port: Int)
+        /// A unix domain socket (IPC socket) at path `path`.
+        case unix(path: String)
+    }
+
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }
@@ -146,13 +153,13 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     /// Map of `EventLoop` identifiers to respective connection pools.
     private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
     private var poolLock = NIOLock()
-    private var lazyAddresses: [Socket]?
+    private var lazyAddresses: [RedisClient.Socket]?
     private var logger: Logger?
     
     /// The configuration to create pools with.
     private var config: RedisConnectionPool.Configuration
 
-    init(config: RedisConnectionPool.Configuration, lazyAddresses: [Socket]? = nil) {
+    init(config: RedisConnectionPool.Configuration, lazyAddresses: [RedisClient.Socket]? = nil) {
         self.config = config
         self.lazyAddresses = lazyAddresses
     }

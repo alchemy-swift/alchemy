@@ -128,7 +128,7 @@ extension BasicAuthable {
 /// basic auth values don't match a row in the database, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
-    public func intercept(_ request: Request, next: Next) async throws -> Response {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
         guard let basicAuth = request.basicAuth() else {
             throw HTTPError(.unauthorized)
         }

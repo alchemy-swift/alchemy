@@ -2,12 +2,15 @@ import Foundation
 
 struct Terminal {
     static var columns: Int = {
-        let string = try! safeShell("tput cols").trimmingCharacters(in: .whitespacesAndNewlines)
-        return Int(string) ?? 80
+        guard let string = try? shell("tput cols").trimmingCharacters(in: .whitespacesAndNewlines), let columns = Int(string) else {
+            return 80
+        }
+
+        return columns
     }()
 
     @discardableResult
-    private static func safeShell(_ command: String) throws -> String {
+    private static func shell(_ command: String) throws -> String {
         let task = Process()
         let pipe = Pipe()
 

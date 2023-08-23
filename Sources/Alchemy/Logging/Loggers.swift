@@ -22,8 +22,10 @@ public struct Loggers: Plugin {
 
         if let _default = `default` ?? loggers.keys.first {
             app.container.registerSingleton(Log(_default))
-        } else {
-            app.container.registerSingleton(Logger.alchemyDefault)
+        }
+
+        if !Env.isXcode && Env.isDebug {
+            print() // Clear out the console on boot.
         }
     }
 }

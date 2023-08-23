@@ -7,29 +7,13 @@ public final class Filesystem: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
     
-    private var provider: FilesystemProvider {
-        get {
-            lock.withLock {
-                if let _provider {
-                    return _provider
-                } else {
-                    let provider = createProvider()
-                    self._provider = provider
-                    return provider
-                }
-            }
-        }
-    }
-
-    private let lock = NIOLock()
-    private var _provider: FilesystemProvider?
-    private let createProvider: () -> FilesystemProvider
+    private var provider: FilesystemProvider
 
     /// The root directory for storing and fetching files.
     public var root: String { provider.root }
 
-    public init(provider: @escaping @autoclosure () -> FilesystemProvider) {
-        self.createProvider = provider
+    public init(provider: FilesystemProvider) {
+        self.provider = provider
     }
     
     /// Create a file in this storage.

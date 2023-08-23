@@ -206,7 +206,11 @@ public final class Content: Buildable {
     }
     
     private func unwrap<T>(_ value: T?) throws -> T {
-        try value.unwrap(or: ContentError.typeMismatch)
+        guard let value else {
+            throw ContentError.typeMismatch
+        }
+
+        return value
     }
     
     public func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
@@ -266,7 +270,12 @@ enum ContentError: Error {
 extension Content: DecoderDelegate {
     
     private func require<T>(_ optional: T?, key: CodingKey?) throws -> T {
-        try optional.unwrap(or: DecodingError.valueNotFound(T.self, .init(codingPath: [key].compactMap { $0 }, debugDescription: "Value wasn`t available.")))
+        guard let optional else {
+            let context = DecodingError.Context(codingPath: [key].compactMap { $0 }, debugDescription: "Value wasn`t available.")
+            throw DecodingError.valueNotFound(T.self, context)
+        }
+
+        return optional
     }
     
     func decodeString(for key: CodingKey?) throws -> String {

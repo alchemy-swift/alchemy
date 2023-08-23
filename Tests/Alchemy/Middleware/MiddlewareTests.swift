@@ -122,7 +122,7 @@ struct TestMiddleware: Middleware {
     var req: ((Request) async throws -> Void)?
     var res: ((Response) async throws -> Void)?
 
-    func intercept(_ request: Request, next: Next) async throws -> Response {
+    func handle(_ request: Request, next: Next) async throws -> Response {
         try await req?(request)
         let response = try await next(request)
         try await res?(response)

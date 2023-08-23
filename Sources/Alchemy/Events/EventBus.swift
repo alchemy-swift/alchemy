@@ -43,6 +43,13 @@ public final class EventBus: Service {
     }
 }
 
+extension Event {
+    /// Fire this event on an `EventBus`.
+    public func fire(on events: EventBus = Events) async throws {
+        try await events.fire(self)
+    }
+}
+
 extension Listener {
     fileprivate func handle() async throws { try await run() }
 }

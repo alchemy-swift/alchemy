@@ -37,11 +37,11 @@ final class DatabaseCache: CacheProvider {
         let item = try await getItem(key: key)
         let expiration = time.map { Date().adding(time: $0) }
         if var item = item {
-            item.text = value.description
+            item.value = value.description
             item.expiration = expiration ?? -1
             _ = try await item.save(on: db)
         } else {
-            _ = try await CacheItem(_key: key, text: value.description, expiration: expiration ?? -1).save(on: db)
+            _ = try await CacheItem(_key: key, value: value.description, expiration: expiration ?? -1).save(on: db)
         }
     }
     
@@ -66,11 +66,11 @@ final class DatabaseCache: CacheProvider {
     func increment(_ key: String, by amount: Int) async throws -> Int {
         if let item = try await getItem(key: key) {
             let newVal = try item.cast() + amount
-            _ = try await item.update { $0.text = "\(newVal)" }
+            _ = try await item.update { $0.value = "\(newVal)" }
             return newVal
         }
         
-        _ = try await CacheItem(_key: key, text: "\(amount)").save(on: db)
+        _ = try await CacheItem(_key: key, value: "\(amount)").save(on: db)
         return amount
     }
     
@@ -103,16 +103,9 @@ extension Cache {
 private struct CacheItem: Model, Codable {
     static let table = "cache"
 
-    static let storedProperties = [
-        \CacheItem.id: "id",
-        \CacheItem._key: "key",
-        \CacheItem.text: "text",
-        \CacheItem.expiration: "expiration",
-    ]
-
     var id: PK<Int> = .new
     let _key: String
-    var text: String
+    var value: String
     var expiration: Int = -1
     
     var isValid: Bool {
@@ -124,7 +117,11 @@ private struct CacheItem: Model, Codable {
     }
     
     func cast<L: LosslessStringConvertible>(_ type: L.Type = L.self) throws -> L {
-        try L(text).unwrap(or: CacheError("Unable to cast cache item `\(_key)` to \(L.self)."))
+        guard let converted = L(value) else {
+            throw CacheError("Unable to cast cache item `\(_key)` to \(L.self).")
+        }
+
+        return converted
     }
 }
 

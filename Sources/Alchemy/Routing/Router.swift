@@ -75,7 +75,7 @@ public final class Router {
     ///   - path: The path of a requst this handler can handle.
     func add(handler: @escaping Handler, for method: HTTPMethod, path: String, options: RouteOptions) {
         let splitPath = pathPrefixes + path.tokenized(with: method)
-        let middlewareClosures = middlewares.reversed().map(Middleware.intercept)
+        let middlewareClosures = middlewares.reversed().map(Middleware.handle)
         let entry = HandlerEntry(options: options) {
             var next = self.cleanHandler(handler)
             for middleware in middlewareClosures {
@@ -119,7 +119,7 @@ public final class Router {
         for middleware in additionalMiddlewares {
             let lastHandler = handler
             handler = cleanHandler {
-                try await middleware.intercept($0, next: lastHandler)
+                try await middleware.handle($0, next: lastHandler)
             }
         }
         
@@ -176,7 +176,7 @@ extension String {
 }
 
 private struct AccumulateMiddleware: Middleware {
-    func intercept(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
+    func handle(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
         try await next(request.collect())
     }
 }

@@ -38,7 +38,7 @@ public struct SQLiteConfiguration: ConnectionPoolSource {
         }
     }
 
-    public init(threadPool: NIOThreadPool = Thread.pool, storage: Storage, enableForeignKeys: Bool = true) {
+    public init(threadPool: NIOThreadPool = Thread, storage: Storage, enableForeignKeys: Bool = true) {
         self.threadPool = threadPool
         self.storage = storage
         self.enableForeignKeys = enableForeignKeys
