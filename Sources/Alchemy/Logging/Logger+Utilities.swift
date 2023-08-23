@@ -35,17 +35,17 @@ extension Logger: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
 
-    public static let alchemyDefault = Logger(label: "Alchemy", destination: {
+    public static let alchemyDefault: Logger = {
         if Env.isProd {
-            return .debug
+            return .stdout
         } else if Env.isTest {
-            return .debug
+            return .null
         } else if Env.isXcode {
             return .xcode
         } else {
             return .debug
         }
-    }())
+    }()
 
     // MARK: Conveniences
 

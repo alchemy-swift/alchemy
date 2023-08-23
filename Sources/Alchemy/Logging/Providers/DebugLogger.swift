@@ -1,8 +1,8 @@
 import Logging
 
-extension LogDestination where Self == DebugLogger {
-    static var debug: DebugLogger {
-        DebugLogger()
+extension Logger {
+    static var debug: Logger {
+        Logger(label: "Alchemy", destination: DebugLogger())
     }
 }
 

@@ -1,9 +1,9 @@
 import Logging
 import OSLog
 
-extension LogDestination where Self == XcodeLogger {
-    static var xcode: XcodeLogger {
-        XcodeLogger()
+extension Logging.Logger {
+    static var xcode: Logging.Logger {
+        Logger(label: "Alchemy", destination: XcodeLogger())
     }
 }
 

@@ -1,11 +1,11 @@
 import Foundation
 
 extension Logger {
-    public init(label: String = "Logger", level: Logger.Level = .info, handler: @escaping (LogPayload) -> Void) {
+    public init(label: String = "Alchemy", level: Logger.Level = .info, handler: @escaping (LogPayload) -> Void) {
         self.init(label: label, level: level, destination: AnonymousDestination(callback: handler))
     }
 
-    public init(label: String = "Logger", 
+    public init(label: String = "Alchemy", 
                 level: Logger.Level = .info,
                 handler: @escaping (LogPayload) async throws -> Void,
                 onError: @escaping (LogPayload, Error) -> Void = onErrorDefault) {

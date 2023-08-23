@@ -1,8 +1,7 @@
-//
-//  File.swift
-//  
-//
-//  Created by Josh Wright on 8/22/23.
-//
+import Logging
 
-import Foundation
+extension Logger {
+    static var null: Logger {
+        Logger(handler: { _ in })
+    }
+}

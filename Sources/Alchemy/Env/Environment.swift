@@ -49,7 +49,7 @@ public final class Environment: Equatable, ExpressibleByStringLiteral {
     public init(name: String, isTest: Bool = false, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
         self.name = name
         self.isTest = isTest
-        self.isProd = false
+        self.isProd = name.lowercased() == "prod"
         self.dotenvPaths = dotenvPaths ?? [".env.\(name)"]
         self.dotenvVariables = dotenvVariables
         self.processVariables = processVariables
