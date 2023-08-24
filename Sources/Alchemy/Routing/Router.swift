@@ -11,16 +11,6 @@ fileprivate let kRouterPathParameterEscape = ":"
 /// Specifically, it takes an `Request` and routes it to
 /// a handler that returns an `ResponseConvertible`.
 public final class Router {
-    public struct RouteOptions: OptionSet {
-        public let rawValue: Int
-        
-        public init(rawValue: Int) {
-            self.rawValue = rawValue
-        }
-
-        public static let stream = RouteOptions(rawValue: 1 << 0)
-    }
-    
     private struct HandlerEntry {
         let options: RouteOptions
         let handler: (Request) async -> Response
@@ -61,9 +51,6 @@ public final class Router {
     /// Internal hook for logging the result of each request.
     private var _didHandle: (Request, Response) -> Void = { _, _ in }
 
-    /// Creates a new router.
-    init() {}
-    
     /// Adds a handler to this router. A handler takes an `Request`
     /// and returns an `ResponseConvertible`.
     ///
@@ -87,7 +74,7 @@ public final class Router {
         
         trie.insert(path: splitPath, value: entry)
     }
-    
+
     /// Handles a request. If the request has any dynamic path
     /// parameters in its URI, this will parse those out from
     /// the actual URI and set them on the `Request` before
@@ -168,6 +155,16 @@ public final class Router {
     }
 }
 
+public struct RouteOptions: OptionSet {
+    public let rawValue: Int
+
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    public static let stream = RouteOptions(rawValue: 1 << 0)
+}
+
 extension String {
     fileprivate func tokenized(with method: HTTPMethod) -> [String] {
         split(separator: "/").map(String.init).filter { !$0.isEmpty } + [method.rawValue]
@@ -177,5 +174,84 @@ extension String {
 private struct AccumulateMiddleware: Middleware {
     func handle(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
         try await next(request.collect())
+    }
+}
+
+/*
+ 
+ Router takes path.
+
+ 1. Looks up node @ path.
+ 2. Looks up all middleware for Method.
+ 3. Runs all middleware.
+
+ */
+
+struct NotFoundMiddleware: Middleware {
+    func handle(_ request: Request, next: Next) -> Response {
+        Response(status: .notFound)
+    }
+}
+
+struct ErrorHandlingMiddleware: Middleware {
+    func handle(_ request: Request, next: Next) async -> Response {
+        do {
+            return try await next(request)
+        } catch {
+            Log.error("Encountered internal error: \(String(reflecting: error)).")
+            return Response(status: .internalServerError)
+        }
+    }
+}
+
+struct Tester {
+    func test(app: Application) {
+        let mw = "" as! Middleware
+        let token = "" as! Middleware
+        let todo = "" as! Middleware
+
+        /*
+
+         Give User Control Over
+
+         - what code runs on what request
+
+         Middleware Applies to
+
+         1. All requests
+         2. All requests that match a url pattern
+         3. A single route
+         4. A group of routes
+
+         Request Has
+
+         1. Method, Path
+         2. Middleware
+
+         Route = Middleware
+         Controller = Middleware
+
+         */
+
+        // Apply middleware to all requests.
+        app.use(mw)
+
+        // Apply middleware to all routes this router will handle, starting with /foo.
+        app.use("/foo", mw)
+
+        app.group("/bar", mw)
+
+        app.group("/foo", mw) {
+            $0
+                .use(token)
+                .
+            // routes here will have "/foo" and mw applied to them
+        }
+
+        // Apply middleware to GET /bar & POST /baz
+        app
+            .using("/foo", mwa)
+            .get("/bar", use: bar) // GET /foo/bar
+            .post("/baz", use: baz) // POST /foo/baz
     }
 }
