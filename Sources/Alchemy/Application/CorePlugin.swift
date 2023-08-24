@@ -6,11 +6,8 @@ struct CorePlugin: Plugin {
 
         // 0. Get relevant command line arguments
 
-        let args = CommandLine.arguments
         let envName: String?
-        if let index = args.firstIndex(of: "--env"), let value = args[safe: index + 1] {
-            envName = value
-        } else if let index = args.firstIndex(of: "-e"), let value = args[safe: index + 1] {
+        if let value = CommandLine.value(for: "--env") ?? CommandLine.value(for: "-e") {
             envName = value
         } else if let value = ProcessInfo.processInfo.environment["APP_ENV"] {
             envName = value
@@ -19,9 +16,7 @@ struct CorePlugin: Plugin {
         }
 
         let logLevel: Logger.Level?
-        if let index = args.firstIndex(of: "--log"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
-            logLevel = level
-        } else if let index = args.firstIndex(of: "-l"), let value = args[safe: index + 1], let level = Logger.Level(rawValue: value) {
+        if let value = CommandLine.value(for: "--log") ?? CommandLine.value(for: "-l"), let level = Logger.Level(rawValue: value) {
             logLevel = level
         } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
             logLevel = level
