@@ -93,7 +93,10 @@ extension Response {
 extension Request {
     @discardableResult
     public func collect() async throws -> Request {
-        self.hbRequest.body = .byteBuffer(try await body?.collect())
+        if let body {
+            self.body = .buffer(try await body.collect())
+        }
+        
         return self
     }
 }

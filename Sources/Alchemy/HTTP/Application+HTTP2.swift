@@ -1,6 +1,6 @@
 import NIOSSL
 import NIOHTTP1
-import Hummingbird
+import HummingbirdCore
 import HummingbirdHTTP2
 
 extension Application {
@@ -18,7 +18,6 @@ extension Application {
     ///
     /// - Parameter tlsConfig: A raw NIO `TLSConfiguration` to use.
     public func useHTTP2(tlsConfig: TLSConfiguration) throws {
-        @Inject var app: HBApplication
-        try app.server.addHTTP2Upgrade(tlsConfiguration: tlsConfig)
+        try server.addHTTP2Upgrade(tlsConfiguration: tlsConfig)
     }
 }

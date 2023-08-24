@@ -10,12 +10,12 @@ extension Application {
             /// Your app's default Logger.
 
             default: {
-                if Env.isDebug {
-                    "debug"
+                if Env.isXcode {
+                    "xcode"
                 } else if Env.isTesting {
                     "null"
-                } else if Env.isXcode {
-                    "xcode"
+                } else if Env.isDebug {
+                    "debug"
                 } else {
                     "stdout"
                 }

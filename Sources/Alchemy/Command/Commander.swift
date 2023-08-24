@@ -15,8 +15,6 @@ final class Commander {
         @Option(name: .shortAndLong) var log: Logger.Level? = nil
     }
 
-    @Inject var env: Environment
-
     var commands: [Command.Type] = []
     var defaultCommand: Command.Type = ServeCommand.self
 
@@ -29,12 +27,18 @@ final class Commander {
     }
 
     func start(args: [String]? = nil) async throws {
+
+        // 0. Parse the Command
+
+        // When running tests, don't use the command line args as the default;
+        // they are irrelevant to running the app and may contain a bunch of
+        // options that will cause `AsyncParsableCommand` parsing to fail.
+        let fallbackArgs = Env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
+        var command = try Launch.parseAsRoot(args ?? fallbackArgs)
+
+        // 1. Run Command
+
         do {
-            // When running tests, don't use the command line args as the default;
-            // they are irrelevant to running the app and may contain a bunch of
-            // options that will cause `AsyncParsableCommand` parsing to fail.
-            let fallbackArgs = env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
-            var command = try Launch.parseAsRoot(args ?? fallbackArgs)
             try await LoopGroup.next()
                 .asyncSubmit {
                     if var asyncCommand = command as? AsyncParsableCommand {
@@ -44,14 +48,16 @@ final class Commander {
                     }
                 }
                 .get()
-
-            if command.waitForLifecycle {
-                Lifecycle.wait()
-            } else {
-                try await Lifecycle.shutdown()
-            }
         } catch {
             Launch.exit(withError: error)
+        }
+
+        // 2. Wait or Shutdown
+
+        if command.waitForLifecycle {
+            Lifecycle.wait()
+        } else {
+            try await Lifecycle.shutdown()
         }
     }
 }

@@ -53,11 +53,10 @@ extension Application {
     public var queues: Queues { Queues() }
     public var defaultPlugins: [Plugin] {
         [
-            EventsPlugin(),
-            RoutingPlugin(),
+            HTTPPlugin(),
+            CommandsPlugin(),
             SchedulingPlugin(),
-            HTTPClients(),
-            Commands(),
+            EventsPlugin(),
             filesystems,
             databases,
             caches,
@@ -68,15 +67,14 @@ extension Application {
     public func boot() { /* default to no-op */ }
 
     public func run() async throws {
-        registerServices()
+        setup()
         try await Lifecycle.start()
-        try boot()
         try await start()
     }
 
-    public func registerServices() {
+    public func setup() {
 
-        // 0. Setup the main Container.
+        // 0. Set the main Container.
 
         Container.main = Container()
 
@@ -108,6 +106,14 @@ extension Application {
                 shutdown: .async { try await plugin.shutdownServices(in: self) }
             )
         }
+
+        // 4. Register Application.boot to Lifecycle
+
+        lifecycle.register(
+            label: "Application Boot",
+            start: .sync { try boot() },
+            shutdown: .none
+        )
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`
@@ -117,3 +123,4 @@ extension Application {
         try await Self().run()
     }
 }
+

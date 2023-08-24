@@ -44,7 +44,7 @@ public protocol Command: AsyncParsableCommand {
     /// The name of this command. Run it in the command line by passing this
     /// name as an argument. Defaults to the type name.
     static var name: String { get }
-    
+
     /// When running the app with this command, should the app
     /// shut down after the command `start()` is finished.
     /// Defaults to `true`.
@@ -53,6 +53,9 @@ public protocol Command: AsyncParsableCommand {
     /// indefinitely running work such as starting a queue
     /// worker or running the server.
     static var shutdownAfterRun: Bool { get }
+
+    /// Run the command.
+    func run() async throws
 }
 
 extension Command {

@@ -1,9 +1,6 @@
 import ArgumentParser
 import Foundation
 
-typealias Flag = ArgumentParser.Flag
-typealias Option = ArgumentParser.Option
-
 final class ModelMakeCommand: Command {
     static var configuration = CommandConfiguration(
         commandName: "make:model",

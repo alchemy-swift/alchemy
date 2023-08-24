@@ -1,4 +1,4 @@
-struct Commands: Plugin {
+struct CommandsPlugin: Plugin {
     func registerServices(in app: Application) {
         app.container.registerSingleton(Commander())
         if app.container.env.isTesting {

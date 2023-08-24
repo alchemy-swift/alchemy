@@ -1,6 +1,5 @@
 @testable
 import Alchemy
-import Hummingbird
 import NIOCore
 
 extension Request {
@@ -13,15 +12,13 @@ extension Request {
         headers: HTTPHeaders = [:],
         body: ByteContent? = nil
     ) -> Request {
-        struct DummyContext: HBRequestContext {
+        struct DummyContext: RequestContext {
             let eventLoop: EventLoop = EmbeddedEventLoop()
             let allocator: ByteBufferAllocator = .init()
             let remoteAddress: SocketAddress? = nil
         }
         
-        let dummyApp = HBApplication()
         let head = HTTPRequestHead(version: version, method: method, uri: uri, headers: headers)
-        let req = HBRequest(head: head, body: .byteBuffer(body?.buffer), application: dummyApp, context: DummyContext())
-        return Request(hbRequest: req)
+        return Request(head: head, body: nil, context: DummyContext())
     }
 }

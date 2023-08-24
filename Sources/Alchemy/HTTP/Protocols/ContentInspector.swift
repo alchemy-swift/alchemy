@@ -1,4 +1,3 @@
-import Hummingbird
 import MultipartKit
 
 public protocol ContentInspector {

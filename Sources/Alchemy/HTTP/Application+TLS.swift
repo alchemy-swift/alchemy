@@ -1,7 +1,7 @@
 import NIOSSL
 import NIOHTTP1
 import HummingbirdTLS
-import Hummingbird
+import HummingbirdCore
 
 extension Application {
     /// Use HTTPS when serving.
@@ -18,7 +18,6 @@ extension Application {
     ///
     /// - Parameter tlsConfig: A raw NIO `TLSConfiguration` to use.
     public func useHTTPS(tlsConfig: TLSConfiguration) throws {
-        @Inject var app: HBApplication
-        try app.server.addTLS(tlsConfiguration: tlsConfig)
+        try server.addTLS(tlsConfiguration: tlsConfig)
     }
 }
