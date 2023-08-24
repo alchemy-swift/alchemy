@@ -4,7 +4,7 @@ import NIO
 struct CorePlugin: Plugin {
     func registerServices(in app: Application) {
 
-        // 0. Get relevant command line arguments
+        // 0. Register Environment
 
         let envName: String?
         if let value = CommandLine.value(for: "--env") ?? CommandLine.value(for: "-e") {
@@ -14,17 +14,6 @@ struct CorePlugin: Plugin {
         } else {
             envName = nil
         }
-
-        let logLevel: Logger.Level?
-        if let value = CommandLine.value(for: "--log") ?? CommandLine.value(for: "-l"), let level = Logger.Level(rawValue: value) {
-            logLevel = level
-        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
-            logLevel = level
-        } else {
-            logLevel = nil
-        }
-
-        // 1. Register Environment
 
         let env: Environment
         if let envName {
@@ -36,13 +25,22 @@ struct CorePlugin: Plugin {
         env.loadVariables()
         app.container.registerSingleton(env)
 
-        // 2. Register Loggers
+        // 1. Register Loggers
+
+        let logLevel: Logger.Level?
+        if let value = CommandLine.value(for: "--log") ?? CommandLine.value(for: "-l"), let level = Logger.Level(rawValue: value) {
+            logLevel = level
+        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
+            logLevel = level
+        } else {
+            logLevel = nil
+        }
 
         var loggers = app.loggers
         loggers.logLevelOverride = logLevel
         loggers.registerServices(in: app)
 
-        // 3. Register NIO services
+        // 2. Register NIO services
 
         let threads = env.isTesting ? 1 : System.coreCount
         app.container.registerSingleton(MultiThreadedEventLoopGroup(numberOfThreads: threads), as: EventLoopGroup.self)
@@ -58,7 +56,7 @@ struct CorePlugin: Plugin {
             return current
         }
 
-        // 4. Register Lifecycle
+        // 3. Register Lifecycle
 
         app.container.registerSingleton(
             ServiceLifecycle(
@@ -80,7 +78,7 @@ struct CorePlugin: Plugin {
             )
         )
 
-        // 5. Register the Application
+        // 4. Register the Application
 
         app.container.registerSingleton(app)
         app.container.registerSingleton(app, as: Application.self)

@@ -96,7 +96,7 @@ extension Request {
         if let body {
             self.body = .buffer(try await body.collect())
         }
-        
+
         return self
     }
 }

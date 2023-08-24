@@ -164,23 +164,27 @@ extension HBRequestBody {
 }
 
 extension ByteContent? {
-    var hbResponseBody: HBResponseBody {
+    fileprivate var hbResponseBody: HBResponseBody {
         switch self {
         case .buffer(let buffer):
             return .byteBuffer(buffer)
         case .stream(let stream):
-            return .stream(stream)
+            return .stream(StreamerProxy(stream: stream))
         case .none:
             return .empty
         }
     }
 }
 
-extension ByteStream: HBResponseBodyStreamer, @unchecked Sendable {
-    public func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
-        _read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
+struct StreamerProxy: HBResponseBodyStreamer {
+    let stream: ByteStream
+
+    func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+        stream._read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
     }
 }
+
+extension ByteStream: @unchecked Sendable {}
 
 extension HBHTTPError: ResponseConvertible {
     public func response() -> Response {
