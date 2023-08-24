@@ -219,39 +219,49 @@ struct Tester {
          Middleware Applies to
 
          1. All requests
+
+         app.useAll()
+
          2. All requests that match a url pattern
+
+         app.useAll("/path")
+
          3. A single route
+
+         app.get("/path", middleware) {
+
+         }
+
          4. A group of routes
 
-         Request Has
-
-         1. Method, Path
-         2. Middleware
-
-         Route = Middleware
-         Controller = Middleware
+         app.group("/path", middleware)
 
          */
-
-        // Apply middleware to all requests.
-        app.use(mw)
-
-        // Apply middleware to all routes this router will handle, starting with /foo.
-        app.use("/foo", mw)
-
-        app.group("/bar", mw)
-
-        app.group("/foo", mw) {
-            $0
-                .use(token)
-                .
-            // routes here will have "/foo" and mw applied to them
-        }
-
-        // Apply middleware to GET /bar & POST /baz
-        app
-            .using("/foo", mwa)
-            .get("/bar", use: bar) // GET /foo/bar
-            .post("/baz", use: baz) // POST /foo/baz
     }
 }
+
+protocol AppProtocol: RouterProtocol {
+    /// Add a Middleware to all requets on this application.
+    func useAll(_ middleware: Middleware)
+}
+
+protocol RouterProtocol {
+    
+    /// Add a Middleware
+    func use(_ middleware: Middleware)
+
+    /// Group
+    func group(_ path: String, _ middleware: Middleware) -> RouterProtocol
+}
+
+/*
+
+ A Router is a special middleware that handles requests.
+
+ */
+
+/*
+
+ A Controller is a special middleware that handles requests.
+
+ */
