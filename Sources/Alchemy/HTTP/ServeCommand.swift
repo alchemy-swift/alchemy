@@ -65,11 +65,7 @@ struct ServeCommand: Command {
             Q.startWorker()
         }
 
-        if !quiet {
-            Routes.didHandle(logResponse)
-        }
-
-        let responder = RouterResponder(router: Routes)
+        let responder = RouterResponder(router: Routes, debug: !quiet)
         try await app.server.start(responder: responder).get()
 
         if let unixSocket = socket {
@@ -84,6 +80,26 @@ struct ServeCommand: Command {
         if !Env.isXcode {
             print()
         }
+    }
+}
+
+private struct RouterResponder: HBHTTPResponder {
+    let router: Router
+    let debug: Bool
+
+    func respond(to request: HBHTTPRequest, context: ChannelHandlerContext, onComplete: @escaping (Result<HBHTTPResponse, Error>) -> Void) {
+        let req = Request(head: request.head, body: request.body.byteContent(on: context.eventLoop), context: context)
+        context.eventLoop
+            .asyncSubmit {
+                let res = await router.handle(request: req)
+                if debug {
+                    logResponse(req: req, res: res)
+                }
+
+                let head = HTTPResponseHead(version: req.version, status: res.status, headers: res.headers)
+                return HBHTTPResponse(head: head, body: res.body.hbResponseBody)
+            }
+            .whenComplete(onComplete)
     }
 
     private func logResponse(req: Request, res: Response) {
@@ -120,21 +136,6 @@ struct ServeCommand: Command {
         }()
 
         Log.comment("\(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)")
-    }
-}
-
-private struct RouterResponder: HBHTTPResponder {
-    let router: Router
-
-    func respond(to request: HBHTTPRequest, context: ChannelHandlerContext, onComplete: @escaping (Result<HBHTTPResponse, Error>) -> Void) {
-        let req = Request(head: request.head, body: request.body.byteContent(on: context.eventLoop), context: context)
-        context.eventLoop
-            .asyncSubmit {
-                let res = await router.handle(request: req)
-                let head = HTTPResponseHead(version: req.version, status: res.status, headers: res.headers)
-                return HBHTTPResponse(head: head, body: res.body.hbResponseBody)
-            }
-            .whenComplete(onComplete)
     }
 }
 

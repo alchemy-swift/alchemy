@@ -48,9 +48,6 @@ public final class Router {
     /// A trie that holds all the handlers.
     private let trie = Trie<HandlerEntry>()
 
-    /// Internal hook for logging the result of each request.
-    private var _didHandle: (Request, Response) -> Void = { _, _ in }
-
     /// Adds a handler to this router. A handler takes an `Request`
     /// and returns an `ResponseConvertible`.
     ///
@@ -97,7 +94,7 @@ public final class Router {
             
             // Collate the request if streaming isn't specified.
             if !match.value.options.contains(.stream) {
-                additionalMiddlewares.append(AccumulateMiddleware())
+                additionalMiddlewares.append(CollectionMiddleware())
             }
         }
         
@@ -109,17 +106,7 @@ public final class Router {
             }
         }
         
-        let response = await handler(request)
-        _didHandle(request, response)
-        return response
-    }
-
-    func didHandle(_ hook: @escaping (Request, Response) -> Void) {
-        let previous = _didHandle
-        _didHandle = {
-            previous($0, $1)
-            hook($0, $1)
-        }
+        return await handler(request)
     }
 
     /// Converts a throwing, ResponseConvertible handler into a
@@ -155,25 +142,13 @@ public final class Router {
     }
 }
 
-public struct RouteOptions: OptionSet {
-    public let rawValue: Int
-
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
-    }
-
-    public static let stream = RouteOptions(rawValue: 1 << 0)
-}
-
 extension String {
     fileprivate func tokenized(with method: HTTPMethod) -> [String] {
         split(separator: "/").map(String.init).filter { !$0.isEmpty } + [method.rawValue]
     }
-}
 
-private struct AccumulateMiddleware: Middleware {
-    func handle(_ request: Request, next: (Request) async throws -> Response) async throws -> Response {
-        try await next(request.collect())
+    fileprivate var tokenized: [String] {
+        split(separator: "/").map(String.init).filter { !$0.isEmpty }
     }
 }
 
@@ -187,81 +162,188 @@ private struct AccumulateMiddleware: Middleware {
 
  */
 
-struct NotFoundMiddleware: Middleware {
-    func handle(_ request: Request, next: Next) -> Response {
-        Response(status: .notFound)
+protocol HandlerProtocol {
+    func route(for request: Request) -> Route?
+}
+
+public struct Matcher {
+    let method: HTTPMethod?
+    let tokens: [String]
+
+    init(method: HTTPMethod?, tokens: [String]) {
+        self.method = method
+        self.tokens = tokens
+    }
+
+    init(method: HTTPMethod?, string: String) {
+        self.init(method: method, tokens: string.tokenized)
+    }
+
+    func match(_ request: Request) -> [Parameter]? {
+        if let method {
+            guard request.method == method else {
+                return nil
+            }
+        }
+
+        let reqParts = request.path.tokenized
+        var parameters: [Parameter] = []
+        for (index, part) in tokens.enumerated() {
+            guard let reqPart = reqParts[safe: index] else {
+                return nil
+            }
+
+            if reqPart.hasPrefix(kRouterPathParameterEscape) {
+                let key = String(reqPart.dropFirst())
+                parameters.append(Parameter(key: key, value: part))
+            } else if reqPart != part {
+                return nil
+            }
+        }
+
+        return parameters
+    }
+
+    func with(prefixes: [String]) -> Matcher {
+        Matcher(method: method, tokens: prefixes + tokens)
     }
 }
 
-struct ErrorHandlingMiddleware: Middleware {
-    func handle(_ request: Request, next: Next) async -> Response {
+final class HTTPRouter: RouteBuilder {
+    let subrouter: Subrouter
+    let globalMiddlewares: [Middleware]
+    let notFoundHandler: (Request) async throws -> Response
+    let errorHandler: (Request, Error) async throws -> Response
+    let maxUploadSize: Int?
+
+    init(maxUploadSize: Int?) {
+        self.subrouter = Subrouter()
+        self.globalMiddlewares = []
+        self.notFoundHandler = { _ in Response(status: .notFound) }
+        self.errorHandler = { _, _ in Response(status: .internalServerError) }
+        self.maxUploadSize = maxUploadSize
+    }
+    
+    func addHandler(matcher: Matcher, middlewares: [Middleware], options: RouteOptions, handler: @escaping (Request) async throws -> Response) {
+        subrouter.addHandler(matcher: matcher, middlewares: middlewares, options: options, handler: handler)
+    }
+
+    func addMiddlewares(_ middlewares: [Middleware]) {
+        subrouter.addMiddlewares(middlewares)
+    }
+
+    func addGroup(prefix: String, middlewares: [Middleware]) -> RouteBuilder {
+        subrouter.addGroup(prefix: prefix, middlewares: middlewares)
+    }
+
+    func handle(request: Request) async -> Response {
         do {
-            return try await next(request)
+            if let maxUploadSize, let length = request.headers.contentLength, length > maxUploadSize {
+                throw HTTPError(.payloadTooLarge)
+            }
+
+            guard let route = subrouter.route(for: request) else {
+                return try await notFoundHandler(request)
+            }
+
+            let additional = route.options.contains(.stream) ? [] : [CollectionMiddleware()]
+            return try await send(request: request, through: additional + globalMiddlewares + route.middlewares, handler: route.handler)
+        } catch {
+            return await _errorHandler(request: request, error: error)
+        }
+    }
+
+    private func _errorHandler(request: Request, error: Error) async -> Response {
+        do {
+            if let error = error as? ResponseConvertible {
+                do {
+                    return try await error.response()
+                } catch {
+                    return try await errorHandler(request, error)
+                }
+            } else {
+                return try await errorHandler(request, error)
+            }
         } catch {
             Log.error("Encountered internal error: \(String(reflecting: error)).")
             return Response(status: .internalServerError)
         }
     }
-}
 
-struct Tester {
-    func test(app: Application) {
-        let mw = "" as! Middleware
-        let token = "" as! Middleware
-        let todo = "" as! Middleware
+    private func send(request: Request, through middlewares: [Middleware], handler: (Request) async throws -> Response) async throws -> Response {
+        guard let first = middlewares.first else {
+            return try await handler(request)
+        }
 
-        /*
-
-         Give User Control Over
-
-         - what code runs on what request
-
-         Middleware Applies to
-
-         1. All requests
-
-         app.useAll()
-
-         2. All requests that match a url pattern
-
-         app.useAll("/path")
-
-         3. A single route
-
-         app.get("/path", middleware) {
-
-         }
-
-         4. A group of routes
-
-         app.group("/path", middleware)
-
-         */
+        return try await first.handle(request) {
+            try await send(request: $0, through: Array(middlewares.dropFirst()), handler: handler)
+        }
     }
 }
 
-protocol AppProtocol: RouterProtocol {
-    /// Add a Middleware to all requets on this application.
-    func useAll(_ middleware: Middleware)
+final class Subrouter: HandlerProtocol, RouteBuilder {
+    var prefixes: [String]
+    var middlewares: [Middleware]
+    var subrouters: [HandlerProtocol] = []
+
+    init(prefixes: [String] = [], middlewares: [Middleware] = [], subrouters: [HandlerProtocol] = []) {
+        self.prefixes = prefixes
+        self.middlewares = middlewares
+        self.subrouters = subrouters
+    }
+
+    func route(for request: Request) -> Route? {
+        for subrouter in subrouters {
+            if let route = subrouter.route(for: request) {
+                return route.with(middleware: middlewares)
+            }
+        }
+
+        return nil
+    }
+
+    func addHandler(matcher: Matcher, middlewares: [Middleware], options: RouteOptions, handler: @escaping (Request) async throws -> Response) {
+        let route = Route(matcher: matcher.with(prefixes: prefixes), parameters: [], options: options, middlewares: middlewares, handler: handler)
+        subrouters.append(route)
+    }
+
+    func addMiddlewares(_ middlewares: [Middleware]) {
+        self.middlewares.append(contentsOf: middlewares)
+    }
+
+    func addGroup(prefix: String, middlewares: [Middleware]) -> RouteBuilder {
+        let subrouter = Subrouter(prefixes: prefixes + prefix.tokenized, middlewares: middlewares)
+        subrouters.append(subrouter)
+        return subrouter
+    }
 }
 
-protocol RouterProtocol {
-    
-    /// Add a Middleware
-    func use(_ middleware: Middleware)
+struct Route: HandlerProtocol {
+    let matcher: Matcher
+    let parameters: [Parameter]
+    let options: RouteOptions
+    let middlewares: [Middleware]
+    let handler: (Request) async throws -> Response
 
-    /// Group
-    func group(_ path: String, _ middleware: Middleware) -> RouterProtocol
+    func with(middleware: [Middleware]) -> Route {
+        Route(matcher: matcher, parameters: parameters, options: options, middlewares: middlewares, handler: handler)
+    }
+
+    func with(parameters: [Parameter]) -> Route {
+        Route(matcher: matcher, parameters: parameters, options: options, middlewares: middlewares, handler: handler)
+    }
+
+    func route(for request: Request) -> Route? {
+        guard let params = matcher.match(request) else {
+            return nil
+        }
+
+        return with(parameters: params)
+    }
 }
 
-/*
-
- A Router is a special middleware that handles requests.
-
- */
-
-/*
-
- A Controller is a special middleware that handles requests.
-
- */
+private struct CollectionMiddleware: Middleware {
+    func handle(_ request: Request, next: Next) async throws -> Response {
+        try await next(request.collect())
+    }
+}
