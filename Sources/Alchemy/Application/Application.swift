@@ -13,7 +13,7 @@ import NIO
 ///         }
 ///     }
 ///
-public protocol Application {
+public protocol Application: Router {
     /// Setup your application here. Called after all services are loaded.
     func boot() throws
 

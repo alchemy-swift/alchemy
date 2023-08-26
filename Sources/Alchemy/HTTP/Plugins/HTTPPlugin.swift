@@ -3,7 +3,11 @@ import HummingbirdCore
 struct HTTPPlugin: Plugin {
     func registerServices(in app: Application) {
         app.container.registerSingleton(HBHTTPServer(group: LoopGroup, configuration: hummingbirdConfiguration(for: app)))
-        app.container.registerSingleton(Router())
+        let router = HTTPRouter()
+        app.container.registerSingleton(router, as: Router.self)
+        let handler = HTTPHandler(maxUploadSize: app.configuration.maxUploadSize, router: router)
+        app.container.registerSingleton(handler)
+        app.container.registerSingleton(handler, as: RequestHandler.self)
         app.container.registerSingleton(Client())
     }
 

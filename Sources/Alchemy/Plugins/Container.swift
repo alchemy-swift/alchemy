@@ -8,7 +8,7 @@ extension Container {
         resolve(id: key)
     }
 
-    public func get<Base, Type>(_ key: KeyPath<Base, Type>, error: StaticString? = nil) -> Type {
+    public func require<Base, Type>(_ key: KeyPath<Base, Type>, error: StaticString? = nil) -> Type {
         guard let value = resolve(Type.self, id: key) else {
             preconditionFailure(error?.description ?? "Cannot get extension of type \(Type.self) without having set it")
         }

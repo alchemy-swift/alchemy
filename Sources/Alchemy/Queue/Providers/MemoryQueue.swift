@@ -10,8 +10,6 @@ public actor MemoryQueue: QueueProvider {
     
     private let lock = NSRecursiveLock()
     
-    init() {}
-    
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) async throws {

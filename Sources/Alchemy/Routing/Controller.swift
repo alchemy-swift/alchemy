@@ -5,19 +5,19 @@ public protocol Controller {
     /// Add this controller's handlers to a router.
     ///
     /// - Parameter router: The Router on which to add handlers.
-    func route(_ app: Application)
+    func route(_ router: Router)
 }
 
-extension Application {
-    /// Adds a controller to this route.
+extension Router {
+    /// Adds a controller to this router.
     ///
     /// - Parameter controller: The controller to handle routes on
     ///   this router.
     /// - Returns: This router for chaining.
     @discardableResult
     public func controller(_ controllers: Controller...) -> Self {
-        controllers.forEach { c in
-            _ = snapshotMiddleware { c.route($0) }
+        controllers.forEach {
+            $0.route(group())
         }
         
         return self

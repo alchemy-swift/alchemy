@@ -2,7 +2,7 @@ import MultipartKit
 
 public protocol ContentInspector {
     var headers: HTTPHeaders { get }
-    var body: ByteContent? { get }
+    var body: Bytes? { get }
     var container: Container { get }
 }
 
@@ -76,10 +76,7 @@ extension ContentInspector {
     }
     
     private var _content: Content? {
-        get {
-            guard container.exists(\ContentInspector._content) else { return nil }
-            return container.get(\ContentInspector._content)
-        }
+        get { container.get(\ContentInspector._content) ?? nil }
         nonmutating set { container.set(\ContentInspector._content, value: newValue) }
     }
     
@@ -123,7 +120,7 @@ extension ContentInspector {
     
     public func preferredDecoder() -> ContentDecoder? {
         guard let contentType = headers.contentType else {
-            return ByteContent.defaultDecoder
+            return Bytes.defaultDecoder
         }
         
         switch contentType {

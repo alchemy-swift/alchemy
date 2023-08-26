@@ -1,10 +1,67 @@
 import Foundation
 
+extension Queue {
+    /// A queue backed by an SQL database.
+    ///
+    /// - Parameter database: A database to drive this queue with.
+    ///   Defaults to your default database.
+    /// - Returns: The configured queue.
+    public static func database(_ db: Database = DB) -> Queue {
+        Queue(provider: DatabaseQueue(db: db))
+    }
+
+    /// A queue backed by the default SQL database.
+    public static var database: Queue {
+        .database()
+    }
+}
+
 /// A queue that persists jobs to a database.
 final class DatabaseQueue: QueueProvider {
-    
-    /// The database backing this queue.
+    /// Represents the table of jobs backing a `DatabaseQueue`.
+    struct JobModel: Model, Codable {
+        static var table = "jobs"
 
+        var id: PK<String> = .new
+        let jobName: String
+        let channel: String
+        let json: JSONString
+        let recoveryStrategy: RecoveryStrategy
+        let backoffSeconds: Int
+
+        var attempts: Int
+        var reserved: Bool
+        var reservedAt: Date?
+        var queuedAt: Date?
+        var backoffUntil: Date?
+
+        init(jobData: JobData) {
+            id = .existing(jobData.id)
+            jobName = jobData.jobName
+            channel = jobData.channel
+            json = jobData.json
+            attempts = jobData.attempts
+            recoveryStrategy = jobData.recoveryStrategy
+            backoffSeconds = jobData.backoff.seconds
+            backoffUntil = jobData.backoffUntil
+            reserved = false
+        }
+
+        func toJobData() throws -> JobData {
+            JobData(
+                id: try id.require(),
+                json: json,
+                jobName: jobName,
+                channel: channel,
+                recoveryStrategy: recoveryStrategy,
+                retryBackoff: .seconds(Int64(backoffSeconds)),
+                attempts: attempts,
+                backoffUntil: backoffUntil
+            )
+        }
+    }
+
+    /// The database backing this queue.
     let db: Database
 
     /// Initialize with a database, to which Jobs will be persisted.
@@ -54,82 +111,7 @@ final class DatabaseQueue: QueueProvider {
     func shutdown() {}
 }
 
-extension Queue {
-    /// A queue backed by an SQL database.
-    ///
-    /// - Parameter database: A database to drive this queue with.
-    ///   Defaults to your default database.
-    /// - Returns: The configured queue.
-    public static func database(_ db: Database = DB) -> Queue {
-        Queue(provider: DatabaseQueue(db: db))
-    }
-    
-    /// A queue backed by the default SQL database.
-    public static var database: Queue {
-        .database()
-    }
-}
-
-// MARK: - Models
-
-/// Represents the table of jobs backing a `DatabaseQueue`.
-struct JobModel: Model, Codable {
-    static var table = "jobs"
-
-    static let storedProperties = [
-        \JobModel.id: "id",
-        \JobModel.jobName: "jobName",
-        \JobModel.channel: "channel",
-        \JobModel.json: "json",
-        \JobModel.recoveryStrategy: "recoveryStrategy",
-        \JobModel.backoffSeconds: "backoffSeconds",
-        \JobModel.attempts: "attempts",
-        \JobModel.reserved: "reserved",
-        \JobModel.reservedAt: "reservedAt",
-        \JobModel.queuedAt: "queuedAt",
-        \JobModel.backoffUntil: "backoffUntil",
-    ]
-
-    var id: PK<String> = .new
-    let jobName: String
-    let channel: String
-    let json: JSONString
-    let recoveryStrategy: RecoveryStrategy
-    let backoffSeconds: Int
-    
-    var attempts: Int
-    var reserved: Bool
-    var reservedAt: Date?
-    var queuedAt: Date?
-    var backoffUntil: Date?
-
-    init(jobData: JobData) {
-        id = .existing(jobData.id)
-        jobName = jobData.jobName
-        channel = jobData.channel
-        json = jobData.json
-        attempts = jobData.attempts
-        recoveryStrategy = jobData.recoveryStrategy
-        backoffSeconds = jobData.backoff.seconds
-        backoffUntil = jobData.backoffUntil
-        reserved = false
-    }
-    
-    func toJobData() throws -> JobData {
-        JobData(
-            id: try id.require(),
-            json: json,
-            jobName: jobName,
-            channel: channel,
-            recoveryStrategy: recoveryStrategy,
-            retryBackoff: .seconds(Int64(backoffSeconds)),
-            attempts: attempts,
-            backoffUntil: backoffUntil
-        )
-    }
-}
-
-// MARK: - Migrations
+// MARK: - Migration
 
 extension Queue {
     /// A Migration for the table used by DatabaseQueue to store jobs.

@@ -23,7 +23,7 @@ public final class Filesystem: Service {
     ///  - contents: the binary contents of the file.
     /// - Returns: The newly created file.
     @discardableResult
-    public func create(_ filepath: String, content: ByteContent) async throws -> File {
+    public func create(_ filepath: String, content: Bytes) async throws -> File {
         try await provider.create(filepath, content: content)._in(self)
     }
     

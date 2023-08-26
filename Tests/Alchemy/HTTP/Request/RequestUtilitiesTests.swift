@@ -50,12 +50,12 @@ final class RequestUtilitiesTests: XCTestCase {
     }
 }
 
-extension ByteContent {
-    fileprivate static var empty: ByteContent {
+extension Bytes {
+    fileprivate static var empty: Bytes {
         .buffer(ByteBuffer())
     }
     
-    fileprivate static var json: ByteContent {
+    fileprivate static var json: Bytes {
         .string("""
             {"foo":"bar"}
             """)

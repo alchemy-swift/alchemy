@@ -13,7 +13,7 @@ open class TestCase<A: Application>: XCTestCase {
         public var urlComponents = URLComponents()
         public var method: HTTPMethod = .GET
         public var headers: HTTPHeaders = [:]
-        public var body: ByteContent? = nil
+        public var body: Bytes? = nil
         private var version: HTTPVersion = .http1_1
         private var remoteAddress: SocketAddress? = nil
         

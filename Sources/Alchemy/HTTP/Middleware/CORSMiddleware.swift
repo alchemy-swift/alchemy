@@ -76,7 +76,6 @@ public final class CORSMiddleware: Middleware {
         }
     }
 
-
     /// Configuration used for populating headers in response for CORS
     /// requests.
     public struct Configuration {

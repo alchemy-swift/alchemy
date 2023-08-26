@@ -1,8 +1,8 @@
 import Alchemy
 
 struct ApplicationsController: Controller {
-    func route(_ app: Application) {
-        app
+    func route(_ router: Router) {
+        router
             .get("/applications", use: index)
             .post("/applications", use: create)
             .get("/applications/:id", use: show)
@@ -23,7 +23,7 @@ struct ApplicationsController: Controller {
     }
     
     private func update(req: Request) async throws -> Applications {
-        try await Applications.require(req.parameter("id")).update(req.body?.decodeJSONDictionary() ?? [:])
+        try await Applications.require(req.parameter("id")).update(req.content)
     }
     
     private func delete(req: Request) async throws {

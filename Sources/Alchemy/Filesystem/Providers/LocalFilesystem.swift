@@ -61,7 +61,7 @@ struct LocalFilesystem: FilesystemProvider {
             size: fileSizeBytes)
     }
     
-    func create(_ filepath: String, content: ByteContent) async throws -> File {
+    func create(_ filepath: String, content: Bytes) async throws -> File {
         let url = try url(for: filepath)
         guard try await !exists(filepath) else {
             throw FileError.filenameAlreadyExists

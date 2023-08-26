@@ -236,7 +236,7 @@ extension Content.Node: Encodable {
             if let string = value.string { try container.encode(string) }
             if let double = value.double { try container.encode(double) }
             if let int = value.int { try container.encode(int) }
-            if let file = value.file { try container.encode(file.content?.data())}
+            if let file = value.file { try container.encode(file.content?.data)}
         case .null:
             var container = encoder.singleValueContainer()
             try container.encodeNil()

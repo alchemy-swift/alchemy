@@ -25,7 +25,12 @@ public struct JobData: Codable, Equatable {
     public var attempts: Int
     /// Can this job be retried.
     public var canRetry: Bool {
-        attempts <= recoveryStrategy.maximumRetries
+        switch recoveryStrategy {
+        case .none:
+            return false
+        case .retry(let retries):
+            return attempts <= retries
+        }
     }
     
     /// Indicates if this job is currently in backoff, and should not
@@ -37,7 +42,15 @@ public struct JobData: Codable, Equatable {
         
         return date > Date()
     }
-    
+
+    /// The next date this job can be attempted. `nil` if the job can
+    /// be retried immediately.
+    public var nextRetryDate: Date? {
+        backoff.seconds > 0
+            ? Date().addingTimeInterval(TimeInterval(backoff.seconds))
+            : nil
+    }
+
     /// Create with a Job, id, and channel.
     ///
     /// - Parameters:
@@ -89,10 +102,15 @@ public struct JobData: Codable, Equatable {
         self.attempts = attempts
         self.backoffUntil = backoffUntil
     }
-    
-    /// The next date this job can be attempted. `nil` if the job can
-    /// be retried immediately.
-    func nextRetryDate() -> Date? {
-        return backoff.seconds > 0 ? Date().addingTimeInterval(TimeInterval(backoff.seconds)) : nil
+}
+
+extension TimeAmount: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(nanoseconds)
+    }
+
+    public init(from decoder: Decoder) throws {
+        self = .nanoseconds(try decoder.singleValueContainer().decode(Int64.self))
     }
 }

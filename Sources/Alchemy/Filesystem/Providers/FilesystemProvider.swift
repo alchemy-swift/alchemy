@@ -4,7 +4,7 @@ public protocol FilesystemProvider {
     
     /// Create a file in this filesystem.
     @discardableResult
-    func create(_ filepath: String, content: ByteContent) async throws -> File
+    func create(_ filepath: String, content: Bytes) async throws -> File
     
     /// Returns whether a file with the given path exists.
     func exists(_ filepath: String) async throws -> Bool

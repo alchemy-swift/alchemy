@@ -7,6 +7,7 @@ public protocol Job: Codable {
     
     /// The recovery strategy for this job. Defaults to `.none`.
     var recoveryStrategy: RecoveryStrategy { get }
+    
     /// The time that should be waited before retrying this job if it
     /// fails. Sub-second precision is ignored. Defaults to 0.
     var retryBackoff: TimeAmount { get }
@@ -14,8 +15,10 @@ public protocol Job: Codable {
     /// Called when a job finishes, either successfully or with too
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
+    
     /// Called when a job fails, whether it can be retried or not.
     func failed(error: Error)
+    
     /// Run this Job.
     func run() async throws
 }
@@ -35,39 +38,29 @@ extension Job {
         }
     }
     
-    public func failed(error: Error) {}
+    public func failed(error: Error) {
+        /* default to no-op */
+    }
+
+    /// Dispatch this Job on a queue.
+    ///
+    /// - Parameters:
+    ///   - queue: The queue to dispatch on.
+    ///   - channel: The name of the channel to dispatch on.
+    public func dispatch(on queue: Queue = Q, channel: String = Queue.defaultChannel) async throws {
+        try await queue.enqueue(self, channel: channel)
+    }
 }
 
-public enum RecoveryStrategy: Equatable {
-    /// Removes task from the queue
+public enum RecoveryStrategy: Equatable, Codable {
+    /// The task will not be retried if it fails.
     case none
-    /// Retries the task a specified amount of times
+    /// The task will be retried after a failure, up to the specified amount.
     case retry(Int)
-    
-    /// The maximum number of retries allowed for this strategy.
-    var maximumRetries: Int {
-        switch self {
-        case .none:
-            return 0
-        case .retry(let maxRetries):
-            return maxRetries
-        }
-    }
-}
 
-extension TimeAmount: Codable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(nanoseconds)
-    }
-    
-    public init(from decoder: Decoder) throws {
-        self = .nanoseconds(try decoder.singleValueContainer().decode(Int64.self))
-    }
-}
+    // MARK: Codable
 
-extension RecoveryStrategy: Codable {
-    enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey {
         case none, retry
     }
 
@@ -75,8 +68,7 @@ extension RecoveryStrategy: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         if let intValue = try container.decodeIfPresent(Int.self, forKey: .retry) {
             self = .retry(intValue)
-        }
-        else {
+        } else {
             self = .none
         }
     }

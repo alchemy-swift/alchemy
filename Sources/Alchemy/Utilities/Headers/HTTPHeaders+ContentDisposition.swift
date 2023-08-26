@@ -15,6 +15,24 @@ extension HTTPHeaders {
         public var value: Value
         public var name: String?
         public var filename: String?
+        
+        public init(value: Value, name: String? = nil, filename: String? = nil) {
+            self.value = value
+            self.name = name
+            self.filename = filename
+        }
+
+        public static func inline(name: String? = nil, filename: String? = nil) -> ContentDisposition {
+            self.init(value: .inline, name: name, filename: filename)
+        }
+
+        public static func attachment(name: String? = nil, filename: String? = nil) -> ContentDisposition {
+            self.init(value: .attachment, name: name, filename: filename)
+        }
+
+        public static func formData(name: String? = nil, filename: String? = nil) -> ContentDisposition {
+            self.init(value: .formData, name: name, filename: filename)
+        }
     }
     
     public var contentDisposition: ContentDisposition? {

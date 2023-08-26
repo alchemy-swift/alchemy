@@ -24,10 +24,10 @@ extension Client.Response {
     
     // MARK: Body
     
-    public var data: Data? { body?.data() }
-    public var string: String? { body?.string() }
+    public var data: Data? { body?.data }
+    public var string: String? { body?.string }
     
-    public func decode<D: Decodable>(_ type: D.Type = D.self, using decoder: ContentDecoder = ByteContent.defaultDecoder) throws -> D {
+    public func decode<D: Decodable>(_ type: D.Type = D.self, using decoder: ContentDecoder = Bytes.defaultDecoder) throws -> D {
         guard let buffer = body?.buffer else {
             throw ClientError(message: "The response had no body to decode from.", request: request, response: self)
         }
@@ -80,7 +80,7 @@ public struct ClientError: Error, CustomStringConvertible {
         }
     }
 
-    private func debugString(for content: ByteContent?) -> String {
+    private func debugString(for content: Bytes?) -> String {
         guard let content else {
             return "<empty>"
         }

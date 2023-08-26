@@ -24,10 +24,6 @@ struct WorkCommand: Command {
     /// work.
     @Flag var schedule: Bool = false
 
-    private var scheduler: Scheduler {
-        Container.resolveAssert()
-    }
-
     init() {}
     init(name: String?, channels: String = Queue.defaultChannel, workers: Int = 1, schedule: Bool = false) {
         self.name = name
@@ -40,13 +36,12 @@ struct WorkCommand: Command {
     
     func run() throws {
         let queue: Queue = name.map { Container.resolveAssert(id: $0) } ?? Q
-
         for _ in 0..<workers {
             queue.startWorker(for: channels.components(separatedBy: ","))
         }
 
         if schedule {
-            scheduler.start()
+            Schedule.start()
         }
         
         let schedulerText = schedule ? "scheduler and " : ""

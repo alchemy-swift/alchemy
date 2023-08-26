@@ -19,7 +19,7 @@ extension Response: ResponseConvertible {
 
 extension String: ResponseConvertible {
     public func response() -> Response {
-        Response(status: .ok).withString(self)
+        Response(status: .ok, string: self)
     }
 }
 
@@ -29,6 +29,6 @@ extension String: ResponseConvertible {
 // `.on` specifically for `Encodable`) types.
 extension Encodable where Self: ResponseConvertible {
     public func response() throws -> Response {
-        try Response(status: .ok).withValue(self)
+        try Response(status: .ok, encodable: self)
     }
 }

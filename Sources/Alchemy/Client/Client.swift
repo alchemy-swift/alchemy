@@ -26,7 +26,7 @@ public final class Client: Service {
         /// Any headers for this request.
         public var headers: HTTPHeaders = [:]
         /// The body of this request, either a static buffer or byte stream.
-        public var body: ByteContent? = nil
+        public var body: Bytes? = nil
         /// The url of this request.
         public var url: URL { urlComponents.url ?? URL(string: "/")! }
         /// Remote host, resolved from `URL`.
@@ -41,7 +41,7 @@ public final class Client: Service {
         /// Custom config override when making this request.
         public var config: HTTPClient.Configuration? = nil
         
-        public init(url: String = "", method: HTTPMethod = .GET, headers: HTTPHeaders = [:], body: ByteContent? = nil, timeout: TimeAmount? = nil) {
+        public init(url: String = "", method: HTTPMethod = .GET, headers: HTTPHeaders = [:], body: Bytes? = nil, timeout: TimeAmount? = nil) {
             self.urlComponents = URLComponents(string: url) ?? URLComponents()
             self.method = method
             self.headers = headers
@@ -91,7 +91,7 @@ public final class Client: Service {
         /// Reponse HTTP headers.
         public let headers: HTTPHeaders
         /// Response body.
-        public var body: ByteContent?
+        public var body: Bytes?
         /// Allows for extending storage on this type.
         public var container = Container()
         
@@ -101,11 +101,17 @@ public final class Client: Service {
             _ status: HTTPResponseStatus = .ok,
             version: HTTPVersion = .http1_1,
             headers: HTTPHeaders = [:],
-            body: ByteContent? = nil
+            body: Bytes? = nil
         ) -> Client.Response {
             Client.Response(request: Request(url: ""), host: "", status: status, version: version, headers: headers, body: body)
         }
-        
+
+        @discardableResult
+        public mutating func collect() async throws -> Client.Response {
+            self.body = (try await body?.collect()).map { .buffer($0) }
+            return self
+        }
+
         // MARK: ResponseConvertible
         
         public func response() async throws -> Alchemy.Response {
@@ -118,7 +124,7 @@ public final class Client: Service {
         public var urlComponents: URLComponents { get { clientRequest.urlComponents } set { clientRequest.urlComponents = newValue} }
         public var method: HTTPMethod { get { clientRequest.method } set { clientRequest.method = newValue} }
         public var headers: HTTPHeaders { get { clientRequest.headers } set { clientRequest.headers = newValue} }
-        public var body: ByteContent? { get { clientRequest.body } set { clientRequest.body = newValue} }
+        public var body: Bytes? { get { clientRequest.body } set { clientRequest.body = newValue} }
         public private(set) var clientRequest: Client.Request
 
         init(client: Client) {

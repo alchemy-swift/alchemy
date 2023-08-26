@@ -4,12 +4,13 @@ import MultipartKit
 
 public protocol ContentBuilder: Buildable {
     var headers: HTTPHeaders { get set }
-    var body: ByteContent? { get set }
+    var body: Bytes? { get set }
 }
 
 extension ContentBuilder {
-    // MARK: - Headers
     
+    // MARK: - Headers
+
     public func withHeader(_ name: String, value: String) -> Self {
         with { $0.headers.add(name: name, value: value) }
     }
@@ -33,7 +34,7 @@ extension ContentBuilder {
     
     // MARK: - Body
     
-    public func withBody(_ content: ByteContent, type: ContentType? = nil, length: Int? = nil) -> Self {
+    public func withBody(_ content: Bytes, type: ContentType? = nil, length: Int? = nil) -> Self {
         guard body == nil else {
             preconditionFailure("A request body should only be set once.")
         }
@@ -91,5 +92,16 @@ extension ContentBuilder {
         }
         
         return try withBody(files, encoder: encoder)
+    }
+}
+
+extension Bytes {
+    fileprivate static func json(_ dict: [String: Any?]) throws -> Bytes {
+        guard JSONSerialization.isValidJSONObject(dict) else {
+            let context = EncodingError.Context(codingPath: [], debugDescription: "Invalid JSON dict.")
+            throw EncodingError.invalidValue(dict, context)
+        }
+
+        return .buffer(ByteBuffer(data: try JSONSerialization.data(withJSONObject: dict)))
     }
 }

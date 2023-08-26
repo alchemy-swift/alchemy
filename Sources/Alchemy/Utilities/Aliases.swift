@@ -33,7 +33,7 @@ public func Log(_ ids: Logger.Identifier...) -> Logger {
     Logger(loggers: ids.map { Container.resolveAssert(id: $0) })
 }
 
-/// The appliation Router
+/// The application Router
 public var Routes: Router { Container.resolveAssert() }
 
 /// The appliation Router

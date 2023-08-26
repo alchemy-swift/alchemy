@@ -33,6 +33,9 @@ import NIO
 /// }
 /// ```
 public protocol Middleware {
+    /// The type signature of a Middleware handle function.
+    typealias Handler = (Request, Next) async throws -> Response
+
     /// Passes a request to the next piece of the handler chain. It is
     /// a closure that expects a request and returns a response.
     typealias Next = (Request) async throws -> Response
@@ -47,4 +50,22 @@ public protocol Middleware {
     ///   pass along the handler chain.
     /// - Throws: Any error encountered when intercepting the request.
     func handle(_ request: Request, next: Next) async throws -> Response
+}
+
+/// An array of Middleware can be used like a single middleware. The request
+/// will be consecutively passed through each middleware.
+extension [Middleware]: Middleware {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
+        try await send(request: request, through: self, finally: next)
+    }
+
+    private func send(request: Request, through middlewares: [Middleware], finally: Next) async throws -> Response {
+        guard let first = middlewares.first else {
+            return try await finally(request)
+        }
+
+        return try await first.handle(request) {
+            try await send(request: $0, through: Array(middlewares.dropFirst()), finally: finally)
+        }
+    }
 }

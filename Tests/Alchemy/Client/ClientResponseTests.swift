@@ -30,7 +30,7 @@ final class ClientResponseTests: XCTestCase {
         {"foo":"bar"}
         """
         let jsonData = jsonString.data(using: .utf8) ?? Data()
-        let body = ByteContent.string(jsonString)
+        let body = Bytes.string(jsonString)
         XCTAssertEqual(Client.Response(body: body).body?.buffer, body.buffer)
         XCTAssertEqual(Client.Response(body: body).data, jsonData)
         XCTAssertEqual(Client.Response(body: body).string, jsonString)
@@ -41,7 +41,7 @@ final class ClientResponseTests: XCTestCase {
 }
 
 extension Client.Response {
-    fileprivate init(_ status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], body: ByteContent? = nil) {
+    fileprivate init(_ status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], body: Bytes? = nil) {
         self.init(request: Client.Request(url: ""), host: "https://example.com", status: status, version: .http1_1, headers: headers, body: body)
     }
 }

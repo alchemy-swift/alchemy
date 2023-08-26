@@ -65,7 +65,7 @@ struct ServeCommand: Command {
             Q.startWorker()
         }
 
-        let responder = RouterResponder(router: Routes, debug: !quiet)
+        let responder = HTTPResponder(logResponses: !quiet)
         try await app.server.start(responder: responder).get()
 
         if let unixSocket = socket {
@@ -83,17 +83,26 @@ struct ServeCommand: Command {
     }
 }
 
-private struct RouterResponder: HBHTTPResponder {
-    let router: Router
-    let debug: Bool
+private struct HTTPResponder: HBHTTPResponder {
+    @Inject var handler: RequestHandler
+
+    let logResponses: Bool
 
     func respond(to request: HBHTTPRequest, context: ChannelHandlerContext, onComplete: @escaping (Result<HBHTTPResponse, Error>) -> Void) {
-        let req = Request(head: request.head, body: request.body.byteContent(on: context.eventLoop), context: context)
+        let startedAt = Date()
+        let req = Request(method: request.head.method,
+                          uri: request.head.uri,
+                          headers: request.head.headers,
+                          version: request.head.version,
+                          body: request.body.byteContent(on: context.eventLoop),
+                          localAddress: context.localAddress,
+                          remoteAddress: context.remoteAddress,
+                          eventLoop: context.eventLoop)
         context.eventLoop
             .asyncSubmit {
-                let res = await router.handle(request: req)
-                if debug {
-                    logResponse(req: req, res: res)
+                let res = await handler.handle(request: req)
+                if logResponses {
+                    logResponse(req: req, res: res, startedAt: startedAt)
                 }
 
                 let head = HTTPResponseHead(version: req.version, status: res.status, headers: res.headers)
@@ -102,7 +111,7 @@ private struct RouterResponder: HBHTTPResponder {
             .whenComplete(onComplete)
     }
 
-    private func logResponse(req: Request, res: Response) {
+    private func logResponse(req: Request, res: Response, startedAt: Date) {
         enum Formatters {
             static let date: DateFormatter = {
                 let formatter = DateFormatter()
@@ -120,7 +129,7 @@ private struct RouterResponder: HBHTTPResponder {
         let dateString = Formatters.date.string(from: finishedAt)
         let timeString = Formatters.time.string(from: finishedAt)
         let left = "\(dateString) \(timeString) \(req.path)"
-        let right = "\(req.createdAt.elapsedString) \(res.status.code)"
+        let right = "\(startedAt.elapsedString) \(res.status.code)"
         let dots = Log.dots(left: left, right: right)
         let code: String = {
             switch res.status.code {
@@ -139,32 +148,39 @@ private struct RouterResponder: HBHTTPResponder {
     }
 }
 
-extension ChannelHandlerContext: RequestContext {
-    public var allocator: ByteBufferAllocator {
-        channel.allocator
+extension HBHTTPError: ResponseConvertible {
+    public func response() -> Response {
+        Response(status: status, headers: headers, body: body.map { .string($0) })
     }
 }
 
 extension HBRequestBody {
-    func byteContent(on eventLoop: EventLoop) -> ByteContent? {
+    fileprivate func byteContent(on eventLoop: EventLoop) -> Bytes? {
         switch self {
         case .byteBuffer(let bytes):
             return bytes.map { .buffer($0) }
         case .stream(let streamer):
-            return .stream(.new { reader in
-                try await streamer
-                    .consumeAll(on: eventLoop) { buffer in
-                        eventLoop.asyncSubmit {
-                            try await reader.write(buffer)
-                        }
+            return .stream(ByteStream { writer in
+                try await streamer.consumeAll(on: eventLoop) { buffer in
+                    eventLoop.asyncSubmit {
+                        try await writer.write(buffer)
                     }
-                    .get()
+                }
+                .get()
             })
         }
     }
 }
 
-extension ByteContent? {
+extension Bytes? {
+    private struct StreamerProxy: HBResponseBodyStreamer, @unchecked Sendable {
+        let stream: ByteStream
+
+        func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
+            stream._read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
+        }
+    }
+
     fileprivate var hbResponseBody: HBResponseBody {
         switch self {
         case .buffer(let buffer):
@@ -174,21 +190,5 @@ extension ByteContent? {
         case .none:
             return .empty
         }
-    }
-}
-
-struct StreamerProxy: HBResponseBodyStreamer {
-    let stream: ByteStream
-
-    func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
-        stream._read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
-    }
-}
-
-extension ByteStream: @unchecked Sendable {}
-
-extension HBHTTPError: ResponseConvertible {
-    public func response() -> Response {
-        Response(status: status, headers: headers, body: body.map { .string($0) })
     }
 }

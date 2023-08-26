@@ -135,6 +135,11 @@ extension Model {
         return try await refresh(on: db)
     }
 
+    @discardableResult
+    public func update<E: Encodable>(on db: Database = database, _ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> Self {
+        try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+    }
+
     // MARK: UPSERT
 
     public func upsert(on db: Database = database, conflicts: [String] = upsertConflictKeys) async throws {

@@ -1,6 +1,22 @@
 import NIO
 import RediStack
 
+extension Queue {
+    /// A queue backed by a Redis connection.
+    ///
+    /// - Parameter redis: A redis connection to drive this queue.
+    ///   Defaults to your default redis connection.
+    /// - Returns: The configured queue.
+    public static func redis(_ redis: RedisClient = Redis) -> Queue {
+        Queue(provider: RedisQueue(redis: redis))
+    }
+
+    /// A queue backed by the default Redis connection.
+    public static var redis: Queue {
+        .redis()
+    }
+}
+
 /// A queue that persists jobs to a Redis instance.
 struct RedisQueue: QueueProvider {
     /// The underlying redis connection.
@@ -104,21 +120,5 @@ struct RedisQueue: QueueProvider {
     private func storeJobData(_ job: JobData) async throws {
         let jsonString = try job.jsonString()
         _ = try await redis.hset(job.id, to: jsonString, in: dataKey).get()
-    }
-}
-
-extension Queue {
-    /// A queue backed by a Redis connection.
-    ///
-    /// - Parameter redis: A redis connection to drive this queue.
-    ///   Defaults to your default redis connection.
-    /// - Returns: The configured queue.
-    public static func redis(_ redis: RedisClient = Redis) -> Queue {
-        Queue(provider: RedisQueue(redis: redis))
-    }
-    
-    /// A queue backed by the default Redis connection.
-    public static var redis: Queue {
-        .redis()
     }
 }

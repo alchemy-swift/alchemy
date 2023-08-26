@@ -17,7 +17,7 @@ public protocol Plugin {
 
 extension Plugin {
     public var label: String { name(of: Self.self) }
-    public func registerServices(in app: Application) { /* no-op */ }
-    public func boot(app: Application) async throws { /* no-op */ }
-    public func shutdownServices(in app: Application) async throws { /* no-op */ }
+    public func registerServices(in app: Application) { /* default to no-op */ }
+    public func boot(app: Application) async throws { /* default to no-op */ }
+    public func shutdownServices(in app: Application) async throws { /* default to no-op */ }
 }

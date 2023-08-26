@@ -10,7 +10,7 @@ extension Request {
         method: HTTPMethod = .GET,
         uri: String = "foo",
         headers: HTTPHeaders = [:],
-        body: ByteContent? = nil
+        body: Bytes? = nil
     ) -> Request {
         struct DummyContext: RequestContext {
             let eventLoop: EventLoop = EmbeddedEventLoop()
