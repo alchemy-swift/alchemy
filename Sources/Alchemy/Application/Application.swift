@@ -42,6 +42,9 @@ public protocol Application: Router {
 
     /// The default plugins to use for this application.
     var defaultPlugins: [Plugin] { get }
+
+    /// Called when your app will schedule tasks.
+    func schedule(on schedule: Scheduler)
 }
 
 extension Application {
@@ -65,6 +68,7 @@ extension Application {
     }
 
     public func boot() { /* default to no-op */ }
+    public func schedule(on schedule: Scheduler) { /* default to no-op */ }
 
     public func run() async throws {
         setup()

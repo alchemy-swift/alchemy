@@ -58,6 +58,7 @@ struct ServeCommand: Command {
         }
 
         if schedule {
+            app.schedule(on: Schedule)
             Schedule.start()
         }
 

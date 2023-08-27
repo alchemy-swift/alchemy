@@ -1,6 +1,11 @@
 import Alchemy
 
 struct TestService: Service, Configurable {
+    public struct Identifier: ServiceIdentifier {
+        private let hashable: AnyHashable
+        public init(hashable: AnyHashable) { self.hashable = hashable }
+    }
+    
     struct Config {
         let foo: String
     }
