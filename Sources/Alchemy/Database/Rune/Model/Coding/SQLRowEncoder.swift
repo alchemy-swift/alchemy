@@ -50,9 +50,6 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// with column names in a database.
     let keyMapping: KeyMapping
     let jsonEncoder: JSONEncoder
-    
-    // MARK: Encoder
-    
     var codingPath = [CodingKey]()
     var userInfo: [CodingUserInfoKey: Any] = [:]
     
@@ -65,18 +62,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
         self.jsonEncoder = jsonEncoder
         self.fields = [:]
     }
-    
-    subscript(column: String) -> SQLConvertible? {
-        get { fields[column] }
-        set { fields[keyMapping.encode(column)] = newValue ?? .null }
-    }
-    
-    func put<E: Encodable>(json: E, at key: String) throws {
-        let jsonData = try jsonEncoder.encode(json)
-        let bytes = ByteBuffer(data: jsonData)
-        self[key] = .value(.json(bytes))
-    }
-    
+
     /// Read and return the stored properties of an `Model` object.
     ///
     /// - Parameter value: The `Model` instance to read from.
@@ -88,7 +74,9 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
         defer { fields = [:] }
         return fields
     }
-    
+
+    // MARK: Encoder
+
     func container<Key>(keyedBy: Key.Type) -> KeyedEncodingContainer<Key> {
         KeyedEncodingContainer(_KeyedEncodingContainer<Key>(writer: self, codingPath: codingPath))
     }
@@ -99,5 +87,18 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
 
     func singleValueContainer() -> SingleValueEncodingContainer {
         fatalError("`Model`s should never encode to a single value container.")
+    }
+
+    // MARK: SQLRowWritier
+
+    func put<E: Encodable>(json: E, at key: String) throws {
+        let jsonData = try jsonEncoder.encode(json)
+        let bytes = ByteBuffer(data: jsonData)
+        self[key] = .value(.json(bytes))
+    }
+
+    subscript(column: String) -> SQLConvertible? {
+        get { fields[column] }
+        set { fields[keyMapping.encode(column)] = newValue ?? .null }
     }
 }

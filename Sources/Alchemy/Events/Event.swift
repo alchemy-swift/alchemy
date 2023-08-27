@@ -7,4 +7,9 @@ public protocol Event {
 
 extension Event {
     public static var registrationKey: String { name(of: Self.self) }
+
+    /// Fire this event on an `EventBus`.
+    public func fire(on bus: EventBus = Events) async throws {
+        try await bus.fire(self)
+    }
 }

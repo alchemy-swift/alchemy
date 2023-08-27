@@ -1,5 +1,5 @@
 /// Processes a specific type of `Event`.
-public protocol Listener {
+public protocol Listener<ObservedEvent> {
     associatedtype ObservedEvent: Event
     
     /// Handle the event this listener was created for.

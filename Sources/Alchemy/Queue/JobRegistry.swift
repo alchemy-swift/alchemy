@@ -3,7 +3,7 @@ import NIOConcurrencyHelpers
 /// Storage for `Job` decoding behavior.
 struct JobRegistry {
     /// Stored decoding behavior for jobs.
-    private static var creators: [String: (JobData) throws -> Job] = [:]
+    private static var creators: [String: (JobData) async throws -> Job] = [:]
     private static let lock = NIOLock()
     
     /// Register a job to cache its decoding behavior.
@@ -21,19 +21,17 @@ struct JobRegistry {
     }
 
     /// Decode a job from the given job data.
-    static func createJob(from jobData: JobData) throws -> Job {
-        try lock.withLock {
-            guard let creator = creators[jobData.jobName] else {
-                Log.warning("Unknown job of type '\(jobData.jobName)'. Please register it via `app.registerJob(\(jobData.jobName).self)`.")
-                throw JobError.unknownType
-            }
-            
-            do {
-                return try creator(jobData)
-            } catch {
-                Log.error("Error decoding job named \(jobData.jobName): \(error).")
-                throw error
-            }
+    static func createJob(from jobData: JobData) async throws -> Job {
+        guard let creator = lock.withLock({ creators[jobData.jobName] }) else {
+            Log.warning("Unknown job of type '\(jobData.jobName)'. Please register it in your Queues config or with `app.registerJob(\(jobData.jobName).self)`.")
+            throw JobError.unknownType
+        }
+
+        do {
+            return try await creator(jobData)
+        } catch {
+            Log.error("Error decoding job named \(jobData.jobName): \(error).")
+            throw error
         }
     }
 }

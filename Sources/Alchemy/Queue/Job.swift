@@ -15,7 +15,7 @@ public protocol Job {
     // MARK: Handling
 
     /// Creates this job from the given JobData.
-    init(jobData: JobData) throws
+    init(jobData: JobData) async throws
 
     /// Creates a payload for this job that will be enqueued on the given queue.
     func payload(for queue: Queue, channel: String) throws -> Data

@@ -121,7 +121,7 @@ public final class Queue: Service {
 
         var job: Job?
         do {
-            job = try JobRegistry.createJob(from: jobData)
+            job = try await JobRegistry.createJob(from: jobData)
             let context = JobContext(queue: self, channel: jobData.channel, jobData: jobData)
             try await job?.handle(context: context)
             try await provider.complete(jobData, outcome: .success)
