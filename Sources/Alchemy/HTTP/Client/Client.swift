@@ -323,11 +323,11 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
     }
 
     func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ part: ByteBuffer) -> EventLoopFuture<Void> {
-        switch self.state {
+        switch state {
         case .idle:
             preconditionFailure("no head received before body")
         case .head(let head):
-            self.state = .body(head, part)
+            state = .body(head, part)
             return task.eventLoop.makeSucceededFuture(())
         case .body(let head, var body):
             if allowStreaming {
@@ -344,10 +344,10 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
                 // a cross-module call in the way) so we need to drop the original reference to `body` in
                 // `self.state` or we'll get a CoW. To fix that we temporarily set the state to `.idle` (which
                 // has no associated data). We'll fix it at the bottom of this block.
-                self.state = .idle
+                state = .idle
                 var part = part
                 body.writeBuffer(&part)
-                self.state = .body(head, body)
+                state = .body(head, body)
                 return task.eventLoop.makeSucceededVoidFuture()
             }
         case .stream(_, let stream):
@@ -358,12 +358,12 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
     }
 
     func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
-        self.state = .error(error)
+        state = .error(error)
         responsePromise.fail(error)
     }
 
     func didFinishRequest(task: HTTPClient.Task<Response>) throws {
-        switch self.state {
+        switch state {
         case .idle:
             preconditionFailure("no head received before end")
         case .head(let head):

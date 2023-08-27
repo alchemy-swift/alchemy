@@ -18,12 +18,6 @@ extension Logger: Service {
         public init(hashable: AnyHashable) { self.hashable = hashable }
     }
 
-    public func withLevel(_ level: Logger.Level) -> Logger {
-        var logger = self
-        logger.logLevel = level
-        return logger
-    }
-
     // MARK: Conveniences
 
     /// Log a message with the `Logger.Level.trace` log level.
@@ -94,6 +88,13 @@ extension Logger: Service {
     ///     `[String: Logger.MetadataType]`) to log.
     public func critical(_ message: String, metadata: Metadata? = nil, file: String = #fileID, function: String = #function, line: UInt = #line) {
         critical(Message(stringLiteral: message), metadata: metadata, file: file, function: function, line: line)
+    }
+
+    /// Returns a copy of this logger with the given level.
+    public func withLevel(_ level: Logger.Level) -> Logger {
+        var logger = self
+        logger.logLevel = level
+        return logger
     }
 
     // MARK: Comments
