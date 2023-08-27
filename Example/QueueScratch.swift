@@ -1,7 +1,7 @@
 import Alchemy
 
 struct DoExpensiveWork: Job, Codable {
-    func run() async throws {
+    func handle(context: JobContext) async throws {
         print("SUP")
     }
 }

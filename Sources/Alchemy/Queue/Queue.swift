@@ -122,7 +122,8 @@ public final class Queue: Service {
         var job: Job?
         do {
             job = try JobRegistry.createJob(from: jobData)
-            try await job?.run()
+            let context = JobContext(queue: self, channel: jobData.channel, jobData: jobData)
+            try await job?.handle(context: context)
             try await provider.complete(jobData, outcome: .success)
             job?.finished(result: .success(()))
         } catch where jobData.canRetry {

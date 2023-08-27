@@ -48,7 +48,7 @@ public struct JobData: Codable, Equatable {
             : nil
     }
 
-    public init(
+    init(
         id: String, 
         payload: Data,
         jobName: String,

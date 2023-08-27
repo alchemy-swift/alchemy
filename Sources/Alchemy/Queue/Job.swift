@@ -17,11 +17,11 @@ public protocol Job {
     /// Creates this job from the given JobData.
     init(jobData: JobData) throws
 
-    /// Enqueues this job on the given queue.
+    /// Creates a payload for this job that will be enqueued on the given queue.
     func payload(for queue: Queue, channel: String) throws -> Data
 
-    /// Run this Job.
-    func run() async throws
+    /// Run this `Job` in the given context.
+    func handle(context: JobContext) async throws
 
     // MARK: Hooks
 
@@ -29,48 +29,8 @@ public protocol Job {
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
 
-    /// Called when a job fails, whether it can be retried or not.
+    /// Called each time a job fails, even if it will be retried.
     func failed(error: Error)
-}
-
-// By default, `Codable` Jobs will use JSON as their payload.
-extension Job where Self: Codable {
-    public init(jobData: JobData) throws {
-        self = try JSONDecoder().decode(Self.self, from: jobData.payload)
-    }
-
-    public func payload(for queue: Queue, channel: String) throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-}
-
-// Default implementations.
-extension Job {
-    public static var name: String { Alchemy.name(of: Self.self) }
-    public var recoveryStrategy: RecoveryStrategy { .none }
-    public var retryBackoff: TimeAmount { .zero }
-    
-    public func finished(result: Result<Void, Error>) {
-        switch result {
-        case .success:
-            Log.info("Job '\(Self.name)' succeeded.")
-        case .failure(let error):
-            Log.error("Job '\(Self.name)' failed with error: \(error).")
-        }
-    }
-    
-    public func failed(error: Error) {
-        /* default to no-op */
-    }
-
-    /// Dispatch this Job on a queue.
-    ///
-    /// - Parameters:
-    ///   - queue: The queue to dispatch on.
-    ///   - channel: The name of the channel to dispatch on.
-    public func dispatch(on queue: Queue = Q, channel: String = Queue.defaultChannel) async throws {
-        try await queue.enqueue(self, channel: channel)
-    }
 }
 
 public enum RecoveryStrategy: Equatable, Codable {
@@ -102,5 +62,55 @@ public enum RecoveryStrategy: Equatable, Codable {
         case .retry(let value):
             try container.encode(value, forKey: .retry)
         }
+    }
+}
+
+/// The context this job is running in.
+public struct JobContext {
+    /// The queue this job was queued on.
+    let queue: Queue
+    /// The channel this job was queued on.
+    let channel: String
+    /// The JobData corresponding to this job.
+    let jobData: JobData
+}
+
+// Default implementations.
+extension Job {
+    public static var name: String { Alchemy.name(of: Self.self) }
+    public var recoveryStrategy: RecoveryStrategy { .none }
+    public var retryBackoff: TimeAmount { .zero }
+    
+    public func finished(result: Result<Void, Error>) {
+        switch result {
+        case .success:
+            Log.info("Job '\(Self.name)' succeeded.")
+        case .failure(let error):
+            Log.error("Job '\(Self.name)' failed with error: \(error).")
+        }
+    }
+    
+    public func failed(error: Error) {
+        /* default to no-op */
+    }
+
+    /// Dispatch this Job on a queue.
+    ///
+    /// - Parameters:
+    ///   - queue: The queue to dispatch on.
+    ///   - channel: The name of the channel to dispatch on.
+    public func dispatch(on queue: Queue = Q, channel: String = Queue.defaultChannel) async throws {
+        try await queue.enqueue(self, channel: channel)
+    }
+}
+
+// By default, `Codable` jobs will use JSON as their payload.
+extension Job where Self: Codable {
+    public init(jobData: JobData) throws {
+        self = try JSONDecoder().decode(Self.self, from: jobData.payload)
+    }
+
+    public func payload(for queue: Queue, channel: String) throws -> Data {
+        try JSONEncoder().encode(self)
     }
 }

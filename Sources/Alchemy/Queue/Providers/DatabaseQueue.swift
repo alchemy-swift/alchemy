@@ -123,7 +123,7 @@ extension Queue {
                 $0.string("id").primary()
                 $0.string("job_name").notNull()
                 $0.string("channel").notNull()
-                $0.json("json").notNull()
+                $0.json("payload").notNull()
                 $0.json("recovery_strategy").notNull()
                 $0.int("attempts").notNull()
                 $0.bool("reserved").notNull()
