@@ -18,7 +18,7 @@ extension Queue {
 }
 
 /// A queue that persists jobs to a Redis instance.
-struct RedisQueue: QueueProvider {
+fileprivate struct RedisQueue: QueueProvider {
     /// The underlying redis connection.
     private let redis: RedisClient
     /// All job data.
@@ -120,5 +120,38 @@ struct RedisQueue: QueueProvider {
     private func storeJobData(_ job: JobData) async throws {
         let jsonString = try job.jsonString()
         _ = try await redis.hset(job.id, to: jsonString, in: dataKey).get()
+    }
+}
+
+extension Encodable {
+    /// Encode this type into a JSON string.
+    ///
+    /// - Parameter encoder: The encoder to encode with. Defaults to
+    ///   `JSONEncoder()`.
+    /// - Throws: Any error encountered when encoding.
+    /// - Returns: A JSON string representing this object.
+    fileprivate func jsonString(using encoder: JSONEncoder = JSONEncoder()) throws -> String {
+        guard let string = try String(data: encoder.encode(self), encoding: .utf8) else {
+            throw JobError("Unable to encode `\(Self.self)` to a JSON string.")
+        }
+
+        return string
+    }
+}
+
+extension Decodable {
+    /// Initialize this type from a JSON string.
+    ///
+    /// - Parameters:
+    ///   - jsonString: The JSON string to initialize from.
+    ///   - decoder: The decoder to decode with. Defaults to
+    ///     `JSONDecoder()`.
+    /// - Throws: Any error encountered when decoding this type.
+    fileprivate init(jsonString: String, using decoder: JSONDecoder = JSONDecoder()) throws {
+        guard let data = jsonString.data(using: .utf8) else {
+            throw JobError("Unable to initialize `\(Self.self)` from JSON string `\(jsonString)`.")
+        }
+
+        self = try decoder.decode(Self.self, from: data)
     }
 }

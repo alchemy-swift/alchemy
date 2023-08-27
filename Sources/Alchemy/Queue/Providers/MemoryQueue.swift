@@ -1,15 +1,36 @@
 import Foundation
 import NIO
+import NIOConcurrencyHelpers
+
+extension Queue {
+    /// An in memory queue.
+    public static var memory: Queue {
+        Queue(provider: MemoryQueue())
+    }
+
+    /// Fake the queue with an in memory queue. Useful for testing.
+    ///
+    /// - Parameter id: The identifier of the queue to fake. Defaults to
+    ///   `default`.
+    /// - Returns: A `MemoryQueue` for verifying test expectations.
+    @discardableResult
+    public static func fake(_ identifier: Identifier? = nil) -> MemoryQueue {
+        let mock = MemoryQueue()
+        Container.main.registerSingleton(mock, id: identifier)
+        return mock
+    }
+}
 
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
 public actor MemoryQueue: QueueProvider {
-    var jobs: [JobID: JobData] = [:]
-    var pending: [String: [JobID]] = [:]
-    var reserved: [String: [JobID]] = [:]
-    
-    private let lock = NSRecursiveLock()
-    
+    private typealias JobID = String
+
+    private var jobs: [JobID: JobData] = [:]
+    private var pending: [String: [JobID]] = [:]
+    private var reserved: [String: [JobID]] = [:]
+    private let lock = NIOLock()
+
     // MARK: - Queue
     
     public func enqueue(_ job: JobData) async throws {
@@ -18,16 +39,17 @@ public actor MemoryQueue: QueueProvider {
     }
     
     public func dequeue(from channel: String) async throws -> JobData? {
-        guard
-            let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
-                let isInBackoff = jobs[thing]?.inBackoff ?? false
+        guard 
+            let index = pending[channel]?.firstIndex(where: { id in
+                let isInBackoff = jobs[id]?.inBackoff ?? false
                 return !isInBackoff
             }),
+            let id = pending[channel]?.remove(at: index),
             let job = jobs[id]
         else {
             return nil
         }
-        
+
         append(id: id, on: job.channel, dict: &reserved)
         return job
     }
@@ -53,39 +75,5 @@ public actor MemoryQueue: QueueProvider {
         var array = dict[channel] ?? []
         array.append(id)
         dict[channel] = array
-    }
-}
-
-extension Queue {
-    /// An in memory queue.
-    public static var memory: Queue {
-        Queue(provider: MemoryQueue())
-    }
-
-    /// Fake the queue with an in memory queue. Useful for testing.
-    ///
-    /// - Parameter id: The identifier of the queue to fake. Defaults to
-    ///   `default`.
-    /// - Returns: A `MemoryQueue` for verifying test expectations.
-    @discardableResult
-    public static func fake(_ identifier: Identifier? = nil) -> MemoryQueue {
-        let mock = MemoryQueue()
-        Container.main.registerSingleton(mock, id: identifier)
-        return mock
-    }
-}
-
-extension Array {
-    /// Pop the first element that satisfies the given conditional.
-    ///
-    /// - Parameter conditional: A conditional closure.
-    /// - Returns: The first matching element, or nil if no elements
-    ///   match.
-    fileprivate mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
-        guard let firstIndex = firstIndex(where: conditional) else {
-            return nil
-        }
-        
-        return remove(at: firstIndex)
     }
 }

@@ -17,7 +17,7 @@ extension Queue {
 }
 
 /// A queue that persists jobs to a database.
-final class DatabaseQueue: QueueProvider {
+private final class DatabaseQueue: QueueProvider {
     /// Represents the table of jobs backing a `DatabaseQueue`.
     struct JobModel: Model, Codable {
         static var table = "jobs"
@@ -25,7 +25,7 @@ final class DatabaseQueue: QueueProvider {
         var id: PK<String> = .new
         let jobName: String
         let channel: String
-        let json: JSONString
+        let payload: Data
         let recoveryStrategy: RecoveryStrategy
         let backoffSeconds: Int
 
@@ -36,10 +36,10 @@ final class DatabaseQueue: QueueProvider {
         var backoffUntil: Date?
 
         init(jobData: JobData) {
-            id = .existing(jobData.id)
+            id = .new(jobData.id)
             jobName = jobData.jobName
             channel = jobData.channel
-            json = jobData.json
+            payload = jobData.payload
             attempts = jobData.attempts
             recoveryStrategy = jobData.recoveryStrategy
             backoffSeconds = jobData.backoff.seconds
@@ -50,12 +50,12 @@ final class DatabaseQueue: QueueProvider {
         func toJobData() throws -> JobData {
             JobData(
                 id: try id.require(),
-                json: json,
+                payload: payload,
                 jobName: jobName,
                 channel: channel,
+                attempts: attempts, 
                 recoveryStrategy: recoveryStrategy,
-                retryBackoff: .seconds(Int64(backoffSeconds)),
-                attempts: attempts,
+                backoff: .seconds(Int64(backoffSeconds)),
                 backoffUntil: backoffUntil
             )
         }
@@ -123,7 +123,7 @@ extension Queue {
                 $0.string("id").primary()
                 $0.string("job_name").notNull()
                 $0.string("channel").notNull()
-                $0.string("json", length: .unlimited).notNull()
+                $0.json("json").notNull()
                 $0.json("recovery_strategy").notNull()
                 $0.int("attempts").notNull()
                 $0.bool("reserved").notNull()

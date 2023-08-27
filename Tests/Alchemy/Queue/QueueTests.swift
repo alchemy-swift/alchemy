@@ -15,7 +15,7 @@ final class QueueTests: TestCase<TestApp> {
         // first place. While this shouldn't be necessary, it is a stopgap
         // for throwing an error when shutting down unconnected redis.
         try? app.stop()
-        JobDecoding.reset()
+        JobRegistry.reset()
     }
     
     func testConfig() {
@@ -29,16 +29,16 @@ final class QueueTests: TestCase<TestApp> {
     
     func testJobDecoding() {
         let fakeData = JobData(id: UUID().uuidString, json: "", jobName: "foo", channel: "bar", recoveryStrategy: .none, retryBackoff: .zero, attempts: 0, backoffUntil: nil)
-        XCTAssertThrowsError(try JobDecoding.decode(fakeData))
+        XCTAssertThrowsError(try JobRegistry.decode(fakeData))
         
         struct TestJob: Job {
             let foo: String
             func run() async throws {}
         }
         
-        JobDecoding.register(TestJob.self)
+        JobRegistry.register(TestJob.self)
         let invalidData = JobData(id: "foo", json: "bar", jobName: "TestJob", channel: "foo", recoveryStrategy: .none, retryBackoff: .zero, attempts: 0, backoffUntil: nil)
-        XCTAssertThrowsError(try JobDecoding.decode(invalidData))
+        XCTAssertThrowsError(try JobRegistry.decode(invalidData))
     }
     
     func testDatabaseQueue() async throws {
@@ -86,7 +86,7 @@ final class QueueTests: TestCase<TestApp> {
         XCTAssertEqual(jobData.recoveryStrategy, .retry(3), file: file, line: line)
         XCTAssertEqual(jobData.backoff, .seconds(0), file: file, line: line)
         
-        let decodedJob = try JobDecoding.decode(jobData)
+        let decodedJob = try JobRegistry.decode(jobData)
         guard let testJob = decodedJob as? TestJob else {
             XCTFail("Failed to decode TestJob \(jobData.jobName) \(type(of: decodedJob))", file: file, line: line)
             return

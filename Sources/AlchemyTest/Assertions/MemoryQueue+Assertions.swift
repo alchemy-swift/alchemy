@@ -34,7 +34,7 @@ extension MemoryQueue {
                     return false
                 }
                 
-                let job = try (JobDecoding.decode($0) as? J).unwrap(or: JobError.unknownType)
+                let job = try (JobRegistry.decode($0) as? J).unwrap(or: JobError.unknownType)
                 return assertion(job)
             }
             
@@ -54,7 +54,7 @@ extension MemoryQueue {
                     return false
                 }
                 
-                let job = try (JobDecoding.decode($0) as? J).unwrap(or: JobError.unknownType)
+                let job = try (JobRegistry.decode($0) as? J).unwrap(or: JobError.unknownType)
                 return job == instance
             }
             

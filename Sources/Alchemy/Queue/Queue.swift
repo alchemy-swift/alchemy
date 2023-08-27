@@ -31,7 +31,15 @@ public final class Queue: Service {
     ///   - channel: The channel on which to enqueue the job. Defaults
     ///     to `Queue.defaultChannel`.
     public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) async throws {
-        try await provider.enqueue(JobData(job, channel: channel))
+        let payload = try job.payload(for: self, channel: channel)
+        let data = JobData(id: channel,
+                           payload: payload,
+                           jobName: J.name,
+                           channel: channel,
+                           attempts: 0, 
+                           recoveryStrategy: job.recoveryStrategy,
+                           backoff: job.retryBackoff)
+        try await provider.enqueue(data)
     }
 
     public func shutdown() async throws {
@@ -113,7 +121,7 @@ public final class Queue: Service {
 
         var job: Job?
         do {
-            job = try JobDecoding.decode(jobData)
+            job = try JobRegistry.createJob(from: jobData)
             try await job?.run()
             try await provider.complete(jobData, outcome: .success)
             job?.finished(result: .success(()))

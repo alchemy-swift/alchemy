@@ -5,7 +5,7 @@ import AlchemyTest
 final class ApplicationJobTests: TestCase<TestApp> {
     override func tearDown() {
         super.tearDown()
-        JobDecoding.reset()
+        JobRegistry.reset()
     }
     
     func testRegisterJob() {

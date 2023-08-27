@@ -1,15 +1,10 @@
 import NIO
 
-public typealias JobID = String
-public typealias JSONString = String
-
 /// Represents a persisted Job, contains the serialized Job as well as some
 /// additional info for `Queue`s.
 public struct JobData: Codable, Equatable {
     /// The unique id of this job, by default this is a UUID string.
-    public let id: JobID
-    /// The serialized Job this persists.
-    public var json: JSONString
+    public let id: String
     /// The Job name.
     public let jobName: String
     /// The channel this is associated with.
@@ -23,6 +18,8 @@ public struct JobData: Codable, Equatable {
     public var backoffUntil: Date?
     /// The number of attempts this Job has been attempted.
     public var attempts: Int
+    /// The serialized Job this persists.
+    public var payload: Data
     /// Can this job be retried.
     public var canRetry: Bool {
         switch recoveryStrategy {
@@ -51,56 +48,24 @@ public struct JobData: Codable, Equatable {
             : nil
     }
 
-    /// Create with a Job, id, and channel.
-    ///
-    /// - Parameters:
-    ///   - job: The `Job` to persist.
-    ///   - id: A unique id for the Job.
-    ///   - channel: The name of the queue the `job` belongs on.
-    /// - Throws: If the `job` is unable to be serialized to a String.
-    public init<J: Job>(_ job: J, id: String = UUID().uuidString, channel: String) throws {
-        // If the Job hasn't been registered, register it.
-        if !JobDecoding.isRegistered(J.self) {
-            JobDecoding.register(J.self)
-        }
-        
+    public init(
+        id: String, 
+        payload: Data,
+        jobName: String,
+        channel: String,
+        attempts: Int,
+        recoveryStrategy: RecoveryStrategy,
+        backoff: TimeAmount,
+        backoffUntil: Date? = nil
+    ) {
         self.id = id
-        self.jobName = J.name
-        self.channel = channel
-        self.recoveryStrategy = job.recoveryStrategy
-        self.attempts = 0
-        self.backoff = job.retryBackoff
-        self.backoffUntil = nil
-        do {
-            self.json = try job.jsonString()
-        } catch {
-            throw JobError("Error encoding Job of type `\(J.name)`: \(error)")
-        }
-    }
-    
-    /// Create a job data with the given data.
-    ///
-    /// - Parameters:
-    ///   - id: A unique id for this job.
-    ///   - json: The json string of the job.
-    ///   - jobName: The name of this job.
-    ///   - channel: The channel the job is supposed to run on.
-    ///   - recoveryStrategy: How this job should handle failures.
-    ///   - retryBackoff: How long a worker should wait to retry this
-    ///     job after a failure.
-    ///   - attempts: The number of times this job has been attempted
-    ///     so far.
-    ///   - backoffUntil: A date indicating the soonest this job can
-    ///     be retried.
-    public init(id: JobID, json: JSONString, jobName: String, channel: String, recoveryStrategy: RecoveryStrategy, retryBackoff: TimeAmount, attempts: Int, backoffUntil: Date?) {
-        self.id = id
-        self.json = json
+        self.payload = payload
         self.jobName = jobName
         self.channel = channel
         self.recoveryStrategy = recoveryStrategy
-        self.backoff = retryBackoff
-        self.attempts = attempts
+        self.backoff = backoff
         self.backoffUntil = backoffUntil
+        self.attempts = attempts
     }
 }
 

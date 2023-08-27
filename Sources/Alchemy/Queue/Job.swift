@@ -1,7 +1,7 @@
 import NIO
 
 /// A task that can be persisted and queued for background processing.
-public protocol Job: Codable {
+public protocol Job {
     /// The name of this Job. Defaults to the type name.
     static var name: String { get }
     
@@ -11,16 +11,37 @@ public protocol Job: Codable {
     /// The time that should be waited before retrying this job if it
     /// fails. Sub-second precision is ignored. Defaults to 0.
     var retryBackoff: TimeAmount { get }
-    
+
+    // MARK: Handling
+
+    /// Creates this job from the given JobData.
+    init(jobData: JobData) throws
+
+    /// Enqueues this job on the given queue.
+    func payload(for queue: Queue, channel: String) throws -> Data
+
+    /// Run this Job.
+    func run() async throws
+
+    // MARK: Hooks
+
     /// Called when a job finishes, either successfully or with too
     /// many failed attempts.
     func finished(result: Result<Void, Error>)
-    
+
     /// Called when a job fails, whether it can be retried or not.
     func failed(error: Error)
-    
-    /// Run this Job.
-    func run() async throws
+}
+
+// By default, `Codable` Jobs will use JSON as their payload.
+extension Job where Self: Codable {
+    public init(jobData: JobData) throws {
+        self = try JSONDecoder().decode(Self.self, from: jobData.payload)
+    }
+
+    public func payload(for queue: Queue, channel: String) throws -> Data {
+        try JSONEncoder().encode(self)
+    }
 }
 
 // Default implementations.

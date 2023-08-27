@@ -4,12 +4,7 @@ extension Application {
     /// to handle jobs of that type.
     ///
     /// - Parameter jobType: The type of Job to register.
-    public func registerJob<J: Job>(_ jobType: J.Type) {
-        JobDecoding.register(jobType)
-    }
-    
-    /// All custom Job types registered to this application.
-    public var registeredJobs: [Job.Type] {
-        JobDecoding.registeredJobs
+    public func registerJob(_ jobType: Job.Type) {
+        JobRegistry.register(jobType)
     }
 }

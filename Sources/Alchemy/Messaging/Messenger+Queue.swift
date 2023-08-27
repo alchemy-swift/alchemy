@@ -25,7 +25,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
     // MARK: Queueing
     
     public func queue(_ queue: Bool = true) -> Self {
-        JobDecoding.register(MessageJob<C>.self)
+        JobRegistry.register(MessageJob<C>.self)
         return Self(_send: _send, _shutdown: _shutdown, saveInDatabase: store, preferQueueing: queue)
     }
     
@@ -34,7 +34,7 @@ extension Messenger where C.Message: Codable, C.Receiver: Codable {
     }
 }
 
-private struct MessageJob<C: MessageChannel>: Job where C.Message: Codable, C.Receiver: Codable {
+private struct MessageJob<C: MessageChannel>: Job, Codable where C.Message: Codable, C.Receiver: Codable {
     let message: C.Message
     let receiver: C.Receiver
     

@@ -20,7 +20,7 @@ public struct Queues: Plugin {
         }
 
         for job in jobs {
-            JobDecoding.register(job)
+            app.registerJob(job)
         }
     }
 

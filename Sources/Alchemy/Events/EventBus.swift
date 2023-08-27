@@ -20,14 +20,14 @@ public final class EventBus: Service {
         registeredHandlers[E.registrationKey] = existingHandlers + [.closure(action)]
     }
     
-    public func on<L: Listener>(listener: L.Type) {
+    public func register<L: Listener>(listener: L) {
         let _handlers = lock.withLock { registeredHandlers[L.ObservedEvent.registrationKey] ?? [] }
         guard let existingHandlers = _handlers as? [Handler<L.ObservedEvent>] else { return }
         registeredHandlers[L.ObservedEvent.registrationKey] = existingHandlers + [.closure {
-            try await L(event: $0).handle()
+            try await listener._handle(event: $0)
         }]
     }
-    
+
     public func fire<E: Event>(_ event: E) async throws {
         let _handlers = lock.withLock { registeredHandlers[E.registrationKey] ?? [] }
         guard let handlers = _handlers as? [Handler<E>] else {
@@ -51,11 +51,15 @@ extension Event {
 }
 
 extension Listener {
-    fileprivate func handle() async throws { try await run() }
+    fileprivate func _handle(event: ObservedEvent) async throws {
+        try await handle(event: event)
+    }
 }
 
 extension Listener where Self: Job {
-    fileprivate func handle() async throws { try await dispatch() }
+    fileprivate func _handle(event: Event) async throws {
+        try await dispatch()
+    }
 }
 
 private protocol AnyHandler {}
