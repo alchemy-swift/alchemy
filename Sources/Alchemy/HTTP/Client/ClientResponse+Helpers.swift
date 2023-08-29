@@ -10,6 +10,7 @@ extension Client.Response {
     public var isClientError: Bool { (400...499).contains(status.code) }
     public var isServerError: Bool { (500...599).contains(status.code) }
     
+    @discardableResult
     public func validateSuccessful() throws -> Self {
         guard isSuccessful else {
             throw ClientError(message: "The response code was not successful", request: request, response: self)

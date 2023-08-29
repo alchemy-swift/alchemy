@@ -19,14 +19,14 @@ struct ApplicationsController: Controller {
     }
     
     private func show(req: Request) async throws -> Applications {
-        try await Applications.require(req.parameter("id"))
+        try await Applications.require(req.requireParameter("id"))
     }
     
     private func update(req: Request) async throws -> Applications {
-        try await Applications.require(req.parameter("id")).update(req.content)
+        try await Applications.require(req.requireParameter("id")).update(req.content)
     }
     
     private func delete(req: Request) async throws {
-        try await Applications.delete(req.parameter("id"))
+        try await Applications.delete(req.requireParameter("id"))
     }
 }

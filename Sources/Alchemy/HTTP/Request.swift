@@ -175,7 +175,7 @@ public final class Request: RequestInspector {
     ///     ...
     /// }
     /// ```
-    public func parameter<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) throws -> L {
+    public func requireParameter<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) throws -> L {
         guard let parameterString: String = parameters.first(where: { $0.key == key })?.value else {
             throw ValidationError("expected parameter \(key)")
         }

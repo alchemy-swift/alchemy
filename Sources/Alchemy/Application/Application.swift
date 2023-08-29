@@ -34,6 +34,9 @@ public protocol Application: Router {
     /// The filesystem configuration of the application.
     var filesystems: Filesystems { get }
 
+    /// The messenger configuration of the application.
+    var messengers: Messengers { get }
+
     /// The loggers of you application.
     var loggers: Loggers { get }
 
@@ -52,6 +55,7 @@ extension Application {
     public var configuration: Configuration { Configuration() }
     public var databases: Databases { Databases() }
     public var filesystems: Filesystems { Filesystems() }
+    public var messengers: Messengers { Messengers() }
     public var loggers: Loggers { Loggers() }
     public var queues: Queues { Queues() }
     public var defaultPlugins: [Plugin] {

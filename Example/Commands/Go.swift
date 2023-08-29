@@ -10,6 +10,7 @@ struct Go: Command {
     static let name = "go"
 
     func run() async throws {
+        try await Demo().go()
         Log.trace("Trace")
         Log.debug("Debug")
         Log.info("Info", metadata: ["foo": "1", "bar": "2"])
