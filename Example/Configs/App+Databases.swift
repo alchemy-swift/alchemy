@@ -30,7 +30,6 @@ extension Application {
             migrations: [
                 Cache.AddCacheMigration(),
                 Queue.AddJobsMigration(),
-                AddMessagesMigration(),
                 AddStuffMigration(),
                 AddStuff2Migration(),
                 AddStuff3Migration(),

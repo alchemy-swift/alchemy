@@ -1,6 +1,6 @@
 import Alchemy
 
-struct TestService: Service, Configurable {
+struct TestService: Service {
     public struct Identifier: ServiceIdentifier {
         private let hashable: AnyHashable
         public init(hashable: AnyHashable) { self.hashable = hashable }

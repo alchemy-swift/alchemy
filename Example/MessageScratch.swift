@@ -45,24 +45,6 @@ import Alchemy
 
  */
 
-struct Demo {
-    func go() async throws {
-        let channels = Channels(channels: [
-            .twilio(accountSID: "", authToken: "", fromNumber: "", baseURL: "")
-        ])
-
-        print("\(type(of: channels.channels[0]))")
-    }
-
-    func notifyAccountLocked(user: User) {
-
-    }
-
-    func verifyPhone(user: User) async throws {
-
-    }
-}
-
 var SMS: TwilioChannel {
     Container.resolveAssert()
 }
@@ -80,10 +62,6 @@ protocol Channel<Message> {
 
     func send(message: Message) async throws
     func shutdown() async throws
-}
-
-struct Channels {
-    let channels: [Messenger]
 }
 
 struct SMSMessage {
