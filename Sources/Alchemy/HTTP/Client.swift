@@ -106,6 +106,31 @@ public final class Client: Service {
             Client.Response(request: Request(url: ""), host: "", status: status, version: version, headers: headers, body: body)
         }
 
+        // MARK: Validation
+
+        @discardableResult
+        public func validateSuccessful() throws -> Self {
+            guard isSuccessful else {
+                throw ClientError(message: "The response code was not successful", request: request, response: self)
+            }
+
+            return self
+        }
+
+        // MARK: Body
+
+        public func decode<D: Decodable>(_ type: D.Type = D.self, using decoder: HTTPDecoder = Bytes.defaultDecoder) throws -> D {
+            guard let buffer = body?.buffer else {
+                throw ClientError(message: "The response had no body to decode from.", request: request, response: self)
+            }
+
+            do {
+                return try decoder.decodeBody(D.self, from: buffer, contentType: headers.contentType)
+            } catch {
+                throw ClientError(message: "Error decoding `\(D.self)`. \(error)", request: request, response: self)
+            }
+        }
+
         @discardableResult
         public mutating func collect() async throws -> Client.Response {
             self.body = (try await body?.collect()).map { .buffer($0) }

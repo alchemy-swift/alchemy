@@ -1,37 +1,37 @@
 import HummingbirdFoundation
 
-extension ContentEncoder where Self == URLEncodedFormEncoder {
+extension HTTPEncoder where Self == URLEncodedFormEncoder {
     public static var urlForm: URLEncodedFormEncoder { URLEncodedFormEncoder() }
 }
 
-extension ContentDecoder where Self == URLEncodedFormDecoder {
+extension HTTPDecoder where Self == URLEncodedFormDecoder {
     public static var urlForm: URLEncodedFormDecoder { URLEncodedFormDecoder() }
 }
 
-extension URLEncodedFormEncoder: ContentEncoder {
-    public func encodeContent<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
+extension URLEncodedFormEncoder: HTTPEncoder {
+    public func encodeBody<E: Encodable>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) {
         return (buffer: ByteBuffer(string: try encode(value)), contentType: .urlForm)
     }
 }
 
-extension URLEncodedFormDecoder: ContentDecoder {
-    public func decodeContent<D>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D where D : Decodable {
+extension URLEncodedFormDecoder: HTTPDecoder {
+    public func decodeBody<D: Decodable>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D {
         try decode(type, from: buffer.string)
     }
     
     public func content(from buffer: ByteBuffer, contentType: ContentType?) -> Content {
         do {
             let topLevel = try decode(URLEncodedNode.self, from: buffer.string)
-            return Content(root: parse(node: topLevel))
+            return Content(node: parse(node: topLevel))
         } catch {
             return Content(error: error)
         }
     }
     
-    private func parse(node: URLEncodedNode) -> Content.Node {
+    private func parse(node: URLEncodedNode) -> Content.State.Node {
         switch node {
         case .dict(let dict):
-            return .dict(dict.mapValues { parse(node: $0) })
+            return .dictionary(dict.mapValues { parse(node: $0) })
         case .array(let array):
             return .array(array.map { parse(node: $0) })
         case .value(let string):
@@ -64,8 +64,4 @@ enum URLEncodedNode: Decodable {
             self = .value(try String(from: decoder))
         }
     }
-}
-
-extension URLEncodedNode {
-    
 }

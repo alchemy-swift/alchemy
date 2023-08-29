@@ -1,6 +1,6 @@
 import Alchemy
 
-extension ContentInspector {
+extension HTTPInspector {
     // MARK: Header Assertions
     
     @discardableResult

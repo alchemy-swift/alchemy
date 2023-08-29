@@ -2,12 +2,12 @@ import NIOHTTP1
 import HummingbirdFoundation
 import MultipartKit
 
-public protocol ContentBuilder: Buildable {
+public protocol HTTPBuilder: Buildable {
     var headers: HTTPHeaders { get set }
     var body: Bytes? { get set }
 }
 
-extension ContentBuilder {
+extension HTTPBuilder {
     
     // MARK: - Headers
 
@@ -54,8 +54,8 @@ extension ContentBuilder {
         withBody(.buffer(buffer))
     }
     
-    public func withBody<E: Encodable>(_ value: E, encoder: ContentEncoder = .json) throws -> Self {
-        let (buffer, type) = try encoder.encodeContent(value)
+    public func withBody<E: Encodable>(_ value: E, encoder: HTTPEncoder = .json) throws -> Self {
+        let (buffer, type) = try encoder.encodeBody(value)
         return withBody(.buffer(buffer), type: type)
     }
     

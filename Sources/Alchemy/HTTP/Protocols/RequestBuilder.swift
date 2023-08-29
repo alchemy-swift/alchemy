@@ -1,7 +1,7 @@
 import Foundation
 import NIOHTTP1
 
-public protocol RequestBuilder: ContentBuilder {
+public protocol RequestBuilder: HTTPBuilder {
     associatedtype Res
     
     var urlComponents: URLComponents { get set }
@@ -58,30 +58,30 @@ extension RequestBuilder {
     }
     
     public func get(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.GET).execute()
+        try await request(.GET, uri: uri)
     }
     
     public func post(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.POST).execute()
+        try await request(.POST, uri: uri)
     }
     
     public func put(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.PUT).execute()
+        try await request(.PUT, uri: uri)
     }
     
     public func patch(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.PATCH).execute()
+        try await request(.PATCH, uri: uri)
     }
     
     public func delete(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.DELETE).execute()
+        try await request(.DELETE, uri: uri)
     }
     
     public func options(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.OPTIONS).execute()
+        try await request(.OPTIONS, uri: uri)
     }
     
     public func head(_ uri: String) async throws -> Res {
-        try await withBaseUrl(uri).withMethod(.HEAD).execute()
+        try await request(.HEAD, uri: uri)
     }
 }

@@ -7,9 +7,9 @@ import HummingbirdCore
 /// A collection of bytes that is either a single buffer or a stream of buffers.
 public enum Bytes: ExpressibleByStringLiteral {
     /// The default decoder for reading content from an incoming request.
-    public static var defaultDecoder: ContentDecoder = .json
+    public static var defaultDecoder: HTTPDecoder = .json
     /// The default encoder for writing content to an outgoing response.
-    public static var defaultEncoder: ContentEncoder = .json
+    public static var defaultEncoder: HTTPEncoder = .json
     
     case buffer(ByteBuffer)
     case stream(ByteStream)
@@ -83,8 +83,8 @@ public enum Bytes: ExpressibleByStringLiteral {
         .stream(ByteStream(streamer: streamer))
     }
 
-    public static func encode<E: Encodable>(_ value: E, using encoder: ContentEncoder = Bytes.defaultEncoder) throws -> Bytes {
-        let (buffer, _) = try encoder.encodeContent(value)
+    public static func encode<E: Encodable>(_ value: E, using encoder: HTTPEncoder = Bytes.defaultEncoder) throws -> Bytes {
+        let (buffer, _) = try encoder.encodeBody(value)
         return .buffer(buffer)
     }
 }

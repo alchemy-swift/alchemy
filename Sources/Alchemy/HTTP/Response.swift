@@ -60,8 +60,8 @@ public final class Response {
     /// - Parameters:
     ///   - data: The data in the body.
     ///   - type: The content type of the body.
-    public convenience init<E: Encodable>(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], encodable: E, encoder: ContentEncoder = Bytes.defaultEncoder) throws {
-        let (buffer, type) = try encoder.encodeContent(encodable)
+    public convenience init<E: Encodable>(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], encodable: E, encoder: HTTPEncoder = Bytes.defaultEncoder) throws {
+        let (buffer, type) = try encoder.encodeBody(encodable)
         self.init(status: status, headers: headers, buffer: buffer, contentType: type)
     }
 

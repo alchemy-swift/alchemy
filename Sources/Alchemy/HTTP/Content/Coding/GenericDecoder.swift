@@ -1,6 +1,6 @@
 struct GenericDecoder: Decoder {
     struct Keyed<Key: CodingKey>: KeyedDecodingContainerProtocol {
-        let delegate: DecoderDelegate
+        let delegate: GenericDecoderDelegate
         let codingPath: [CodingKey] = []
         var allKeys: [Key] { delegate.allKeys.compactMap { Key(stringValue: $0) } }
         
@@ -13,11 +13,11 @@ struct GenericDecoder: Decoder {
         }
         
         func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
-            try delegate._decode(type, for: key)
+            try delegate.decode(type, for: key)
         }
         
         func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-            KeyedDecodingContainer(Keyed<NestedKey>(delegate: try delegate.map(for: key)))
+            KeyedDecodingContainer(Keyed<NestedKey>(delegate: try delegate.dictionary(for: key)))
         }
         
         func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
@@ -34,7 +34,7 @@ struct GenericDecoder: Decoder {
     }
     
     struct Unkeyed: UnkeyedDecodingContainer {
-        let delegate: [DecoderDelegate]
+        let delegate: [GenericDecoderDelegate]
         let codingPath: [CodingKey] = []
         var count: Int? { delegate.count }
         var isAtEnd: Bool { currentIndex == count }
@@ -47,7 +47,7 @@ struct GenericDecoder: Decoder {
         
         mutating func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
             defer { currentIndex += 1 }
-            return try delegate[currentIndex]._decode(type)
+            return try delegate[currentIndex].decode(type)
         }
         
         mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -66,7 +66,7 @@ struct GenericDecoder: Decoder {
     }
     
     struct Single: SingleValueDecodingContainer {
-        let delegate: DecoderDelegate
+        let delegate: GenericDecoderDelegate
         let codingPath: [CodingKey] = []
         
         func decodeNil() -> Bool {
@@ -74,13 +74,13 @@ struct GenericDecoder: Decoder {
         }
         
         func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-            try delegate._decode(type)
+            try delegate.decode(type)
         }
     }
     
     // MARK: Decoder
     
-    var delegate: DecoderDelegate
+    var delegate: GenericDecoderDelegate
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
     
@@ -97,17 +97,46 @@ struct GenericDecoder: Decoder {
     }
 }
 
-struct GenericCodingKey: CodingKey {
-    let stringValue: String
-    let intValue: Int?
+extension GenericDecoderDelegate {
+    fileprivate func decode<T: Decodable>(_ type: T.Type = T.self, for key: CodingKey? = nil) throws -> T {
+        var value: Any? = nil
+        if T.self is Int.Type {
+            value = try decodeInt(for: key)
+        } else if T.self is String.Type {
+            value = try decodeString(for: key)
+        } else if T.self is Bool.Type {
+            value = try decodeBool(for: key)
+        } else if T.self is Double.Type {
+            value = try decodeDouble(for: key)
+        } else if T.self is Float.Type {
+            value = Float(try decodeDouble(for: key))
+        } else if T.self is Int8.Type {
+            value = Int8(try decodeInt(for: key))
+        } else if T.self is Int16.Type {
+            value = Int16(try decodeInt(for: key))
+        } else if T.self is Int32.Type {
+            value = Int32(try decodeInt(for: key))
+        } else if T.self is Int64.Type {
+            value = Int64(try decodeInt(for: key))
+        } else if T.self is UInt.Type {
+            value = UInt(try decodeInt(for: key))
+        } else if T.self is UInt8.Type {
+            value = UInt8(try decodeInt(for: key))
+        } else if T.self is UInt16.Type {
+            value = UInt16(try decodeInt(for: key))
+        } else if T.self is UInt32.Type {
+            value = UInt32(try decodeInt(for: key))
+        } else if T.self is UInt64.Type {
+            value = UInt64(try decodeInt(for: key))
+        } else {
+            return try T(from: GenericDecoder(delegate: key.map { try dictionary(for: $0) } ?? self))
+        }
 
-    init(stringValue: String) {
-        self.stringValue = stringValue
-        self.intValue = Int(stringValue)
-    }
-    
-    init(intValue: Int) {
-        self.stringValue = "\(intValue)"
-        self.intValue = intValue
+        guard let t = value as? T else {
+            let context = DecodingError.Context(codingPath: [key].compactMap { $0 }, debugDescription: "Unable to decode value of type \(T.self).")
+            throw DecodingError.dataCorrupted(context)
+        }
+
+        return t
     }
 }

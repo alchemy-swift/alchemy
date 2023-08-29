@@ -14,7 +14,7 @@ final class ContentTests: XCTestCase {
     ]
     
     func testDict() throws {
-        let content = Content(root: .any(Fixtures.dictContent))
+        let content = Content(node: .any(Fixtures.dictContent))
         for test in allTests {
             try test(content, true)
         }

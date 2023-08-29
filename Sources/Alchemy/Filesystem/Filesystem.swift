@@ -24,7 +24,7 @@ public final class Filesystem: Service {
     /// - Returns: The newly created file.
     @discardableResult
     public func create(_ filepath: String, content: Bytes) async throws -> File {
-        try await provider.create(filepath, content: content)._in(self)
+        try await provider.create(filepath, content: content).in(self)
     }
     
     /// Returns whether a file with the given path exists.
@@ -34,7 +34,7 @@ public final class Filesystem: Service {
     
     /// Gets the contents of the file at the given path.
     public func get(_ filepath: String) async throws -> File {
-        try await provider.get(filepath)._in(self)
+        try await provider.get(filepath).in(self)
     }
     
     /// Delete a file at the given path.

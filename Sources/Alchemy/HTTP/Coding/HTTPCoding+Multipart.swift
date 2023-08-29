@@ -1,24 +1,24 @@
 import MultipartKit
 
-extension ContentEncoder where Self == FormDataEncoder {
+extension HTTPEncoder where Self == FormDataEncoder {
     public static var multipart: FormDataEncoder { FormDataEncoder() }
 }
 
-extension ContentDecoder where Self == FormDataDecoder {
+extension HTTPDecoder where Self == FormDataDecoder {
     public static var multipart: FormDataDecoder { FormDataDecoder() }
 }
 
-extension FormDataEncoder: ContentEncoder {
+extension FormDataEncoder: HTTPEncoder {
     static var boundary: () -> String = { "AlchemyFormBoundary" + .randomAlphaNumberic(15) }
     
-    public func encodeContent<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
+    public func encodeBody<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
         let boundary = FormDataEncoder.boundary()
         return (buffer: ByteBuffer(string: try encode(value, boundary: boundary)), contentType: .multipart(boundary: boundary))
     }
 }
 
-extension FormDataDecoder: ContentDecoder {
-    public func decodeContent<D>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D where D : Decodable {
+extension FormDataDecoder: HTTPDecoder {
+    public func decodeBody<D: Decodable>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D {
         guard let boundary = contentType?.parameters["boundary"] else {
             throw HTTPError(.notAcceptable, message: "Attempted to decode multipart/form-data but couldn't find a `boundary` in the `Content-Type` header.")
         }
@@ -51,7 +51,7 @@ extension FormDataDecoder: ContentDecoder {
         do {
             try parser.execute(buffer)
             let dict = Dictionary(uniqueKeysWithValues: parts.compactMap { part in part.name.map { ($0, part) } })
-            return Content(root: .dict(dict.mapValues { .value($0) }))
+            return Content(node: .dictionary(dict.mapValues { .value($0) }))
         } catch {
             return Content(error: error)
         }

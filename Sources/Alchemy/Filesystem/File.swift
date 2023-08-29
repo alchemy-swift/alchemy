@@ -1,11 +1,13 @@
 import MultipartKit
 import NIOCore
 
-// File
+/// Represents a file from either a filesystem (on disk, in AWS S3, etc) or from
+/// an HTTP request (uploaded or downloaded).
 public struct File: Codable, ResponseConvertible, ModelProperty {
     public enum Source {
         // The file is stored in a `Filesystem` with the given path.
         case filesystem(Filesystem? = nil, path: String)
+        
         // The file came with the given ContentType from an HTTP request.
         case http(clientContentType: ContentType?)
         
@@ -16,11 +18,15 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     
     /// The name of this file, including the extension
     public var name: String
+    
     /// The source of this file, either from an HTTP request or from a Filesystem.
     public var source: Source
+
+    /// The contents of this file
     public var content: Bytes?
     public let size: Int?
     public let clientContentType: ContentType?
+    
     /// The path extension of this file.
     public var `extension`: String {
         name.components(separatedBy: ".").last ?? ""
@@ -38,21 +44,9 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         self.clientContentType = nil
     }
     
-    public func _in(_ filesystem: Filesystem) -> File {
-        var copy = self
-        switch source {
-        case .filesystem(_, let path):
-            copy.source = .filesystem(filesystem, path: path)
-        default:
-            break
-        }
-        
-        return copy
-    }
-    
     // MARK: - Accessing Contents
     
-    /// get a url for this resource
+    /// Get a url for this resource.
     public func url() throws -> URL {
         switch source {
         case .filesystem(let filesystem, let path):
@@ -62,7 +56,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         }
     }
     
-    /// get temporary url for this resource
+    /// Get a temporary url for this resource.
     public func temporaryUrl(expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
         switch source {
         case .filesystem(let filesystem, let path):
@@ -89,6 +83,18 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     public mutating func collect() async throws -> File {
         self.content = .buffer(try await getContent().collect())
         return self
+    }
+
+    func `in`(_ filesystem: Filesystem) -> File {
+        var copy = self
+        switch source {
+        case .filesystem(_, let path):
+            copy.source = .filesystem(filesystem, path: path)
+        default:
+            break
+        }
+
+        return copy
     }
 
     // MARK: ModelProperty

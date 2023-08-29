@@ -14,7 +14,7 @@ extension Filesystem {
     }
 }
 
-struct LocalFilesystem: FilesystemProvider {
+private struct LocalFilesystem: FilesystemProvider {
     /// The file IO helper for streaming files.
     private let fileIO = NonBlockingFileIO(threadPool: Thread)
     /// Used for allocating buffers when pulling out file data.
