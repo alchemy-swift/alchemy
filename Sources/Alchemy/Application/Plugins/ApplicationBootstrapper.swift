@@ -1,7 +1,7 @@
 import NIO
 
 /// Sets up core application services that other plugins may depend on.
-struct CorePlugin: Plugin {
+struct ApplicationBootstrapper: Plugin {
     func registerServices(in app: Application) {
 
         // 0. Register Environment
@@ -73,7 +73,7 @@ struct CorePlugin: Plugin {
 
                         return logger
                     }(),
-                    installBacktrace: !app.container.env.isTesting
+                    installBacktrace: !app.env.isTesting
                 )
             )
         )
@@ -94,18 +94,12 @@ struct CorePlugin: Plugin {
     }
 }
 
-extension Container {
-    public var env: Environment {
-        resolveAssert()
-    }
-}
-
 extension Application {
     public var env: Environment {
-        container.env
+        container.resolveAssert()
     }
 
     public var lifecycle: ServiceLifecycle {
-        Container.resolveAssert()
+        container.resolveAssert()
     }
 }

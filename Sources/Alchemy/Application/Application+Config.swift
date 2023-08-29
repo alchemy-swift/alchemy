@@ -5,6 +5,10 @@ extension Application {
 public struct ApplicationConfiguration {
     /// Application plugins.
     public let plugins: () -> [Plugin]
+    /// The default plugins that will be loaded on your app. You won't typically
+    /// override this unless you want to prevent default Alchemy plugins from
+    /// loading. Add additional plugins to your app through `plugins`.
+    public let defaultPlugins: (Application) -> [Plugin]
     /// Application commands.
     public let commands: [Command.Type]
     /// Maximum upload size allowed.
@@ -24,6 +28,7 @@ public struct ApplicationConfiguration {
 
     public init(
         plugins: @escaping @autoclosure () -> [Plugin] = [],
+        defaultPlugins: @escaping (Application) -> [Plugin] = defaultPlugins,
         commands: [Command.Type] = [],
         maxUploadSize: Int = 2 * 1024 * 1024,
         maxStreamingBufferSize: Int = 1 * 1024 * 1024,
@@ -34,6 +39,7 @@ public struct ApplicationConfiguration {
         writeTimeout: TimeAmount = .minutes(3)
     ) {
         self.plugins = plugins
+        self.defaultPlugins = defaultPlugins
         self.commands = commands
         self.maxUploadSize = maxUploadSize
         self.maxStreamingBufferSize = maxStreamingBufferSize
@@ -42,5 +48,20 @@ public struct ApplicationConfiguration {
         self.withPipeliningAssistance = withPipeliningAssistance
         self.readTimeout = readTimeout
         self.writeTimeout = writeTimeout
+    }
+
+    /// The default plugins that will be loaded on an Alchemy app, in addition
+    /// to user defined plugins.
+    public static func defaultPlugins(for app: Application) -> [Plugin] {
+        [
+            HTTPPlugin(),
+            CommandsPlugin(),
+            SchedulingPlugin(),
+            EventsPlugin(),
+            app.filesystems,
+            app.databases,
+            app.caches,
+            app.queues,
+        ]
     }
 }

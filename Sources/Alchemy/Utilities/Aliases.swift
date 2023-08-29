@@ -19,6 +19,8 @@ public var Env: Environment { Container.resolveAssert() }
 public var Log: Logger {
     get {
         guard let logger: Logger = Container.resolve() else {
+            /// If a logger hasn't been registered yet, register one with
+            /// sensible defaults.
             let logger = Logger.default
             Container.main.registerSingleton(logger)
             return logger

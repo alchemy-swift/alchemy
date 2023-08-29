@@ -5,7 +5,7 @@ public protocol Plugin {
     /// A label for this plugin, for registration in the app lifecycle.
     var label: String { get }
 
-    /// Register any services in a Container.
+    /// Register any services to an Application.
     func registerServices(in app: Application)
 
     /// Setup this plugin for the given app.

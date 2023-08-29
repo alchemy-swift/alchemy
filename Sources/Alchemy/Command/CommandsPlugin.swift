@@ -1,7 +1,7 @@
 struct CommandsPlugin: Plugin {
     func registerServices(in app: Application) {
         app.container.registerSingleton(Commander())
-        if app.container.env.isTesting {
+        if app.env.isTesting {
             FileCreator.mock()
         }
     }
@@ -24,7 +24,7 @@ struct CommandsPlugin: Plugin {
 }
 
 extension Application {
-    fileprivate var commander: Commander {
+    var commander: Commander {
         container.resolveAssert()
     }
 
@@ -34,19 +34,5 @@ extension Application {
 
     public func setDefaultCommand(_ command: (some Command).Type) {
         commander.defaultCommand = command
-    }
-
-    /// Starts the application with the given arguments.
-    public func start(_ args: String...) async throws {
-        try await start(args: args.isEmpty ? nil : args)
-    }
-
-    public func start(args: [String]? = nil) async throws {
-        try await commander.start(args: args)
-    }
-
-    /// Stops your application from running.
-    public func stop() async throws {
-        try await Lifecycle.shutdown()
     }
 }

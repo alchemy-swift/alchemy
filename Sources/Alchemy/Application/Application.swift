@@ -14,19 +14,22 @@ import NIO
 ///     }
 ///
 public protocol Application: Router {
+    /// Create an instance of this Application.
+    init()
+
     /// Setup your application here. Called after all services are loaded.
     func boot() throws
 
-    /// Required empty initializer.
-    init()
+    /// Setup any scheduled tasks in your application here.
+    func schedule(on schedule: Scheduler)
 
-    // MARK: Configs
-
-    /// The cache configuration of the application.
-    var caches: Caches { get }
+    // MARK: Configuration
 
     /// The core configuration of the application.
     var configuration: Configuration { get }
+
+    /// The cache configuration of the application.
+    var caches: Caches { get }
 
     /// The database configuration of the application.
     var databases: Databases { get }
@@ -39,12 +42,6 @@ public protocol Application: Router {
 
     /// The queue configuration of the application.
     var queues: Queues { get }
-
-    /// The default plugins to use for this application.
-    var defaultPlugins: [Plugin] { get }
-
-    /// Called when your app will schedule tasks.
-    func schedule(on schedule: Scheduler)
 }
 
 extension Application {
@@ -54,18 +51,6 @@ extension Application {
     public var filesystems: Filesystems { Filesystems() }
     public var loggers: Loggers { Loggers() }
     public var queues: Queues { Queues() }
-    public var defaultPlugins: [Plugin] {
-        [
-            HTTPPlugin(),
-            CommandsPlugin(),
-            SchedulingPlugin(),
-            EventsPlugin(),
-            filesystems,
-            databases,
-            caches,
-            queues,
-        ]
-    }
 
     public func boot() { /* default to no-op */ }
     public func schedule(on schedule: Scheduler) { /* default to no-op */ }
@@ -78,32 +63,22 @@ extension Application {
 
     public func setup() {
 
-        // 0. Set the main Container.
+        // 1. Register Core Services.
 
-        Container.main = Container()
+        let bootstrap = ApplicationBootstrapper()
+        bootstrap.registerServices(in: self)
+        bootstrap.boot(app: self)
 
-        // 1. Boot CoreServices.
-
-        let core = CorePlugin()
-        core.registerServices(in: self)
-        core.boot(app: self)
+        lifecycle.register(
+            label: bootstrap.label,
+            start: .none,
+            shutdown: .async { try await bootstrap.shutdownServices(in: self) }
+        )
 
         // 2. Register Plugins.
 
-        let defaultPlugins = defaultPlugins
-        defaultPlugins.forEach { $0.registerServices(in: self) }
-        let userPlugins = configuration.plugins()
-        userPlugins.forEach { $0.registerServices(in: self) }
-
-        // 3. Register Plugin Lifecyle events.
-
-        lifecycle.register(
-            label: core.label,
-            start: .none,
-            shutdown: .async { try await core.shutdownServices(in: self) }
-        )
-
-        for plugin in defaultPlugins + userPlugins {
+        for plugin in configuration.defaultPlugins(self) + configuration.plugins() {
+            plugin.registerServices(in: self)
             lifecycle.register(
                 label: plugin.label,
                 start: .async { try await plugin.boot(app: self) },
@@ -111,13 +86,27 @@ extension Application {
             )
         }
 
-        // 4. Register Application.boot to Lifecycle
+        // 3. Register Application.boot to Lifecycle
 
         lifecycle.register(
             label: "Application Boot",
             start: .sync { try boot() },
             shutdown: .none
         )
+    }
+
+    /// Starts the application with the given arguments.
+    public func start(_ args: String...) async throws {
+        try await start(args: args.isEmpty ? nil : args)
+    }
+
+    /// Starts the application with the given arguments.
+    public func start(args: [String]? = nil) async throws {
+        try await commander.start(args: args)
+    }
+
+    public func stop() async throws {
+        try await Lifecycle.shutdown()
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`
