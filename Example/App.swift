@@ -11,11 +11,11 @@ struct App: Application {
 
         }
 
-        get("bad") { _ -> String in
+        get("bad") { _ -> Void in
             throw HTTPError(.badRequest)
         }
 
-        get("fail") { _ -> String in
+        get("fail") { _ -> Void in
             throw HTTPError(.internalServerError)
         }
     }

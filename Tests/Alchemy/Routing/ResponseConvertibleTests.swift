@@ -6,3 +6,5 @@ final class ResponseConvertibleTests: XCTestCase {
         try array.response().assertOk().assertJson(array)
     }
 }
+
+extension [String]: ResponseConvertible {}

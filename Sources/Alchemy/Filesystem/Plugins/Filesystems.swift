@@ -9,11 +9,11 @@ public struct Filesystems: Plugin {
 
     public func registerServices(in app: Application) {
         for (id, disk) in disks {
-            app.container.registerSingleton(disk, id: id)
+            app.container.register(disk, id: id).singleton()
         }
 
         if let _default = `default` ?? disks.keys.first {
-            app.container.registerSingleton(Storage(_default))
+            app.container.register(Storage(_default)).singleton()
         }
     }
 }

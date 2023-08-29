@@ -3,11 +3,8 @@ import NIO
 /// Queue lets you run queued jobs to be processed in the background.
 /// Jobs are persisted by the given `QueueProvider`.
 public final class Queue: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<Queue>
+
     /// The default channel to dispatch jobs on for all queues.
     public static var defaultChannel = "default"
     /// The default rate at which workers poll queues.

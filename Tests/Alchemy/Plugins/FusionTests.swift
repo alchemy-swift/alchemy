@@ -1,4 +1,4 @@
-@testable import Fusion
+@testable import Alchemy
 import XCTest
 
 final class FusionTest: XCTestCase {
@@ -13,7 +13,7 @@ final class FusionTest: XCTestCase {
     func testTransient() {
         let exp = expectation(description: "called 3x")
         exp.expectedFulfillmentCount = 3
-        container.bind(to: String.self) { _ in
+        container.register { _ in
             exp.fulfill()
             return "Testing1"
         }
@@ -27,10 +27,10 @@ final class FusionTest: XCTestCase {
     func testSingleton() {
         let exp = expectation(description: "called 1x")
         exp.expectedFulfillmentCount = 1
-        container.bind(.singleton, to: String.self) { _ in
+        container.register { _ in
             exp.fulfill()
             return "Testing2"
-        }
+        }.singleton()
 
         XCTAssertEqual(container.resolve(String.self), "Testing2")
         XCTAssertEqual(container.resolve(String.self), "Testing2")
@@ -41,10 +41,10 @@ final class FusionTest: XCTestCase {
     func testSingletonIdentified() {
         let exp = expectation(description: "called 1x")
         exp.expectedFulfillmentCount = 1
-        container.bind(.singleton, to: String.self, id: "test") { _ in
+        container.register(factory: { _ in
             exp.fulfill()
             return "Testing3"
-        }
+        }, id: "test").singleton()
 
         XCTAssertEqual(container.resolve(String.self), nil)
         XCTAssertEqual(container.resolve(String.self, id: "foo"), nil)
@@ -53,32 +53,32 @@ final class FusionTest: XCTestCase {
     }
 
     func testOverride() {
-        container.bind(.singleton, value: "Testing1")
+        container.register("Testing1").singleton()
         XCTAssertEqual(container.resolve(String.self), "Testing1")
-        container.bind(.singleton, value: "Testing2")
+        container.register("Testing2").singleton()
         XCTAssertEqual(container.resolve(String.self), "Testing2")
-        container.bind(value: "Testing3")
+        container.register("Testing3")
         XCTAssertEqual(container.resolve(String.self), "Testing3")
-        container.bind(value: "Testing4")
+        container.register("Testing4")
         XCTAssertEqual(container.resolve(String.self), "Testing4")
-        container.bind(.singleton, value: "Testing5")
+        container.register("Testing5").singleton()
         XCTAssertEqual(container.resolve(String.self), "Testing5")
-        container.bind(.singleton, value: "Testing6")
+        container.register("Testing6").singleton()
         XCTAssertEqual(container.resolve(String.self), "Testing6")
     }
 
     func testContainer() {
         let childContainer = Container(parent: container)
-        container.bind(.singleton, to: String.self) { _ in "Testing4" }
-        childContainer.bind(.singleton, to: Int.self) { _ in 4 }
+        container.register(factory: { _ in "Testing4" }).singleton()
+        childContainer.register(factory: { _ in 4 }).singleton()
         XCTAssertEqual(childContainer.resolve(String.self), "Testing4")
         XCTAssertEqual(childContainer.resolve(Int.self), 4)
         XCTAssertEqual(container.resolve(Int.self), nil)
     }
 
     func testDependency() {
-        container.bind(value: "5")
-        container.bind { container in
+        container.register("5")
+        container.register { container in
             return Int(container.resolve(String.self)!)!
         }
 
@@ -87,8 +87,8 @@ final class FusionTest: XCTestCase {
     }
 
     func testDefault() {
-        Container.main.bind(to: String.self, factory: { _ in "Testing6" })
-        Container.main.bind(to: Int.self, factory: { _ in 6 })
+        Container.main.register(factory: { _ in "Testing6" })
+        Container.main.register(factory: { _ in 6 })
         let instance = TestingDefault()
         XCTAssertEqual(instance.string, "Testing6")
         XCTAssertEqual(instance.int, 6)
@@ -96,10 +96,10 @@ final class FusionTest: XCTestCase {
 
     func testContainerized() {
         let container = Container()
-        container.bind(to: String.self) { _ in "Testing7" }
-        container.bind(to: Int.self) { _ in 6 }
-        container.bind(.singleton, id: true) { _ in true }
-        container.bind(.singleton, id: false) { _ in false }
+        container.register { _ in "Testing7" }
+        container.register { _ in 6 }
+        container.register(factory: { _ in true }, id: true)
+        container.register(factory: { _ in false }, id: false)
 
         let instance = TestingContainerized(container: container)
         XCTAssertEqual(instance.string, "Testing7")
@@ -109,14 +109,14 @@ final class FusionTest: XCTestCase {
     }
 
     func testProperlyCastNilToHashable() {
-        container.bind(.singleton, id: nil, value: "cat")
+        container.register("cat").singleton()
         XCTAssertEqual(container.resolve(String.self), "cat")
     }
 
     func testInject() {
-        container.bind(value: "foo")
-        container.bind(id: 1, value: "bar")
-        container.bind(id: 2, value: "baz")
+        container.register("foo")
+        container.register("bar", id: 1)
+        container.register("baz", id: 2)
 
         @Inject    var string1: String
         @Inject(1) var string2: String
@@ -128,25 +128,25 @@ final class FusionTest: XCTestCase {
     }
 
     func testThrowing() throws {
-        container.bind(value: 1)
-        XCTAssertEqual(try container.resolveThrowing(Int.self), 1)
-        XCTAssertThrowsError(try container.resolveThrowing(String.self))
-        XCTAssertThrowsError(try Container.resolveThrowing(String.self))
+        container.register(1)
+        XCTAssertEqual(try container.resolveOrThrow(Int.self), 1)
+        XCTAssertThrowsError(try container.resolveOrThrow(String.self))
+        XCTAssertThrowsError(try Container.resolveOrThrow(String.self))
     }
 
     func testStatic() throws {
-        Container.bind(value: 1)
-        Container.bind { "\($0.resolveAssert(Int.self))" }
+        Container.register(1)
+        Container.register { "\($0.require(Int.self))" }
         XCTAssertNil(Container.resolve(Bool.self))
         XCTAssertEqual(Container.resolve(String.self), "1")
-        XCTAssertEqual(try Container.resolveThrowing(Int.self), 1)
-        XCTAssertEqual(Container.resolveAssert(String.self), "1")
+        XCTAssertEqual(try Container.resolveOrThrow(Int.self), 1)
+        XCTAssertEqual(Container.require(String.self), "1")
     }
 
     func testDebug() {
-        container.bind(.singleton, value: "foo")
-        container.bind(id: 1, value: 0)
-        container.bind(id: 2, value: false)
+        container.register("foo").singleton()
+        container.register(0, id: 1)
+        container.register(false, id: 2)
         XCTAssertEqual(container.debugDescription, """
         *Container Entries*
         - Bool (2): false (transient)

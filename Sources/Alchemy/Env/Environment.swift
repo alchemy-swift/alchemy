@@ -192,9 +192,20 @@ public final class Environment: ExpressibleByStringLiteral {
         CommandLine.arguments.contains { $0.contains("/Xcode/DerivedData") }
     }
 
-    public static var `default`: Environment {
-        isRunFromTests
-            ? Environment(name: "test")
-            : Environment(name: "dev", dotenvPaths: [".env"])
+    public static func createDefault() -> Environment {
+        let env: Environment
+        if
+            let name = CommandLine.value(for: "--env") ??
+                CommandLine.value(for: "-e") ??
+                ProcessInfo.processInfo.environment["APP_ENV"] {
+            env = Environment(name: name)
+        } else {
+            env = isRunFromTests
+                ? Environment(name: "test")
+                : Environment(name: "dev", dotenvPaths: [".env"])
+        }
+
+        env.loadVariables()
+        return env
     }
 }

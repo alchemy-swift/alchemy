@@ -22,16 +22,16 @@ final class RequestUtilitiesTests: XCTestCase {
     func testParameter() {
         let request = Request.fixture()
         request.parameters = [
-            Parameter(key: "foo", value: "one"),
-            Parameter(key: "bar", value: "two"),
-            Parameter(key: "baz", value: "three"),
+            Request.Parameter(key: "foo", value: "one"),
+            Request.Parameter(key: "bar", value: "two"),
+            Request.Parameter(key: "baz", value: "three"),
         ]
         XCTAssertEqual(try request.parameter("foo"), "one")
         XCTAssertEqual(try request.parameter("bar"), "two")
         XCTAssertEqual(try request.parameter("baz"), "three")
         XCTAssertThrowsError(try request.parameter("fake", as: String.self))
         XCTAssertThrowsError(try request.parameter("foo", as: Int.self))
-        XCTAssertTrue(request.parameters.contains(Parameter(key: "foo", value: "one")))
+        XCTAssertTrue(request.parameters.contains(Request.Parameter(key: "foo", value: "one")))
     }
     
     func testBody() {

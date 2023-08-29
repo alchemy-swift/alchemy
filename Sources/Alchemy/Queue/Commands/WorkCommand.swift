@@ -35,7 +35,7 @@ struct WorkCommand: Command {
     // MARK: Command
     
     func run() throws {
-        let queue: Queue = name.map { Container.resolveAssert(id: $0) } ?? Q
+        let queue: Queue = name.map { Container.require(id: $0) } ?? Q
         for _ in 0..<workers {
             queue.startWorker(for: channels.components(separatedBy: ","))
         }

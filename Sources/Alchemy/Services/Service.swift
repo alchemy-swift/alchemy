@@ -1,46 +1,32 @@
 /// An identified service provider.
 public protocol Service {
     /// An identifier, unique to the service.
-    associatedtype Identifier: ServiceIdentifier
+    associatedtype Identifier: Hashable
 }
 
-public protocol ServiceIdentifier: Hashable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
-    init(hashable: AnyHashable)
-}
+/// A type to be used as the identifier for various services.
+public struct ServiceIdentifier<T>: Hashable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
+    public let value: AnyHashable
 
-extension ServiceIdentifier {
+    public init(value: AnyHashable) {
+        self.value = value
+    }
 
     // MARK: - ExpressibleByStringLiteral
 
     public init(stringLiteral value: String) {
-        self.init(hashable: value)
+        self.init(value: value)
     }
 
     // MARK: - ExpressibleByIntegerLiteral
 
     public init(integerLiteral value: Int) {
-        self.init(hashable: value)
+        self.init(value: value)
     }
 }
 
-extension Inject where Service: Alchemy.Service {
-    public convenience init(_ identifier: Service.Identifier) {
+extension Inject where Value: Service {
+    public convenience init(_ identifier: Value.Identifier) {
         self.init(id: identifier)
     }
-}
-
-struct Foo<T>: Hashable {
-
-}
-
-protocol HasThing {
-    associatedtype Thing: Hashable
-}
-
-final class Bar: HasThing {
-    typealias Thing = Foo<Bar>
-}
-
-extension Bar.Thing {
-    static let thing: Bar.Thing = .init()
 }

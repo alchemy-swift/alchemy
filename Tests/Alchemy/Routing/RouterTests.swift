@@ -75,8 +75,8 @@ final class RouterTests: TestCase<TestApp> {
         let uuidString = UUID().uuidString
         app.get("/v1/some_path/:uuid/:user_id") { request async -> ResponseConvertible in
             XCTAssertEqual(request.parameters, [
-                Parameter(key: "uuid", value: uuidString),
-                Parameter(key: "user_id", value: "123"),
+                Request.Parameter(key: "uuid", value: uuidString),
+                Request.Parameter(key: "user_id", value: "123"),
             ])
             await expect.signalOne()
             return "foo"
@@ -110,11 +110,11 @@ final class RouterTests: TestCase<TestApp> {
 
     func testGroupedPathPrefix() async throws {
         app
-            .grouped("group") { app in
+            .grouping("group") { app in
                 app
                     .get("/foo") { _ in 1 }
                     .get("/bar") { _ in 2 }
-                    .grouped("/nested") { app in
+                    .grouping("/nested") { app in
                         app.post("/baz") { _ in 3 }
                     }
                     .post("/bar") { _ in 4 }

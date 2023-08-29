@@ -5,7 +5,7 @@ final class Commander {
     /// Command to launch a given application.
     private struct Launch: AsyncParsableCommand {
         static var configuration: CommandConfiguration {
-            Container.resolveAssert(Commander.self).launchConfiguration()
+            Container.require(Commander.self).launchConfiguration()
         }
 
         /// The environment file to load. Defaults to `env`.

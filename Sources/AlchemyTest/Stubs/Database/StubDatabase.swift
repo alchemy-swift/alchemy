@@ -1,15 +1,10 @@
 import Alchemy
 
-public struct StubDialect: SQLGrammar {}
+public struct StubGrammar: SQLGrammar {}
 
 public final class StubDatabase: DatabaseProvider {
     private var isShutdown = false
     private var stubs: [[SQLRow]] = []
-    
-    public let grammar = Grammar()
-    public let dialect: SQLGrammar = StubDialect()
-    
-    init() {}
     
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         guard !isShutdown else {
@@ -17,7 +12,7 @@ public final class StubDatabase: DatabaseProvider {
         }
         
         guard let mockedRows = stubs.first else {
-            throw StubDatabaseError("Before running a query on a stubbed database, please stub it's resposne with `stub()`.")
+            throw StubDatabaseError("Before running a query on a stubbed database, please stub it's response with `stub()`.")
         }
         
         return mockedRows

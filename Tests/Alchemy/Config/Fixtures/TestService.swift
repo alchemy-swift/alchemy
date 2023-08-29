@@ -1,11 +1,8 @@
 import Alchemy
 
 struct TestService: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<TestService>
+
     struct Config {
         let foo: String
     }

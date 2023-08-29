@@ -13,10 +13,7 @@ import Logging
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
 extension Logger: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
+    public typealias Identifier = ServiceIdentifier<Logger>
 
     // MARK: Conveniences
 

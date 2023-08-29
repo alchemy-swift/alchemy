@@ -12,11 +12,11 @@ public struct Queues: Plugin {
     public func registerServices(in app: Application) {
         let queues = queues()
         for (id, queue) in queues {
-            app.container.registerSingleton(queue, id: id)
+            app.container.register(queue, id: id).singleton()
         }
 
         if let _default = `default` ?? queues.keys.first {
-            app.container.registerSingleton(Q(_default))
+            app.container.register(Q(_default)).singleton()
         }
 
         for job in jobs {

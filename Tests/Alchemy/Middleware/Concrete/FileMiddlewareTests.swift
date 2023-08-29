@@ -85,5 +85,5 @@ extension Request {
 }
 
 extension Response {
-    static let `default` = Response(status: .ok).withString("bar")
+    static let `default` = Response(status: .ok, string: "bar")
 }

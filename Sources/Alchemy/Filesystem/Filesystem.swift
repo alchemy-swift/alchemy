@@ -2,11 +2,8 @@ import NIOConcurrencyHelpers
 
 /// An abstraction around local or remote file storage.
 public final class Filesystem: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<Filesystem>
+
     private var provider: FilesystemProvider
 
     /// The root directory for storing and fetching files.

@@ -129,9 +129,9 @@ extension Cache {
     ///     an empty dict.
     /// - Returns: A `MemoryCache` for verifying test expectations.
     @discardableResult
-    public static func fake(_ identifier: Identifier? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
+    public static func fake(_ id: Identifier? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
         let provider = MemoryCache(data)
-        Container.main.registerSingleton(Cache(provider: provider), id: identifier)
+        Container.register(Cache(provider: provider), id: id).singleton()
         return provider
     }
 }

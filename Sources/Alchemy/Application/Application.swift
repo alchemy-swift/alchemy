@@ -45,6 +45,8 @@ public protocol Application: Router {
 }
 
 extension Application {
+    /// The main application container.
+    public var container: Container { .main }
     public var caches: Caches { Caches() }
     public var configuration: Configuration { Configuration() }
     public var databases: Databases { Databases() }

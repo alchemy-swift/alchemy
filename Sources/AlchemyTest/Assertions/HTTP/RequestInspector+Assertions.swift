@@ -1,6 +1,5 @@
 import Alchemy
 
-extension Client.Request: RequestInspector {}
-extension RequestInspector {
-    
+extension Client.Request: RequestInspector {
+    public var container: Container { Container() }
 }

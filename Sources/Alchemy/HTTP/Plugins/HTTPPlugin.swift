@@ -2,13 +2,14 @@ import HummingbirdCore
 
 struct HTTPPlugin: Plugin {
     func registerServices(in app: Application) {
-        app.container.registerSingleton(HBHTTPServer(group: LoopGroup, configuration: hummingbirdConfiguration(for: app)))
-        let router = HTTPRouter()
-        app.container.registerSingleton(router, as: Router.self)
-        let handler = HTTPHandler(maxUploadSize: app.configuration.maxUploadSize, router: router)
-        app.container.registerSingleton(handler)
-        app.container.registerSingleton(handler, as: RequestHandler.self)
-        app.container.registerSingleton(Client())
+        let configuration = app.configuration
+        let hbConfiguration = hummingbirdConfiguration(for: configuration)
+        app.container.register { HBHTTPServer(group: $0.require(), configuration: hbConfiguration) }.singleton()
+        app.container.register(HTTPRouter()).singleton()
+        app.container.register { HTTPHandler(maxUploadSize: configuration.maxUploadSize, router: $0.require() as HTTPRouter) }.singleton()
+        app.container.register { $0.require() as HTTPRouter as Router }
+        app.container.register { $0.require() as HTTPHandler as RequestHandler }
+        app.container.register(Client()).singleton()
     }
 
     func shutdownServices(in app: Application) async throws {
@@ -16,11 +17,10 @@ struct HTTPPlugin: Plugin {
         try await app.container.resolve(HBHTTPServer.self)?.stop().get()
     }
 
-    private func hummingbirdConfiguration(for app: Application) -> HBHTTPServer.Configuration {
+    private func hummingbirdConfiguration(for configuration: Application.Configuration) -> HBHTTPServer.Configuration {
         let socket = CommandLine.value(for: "--socket") ?? nil
         let host = CommandLine.value(for: "--host") ?? kDefaultHost
         let port = (CommandLine.value(for: "--port").map { Int($0) } ?? nil) ?? kDefaultPort
-        let configuration = app.configuration
         return HBHTTPServer.Configuration(
             address: {
                 if let socket {
@@ -44,6 +44,6 @@ struct HTTPPlugin: Plugin {
 
 extension Application {
     public var server: HBHTTPServer {
-        Container.resolveAssert()
+        Container.require()
     }
 }

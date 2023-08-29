@@ -5,16 +5,13 @@ import RediStack
 
 /// A client for interfacing with a Redis instance.
 public struct RedisClient: RediStack.RedisClient, Service {
+    public typealias Identifier = ServiceIdentifier<RedisClient>
+
     public enum Socket: Equatable {
         /// An ip address `host` at port `port`.
         case ip(host: String, port: Int)
         /// A unix domain socket (IPC socket) at path `path`.
         case unix(path: String)
-    }
-
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
     }
 
     let provider: RedisProvider

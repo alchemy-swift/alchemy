@@ -1,11 +1,8 @@
 import NIOConcurrencyHelpers
 
 public final class EventBus: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<EventBus>
+
     public typealias Handler<E: Event> = (E) async throws -> Void
     private typealias AnyHandler = (Event) async throws -> Void
 

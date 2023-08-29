@@ -14,9 +14,9 @@ extension Queue {
     ///   `default`.
     /// - Returns: A `MemoryQueue` for verifying test expectations.
     @discardableResult
-    public static func fake(_ identifier: Identifier? = nil) -> MemoryQueue {
+    public static func fake(_ id: Identifier? = nil) -> MemoryQueue {
         let mock = MemoryQueue()
-        Container.main.registerSingleton(mock, id: identifier)
+        Container.register(mock, id: id).singleton()
         return mock
     }
 }
@@ -24,9 +24,9 @@ extension Queue {
 /// A queue that persists jobs to memory. Jobs will be lost if the
 /// app shuts down. Useful for tests.
 public actor MemoryQueue: QueueProvider {
-    private typealias JobID = String
+    typealias JobID = String
 
-    private var jobs: [JobID: JobData] = [:]
+    var jobs: [JobID: JobData] = [:]
     private var pending: [String: [JobID]] = [:]
     private var reserved: [String: [JobID]] = [:]
     private let lock = NIOLock()

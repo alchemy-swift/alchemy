@@ -3,7 +3,7 @@ import AlchemyTest
 final class ApplicationErrorRouteTests: TestCase<TestApp> {
     func testCustomNotFound() async throws {
         try await Test.get("/not_found").assertBody(HTTPResponseStatus.notFound.reasonPhrase).assertNotFound()
-        app.notFound { _ in
+        app.notFoundHandler { _ in
             "Hello, world!"
         }
         
@@ -20,7 +20,7 @@ final class ApplicationErrorRouteTests: TestCase<TestApp> {
         let status = HTTPResponseStatus.internalServerError
         try await Test.get("/error").assertBody(status.reasonPhrase).assertStatus(status)
         
-        app.internalError { _, _ in
+        app.errorHandler { _, _ in
             "Nothing to see here."
         }
         
@@ -34,7 +34,7 @@ final class ApplicationErrorRouteTests: TestCase<TestApp> {
             throw TestError()
         }
         
-        app.internalError { _, _ in
+        app.errorHandler { _, _ in
             throw TestError()
         }
         

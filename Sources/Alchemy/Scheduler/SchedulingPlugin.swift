@@ -1,6 +1,6 @@
 struct SchedulingPlugin: Plugin {
     func registerServices(in app: Application) {
-        app.container.registerSingleton(Scheduler())
+        app.container.register(Scheduler()).singleton()
     }
 
     func shutdownServices(in app: Application) async throws {

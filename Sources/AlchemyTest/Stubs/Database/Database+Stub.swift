@@ -4,9 +4,9 @@ extension Database {
     /// - Parameter id: The identifier of the database to stub, defaults to
     ///   `default`.
     @discardableResult
-    public static func stub(_ id: Identifier = .default) -> StubDatabase {
+    public static func stub(_ id: Identifier? = nil) -> StubDatabase {
         let stub = StubDatabase()
-        bind(id, Database(provider: stub))
+        Container.register(Database(provider: stub, grammar: StubGrammar()), id: id).singleton()
         return stub
     }
 }

@@ -4,6 +4,6 @@ import Foundation
 
 extension Environment {
     public static func stub(_ values: [String: String]) {
-        Environment.current = Environment(name: "stub", dotenvVariables: values)
+        Container.register(Environment(name: "stub", dotenvVariables: values)).singleton()
     }
 }

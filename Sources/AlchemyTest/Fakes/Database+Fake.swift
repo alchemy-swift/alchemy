@@ -8,15 +8,13 @@ extension Database {
     ///   - seeders: Any seeders to set on the database, they will be run before
     ///     this function returns.
     @discardableResult
-    public static func fake(_ id: Identifier = .default, migrations: [Migration] = [], seeders: [Seeder] = []) async throws -> Database {
+    public static func fake(_ id: Identifier? = nil, migrations: [Migration] = [], seeders: [Seeder] = []) async throws -> Database {
         let db = Database.sqlite
         db.migrations = migrations
         db.seeders = seeders
-        bind(id, db)
-        
+        Container.register(db, id: id).singleton()
         if !migrations.isEmpty { try await db.migrate() }
         if !seeders.isEmpty { try await db.seed() }
-        
         return db
     }
 }

@@ -11,11 +11,8 @@ import NIOHTTP1
 ///
 /// See `Client.Builder` for the request builder interface.
 public final class Client: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<Client>
+
     /// A type for making http requests with a `Client`. Supports static or
     /// streamed content.
     public struct Request {

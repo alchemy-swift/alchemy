@@ -10,11 +10,11 @@ public struct Caches: Plugin {
     public func registerServices(in app: Application) {
         let caches = caches()
         for (id, cache) in caches {
-            app.container.registerSingleton(cache, id: id)
+            app.container.register(cache, id: id).singleton()
         }
 
         if let _default = `default` ?? caches.keys.first {
-            app.container.registerSingleton(Stash(_default))
+            app.container.register(Stash(_default)).singleton()
         }
     }
 }

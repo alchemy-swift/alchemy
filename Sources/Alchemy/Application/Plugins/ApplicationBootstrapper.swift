@@ -6,51 +6,22 @@ struct ApplicationBootstrapper: Plugin {
 
         // 0. Register Environment
 
-        let envName: String?
-        if let value = CommandLine.value(for: "--env") ?? CommandLine.value(for: "-e") {
-            envName = value
-        } else if let value = ProcessInfo.processInfo.environment["APP_ENV"] {
-            envName = value
-        } else {
-            envName = nil
-        }
-
-        let env: Environment
-        if let envName {
-            env = Environment(name: envName)
-        } else {
-            env = .default
-        }
-
-        env.loadVariables()
-        app.container.registerSingleton(env)
+        app.container.register { Environment.createDefault() }.singleton()
 
         // 1. Register Loggers
 
-        let logLevel: Logger.Level?
-        if let value = CommandLine.value(for: "--log") ?? CommandLine.value(for: "-l"), let level = Logger.Level(rawValue: value) {
-            logLevel = level
-        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
-            logLevel = level
-        } else {
-            logLevel = nil
-        }
-
-        var loggers = app.loggers
-        loggers.logLevelOverride = logLevel
-        loggers.registerServices(in: app)
+        app.loggers.registerServices(in: app)
 
         // 2. Register NIO services
 
-        let threads = env.isTesting ? 1 : System.coreCount
-        app.container.registerSingleton(MultiThreadedEventLoopGroup(numberOfThreads: threads), as: EventLoopGroup.self)
-        app.container.registerSingleton(NIOThreadPool(numberOfThreads: threads))
+        app.container.register { MultiThreadedEventLoopGroup(numberOfThreads: $0.coreCount) as EventLoopGroup }.singleton()
+        app.container.register { NIOThreadPool(numberOfThreads: $0.coreCount) }.singleton()
         app.container.register { container in
-            guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !env.isTesting else {
+            guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !container.env.isTesting else {
                 // With async/await there is no guarantee that you'll
                 // be running on an event loop. When one is needed,
                 // return a random one for now.
-                return container.resolveAssert(EventLoopGroup.self).next()
+                return container.require(EventLoopGroup.self).next()
             }
 
             return current
@@ -58,30 +29,28 @@ struct ApplicationBootstrapper: Plugin {
 
         // 3. Register Lifecycle
 
-        app.container.registerSingleton(
-            ServiceLifecycle(
+        app.container.register { container in
+            var logger = container.log
+
+            // ServiceLifecycle is pretty noisy. Let's default it to
+            // logging @ .notice or above, unless the user has set
+            // the default log level to .debug or below.
+            if logger.logLevel > .debug {
+                logger.logLevel = .notice
+            }
+
+            return ServiceLifecycle(
                 configuration: ServiceLifecycle.Configuration(
-                    logger: {
-                        var logger = Log
-
-                        // ServiceLifecycle is pretty noisy. Let's default it to
-                        // logging @ .notice or above, unless the user has set
-                        // the default log level to .debug or below.
-                        if logger.logLevel > .debug {
-                            logger.logLevel = .notice
-                        }
-
-                        return logger
-                    }(),
-                    installBacktrace: !app.env.isTesting
+                    logger: logger,
+                    installBacktrace: !container.env.isTesting
                 )
             )
-        )
+        }.singleton()
 
         // 4. Register the Application
 
-        app.container.registerSingleton(app)
-        app.container.registerSingleton(app, as: Application.self)
+        app.container.register(app).singleton()
+        app.container.register(app as Application).singleton()
     }
 
     func boot(app: Application) {
@@ -96,10 +65,24 @@ struct ApplicationBootstrapper: Plugin {
 
 extension Application {
     public var env: Environment {
-        container.resolveAssert()
+        container.require()
     }
 
     public var lifecycle: ServiceLifecycle {
-        container.resolveAssert()
+        container.require()
+    }
+}
+
+extension Container {
+    var env: Environment {
+        require()
+    }
+
+    var log: Logger {
+        require()
+    }
+
+    fileprivate var coreCount: Int {
+        env.isTesting ? 1 : System.coreCount
     }
 }

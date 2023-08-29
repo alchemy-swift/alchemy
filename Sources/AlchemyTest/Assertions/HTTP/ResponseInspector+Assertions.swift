@@ -1,8 +1,12 @@
 import Alchemy
 import XCTest
 
-extension Response: ResponseInspector {}
+extension Response: ResponseInspector {
+    public var container: Container { Container() }
+}
+
 extension ResponseInspector {
+    
     // MARK: Status Assertions
     
     @discardableResult

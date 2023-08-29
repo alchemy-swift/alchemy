@@ -26,19 +26,19 @@ public struct Databases: Plugin {
         for (id, db) in databases {
             db.migrations = migrations
             db.seeders = seeders
-            app.container.registerSingleton(db, id: id)
+            app.container.register(db, id: id).singleton()
         }
 
         if let _default = `default` ?? databases.keys.first {
-            app.container.registerSingleton(DB(_default))
+            app.container.register(DB(_default)).singleton()
         }
 
         for (id, db) in redis {
-            app.container.registerSingleton(db, id: id)
+            app.container.register(db, id: id).singleton()
         }
 
         if let _default = defaultRedis ?? redis.keys.first {
-            app.container.registerSingleton(Redis(_default))
+            app.container.register(Redis(_default)).singleton()
         }
     }
 

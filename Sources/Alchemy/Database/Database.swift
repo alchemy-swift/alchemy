@@ -5,11 +5,8 @@ import NIOConcurrencyHelpers
 /// injectable `Service` so you can register the default one
 /// via `Database.config(default: .postgres())`.
 public final class Database: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<Database>
+
     /// Any migrations associated with this database, whether run yet or not.
     public var migrations: [Migration] = []
     
@@ -48,7 +45,7 @@ public final class Database: Service {
     /// Create a database backed by the given provider.
     ///
     /// - Parameter provider: The provider.
-    convenience init(provider: @escaping @autoclosure () -> DatabaseProvider, grammar: SQLGrammar) {
+    public convenience init(provider: @escaping @autoclosure () -> DatabaseProvider, grammar: SQLGrammar) {
         self.init(provider: provider(), grammar: grammar, logging: nil)
     }
 

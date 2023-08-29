@@ -5,9 +5,9 @@ extension RedisClient {
     ///
     /// - Parameter id: The id of the redis client to stub, defaults to
     ///   `default`.
-    public static func stub(_ id: Identifier = .default) -> StubRedis {
+    public static func stub(_ id: Identifier? = nil) -> StubRedis {
         let provider = StubRedis()
-        bind(id, RedisClient(provider: provider))
+        Container.register(RedisClient(provider: provider), id: id).singleton()
         return provider
     }
 }

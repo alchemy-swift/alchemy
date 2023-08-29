@@ -1,8 +1,5 @@
 // These libraries are also imported wherever Alchemy is.
 
-// Alchemy related
-@_exported import Fusion
-
 // Argument Parser
 @_exported import ArgumentParser
 
