@@ -26,11 +26,11 @@ final class RequestUtilitiesTests: XCTestCase {
             Request.Parameter(key: "bar", value: "two"),
             Request.Parameter(key: "baz", value: "three"),
         ]
-        XCTAssertEqual(try request.parameter("foo"), "one")
-        XCTAssertEqual(try request.parameter("bar"), "two")
-        XCTAssertEqual(try request.parameter("baz"), "three")
-        XCTAssertThrowsError(try request.parameter("fake", as: String.self))
-        XCTAssertThrowsError(try request.parameter("foo", as: Int.self))
+        XCTAssertEqual(request.parameter("foo"), "one")
+        XCTAssertEqual(request.parameter("bar"), "two")
+        XCTAssertEqual(request.parameter("baz"), "three")
+        XCTAssertThrowsError(request.parameter("fake", as: String.self))
+        XCTAssertThrowsError(request.parameter("foo", as: Int.self))
         XCTAssertTrue(request.parameters.contains(Request.Parameter(key: "foo", value: "one")))
     }
     
