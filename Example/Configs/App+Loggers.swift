@@ -11,24 +11,31 @@ extension Application {
 
             default: {
                 if Env.isXcode {
-                    "xcode"
+                    .xcode
                 } else if Env.isTesting {
-                    "null"
+                    .null
                 } else if Env.isDebug {
-                    "debug"
+                    .debug
                 } else {
-                    "stdout"
+                    .stdout
                 }
             }(),
 
             // Define your loggers here
 
             loggers: [
-                "debug": .debug,
-                "null": .null,
-                "stdout": .stdout,
-                "xcode": .xcode,
+                .debug: .debug,
+                .null: .null,
+                .stdout: .stdout,
+                .xcode: .xcode,
             ]
         )
     }
+}
+
+extension Logger.Identifier {
+    static let debug: Logger.Identifier = "debug"
+    static let null: Logger.Identifier = "null"
+    static let stdout: Logger.Identifier = "stdout"
+    static let xcode: Logger.Identifier = "xcode"
 }

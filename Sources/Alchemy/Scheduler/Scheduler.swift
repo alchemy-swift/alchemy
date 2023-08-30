@@ -4,86 +4,108 @@ import NIOConcurrencyHelpers
 /// A service for scheduling recurring work, in lieu of a separate
 /// cron task running apart from your server.
 public final class Scheduler {
-    private struct WorkItem {
-        let interval: Interval
+    private struct ScheduledTask {
+        let name: String
+        let frequency: Frequency
         let work: () async throws -> Void
     }
 
     public private(set) var isStarted: Bool = false
-    public private(set) var isShutdown: Bool = false
-    private var workItems: [WorkItem] = []
-    private let isTesting: Bool
-    private var scheduled: [Scheduled<Void>]
-    private let lock: NIOLock
+    private var tasks: [ScheduledTask] = []
+    private var scheduled: [Scheduled<Void>] = []
+    private let lock = NIOLock()
 
-    /// Initialize this Scheduler, potentially flagging it for testing. If
-    /// testing is enabled, work items will only be run once, and not
-    /// rescheduled.
-    init(isTesting: Bool = false) {
-        self.isTesting = isTesting
-        self.scheduled = []
-        self.lock = NIOLock()
-    }
-    
     /// Start scheduling with the given loop.
     ///
     /// - Parameter scheduleLoop: A loop to run all tasks on. Defaults
     ///   to the next available `EventLoop`.
     public func start(on scheduleLoop: EventLoop = LoopGroup.next()) {
-        guard !isStarted else {
-            Log.warning("This scheduler has already been started.")
-            return
+        lock.withLock {
+            guard !isStarted else {
+                Log.warning("This scheduler has already been started.")
+                return
+            }
+
+            isStarted = true
         }
-        
-        isStarted = true
-        for item in workItems {
-            schedule(interval: item.interval, task: item.work, on: scheduleLoop)
+
+        for task in tasks {
+            schedule(task: task, on: scheduleLoop)
         }
     }
 
     public func shutdown() async throws {
         lock.withLock {
-            isShutdown = true
+            isStarted = false
             scheduled.forEach { $0.cancel() }
             scheduled = []
         }
     }
 
-    /// Add a work item to this scheduler. When the schedule is
-    /// started, it will begin running each of it's work items
-    /// at their given frequency.
-    ///
-    /// - Parameters:
-    ///   - schedule: The schedule to run this work.
-    ///   - work: The work to run.
-    func addWork(interval: Interval, work: @escaping () async throws -> Void) {
-        workItems.append(WorkItem(interval: interval, work: work))
-    }
-    
-    private func schedule(interval: Interval, task: @escaping () async throws -> Void, on loop: EventLoop) {
-        guard let delay = interval.next() else {
-            Log.info("Interval complete; there is no future date to run.")
+    private func schedule(task: ScheduledTask, on loop: EventLoop) {
+        guard let delay = task.frequency.timeUntilNext() else {
+            Log.info("Scheduling \(task.name) complete; there are no future times in the frequency.")
             return
         }
 
         lock.withLock {
-            guard !isShutdown else {
-                Log.debug("Not scheduling work, the Scheduler has been shut down.")
+            guard isStarted else {
+                Log.debug("Not scheduling task \(task.name), this Scheduler is not started.")
                 return
             }
 
             let scheduledTask = loop.flatScheduleTask(in: delay) {
                 loop.asyncSubmit {
                     // Schedule next and run
-                    if !self.isTesting {
-                        self.schedule(interval: interval, task: task, on: loop)
-                    }
+                    self.schedule(task: task, on: loop)
 
-                    try await task()
+                    try await task.work()
                 }
             }
 
             scheduled.append(scheduledTask)
+        }
+    }
+
+    // MARK: Scheduling
+
+    /// Schedule a recurring task.
+    ///
+    /// - Parameters:
+    ///   - name: An optional name of the task for debugging.
+    ///   - task: The task to run.
+    /// - Returns: A builder for customizing the scheduling frequency.
+    public func task(_ name: String? = nil, _ task: @escaping () async throws -> Void) -> Frequency {
+        let frequency = Frequency()
+        let name = name ?? "task_\(tasks.count)"
+        let task = ScheduledTask(name: name, frequency: frequency) {
+            do {
+                Log.info("Scheduling \(name) (\(frequency.cron.string))")
+                try await task()
+            } catch {
+                Log.error("Error scheduling \(name): \(error)")
+                throw error
+            }
+        }
+        
+        tasks.append(task)
+        return frequency
+    }
+
+    /// Schedule a recurring `Job`.
+    ///
+    /// - Parameters:
+    ///   - job: The job to schedule.
+    ///   - queue: The queue to schedule it on.
+    ///   - channel: The queue channel to schedule it on.
+    /// - Returns: A builder for customizing the scheduling frequency.
+    public func job<J: Job>(_ job: @escaping @autoclosure () -> J, queue: Queue = Q, channel: String = Queue.defaultChannel) -> Frequency {
+
+        // Register the job, just in case the user forgot.
+        JobRegistry.register(J.self)
+
+        return task("\(J.self)") {
+            try await job().dispatch(on: queue, channel: channel)
         }
     }
 }

@@ -28,17 +28,17 @@ final class Commander {
 
     func start(args: [String]? = nil) async throws {
 
-        // 0. Parse the Command
-
-        // When running tests, don't use the command line args as the default;
-        // they are irrelevant to running the app and may contain a bunch of
-        // options that will cause `AsyncParsableCommand` parsing to fail.
-        let fallbackArgs = Env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
-        var command = try Launch.parseAsRoot(args ?? fallbackArgs)
-
-        // 1. Run Command
-
         do {
+            // 0. Parse the Command
+
+            // When running tests, don't use the command line args as the default;
+            // they are irrelevant to running the app and may contain a bunch of
+            // options that will cause `AsyncParsableCommand` parsing to fail.
+            let fallbackArgs = Env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
+            var command = try Launch.parseAsRoot(args ?? fallbackArgs)
+
+            // 1. Run Command
+
             try await LoopGroup.next()
                 .asyncSubmit {
                     if var asyncCommand = command as? AsyncParsableCommand {
@@ -48,16 +48,16 @@ final class Commander {
                     }
                 }
                 .get()
+
+            // 2. Wait or Shutdown
+
+            if command.waitForLifecycle {
+                Lifecycle.wait()
+            } else {
+                try await Lifecycle.shutdown()
+            }
         } catch {
             Launch.exit(withError: error)
-        }
-
-        // 2. Wait or Shutdown
-
-        if command.waitForLifecycle {
-            Lifecycle.wait()
-        } else {
-            try await Lifecycle.shutdown()
         }
     }
 }

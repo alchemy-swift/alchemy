@@ -49,7 +49,7 @@ public struct JobData: Codable, Equatable {
     }
 
     init(
-        id: String, 
+        id: String = UUID().uuidString,
         payload: Data,
         jobName: String,
         channel: String,

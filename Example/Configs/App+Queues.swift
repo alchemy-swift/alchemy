@@ -9,18 +9,21 @@ extension Application {
 
             /// Your app's default Queue.
 
-            default: "database",
+            default: .redis,
 
             /// Define your queues here
 
             queues: [
-                "database": .database,
-                "memory": .memory,
+                .database: .database,
+                .memory: .memory,
+                .redis: .redis,
             ],
 
             /// Define any jobs you'll want to handle here
 
-            jobs: []
+            jobs: [
+                GoJob.self
+            ]
         )
     }
 }

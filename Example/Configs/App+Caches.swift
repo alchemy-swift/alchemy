@@ -14,7 +14,8 @@ extension Application {
             /// Define your caches here
 
             caches: [
-                "database": .database
+                "database": .database,
+                "redis": .redis,
             ]
         )
     }

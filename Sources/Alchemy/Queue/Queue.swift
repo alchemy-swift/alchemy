@@ -28,9 +28,9 @@ public final class Queue: Service {
     ///   - channel: The channel on which to enqueue the job. Defaults
     ///     to `Queue.defaultChannel`.
     public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) async throws {
+        JobRegistry.register(J.self)
         let payload = try job.payload(for: self, channel: channel)
-        let data = JobData(id: channel,
-                           payload: payload,
+        let data = JobData(payload: payload,
                            jobName: J.name,
                            channel: channel,
                            attempts: 0, 
@@ -77,7 +77,7 @@ public final class Queue: Service {
                 return
             }
 
-            Log.info("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
+            Log.debug("Dequeued job \(jobData.jobName) from queue \(jobData.channel)")
             try await execute(jobData)
 
             if untilEmpty {
