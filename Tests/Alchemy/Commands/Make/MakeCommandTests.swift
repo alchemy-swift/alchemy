@@ -8,6 +8,7 @@ final class MakeCommandTests: TestCase<TestApp> {
     override func setUp() {
         super.setUp()
         fileName = UUID().uuidString
+        FileCreator.mock()
     }
     
     func testColumnData() {
