@@ -1,12 +1,6 @@
 struct CommandsPlugin: Plugin {
     func registerServices(in app: Application) {
-        app.container.register { container in
-            if container.env.isTesting {
-                FileCreator.mock()
-            }
-            
-            return Commander()
-        }.singleton()
+        app.container.register(Commander()).singleton()
     }
 
     func boot(app: Application) {
