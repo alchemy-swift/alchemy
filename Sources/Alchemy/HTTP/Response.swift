@@ -18,8 +18,12 @@ public final class Response {
         self.headers = headers
         self.body = body
 
-        if updateContentLength, let length = body?.length {
-            self.headers.contentLength = length
+        if updateContentLength {
+            if let body {
+                self.headers.contentLength = body.length
+            } else {
+                self.headers.contentLength = 0
+            }
         }
 
         if let contentType {

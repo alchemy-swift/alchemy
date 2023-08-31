@@ -22,31 +22,21 @@ extension URLEncodedFormDecoder: HTTPDecoder {
     public func content(from buffer: ByteBuffer, contentType: ContentType?) -> Content {
         do {
             let topLevel = try decode(URLEncodedNode.self, from: buffer.string)
-            return Content(node: parse(node: topLevel))
+            return Content(value: parse(value: topLevel))
         } catch {
             return Content(error: error)
         }
     }
     
-    private func parse(node: URLEncodedNode) -> Content.State.Node {
-        switch node {
+    private func parse(value: URLEncodedNode) -> Content.Value {
+        switch value {
         case .dict(let dict):
-            return .dictionary(dict.mapValues { parse(node: $0) })
+            return .dictionary(dict.mapValues { parse(value: $0) })
         case .array(let array):
-            return .array(array.map { parse(node: $0) })
+            return .array(array.map { parse(value: $0) })
         case .value(let string):
-            return .value(URLValue(value: string))
+            return .string(string)
         }
-    }
-    
-    private struct URLValue: ContentValue {
-        let value: String
-        
-        var string: String? { value }
-        var bool: Bool? { Bool(value) }
-        var int: Int? { Int(value) }
-        var double: Double? { Double(value) }
-        var file: File? { nil }
     }
 }
 

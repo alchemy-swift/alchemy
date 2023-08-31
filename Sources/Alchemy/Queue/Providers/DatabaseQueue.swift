@@ -88,7 +88,7 @@ private final class DatabaseQueue: QueueProvider {
                 .limit(1)
                 .lock(for: .update, option: .skipLocked)
                 .first()
-            
+
             return try await job?.update(on: conn) {
                 $0.reserved = true
                 $0.reservedAt = Date()

@@ -51,22 +51,21 @@ extension FormDataDecoder: HTTPDecoder {
         do {
             try parser.execute(buffer)
             let dict = Dictionary(uniqueKeysWithValues: parts.compactMap { part in part.name.map { ($0, part) } })
-            return Content(node: .dictionary(dict.mapValues { .value($0) }))
+            return Content(value: .dictionary(dict.mapValues(\.value)))
         } catch {
             return Content(error: error)
         }
     }
 }
 
-extension MultipartPart: ContentValue {
-    public var string: String? { body.string }
-    public var int: Int? { Int(body.string) }
-    public var bool: Bool? { Bool(body.string) }
-    public var double: Double? { Double(body.string) }
-    
-    public var file: File? {
-        guard let disposition = headers.contentDisposition, let filename = disposition.filename else { return nil }
-        return File(name: filename, source: .http(clientContentType: headers.contentType), content: .buffer(body), size: body.writerIndex)
+extension MultipartPart {
+    fileprivate var value: Content.Value {
+        guard let disposition = headers.contentDisposition, let filename = disposition.filename else {
+            return .string(body.string)
+        }
+        
+        let file = File(name: filename, source: .http(clientContentType: headers.contentType), content: .buffer(body), size: body.writerIndex)
+        return .file(file)
     }
 }
 

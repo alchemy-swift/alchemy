@@ -40,13 +40,14 @@ struct ServeCommand: Command {
     @Flag var quiet: Bool = false
 
     init() {}
-    init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false) {
+    init(host: String = "127.0.0.1", port: Int = 3000, workers: Int = 0, schedule: Bool = false, migrate: Bool = false, quiet: Bool = true) {
         self.host = host
         self.port = port
         self.socket = nil
         self.workers = workers
         self.schedule = schedule
         self.migrate = migrate
+        self.quiet = true
     }
 
     // MARK: Command
@@ -69,9 +70,10 @@ struct ServeCommand: Command {
         let responder = HTTPResponder(logResponses: !quiet)
         try await app.server.start(responder: responder).get()
 
-        if let unixSocket = socket {
+        let address = app.server.configuration.address
+        if let unixSocket = address.unixDomainSocketPath {
             Log.info("Server running on \(unixSocket).")
-        } else {
+        } else if let host = address.host, let port = address.port {
             let link = "[http://\(host):\(port)]".bold
             Log.info("Server running on \(link).")
         }

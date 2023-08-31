@@ -26,8 +26,7 @@ final class Commander {
         CommandConfiguration(abstract: "Launch your app.", subcommands: commands, defaultSubcommand: defaultCommand)
     }
 
-    func start(args: [String]? = nil) async throws {
-
+    func start(args: [String]? = nil, wait: Bool) async throws {
         do {
             // 0. Parse the Command
 
@@ -50,6 +49,10 @@ final class Commander {
                 .get()
 
             // 2. Wait or Shutdown
+
+            guard wait else {
+                return
+            }
 
             if command.waitForLifecycle {
                 Lifecycle.wait()

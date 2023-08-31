@@ -16,7 +16,7 @@ extension App {
             // Define any custom commands here.
 
             commands: [
-                Go.self
+                Debug.self
             ]
         )
     }

@@ -6,8 +6,12 @@ public final class ByteStream: AsyncSequence {
     public struct Writer {
         fileprivate let stream: ByteStream
 
-        func write(_ chunk: ByteBuffer) async throws {
+        public func write(_ chunk: ByteBuffer) async throws {
             try await stream._write(chunk: chunk).get()
+        }
+
+        public func write(_ string: String) async throws {
+            try await stream._write(chunk: ByteBuffer(string: string)).get()
         }
     }
 

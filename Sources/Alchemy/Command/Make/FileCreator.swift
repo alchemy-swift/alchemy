@@ -15,9 +15,9 @@ struct FileCreator {
         let filePath = "\(migrationLocation)/\(fileName).\(`extension`)"
         let destinationURL = URL(fileURLWithPath: filePath)
         try contents.write(to: destinationURL, atomically: true, encoding: .utf8)
-        print("🧪 create \(filePath.green)")
+        Log.comment("🧪 create \(filePath.green)")
         if let comment = comment {
-            print("          └─ \(comment)")
+            Log.comment("          └─ \(comment)")
         }
     }
 

@@ -71,25 +71,25 @@ final class RouterTests: TestCase<TestApp> {
     }
 
     func testPathParametersMatch() async throws {
-        let expect = Expect()
+        var expect = Expect()
         let uuidString = UUID().uuidString
-        app.get("/v1/some_path/:uuid/:user_id") { request async -> ResponseConvertible in
-            XCTAssertEqual(request.parameters, [
+        app.get("/v1/some_path/:uuid/:user_id") {
+            XCTAssertEqual($0.parameters, [
                 Request.Parameter(key: "uuid", value: uuidString),
                 Request.Parameter(key: "user_id", value: "123"),
             ])
-            await expect.signalOne()
+            expect.signalOne()
             return "foo"
         }
         
         try await Test.get("/v1/some_path/\(uuidString)/123").assertBody("foo").assertOk()
-        AssertTrue(await expect.one)
+        AssertTrue(expect.one)
     }
 
     func testMultipleRequests() async throws {
         app.get("/foo") { _ in 1 }
         app.get("/foo") { _ in 2 }
-        try await Test.get("/foo").assertOk().assertBody("2")
+        try await Test.get("/foo").assertOk().assertBody("1")
     }
 
     func testInvalidPath() throws {
@@ -139,7 +139,7 @@ final class RouterTests: TestCase<TestApp> {
     func testError() async throws {
         app.get("/error") { _ -> Void in throw TestError() }
         let status = HTTPResponseStatus.internalServerError
-        try await Test.get("/error").assertStatus(status).assertBody(status.reasonPhrase)
+        try await Test.get("/error").assertStatus(status).assertEmpty()
     }
     
     func testErrorHandling() async throws {
@@ -148,7 +148,7 @@ final class RouterTests: TestCase<TestApp> {
         
         let errorStatus = HTTPResponseStatus.internalServerError
         try await Test.get("/error_convert").assertStatus(.badGateway).assertEmpty()
-        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertBody(errorStatus.reasonPhrase)
+        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertEmpty()
     }
 }
 
@@ -156,7 +156,7 @@ private struct TestError: Error {}
 
 private struct TestConvertibleError: Error, ResponseConvertible {
     func response() async throws -> Response {
-        Response(status: .badGateway, body: nil)
+        Response(status: .badGateway)
     }
 }
 

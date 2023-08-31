@@ -10,9 +10,14 @@ extension Database {
     @discardableResult
     public static func fake(_ id: Identifier? = nil, migrations: [Migration] = [], seeders: [Seeder] = []) async throws -> Database {
         let db = Database.sqlite
+        Container.register(db, id: id).singleton()
+        Container
+            .require(ServiceLifecycle.self)
+            .registerShutdown(label: "fake db", .async {
+                try await db.shutdown()
+            })
         db.migrations = migrations
         db.seeders = seeders
-        Container.register(db, id: id).singleton()
         if !migrations.isEmpty { try await db.migrate() }
         if !seeders.isEmpty { try await db.seed() }
         return db

@@ -6,7 +6,7 @@ public protocol Service {
 
 /// A type to be used as the identifier for various services.
 public struct ServiceIdentifier<T>: Hashable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
-    public let value: AnyHashable
+    private let value: AnyHashable
 
     public init(value: AnyHashable) {
         self.value = value
@@ -15,13 +15,13 @@ public struct ServiceIdentifier<T>: Hashable, ExpressibleByStringLiteral, Expres
     // MARK: - ExpressibleByStringLiteral
 
     public init(stringLiteral value: String) {
-        self.init(value: value)
+        self.value = value
     }
 
     // MARK: - ExpressibleByIntegerLiteral
 
     public init(integerLiteral value: Int) {
-        self.init(value: value)
+        self.value = value
     }
 }
 

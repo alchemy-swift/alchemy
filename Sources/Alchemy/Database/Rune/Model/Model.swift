@@ -48,7 +48,7 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
 
 extension Model {
     public static var database: Database { DB }
-    public static var keyMapping: KeyMapping { DB.keyMapping }
+    public static var keyMapping: KeyMapping { database.keyMapping }
     public static var table: String { keyMapping.encode("\(Self.self)").pluralized }
     public static var primaryKey: String { "id" }
     public static var upsertConflictKeys: [String] { [primaryKey] }
@@ -81,11 +81,7 @@ extension Model where Self: Codable {
 
 extension Encodable {
     func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> [String: SQLConvertible] {
-        try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder)
-            .fields(for: self)
-            // Automatically escape fields pulled of Encodable types, so that
-            // reserved keywords won't create issues in SQL queries.
-            .mapKeys(\.inQuotes)
+        try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder).fields(for: self)
     }
 }
 

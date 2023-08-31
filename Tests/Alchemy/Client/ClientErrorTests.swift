@@ -5,27 +5,47 @@ import AsyncHTTPClient
 
 final class ClientErrorTests: TestCase<TestApp> {
     func testClientError() async throws {
-        let request = Client.Request(url: "http://localhost/foo", method: .POST, headers: ["foo": "bar"], body: .string("foo"))
-        let response = Client.Response(request: request, host: "alchemy", status: .conflict, version: .http1_1, headers: ["foo": "bar"], body: .string("bar"))
+        let request = Client.Request(
+            url: "http://localhost/foo",
+            method: .POST,
+            headers: ["foo": "bar"],
+            body: "foo"
+        )
         
-        let error = ClientError(message: "foo", request: request, response: response)
-        AssertEqual(error.description, """
+        let error = ClientError(
+            message: "foo",
+            request: request,
+            response: Client.Response(
+                request: request,
+                host: "alchemy",
+                status: .conflict,
+                version: .http1_1,
+                headers: [
+                    "foo": "bar"
+                ],
+                body: "bar"
+            )
+        )
+
+        let expectedOutput = """
             *** HTTP Client Error ***
             foo
-            
+
             *** Request ***
             URL: POST http://localhost/foo
             Headers: [
-                foo
+                foo: bar
             ]
-            Body: <3 bytes>
-            
+            Body: foo
+
             *** Response ***
             Status: 409 Conflict
             Headers: [
-                foo
+                foo: bar
             ]
-            Body: <3 bytes>
-            """)
+            Body: bar
+            """
+
+        AssertEqual(error.description, expectedOutput)
     }
 }

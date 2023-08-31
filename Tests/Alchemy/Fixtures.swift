@@ -1,11 +1,11 @@
 // Used for verifying expectations (XCTExpectation isn't as needed since things are async now).
-actor Expect {
+struct Expect {
     var one = false, two = false, three = false, four = false, five = false, six = false
     
-    func signalOne() async { one = true }
-    func signalTwo() async { two = true }
-    func signalThree() async { three = true }
-    func signalFour() async { four = true }
-    func signalFive() async { five = true }
-    func signalSix() async { six = true }
+    mutating func signalOne() { one = true }
+    mutating func signalTwo() { two = true }
+    mutating func signalThree() { three = true }
+    mutating func signalFour() { four = true }
+    mutating func signalFive() { five = true }
+    mutating func signalSix() { six = true }
 }

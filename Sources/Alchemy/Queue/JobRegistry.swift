@@ -3,7 +3,7 @@ import NIOConcurrencyHelpers
 /// Storage for `Job` decoding behavior.
 struct JobRegistry {
     /// Stored decoding behavior for jobs.
-    private static var creators: [String: (JobData) async throws -> Job] = [:]
+    static var creators: [String: (JobData) async throws -> Job] = [:]
     private static let lock = NIOLock()
     
     /// Register a job to cache its decoding behavior.

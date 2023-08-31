@@ -4,8 +4,12 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation, CustomStringConve
     public let parameters: [SQLValue]
 
     public var description: String {
-        let binds = parameters.isEmpty ? "" : " \(parameters)"
-        return "\(statement);\(binds)"
+        if statement == "?" {
+            return rawSQLString
+        } else {
+            let binds = parameters.isEmpty ? "" : " \(parameters)"
+            return "\(statement);\(binds)"
+        }
     }
 
     public var rawSQLString: String {

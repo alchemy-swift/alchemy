@@ -20,7 +20,7 @@ public protocol Router {
 
 /// Matches a Request against a Route. The match is a success if the request
 /// path matches the variablized input path as well as an arbitrary
-/// matching closure for more fine grained matching logic.
+/// matching closure for more generic matching logic.
 public struct RouteMatcher: Buildable {
     /// Any variables parsed from the path during matching.
     public var parameters: [Request.Parameter]
@@ -50,8 +50,8 @@ public struct RouteMatcher: Buildable {
                 return false
             }
 
-            if part.hasPrefix(RouteMatcher.parameterEscape) {
-                parameters.append(Request.Parameter(key: String(part.dropFirst()), value: part))
+            if token.hasPrefix(RouteMatcher.parameterEscape) {
+                parameters.append(Request.Parameter(key: String(token.dropFirst()), value: part))
             } else if part != token {
                 return false
             }

@@ -1,13 +1,12 @@
 @testable import Alchemy
 import XCTest
 
-final class FusionTest: XCTestCase {
-    var container = Container()
+final class ContainerTests: XCTestCase {
+    var container: Container { .main }
 
     override func setUp() {
         super.setUp()
-        Container.main = Container()
-        container = .main
+        container.reset()
     }
 
     func testTransient() {
@@ -137,10 +136,12 @@ final class FusionTest: XCTestCase {
     func testStatic() throws {
         Container.register(1)
         Container.register { "\($0.require(Int.self))" }
+        Container.register { 1.2 }
         XCTAssertNil(Container.resolve(Bool.self))
-        XCTAssertEqual(Container.resolve(String.self), "1")
-        XCTAssertEqual(try Container.resolveOrThrow(Int.self), 1)
-        XCTAssertEqual(Container.require(String.self), "1")
+        XCTAssertEqual(Container.resolve(), "1")
+        XCTAssertEqual(Container.resolve(), 1.2)
+        XCTAssertEqual(try Container.resolveOrThrow(), 1)
+        XCTAssertEqual(Container.require(), "1")
     }
 
     func testDebug() {
@@ -148,7 +149,7 @@ final class FusionTest: XCTestCase {
         container.register(0, id: 1)
         container.register(false, id: 2)
         XCTAssertEqual(container.debugDescription, """
-        *Container Entries*
+        * Container *
         - Bool (2): false (transient)
         - Int (1): 0 (transient)
         - String: foo (singleton)
@@ -157,9 +158,18 @@ final class FusionTest: XCTestCase {
 
     func testDebugEmpty() {
         XCTAssertEqual(container.debugDescription, """
-        *Container Entries*
+        * Container *
         <nothing registered>
         """)
+    }
+
+    func testKeyPath() {
+        let keyPath = \TestingDefault.string
+        XCTAssertEqual(container.exists(keyPath), false)
+        container.set(keyPath, value: "foo")
+        XCTAssertEqual(container.get(keyPath), "foo")
+        XCTAssertEqual(container.require(keyPath), "foo")
+        XCTAssertEqual(container.exists(keyPath), true)
     }
 }
 

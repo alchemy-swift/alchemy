@@ -14,13 +14,13 @@ final class DatabaseCache: CacheProvider {
     
     /// Get's the item, deleting it and returning nil if it's expired.
     private func getItem(key: String) async throws -> CacheItem? {
-        let item = try await CacheItem.query(on: db).where("_key" == key).first()
+        let item = try await CacheItem.query(on: db).where("key" == key).first()
         guard let item = item else {
             return nil
         }
         
         guard item.isValid else {
-            try await CacheItem.query(on: db).where("_key" == key).delete()
+            try await CacheItem.query(on: db).where("key" == key).delete()
             return nil
         }
         
@@ -41,7 +41,7 @@ final class DatabaseCache: CacheProvider {
             item.expiration = expiration ?? -1
             _ = try await item.save(on: db)
         } else {
-            _ = try await CacheItem(_key: key, value: value.description, expiration: expiration ?? -1).save(on: db)
+            _ = try await CacheItem(key: key, value: value.description, expiration: expiration ?? -1).save(on: db)
         }
     }
     
@@ -60,7 +60,7 @@ final class DatabaseCache: CacheProvider {
     }
     
     func delete(_ key: String) async throws {
-        _ = try await CacheItem.query(on: db).where("_key" == key).delete()
+        _ = try await CacheItem.query(on: db).where("key" == key).delete()
     }
     
     func increment(_ key: String, by amount: Int) async throws -> Int {
@@ -70,7 +70,7 @@ final class DatabaseCache: CacheProvider {
             return newVal
         }
         
-        _ = try await CacheItem(_key: key, value: "\(amount)").save(on: db)
+        _ = try await CacheItem(key: key, value: "\(amount)").save(on: db)
         return amount
     }
     
@@ -104,7 +104,7 @@ private struct CacheItem: Model, Codable {
     static let table = "cache"
 
     var id: PK<Int> = .new
-    let _key: String
+    let key: String
     var value: String
     var expiration: Int = -1
     
@@ -118,7 +118,7 @@ private struct CacheItem: Model, Codable {
     
     func cast<L: LosslessStringConvertible>(_ type: L.Type = L.self) throws -> L {
         guard let converted = L(value) else {
-            throw CacheError("Unable to cast cache item `\(_key)` to \(L.self).")
+            throw CacheError("Unable to cast cache item `\(key)` to \(L.self).")
         }
 
         return converted
@@ -135,8 +135,8 @@ extension Cache {
         public func up(db: Database) async throws {
             try await db.createTable("cache") {
                 $0.increments("id").primary()
-                $0.string("_key").notNull().unique()
-                $0.string("text", length: .unlimited).notNull()
+                $0.string("key").notNull().unique()
+                $0.string("value", length: .unlimited).notNull()
                 $0.int("expiration").notNull()
             }
         }

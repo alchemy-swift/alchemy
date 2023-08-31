@@ -19,3 +19,19 @@ public func AssertFalse(_ expression: Bool, _ message: @autoclosure () -> String
 public func AssertTrue(_ expression: Bool, _ message: @autoclosure () -> String = "", file: StaticString = #filePath, line: UInt = #line) {
     XCTAssertTrue(expression, message(), file: file, line: line)
 }
+
+public func AssertThrowsError<T>(_ expression: @autoclosure () async throws -> T, _ message: @autoclosure () -> String = "", file: StaticString = #filePath, line: UInt = #line, _ errorHandler: (_ error: Error) -> Void = { _ in }) async {
+    do {
+        _ = try await expression()
+    } catch {
+        XCTAssertThrowsError(try { throw error }(), message(), file: file, line: line, errorHandler)
+    }
+}
+
+public func AssertNoThrow<T>(_ expression: @autoclosure () async throws -> T, _ message: @autoclosure () -> String = "", file: StaticString = #filePath, line: UInt = #line) async {
+    do {
+        _ = try await expression()
+    } catch {
+        XCTAssertNoThrow(try { throw error }(), message(), file: file, line: line)
+    }
+}

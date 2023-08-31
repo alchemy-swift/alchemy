@@ -54,11 +54,13 @@ open class TestCase<A: Application>: XCTestCase {
         try await super.setUp()
         app = A()
         app.setup()
+        try app.boot()
     }
-    
+
     open override func tearDown() async throws {
         try await super.tearDown()
         try await app.stop()
+        app.container.reset()
     }
 }
 

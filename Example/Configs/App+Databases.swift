@@ -9,12 +9,12 @@ extension Application {
 
             /// Your default Database
 
-            default: Env.isTesting ? "sqlite" : "postgres",
+            default: .sqlite,
 
             /// Define your databases here
 
             databases: [
-                "postgres": .postgres(
+                .postgres: .postgres(
                     host: Env.DB_HOST ?? "localhost",
                     port: Env.DB_PORT ?? 5432,
                     database: Env.DB ?? "alchemy",
@@ -22,7 +22,7 @@ extension Application {
                     password: Env.DB_PASSWORD ?? "password",
                     enableSSL: Env.DB_ENABLE_SSL ?? false
                 ),
-                "sqlite": .sqlite(path: "../test.db"),
+                .sqlite: .sqlite(path: "../test.db").logRawSQL(),
             ],
 
             /// Migrations for your app
@@ -53,4 +53,9 @@ extension Application {
             ]
         )
     }
+}
+
+extension Database.Identifier {
+    static let sqlite: Database.Identifier = "sqlite"
+    static let postgres: Database.Identifier = "postgres"
 }

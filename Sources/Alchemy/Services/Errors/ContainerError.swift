@@ -1,4 +1,7 @@
-public enum ContainerError: Error {
-    /// A factory was not registered for the given type and identifier.
-    case notRegistered(type: Any.Type, id: AnyHashable?)
+public struct ContainerError: Error {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
 }

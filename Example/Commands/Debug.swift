@@ -1,4 +1,5 @@
 import Alchemy
+import RediStack
 
 struct UserDTO: Codable {
     let id: Int
@@ -11,18 +12,11 @@ enum Thing: String {
     case two
 }
 
-struct Go: Command {
-    static let name = "go"
+struct Debug: Command {
+    static let name = "debug"
 
     func run() async throws {
-        Log.info("\(Thing.one)")
-        Log.trace("Trace")
-        Log.debug("Debug")
-        Log.info("Info", metadata: ["foo": "1", "bar": "2"])
-        Log.notice("Notice", metadata: ["foo": "1", "bar": "2"])
-        Log.warning("Warning", metadata: ["foo": "1", "bar": "2"])
-        Log.error("Error", metadata: ["foo": "1", "bar": "2"])
-        Log.critical("Critical", metadata: ["foo": "1", "bar": "2"])
+        //
     }
 
     func testRelationships() {
@@ -57,6 +51,29 @@ struct Go: Command {
 //        let owner = try await likes.first!.postOwner()
     }
 }
+
+extension Alchemy.RedisClient {
+    static var testing: Alchemy.RedisClient {
+        .configuration(RedisConnectionPool.Configuration(
+            initialServerConnectionAddresses: [
+                try! .makeAddressResolvingHost("localhost", port: 6379)
+            ],
+            maximumConnectionCount: .maximumActiveConnections(1),
+            connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(connectionDefaultLogger: Log),
+            connectionRetryTimeout: .milliseconds(100)
+        ))
+    }
+
+    func checkAvailable() async -> Bool {
+        do {
+            _ = try await ping().get()
+            return true
+        } catch {
+            return false
+        }
+    }
+}
+
 
 struct User: Model, Codable, KeyPathQueryable {
     static var storedProperties = [

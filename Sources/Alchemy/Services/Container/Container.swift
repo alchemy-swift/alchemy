@@ -44,6 +44,13 @@ public final class Container: CustomDebugStringConvertible {
             self.typeString = "\(type)"
             self.id = id
         }
+
+        static func == (lhs: Key, rhs: Key) -> Bool {
+            // This way, regardless of the type of the id, if it has the same
+            // hashValue (typically because its backed by the same hashable
+            // type, it will be equal.
+            lhs.hashValue == rhs.hashValue
+        }
     }
 
     /// The main service container.
@@ -63,14 +70,20 @@ public final class Container: CustomDebugStringConvertible {
         self.factories = [:]
     }
 
+    /// Remove all factories and cached values from this container.
+    public func reset() {
+        lock.withLock {
+            factories = [:]
+        }
+    }
+
     // MARK: Registering
 
     @discardableResult
     public func register<T>(factory: @escaping (Container) -> T, id: AnyHashable? = nil) -> Factory {
         lock.withLock {
-            let key = Key(type: T.self, id: id)
             let factory = Factory(factory)
-            factories[key] = factory
+            factories[Key(type: T.self, id: id)] = factory
             return factory
         }
     }
@@ -87,17 +100,17 @@ public final class Container: CustomDebugStringConvertible {
 
     @discardableResult
     public static func register<T>(factory: @escaping (Container) -> T, id: AnyHashable? = nil) -> Factory {
-        main.register(factory, id: id)
+        main.register(factory: factory, id: id)
     }
 
     @discardableResult
     public static func register<T>(_ factory: @escaping () -> T, id: AnyHashable? = nil) -> Factory {
-        main.register(factory: { _ in factory() }, id: id)
+        main.register(factory, id: id)
     }
 
     @discardableResult
     public static func register<T>(_ factory: @escaping @autoclosure () -> T, id: AnyHashable? = nil) -> Factory {
-        main.register(factory, id: id)
+        main.register(factory(), id: id)
     }
 
     // MARK: Resolving
@@ -130,7 +143,8 @@ public final class Container: CustomDebugStringConvertible {
     ///   - id: An optional identifier to resolve with.
     public func resolveOrThrow<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) throws -> T {
         guard let unwrapped = resolve(type, id: id) else {
-            throw ContainerError.notRegistered(type: T.self, id: id)
+            let identifier = id.map { " with identifier \($0)" } ?? ""
+            throw ContainerError("A \(T.self)\(identifier) wasn't registered to this container.")
         }
 
         return unwrapped

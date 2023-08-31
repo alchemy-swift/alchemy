@@ -99,7 +99,7 @@ extension Logger: Service {
     /// Logs a "comment". Internal function intended for useful context during
     /// local dev only.
     func comment(_ message: String) {
-        if !Env.isTesting || Env.isDebug {
+        if !Env.isTesting && Env.isDebug {
             let padding = Env.isXcode ? "" : "  "
             print("\(padding)\(message)")
         }
@@ -111,7 +111,9 @@ extension Logger: Service {
     }
 
     static let `default`: Logger = {
-        if Environment.isXcode {
+        if Environment.isRunFromTests {
+            return .null
+        } else if Environment.isXcode {
             return .xcode
         } else {
             return .debug

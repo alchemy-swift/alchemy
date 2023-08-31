@@ -22,7 +22,7 @@ extension Database {
         sqlite(configuration: .init(storage: .memory(identifier: identifier), enableForeignKeys: true))
     }
 
-    public static func sqlite(configuration: @escaping @autoclosure () -> SQLiteConfiguration) -> Database {
-        Database(provider: SQLiteDatabaseProvider(configuration: configuration()), grammar: SQLiteGrammar())
+    public static func sqlite(configuration: SQLiteConfiguration) -> Database {
+        Database(provider: SQLiteDatabaseProvider(configuration: configuration), grammar: SQLiteGrammar())
     }
 }

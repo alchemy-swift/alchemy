@@ -89,7 +89,7 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
         return try await next(
             request
                 .set(model)
-                .set(model.user.get())
+                .set(model.user())
         )
     }
 }

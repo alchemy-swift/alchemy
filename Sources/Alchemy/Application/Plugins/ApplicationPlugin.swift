@@ -1,7 +1,7 @@
 import NIO
 
 /// Sets up core application services that other plugins may depend on.
-struct ApplicationBootstrapper: Plugin {
+struct ApplicationPlugin: Plugin {
     func registerServices(in app: Application) {
 
         // 0. Register Environment
@@ -15,7 +15,7 @@ struct ApplicationBootstrapper: Plugin {
         // 2. Register NIO services
 
         app.container.register { MultiThreadedEventLoopGroup(numberOfThreads: $0.coreCount) as EventLoopGroup }.singleton()
-        app.container.register { NIOThreadPool(numberOfThreads: $0.coreCount) }.singleton()
+        app.container.register { NIOThreadPool.singleton }
         app.container.register { container in
             guard let current = MultiThreadedEventLoopGroup.currentEventLoop, !container.env.isTesting else {
                 // With async/await there is no guarantee that you'll
@@ -30,7 +30,7 @@ struct ApplicationBootstrapper: Plugin {
         // 3. Register Lifecycle
 
         app.container.register { container in
-            var logger = container.log
+            var logger: Logger = container.require()
 
             // ServiceLifecycle is pretty noisy. Let's default it to
             // logging @ .notice or above, unless the user has set
@@ -46,11 +46,6 @@ struct ApplicationBootstrapper: Plugin {
                 )
             )
         }.singleton()
-
-        // 4. Register the Application
-
-        app.container.register(app).singleton()
-        app.container.register(app as Application).singleton()
     }
 
     func boot(app: Application) {
@@ -59,7 +54,6 @@ struct ApplicationBootstrapper: Plugin {
 
     func shutdownServices(in app: Application) async throws {
         try await app.container.resolve(EventLoopGroup.self)?.shutdownGracefully()
-        try await app.container.resolve(NIOThreadPool.self)?.shutdownGracefully()
     }
 }
 
@@ -75,10 +69,6 @@ extension Application {
 
 extension Container {
     var env: Environment {
-        require()
-    }
-
-    var log: Logger {
         require()
     }
 

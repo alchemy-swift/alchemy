@@ -32,7 +32,7 @@ extension EagerLoadable {
         return values
     }
 
-    public func get() async throws -> To {
+    public func value() async throws -> To {
         guard let cached = try from.cached(at: cacheKey, To.self) else {
             return try await load()
         }
@@ -66,7 +66,7 @@ extension EagerLoadable {
     }
 
     public func callAsFunction() async throws -> To {
-        try await get()
+        try await value()
     }
 }
 

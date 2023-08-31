@@ -22,31 +22,29 @@ extension JSONDecoder: HTTPDecoder {
     public func content(from buffer: ByteBuffer, contentType: ContentType?) -> Content {
         do {
             let topLevel = try JSONSerialization.jsonObject(with: buffer, options: .fragmentsAllowed)
-            return Content(node: parse(val: topLevel))
+            return Content(value: parse(val: topLevel))
         } catch {
             return Content(error: error)
         }
     }
     
-    private func parse(val: Any) -> Content.State.Node {
+    private func parse(val: Any) -> Content.Value {
         if let dict = val as? [String: Any] {
             return .dictionary(dict.mapValues { parse(val: $0) })
         } else if let array = val as? [Any] {
             return .array(array.map { parse(val: $0) })
+        } else if let string = val as? String {
+            return .string(string)
+        } else if let int = val as? Int {
+            return .int(int)
+        } else if let double = val as? Double {
+            return .double(double)
+        } else if let bool = val as? Bool {
+            return .bool(bool)
         } else if (val as? NSNull) != nil {
             return .null
         } else {
-            return .value(JSONValue(value: val))
+            return .null
         }
-    }
-    
-    private struct JSONValue: ContentValue {
-        let value: Any
-        
-        var string: String? { value as? String }
-        var bool: Bool? { value as? Bool }
-        var int: Int? { value as? Int }
-        var double: Double? { value as? Double }
-        var file: File? { nil }
     }
 }

@@ -59,6 +59,11 @@ public final class Environment: ExpressibleByStringLiteral {
         self.init(name: value)
     }
 
+    /// Required for dynamic member lookup.
+    public subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
+        self.get(member)
+    }
+
     /// Returns any environment variables loaded from the environment
     /// file as type `T: EnvAllowed`. Supports `String`, `Int`,
     /// `Double`, and `Bool`.
@@ -73,7 +78,7 @@ public final class Environment: ExpressibleByStringLiteral {
 
         return L(val)
     }
-    
+
     /// Loads variables from the process & any environment file.
     public func loadVariables() {
         processVariables = ProcessInfo.processInfo.environment
@@ -162,34 +167,12 @@ public final class Environment: ExpressibleByStringLiteral {
         return fileManager.fileExists(atPath: filePath) ? filePath : nil
     }
 
-    /// Returns any environment variables from `Env.current` as type
-    /// `T: StringInitializable`. Supports `String`, `Int`,
-    /// `Double`, `Bool`, and `UUID`.
-    ///
-    /// - Parameter key: The name of the environment variable.
-    /// - Returns: The variable converted to type `S`. `nil` if no fallback is
-    ///   provided and the variable doesn't exist or cannot be converted as
-    ///   `S`.
-    public static func get<L: LosslessStringConvertible>(_ key: String, as type: L.Type = L.self) -> L? {
-        Env.get(key, as: type)
-    }
-
-    /// Required for dynamic member lookup.
-    public static subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
-        Env.get(member)
-    }
-
-    /// Required for dynamic member lookup.
-    public subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
-        self.get(member)
-    }
-
     public static var isRunFromTests: Bool {
         CommandLine.arguments.contains { $0.contains("xctest") }
     }
 
     public static var isXcode: Bool {
-        CommandLine.arguments.contains { $0.contains("/Xcode/DerivedData") }
+        CommandLine.arguments.contains { $0.contains("/Xcode/DerivedData") || $0.contains("/Xcode/Agents") }
     }
 
     public static func createDefault() -> Environment {

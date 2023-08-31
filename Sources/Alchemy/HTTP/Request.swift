@@ -43,7 +43,7 @@ public final class Request: RequestInspector {
 
     /// A type representing any auth that may be on an HTTP request.
     /// Supports `Basic` and `Bearer`.
-    public enum HTTPAuth: Equatable {
+    public enum Auth: Equatable {
         /// The basic auth of an Request. Corresponds to a header that
         /// looks like
         /// `Authorization: Basic <base64-encoded-username-password>`.
@@ -195,7 +195,7 @@ public final class Request: RequestInspector {
     /// - Returns: An `HTTPAuth` representing relevant info in the
     ///   `Authorization` header, if it exists. Currently only
     ///   supports `Basic` and `Bearer` auth.
-    public func getAuth() -> HTTPAuth? {
+    public func getAuth() -> Auth? {
         guard var authString = headers.first(name: "Authorization") else {
             return nil
         }
@@ -217,10 +217,10 @@ public final class Request: RequestInspector {
             let components = authString.components(separatedBy: ":")
             let username = components[0]
             let password = components.dropFirst().joined()
-            return .basic(HTTPAuth.Basic(username: username, password: password))
+            return .basic(Auth.Basic(username: username, password: password))
         } else if authString.starts(with: "Bearer ") {
             authString.removeFirst(7)
-            return .bearer(HTTPAuth.Bearer(token: authString))
+            return .bearer(Auth.Bearer(token: authString))
         }
 
         return nil
@@ -230,7 +230,7 @@ public final class Request: RequestInspector {
     ///
     /// - Returns: The data from the `Authorization` header, if the
     ///   authorization type is `Basic`.
-    public func basicAuth() -> HTTPAuth.Basic? {
+    public func basicAuth() -> Auth.Basic? {
         guard let auth = self.getAuth() else {
             return nil
         }
@@ -246,7 +246,7 @@ public final class Request: RequestInspector {
     ///
     /// - Returns: The data from the `Authorization` header, if the
     ///   authorization type is `Bearer`.
-    public func bearerAuth() -> HTTPAuth.Bearer? {
+    public func bearerAuth() -> Auth.Bearer? {
         guard let auth = getAuth() else {
             return nil
         }
@@ -297,7 +297,7 @@ public final class Request: RequestInspector {
     /// - Returns: The value of type `T` from the request.
     public func get<T>(_ type: T.Type = T.self) throws -> T {
         guard let value = container.resolve(T.self) else {
-            throw ValidationError("Couldn't find type `\(name(of: T.self))` on this request")
+            throw ContainerError("Couldn't find type `\(name(of: T.self))` on this request")
         }
 
         return value

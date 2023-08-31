@@ -10,10 +10,6 @@ public final class SQLiteDatabaseProvider: DatabaseProvider {
         pool = EventLoopGroupConnectionPool(source: configuration, on: LoopGroup)
     }
 
-    // This is so EventLoopGroupConnectionPool won't crash if a database is
-    // deallocated without calling shutdown first.
-    deinit { pool.shutdown() }
-
     // MARK: Database
 
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
@@ -74,7 +70,6 @@ extension DatabaseProvider {
         } catch {
             Log.debug("Transaction failed. Rolling back.")
             try await raw("ROLLBACK;")
-            try await raw("COMMIT;")
             throw error
         }
     }

@@ -10,6 +10,6 @@ final class ModelPrimaryKeyTests: XCTestCase {
         XCTAssertEqual(try Int(value: .int(1)), 1)
         XCTAssertThrowsError(try Int(value: .string("foo")))
         XCTAssertEqual(try String(value: .string("foo")), "foo")
-        XCTAssertThrowsError(try String(value: .bool(false)))
+        XCTAssertThrowsError(try String(value: .null))
     }
 }

@@ -27,4 +27,8 @@ public struct Queues: Plugin {
     public func boot(app: Application) {
         app.registerCommand(WorkCommand.self)
     }
+
+    public func shutdownServices(in app: Application) async throws {
+        JobRegistry.reset()
+    }
 }

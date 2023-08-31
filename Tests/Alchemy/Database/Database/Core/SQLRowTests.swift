@@ -1,8 +1,14 @@
 @testable
 import Alchemy
 import AlchemyTest
+import NIO
 
-final class SQLRowTests: XCTestCase {
+final class SQLRowTests: TestCase<TestApp> {
+    override func setUp() async throws {
+        try await super.setUp()
+        try await Database.fake()
+    }
+
     func testDecode() {
         struct Test: Decodable, Equatable {
             let foo: Int
@@ -13,6 +19,7 @@ final class SQLRowTests: XCTestCase {
             "foo": 1,
             "bar": "two"
         ]
+
         XCTAssertEqual(try row.decode(Test.self), Test(foo: 1, bar: "two"))
     }
     
@@ -20,7 +27,7 @@ final class SQLRowTests: XCTestCase {
         let date = Date()
         let uuid = UUID()
         let row: SQLRow = [
-            "id": SQLValue.null,
+            "id": 1,
             "bool": false,
             "string": "foo",
             "double": 0.0,
@@ -46,6 +53,7 @@ final class SQLRowTests: XCTestCase {
             "uuid": SQLValue.uuid(uuid),
             "belongs_to_id": 1
         ]
+
         XCTAssertEqual(try row.decodeModel(EverythingModel.self), EverythingModel(date: date, uuid: uuid))
     }
     
@@ -65,8 +73,8 @@ struct EverythingModel: Model, Codable, Equatable {
     enum IntEnum: Int, Codable, ModelEnum { case two = 2 }
     enum DoubleEnum: Double, Codable, ModelEnum { case three = 3.0 }
 
-    var id: PK<Int> = .new
-    
+    var id: PK<Int> = .existing(1)
+
     // Enum
     var stringEnum: StringEnum = .one
     var intEnum: IntEnum = .two

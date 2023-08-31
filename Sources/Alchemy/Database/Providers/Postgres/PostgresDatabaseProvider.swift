@@ -88,7 +88,6 @@ extension DatabaseProvider {
         } catch {
             Log.debug("Transaction failed. Rolling back.")
             try await raw("ROLLBACK;")
-            try await raw("COMMIT;")
             throw error
         }
     }

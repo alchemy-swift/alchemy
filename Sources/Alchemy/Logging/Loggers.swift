@@ -32,7 +32,7 @@ public struct Loggers: Plugin {
             app.container.register(Log(_default)).singleton()
         }
 
-        if !Env.isXcode && Env.isDebug {
+        if !Env.isXcode && Env.isDebug && !Env.isTesting {
             print() // Clear out the console on boot.
         }
     }

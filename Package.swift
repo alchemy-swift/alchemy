@@ -67,15 +67,18 @@ let package = Package(
                 .byName(name: "AlchemyC"),
             ]
         ),
-        .target(name: "AlchemyC", dependencies: []),
-        .target(name: "AlchemyTest", dependencies: ["Alchemy"]),
+        .target(name: "AlchemyC"),
+        .target(
+            name: "AlchemyTest",
+            dependencies: ["Alchemy"]
+        ),
         .testTarget(
             name: "AlchemyTests",
-            dependencies: ["AlchemyTest"],
-            path: "Tests/Alchemy"),
-        .testTarget(
-            name: "AlchemyTestTests",
-            dependencies: ["AlchemyTest"],
-            path: "Tests/AlchemyTest"),
+            dependencies: [
+                "AlchemyTest",
+                "Alchemy"
+            ],
+            path: "Tests"
+        ),
     ]
 )

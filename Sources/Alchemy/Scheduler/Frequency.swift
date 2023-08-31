@@ -21,7 +21,11 @@ public final class Frequency {
         case sat = 6
 
         public init(integerLiteral value: Int) {
-            self = DayOfWeek(rawValue: value) ?? .sun
+            guard let dotw = DayOfWeek(rawValue: value) else {
+                preconditionFailure("Invalid day of the week \(value). Valid options are 0-6.")
+            }
+
+            self = dotw
         }
     }
 
@@ -53,7 +57,11 @@ public final class Frequency {
         case dec = 12
 
         public init(integerLiteral value: Int) {
-            self = Month(rawValue: value) ?? .jan
+            guard let month = Month(rawValue: value) else {
+                preconditionFailure("Invalid month \(value). Valid options are 1-12.")
+            }
+
+            self = month
         }
     }
 
@@ -73,7 +81,7 @@ public final class Frequency {
         // Occasionally the Cron library returns the `next()` as fractions of a
         // millisecond before or after now. If the delay is 0, get the
         // subsequent date and use that instead.
-        if delay == 0 {
+        if delay <= 0 {
             let newDate = cron.next(next)?.date ?? Date().addingTimeInterval(1)
             delay = Int64(newDate.timeIntervalSinceNow * 1000)
         }
@@ -92,7 +100,7 @@ public final class Frequency {
     ///   - min: The minute to run.
     ///   - sec: The second to run.
     public func everyYear(month: Month = .jan, day: Int = 1, hr: Int = 0, min: Int = 0, sec: Int = 0) {
-        cron("\(sec) \(min) \(hr) \(min) \(day) \(month.rawValue) * *")
+        cron("\(sec) \(min) \(hr) \(day) \(month.rawValue) * *")
     }
 
     /// Run this task monthly.
@@ -159,7 +167,7 @@ public final class Frequency {
         do {
             cron = try DatePattern(expression)
         } catch {
-            preconditionFailure("Error parsing cron expression '\(cron)': \(error).")
+            preconditionFailure("Error parsing cron expression '\(expression)': \(error).")
         }
     }
 }

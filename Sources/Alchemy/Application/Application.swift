@@ -17,7 +17,7 @@ public protocol Application: Router {
     /// Create an instance of this Application.
     init()
 
-    /// Setup your application here. Called after all services are loaded.
+    /// Setup your application here. Called after all services are registered.
     func boot() throws
 
     /// Setup any scheduled tasks in your application here.
@@ -59,56 +59,58 @@ extension Application {
 
     public func run() async throws {
         setup()
-        try await Lifecycle.start()
+        try boot()
         try await start()
     }
 
     public func setup() {
 
-        // 1. Register Core Services.
+        // 0. Register the Application
 
-        let bootstrap = ApplicationBootstrapper()
-        bootstrap.registerServices(in: self)
-        bootstrap.boot(app: self)
+        container.register(self).singleton()
+        container.register(self as Application).singleton()
 
-        lifecycle.register(
-            label: bootstrap.label,
-            start: .none,
-            shutdown: .async { try await bootstrap.shutdownServices(in: self) }
-        )
+        // 1. Register core Plugin services.
 
-        // 2. Register Plugins.
+        let core = ApplicationPlugin()
+        core.registerServices(in: self)
 
-        for plugin in configuration.defaultPlugins(self) + configuration.plugins() {
+        // 2. Register other Plugin services.
+
+        let plugins = configuration.defaultPlugins(self) + configuration.plugins()
+        for plugin in plugins {
             plugin.registerServices(in: self)
-            lifecycle.register(
-                label: plugin.label,
-                start: .async { try await plugin.boot(app: self) },
-                shutdown: .async { try await plugin.shutdownServices(in: self) }
-            )
         }
 
-        // 3. Register Application.boot to Lifecycle
+        // 3. Register all Plugins with lifecycle.
 
-        lifecycle.register(
-            label: "Application Boot",
-            start: .sync { try boot() },
-            shutdown: .none
-        )
+        for plugin in [core] + plugins {
+            lifecycle.register(
+                label: plugin.label,
+                start: .async {
+                    try await plugin.boot(app: self)
+                },
+                shutdown: .async {
+                    try await plugin.shutdownServices(in: self)
+                },
+                shutdownIfNotStarted: true
+            )
+        }
     }
 
     /// Starts the application with the given arguments.
-    public func start(_ args: String...) async throws {
-        try await start(args: args.isEmpty ? nil : args)
+    public func start(_ args: String..., wait: Bool = true) async throws {
+        try await start(args: args.isEmpty ? nil : args, wait: wait)
     }
 
     /// Starts the application with the given arguments.
-    public func start(args: [String]? = nil) async throws {
-        try await commander.start(args: args)
+    public func start(args: [String]? = nil, wait: Bool = true) async throws {
+        try await lifecycle.start()
+        try await commander.start(args: args, wait: wait)
     }
 
     public func stop() async throws {
-        try await Lifecycle.shutdown()
+        try await lifecycle.shutdown()
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`
@@ -118,4 +120,3 @@ extension Application {
         try await Self().run()
     }
 }
-

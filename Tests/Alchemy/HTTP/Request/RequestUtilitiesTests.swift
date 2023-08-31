@@ -7,10 +7,6 @@ final class RequestUtilitiesTests: XCTestCase {
         XCTAssertEqual(Request.fixture(uri: "/foo/bar").path, "/foo/bar")
     }
     
-    func testInvalidPath() {
-        XCTAssertEqual(Request.fixture(uri: "%").path, "")
-    }
-    
     func testQueryItems() {
         XCTAssertEqual(Request.fixture(uri: "/path").queryItems, nil)
         XCTAssertEqual(Request.fixture(uri: "/path?foo=1&bar=2").queryItems, [
@@ -29,8 +25,8 @@ final class RequestUtilitiesTests: XCTestCase {
         XCTAssertEqual(request.parameter("foo"), "one")
         XCTAssertEqual(request.parameter("bar"), "two")
         XCTAssertEqual(request.parameter("baz"), "three")
-        XCTAssertThrowsError(request.parameter("fake", as: String.self))
-        XCTAssertThrowsError(request.parameter("foo", as: Int.self))
+        XCTAssertNil(request.parameter("fake", as: String.self))
+        XCTAssertNil(request.parameter("foo", as: Int.self))
         XCTAssertTrue(request.parameters.contains(Request.Parameter(key: "foo", value: "one")))
     }
     

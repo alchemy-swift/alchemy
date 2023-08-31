@@ -16,7 +16,7 @@ extension Queue {
     @discardableResult
     public static func fake(_ id: Identifier? = nil) -> MemoryQueue {
         let mock = MemoryQueue()
-        Container.register(mock, id: id).singleton()
+        Container.register(Queue(provider: mock), id: id).singleton()
         return mock
     }
 }

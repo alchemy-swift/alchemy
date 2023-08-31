@@ -39,6 +39,23 @@ public final class Queue: Service {
         try await provider.enqueue(data)
     }
 
+    /// Dequeue the next job from a given set of channels, ordered by
+    /// priority.
+    ///
+    /// - Parameter channels: The channels to dequeue from.
+    /// - Returns: A dequeued `Job`, if there is one.
+    func dequeue(from channels: [String]) async throws -> JobData? {
+        guard let channel = channels.first else {
+            return nil
+        }
+
+        if let job = try await provider.dequeue(from: channel) {
+            return job
+        } else {
+            return try await dequeue(from: Array(channels.dropFirst()))
+        }
+    }
+
     public func shutdown() async throws {
         try await provider.shutdown()
     }
@@ -86,23 +103,6 @@ public final class Queue: Service {
         } catch {
             Log.error("Error running job \(name(of: Self.self)) from `\(channels)`. \(error)")
             throw error
-        }
-    }
-
-    /// Dequeue the next job from a given set of channels, ordered by
-    /// priority.
-    ///
-    /// - Parameter channels: The channels to dequeue from.
-    /// - Returns: A dequeued `Job`, if there is one.
-    private func dequeue(from channels: [String]) async throws -> JobData? {
-        guard let channel = channels.first else {
-            return nil
-        }
-
-        if let job = try await provider.dequeue(from: channel) {
-            return job
-        } else {
-            return try await dequeue(from: Array(channels.dropFirst()))
         }
     }
 
