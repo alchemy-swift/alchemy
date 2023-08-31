@@ -20,13 +20,13 @@ public final class Scheduler {
     /// - Parameter scheduleLoop: A loop to run all tasks on. Defaults
     ///   to the next available `EventLoop`.
     public func start(on scheduleLoop: EventLoop = LoopGroup.next()) {
-        lock.withLock {
-            guard !isStarted else {
-                Log.warning("This scheduler has already been started.")
-                return
-            }
-
+        guard lock.withLock({
+            guard !isStarted else { return false }
             isStarted = true
+            return true
+        }) else {
+            Log.warning("This scheduler has already been started.")
+            return
         }
 
         for task in tasks {
