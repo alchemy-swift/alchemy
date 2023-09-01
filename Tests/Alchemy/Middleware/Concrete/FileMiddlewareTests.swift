@@ -8,6 +8,7 @@ final class FileMiddlewareTests: TestCase<TestApp> {
     
     override func setUp() {
         super.setUp()
+        FileCreator.mock()
         middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public", extensions: ["html"])
         fileName = UUID().uuidString
     }
