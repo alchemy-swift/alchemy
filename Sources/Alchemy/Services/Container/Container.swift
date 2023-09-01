@@ -238,3 +238,20 @@ public final class Container: CustomDebugStringConvertible {
             """
     }
 }
+
+#if os(Linux)
+extension NSRecursiveLock {
+    fileprivate func withLock<R>(_ body: () throws -> R) rethrows -> R {
+        self.lock()
+        let value: R
+        do {
+            value = try body()
+        } catch {
+            self.unlock()
+            throw error
+        }
+        self.unlock()
+        return value
+    }
+}
+#endif
