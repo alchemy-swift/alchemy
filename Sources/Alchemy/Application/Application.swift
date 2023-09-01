@@ -14,6 +14,9 @@ import NIO
 ///     }
 ///
 public protocol Application: Router {
+    /// The container in which all services of this application are registered.
+    var container: Container { get }
+
     /// Create an instance of this Application.
     init()
 

@@ -2,6 +2,9 @@ import NIO
 
 /// A task that can be persisted and queued for background processing.
 public protocol Job {
+    typealias Context = JobContext
+    typealias RecoveryStrategy = JobRecoveryStrategy
+
     /// The name of this Job. Defaults to the type name.
     static var name: String { get }
     
@@ -21,7 +24,7 @@ public protocol Job {
     func payload(for queue: Queue, channel: String) throws -> Data
 
     /// Run this `Job` in the given context.
-    func handle(context: JobContext) async throws
+    func handle(context: Context) async throws
 
     // MARK: Hooks
 
@@ -33,7 +36,7 @@ public protocol Job {
     func failed(error: Error)
 }
 
-public enum RecoveryStrategy: Equatable, Codable {
+public enum JobRecoveryStrategy: Equatable, Codable {
     /// The task will not be retried if it fails.
     case none
     /// The task will be retried after a failure, up to the specified amount.

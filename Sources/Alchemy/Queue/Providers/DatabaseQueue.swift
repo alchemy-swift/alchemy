@@ -26,7 +26,7 @@ private final class DatabaseQueue: QueueProvider {
         let jobName: String
         let channel: String
         let payload: Data
-        let recoveryStrategy: RecoveryStrategy
+        let recoveryStrategy: Job.RecoveryStrategy
         let backoffSeconds: Int
 
         var attempts: Int

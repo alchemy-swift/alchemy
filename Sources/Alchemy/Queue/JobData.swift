@@ -10,7 +10,7 @@ public struct JobData: Codable, Equatable {
     /// The channel this is associated with.
     public let channel: String
     /// The recovery strategy to enact, should this Job fail to run.
-    public let recoveryStrategy: RecoveryStrategy
+    public let recoveryStrategy: Job.RecoveryStrategy
     /// How long should be waited before retrying a Job after a
     /// failure.
     public let backoff: TimeAmount
@@ -54,7 +54,7 @@ public struct JobData: Codable, Equatable {
         jobName: String,
         channel: String,
         attempts: Int,
-        recoveryStrategy: RecoveryStrategy,
+        recoveryStrategy: Job.RecoveryStrategy,
         backoff: TimeAmount,
         backoffUntil: Date? = nil
     ) {
