@@ -84,15 +84,15 @@ extension HTTPInspector {
     public var content: Content {
         get {
             guard let content = container.get(\HTTPInspector.content) else {
-                let content: Content =
-                    switch (body, preferredDecoder()) {
-                    case (.none, _):
-                        Content(error: ContentError.emptyBody)
-                    case (_, .none):
-                        Content(error: ContentError.unknownContentType(headers.contentType))
-                    case (.some(let body), .some(let decoder)):
-                        decoder.content(from: body.buffer, contentType: headers.contentType)
-                    }
+                let content: Content
+                switch (body, preferredDecoder()) {
+                case (.none, _):
+                    content = Content(error: ContentError.emptyBody)
+                case (_, .none):
+                    content = Content(error: ContentError.unknownContentType(headers.contentType))
+                case (.some(let body), .some(let decoder)):
+                    content = decoder.content(from: body.buffer, contentType: headers.contentType)
+                }
 
                 container.set(\HTTPInspector.content, value: content)
                 return content

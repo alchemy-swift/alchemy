@@ -1,10 +1,15 @@
-import OSLog
-
 extension Logging.Logger {
     public static var xcode: Logging.Logger {
+        #if os(macOS)
         Logger(label: "Alchemy", destination: XcodeLogger())
+        #else
+        Logger(label: "Alchemy", destination: DebugLogger())
+        #endif
     }
 }
+
+#if os(macOS)
+import OSLog
 
 struct XcodeLogger: LogDestination {
     private let logger = Logger()
@@ -42,3 +47,4 @@ struct XcodeLogger: LogDestination {
             .joined(separator: ", ")
     }
 }
+#endif

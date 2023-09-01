@@ -11,13 +11,13 @@ extension Application {
 
             default: {
                 if Env.isXcode {
-                    .xcode
+                    return .xcode
                 } else if Env.isTesting {
-                    .null
+                    return .null
                 } else if Env.isDebug {
-                    .debug
+                    return .debug
                 } else {
-                    .stdout
+                    return .stdout
                 }
             }(),
 
