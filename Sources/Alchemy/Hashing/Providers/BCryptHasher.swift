@@ -27,12 +27,6 @@ public final class BCryptHasher: HashAlgorithm {
     }
 }
 
-/// Creates and verifies BCrypt hashes. Normally you will not need to initialize one of these classes and you will
-/// use the global `BCrypt` convenience instead.
-///
-///     try BCrypt.hash("vapor", cost: 4)
-///
-/// See `BCrypt` for more information.
 private final class _BCrypt {
     func hash(_ plaintext: String, cost: Int = 12) throws -> String {
         guard cost >= BCRYPT_MINLOGROUNDS && cost <= 31 else {

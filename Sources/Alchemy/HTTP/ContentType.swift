@@ -1,13 +1,12 @@
-import Foundation
-
-/// An HTTP content type. It has a `value: String` appropriate for
-/// putting into `Content-Type` headers.
+/// An HTTP content type. It has a `value: String` appropriate for putting into
+/// `Content-Type` headers.
 public struct ContentType: Equatable {
     /// The name of this content type
     public var value: String
     /// Any parameters to go along with the content type value.
     public var parameters: [String: String] = [:]
-    /// The entire string for the Content-Type header including name and parameters.
+    /// The entire string for the Content-Type header including name and
+    /// parameters.
     public var string: String {
         ([value] + parameters.map { "\($0)=\($1)" }).joined(separator: "; ")
     }
@@ -126,7 +125,7 @@ public struct ContentType: Equatable {
     /// application/zip
     public static let zip =            ContentType("application/zip")
     /// application/x-www-form-urlencoded
-    public static let urlForm =     ContentType("application/x-www-form-urlencoded")
+    public static let urlForm =        ContentType("application/x-www-form-urlencoded")
     /// multipart/form-data
     public static let multipart =      ContentType("multipart/form-data")
     
@@ -135,8 +134,7 @@ public struct ContentType: Equatable {
         ContentType("multipart/form-data; boundary=\(boundary)")
     }
     
-    /// A non exhaustive mapping of file extensions to known content
-    /// types.
+    /// A non exhaustive mapping of file extensions to known content types.
     private static let fileExtensionMapping = [
         "aac":    ContentType("audio/aac"),
         "abw":    ContentType("application/x-abiword"),

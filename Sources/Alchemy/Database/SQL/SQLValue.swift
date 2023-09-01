@@ -1,8 +1,4 @@
-import Foundation
-
-/// Represents the type / value combo of an SQL database field. These
-/// don't necessarily correspond to a specific SQL database's types;
-/// they just represent the types that Alchemy current supports.
+/// A value that can be stored and loaded from fields in an SQL table.
 public enum SQLValue: Hashable, CustomStringConvertible {
     /// An `Int` value.
     case int(Int)

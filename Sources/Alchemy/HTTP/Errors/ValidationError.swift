@@ -1,13 +1,9 @@
-import Foundation
-
-/// An error related to decoding a type from a `DecodableRequest`.
+/// An error related to validating an incoming `Request`.
 public struct ValidationError: Error, ResponseConvertible {
     /// What went wrong.
     public let message: String
     
     /// Create an error with the specified message.
-    ///
-    /// - Parameter message: What went wrong.
     public init(_ message: String) {
         self.message = message
     }

@@ -1,8 +1,7 @@
-/// Provides a convenient `@propertyWrapper` for injecting services to
-/// a type. By default, resolves services from the global container
-/// (`Container.main`) but if the enclosing type conforms to
-/// `Containerized` services are resolved from
-/// `EnclosingType.container`.
+/// Provides a convenient `@propertyWrapper` for injecting services to a type.
+/// By default, resolves services from the global container (`Container.main`)
+/// but if the enclosing type conforms to `Containerized` services are
+/// resolved from `EnclosingType.container`.
 @propertyWrapper
 public final class Inject<Value> {
     /// The value is injected each time this is accessed.
@@ -10,9 +9,9 @@ public final class Inject<Value> {
         get { Container.main.require(id: id) }
     }
 
-    /// An optional identifier that may be associated with the service
-    /// this property wrapper is injecting. Used for storing any
-    /// identifiers of a service.
+    /// An optional identifier that may be associated with the service this
+    /// property wrapper is injecting. Used for storing any identifiers 
+    /// of a service.
     private var id: AnyHashable?
 
     /// Create the property wrapper with an identifier.

@@ -1,7 +1,4 @@
 import AsyncHTTPClient
-import NIO
-import Foundation
-import NIOHTTP1
 import HummingbirdCore
 
 /// A collection of bytes that is either a single buffer or a stream of buffers.

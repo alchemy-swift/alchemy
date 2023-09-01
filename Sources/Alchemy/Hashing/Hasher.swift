@@ -13,8 +13,8 @@ public struct Hasher<Algorithm: HashAlgorithm> {
         try algorithm.verify(plaintext, hash: hash)
     }
     
-    // MARK: async Support
-    
+    // MARK: Async Support
+
     public func makeAsync(_ value: String) async throws -> String {
         try await Thread.run { try make(value) }
     }

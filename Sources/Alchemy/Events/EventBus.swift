@@ -8,24 +8,31 @@ public final class EventBus: Service {
 
     private var listeners: [String: any Listener] = [:]
     private var handlers: [String: [AnyHandler]] = [:]
+    private let lock = NIOLock()
 
     public func on<E: Event>(_ event: E.Type, handler: @escaping Handler<E>) {
-        handlers[E.registrationKey, default: []] += [convertHandler(handler)]
+        lock.withLock {
+            handlers[E.registrationKey, default: []] += [convertHandler(handler)]
+        }
     }
 
     public func register<L: Listener>(listener: L) {
-        handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.handle)]
-        listeners[L.registryId] = listener
+        lock.withLock {
+            handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.handle)]
+            listeners[L.registryId] = listener
+        }
     }
 
     public func register<L: QueueableListener>(listener: L) {
-        Jobs.register(EventJob<L.ObservedEvent>.self)
-        handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.dispatch)]
-        listeners[L.registryId] = listener
+        lock.withLock {
+            Jobs.register(EventJob<L.ObservedEvent>.self)
+            handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.dispatch)]
+            listeners[L.registryId] = listener
+        }
     }
     
     public func fire<E: Event>(_ event: E) async throws {
-        let handlers = handlers[E.registrationKey] ?? []
+        let handlers = lock.withLock { self.handlers[E.registrationKey] ?? [] }
         for handle in handlers {
             try await handle(event)
         }

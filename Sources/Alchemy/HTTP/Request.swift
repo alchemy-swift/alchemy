@@ -1,16 +1,11 @@
-import Foundation
-import NIO
-import NIOHTTP1
-
 /// A type that represents inbound requests to your application.
 public final class Request: RequestInspector {
-    /// Represents a dynamic parameter inside the path. Parameter
-    /// placeholders should be prefaced with a colon (`:`) in
-    /// the route string. Something like `:user_id` in the
-    /// path `/v1/users/:user_id`.
+    /// Represents a dynamic parameter inside the path. Parameter placeholders
+    /// should be prefaced with a colon (`:`) in the route string. Something
+    /// like `:user_id` in the path `/v1/users/:user_id`.
     public struct Parameter: Equatable {
         /// The escaped parameter that was matched, _without_ the colon.
-        /// Something like `user_id` if `:user_id` was in the path.
+        /// Something like `user_id` if `:user_id` were in the path.
         public let key: String
         /// The actual string value of the parameter.
         public let value: String
@@ -20,8 +15,8 @@ public final class Request: RequestInspector {
             value
         }
 
-        /// Decodes an `Int` from this parameter's value or throws if the
-        /// string can't be converted to an `Int`.
+        /// Decodes an `Int` from this parameter's value or throws if the string
+        /// can't be converted to an `Int`.
         public func int() throws -> Int {
             guard let int = Int(value) else {
                 throw ValidationError("Unable to decode Int for '\(key)'. Value was '\(value)'.")
@@ -30,8 +25,8 @@ public final class Request: RequestInspector {
             return int
         }
 
-        /// Decodes a `UUID` from this parameter's value or throws if the
-        /// string is an invalid `UUID`.
+        /// Decodes a `UUID` from this parameter's value or throws if the string
+        /// is an invalid `UUID`.
         public func uuid() throws -> UUID {
             guard let uuid = UUID(uuidString: value) else {
                 throw ValidationError("Unable to decode UUID for '\(key)'. Value was '\(value)'.")
@@ -41,8 +36,8 @@ public final class Request: RequestInspector {
         }
     }
 
-    /// A type representing any auth that may be on an HTTP request.
-    /// Supports `Basic` and `Bearer`.
+    /// A type representing any auth that may be on an HTTP request. Supports
+    /// `Basic` and `Bearer`.
     public enum Auth: Equatable {
         /// The basic auth of an Request. Corresponds to a header that
         /// looks like
@@ -171,7 +166,7 @@ public final class Request: RequestInspector {
     /// Use this to fetch any parameters from the path.
     /// ```swift
     /// app.post("/users/:user_id") { request in
-    ///     let userId: Int = try request.parameter("user_id")
+    ///     let userId: Int = try request.requireParameter("user_id")
     ///     ...
     /// }
     /// ```
@@ -189,8 +184,7 @@ public final class Request: RequestInspector {
 
     // MARK: Auth
 
-    /// Get any authorization data from the request's `Authorization`
-    /// header.
+    /// Get any authorization data from the request's `Authorization` header.
     ///
     /// - Returns: An `HTTPAuth` representing relevant info in the
     ///   `Authorization` header, if it exists. Currently only
@@ -287,14 +281,8 @@ public final class Request: RequestInspector {
         return self
     }
 
-    /// Gets a value associated with this request, throws if there is
-    /// not a value of type `T` already set.
-    ///
-    /// - Parameter type: The type of the associated value to get from
-    ///   the request.
-    /// - Throws: An `AssociatedValueError` if there isn't a value of
-    ///   type `T` found associated with the request.
-    /// - Returns: The value of type `T` from the request.
+    /// Gets a value associated with this request, throws if there is not a
+    /// value of type `T` already set.
     public func get<T>(_ type: T.Type = T.self) throws -> T {
         guard let value = container.resolve(T.self) else {
             throw ContainerError("Couldn't find type `\(name(of: T.self))` on this request")

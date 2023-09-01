@@ -1,5 +1,3 @@
-import Foundation
-
 public protocol CacheProvider {
     /// Get the value for `key`.
     ///

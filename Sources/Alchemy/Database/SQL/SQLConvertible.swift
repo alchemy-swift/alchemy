@@ -1,5 +1,3 @@
-import Foundation
-
 /// Something that's convertible to an SQL statement or expression.
 public protocol SQLConvertible {
     var sql: SQL { get }

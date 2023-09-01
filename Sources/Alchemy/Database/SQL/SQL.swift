@@ -34,11 +34,14 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation, CustomStringConve
     /// inputs may be SQL expressions themselves (such as `NOW()`) and will
     /// replace '?'s in the provided statement.
     public init(_ statement: String, input: [SQLConvertible] = []) {
+        
         // 0. Escape double question marks.
+
         let questionmark = "___questionmark"
         let escapedStatement = statement.replacingOccurrences(of: "??", with: questionmark)
 
         // 1. Replace question marks with corresponding parameter statement.
+        
         let parts = escapedStatement.components(separatedBy: "?")
         precondition(parts.count - 1 == input.count, "The number of parameters must match the number of '?'s in the statement.")
         var values: [SQLValue] = []
@@ -58,6 +61,7 @@ public struct SQL: Hashable, ExpressibleByStringInterpolation, CustomStringConve
         statement += parts[parts.count - 1]
 
         // 2. Replace escaped question marks.
+
         statement = statement.replacingOccurrences(of: questionmark, with: "?")
         self.init(statement, parameters: values)
     }

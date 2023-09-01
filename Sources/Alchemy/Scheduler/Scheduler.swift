@@ -1,8 +1,8 @@
 import NIOCore
 import NIOConcurrencyHelpers
 
-/// A service for scheduling recurring work, in lieu of a separate
-/// cron task running apart from your server.
+/// A service for scheduling recurring work, in lieu of a separate cron task
+/// running apart from your server.
 public final class Scheduler {
     private struct ScheduledTask {
         let name: String
@@ -17,8 +17,8 @@ public final class Scheduler {
 
     /// Start scheduling with the given loop.
     ///
-    /// - Parameter scheduleLoop: A loop to run all tasks on. Defaults
-    ///   to the next available `EventLoop`.
+    /// - Parameter scheduleLoop: A loop to run all tasks on. Defaults to the
+    ///   next available `EventLoop`.
     public func start(on scheduleLoop: EventLoop = LoopGroup.next()) {
         guard lock.withLock({
             guard !isStarted else { return false }

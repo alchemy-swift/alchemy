@@ -1,5 +1,4 @@
 import MultipartKit
-import NIOCore
 
 /// Represents a file from either a filesystem (on disk, in AWS S3, etc) or from
 /// an HTTP request (uploaded or downloaded).

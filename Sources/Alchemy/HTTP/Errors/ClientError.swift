@@ -1,12 +1,10 @@
-import Foundation
-
-/// An error encountered when making a `Client` request.
+/// An error encountered when making a request with `Client`.
 public struct ClientError: Error, CustomStringConvertible {
     /// What went wrong.
     public let message: String
-    /// The associated `HTTPClient.Request`.
+    /// The associated `Client.Request`.
     public let request: Client.Request
-    /// The associated `HTTPClient.Response`.
+    /// The associated `Client.Response`.
     public let response: Client.Response
 
     // MARK: - CustomStringConvertible

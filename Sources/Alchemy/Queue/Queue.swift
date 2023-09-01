@@ -1,7 +1,5 @@
-import NIO
-
-/// Queue lets you run queued jobs to be processed in the background.
-/// Jobs are persisted by the given `QueueProvider`.
+/// Queue lets you run queued jobs to be processed in the background. Jobs are
+/// persisted by the given `QueueProvider`.
 public final class Queue: Service {
     public typealias Identifier = ServiceIdentifier<Queue>
 
@@ -69,6 +67,8 @@ public final class Queue: Service {
     ///     work. Defaults to `Queue.defaultChannel`.
     ///   - pollRate: The rate at which this worker should poll the
     ///     queue for new work. Defaults to `Queue.defaultPollRate`.
+    ///   - untilEmpty: If true, workers will run all available jobs before
+    ///     waiting to poll the queue again.
     ///   - eventLoop: The loop this worker will run on. Defaults to
     ///     your apps next available loop.
     public func startWorker(for channels: [String] = [Queue.defaultChannel], pollRate: TimeAmount = Queue.defaultPollRate, untilEmpty: Bool = true, on eventLoop: EventLoop = LoopGroup.next()) {

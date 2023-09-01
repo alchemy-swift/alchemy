@@ -48,7 +48,7 @@ public final class Container: CustomDebugStringConvertible {
         static func == (lhs: Key, rhs: Key) -> Bool {
             // This way, regardless of the type of the id, if it has the same
             // hashValue (typically because its backed by the same hashable
-            // type, it will be equal.
+            // type) it will be equal.
             lhs.hashValue == rhs.hashValue
         }
     }
@@ -62,8 +62,7 @@ public final class Container: CustomDebugStringConvertible {
 
     /// Initialize a container with an optional parent `Container`.
     ///
-    /// - Parameter parent: The optional parent `Container`. Defaults
-    ///   to `nil`.
+    /// - Parameter parent: The optional parent `Container`. Defaults to `nil`.
     public init(parent: Container? = nil) {
         self.parent = parent
         self.lock = NSRecursiveLock()

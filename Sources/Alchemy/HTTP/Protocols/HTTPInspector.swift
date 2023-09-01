@@ -26,14 +26,12 @@ extension HTTPInspector {
         body?.string
     }
 
-    /// Decodes the content as a decodable, based on it's content type or with
-    /// the given content decoder.
+    /// Decodes the the given type from the body of the request based on it's
+    /// content type or with the given content decoder.
     ///
     /// - Parameters:
     ///   - type: The Decodable type to which the body should be decoded.
-    ///   - decoder: The decoder with which to decode. Defaults to
-    ///     `Content.defaultDecoder`.
-    /// - Throws: Any errors encountered during decoding.
+    ///   - decoder: The decoder with which to decode.
     /// - Returns: The decoded object of type `type`.
     public func decode<D: Decodable>(_ type: D.Type = D.self, with decoder: HTTPDecoder? = nil) throws -> D {
         guard let buffer = body?.buffer else {
@@ -129,9 +127,6 @@ extension HTTPInspector {
     /// Any files attached to this content, keyed by their multipart name
     /// (separate from filename). Only populated if this content is
     /// associated with a multipart request containing files.
-    ///
-    /// Async since the request may need to finish streaming before we get the
-    /// files.
     public func files() -> [String: File] {
         guard !content.allKeys.isEmpty else {
             return [:]

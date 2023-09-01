@@ -1,5 +1,3 @@
-import NIO
-
 /// Represents a persisted Job, contains the serialized Job as well as some
 /// additional info for `Queue`s.
 public struct JobData: Codable, Equatable {

@@ -23,14 +23,11 @@ extension Query {
     /// results. Internally this uses the `limit` and `offset`
     /// methods.
     ///
-    /// - Note: Paging starts at index 1, not 0.
+    /// - Note: Paging starts at index 1 so `page: 1` will give the 1st page.
     ///
     /// - Parameters:
     ///   - page: What `page` of results to offset by.
-    ///   - perPage: How many results to show on each page. Defaults
-    ///     to `25`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
+    ///   - pageSize: How many results to show on each page. Defaults to `100`.
     public func page(_ page: Int, pageSize: Int = 100) -> Self {
         offset((page - 1) * pageSize).limit(pageSize)
     }

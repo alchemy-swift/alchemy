@@ -1,5 +1,3 @@
-import ArgumentParser
-
 struct ControllerMakeCommand: Command {
     static var configuration = CommandConfiguration(
         commandName: "make:controller",

@@ -1,6 +1,6 @@
-/// Handles any environment info of your application. Loads any
-/// environment variables from the file a `.env` or `.{APP_ENV}`
-/// if `APP_ENV` is set in the current environment.
+/// Handles any environment info of your application. Loads any environment
+/// variables from the file a `.env` or `.env.{APP_ENV}` if `APP_ENV` is
+/// set in the current environment.
 ///
 /// Variables are accessed via `.get`. Supports dynamic member lookup.
 /// ```swift
@@ -9,17 +9,14 @@
 /// OTHER_KEY=123456
 ///
 /// // Swift code
-/// let someVariable: String? = Env.current.get("SOME_KEY")
+/// let someVariable: String? = Env.get("SOME_KEY")
 ///
 /// // Dynamic member lookup
 /// let otherVariable: Int? = Env.OTHER_KEY
 /// ```
 @dynamicMemberLookup
 public final class Environment: ExpressibleByStringLiteral {
-    /// The environment file location of this application. Additional
-    /// env variables are pulled from the file at '.{name}'. This
-    /// defaults to `env`, `APP_ENV`, or `-e` / `--env` command
-    /// line arguments.
+    /// The name of the environment.
     public let name: String
     /// The paths from which the dotenv file should be loaded.
     public let dotenvPaths: [String]
@@ -64,13 +61,11 @@ public final class Environment: ExpressibleByStringLiteral {
         self.get(member)
     }
 
-    /// Returns any environment variables loaded from the environment
-    /// file as type `T: EnvAllowed`. Supports `String`, `Int`,
-    /// `Double`, and `Bool`.
+    /// Returns any environment variables with the given key as `L`.
     ///
     /// - Parameter key: The name of the environment variable.
-    /// - Returns: The variable converted to type `S`. `nil` if the
-    ///   variable doesn't exist or it cannot be converted as `S`.
+    /// - Returns: The variable converted to `L` or `nil` if the variable
+    ///   doesn't exist or it cannot be converted to `L`.
     public func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
         guard let val = processVariables[key] ?? dotenvVariables[key] else {
             return nil
@@ -87,11 +82,6 @@ public final class Environment: ExpressibleByStringLiteral {
             .reduce([:], +)
     }
 
-    /// Load the environment file and put all the variables into the
-    /// process environment.
-    ///
-    /// - Parameter path: The path of the file from which to load the
-    ///   variables.
     private func loadDotEnvFile(path: String) -> [String: String]? {
         let absolutePath = path.starts(with: "/") ? path : getAbsolutePath(relativePath: "/\(path)")
 
@@ -142,13 +132,8 @@ public final class Environment: ExpressibleByStringLiteral {
         return values
     }
 
-    /// Determines the absolute path of the given argument relative to
-    /// the current directory. Return nil if there is no file at that
-    /// path.
-    ///
-    /// - Parameter relativePath: The path to find.
-    /// - Returns: The absolute path of the `relativePath`, if it
-    ///   exists.
+    /// Determines the absolute path of the given argument relative to the
+    /// current directory. Return nil if there is no file at that path.
     private func getAbsolutePath(relativePath: String) -> String? {
         if relativePath.contains("/DerivedData") {
             Log.comment("""

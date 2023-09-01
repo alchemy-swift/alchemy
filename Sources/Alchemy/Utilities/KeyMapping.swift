@@ -1,7 +1,5 @@
-import Foundation
-
-/// Represents the mapping between your type's property names and
-/// their corresponding request field key.
+/// Represents the mapping between your type's property names and a
+/// corresponding field key. Used to map `Codable` types to SQL fields.
 public enum KeyMapping {
     /// Use the literal name for all properties on a type as its field key.
     case useDefaultKeys

@@ -13,11 +13,11 @@ public final class Filesystem: Service {
         self.provider = provider
     }
     
-    /// Create a file in this storage.
+    /// Create a file in this filesystem.
+    ///
     /// - Parameters:
     ///  - filename: The name of the file, including extension, to create.
-    ///  - directory: The directory to put the file in. If nil, goes in root.
-    ///  - contents: the binary contents of the file.
+    ///  - content: the binary contents of the file.
     /// - Returns: The newly created file.
     @discardableResult
     public func create(_ filepath: String, content: Bytes) async throws -> File {

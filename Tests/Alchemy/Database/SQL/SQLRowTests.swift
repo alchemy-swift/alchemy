@@ -1,7 +1,6 @@
 @testable
 import Alchemy
 import AlchemyTest
-import NIO
 
 final class SQLRowTests: TestCase<TestApp> {
     override func setUp() async throws {

@@ -1,6 +1,5 @@
 import AsyncKit
 import NIOSSL
-import NIOCore
 import MySQLNIO
 @_implementationOnly import NIOPosix // for inet_pton()
 
@@ -12,10 +11,6 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
     public init(configuration: MySQLConfiguration) {
         pool = EventLoopGroupConnectionPool(source: configuration, on: LoopGroup)
     }
-
-    // This is so EventLoopGroupConnectionPool won't crash if a database is
-    // deallocated without calling shutdown first.
-    deinit { pool.shutdown() }
 
     // MARK: Database
     

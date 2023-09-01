@@ -1,15 +1,9 @@
-import NIO
-
 /// Useful extensions for various CRUD operations of a `Model`.
 extension Model {
 
     // MARK: - SELECT
 
-    /// Load all models of this type from a database.
-    ///
-    /// - Parameter db: The database to load models from. Defaults to
-    ///   `Database.default`.
-    /// - Returns: An array of this model, loaded from the database.
+    /// Fetch all models of this type from a database.
     public static func all(on db: Database = database) async throws -> [Self] {
         try await query(on: db).get()
     }
@@ -23,12 +17,6 @@ extension Model {
     }
 
     /// Fetch the first model with the given id.
-    ///
-    /// - Parameters:
-    ///   - db: The database to fetch the model from. Defaults to
-    ///     `Database.default`.
-    ///   - id: The id of the model to find.
-    /// - Returns: A matching model, if one exists.
     public static func find(on db: Database = database, _ id: PrimaryKey) async throws -> Self? {
         try await `where`(on: db, primaryKey == id).first()
     }
@@ -36,9 +24,9 @@ extension Model {
     /// Fetch the first model that matches the given where clause.
     ///
     /// - Parameters:
-    ///   - where: A where clause for filtering models.
     ///   - db: The database to fetch the model from. Defaults to
     ///     `Database.default`.
+    ///   - where: A where clause for filtering models.
     /// - Returns: A matching model, if one exists.
     public static func first(on db: Database = database, where: SQLWhere.Clause) async throws -> Self? {
         try await Self.where(on: db, `where`).first()
@@ -53,13 +41,11 @@ extension Model {
         try await query(on: db).first()
     }
 
-    /// Similar to `firstModel`. Gets the first result of a query, but
-    /// unwraps the element, throwing an error if it doesn't exist.
+    /// Similar to `find`. Gets the first result of a query, but unwraps the
+    /// element, throwing an error if it doesn't exist.
     ///
     /// - Parameter error: The error to throw should no element be
     ///   found. Defaults to `RuneError.notFound`.
-    /// - Returns: The unwrapped first result of this query, or the
-    ///   supplied error if no result was found.
     public static func require(_ id: PrimaryKey, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
         guard let model = try await find(on: db, id) else {
             throw error
@@ -159,14 +145,8 @@ extension Model {
 
     // MARK: - Save
     
-    /// Saves this model to a database. If this model's `id` is nil,
-    /// it inserts it. If the `id` is not nil, it updates.
-    ///
-    /// - Parameter db: The database to save this model to. Defaults
-    ///   to `Database.default`.
-    /// - Returns: An updated version of this model, reflecting any
-    ///   changes that may have occurred saving this object to the
-    ///   database (an `id` being populated, for example).
+    /// Saves this model to a database. If this model has not been loaded from a 
+    /// database, it will be inserted, otherwise it will be updated.
     @discardableResult
     public func save(on db: Database = database) async throws -> Self {
         if row == nil {
@@ -180,53 +160,29 @@ extension Model {
 
     /// Deletes this model from a database. This will fail if the
     /// model has a nil `id` field.
-    ///
-    /// - Parameter db: The database to remove this model from.
-    ///   Defaults to `Database.default`.
     public func delete(on db: Database = database) async throws {
         try await [self].deleteAll(on: db)
     }
     
-    /// Delete all models that match the given where clause.
-    ///
-    /// - Parameters:
-    ///   - db: The database to fetch the model from. Defaults to
-    ///     `Database.default`.
-    ///   - where: A where clause to filter models.
+    /// Delete all models that match the given `where` clause.
     public static func delete(on db: Database = database, _ where: SQLWhere.Clause) async throws {
         try await query(on: db).where(`where`).delete()
     }
     
     /// Delete the first model with the given id.
-    ///
-    /// - Parameters:
-    ///   - db: The database to delete the model from. Defaults to
-    ///     `Database.default`.
-    ///   - id: The id of the model to delete.
     public static func delete(on db: Database = database, _ id: Self.PrimaryKey) async throws {
         try await query(on: db).where(primaryKey == id).delete()
     }
     
     /// Delete all models of this type from a database.
-    ///
-    /// - Parameter
-    ///   - db: The database to delete models from. Defaults
-    ///     to `Database.default`.
-    ///   - where: An optional where clause to specify the elements
-    ///     to delete.
     public static func truncate(on db: Database = database) async throws {
         try await query(on: db).delete()
     }
 
     // MARK: - Refresh
 
-    /// Fetches an copy of this model from a database, with any
-    /// updates that may have been made since it was last
-    /// fetched.
-    ///
-    /// - Parameter db: The database to load from. Defaults to
-    ///   `Database.default`.
-    /// - Returns: A freshly synced copy of this model.
+    /// Fetches an copy of this model from a database, with any updates that may
+    /// have been made since it was last fetched.
     public func refresh(on db: Database = database) async throws -> Self {
         let model = try await Self.require(id.require(), db: db)
         row = model.row
@@ -236,14 +192,7 @@ extension Model {
 
     // MARK: Query
 
-    /// Creates a query on the given model with the given where
-    /// clause.
-    ///
-    /// - Parameters:
-    ///   - where: A clause to match.
-    ///   - db: The database to query. Defaults to `Database.default`.
-    /// - Returns: A query on the `Model`'s table that matches the
-    ///   given where clause.
+    /// Creates a query on the given model with the given where clause.
     public static func `where`(on db: Database = database, _ where: SQLWhere.Clause) -> Query<Self> {
         query(on: db).where(`where`)
     }
@@ -268,11 +217,6 @@ extension Array where Element: Model {
     // MARK: INSERT
 
     /// Inserts each element in this array to a database.
-    ///
-    /// - Parameter db: The database to insert the models into.
-    ///   Defaults to `Database.default`.
-    /// - Returns: All models in array, updated to reflect any changes
-    ///   in the model caused by inserting.
     public func insertAll(on db: Database = Element.database) async throws {
         try await Element.willCreate(self)
         try await Element.query(on: db).insert(try insertableFields(on: db))
@@ -280,11 +224,6 @@ extension Array where Element: Model {
     }
     
     /// Inserts and returns each element in this array to a database.
-    ///
-    /// - Parameter db: The database to insert the models into.
-    ///   Defaults to `Database.default`.
-    /// - Returns: All models in array, updated to reflect any changes
-    ///   in the model caused by inserting.
     public func insertReturnAll(on db: Database = Element.database) async throws -> Self {
         try await _insertReturnAll(on: db)
     }
@@ -336,12 +275,8 @@ extension Array where Element: Model {
 
     // MARK: DELETE
 
-    /// Deletes all objects in this array from a database. If an
-    /// object in this array isn't actually in the database, it
-    /// will be ignored.
-    ///
-    /// - Parameter db: The database to delete from. Defaults to
-    ///   `Database.default`.
+    /// Deletes all objects in this array from a database. If an object in this
+    /// array isn't actually in the database, it will be ignored.
     public func deleteAll(on db: Database = Element.database) async throws {
         let ids = map(\.id)
         try await Element.willDelete(self)

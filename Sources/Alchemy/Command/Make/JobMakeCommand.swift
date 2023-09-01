@@ -1,5 +1,3 @@
-import ArgumentParser
-
 struct JobMakeCommand: Command {
     static var configuration = CommandConfiguration(
         commandName: "make:job",

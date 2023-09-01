@@ -1,15 +1,11 @@
-import NIOHTTP1
-
 extension Application {
 
     // MARK: Error Handlers
 
-    /// Set a custom handler for when a handler isn't found for a
-    /// request.
+    /// Set a custom handler for when a handler isn't found for a request.
     ///
-    /// - Parameter handler: The handler that returns a custom not
-    ///   found response.
-    /// - Returns: This application for chaining handlers.
+    /// - Parameter handler: The handler that returns a custom not found
+    ///   response.
     @discardableResult
     public func notFoundHandler(use handler: @escaping Router.Handler) -> Self {
         @Inject var _handler: RequestHandler
@@ -17,12 +13,11 @@ extension Application {
         return self
     }
 
-    /// Set a custom handler for when an internal error happens while
-    /// handling a request.
+    /// Set a custom handler for when an internal error happens while handling
+    /// a request.
     ///
-    /// - Parameter handler: The handler that returns a custom
-    ///   internal error response.
-    /// - Returns: This application for chaining handlers.
+    /// - Parameter handler: The handler that returns a custom internal error
+    ///   response.
     @discardableResult
     public func errorHandler(use handler: @escaping Router.ErrorHandler) -> Self {
         @Inject var _handler: RequestHandler
@@ -32,12 +27,11 @@ extension Application {
 
     // MARK: Global Middleware
 
-    /// Applies a middleware to all requests that come through the
-    /// application, whether they are handled or not.
+    /// Applies a middleware to all requests that come through the application,
+    /// whether they are handled or not.
     ///
-    /// - Parameter middlewares: The middlewares which will handle
-    ///   all requests to this application.
-    /// - Returns: This Application for chaining.
+    /// - Parameter middlewares: The middlewares which will handle all requests
+    ///   to this application.
     @discardableResult
     public func useAll(_ middlewares: Middleware...) -> Self {
         @Inject var _handler: RequestHandler
@@ -45,12 +39,11 @@ extension Application {
         return self
     }
 
-    /// Applies an middleware to all requests that come through the
-    /// application, whether they are handled or not.
+    /// Applies an middleware to all requests that come through the application,
+    /// whether they are handled or not.
     ///
     /// - Parameter middlewareHandler: The middleware closure which will handle
     ///   all requests to this application.
-    /// - Returns: This Application for chaining.
     @discardableResult
     public func useAll(_ middlewareHandler: @escaping Middleware.Handler) -> Self {
         useAll(AnonymousMiddleware(handler: middlewareHandler))

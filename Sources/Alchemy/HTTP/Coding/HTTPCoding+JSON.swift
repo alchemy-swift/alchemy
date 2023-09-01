@@ -1,5 +1,3 @@
-import Foundation
-
 extension HTTPEncoder where Self == JSONEncoder {
     public static var json: JSONEncoder { JSONEncoder() }
 }

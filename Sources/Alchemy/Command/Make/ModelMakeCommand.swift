@@ -1,6 +1,3 @@
-import ArgumentParser
-import Foundation
-
 final class ModelMakeCommand: Command {
     static var configuration = CommandConfiguration(
         commandName: "make:model",

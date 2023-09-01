@@ -12,8 +12,6 @@ public struct JobError: Error, Equatable {
     }
     
     /// Initialize with a message.
-    ///
-    /// - Parameter message: Why this error was thrown.
     init(_ message: String) {
         self.init(type: .general(message))
     }

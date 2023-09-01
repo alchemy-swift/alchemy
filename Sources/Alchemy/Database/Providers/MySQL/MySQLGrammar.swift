@@ -1,13 +1,12 @@
-import NIO
-
-/// A MySQL specific Grammar for compiling QueryBuilder statements
-/// into SQL strings.
+/// A MySQL specific Grammar for compiling `Query` to SQL.
 struct MySQLGrammar: SQLGrammar {
     func insertReturn(_ table: String, values: [[String : SQLConvertible]]) -> [SQL] {
-        values.flatMap {[
-            insert(table, values: [$0]),
-            "SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()"
-        ]}
+        values.flatMap {
+            [
+                insert(table, values: [$0]),
+                "SELECT * FROM \(table) WHERE id = LAST_INSERT_ID()"
+            ]
+        }
     }
 
     func dropIndex(on table: String, indexName: String) -> SQL {

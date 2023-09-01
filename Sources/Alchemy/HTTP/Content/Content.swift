@@ -1,5 +1,3 @@
-import Foundation
-
 /// Utility making it easy to set or modify HTTP content.
 @dynamicMemberLookup
 public final class Content: Buildable {

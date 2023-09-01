@@ -1,3 +1,7 @@
-public protocol ModelOrOptional: OneOrMany {}
+public protocol ModelOrOptional: OneOrMany {
+    //
+}
 
-extension Optional: ModelOrOptional where Wrapped: Model {}
+extension Optional: ModelOrOptional where Wrapped: Model {
+    //
+}

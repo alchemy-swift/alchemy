@@ -1,8 +1,6 @@
 import AsyncKit
 import NIOSSL
-import NIOCore
 import MySQLNIO
-import Logging
 
 public struct MySQLConfiguration: ConnectionPoolSource {
     public static let defaultPort = 3306

@@ -1,5 +1,3 @@
-import Foundation
-
 public final class PK<Identifier: PrimaryKeyProtocol>: Codable, Hashable, SQLValueConvertible, ModelProperty, CustomDebugStringConvertible {
     public var value: Identifier?
     fileprivate var storage: ModelStorage

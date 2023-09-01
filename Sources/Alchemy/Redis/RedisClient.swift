@@ -186,10 +186,6 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
         }
     }
 
-    /// Gets or creates a pool for the current `EventLoop`.
-    ///
-    /// - Returns: A `RedisConnectionPool` associated with the current
-    ///   `EventLoop` for sending commands to.
     private func getPool() throws -> RedisConnectionPool {
         let loop = Loop
         let key = ObjectIdentifier(loop)

@@ -1,12 +1,7 @@
-import Foundation
-import NIO
-
 /// An SQL query.
 open class Query<Result: QueryResult>: SQLConvertible {
     let db: Database
     var logging: QueryLogging? = nil
-
-    /// The SQL table to be queried.
     var table: String?
     var columns: [String]
     var isDistinct = false
@@ -85,12 +80,6 @@ open class Query<Result: QueryResult>: SQLConvertible {
     // MARK: SELECT
 
     /// Run a select query and return the database rows.
-    ///
-    /// - Note: Optional columns can be provided that override the
-    ///   original select columns.
-    /// - Parameter columns: The columns you would like returned.
-    ///   Defaults to `nil`.
-    /// - Returns: The rows returned by the database.
     public func get() async throws -> [Result] {
         try await _didLoad(rows().map(Result.init))
     }
@@ -120,12 +109,6 @@ open class Query<Result: QueryResult>: SQLConvertible {
     }
 
     /// Run a select query and return the first database row only row.
-    ///
-    /// - Note: Optional columns can be provided that override the
-    ///   original select columns.
-    /// - Parameter columns: The columns you would like returned.
-    ///   Defaults to `nil`.
-    /// - Returns: The first row in the database, if it exists.
     public func first() async throws -> Result? {
         try await limit(1).get().first
     }
@@ -159,19 +142,12 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     // MARK: INSERT
 
-    /// Perform an insert and create a database row from the provided
-    /// data.
-    ///
-    /// - Parameter value: A dictionary containing the values to be
-    ///   inserted.
+    /// Perform an insert and create a database row from the provided data.
     public func insert(_ value: [String: SQLConvertible]) async throws {
         try await insert([value])
     }
 
     /// Perform an insert and create database rows from the provided data.
-    ///
-    /// - Parameter values: An array of dictionaries containing the values to be
-    ///   inserted.
     public func insert(_ values: [[String: SQLConvertible]]) async throws {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
@@ -310,10 +286,9 @@ open class Query<Result: QueryResult>: SQLConvertible {
     /// For example, if you wanted to update the first name of a user
     /// whose ID equals 10, you could do so as follows:
     /// ```swift
-    /// database
-    ///     .table("users")
+    /// DB.table("users")
     ///     .where("id" == 10)
-    ///     .update(values: [
+    ///     .update([
     ///         "first_name": "Ashley"
     ///     ])
     /// ```
@@ -385,7 +360,7 @@ extension Database {
     /// Usage:
     /// ```swift
     /// if let row = try await database.table("users").where("id" == 1).first() {
-    ///     print("Got a row with fields: \(row.allColumns)")
+    ///     print("Got a row with fields: \(row.fields)")
     /// }
     /// ```
     ///

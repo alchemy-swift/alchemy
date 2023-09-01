@@ -1,5 +1,4 @@
 import NIOSSL
-import NIOHTTP1
 import HummingbirdCore
 import HummingbirdHTTP2
 import HummingbirdTLS

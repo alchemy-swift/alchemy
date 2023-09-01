@@ -1,10 +1,8 @@
-/// Conform a class to `Containerized` lets the `@Inject` property
-/// wrapper know that there is a custom container from which
-/// services should be resolved.
+/// Conform a class to `Containerized` lets the `@Inject` property wrapper know
+/// that there is a custom container from which services should be resolved.
 ///
-/// If the enclosing type of the property wrapper is not
-/// `Containerized`, injected services will be resolved
-/// from `Container.default`.
+/// If the enclosing type of the property wrapper is not `Containerized`,
+/// injected services will be resolved from `Container.default`.
 ///
 /// Usage:
 /// ```swift
@@ -16,7 +14,7 @@
 /// }
 /// ```
 public protocol Containerized: AnyObject {
-    /// The container from which `@Inject`ed services on this type
-    /// should be resolved.
+    /// The container from which `@Inject`ed services on this type should be
+    /// resolved.
     var container: Container { get }
 }

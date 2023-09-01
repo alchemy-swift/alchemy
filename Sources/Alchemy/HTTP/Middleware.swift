@@ -1,8 +1,5 @@
-import NIO
-
-/// A `Middleware` is used to handle either incoming `Request`s or
-/// outgoing `Response`s. The can handle either synchronously or
-/// asynchronously.
+/// A `Middleware` is used to handle either incoming `Request`s or outgoing
+/// `Response`s. The can handle either synchronously or asynchronously.
 ///
 /// Usage:
 /// ```swift
@@ -19,15 +16,14 @@ import NIO
 ///     }
 /// }
 ///
-/// // Find and set a user on a Request if the request path has a
-/// // `user_id` parameter
+/// // Find and set a user on a Request if the request path has a `user_id` parameter
 /// struct FindUserMiddleware: Middleware {
 ///     func handle(_ request: Request, next: Next) async throws -> Response {
 ///         let userId = request.parameter(for: "user_id")
 ///         let user = try await User.find(userId)
-///         // Set some data on the request for access in subsequent
-///         // Middleware or request handlers. See `HTTPRequst.set`
-///         // for more detail.
+///
+///         // Set some data on the request for access in subsequent Middleware
+///         // or request handlers. See `HTTPRequst.set` for more detail.
 ///         return try await next(request.set(user))
 ///     }
 /// }
@@ -36,23 +32,22 @@ public protocol Middleware {
     /// The type signature of a Middleware handle function.
     typealias Handler = (Request, Next) async throws -> Response
 
-    /// Passes a request to the next piece of the handler chain. It is
-    /// a closure that expects a request and returns a response.
+    /// Passes a request to the next piece of the handler chain. Next is a
+    /// closure that expects a request and returns a response.
     typealias Next = (Request) async throws -> Response
     
-    /// Intercept a requst, returning a Response representing from
-    /// the subsequent handlers.
+    /// Intercept a requst, returning a Response representing from the
+    /// subsequent handlers.
     ///
-    /// Be sure to call `next` when returning, unless you don't want
-    /// the request to be handled.
+    /// Be sure to call `next` when returning, unless you don't want the request
+    /// to be handled.
     ///
     /// - Parameter request: The incoming request to handle, then
     ///   pass along the handler chain.
-    /// - Throws: Any error encountered when intercepting the request.
     func handle(_ request: Request, next: Next) async throws -> Response
 }
 
-/// An array of Middleware can be used like a single middleware. The request
+/// An array of `Middleware` can be used like a single `Middleware`. The request
 /// will be consecutively passed through each middleware.
 extension [Middleware]: Middleware {
     public func handle(_ request: Request, next: Next) async throws -> Response {

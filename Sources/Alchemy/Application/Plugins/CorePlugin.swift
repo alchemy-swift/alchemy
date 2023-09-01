@@ -1,6 +1,6 @@
 import NIO
 
-/// Sets up core application services that other plugins may depend on.
+/// Sets up core services that other services may depend on.
 struct CorePlugin: Plugin {
     func registerServices(in app: Application) {
 

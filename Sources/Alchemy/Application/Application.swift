@@ -1,5 +1,3 @@
-import NIO
-
 /// The core type for an Alchemy application. Implement this & it's
 /// `boot` function, then add the `@main` attribute to mark it as
 /// the entrypoint for your application.
@@ -120,11 +118,10 @@ extension Application {
         // 1. Parse and run a `Command` based on the application arguments.
 
         let command = try await commander.runCommand(args: args)
-
-        // 2. If `wait`, either wait for lifecycle or immediately shut it down
-        // depending on if the command is something that should be waited for.
-
         guard waitOrShutdown else { return }
+
+        // 2. Wait for lifecycle or immediately shut down depending on if the
+        // command should run indefinitely.
 
         if command.runUntilStopped {
             wait()
@@ -133,17 +130,15 @@ extension Application {
         }
     }
 
-    public func stop() async throws {
-        try await lifecycle.shutdown()
-    }
-
     public func wait() {
         lifecycle.wait()
     }
 
-    /// Setup and launch this application. By default it serves, see `Launch`
-    /// for subcommands and options. This is so the app can be started with
-    /// @main.
+    public func stop() async throws {
+        try await lifecycle.shutdown()
+    }
+
+    // For @main support
     public static func main() async throws {
         try await Self().run()
     }
@@ -151,6 +146,6 @@ extension Application {
 
 extension ParsableCommand {
     fileprivate var runUntilStopped: Bool {
-        !((Self.self as? Command.Type)?.shutdownAfterRun ?? true)
+        (Self.self as? Command.Type)?.runUntilStopped ?? false
     }
 }

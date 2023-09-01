@@ -1,9 +1,8 @@
-import Foundation
 import Pluralize
 
-/// An ActiveRecord-esque type used for modeling a table in a
-/// relational database. Contains many extensions for making
-/// database queries, supporting relationships & more.
+/// An ActiveRecord-esque type used for modeling a table in a relational
+/// database. Contains many extensions for making database queries, 
+/// supporting relationships & more.
 public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// The type of this object's primary key.
     associatedtype PrimaryKey: PrimaryKeyProtocol

@@ -1,5 +1,3 @@
-import Logging
-
 /// Convenience struct for logging logs of various levels to a default
 /// `Logger`. By default, this logger has label `Alchemy`.
 ///

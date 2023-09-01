@@ -6,14 +6,10 @@ public protocol Migration {
 
     /// The schema changes that should be run when applying this
     /// migration to a database.
-    ///
-    /// - Parameter schema: The schema to build changes on.
     func up(db: Database) async throws
 
     /// The schema changes that should be run when rolling back this
     /// migration to a database.
-    ///
-    /// - Parameter schema: The schema to build changes on.
     func down(db: Database) async throws
 }
 

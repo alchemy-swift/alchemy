@@ -5,8 +5,10 @@ public enum SQLKey: CustomStringConvertible {
 
     public var string: String {
         switch self {
-        case .specified(let string): return string
-        case .inferred(let string): return string
+        case .specified(let string): 
+            return string
+        case .inferred(let string): 
+            return string
         }
     }
 
@@ -16,8 +18,10 @@ public enum SQLKey: CustomStringConvertible {
 
     public func infer(_ key: String) -> SQLKey {
         switch self {
-        case .specified: return self
-        case .inferred: return .inferred(key)
+        case .specified: 
+            return self
+        case .inferred: 
+            return .inferred(key)
         }
     }
 

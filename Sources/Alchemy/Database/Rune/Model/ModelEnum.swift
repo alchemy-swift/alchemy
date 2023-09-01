@@ -1,5 +1,5 @@
-/// A protocol to which enums on `Model`s should conform to. The enum
-/// will be modeled in the backing table by it's raw value.
+/// A protocol to which enums on `Model`s should conform to. The enum will be
+/// modeled in the backing table by its raw value.
 ///
 /// Usage:
 /// ```swift
@@ -8,7 +8,7 @@
 /// }
 ///
 /// struct Todo: Model {
-///     var id: Int?
+///     var id: PK<Int> = .new
 ///     let name: String
 ///     let isDone: Bool
 ///     let priority: TaskPriority // Stored as `Int` in the database.

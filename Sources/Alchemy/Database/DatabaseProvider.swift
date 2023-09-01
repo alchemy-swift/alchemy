@@ -1,7 +1,4 @@
-/// A generic type to represent any database you might be interacting
-/// with. Currently, the only two implementations are
-/// `PostgresDatabase` and `MySQLDatabase`. The QueryBuilder and Rune
-/// ORM are built on top of this abstraction.
+/// A generic type to represent any database you might be interacting with.
 public protocol DatabaseProvider {
     /// Run a parameterized query on the database. Parameterization
     /// helps protect against SQL injection.
@@ -32,10 +29,12 @@ public protocol DatabaseProvider {
     @discardableResult
     func raw(_ sql: String) async throws -> [SQLRow]
     
-    /// Runs a transaction on the database, using the given closure.
-    /// All database queries in the closure are executed atomically.
+    /// Runs a transaction on the database, using the given closure. All
+    /// database queries in the closure are executed atomically.
     ///
-    /// Uses START TRANSACTION; and COMMIT; under the hood.
+    /// Uses `START TRANSACTION;` and `COMMIT;` under the hood. Will
+    /// automatically `ROLLBACK;` if an unhandled error is
+    /// encountered mid transaction
     ///
     /// - Parameter action: The action to run atomically.
     /// - Returns: The return value of the transaction.

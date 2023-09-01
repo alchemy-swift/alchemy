@@ -1,6 +1,3 @@
-import ArgumentParser
-import Lifecycle
-
 /// Seed the database.
 struct SeedCommand: Command {
     static var name = "db:seed"

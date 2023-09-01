@@ -1,5 +1,3 @@
-import NIO
-
 /// Conform to this protocol to implement a custom queue provider.
 public protocol QueueProvider {
     /// Enqueue a job.
@@ -8,8 +6,7 @@ public protocol QueueProvider {
     /// Dequeue the next job from the given channel.
     func dequeue(from channel: String) async throws -> JobData?
     
-    /// Handle an in progress job that has been completed with the
-    /// given outcome.
+    /// Handle an in progress job that was completed with the given outcome.
     ///
     /// The `JobData` will have any fields that should be updated
     /// (such as `attempts`) already updated when it is passed
@@ -20,8 +17,7 @@ public protocol QueueProvider {
     func shutdown() async throws
 }
 
-/// An outcome of when a job is run. It should either be flagged as
-/// successful, failed, or be retried.
+/// An outcome of when a job is run.
 public enum JobOutcome {
     /// The job succeeded.
     case success

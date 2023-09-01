@@ -1,5 +1,3 @@
-import Foundation
-
 public struct Loggers: Plugin {
     public let `default`: Logger.Identifier?
     public let loggers: [Logger.Identifier: Logger]

@@ -1,5 +1,3 @@
-import ArgumentParser
-
 struct MiddlewareMakeCommand: Command {
     static var configuration = CommandConfiguration(
         commandName: "make:middleware",

@@ -1,5 +1,4 @@
 import Crypto
-import Foundation
 
 extension HashAlgorithm where Self == SHA256Hasher {
     public static var sha256: SHA256Hasher {

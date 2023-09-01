@@ -1,4 +1,3 @@
-import NIO
 import RediStack
 
 extension RedisClient {

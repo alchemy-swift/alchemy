@@ -36,11 +36,8 @@ public struct Queues: Plugin {
 }
 
 extension Application {
-    /// Registers a job to be handled by your application. If you
-    /// don't register a job type, `QueueWorker`s won't be able
-    /// to handle jobs of that type.
-    ///
-    /// - Parameter jobType: The type of Job to register.
+    /// Registers a job to be handled by your application. If you don't register
+    /// a job type, `Queue` workers won't be able to handle jobs of that type.
     public func registerJob(_ jobType: Job.Type) {
         container.require(JobRegistry.self).register(jobType)
     }

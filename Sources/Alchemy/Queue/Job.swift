@@ -1,5 +1,3 @@
-import NIO
-
 /// A task that can be persisted and queued for background processing.
 public protocol Job {
     typealias Context = JobContext
@@ -11,8 +9,8 @@ public protocol Job {
     /// The recovery strategy for this job. Defaults to `.none`.
     var recoveryStrategy: RecoveryStrategy { get }
     
-    /// The time that should be waited before retrying this job if it
-    /// fails. Sub-second precision is ignored. Defaults to 0.
+    /// The time that should be waited before retrying this job if it fails.
+    /// Sub-second precision is ignored. Defaults to 0.
     var retryBackoff: TimeAmount { get }
 
     // MARK: Handling
@@ -28,8 +26,8 @@ public protocol Job {
 
     // MARK: Hooks
 
-    /// Called when a job finishes, either successfully or with too
-    /// many failed attempts.
+    /// Called when a job finishes, either successfully or with too many failed
+    /// attempts.
     func finished(result: Result<Void, Error>)
 
     /// Called each time a job fails, even if it will be retried.
@@ -94,7 +92,7 @@ extension Job {
     }
     
     public func failed(error: Error) {
-        /* default to no-op */
+        //
     }
 
     /// Dispatch this Job on a queue.

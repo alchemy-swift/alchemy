@@ -1,10 +1,3 @@
-import Foundation
-
-/// Decoder for decoding `Model` types from an `SQLRow`.
-/// Properties of the `Decodable` type are matched to
-/// columns with matching names (either the same
-/// name or a specific name mapping based on
-/// the supplied `keyMapping`).
 struct SQLRowDecoder: Decoder, SQLRowReader {
     /// A `KeyedDecodingContainerProtocol` used to decode keys from a
     /// `SQLRow`.

@@ -1,5 +1,3 @@
-import Foundation
-
 public protocol SQLGrammar {
 
     // MARK: SELECT
@@ -354,11 +352,6 @@ extension SQLGrammar {
         SQL("ALTER TABLE \(table) RENAME COLUMN \(column.inQuotes) TO \(to.inQuotes)")
     }
 
-    /// Compile the given create indexes into SQL.
-    ///
-    /// - Parameter table: The name of the table this index will be
-    ///   created on.
-    /// - Returns: SQL objects for creating these indexes on the given table.
     public func createIndexes(on table: String, indexes: [CreateIndex]) -> [SQL] {
         indexes.map { index in
             let indexType = index.isUnique ? "UNIQUE INDEX" : "INDEX"

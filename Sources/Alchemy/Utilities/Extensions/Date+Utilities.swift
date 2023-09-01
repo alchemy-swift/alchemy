@@ -1,5 +1,3 @@
-import Foundation
-
 extension Date {
     var elapsedString: String {
         let elapsedms = Date().timeIntervalSince(self) * 1_000

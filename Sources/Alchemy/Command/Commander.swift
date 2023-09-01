@@ -1,6 +1,3 @@
-import ArgumentParser
-import Lifecycle
-
 final class Commander {
     /// Command to launch a given application.
     private struct Launch: AsyncParsableCommand {

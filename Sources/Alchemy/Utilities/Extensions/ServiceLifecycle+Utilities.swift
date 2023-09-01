@@ -1,5 +1,3 @@
-import Foundation
-
 extension ServiceLifecycle {
     func start() async throws {
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in

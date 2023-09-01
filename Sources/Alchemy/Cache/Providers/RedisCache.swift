@@ -1,4 +1,3 @@
-import Foundation
 import RediStack
 
 /// A Redis based provider for `Cache`.

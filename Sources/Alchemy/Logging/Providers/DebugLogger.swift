@@ -1,5 +1,3 @@
-import Logging
-
 extension Logger {
     public static var debug: Logger {
         Logger(label: "Alchemy", destination: DebugLogger())

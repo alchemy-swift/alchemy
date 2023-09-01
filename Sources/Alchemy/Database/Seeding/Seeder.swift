@@ -3,8 +3,7 @@ public protocol Seeder {
 }
 
 extension Database {
-    /// Seeds the database by running each seeder in `seeders`
-    /// consecutively.
+    /// Seeds the database by running each seeder in `seeders` consecutively.
     public func seed() async throws {
         for seeder in seeders {
             try await seeder.run()

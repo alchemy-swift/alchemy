@@ -40,10 +40,7 @@ public struct StubDatabaseError: Error {
     /// What went wrong.
     let message: String
     
-    /// Initialize a `DatabaseError` with a message detailing what
-    /// went wrong.
-    ///
-    /// - Parameter message: Why this error was thrown.
+    /// Initialize a `DatabaseError` with a message detailing what went wrong.
     init(_ message: String) {
         self.message = message
     }

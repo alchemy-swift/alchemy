@@ -1,5 +1,4 @@
 import Cron
-import NIOCore
 
 /// Used to help build schedule frequencies for scheduled tasks.
 public final class Frequency {
@@ -157,8 +156,8 @@ public final class Frequency {
         cron("* * * * * * *")
     }
 
-    /// Run this task according to the given cron expression. Second
-    /// and year fields are acceptable.
+    /// Run this task according to the given cron expression. Second and year
+    /// fields are acceptable.
     ///
     /// This will stop program execution if the expression is invalid.
     ///

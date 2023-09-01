@@ -1,6 +1,3 @@
-import Foundation
-import NIO
-
 extension Database {
     /// Represents a table for storing migration data. Alchemy will use
     /// this table for keeping track of the various batches of

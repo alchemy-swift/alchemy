@@ -1,11 +1,7 @@
 import SQLiteNIO
 
 extension SQLiteData: SQLValueConvertible {
-    /// Initialize from an Alchemy `SQLValue`.
-    ///
-    /// - Parameter value: the value with which to initialize. Given
-    ///   the type of the value, the `SQLiteData` will be
-    ///   initialized with the best corresponding type.
+    /// Initialize from an `SQLValue`.
     init(_ value: SQLValue) {
         struct Formatters {
             static let iso8601DateFormatter: ISO8601DateFormatter = {

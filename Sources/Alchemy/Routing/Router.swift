@@ -1,6 +1,3 @@
-import NIO
-import NIOHTTP1
-
 /// Something that handlers, middleware, and groups can be defined on.
 public protocol Router {
     typealias Handler = (Request) async throws -> ResponseConvertible
@@ -66,8 +63,8 @@ public struct RouteMatcher: Buildable {
 
     /// The character for indicating path parameters.
     ///
-    /// e.g. /users/:userID/todos/:todoID would have path parameters named
-    /// `userID` and `todoID`.
+    /// e.g. /users/:userId/todos/:todoId would have path parameters named
+    /// `userId` and `todoId`.
     private static let parameterEscape = ":"
 }
 

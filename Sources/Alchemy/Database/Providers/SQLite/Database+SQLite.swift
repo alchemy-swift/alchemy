@@ -10,9 +10,6 @@ extension Database {
     }
 
     /// A file based SQLite database configuration.
-    ///
-    /// - Parameter path: The path of the SQLite database file.
-    /// - Returns: The configuration for connecting to this database.
     public static func sqlite(path: String) -> Database {
         sqlite(configuration: .init(storage: .file(path: path), enableForeignKeys: true))
     }

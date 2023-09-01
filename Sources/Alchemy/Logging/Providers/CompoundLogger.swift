@@ -1,5 +1,3 @@
-import Logging
-
 extension Logger {
     public static func compound(_ loggers: Logger...) -> Logger {
         compound(loggers)

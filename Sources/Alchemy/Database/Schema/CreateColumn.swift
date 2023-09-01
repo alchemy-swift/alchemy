@@ -15,7 +15,7 @@ public struct CreateColumn {
 }
 
 /// An abstraction around various supported SQL column types.
-/// `Grammar`s will map the `ColumnType` to the backing
+/// `SQLGrammar`s will map the `ColumnType` to the backing
 /// grammar type string.
 public enum ColumnType: Equatable {
     /// The length of an SQL string column in characters.

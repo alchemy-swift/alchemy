@@ -169,26 +169,11 @@ extension Query {
 
     // MARK: Value
 
-    /// Add a basic where clause to the query to filter down results.
-    ///
-    /// - Parameters:
-    ///   - clause: A `WhereValue` clause matching a column to a given
-    ///     value.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func `where`(_ clause: SQLWhere.Clause) -> Self {
         wheres.append(.and(clause))
         return self
     }
 
-    /// An alias for `where(_ clause: WhereValue) ` that appends an or
-    /// clause instead of an and clause.
-    ///
-    /// - Parameters:
-    ///   - clause: A `WhereValue` clause matching a column to a given
-    ///     value.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhere(_ clause: SQLWhere.Clause) -> Self {
         wheres.append(.or(clause))
         return self
@@ -214,34 +199,19 @@ extension Query {
     /// could use a nested where clause along with a separate
     /// where value clause:
     /// ```swift
-    /// Query
-    /// .from("users")
-    /// .where {
-    ///     $0.where("age" < 30)
-    ///      .orWhere("first_name" == "Paul")
-    /// }
-    /// .where("age" > 50)
+    /// DB.table("users")
+    ///     .where {
+    ///         $0.where("age" < 30)
+    ///             .orWhere("first_name" == "Paul")
+    ///     }
+    ///     .where("age" > 50)
     /// ```
-    ///
-    /// - Parameters:
-    ///   - closure: A `WhereNestedClosure` that provides a nested
-    ///     clause to attach nested where clauses to.
-    ///   - boolean: How the clause should be appended(`.and` or
-    ///     `.or`). Defaults to `.and`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func `where`(_ closure: @escaping (Query) -> Query) -> Self {
         let query = closure(Query(db: db, table: table))
         return `where`(.nested(wheres: query.wheres))
     }
 
     /// A helper for adding an **or** `where` nested closure clause.
-    ///
-    /// - Parameters:
-    ///   - closure: A `WhereNestedClosure` that provides a nested
-    ///     query to attach nested where clauses to.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhere(_ closure: @escaping (Query) -> Query) -> Self {
         let query = closure(Query(db: db, table: table))
         return orWhere(.nested(wheres: query.wheres))
@@ -251,16 +221,6 @@ extension Query {
 
     /// Add a clause requiring that a column match any values in a
     /// given array.
-    ///
-    /// - Parameters:
-    ///   - column: The column to match against.
-    ///   - values: The values that the column should not match.
-    ///   - type: How the match should happen (*in* or *notIn*).
-    ///     Defaults to `.in`.
-    ///   - boolean: How the clause should be appended (`.and` or
-    ///     `.or`). Defaults to `.and`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func `where`(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return `where`(.raw("FALSE"))
@@ -270,14 +230,6 @@ extension Query {
     }
 
     /// A helper for adding an **or** variant of the `where(column:in:)` clause.
-    ///
-    /// - Parameters:
-    ///   - column: The column to match against.
-    ///   - values: The values that the column should not match.
-    ///   - type: How the match should happen (`.in` or `.notIn`).
-    ///     Defaults to `.in`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhere(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return orWhere(.raw("FALSE"))
@@ -288,14 +240,6 @@ extension Query {
 
     /// Add a clause requiring that a column not match any values in a
     /// given array. This is a helper method for the where in method.
-    ///
-    /// - Parameters:
-    ///   - column: The column to match against.
-    ///   - values: The values that the column should not match.
-    ///   - boolean: How the clause should be appended (`.and` or
-    ///     `.or`). Defaults to `.and`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func whereNot(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return `where`(.raw("TRUE"))
@@ -305,12 +249,6 @@ extension Query {
     }
 
     /// A helper for adding an **or** `whereNot` clause.
-    ///
-    /// - Parameters:
-    ///   - column: The column to match against.
-    ///   - values: The values that the column should not match.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhereNot(_ column: String, in values: [SQLConvertible]) -> Self {
         guard !values.isEmpty else {
             return orWhere(.raw("TRUE"))
@@ -343,11 +281,7 @@ extension Query {
     ///
     /// - Parameters:
     ///   - sql: A string representing the SQL where clause to be run.
-    ///   - input: Any variables for binding in the SQL.
-    ///   - boolean: How the clause should be appended (`.and` or
-    ///     `.or`). Defaults to `.and`.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
+    ///   - parameters: Any variables for binding in the SQL.
     public func whereRaw(_ sql: String, parameters: [SQLValue]) -> Self {
         `where`(.raw(SQL(sql, parameters: parameters)))
     }
@@ -357,8 +291,6 @@ extension Query {
     /// - Parameters:
     ///   - sql: A string representing the SQL where clause to be run.
     ///   - parameters: Any variables for binding in the SQL.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhereRaw(_ sql: String, parameters: [SQLValue]) -> Self {
         orWhere(.raw(SQL(sql, parameters: parameters)))
     }
@@ -368,25 +300,14 @@ extension Query {
     /// Add a where clause requiring that two columns match each other
     ///
     /// - Parameters:
-    ///   - first: The first column to match against.
+    ///   - column: The first column to match against.
     ///   - op: The `Operator` to be used in the comparison.
-    ///   - second: The second column to match against.
-    ///   - boolean: How the clause should be appended (`.and`
-    ///     or `.or`).
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
+    ///   - otherColumn: The second column to match against.
     public func whereColumn(_ column: String, _ op: SQLWhere.Operator, _ otherColumn: String) -> Self {
         `where`(.column(column: column, op: op, otherColumn: otherColumn))
     }
 
     /// A helper for adding an **or** `whereColumn` clause.
-    ///
-    /// - Parameters:
-    ///   - first: The first column to match against.
-    ///   - op: The `Operator` to be used in the comparison.
-    ///   - second: The second column to match against.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhereColumn(_ column: String, _ op: SQLWhere.Operator, _ otherColumn: String) -> Self {
         orWhere(.column(column: column, op: op, otherColumn: otherColumn))
     }
@@ -394,44 +315,21 @@ extension Query {
     // MARK: NULL
 
     /// Add a where clause requiring that a column be null.
-    ///
-    /// - Parameters:
-    ///   - column: The column to match against.
-    ///   - boolean: How the clause should be appended (`.and` or
-    ///     `.or`).
-    ///   - not: Should the value be null or not null.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func whereNull(_ column: String) -> Self {
         `where`(.raw("\(column) IS NULL"))
     }
 
     /// A helper for adding an **or** `whereNull` clause.
-    ///
-    /// - Parameter column: The column to match against.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhereNull(_ column: String) -> Self {
         orWhere(.raw("\(column) IS NULL"))
     }
 
     /// Add a where clause requiring that a column not be null.
-    ///
-    /// - Parameters:
-    ///   - column: The column to match against.
-    ///   - boolean: How the clause should be appended (`.and` or
-    ///     `.or`).
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func whereNotNull(_ column: String) -> Self {
         `where`(.raw("\(column) IS NOT NULL"))
     }
 
     /// A helper for adding an **or** `whereNotNull` clause.
-    ///
-    /// - Parameter column: The column to match against.
-    /// - Returns: The current query builder `Query` to chain future
-    ///   queries to.
     public func orWhereNotNull(_ column: String) -> Self {
         orWhere(.raw("\(column) IS NOT NULL"))
     }

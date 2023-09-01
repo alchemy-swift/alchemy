@@ -1,5 +1,3 @@
-import NIOHTTP1
-
 public protocol ResponseInspector: HTTPInspector {
     var status: HTTPResponseStatus { get }
 }

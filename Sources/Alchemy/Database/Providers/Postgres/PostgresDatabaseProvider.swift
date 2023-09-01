@@ -15,10 +15,6 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
         pool = EventLoopGroupConnectionPool(source: configuration, on: LoopGroup)
     }
 
-    // This is so EventLoopGroupConnectionPool won't crash if a database is
-    // deallocated without calling shutdown first.
-    deinit { pool.shutdown() }
-
     // MARK: Database
     
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
@@ -104,24 +100,12 @@ extension String {
     /// marks ('?') in the SQL string. PostgreSQL requires binds
     /// to be denoted by $1, $2, etc. This function converts all
     /// '?'s to strings appropriate for Postgres binds.
-    ///
-    /// - Parameter sql: The SQL string to replace binds with.
-    /// - Returns: An SQL string appropriate for running in Postgres.
     func positionPostgresBinds() -> String {
-        // TODO: Move this to Grammar
+        // TODO: Move this to SQLGrammar
         replaceAll(matching: "(\\?)") { (index, _) in "$\(index + 1)" }
     }
     
-    /// Replace all instances of a regex pattern with a string,
-    /// determined by a closure.
-    ///
-    /// - Parameters:
-    ///   - pattern: The pattern to replace.
-    ///   - callback: The closure used to define replacements for the
-    ///     pattern. Takes an index and a string that is the token to
-    ///     replace.
-    /// - Returns: The string with replaced patterns.
-    func replaceAll(matching pattern: String, callback: (Int, String) -> String) -> String {
+    private func replaceAll(matching pattern: String, callback: (Int, String) -> String) -> String {
         let expression = try! NSRegularExpression(pattern: pattern, options: [])
         let matches = expression
             .matches(in: self, options: [], range: NSRange(startIndex..<endIndex, in: self))

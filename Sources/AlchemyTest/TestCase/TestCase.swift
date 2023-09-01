@@ -1,6 +1,5 @@
 @testable
 import Alchemy
-import NIOCore
 import XCTest
 
 /// A test case class that makes it easy for you to test your app. By default

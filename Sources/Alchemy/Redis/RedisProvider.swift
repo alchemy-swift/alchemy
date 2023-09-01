@@ -1,7 +1,7 @@
 import RediStack
 
-/// Under the hood provider for `Redis`. Used so either connection pools
-/// or connections can be injected into `Redis` for accessing redis.
+/// Under the hood provider for `Redis`. Used so either connection pools or
+/// connections can be injected into `Redis` for accessing redis.
 public protocol RedisProvider {
     /// Log with the given logger.
     func logging(to logger: Logger) -> RediStack.RedisClient

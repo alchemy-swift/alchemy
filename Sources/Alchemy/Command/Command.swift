@@ -1,5 +1,3 @@
-import ArgumentParser
-
 /// An interface for defining custom commands. Implement `start()`,
 /// register your command type to your application, and you're
 /// off to the races.
@@ -10,7 +8,7 @@ import ArgumentParser
 /// First, conform to the `Command` interface.
 ///
 /// ```swift
-/// final class SyncUserData: Command {
+/// struct SyncUserData: Command {
 ///     static var configuration = CommandConfiguration(commandName: "sync", discussion: "Sync all data for all users.")
 ///
 ///     @Option(help: "Sync data for a specific user only.")
@@ -38,7 +36,7 @@ import ArgumentParser
 /// Now you may run your Alchemy app with your new command.
 ///
 /// ```bash
-/// $ swift run MyApp sync --id 2 --dry
+/// $ swift run app sync --id 2 --dry
 /// ```
 public protocol Command: AsyncParsableCommand {
     /// The name of this command. Run it in the command line by passing this
@@ -46,20 +44,15 @@ public protocol Command: AsyncParsableCommand {
     static var name: String { get }
 
     /// When running the app with this command, should the app
-    /// shut down after the command `start()` is finished.
-    /// Defaults to `true`.
-    ///
-    /// In most cases this is yes, unless the command performs
-    /// indefinitely running work such as starting a queue
-    /// worker or running the server.
-    static var shutdownAfterRun: Bool { get }
+    /// stay alive after `run` is finished.
+    static var runUntilStopped: Bool { get }
 
     /// Run the command.
     func run() async throws
 }
 
 extension Command {
-    public static var shutdownAfterRun: Bool { true }
+    public static var runUntilStopped: Bool { false }
 
     public static var name: String {
         Alchemy.name(of: Self.self)

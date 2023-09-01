@@ -1,19 +1,15 @@
-import ArgumentParser
 import NIO
 import NIOSSL
 import NIOHTTP1
 import NIOHTTP2
-import Lifecycle
 import HummingbirdCore
 
 let kDefaultHost = "127.0.0.1"
 let kDefaultPort = 3000
 
-/// Command to serve on launched. This is a subcommand of `Launch`.
-/// The app will route with the singleton `HTTPRouter`.
 struct ServeCommand: Command {
     static let name = "serve"
-    static var shutdownAfterRun: Bool = false
+    static var runUntilStopped: Bool = true
     
     /// The host to serve at. Defaults to `127.0.0.1`.
     @Option var host = kDefaultHost

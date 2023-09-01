@@ -1,5 +1,3 @@
-import Foundation
-import NIO
 import NIOConcurrencyHelpers
 
 extension Queue {

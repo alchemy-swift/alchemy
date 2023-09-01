@@ -1,5 +1,3 @@
-import Foundation
-
 /// A row of data returned by an SQL query.
 public struct SQLRow: ExpressibleByDictionaryLiteral {
     public let fields: [(column: String, value: SQLValue)]

@@ -1,4 +1,3 @@
-import Logging
 import OSLog
 
 extension Logging.Logger {

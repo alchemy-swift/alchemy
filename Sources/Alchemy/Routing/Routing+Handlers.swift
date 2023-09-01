@@ -3,9 +3,10 @@ extension Router {
     ///
     /// - Parameters:
     ///   - method: The method of requests this handler will handle.
-    ///   - path: The path this handler expects. Dynamic path
-    ///     parameters should be prefaced with a `:`
-    ///     (See `Parameter`).
+    ///   - path: The path this handler expects. Dynamic path parameters should
+    ///     be prefaced with a `:` (See `Request.Parameter`).
+    ///   - options: The options for this route, to enable streaming.
+    ///   - middlewares: Any middlewares to apply to this route.
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
@@ -59,12 +60,12 @@ extension Router {
 
     // MARK: - Sugar
 
-    /// The following are all sugar for defining handlers, since it's
-    /// not possible to conform all handler return types we wish to
-    /// support to `ResponseConvertible`.
-    ///
-    /// Specifically, these extensions support having `Void` and
-    /// `Encodable` as handler return types.
+    // The following are all sugar for defining handlers, since it's not
+    // possible to conform all handler return types we wish to support
+    // to `ResponseConvertible`.
+    //
+    // Specifically, these extensions support having `Void` and `Encodable` as
+    // handler return types.
 
     // MARK: Void
 
@@ -75,9 +76,10 @@ extension Router {
     ///
     /// - Parameters:
     ///   - method: The method of requests this handler will handle.
-    ///   - path: The path this handler expects. Dynamic path
-    ///     parameters should be prefaced with a `:`
-    ///     (See `Parameter`).
+    ///   - path: The path this handler expects. Dynamic path parameters should
+    ///     be prefaced with a `:` (See `Parameter`).
+    ///   - options: The options for this route, to enable streaming.
+    ///   - middlewares: Any middlewares to apply to this route.
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
@@ -139,9 +141,10 @@ extension Router {
     ///
     /// - Parameters:
     ///   - method: The method of requests this handler will handle.
-    ///   - path: The path this handler expects. Dynamic path
-    ///     parameters should be prefaced with a `:`
-    ///     (See `Parameter`).
+    ///   - path: The path this handler expects. Dynamic path parameters should
+    ///     be prefaced with a `:` (See `Parameter`).
+    ///   - options: The options for this route, to enable streaming.
+    ///   - middlewares: Any middlewares to apply to this route.
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult

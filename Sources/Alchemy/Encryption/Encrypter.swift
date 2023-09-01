@@ -1,5 +1,4 @@
 import Crypto
-import Foundation
 
 extension SymmetricKey {
     public static var app: SymmetricKey = {

@@ -1,5 +1,3 @@
-import Foundation
-
 /// An in memory provider for `Cache` for testing.
 public final class MemoryCache: CacheProvider {
     var data: [String: MemoryCacheItem] = [:]

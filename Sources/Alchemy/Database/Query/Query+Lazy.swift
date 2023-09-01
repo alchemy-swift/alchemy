@@ -1,5 +1,3 @@
-import Foundation
-
 extension Query {
     public func lazy(_ chunkSize: Int = 100) -> LazyQuerySequence<Result> {
         LazyQuerySequence(query: self, chunkSize: chunkSize)

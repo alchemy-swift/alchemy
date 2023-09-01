@@ -1,6 +1,3 @@
-import Foundation
-import NIOHTTP1
-
 public protocol RequestInspector: HTTPInspector {
     var method: HTTPMethod { get }
     var urlComponents: URLComponents { get }

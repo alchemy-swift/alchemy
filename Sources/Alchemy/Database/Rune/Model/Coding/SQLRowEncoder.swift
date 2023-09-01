@@ -1,7 +1,3 @@
-import Foundation
-
-/// Used for turning any `Encodable` into an ordered dictionary of columns to
-/// `SQLValue`s based on its stored properties.
 final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// Used to decode keyed values from a Model.
     private struct _KeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtocol {

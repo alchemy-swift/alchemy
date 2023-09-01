@@ -1,4 +1,3 @@
-import Foundation
 import Rainbow
 
 /// Used to generate files related to an alchemy project.

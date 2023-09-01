@@ -1,5 +1,4 @@
 import Crypto
-import Foundation
 
 /// A protocol for automatically authenticating incoming requests
 /// based on their `Authentication: Bearer ...` header. When the
@@ -25,8 +24,8 @@ import Foundation
 /// // auth.
 /// app
 ///     // Will apply this auth middleware to all following requests.
-///     .on(MyToken.tokenAuthMiddleware())
-///     .on(.GET, "/todos") { req in
+///     .use(MyToken.tokenAuthMiddleware())
+///     .get("/todos") { req in
 ///         // Middleware will have authed and set a user on the
 ///         // request, or returned an unauthorized response.
 ///         let authedUser = try req.get(User.self)

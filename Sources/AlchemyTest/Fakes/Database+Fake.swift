@@ -2,7 +2,8 @@ extension Database {
     /// Fake the database with an in memory SQLite database.
     ///
     /// - Parameters:
-    ///   - id: The identifier of the database to fake, defaults to `default`.
+    ///   - id: The identifier of the database to fake.
+    ///   - keyMapping: The `KeyMapping` of this database.
     ///   - seeds: Any migrations to set on the database, they will be run
     ///     before this function returns.
     ///   - seeders: Any seeders to set on the database, they will be run before

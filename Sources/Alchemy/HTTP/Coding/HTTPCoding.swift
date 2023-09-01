@@ -1,5 +1,3 @@
-import NIOCore
-
 /// Decodes a type from an HTTP message (Response or Request) body.
 public protocol HTTPDecoder {
     func decodeBody<D: Decodable>(_ type: D.Type, from buffer: ByteBuffer, contentType: ContentType?) throws -> D

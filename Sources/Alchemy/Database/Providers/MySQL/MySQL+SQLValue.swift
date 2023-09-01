@@ -1,11 +1,7 @@
 import MySQLNIO
 
 extension MySQLData: SQLValueConvertible {
-    /// Initialize from an Alchemy `SQLValue`.
-    ///
-    /// - Parameter value: The value with which to initialize. Given
-    ///   the type of the value, the `MySQLData` will be initialized
-    ///   with the best corresponding type.
+    /// Initialize from an `SQLValue`.
     init(_ value: SQLValue) {
         switch value {
         case .bool(let value):

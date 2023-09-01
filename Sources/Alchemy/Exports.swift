@@ -22,6 +22,9 @@
 @_exported import enum NIO.System
 @_exported import struct NIO.TimeAmount
 
+// NIOCore
+@_exported import enum NIOCore.SocketAddress
+
 // NIOHTTP1
 @_exported import struct NIOHTTP1.HTTPHeaders
 @_exported import enum NIOHTTP1.HTTPMethod

@@ -1,4 +1,4 @@
-/// An app-wide event fired by an `EventBus`.
+/// An app-wide event to be fired by an `EventBus`.
 public protocol Event {
     /// The key for which the event is registered in the `EventBus`. Defaults to
     /// the type name.

@@ -4,12 +4,10 @@ public struct RuneError: Error {
     public let message: String
     
     /// Create a `RuneError` with the given message.
-    ///
-    /// - Parameter message: A message detailing the error.
-    public init(_ message: String) { self.message = message }
-    
-    // MARK: All `RuneError`s.
-    
+    public init(_ message: String) {
+        self.message = message
+    }
+
     /// A `Model` wasn't found.
     public static let notFound = RuneError("Unable to find an element of this type.")
 }

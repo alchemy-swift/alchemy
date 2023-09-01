@@ -1,5 +1,3 @@
-import Foundation
-
 struct Terminal {
     static var columns: Int = {
         guard let string = try? shell("tput cols").trimmingCharacters(in: .whitespacesAndNewlines), let columns = Int(string) else {

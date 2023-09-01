@@ -1,6 +1,3 @@
-import Foundation
-import NIOHTTP1
-
 public protocol RequestBuilder: HTTPBuilder {
     associatedtype Res
     

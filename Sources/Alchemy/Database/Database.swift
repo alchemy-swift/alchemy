@@ -1,9 +1,4 @@
-import Foundation
-import NIOConcurrencyHelpers
-
-/// Used for interacting with an SQL database. This class is an
-/// injectable `Service` so you can register the default one
-/// via `Database.config(default: .postgres())`.
+/// Used for interacting with an SQL database.
 public final class Database: Service {
     public typealias Identifier = ServiceIdentifier<Database>
 
