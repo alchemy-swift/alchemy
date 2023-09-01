@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTest
 
-final class RelationshipNewTests: TestCase<TestApp> {
+final class RelationshipTests: TestCase<TestApp> {
     private var organization: Organization!
     private var user: User!
     private var repository: Repository!
