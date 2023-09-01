@@ -198,7 +198,7 @@ extension SQLGrammar {
             return SQL("INSERT INTO \(table) DEFAULT VALUES")
         }
 
-        let columns = Set(values.flatMap(\.keys)).array
+        let columns = Set(values.flatMap(\.keys))
         var input: [SQLConvertible] = []
         var placeholders: [String] = []
 
