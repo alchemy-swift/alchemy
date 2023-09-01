@@ -33,7 +33,7 @@ extension MemoryQueue {
                 continue
             }
 
-            if (try await JobRegistry.createJob(from: job) as? J).map(assertion) ?? false {
+            if (try await Jobs.createJob(from: job) as? J).map(assertion) ?? false {
                 return
             }
         }
@@ -52,7 +52,7 @@ extension MemoryQueue {
                 continue
             }
 
-            if (try await JobRegistry.createJob(from: job) as? J) == instance {
+            if (try await Jobs.createJob(from: job) as? J) == instance {
                 return
             }
         }

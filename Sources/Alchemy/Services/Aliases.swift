@@ -1,5 +1,7 @@
 import Crypto
 
+// MARK: Public Aliases
+
 /// The default configured Client
 public var Http: Client.Builder { Container.require(Client.self).builder() }
 public func Http(_ id: Client.Identifier) -> Client.Builder { Container.require(Client.self, id: id).builder() }
@@ -77,3 +79,9 @@ public var LoopGroup: EventLoopGroup { Container.require() }
 
 /// A thread pool to run expensive work on.
 public var Thread: NIOThreadPool { Container.require() }
+
+// MARK: Internal
+
+var Jobs: JobRegistry {
+    Container.require()
+}

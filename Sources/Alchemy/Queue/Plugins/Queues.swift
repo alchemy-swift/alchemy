@@ -19,6 +19,8 @@ public struct Queues: Plugin {
             app.container.register(Q(_default)).singleton()
         }
 
+        app.container.register(JobRegistry()).singleton()
+
         for job in jobs {
             app.registerJob(job)
         }
@@ -29,6 +31,17 @@ public struct Queues: Plugin {
     }
 
     public func shutdownServices(in app: Application) async throws {
-        JobRegistry.reset()
+        app.container.require(JobRegistry.self).reset()
+    }
+}
+
+extension Application {
+    /// Registers a job to be handled by your application. If you
+    /// don't register a job type, `QueueWorker`s won't be able
+    /// to handle jobs of that type.
+    ///
+    /// - Parameter jobType: The type of Job to register.
+    public func registerJob(_ jobType: Job.Type) {
+        container.require(JobRegistry.self).register(jobType)
     }
 }

@@ -14,9 +14,9 @@ final class FilesystemTests: TestCase<TestApp> {
         _testInvalidURL,
     ]
     
-    func testConfig() {
-        let config = Filesystems(default: 1, disks: [1: .local, 2: .local])
-        config.registerServices(in: app)
+    func testPlugin() {
+        let plugin = Filesystems(default: 1, disks: [1: .local, 2: .local])
+        plugin.registerServices(in: app)
         XCTAssertNotNil(Container.resolve(Filesystem.self))
         XCTAssertNotNil(Container.resolve(Filesystem.self, id: 1))
         XCTAssertNotNil(Container.resolve(Filesystem.self, id: 2))

@@ -19,7 +19,7 @@ public final class EventBus: Service {
     }
 
     public func register<L: QueueableListener>(listener: L) {
-        JobRegistry.register(EventJob<L.ObservedEvent>.self)
+        Jobs.register(EventJob<L.ObservedEvent>.self)
         handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.dispatch)]
         listeners[L.registryId] = listener
     }

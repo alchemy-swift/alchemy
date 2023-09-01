@@ -102,7 +102,7 @@ public final class Scheduler {
     public func job<J: Job>(_ job: @escaping @autoclosure () -> J, queue: Queue = Q, channel: String = Queue.defaultChannel) -> Frequency {
 
         // Register the job, just in case the user forgot.
-        JobRegistry.register(J.self)
+        Jobs.register(J.self)
 
         return task("\(J.self)") {
             try await job().dispatch(on: queue, channel: channel)

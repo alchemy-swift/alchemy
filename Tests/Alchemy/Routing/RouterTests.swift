@@ -150,6 +150,58 @@ final class RouterTests: TestCase<TestApp> {
         try await Test.get("/error_convert").assertStatus(.badGateway).assertEmpty()
         try await Test.get("/error_convert_error").assertStatus(errorStatus).assertEmpty()
     }
+
+    // MARK: Streaming
+
+    func testServerResponseStream() async throws {
+        app.get("/stream") { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
+
+        try await Test.get("/stream")
+            .collect()
+            .assertOk()
+            .assertBody("foobarbaz")
+    }
+
+    func testEndToEndStream() async throws {
+        app.get("/stream", options: .stream) { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
+
+        try await app.start(waitOrShutdown: false)
+        var expected = ["foo", "bar", "baz"]
+        try await Http
+            .withStream()
+            .get("http://localhost:3000/stream")
+            .assertStream {
+                guard expected.first != nil else {
+                    XCTFail("There were too many stream elements.")
+                    return
+                }
+
+                XCTAssertEqual($0.string, expected.removeFirst())
+            }
+            .assertOk()
+    }
+
+    func testFileRequest() {
+        app.get("/stream") { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
+    }
 }
 
 private struct TestError: Error {}

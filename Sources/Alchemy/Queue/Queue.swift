@@ -28,7 +28,7 @@ public final class Queue: Service {
     ///   - channel: The channel on which to enqueue the job. Defaults
     ///     to `Queue.defaultChannel`.
     public func enqueue<J: Job>(_ job: J, channel: String = defaultChannel) async throws {
-        JobRegistry.register(J.self)
+        Jobs.register(J.self)
         let payload = try job.payload(for: self, channel: channel)
         let data = JobData(payload: payload,
                            jobName: J.name,
@@ -118,7 +118,7 @@ public final class Queue: Service {
 
         var job: Job?
         do {
-            job = try await JobRegistry.createJob(from: jobData)
+            job = try await Jobs.createJob(from: jobData)
             let context = JobContext(queue: self, channel: jobData.channel, jobData: jobData)
             try await job?.handle(context: context)
             try await provider.complete(jobData, outcome: .success)

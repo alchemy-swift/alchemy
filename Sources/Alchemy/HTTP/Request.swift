@@ -93,7 +93,7 @@ public final class Request: RequestInspector {
     /// A container for storing associated types and services.
     public let container: Container
 
-    // MARK: Convenience Computed Properties
+    // MARK: Computed Properties
 
     /// The remote address where this request came from.
     public var ip: String { remoteAddress?.ipAddress ?? "" }
