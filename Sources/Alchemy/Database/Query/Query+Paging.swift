@@ -32,6 +32,6 @@ extension Query {
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
     public func page(_ page: Int, pageSize: Int = 100) -> Self {
-        offset((page - 1) * page).limit(pageSize)
+        offset((page - 1) * pageSize).limit(pageSize)
     }
 }

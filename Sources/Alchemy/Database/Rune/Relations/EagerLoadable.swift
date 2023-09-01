@@ -17,7 +17,7 @@ extension EagerLoadable {
         "\(Self.self)"
     }
 
-    public var isCached: Bool {
+    public var isLoaded: Bool {
         from.cacheExists(cacheKey)
     }
 

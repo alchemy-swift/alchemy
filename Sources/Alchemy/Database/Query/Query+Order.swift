@@ -3,9 +3,9 @@ public struct SQLOrder: Equatable {
     /// A sorting direction.
     public enum Direction: String {
         /// Sort elements in ascending order.
-        case asc
+        case asc = "ASC"
         /// Sort elements in descending order.
-        case desc
+        case desc = "DESC"
     }
 
     /// The column to order by.

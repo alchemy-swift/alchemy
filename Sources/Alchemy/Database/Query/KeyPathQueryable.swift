@@ -132,11 +132,11 @@ extension Query where Result: Model & KeyPathQueryable {
         orWhere(typedWhere.clause)
     }
 
-    public func `where`<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Clause.Operator, _ value: Value) -> Self {
+    public func `where`<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Operator, _ value: Value) -> Self {
         `where`(.value(column: _column(for: column), op: op, value: value.sql))
     }
 
-    public func orWhere<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Clause.Operator, _ value: Value) -> Self {
+    public func orWhere<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Operator, _ value: Value) -> Self {
         orWhere(.value(column: _column(for: column), op: op, value: value.sql))
     }
 
@@ -194,11 +194,11 @@ extension Query where Result: Model & KeyPathQueryable {
 
     // MARK: Column
 
-    public func whereColumn<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Clause.Operator, _ otherColumn: KeyPath<Result, Value>) -> Self {
+    public func whereColumn<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Operator, _ otherColumn: KeyPath<Result, Value>) -> Self {
         `where`(.column(column: _column(for: column), op: op, otherColumn: _column(for: otherColumn)))
     }
 
-    public func orWhereColumn<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Clause.Operator, _ otherColumn: KeyPath<Result, Value>) -> Self {
+    public func orWhereColumn<Value: SQLConvertible>(_ column: KeyPath<Result, Value>, _ op: SQLWhere.Operator, _ otherColumn: KeyPath<Result, Value>) -> Self {
         orWhere(.column(column: _column(for: column), op: op, otherColumn: _column(for: otherColumn)))
     }
 

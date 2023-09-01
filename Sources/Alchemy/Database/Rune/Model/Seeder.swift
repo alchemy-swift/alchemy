@@ -18,29 +18,15 @@ extension Seedable where Self: Model {
     }
 
     @discardableResult
-    public static func seed(_ modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
-        try await _seed(1, modifier: modifier).first!
+    public static func seed(fields: [String: SQLConvertible] = [:], modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
+        try await seed(1, fields: fields, modifier: modifier).first!
     }
 
     @discardableResult
-    public static func seed(_ fieldOverrides: [String: SQLConvertible]) async throws -> Self {
-        try await _seed(1, fieldOverrides: fieldOverrides).first!
-    }
-
-    @discardableResult
-    public static func seed(_ count: Int, _ modifier: ((inout Self) async throws -> Void)? = nil) async throws -> [Self] {
-        try await _seed(count, modifier: modifier)
-    }
-
-    @discardableResult
-    public static func seed(_ count: Int, _ fieldOverrides: [String: SQLConvertible] = [:]) async throws -> [Self] {
-        try await _seed(count, fieldOverrides: fieldOverrides)
-    }
-
-    @discardableResult
-    private static func _seed(_ count: Int, 
-                              modifier: ((inout Self) async throws -> Void)? = nil,
-                              fieldOverrides: [String: SQLConvertible] = [:]
+    public static func seed(
+        _ count: Int = 1,
+        fields: [String: SQLConvertible] = [:],
+        modifier: ((inout Self) async throws -> Void)? = nil
     ) async throws -> [Self] {
         var models: [Self] = []
         for _ in 1...count {
@@ -49,7 +35,7 @@ extension Seedable where Self: Model {
             models.append(model)
         }
 
-        return try await models._insertReturnAll(fieldOverrides: fieldOverrides)
+        return try await models._insertReturnAll(fieldOverrides: fields)
     }
 }
 

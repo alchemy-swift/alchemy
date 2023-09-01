@@ -8,8 +8,8 @@ extension Database {
     ///   - seeders: Any seeders to set on the database, they will be run before
     ///     this function returns.
     @discardableResult
-    public static func fake(_ id: Identifier? = nil, migrations: [Migration] = [], seeders: [Seeder] = []) async throws -> Database {
-        let db = Database.sqlite
+    public static func fake(_ id: Identifier? = nil, keyMapping: KeyMapping = .snakeCase, migrations: [Migration] = [], seeders: [Seeder] = []) async throws -> Database {
+        let db = Database.sqlite.keyMapping(keyMapping)
         Container.register(db, id: id).singleton()
         Container
             .require(ServiceLifecycle.self)

@@ -151,7 +151,7 @@ extension SQLGrammar {
         }
 
         let ordersSQL = orders
-            .map { "\($0.column) \($0.direction)" }
+            .map { "\($0.column) \($0.direction.rawValue)" }
             .joined(separator: ", ")
         return SQL("ORDER BY \(ordersSQL)")
     }

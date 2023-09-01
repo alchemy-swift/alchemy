@@ -50,11 +50,11 @@ extension Query {
     ///   - value: The value that the column should  match.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func having(_ column: String, _ op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+    public func having(_ column: String, _ op: SQLWhere.Operator, _ value: SQLConvertible) -> Self {
         having(.value(column: column, op: op, value: value.sql))
     }
 
-    public func orHaving(_ column: String, _ op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+    public func orHaving(_ column: String, _ op: SQLWhere.Operator, _ value: SQLConvertible) -> Self {
         orHaving(.value(column: column, op: op, value: value.sql))
     }
 }

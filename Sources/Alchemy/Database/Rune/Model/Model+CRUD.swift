@@ -228,7 +228,7 @@ extension Model {
     ///   `Database.default`.
     /// - Returns: A freshly synced copy of this model.
     public func refresh(on db: Database = database) async throws -> Self {
-        let model = try await Self.require(id(), db: db)
+        let model = try await Self.require(id.require(), db: db)
         row = model.row
         model.mergeCache(self)
         return model

@@ -30,7 +30,7 @@ extension MySQLData: SQLValueConvertible {
     }
 
     public var sqlValue: SQLValue {
-        switch self.type {
+        switch type {
         case .int24, .short, .long, .longlong:
             return int.map { .int($0) } ?? .null
         case .tiny:

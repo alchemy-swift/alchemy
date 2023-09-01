@@ -4,33 +4,33 @@ public struct SQLWhere: Hashable, SQLConvertible {
         case or = "OR"
     }
 
-    public indirect enum Clause: Hashable {
-        public enum Operator: CustomStringConvertible, Equatable {
-            case equals
-            case lessThan
-            case greaterThan
-            case lessThanOrEqualTo
-            case greaterThanOrEqualTo
-            case notEqualTo
-            case like
-            case notLike
-            case raw(String)
+    public enum Operator: CustomStringConvertible, Equatable {
+        case equals
+        case lessThan
+        case greaterThan
+        case lessThanOrEqualTo
+        case greaterThanOrEqualTo
+        case notEqualTo
+        case like
+        case notLike
+        case raw(String)
 
-            public var description: String {
-                switch self {
-                case .equals: return "="
-                case .lessThan: return "<"
-                case .greaterThan: return ">"
-                case .lessThanOrEqualTo: return "<="
-                case .greaterThanOrEqualTo: return ">="
-                case .notEqualTo: return "!="
-                case .like: return "LIKE"
-                case .notLike: return "NOT LIKE"
-                case .raw(let value): return value
-                }
+        public var description: String {
+            switch self {
+            case .equals: return "="
+            case .lessThan: return "<"
+            case .greaterThan: return ">"
+            case .lessThanOrEqualTo: return "<="
+            case .greaterThanOrEqualTo: return ">="
+            case .notEqualTo: return "!="
+            case .like: return "LIKE"
+            case .notLike: return "NOT LIKE"
+            case .raw(let value): return value
             }
         }
+    }
 
+    public indirect enum Clause: Hashable {
         case raw(SQL)
         case value(column: String, op: Operator, value: SQL)
         case column(column: String, op: Operator, otherColumn: String)
@@ -194,11 +194,11 @@ extension Query {
         return self
     }
 
-    public func `where`(_ column: String, _ op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+    public func `where`(_ column: String, _ op: SQLWhere.Operator, _ value: SQLConvertible) -> Self {
         `where`(.value(column: column, op: op, value: value.sql))
     }
 
-    public func orWhere(_ column: String, _ op: SQLWhere.Clause.Operator, _ value: SQLConvertible) -> Self {
+    public func orWhere(_ column: String, _ op: SQLWhere.Operator, _ value: SQLConvertible) -> Self {
         orWhere(.value(column: column, op: op, value: value.sql))
     }
 
@@ -375,7 +375,7 @@ extension Query {
     ///     or `.or`).
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func whereColumn(_ column: String, _ op: SQLWhere.Clause.Operator, _ otherColumn: String) -> Self {
+    public func whereColumn(_ column: String, _ op: SQLWhere.Operator, _ otherColumn: String) -> Self {
         `where`(.column(column: column, op: op, otherColumn: otherColumn))
     }
 
@@ -387,7 +387,7 @@ extension Query {
     ///   - second: The second column to match against.
     /// - Returns: The current query builder `Query` to chain future
     ///   queries to.
-    public func orWhereColumn(_ column: String, _ op: SQLWhere.Clause.Operator, _ otherColumn: String) -> Self {
+    public func orWhereColumn(_ column: String, _ op: SQLWhere.Operator, _ otherColumn: String) -> Self {
         orWhere(.column(column: column, op: op, otherColumn: otherColumn))
     }
 

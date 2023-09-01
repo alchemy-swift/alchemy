@@ -35,6 +35,10 @@ public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
     public func connect(_ models: [M], pivotFields: [String: SQLConvertible] = [:]) async throws {
         let from = try requireFromValue()
         let tos = try models.map { try requireToValue($0) }
+        guard fromKey.string != toKey.string else {
+            throw DatabaseError("Pivot table can't have duplicate keys")
+        }
+
         let fieldsArray = tos.map { ["\(fromKey)": from, "\(toKey)": $0] + pivotFields }
         try await db.table(pivot.table).insert(fieldsArray)
     }
