@@ -5,7 +5,12 @@ final class Commander {
     /// Command to launch a given application.
     private struct Launch: AsyncParsableCommand {
         static var configuration: CommandConfiguration {
-            Container.require(Commander.self).launchConfiguration()
+            let commander = Container.require(Commander.self)
+            return CommandConfiguration(
+                abstract: "Launch your app.",
+                subcommands: commander.commands,
+                defaultSubcommand: commander.defaultCommand
+            )
         }
 
         /// The environment file to load. Defaults to `env`.
@@ -15,60 +20,50 @@ final class Commander {
         @Option(name: .shortAndLong) var log: Logger.Level? = nil
     }
 
-    var commands: [Command.Type] = []
-    var defaultCommand: Command.Type = ServeCommand.self
+    private var commands: [Command.Type] = []
+    private var defaultCommand: Command.Type = ServeCommand.self
+
+    // MARK: Registering Commands
 
     func register(command: (some Command).Type) {
         commands.append(command)
     }
 
-    func launchConfiguration() -> CommandConfiguration {
-        CommandConfiguration(abstract: "Launch your app.", subcommands: commands, defaultSubcommand: defaultCommand)
+    func setDefault(command: (some Command).Type) {
+        defaultCommand = command
     }
 
-    func start(args: [String]? = nil, wait: Bool) async throws {
-        do {
-            // 0. Parse the Command
+    // MARK: Running Commands
 
-            // When running tests, don't use the command line args as the default;
-            // they are irrelevant to running the app and may contain a bunch of
-            // options that will cause `AsyncParsableCommand` parsing to fail.
-            let fallbackArgs = Env.isTesting ? [] : Array(CommandLine.arguments.dropFirst())
-            var command = try Launch.parseAsRoot(args ?? fallbackArgs)
+    /// Runs a command based on the given arguments. Returns the command that
+    /// ran, after it is finished running.
+    func runCommand(args: [String]? = nil) async throws -> ParsableCommand {
+        
+        // 0. Parse the Command
 
-            // 1. Run Command
+        // When running a command with no arguments during a test, send an empty
+        // array of arguments to swift-argument-parser. Otherwise, it will
+        // try to parse the arguments of the test runner throw errors.
+        var command = try Launch.parseAsRoot(args ?? (Env.isTesting ? [] : nil))
 
-            try await LoopGroup.next()
-                .asyncSubmit {
-                    if var asyncCommand = command as? AsyncParsableCommand {
-                        try await asyncCommand.run()
-                    } else {
-                        try command.run()
-                    }
-                }
-                .get()
+        // 1. Run the Command on an `EventLoop`.
 
-            // 2. Wait or Shutdown
-
-            guard wait else {
+        try await Loop.asyncSubmit {
+            guard var asyncCommand = command as? AsyncParsableCommand else {
+                try command.run()
                 return
             }
 
-            if command.waitForLifecycle {
-                Lifecycle.wait()
-            } else {
-                try await Lifecycle.shutdown()
-            }
-        } catch {
-            Launch.exit(withError: error)
+            try await asyncCommand.run()
         }
+        .get()
+
+        return command
+    }
+
+    func exit(error: Error) {
+        Launch.exit(withError: error)
     }
 }
 
 extension Logger.Level: ExpressibleByArgument {}
-
-extension ParsableCommand {
-    fileprivate var waitForLifecycle: Bool {
-        !((Self.self as? Command.Type)?.shutdownAfterRun ?? true)
-    }
-}

@@ -68,8 +68,8 @@ public func Hash<Algorithm: HashAlgorithm>(_ algorithm: Algorithm) -> Hasher<Alg
 public var Crypt: Encrypter { Encrypter(key: .app) }
 public func Crypt(key: SymmetricKey) -> Encrypter { Encrypter(key: key) }
 
-/// The event loop your code is currently running on, or the next available one
-/// if your code isn't running on an `EventLoop`.
+/// The `EventLoop` your code is currently running on, or the next one from your
+/// app's `EventLoopGroup` if your code isn't running on an `EventLoop`.
 public var Loop: EventLoop { Container.require() }
 
 /// The main `EventLoopGroup` of your Application.

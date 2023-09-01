@@ -1,7 +1,7 @@
 import NIO
 
 /// Sets up core application services that other plugins may depend on.
-struct ApplicationPlugin: Plugin {
+struct CorePlugin: Plugin {
     func registerServices(in app: Application) {
 
         // 0. Register Environment

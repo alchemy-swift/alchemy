@@ -30,6 +30,6 @@ extension Application {
     }
 
     public func setDefaultCommand(_ command: (some Command).Type) {
-        commander.defaultCommand = command
+        commander.setDefault(command: command)
     }
 }

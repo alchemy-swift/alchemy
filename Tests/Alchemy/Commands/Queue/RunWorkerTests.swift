@@ -23,7 +23,7 @@ final class RunWorkerTests: TestCase<TestApp> {
     }
     
     func testRunCLI() async throws {
-        try await app.start("queue:work", "--workers", "3", "--schedule", wait: false)
+        try await app.start("queue:work", "--workers", "3", "--schedule", waitOrShutdown: false)
         XCTAssertEqual(Q.workers.count, 3)
         XCTAssertTrue(Schedule.isStarted)
     }

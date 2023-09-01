@@ -46,7 +46,7 @@ final class StreamingTests: TestCase<TestApp> {
             }
         }
         
-        try await app.start(wait: false)
+        try await app.start(waitOrShutdown: false)
         var expected = ["foo", "bar", "baz"]
         try await Http
             .withStream()

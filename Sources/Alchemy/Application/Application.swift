@@ -61,9 +61,13 @@ extension Application {
     public func schedule(on schedule: Scheduler) { /* default to no-op */ }
 
     public func run() async throws {
-        setup()
-        try boot()
-        try await start()
+        do {
+            setup()
+            try boot()
+            try await start()
+        } catch {
+            commander.exit(error: error)
+        }
     }
 
     public func setup() {
@@ -75,7 +79,7 @@ extension Application {
 
         // 1. Register core Plugin services.
 
-        let core = ApplicationPlugin()
+        let core = CorePlugin()
         core.registerServices(in: self)
 
         // 2. Register other Plugin services.
@@ -102,18 +106,39 @@ extension Application {
     }
 
     /// Starts the application with the given arguments.
-    public func start(_ args: String..., wait: Bool = true) async throws {
-        try await start(args: args.isEmpty ? nil : args, wait: wait)
+    public func start(_ args: String..., waitOrShutdown: Bool = true) async throws {
+        try await start(args: args.isEmpty ? nil : args, waitOrShutdown: waitOrShutdown)
     }
 
     /// Starts the application with the given arguments.
-    public func start(args: [String]? = nil, wait: Bool = true) async throws {
+    public func start(args: [String]? = nil, waitOrShutdown: Bool = true) async throws {
+
+        // 0. Start the application lifecycle.
+
         try await lifecycle.start()
-        try await commander.start(args: args, wait: wait)
+
+        // 1. Parse and run a `Command` based on the application arguments.
+
+        let command = try await commander.runCommand(args: args)
+
+        // 2. If `wait`, either wait for lifecycle or immediately shut it down
+        // depending on if the command is something that should be waited for.
+
+        guard waitOrShutdown else { return }
+
+        if command.runUntilStopped {
+            wait()
+        } else {
+            try await stop()
+        }
     }
 
     public func stop() async throws {
         try await lifecycle.shutdown()
+    }
+
+    public func wait() {
+        lifecycle.wait()
     }
 
     /// Setup and launch this application. By default it serves, see `Launch`
@@ -121,5 +146,11 @@ extension Application {
     /// @main.
     public static func main() async throws {
         try await Self().run()
+    }
+}
+
+extension ParsableCommand {
+    fileprivate var runUntilStopped: Bool {
+        !((Self.self as? Command.Type)?.shutdownAfterRun ?? true)
     }
 }
