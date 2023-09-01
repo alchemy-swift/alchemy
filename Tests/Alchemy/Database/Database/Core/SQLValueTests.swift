@@ -1,83 +1,85 @@
-//import AlchemyTest
-//
-//final class SQLValueTests: XCTestCase {
-//    func testNull() {
-//        XCTAssertThrowsError(try SQLValue.null.int())
-//        XCTAssertThrowsError(try SQLValue.null.double())
-//        XCTAssertThrowsError(try SQLValue.null.bool())
-//        XCTAssertThrowsError(try SQLValue.null.string())
-//        XCTAssertThrowsError(try SQLValue.null.json())
-//        XCTAssertThrowsError(try SQLValue.null.date())
-//        XCTAssertThrowsError(try SQLValue.null.uuid("foo"))
-//    }
-//    
-//    func testInt() {
-//        XCTAssertEqual(try SQLValue.int(1).int(), 1)
-//        XCTAssertThrowsError(try SQLValue.string("foo").int())
-//    }
-//    
-//    func testDouble() {
-//        XCTAssertEqual(try SQLValue.double(1.0).double(), 1.0)
-//        XCTAssertThrowsError(try SQLValue.string("foo").double())
-//    }
-//    
-//    func testBool() {
-//        XCTAssertEqual(try SQLValue.bool(false).bool(), false)
-//        XCTAssertEqual(try SQLValue.int(1).bool(), true)
-//        XCTAssertThrowsError(try SQLValue.string("foo").bool())
-//    }
-//    
-//    func testString() {
-//        XCTAssertEqual(try SQLValue.string("foo").string(), "foo")
-//        XCTAssertThrowsError(try SQLValue.int(1).string())
-//    }
-//    
-//    func testDate() {
-//        let date = Date()
-//        XCTAssertEqual(try SQLValue.date(date).date(), date)
-//        XCTAssertThrowsError(try SQLValue.int(1).date())
-//    }
-//    
-//    func testDateIso8601() {
-//        let date = Date()
-//        let formatter = ISO8601DateFormatter()
-//        let dateString = formatter.string(from: date)
-//        let roundedDate = formatter.date(from: dateString) ?? Date()
-//        XCTAssertEqual(try SQLValue.string(formatter.string(from: date)).date(), roundedDate)
-//        XCTAssertThrowsError(try SQLValue.string("").date())
-//    }
-//    
-//    func testJson() {
-//        let jsonString = """
-//        {"foo":1}
-//        """
-//        XCTAssertEqual(try SQLValue.json(Data()).json(), Data())
-//        XCTAssertEqual(try SQLValue.string(jsonString).json(), jsonString.data(using: .utf8))
-//        XCTAssertThrowsError(try SQLValue.int(1).json())
-//    }
-//    
-//    func testUuid() {
-//        let uuid = UUID()
-//        XCTAssertEqual(try SQLValue.uuid(uuid).uuid(), uuid)
-//        XCTAssertEqual(try SQLValue.string(uuid.uuidString).uuid(), uuid)
-//        XCTAssertThrowsError(try SQLValue.string("").uuid())
-//        XCTAssertThrowsError(try SQLValue.int(1).uuid("foo"))
-//    }
-//    
-//    func testDescription() {
-//        XCTAssertEqual(SQLValue.int(0).description, "SQLValue.int(0)")
-//        XCTAssertEqual(SQLValue.double(1.23).description, "SQLValue.double(1.23)")
-//        XCTAssertEqual(SQLValue.bool(true).description, "SQLValue.bool(true)")
-//        XCTAssertEqual(SQLValue.string("foo").description, "SQLValue.string(`foo`)")
-//        let date = Date()
-//        XCTAssertEqual(SQLValue.date(date).description, "SQLValue.date(\(date))")
-//        let jsonString = """
-//        {"foo":"bar"}
-//        """
-//        let jsonData = jsonString.data(using: .utf8) ?? Data()
-//        XCTAssertEqual(SQLValue.json(jsonData).description, "SQLValue.json(\(jsonString))")
-//        let uuid = UUID()
-//        XCTAssertEqual(SQLValue.uuid(uuid).description, "SQLValue.uuid(\(uuid.uuidString))")
-//        XCTAssertEqual(SQLValue.null.description, "SQLValue.null")
-//    }
-//}
+import AlchemyTest
+@testable import Alchemy
+
+final class SQLValueTests: XCTestCase {
+    func testNull() {
+        XCTAssertThrowsError(try SQLValue.null.int())
+        XCTAssertThrowsError(try SQLValue.null.double())
+        XCTAssertThrowsError(try SQLValue.null.bool())
+        XCTAssertThrowsError(try SQLValue.null.string())
+        XCTAssertThrowsError(try SQLValue.null.json())
+        XCTAssertThrowsError(try SQLValue.null.date())
+        XCTAssertThrowsError(try SQLValue.null.uuid("foo"))
+    }
+    
+    func testInt() {
+        XCTAssertEqual(try SQLValue.int(1).int(), 1)
+        XCTAssertThrowsError(try SQLValue.string("foo").int())
+    }
+    
+    func testDouble() {
+        XCTAssertEqual(try SQLValue.double(1.0).double(), 1.0)
+        XCTAssertThrowsError(try SQLValue.string("foo").double())
+    }
+    
+    func testBool() {
+        XCTAssertEqual(try SQLValue.bool(false).bool(), false)
+        XCTAssertEqual(try SQLValue.int(1).bool(), true)
+        XCTAssertThrowsError(try SQLValue.string("foo").bool())
+    }
+    
+    func testString() {
+        XCTAssertEqual(try SQLValue.string("foo").string(), "foo")
+        XCTAssertEqual(try SQLValue.int(1).string(), "1")
+    }
+    
+    func testDate() {
+        let date = Date()
+        XCTAssertEqual(try SQLValue.date(date).date(), date)
+        XCTAssertEqual(try SQLValue.int(1).date(), Date(timeIntervalSince1970: 1))
+    }
+    
+    func testDateIso8601() {
+        let date = Date()
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let dateString = formatter.string(from: date)
+        let roundedDate = formatter.date(from: dateString) ?? Date()
+        XCTAssertEqual(try SQLValue.string(formatter.string(from: date)).date(), roundedDate)
+        XCTAssertThrowsError(try SQLValue.string("").date())
+    }
+    
+    func testJson() {
+        let jsonString = """
+        {"foo":1}
+        """
+        XCTAssertEqual(try SQLValue.json(ByteBuffer()).json(), ByteBuffer())
+        XCTAssertEqual(try SQLValue.string(jsonString).json().data, jsonString.data(using: .utf8))
+        XCTAssertThrowsError(try SQLValue.int(1).json())
+    }
+    
+    func testUuid() {
+        let uuid = UUID()
+        XCTAssertEqual(try SQLValue.uuid(uuid).uuid(), uuid)
+        XCTAssertEqual(try SQLValue.string(uuid.uuidString).uuid(), uuid)
+        XCTAssertThrowsError(try SQLValue.string("").uuid())
+        XCTAssertThrowsError(try SQLValue.int(1).uuid("foo"))
+    }
+    
+    func testDescription() {
+        XCTAssertEqual(SQLValue.int(0).description, "0")
+        XCTAssertEqual(SQLValue.double(1.23).description, "1.23")
+        XCTAssertEqual(SQLValue.bool(true).description, "true")
+        XCTAssertEqual(SQLValue.string("foo").description, "'foo'")
+        let date = Date()
+        XCTAssertEqual(SQLValue.date(date).description, "\(date)")
+        let jsonString = """
+        {"foo":"bar"}
+        """
+        let bytes = ByteBuffer(data: jsonString.data(using: .utf8) ?? Data())
+        XCTAssertEqual(SQLValue.json(bytes).description, "\(jsonString)")
+        let uuid = UUID()
+        XCTAssertEqual(SQLValue.uuid(uuid).description, "\(uuid.uuidString)")
+        XCTAssertEqual(SQLValue.null.description, "NULL")
+    }
+}

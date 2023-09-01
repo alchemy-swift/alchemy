@@ -1,17 +1,17 @@
-//@testable import Alchemy
-//import XCTest
-//
-//final class MigrationTests: XCTestCase {
-//    private let m1 = Migration1()
-//    private let m2 = Migration2()
-//    private let m3 = Migration3()
-//    
-//    func testMigrationNames() {
-//        XCTAssertEqual(self.m1.name, "Migration1")
-//        XCTAssertEqual(self.m2.name, "Migration2")
-//        XCTAssertEqual(self.m3.name, "Migration3")
-//    }
-//    
+@testable import Alchemy
+import XCTest
+
+final class MigrationTests: XCTestCase {
+    private let m1 = Migration1()
+    private let m2 = Migration2()
+    private let m3 = Migration3()
+    
+    func testMigrationNames() {
+        XCTAssertEqual(m1.name, "migration1")
+        XCTAssertEqual(m2.name, "migration2")
+        XCTAssertEqual(m3.name, "migration3")
+    }
+    
 //    func testMigrationsPostgres() {
 //        let postgres = PostgresGrammar()
 //        
@@ -35,4 +35,4 @@
 //        XCTAssertEqual(self.m2.upStatements(for: mysql), self.m2.expectedUpStatementsMySQL)
 //        XCTAssertEqual(self.m3.upStatements(for: mysql), self.m3.expectedUpStatementsMySQL)
 //    }
-//}
+}
