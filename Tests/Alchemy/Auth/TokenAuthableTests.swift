@@ -11,7 +11,7 @@ final class TokenAuthableTests: TestCase<TestApp> {
         }
         
         let auth = try await AuthModel(email: "test@withapollo.com", password: Hash.make("password")).insertReturn()
-        let token = try await TokenModel(authModel: auth).insertReturn()
+        let token = try await TokenModel(userId: auth.id()).insertReturn()
         
         try await Test.get("/user")
             .assertUnauthorized()

@@ -14,9 +14,9 @@ extension Filesystem {
     }
 }
 
-struct LocalFilesystem: FilesystemProvider {
+private struct LocalFilesystem: FilesystemProvider {
     /// The file IO helper for streaming files.
-    private let fileIO = NonBlockingFileIO(threadPool: Thread.pool)
+    private let fileIO = NonBlockingFileIO(threadPool: Thread)
     /// Used for allocating buffers when pulling out file data.
     private let bufferAllocator = ByteBufferAllocator()
     
@@ -36,7 +36,7 @@ struct LocalFilesystem: FilesystemProvider {
         let url = try url(for: filepath)
         let fileInfo = try FileManager.default.attributesOfItem(atPath: url.path)
         guard let fileSizeBytes = (fileInfo[.size] as? NSNumber)?.intValue else {
-            Log.error("[Storage] attempted to access file at `\(url.path)` but it didn't have a size.")
+            Log.error("Attempted to access file at `\(url.path)` but it didn't have a size.")
             throw HTTPError(.internalServerError)
         }
         
@@ -52,16 +52,16 @@ struct LocalFilesystem: FilesystemProvider {
                     byteCount: fileSizeBytes,
                     chunkSize: NonBlockingFileIO.defaultChunkSize,
                     allocator: bufferAllocator,
-                    eventLoop: Loop.current,
+                    eventLoop: Loop,
                     chunkHandler: { chunk in
-                        Loop.current.asyncSubmit { try await writer.write(chunk) }
+                        Loop.asyncSubmit { try await writer.write(chunk) }
                     }
                 ).get()
             },
             size: fileSizeBytes)
     }
     
-    func create(_ filepath: String, content: ByteContent) async throws -> File {
+    func create(_ filepath: String, content: Bytes) async throws -> File {
         let url = try url(for: filepath)
         guard try await !exists(filepath) else {
             throw FileError.filenameAlreadyExists
@@ -73,7 +73,7 @@ struct LocalFilesystem: FilesystemProvider {
         // Stream and write
         var offset: Int64 = 0
         try await content.stream.readAll { buffer in
-            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop.current).get()
+            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop).get()
             offset += Int64(buffer.writerIndex)
         }
         

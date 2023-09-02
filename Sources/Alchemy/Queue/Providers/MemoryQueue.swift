@@ -1,65 +1,4 @@
-import Foundation
-import NIO
-
-/// A queue that persists jobs to memory. Jobs will be lost if the
-/// app shuts down. Useful for tests.
-public final class MemoryQueue: QueueProvider {
-    var jobs: [JobID: JobData] = [:]
-    var pending: [String: [JobID]] = [:]
-    var reserved: [String: [JobID]] = [:]
-    
-    private let lock = NSRecursiveLock()
-    
-    init() {}
-    
-    // MARK: - Queue
-    
-    public func enqueue(_ job: JobData) async throws {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        jobs[job.id] = job
-        append(id: job.id, on: job.channel, dict: &pending)
-    }
-    
-    public func dequeue(from channel: String) async throws -> JobData? {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        guard
-            let id = pending[channel]?.popFirst(where: { (thing: JobID) -> Bool in
-                let isInBackoff = jobs[thing]?.inBackoff ?? false
-                return !isInBackoff
-            }),
-            let job = jobs[id]
-        else {
-            return nil
-        }
-        
-        append(id: id, on: job.channel, dict: &reserved)
-        return job
-    }
-    
-    public func complete(_ job: JobData, outcome: JobOutcome) async throws {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        switch outcome {
-        case .success, .failed:
-            reserved[job.channel]?.removeAll(where: { $0 == job.id })
-            jobs.removeValue(forKey: job.id)
-        case .retry:
-            reserved[job.channel]?.removeAll(where: { $0 == job.id })
-            try await enqueue(job)
-        }
-    }
-    
-    private func append(id: JobID, on channel: String, dict: inout [String: [JobID]]) {
-        var array = dict[channel] ?? []
-        array.append(id)
-        dict[channel] = array
-    }
-}
+import NIOConcurrencyHelpers
 
 extension Queue {
     /// An in memory queue.
@@ -73,24 +12,66 @@ extension Queue {
     ///   `default`.
     /// - Returns: A `MemoryQueue` for verifying test expectations.
     @discardableResult
-    public static func fake(_ identifier: Identifier = .default) -> MemoryQueue {
+    public static func fake(_ id: Identifier? = nil) -> MemoryQueue {
         let mock = MemoryQueue()
-        bind(identifier, Queue(provider: mock))
+        Container.register(Queue(provider: mock), id: id).singleton()
         return mock
     }
 }
 
-extension Array {
-    /// Pop the first element that satisfies the given conditional.
-    ///
-    /// - Parameter conditional: A conditional closure.
-    /// - Returns: The first matching element, or nil if no elements
-    ///   match.
-    fileprivate mutating func popFirst(where conditional: (Element) -> Bool) -> Element? {
-        guard let firstIndex = firstIndex(where: conditional) else {
+/// A queue that persists jobs to memory. Jobs will be lost if the
+/// app shuts down. Useful for tests.
+public actor MemoryQueue: QueueProvider {
+    typealias JobID = String
+
+    var jobs: [JobID: JobData] = [:]
+    private var pending: [String: [JobID]] = [:]
+    private var reserved: [String: [JobID]] = [:]
+    private let lock = NIOLock()
+
+    // MARK: - Queue
+    
+    public func enqueue(_ job: JobData) async throws {
+        jobs[job.id] = job
+        append(id: job.id, on: job.channel, dict: &pending)
+    }
+    
+    public func dequeue(from channel: String) async throws -> JobData? {
+        guard 
+            let index = pending[channel]?.firstIndex(where: { id in
+                let isInBackoff = jobs[id]?.inBackoff ?? false
+                return !isInBackoff
+            }),
+            let id = pending[channel]?.remove(at: index),
+            let job = jobs[id]
+        else {
             return nil
         }
-        
-        return remove(at: firstIndex)
+
+        append(id: id, on: job.channel, dict: &reserved)
+        return job
+    }
+    
+    public func complete(_ job: JobData, outcome: JobOutcome) async throws {
+        switch outcome {
+        case .success, .failed:
+            reserved[job.channel]?.removeAll(where: { $0 == job.id })
+            jobs.removeValue(forKey: job.id)
+        case .retry:
+            reserved[job.channel]?.removeAll(where: { $0 == job.id })
+            try await enqueue(job)
+        }
+    }
+
+    public func shutdown() {
+        jobs = [:]
+        pending = [:]
+        reserved = [:]
+    }
+
+    private func append(id: JobID, on channel: String, dict: inout [String: [JobID]]) {
+        var array = dict[channel] ?? []
+        array.append(id)
+        dict[channel] = array
     }
 }

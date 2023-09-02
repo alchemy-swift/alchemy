@@ -1,5 +1,3 @@
-import NIO
-
 /// A protocol for automatically authenticating incoming requests
 /// based on their `Authentication: Basic ...` header. When the
 /// request is intercepted by the `BasicAuthMiddleware<T>`, it will
@@ -52,9 +50,6 @@ public protocol BasicAuthable: Model {
     ///     Technically doesn't need to be a hashed value if
     ///     `passwordHashKeyString` points to an unhashed value, but
     ///     that wouldn't be very secure, would it?
-    /// - Throws: Any error that might occur during the verification
-    ///   process, by default a `CryptoError` if hashing fails.
-    /// - Returns: a `Bool` indicating if `password` matched `passwordHash`.
     static func verify(password: String, passwordHash: String) throws -> Bool
 }
 
@@ -70,7 +65,6 @@ extension BasicAuthable {
     ///     `Authentication: Basic ...` header.
     ///   - passwordHash: The hashed password of the `BasicAuthable`
     ///     Rune model.
-    /// - Throws: A `CryptoError` if hashing fails.
     /// - Returns: A `Bool` indicating if `password` matched
     ///   `passwordHash`.
     public static func verify(password: String, passwordHash: String) throws -> Bool {
@@ -98,10 +92,12 @@ extension BasicAuthable {
     ///   one. Throws `error` if the model is not found, or the
     ///   password doesn't match.
     public static func authenticate(username: String, password: String, else error: Error = HTTPError(.unauthorized)) async throws -> Self {
-        let rows = try await query()
+        let rows = try await DB
+            .table(Self.table)
             .where(usernameKeyString == username)
-            .getRows(["\(tableName).*", passwordKeyString])
-        
+            .select("\(table).*", passwordKeyString)
+            .get()
+
         guard let firstRow = rows.first else {
             throw error
         }
@@ -114,7 +110,7 @@ extension BasicAuthable {
             throw error
         }
         
-        return try firstRow.decode(Self.self)
+        return try firstRow.decodeModel(Self.self)
     }
 }
 
@@ -126,7 +122,7 @@ extension BasicAuthable {
 /// basic auth values don't match a row in the database, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
-    public func intercept(_ request: Request, next: Next) async throws -> Response {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
         guard let basicAuth = request.basicAuth() else {
             throw HTTPError(.unauthorized)
         }

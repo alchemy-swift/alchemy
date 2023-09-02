@@ -14,7 +14,7 @@ final class ContentTests: XCTestCase {
     ]
     
     func testDict() throws {
-        let content = Content(root: .any(Fixtures.dictContent))
+        let content = Content(value: .dictionary(Fixtures.dictContent))
         for test in allTests {
             try test(content, true)
         }
@@ -91,7 +91,7 @@ final class ContentTests: XCTestCase {
     func _testFlatten(content: Content, allowsNull: Bool) throws {
         var expectedArray: [String?] = ["one", "three", "two"]
         if allowsNull { expectedArray.append(nil) }
-        AssertEqual(try content["object"][*].decode(Optional<String>.self).sorted(), expectedArray)
+        AssertEqual(try content["object"][*].decodeEach(String?.self).sorted(), expectedArray)
     }
     
     func _testDecode(content: Content, allowsNull: Bool) throws {
@@ -151,7 +151,7 @@ final class ContentTests: XCTestCase {
 }
 
 private struct Fixtures {
-    static let dictContent: [String: Any] = [
+    static let dictContent: [String: Content.Value] = [
         "string": "string",
         "int": 0,
         "bool": true,

@@ -1,8 +1,5 @@
 // These libraries are also imported wherever Alchemy is.
 
-// Alchemy related
-@_exported import Fusion
-
 // Argument Parser
 @_exported import ArgumentParser
 
@@ -24,6 +21,9 @@
 @_exported import class NIO.NIOThreadPool
 @_exported import enum NIO.System
 @_exported import struct NIO.TimeAmount
+
+// NIOCore
+@_exported import enum NIOCore.SocketAddress
 
 // NIOHTTP1
 @_exported import struct NIOHTTP1.HTTPHeaders

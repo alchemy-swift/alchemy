@@ -1,14 +1,11 @@
-import Foundation
+import NIOConcurrencyHelpers
 
 /// An abstraction around local or remote file storage.
-public struct Filesystem: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
-    private let provider: FilesystemProvider
-    
+public final class Filesystem: Service {
+    public typealias Identifier = ServiceIdentifier<Filesystem>
+
+    private var provider: FilesystemProvider
+
     /// The root directory for storing and fetching files.
     public var root: String { provider.root }
 
@@ -16,15 +13,15 @@ public struct Filesystem: Service {
         self.provider = provider
     }
     
-    /// Create a file in this storage.
+    /// Create a file in this filesystem.
+    ///
     /// - Parameters:
     ///  - filename: The name of the file, including extension, to create.
-    ///  - directory: The directory to put the file in. If nil, goes in root.
-    ///  - contents: the binary contents of the file.
+    ///  - content: the binary contents of the file.
     /// - Returns: The newly created file.
     @discardableResult
-    public func create(_ filepath: String, content: ByteContent) async throws -> File {
-        try await provider.create(filepath, content: content)._in(self)
+    public func create(_ filepath: String, content: Bytes) async throws -> File {
+        try await provider.create(filepath, content: content).in(self)
     }
     
     /// Returns whether a file with the given path exists.
@@ -34,7 +31,7 @@ public struct Filesystem: Service {
     
     /// Gets the contents of the file at the given path.
     public func get(_ filepath: String) async throws -> File {
-        try await provider.get(filepath)._in(self)
+        try await provider.get(filepath).in(self)
     }
     
     /// Delete a file at the given path.
@@ -62,7 +59,8 @@ public struct Filesystem: Service {
     }
     
     public func directory(_ path: String) -> Filesystem {
-        Filesystem(provider: provider.directory(path))
+        let provider = self.provider.directory(path)
+        return Filesystem(provider: provider)
     }
 }
 

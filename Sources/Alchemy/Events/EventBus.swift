@@ -1,54 +1,86 @@
 import NIOConcurrencyHelpers
 
 public final class EventBus: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
+    public typealias Identifier = ServiceIdentifier<EventBus>
+
+    public typealias Handler<E: Event> = (E) async throws -> Void
+    private typealias AnyHandler = (Event) async throws -> Void
+
+    private var listeners: [String: any Listener] = [:]
+    private var handlers: [String: [AnyHandler]] = [:]
+    private let lock = NIOLock()
+
+    public func on<E: Event>(_ event: E.Type, handler: @escaping Handler<E>) {
+        lock.withLock {
+            handlers[E.registrationKey, default: []] += [convertHandler(handler)]
+        }
     }
-    
-    public enum Handler<E: Event>: AnyHandler {
-        public typealias Closure = (E) async throws -> Void
-        case closure(Closure)
+
+    public func register<L: Listener>(listener: L) {
+        lock.withLock {
+            handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.handle)]
+            listeners[L.registryId] = listener
+        }
     }
-    
-    private var registeredHandlers: [String: [AnyHandler]] = [:]
-    private var lock = Lock()
-    
-    public func on<E: Event>(_ event: E.Type, action: @escaping Handler<E>.Closure) {
-        let _handlers = lock.withLock { registeredHandlers[E.registrationKey] ?? [] }
-        guard let existingHandlers = _handlers as? [Handler<E>] else { return }
-        registeredHandlers[E.registrationKey] = existingHandlers + [.closure(action)]
-    }
-    
-    public func on<L: Listener>(listener: L.Type) {
-        let _handlers = lock.withLock { registeredHandlers[L.ObservedEvent.registrationKey] ?? [] }
-        guard let existingHandlers = _handlers as? [Handler<L.ObservedEvent>] else { return }
-        registeredHandlers[L.ObservedEvent.registrationKey] = existingHandlers + [.closure {
-            try await L(event: $0).handle()
-        }]
+
+    public func register<L: QueueableListener>(listener: L) {
+        lock.withLock {
+            Jobs.register(EventJob<L.ObservedEvent>.self)
+            handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.dispatch)]
+            listeners[L.registryId] = listener
+        }
     }
     
     public func fire<E: Event>(_ event: E) async throws {
-        let _handlers = lock.withLock { registeredHandlers[E.registrationKey] ?? [] }
-        guard let handlers = _handlers as? [Handler<E>] else {
+        let handlers = lock.withLock { self.handlers[E.registrationKey] ?? [] }
+        for handle in handlers {
+            try await handle(event)
+        }
+    }
+
+    fileprivate func lookupListener<E: Event>(_ id: String, eventType: E.Type = E.self) throws -> any Listener<E> {
+        guard let listener = Events.listeners[id] as? any Listener<E> else {
+            throw JobError("Unable to find registered listener of type `\(id)` to handle a queued event.")
+        }
+
+        return listener
+    }
+
+    private func convertHandler<E: Event>(_ handler: @escaping Handler<E>) -> AnyHandler {
+        return { event in
+            guard let event = event as? E else {
+                Log.error("Event handler type mismatch for \(E.registrationKey)!")
+                return
+            }
+
+            try await handler(event)
+        }
+    }
+}
+
+private struct EventJob<E: Event & Codable>: Job, Codable {
+    let event: E
+    let listenerId: String
+
+    func handle(context: JobContext) async throws {
+        try await Events.lookupListener(listenerId, eventType: E.self).handle(event: event)
+    }
+}
+
+extension QueueableListener {
+    fileprivate func dispatch(event: ObservedEvent) async throws {
+        guard shouldQueue(event: event) else {
+            try await handle(event: event)
             return
         }
-        
-        for handler in handlers {
-            switch handler {
-            case .closure(let closure):
-                try await closure(event)
-            }
-        }
+
+        try await EventJob(event: event, listenerId: Self.registryId)
+            .dispatch(on: queue, channel: channel)
     }
 }
 
 extension Listener {
-    fileprivate func handle() async throws { try await run() }
+    fileprivate static var registryId: String {
+        name(of: Self.self)
+    }
 }
-
-extension Listener where Self: Job {
-    fileprivate func handle() async throws { try await dispatch() }
-}
-
-private protocol AnyHandler {}

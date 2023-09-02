@@ -1,4 +1,3 @@
-import Foundation
 import RediStack
 
 /// A Redis based provider for `Cache`.
@@ -15,11 +14,15 @@ final class RedisCache: CacheProvider {
     // MARK: Cache
     
     func get<L: LosslessStringConvertible>(_ key: String) async throws -> L? {
-        guard let value = try await redis.get(RedisKey(key), as: String.self).get() else {
+        guard let string = try await redis.get(RedisKey(key), as: String.self).get() else {
             return nil
         }
-        
-        return try L(value).unwrap(or: CacheError("Unable to cast cache item `\(key)` to \(L.self)."))
+
+        guard let value = L(string) else {
+            throw CacheError("Unable to cast cache item `\(key)` to \(L.self).")
+        }
+
+        return value
     }
     
     func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {

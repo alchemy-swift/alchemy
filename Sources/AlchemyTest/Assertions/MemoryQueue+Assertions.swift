@@ -27,19 +27,18 @@ extension MemoryQueue {
         assertion: (J) -> Bool,
         file: StaticString = #filePath,
         line: UInt = #line
-    ) {
-        XCTAssertNoThrow(try {
-            let matches = try jobs.values.filter {
-                guard $0.jobName == J.name, $0.channel == channel ?? $0.channel else {
-                    return false
-                }
-                
-                let job = try (JobDecoding.decode($0) as? J).unwrap(or: JobError.unknownType)
-                return assertion(job)
+    ) async throws {
+        for job in jobs.values {
+            guard job.jobName == J.name, job.channel == channel ?? job.channel else {
+                continue
             }
-            
-            XCTAssertFalse(matches.isEmpty, file: file, line: line)
-        }(), file: file, line: line)
+
+            if (try await Jobs.createJob(from: job) as? J).map(assertion) ?? false {
+                return
+            }
+        }
+
+        XCTFail(file: file, line: line)
     }
     
     public func assertPushed<J: Job & Equatable>(
@@ -47,18 +46,17 @@ extension MemoryQueue {
         _ instance: J,
         file: StaticString = #filePath,
         line: UInt = #line
-    ) {
-        XCTAssertNoThrow(try {
-            let matches = try jobs.values.filter {
-                guard $0.jobName == J.name, $0.channel == channel ?? $0.channel else {
-                    return false
-                }
-                
-                let job = try (JobDecoding.decode($0) as? J).unwrap(or: JobError.unknownType)
-                return job == instance
+    ) async throws {
+        for job in jobs.values {
+            guard job.jobName == J.name, job.channel == channel ?? job.channel else {
+                continue
             }
-            
-            XCTAssertFalse(matches.isEmpty, file: file, line: line)
-        }(), file: file, line: line)
+
+            if (try await Jobs.createJob(from: job) as? J) == instance {
+                return
+            }
+        }
+
+        XCTFail(file: file, line: line)
     }
 }

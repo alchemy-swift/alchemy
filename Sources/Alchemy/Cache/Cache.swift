@@ -1,13 +1,8 @@
-import Foundation
-
 /// A type for accessing a persistant cache. Supported providers are
 /// `RedisCache`, `DatabaseCache`, and `MemoryCache`.
 public final class Cache: Service {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
-    }
-    
+    public typealias Identifier = ServiceIdentifier<Cache>
+
     private let provider: CacheProvider
     
     /// Initializer this cache with a provider. Prefer static functions
@@ -53,6 +48,7 @@ public final class Cache: Service {
     ///   - key: The key to delete.
     ///   - type: The type to coerce the removed key to for return.
     /// - Returns: The deleted record, if it existed.
+    @discardableResult
     public func remove<L: LosslessStringConvertible>(_ key: String, as type: L.Type = L.self) async throws -> L? {
         try await provider.remove(key)
     }
@@ -70,6 +66,7 @@ public final class Cache: Service {
     ///   - key: The key to increment.
     ///   - amount: The amount to increment by. Defaults to 1.
     /// - Returns: The new value of the record.
+    @discardableResult
     public func increment(_ key: String, by amount: Int = 1) async throws -> Int {
         try await provider.increment(key, by: amount)
     }
@@ -80,6 +77,7 @@ public final class Cache: Service {
     ///   - key: The key to decrement.
     ///   - amount: The amount to decrement by. Defaults to 1.
     /// - Returns: The new value of the record.
+    @discardableResult
     public func decrement(_ key: String, by amount: Int = 1) async throws -> Int {
         try await provider.decrement(key, by: amount)
     }

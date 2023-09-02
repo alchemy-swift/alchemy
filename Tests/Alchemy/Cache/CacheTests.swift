@@ -11,26 +11,20 @@ final class CacheTests: TestCase<TestApp> {
         _testIncrement,
         _testWipe,
     ]
-    
-    override func tearDownWithError() throws {
-        // Redis seems to throw on shutdown if it could never connect in the
-        // first place. While this shouldn't be necessary, it is a stopgap
-        // for throwing an error when shutting down unconnected redis.
-        try? app.stop()
-    }
-    
-    func testConfig() {
-        let config = Cache.Config(caches: [.default: .memory, 1: .memory, 2: .memory])
-        Cache.configure(with: config)
-        XCTAssertNotNil(Container.resolve(Cache.self, identifier: Cache.Identifier.default))
-        XCTAssertNotNil(Container.resolve(Cache.self, identifier: 1))
-        XCTAssertNotNil(Container.resolve(Cache.self, identifier: 2))
+
+    func testPlugin() {
+        let config = Caches(caches: [1: .memory, 2: .memory, 3: .memory])
+        config.registerServices(in: app)
+        XCTAssertNotNil(Container.resolve(Cache.self))
+        XCTAssertNotNil(Container.resolve(Cache.self, id: 1))
+        XCTAssertNotNil(Container.resolve(Cache.self, id: 2))
+        XCTAssertNotNil(Container.resolve(Cache.self, id: 3))
     }
     
     func testDatabaseCache() async throws {
         for test in allTests {
             try await Database.fake(migrations: [Cache.AddCacheMigration()])
-            Cache.bind(.database)
+            Container.register(Cache.database).singleton()
             try await test()
         }
     }
@@ -43,14 +37,16 @@ final class CacheTests: TestCase<TestApp> {
     }
     
     func testRedisCache() async throws {
+        let client = RedisClient.testing
+        Container.register(client).singleton()
+        Container.register(Cache.redis).singleton()
+        app.lifecycle.registerShutdown(label: "Redis", .async(client.shutdown))
+
+        guard await Redis.checkAvailable() else {
+            throw XCTSkip()
+        }
+
         for test in allTests {
-            RedisClient.bind(.testing)
-            Cache.bind(.redis)
-            
-            guard await Redis.checkAvailable() else {
-                throw XCTSkip()
-            }
-            
             try await test()
             try await Stash.wipe()
         }

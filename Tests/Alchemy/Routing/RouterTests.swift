@@ -71,25 +71,25 @@ final class RouterTests: TestCase<TestApp> {
     }
 
     func testPathParametersMatch() async throws {
-        let expect = Expect()
+        var expect = Expect()
         let uuidString = UUID().uuidString
-        app.get("/v1/some_path/:uuid/:user_id") { request async -> ResponseConvertible in
-            XCTAssertEqual(request.parameters, [
-                Parameter(key: "uuid", value: uuidString),
-                Parameter(key: "user_id", value: "123"),
+        app.get("/v1/some_path/:uuid/:user_id") {
+            XCTAssertEqual($0.parameters, [
+                Request.Parameter(key: "uuid", value: uuidString),
+                Request.Parameter(key: "user_id", value: "123"),
             ])
-            await expect.signalOne()
+            expect.signalOne()
             return "foo"
         }
         
         try await Test.get("/v1/some_path/\(uuidString)/123").assertBody("foo").assertOk()
-        AssertTrue(await expect.one)
+        AssertTrue(expect.one)
     }
 
     func testMultipleRequests() async throws {
         app.get("/foo") { _ in 1 }
         app.get("/foo") { _ in 2 }
-        try await Test.get("/foo").assertOk().assertBody("2")
+        try await Test.get("/foo").assertOk().assertBody("1")
     }
 
     func testInvalidPath() throws {
@@ -110,11 +110,11 @@ final class RouterTests: TestCase<TestApp> {
 
     func testGroupedPathPrefix() async throws {
         app
-            .grouped("group") { app in
+            .grouping("group") { app in
                 app
                     .get("/foo") { _ in 1 }
                     .get("/bar") { _ in 2 }
-                    .grouped("/nested") { app in
+                    .grouping("/nested") { app in
                         app.post("/baz") { _ in 3 }
                     }
                     .post("/bar") { _ in 4 }
@@ -139,7 +139,7 @@ final class RouterTests: TestCase<TestApp> {
     func testError() async throws {
         app.get("/error") { _ -> Void in throw TestError() }
         let status = HTTPResponseStatus.internalServerError
-        try await Test.get("/error").assertStatus(status).assertBody(status.reasonPhrase)
+        try await Test.get("/error").assertStatus(status).assertEmpty()
     }
     
     func testErrorHandling() async throws {
@@ -148,7 +148,59 @@ final class RouterTests: TestCase<TestApp> {
         
         let errorStatus = HTTPResponseStatus.internalServerError
         try await Test.get("/error_convert").assertStatus(.badGateway).assertEmpty()
-        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertBody(errorStatus.reasonPhrase)
+        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertEmpty()
+    }
+
+    // MARK: Streaming
+
+    func testServerResponseStream() async throws {
+        app.get("/stream") { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
+
+        try await Test.get("/stream")
+            .collect()
+            .assertOk()
+            .assertBody("foobarbaz")
+    }
+
+    func testEndToEndStream() async throws {
+        app.get("/stream", options: .stream) { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
+
+        try await app.start(waitOrShutdown: false)
+        var expected = ["foo", "bar", "baz"]
+        try await Http
+            .withStream()
+            .get("http://localhost:3000/stream")
+            .assertStream {
+                guard expected.first != nil else {
+                    XCTFail("There were too many stream elements.")
+                    return
+                }
+
+                XCTAssertEqual($0.string, expected.removeFirst())
+            }
+            .assertOk()
+    }
+
+    func testFileRequest() {
+        app.get("/stream") { _ in
+            Response {
+                try await $0.write("foo")
+                try await $0.write("bar")
+                try await $0.write("baz")
+            }
+        }
     }
 }
 
@@ -156,7 +208,7 @@ private struct TestError: Error {}
 
 private struct TestConvertibleError: Error, ResponseConvertible {
     func response() async throws -> Response {
-        Response(status: .badGateway, body: nil)
+        Response(status: .badGateway)
     }
 }
 

@@ -1,6 +1,5 @@
 @testable
 import Alchemy
-import NIOCore
 import XCTest
 
 /// A test case class that makes it easy for you to test your app. By default
@@ -13,10 +12,15 @@ open class TestCase<A: Application>: XCTestCase {
         public var urlComponents = URLComponents()
         public var method: HTTPMethod = .GET
         public var headers: HTTPHeaders = [:]
-        public var body: ByteContent? = nil
+        public var body: Bytes? = nil
         private var version: HTTPVersion = .http1_1
         private var remoteAddress: SocketAddress? = nil
-        
+        private var app: A
+
+        fileprivate init(app: A) {
+            self.app = app
+        }
+
         /// Set the http version of the mock request.
         public func withHttpVersion(_ version: HTTPVersion) -> Self {
             with { $0.version = version }
@@ -27,30 +31,40 @@ open class TestCase<A: Application>: XCTestCase {
             with { $0.remoteAddress = address }
         }
         
-        public func execute() async throws -> Response {
-            await A.current.router.handle(
+        public func execute() async -> Response {
+            await app.handler.handle(
                 request: .fixture(
-                    remoteAddress: remoteAddress,
+                    method: method, 
+                    uri: urlComponents.path, 
+                    headers: headers, 
                     version: version,
-                    method: method,
-                    uri: urlComponents.path,
-                    headers: headers,
-                    body: body))
+                    body: body, 
+                    remoteAddress: remoteAddress
+                )
+            )
         }
     }
     
     /// An instance of your app, reset and configured before each test.
     public var app = A()
-    public var Test: Builder { Builder() }
-    
+    public var Test: Builder { Builder(app: app) }
+
     open override func setUp() async throws {
         try await super.setUp()
         app = A()
-        try app.setup()
+        app.setup()
+        try app.boot()
     }
-    
+
     open override func tearDown() async throws {
         try await super.tearDown()
-        try app.stop()
+        try await app.stop()
+        app.container.reset()
+    }
+}
+
+extension Application {
+    fileprivate var handler: HTTPHandler {
+        container.require()
     }
 }

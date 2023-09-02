@@ -1,6 +1,6 @@
 import Alchemy
 
-extension ContentInspector {
+extension HTTPInspector {
     // MARK: Header Assertions
     
     @discardableResult
@@ -34,12 +34,7 @@ extension ContentInspector {
             return self
         }
 
-        guard let decoded = body.string() else {
-            XCTFail("Request body was not a String.", file: file, line: line)
-            return self
-        }
-        
-        XCTAssertEqual(decoded, string, file: file, line: line)
+        XCTAssertEqual(body.string, string, file: file, line: line)
         return self
     }
     
@@ -78,7 +73,7 @@ extension ContentInspector {
             return self
         }
         
-        guard let dict = try? body.decodeJSONDictionary() else {
+        guard let dict = try? JSONSerialization.jsonObject(with: body.data, options: []) as? [String: Any] else {
             XCTFail("Request body wasn't a json object.", file: file, line: line)
             return self
         }
@@ -90,7 +85,7 @@ extension ContentInspector {
     @discardableResult
     public func assertEmpty(file: StaticString = #filePath, line: UInt = #line) -> Self {
         if body != nil {
-            XCTFail("The response body was not empty \(body?.string() ?? "nil")", file: file, line: line)
+            XCTFail("The response body was not empty \(body?.string ?? "nil")", file: file, line: line)
         }
         
         return self

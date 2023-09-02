@@ -1,6 +1,7 @@
-/// Processes an Event
-public protocol Listener {
+/// Processes a specific type of `Event`.
+public protocol Listener<ObservedEvent> {
     associatedtype ObservedEvent: Event
-    init(event: ObservedEvent)
-    func run() async throws
+    
+    /// Handle the event this listener was created for.
+    func handle(event: ObservedEvent) async throws
 }

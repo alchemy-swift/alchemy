@@ -14,17 +14,17 @@ final class FilesystemTests: TestCase<TestApp> {
         _testInvalidURL,
     ]
     
-    func testConfig() {
-        let config = Filesystem.Config(disks: [.default: .local, 1: .local, 2: .local])
-        Filesystem.configure(with: config)
-        XCTAssertNotNil(Container.resolve(Filesystem.self, identifier: Filesystem.Identifier.default))
-        XCTAssertNotNil(Container.resolve(Filesystem.self, identifier: 1))
-        XCTAssertNotNil(Container.resolve(Filesystem.self, identifier: 2))
+    func testPlugin() {
+        let plugin = Filesystems(default: 1, disks: [1: .local, 2: .local])
+        plugin.registerServices(in: app)
+        XCTAssertNotNil(Container.resolve(Filesystem.self))
+        XCTAssertNotNil(Container.resolve(Filesystem.self, id: 1))
+        XCTAssertNotNil(Container.resolve(Filesystem.self, id: 2))
     }
     
     func testLocal() async throws {
         let root = NSTemporaryDirectory() + UUID().uuidString
-        Filesystem.bind(.local(root: root))
+        Container.register(Filesystem.local(root: root)).singleton()
         XCTAssertEqual(root, Storage.root)
         for test in allTests {
             filePath = UUID().uuidString + ".txt"
@@ -76,7 +76,6 @@ final class FilesystemTests: TestCase<TestApp> {
     
     func _testFileStore() async throws {
         try await File(name: filePath, source: .raw, content: "bar", size: 3).store(as: filePath)
-        print("STORED \(filePath)")
         AssertTrue(try await Storage.exists(filePath))
     }
     

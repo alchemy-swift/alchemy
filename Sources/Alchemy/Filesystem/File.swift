@@ -1,12 +1,12 @@
 import MultipartKit
-import Papyrus
-import NIOCore
 
-// File
+/// Represents a file from either a filesystem (on disk, in AWS S3, etc) or from
+/// an HTTP request (uploaded or downloaded).
 public struct File: Codable, ResponseConvertible, ModelProperty {
     public enum Source {
         // The file is stored in a `Filesystem` with the given path.
         case filesystem(Filesystem? = nil, path: String)
+        
         // The file came with the given ContentType from an HTTP request.
         case http(clientContentType: ContentType?)
         
@@ -17,11 +17,15 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     
     /// The name of this file, including the extension
     public var name: String
+    
     /// The source of this file, either from an HTTP request or from a Filesystem.
     public var source: Source
-    public var content: ByteContent?
+
+    /// The contents of this file
+    public var content: Bytes?
     public let size: Int?
     public let clientContentType: ContentType?
+    
     /// The path extension of this file.
     public var `extension`: String {
         name.components(separatedBy: ".").last ?? ""
@@ -31,7 +35,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         name.components(separatedBy: ".").last.map { ContentType(fileExtension: $0) ?? .octetStream }  ?? .octetStream
     }
     
-    public init(name: String, source: Source, content: ByteContent? = nil, size: Int? = nil) {
+    public init(name: String, source: Source, content: Bytes? = nil, size: Int? = nil) {
         self.name = name
         self.source = source
         self.content = content
@@ -39,21 +43,9 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         self.clientContentType = nil
     }
     
-    public func _in(_ filesystem: Filesystem) -> File {
-        var copy = self
-        switch source {
-        case .filesystem(_, let path):
-            copy.source = .filesystem(filesystem, path: path)
-        default:
-            break
-        }
-        
-        return copy
-    }
-    
     // MARK: - Accessing Contents
     
-    /// get a url for this resource
+    /// Get a url for this resource.
     public func url() throws -> URL {
         switch source {
         case .filesystem(let filesystem, let path):
@@ -63,7 +55,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         }
     }
     
-    /// get temporary url for this resource
+    /// Get a temporary url for this resource.
     public func temporaryUrl(expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
         switch source {
         case .filesystem(let filesystem, let path):
@@ -73,7 +65,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         }
     }
     
-    public func getContent() async throws -> ByteContent {
+    public func getContent() async throws -> Bytes {
         guard let content = content else {
             switch source {
             case .http:
@@ -85,7 +77,25 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         
         return content
     }
-    
+
+    @discardableResult
+    public mutating func collect() async throws -> File {
+        self.content = .buffer(try await getContent().collect())
+        return self
+    }
+
+    func `in`(_ filesystem: Filesystem) -> File {
+        var copy = self
+        switch source {
+        case .filesystem(_, let path):
+            copy.source = .filesystem(filesystem, path: path)
+        default:
+            break
+        }
+
+        return copy
+    }
+
     // MARK: ModelProperty
     
     public init(key: String, on row: SQLRowReader) throws {
@@ -98,23 +108,27 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
             throw RuneError("currently, only files saved in a `Filesystem` can be stored on a `Model`")
         }
 
-        row.put(.string(path), at: key)
+        row.put(path, at: key)
     }
     
     // MARK: - ResponseConvertible
     
     public func response() async throws -> Response {
-        let content = try await getContent()
-        return Response(status: .ok, headers: ["Content-Disposition":"inline; filename=\"\(name)\""])
-            .withBody(content, type: contentType, length: size)
+        try await _response(disposition: .inline(filename: name.inQuotes))
     }
-    
+
     public func download() async throws -> Response {
-        let content = try await getContent()
-        return Response(status: .ok, headers: ["Content-Disposition":"attachment; filename=\"\(name)\""])
-            .withBody(content, type: contentType, length: size)
+        try await _response(disposition: .attachment(filename: name.inQuotes))
     }
-    
+
+    private func _response(disposition: HTTPHeaders.ContentDisposition? = nil) async throws -> Response {
+        let content = try await getContent()
+        let response = Response(status: .ok, body: content, contentType: contentType)
+        response.headers.contentDisposition = disposition
+        response.headers.contentLength = size
+        return response
+    }
+
     // MARK: - Codable
     
     public init(from decoder: Decoder) throws {
@@ -133,7 +147,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
             throw FileError.contentNotLoaded
         }
         
-        try container.encode(content.data())
+        try container.encode(content.data)
     }
 }
 
@@ -149,7 +163,7 @@ extension File: MultipartPartConvertible {
             return nil
         }
         
-        return MultipartPart(headers: headers, body: content.data())
+        return MultipartPart(headers: headers, body: content.data)
     }
     
     public init?(multipart: MultipartPart) {

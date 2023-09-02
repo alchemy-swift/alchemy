@@ -1,9 +1,8 @@
 @testable
 import Alchemy
-import Foundation
 
-extension Env {
+extension Environment {
     public static func stub(_ values: [String: String]) {
-        Env.current = Env(name: "stub", dotEnvVariables: values)
+        Container.register(Environment(name: "stub", dotenvVariables: values)).singleton()
     }
 }

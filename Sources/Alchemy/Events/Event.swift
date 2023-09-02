@@ -1,4 +1,4 @@
-/// An app-wide event fired by an `EventBus`.
+/// An app-wide event to be fired by an `EventBus`.
 public protocol Event {
     /// The key for which the event is registered in the `EventBus`. Defaults to
     /// the type name.
@@ -7,11 +7,9 @@ public protocol Event {
 
 extension Event {
     public static var registrationKey: String { name(of: Self.self) }
-}
 
-extension Event {
     /// Fire this event on an `EventBus`.
-    public func fire(on events: EventBus = Events) async throws {
-        try await events.fire(self)
+    public func fire(on bus: EventBus = Events) async throws {
+        try await bus.fire(self)
     }
 }

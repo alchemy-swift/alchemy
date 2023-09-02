@@ -1,8 +1,24 @@
 import NIO
 import RediStack
 
+extension Queue {
+    /// A queue backed by a Redis connection.
+    ///
+    /// - Parameter redis: A redis connection to drive this queue.
+    ///   Defaults to your default redis connection.
+    /// - Returns: The configured queue.
+    public static func redis(_ redis: RedisClient = Redis) -> Queue {
+        Queue(provider: RedisQueue(redis: redis))
+    }
+
+    /// A queue backed by the default Redis connection.
+    public static var redis: Queue {
+        .redis()
+    }
+}
+
 /// A queue that persists jobs to a Redis instance.
-struct RedisQueue: QueueProvider {
+fileprivate struct RedisQueue: QueueProvider {
     /// The underlying redis connection.
     private let redis: RedisClient
     /// All job data.
@@ -11,13 +27,15 @@ struct RedisQueue: QueueProvider {
     private let processingKey = RedisKey("jobs:processing")
     /// All backed off jobs. "job_id" : "backoff:channel"
     private let backoffsKey = RedisKey("jobs:backoffs")
-    
+    /// The repeating task used for monitoring backoffs.
+    private var backoffTask: RepeatedTask?
+
     /// Initialize with a Redis instance to persist jobs to.
     ///
     /// - Parameter redis: The Redis instance.
     init(redis: RedisClient = Redis) {
         self.redis = redis
-        monitorBackoffs()
+        backoffTask = monitorBackoffs()
     }
     
     // MARK: - Queue
@@ -33,9 +51,11 @@ struct RedisQueue: QueueProvider {
             return nil
         }
         
-        let jobString = try await redis.hget(jobId, from: dataKey, as: String.self).get()
-        let unwrappedJobString = try jobString.unwrap(or: JobError("Missing job data for key `\(jobId)`."))
-        return try JobData(jsonString: unwrappedJobString)
+        guard let jobString = try await redis.hget(jobId, from: dataKey, as: String.self).get() else {
+            throw JobError("Missing job data for key `\(jobId)`.")
+        }
+
+        return try JobData(jsonString: jobString)
     }
     
     func complete(_ job: JobData, outcome: JobOutcome) async throws {
@@ -54,16 +74,24 @@ struct RedisQueue: QueueProvider {
             }
         }
     }
-    
+
+    func shutdown() async throws {
+        let promise: EventLoopPromise<Void> = Loop.makePromise()
+        backoffTask?.cancel(promise: promise)
+        try await promise.futureResult.get()
+    }
+
     // MARK: - Private Helpers
     
     private func key(for channel: String) -> RedisKey {
         RedisKey("jobs:queue:\(channel)")
     }
     
-    private func monitorBackoffs() {
-        let loop = Loop.group.next()
-        loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
+    private func monitorBackoffs() -> RepeatedTask {
+        // TODO: This is failing to die on shutdown. Is there an easier way?
+        // TODO: for example, if something should back off, pull the next one, then put the backoff one back.
+        let loop = LoopGroup.next()
+        return loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
             loop.asyncSubmit {
                 let result = try await redis
                     // Get and remove backoffs that can be rerun.
@@ -95,18 +123,24 @@ struct RedisQueue: QueueProvider {
     }
 }
 
-public extension Queue {
-    /// A queue backed by a Redis connection.
-    ///
-    /// - Parameter redis: A redis connection to drive this queue.
-    ///   Defaults to your default redis connection.
-    /// - Returns: The configured queue.
-    static func redis(_ redis: RedisClient = Redis) -> Queue {
-        Queue(provider: RedisQueue(redis: redis))
+extension Encodable {
+    /// Encode this type into a JSON string.
+    fileprivate func jsonString(using encoder: JSONEncoder = JSONEncoder()) throws -> String {
+        guard let string = try String(data: encoder.encode(self), encoding: .utf8) else {
+            throw JobError("Unable to encode `\(Self.self)` to a JSON string.")
+        }
+
+        return string
     }
-    
-    /// A queue backed by the default Redis connection.
-    static var redis: Queue {
-        .redis()
+}
+
+extension Decodable {
+    /// Initialize this type from a JSON string.
+    fileprivate init(jsonString: String, using decoder: JSONDecoder = JSONDecoder()) throws {
+        guard let data = jsonString.data(using: .utf8) else {
+            throw JobError("Unable to initialize `\(Self.self)` from JSON string `\(jsonString)`.")
+        }
+
+        self = try decoder.decode(Self.self, from: data)
     }
 }

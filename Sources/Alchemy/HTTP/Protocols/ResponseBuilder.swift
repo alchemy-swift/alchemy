@@ -1,5 +1,3 @@
-import NIOHTTP1
-
-public protocol ResponseBuilder: ContentBuilder {
+public protocol ResponseBuilder: HTTPBuilder {
     var status: HTTPResponseStatus { get set }
 }

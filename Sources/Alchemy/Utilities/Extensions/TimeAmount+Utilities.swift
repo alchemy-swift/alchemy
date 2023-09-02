@@ -1,6 +1,3 @@
-import Foundation
-import NIO
-
 extension TimeAmount {
     /// This time amount in seconds.
     var seconds: Int {

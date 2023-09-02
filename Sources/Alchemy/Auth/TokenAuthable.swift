@@ -1,5 +1,4 @@
 import Crypto
-import Foundation
 
 /// A protocol for automatically authenticating incoming requests
 /// based on their `Authentication: Bearer ...` header. When the
@@ -25,8 +24,8 @@ import Foundation
 /// // auth.
 /// app
 ///     // Will apply this auth middleware to all following requests.
-///     .on(MyToken.tokenAuthMiddleware())
-///     .on(.GET, "/todos") { req in
+///     .use(MyToken.tokenAuthMiddleware())
+///     .get("/todos") { req in
 ///         // Middleware will have authed and set a user on the
 ///         // request, or returned an unauthorized response.
 ///         let authedUser = try req.get(User.self)
@@ -41,16 +40,14 @@ public protocol TokenAuthable: Model {
     /// this type will be pulled from the database and
     /// associated with the request.
     associatedtype User: Model
-    
+    associatedtype UserRelation: Relation<Self, User>
+
+    /// The user in question.
+    var user: UserRelation { get }
+
     /// The name of the row that stores the token's value. Defaults to
     /// `"value"`.
     static var valueKeyString: String { get }
-    
-    /// A keypath to the parent `User` model. Note that this a
-    /// `KeyPath` to the _relationship_ type, so it will
-    /// begin with a "$", such as `\.$user` as opposed
-    /// to `\.user`.
-    static var userKey: KeyPath<Self, Self.BelongsTo<User>> { get }
 }
 
 extension TokenAuthable {
@@ -68,30 +65,30 @@ extension TokenAuthable {
 }
 
 /// A `Middleware` type configured to work with `TokenAuthable`. This
-/// middleware will intercept requests and queries the table backing
+/// middleware will handle requests and queries the table backing
 /// `T` for a row matching the token auth headers of the request.
 /// If a matching row is found, that value will be associated
 /// with the request. If there is no `Authentication: Token ...`
 /// header, or the token value isn't valid, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
-    public func intercept(_ request: Request, next: Next) async throws -> Response {
+    public func handle(_ request: Request, next: Next) async throws -> Response {
         guard let bearerAuth = request.bearerAuth() else {
             throw HTTPError(.unauthorized)
         }
         
-        let model = try await T.query()
+        guard let model = try await T
             .where(T.valueKeyString == bearerAuth.token)
-            .with(T.userKey)
+            .with(\.user)
             .first()
-            .unwrap(or: HTTPError(.unauthorized))
-        
+        else {
+            throw HTTPError(.unauthorized)
+        }
+
         return try await next(
             request
-                // Set the token
                 .set(model)
-                // Set the user
-                .set(model[keyPath: T.userKey].wrappedValue)
+                .set(model.user())
         )
     }
 }

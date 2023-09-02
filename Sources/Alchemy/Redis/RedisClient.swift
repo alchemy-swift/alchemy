@@ -4,12 +4,16 @@ import NIOSSL
 import RediStack
 
 /// A client for interfacing with a Redis instance.
-public struct RedisClient: Service, RediStack.RedisClient {
-    public struct Identifier: ServiceIdentifier {
-        private let hashable: AnyHashable
-        public init(hashable: AnyHashable) { self.hashable = hashable }
+public struct RedisClient: RediStack.RedisClient, Service {
+    public typealias Identifier = ServiceIdentifier<RedisClient>
+
+    public enum Socket: Equatable {
+        /// An ip address `host` at port `port`.
+        case ip(host: String, port: Int)
+        /// A unix domain socket (IPC socket) at path `path`.
+        case unix(path: String)
     }
-    
+
     let provider: RedisProvider
     
     public init(provider: RedisProvider) {
@@ -17,14 +21,14 @@ public struct RedisClient: Service, RediStack.RedisClient {
     }
     
     /// Shuts down this client, closing it's associated connection pools.
-    public func shutdown() throws {
-        try provider.shutdown()
+    public func shutdown() async throws {
+        try await provider.shutdown()
     }
     
     // MARK: RediStack.RedisClient
     
     public var eventLoop: EventLoop {
-        Loop.current
+        Loop
     }
     
     public func logging(to logger: Logger) -> RediStack.RedisClient {
@@ -34,7 +38,7 @@ public struct RedisClient: Service, RediStack.RedisClient {
     public func send(command: String, with arguments: [RESPValue]) -> EventLoopFuture<RESPValue> {
         wrapError {
             try provider.getClient()
-                .send(command: command, with: arguments).hop(to: Loop.current)
+                .send(command: command, with: arguments).hop(to: Loop)
         }
     }
     
@@ -88,10 +92,9 @@ public struct RedisClient: Service, RediStack.RedisClient {
         port: Int = 6379,
         password: String? = nil,
         database: Int? = nil,
-        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1),
-        tlsConfiguration: TLSConfiguration? = nil
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
     ) -> RedisClient {
-        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize, tlsConfiguration: tlsConfiguration)
+        return .cluster(.ip(host: host, port: port), password: password, database: database, poolSize: poolSize)
     }
     
     /// Convenience initializer for creating a redis client with the
@@ -111,8 +114,7 @@ public struct RedisClient: Service, RediStack.RedisClient {
         _ sockets: Socket...,
         password: String? = nil,
         database: Int? = nil,
-        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1),
-        tlsConfiguration: TLSConfiguration? = nil
+        poolSize: RedisConnectionPoolSize = .maximumActiveConnections(1)
     ) -> RedisClient {
         return .configuration(
             RedisConnectionPool.Configuration(
@@ -121,8 +123,7 @@ public struct RedisClient: Service, RediStack.RedisClient {
                 connectionFactoryConfiguration: RedisConnectionPool.ConnectionFactoryConfiguration(
                     connectionInitialDatabase: database,
                     connectionPassword: password,
-                    connectionDefaultLogger: Log.logger,
-                    tlsConfiguration: tlsConfiguration
+                    connectionDefaultLogger: Log
                 )
             ),
             addresses: sockets
@@ -148,14 +149,14 @@ public struct RedisClient: Service, RediStack.RedisClient {
 private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     /// Map of `EventLoop` identifiers to respective connection pools.
     private var poolStorage: [ObjectIdentifier: RedisConnectionPool] = [:]
-    private var poolLock = Lock()
-    private var lazyAddresses: [Socket]?
+    private var poolLock = NIOLock()
+    private var lazyAddresses: [RedisClient.Socket]?
     private var logger: Logger?
     
     /// The configuration to create pools with.
     private var config: RedisConnectionPool.Configuration
 
-    init(config: RedisConnectionPool.Configuration, lazyAddresses: [Socket]? = nil) {
+    init(config: RedisConnectionPool.Configuration, lazyAddresses: [RedisClient.Socket]? = nil) {
         self.config = config
         self.lazyAddresses = lazyAddresses
     }
@@ -173,22 +174,20 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
         }.get()
     }
 
-    func shutdown() throws {
-        try poolLock.withLock {
-            try poolStorage.values.forEach {
-                let promise: EventLoopPromise<Void> = $0.eventLoop.makePromise()
-                $0.close(promise: promise)
-                try promise.futureResult.wait()
+    func shutdown() async throws {
+        for pool in poolStorage.values {
+            let promise: EventLoopPromise<Void> = pool.eventLoop.makePromise()
+            pool.close(promise: promise, logger: Log)
+            do {
+                try await promise.futureResult.get()
+            } catch {
+                throw error
             }
         }
     }
 
-    /// Gets or creates a pool for the current `EventLoop`.
-    ///
-    /// - Returns: A `RedisConnectionPool` associated with the current
-    ///   `EventLoop` for sending commands to.
     private func getPool() throws -> RedisConnectionPool {
-        let loop = Loop.current
+        let loop = Loop
         let key = ObjectIdentifier(loop)
         return try poolLock.withLock {
             if let pool = self.poolStorage[key] {
@@ -229,7 +228,7 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     
     // MARK: RediStack.RedisClient
     
-    var eventLoop: EventLoop { Loop.current }
+    var eventLoop: EventLoop { Loop }
     
     func logging(to logger: Logger) -> RediStack.RedisClient {
         self.logger = logger
@@ -250,7 +249,7 @@ private final class ConnectionPool: RedisProvider, RediStack.RedisClient {
     
     private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         do { return try closure() }
-        catch { return Loop.current.makeFailedFuture(error) }
+        catch { return Loop.makeFailedFuture(error) }
     }
 }
 
@@ -259,8 +258,8 @@ extension RedisConnection: RedisProvider {
         self
     }
     
-    public func shutdown() throws {
-        try close().wait()
+    public func shutdown() async throws {
+        try await close().get()
     }
     
     public func transaction<T>(_ transaction: @escaping (RedisProvider) async throws -> T) async throws -> T {
@@ -269,6 +268,9 @@ extension RedisConnection: RedisProvider {
 }
 
 private func wrapError<T>(_ closure: () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-    do { return try closure() }
-    catch { return Loop.current.makeFailedFuture(error) }
+    do {
+        return try closure()
+    } catch {
+        return Loop.makeFailedFuture(error)
+    }
 }

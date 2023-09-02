@@ -1,135 +1,191 @@
-import Foundation
-import Papyrus
-
-public protocol ContentValue {
-    var string: String? { get }
-    var bool: Bool? { get }
-    var double: Double? { get }
-    var int: Int? { get }
-    var file: File? { get }
-}
-
-struct AnyContentValue: ContentValue {
-    let value: Any
-    
-    var string: String? { value as? String }
-    var bool: Bool? { value as? Bool }
-    var int: Int? { value as? Int }
-    var double: Double? { value as? Double }
-    var file: File? { nil }
-}
-
-/// Utility making it easy to set or modify http content
+/// Utility making it easy to set or modify HTTP content.
 @dynamicMemberLookup
 public final class Content: Buildable {
-    public enum Node {
-        case array([Node])
-        case dict([String: Node])
-        case value(ContentValue)
+    public indirect enum Value:
+        ExpressibleByNilLiteral,
+        ExpressibleByBooleanLiteral,
+        ExpressibleByIntegerLiteral,
+        ExpressibleByFloatLiteral,
+        ExpressibleByStringInterpolation,
+        ExpressibleByArrayLiteral,
+        ExpressibleByDictionaryLiteral
+    {
+        case string(String)
+        case bool(Bool)
+        case double(Double)
+        case int(Int)
+        case file(File)
+        case dictionary([String: Value])
+        case array([Value])
         case null
-        
-        static func dict(_ dict: [String: Any]) -> Node {
-            .dict(dict.mapValues(Node.any))
+
+        public var string: String? {
+            if case .string(let string) = self { return string }
+            else { return nil }
         }
-        
-        static func array(_ array: [Any]) -> Node {
-            .array(array.map(Node.any))
+
+        public var bool: Bool? {
+            if case .bool(let bool) = self { return bool }
+            if case .string(let string) = self { return Bool(string) }
+            if case .int(let int) = self { return int != 0 }
+            else { return nil }
         }
-        
-        static func any(_ value: Any) -> Node {
-            if let array = value as? [Any] {
-                return .array(array)
-            } else if let dict = value as? [String: Any] {
-                return .dict(dict)
-            } else if case Optional<Any>.none = value {
-                return .null
-            } else {
-                return .value(AnyContentValue(value: value))
-            }
+
+        public var double: Double? {
+            if case .double(let double) = self { return double }
+            if case .string(let string) = self { return Double(string) }
+            else { return nil }
+        }
+
+        public var int: Int? {
+            if case .int(let int) = self { return int }
+            if case .string(let string) = self { return Int(string) }
+            else { return nil }
+        }
+
+        public var file: File? {
+            if case .file(let file) = self { return file }
+            else { return nil }
+        }
+
+        public var array: [Value]? {
+            if case .array(let array) = self { return array }
+            else { return nil }
+        }
+
+        public var dictionary: [String: Value]? {
+            if case .dictionary(let dictionary) = self { return dictionary }
+            else { return nil }
+        }
+
+        public init(nilLiteral: ()) {
+            self = .null
+        }
+
+        public init(booleanLiteral bool: Bool) {
+            self = .bool(bool)
+        }
+
+        public init(integerLiteral int: Int) {
+            self = .int(int)
+        }
+
+        public init(floatLiteral double: Double) {
+            self = .double(double)
+        }
+
+        public init(stringLiteral string: StringLiteralType) {
+            self = .string(string)
+        }
+
+        public init(arrayLiteral elements: Value...) {
+            self = .array(elements)
+        }
+
+        public init(dictionaryLiteral elements: (String, Value)...) {
+            self = .dictionary(Dictionary(elements))
         }
     }
-    
-    enum Operator {
+
+    public enum State {
+        case value(Value)
+        case error(Error)
+    }
+
+    public enum Operator {
         case field(String)
         case index(Int)
         case flatten
     }
+
+    /// The state of this node; either an error or a value.
+    public let state: State
     
-    enum State {
-        case node(Node)
-        case error(Error)
+    /// The path taken to get here.
+    public let path: [Operator]
+
+    public var string: String? { value?.string }
+    public var stringThrowing: String { get throws { try unwrap(string) } }
+    public var int: Int? { value?.int }
+    public var intThrowing: Int { get throws { try unwrap(int) } }
+    public var bool: Bool? { value?.bool }
+    public var boolThrowing: Bool { get throws { try unwrap(bool) } }
+    public var double: Double? { value?.double }
+    public var doubleThrowing: Double { get throws { try unwrap(double) } }
+    public var file: File? { value?.file }
+    public var fileThrowing: File { get throws { try unwrap(file) } }
+    public var array: [Content]? { value?.array?.enumerated().map { Content(value: $1, path: path + [.index($0)]) } }
+    public var arrayThrowing: [Content] { get throws { try unwrap(array) } }
+    public var dictionary: [String: Content]? {
+        value?.dictionary?
+            .map { (key: $0, value: Content(value: $1, path: path + [.field($0)])) }
+            .keyed(by: \.key)
+            .mapValues(\.value)
     }
     
-    let state: State
-    // The path taken to get here.
-    let path: [Operator]
-    
-    public var string: String? { try? stringThrowing }
-    public var stringThrowing: String { get throws { try unwrap(convertValue().string) } }
-    public var int: Int? { try? intThrowing }
-    public var intThrowing: Int { get throws { try unwrap(convertValue().int) } }
-    public var bool: Bool? { try? boolThrowing }
-    public var boolThrowing: Bool { get throws { try unwrap(convertValue().bool) } }
-    public var double: Double? { try? doubleThrowing }
-    public var doubleThrowing: Double { get throws { try unwrap(convertValue().double) } }
-    public var file: File? { try? fileThrowing }
-    public var fileThrowing: File { get throws { try unwrap(convertValue().file) } }
-    public var array: [Content]? { try? convertArray() }
-    public var arrayThrowing: [Content] { get throws { try convertArray() } }
-    
-    public var exists: Bool { (try? decode(Empty.self)) != nil }
-    public var isNull: Bool { self == nil }
-    
+    public var dictionaryThrowing: [String: Content] { get throws { try unwrap(dictionary) } }
+    public var isNull: Bool {
+        if case .null = value {
+            return true
+        } else {
+            return value == nil
+        }
+    }
+
     public var error: Error? {
         guard case .error(let error) = state else { return nil }
         return error
     }
-    
-    var node: Node? {
-        guard case .node(let node) = state else { return nil }
-        return node
-    }
-    
-    var value: ContentValue? {
-        guard let node = node, case .value(let value) = node else { return nil }
+
+    public var value: Value? {
+        guard case .value(let value) = state else { return nil }
         return value
     }
 
-    init(root: Node, path: [Operator] = []) {
-        self.state = .node(root)
+    public init(value: Value, path: [Operator] = []) {
+        self.state = .value(value)
         self.path = path
     }
     
-    init(error: Error, path: [Operator] = []) {
+    public init(error: Error, path: [Operator] = []) {
         self.state = .error(error)
         self.path = path
     }
+
+    public func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
+        try D(from: GenericDecoder(delegate: self))
+    }
+
+    private func unwrap<T>(_ value: T?) throws -> T {
+        guard let value else { throw ContentError.typeMismatch }
+        return value
+    }
+
+    // MARK: Subscripts
     
-    // MARK: - Subscripts
-    
-    subscript(index: Int) -> Content {
+    public subscript(index: Int) -> Content {
         let newPath = path + [.index(index)]
         switch state {
-        case .node(let node):
-            guard case .array(let array) = node else {
+        case .value(let value):
+            guard case .array(let array) = value else {
                 return Content(error: ContentError.notArray, path: newPath)
             }
             
-            return Content(root: array[index], path: newPath)
+            return Content(value: array[index], path: newPath)
         case .error(let error):
             return Content(error: error, path: newPath)
         }
     }
     
-    subscript(field: String) -> Content {
+    public subscript(field: String) -> Content {
         let newPath = path + [.field(field)]
         switch state {
-        case .node(let node):
-            guard case .dict(let dict) = node else {
+        case .value(let value):
+            guard case .dictionary(let dict) = value else {
                 return Content(error: ContentError.notDictionary, path: newPath)
             }
             
-            return Content(root: dict[field] ?? .null, path: newPath)
+            return Content(value: dict[field] ?? .null, path: newPath)
         case .error(let error):
             return Content(error: error, path: newPath)
         }
@@ -139,101 +195,78 @@ public final class Content: Buildable {
         self[member]
     }
     
-    subscript(operator: (Content, Content) -> Void) -> [Content] {
+    public subscript(operator: (Content, Content) -> Void) -> [Content] {
         let newPath = path + [.flatten]
         switch state {
-        case .node(let node):
-            switch node {
-            case .null, .value:
-                return [Content(error: ContentError.cantFlatten, path: newPath)]
-            case .dict(let dict):
-                return Array(dict.values).map { Content(root: $0, path: newPath) }
+        case .value(let value):
+            switch value {
+            case .dictionary(let dict):
+                return Array(dict.values).map { Content(value: $0, path: newPath) }
             case .array(let array):
                 return array
-                    .flatMap { content -> [Node] in
+                    .flatMap { content in
                         if case .array(let array) = content {
                             return array
-                        } else if case .dict = content {
+                        } else if case .dictionary = content {
                             return [content]
                         } else {
                             return [.null]
                         }
                     }
-                    .map { Content(root: $0, path: newPath) }
+                    .map { Content(value: $0, path: newPath) }
+            default:
+                return [Content(error: ContentError.cantFlatten, path: newPath)]
             }
         case .error(let error):
             return [Content(error: error, path: newPath)]
         }
     }
-    
-    static func *(lhs: Content, rhs: Content) {}
-    
-    static func ==(lhs: Content, rhs: Void?) -> Bool {
+
+    // MARK: Operators
+
+    public static func * (lhs: Content, rhs: Content) {}
+
+    public static func == (lhs: Content, rhs: Void?) -> Bool {
         switch lhs.state {
-        case .node(let node):
-            if case .null = node {
-                return true
-            } else {
+        case .value(let value):
+            guard case .null = value else {
                 return false
             }
+
+            return true
         case .error:
             return false
         }
     }
-    
-    private func convertArray() throws -> [Content] {
-        switch state {
-        case .node(let node):
-            guard case .array(let array) = node else {
-                throw ContentError.typeMismatch
-            }
-            
-            return array.enumerated().map { Content(root: $1, path: path + [.index($0)]) }
-        case .error(let error):
-            throw error
-        }
+
+    public static func == (lhs: Content, rhs: String) -> Bool {
+        lhs.string == rhs
     }
-    
-    private func convertValue() throws -> ContentValue {
-        switch state {
-        case .node(let node):
-            guard case .value(let val) = node else {
-                throw ContentError.typeMismatch
-            }
-            
-            return val
-        case .error(let error):
-            throw error
-        }
+
+    public static func == (lhs: Content, rhs: Int) -> Bool {
+        lhs.int == rhs
     }
-    
-    private func unwrap<T>(_ value: T?) throws -> T {
-        try value.unwrap(or: ContentError.typeMismatch)
+
+    public static func == (lhs: Content, rhs: Double) -> Bool {
+        lhs.double == rhs
     }
-    
-    public func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
-        try D(from: GenericDecoder(delegate: self))
+
+    public static func == (lhs: Content, rhs: Bool) -> Bool {
+        lhs.bool == rhs
     }
 }
 
-enum ContentError: Error {
-    case unknownContentType(ContentType?)
-    case emptyBody
-    case cantFlatten
-    case notDictionary
-    case notArray
-    case doesntExist
-    case wasNull
-    case typeMismatch
-    case notSupported(String)
-}
+// MARK: GenericDecoderDelegate
 
-extension Content: DecoderDelegate {
-    
-    private func require<T>(_ optional: T?, key: CodingKey?) throws -> T {
-        try optional.unwrap(or: DecodingError.valueNotFound(T.self, .init(codingPath: [key].compactMap { $0 }, debugDescription: "Value wasn`t available.")))
+extension Content: GenericDecoderDelegate {
+    var allKeys: [String] {
+        guard 
+            case .value(let value) = state,
+            case .dictionary(let dict) = value
+        else { return [] }
+        return Array(dict.keys)
     }
-    
+
     func decodeString(for key: CodingKey?) throws -> String {
         let value = key.map { self[$0.stringValue] } ?? self
         return try require(value.string, key: key)
@@ -259,127 +292,172 @@ extension Content: DecoderDelegate {
         return value == nil
     }
     
-    var allKeys: [String] {
-        guard case .node(let node) = state, case .dict(let dict) = node else {
-            return []
-        }
-        
-        return Array(dict.keys)
-    }
-    
     func contains(key: CodingKey) -> Bool {
-        guard case .node(let node) = state, case .dict(let dict) = node else {
+        guard case .value(let value) = state, case .dictionary(let dict) = value else {
             return false
         }
         
         return dict.keys.contains(key.stringValue)
     }
     
-    func map(for key: CodingKey) -> DecoderDelegate {
+    func dictionary(for key: CodingKey) -> GenericDecoderDelegate {
         self[key.stringValue]
     }
     
-    func array(for key: CodingKey?) throws -> [DecoderDelegate] {
+    func array(for key: CodingKey?) throws -> [GenericDecoderDelegate] {
         let val = key.map { self[$0.stringValue] } ?? self
         return try val.arrayThrowing.map { $0 }
     }
+
+    private func require<T>(_ optional: T?, key: CodingKey?) throws -> T {
+        guard let optional else {
+            let context = DecodingError.Context(codingPath: [key].compactMap { $0 }, debugDescription: "Value wasn`t available.")
+            throw DecodingError.valueNotFound(T.self, context)
+        }
+
+        return optional
+    }
 }
 
-extension Array where Element == Content {
-    var string: [String]? { try? stringThrowing }
-    var stringThrowing: [String] { get throws { try map { try $0.stringThrowing } } }
-    var int: [Int]? { try? intThrowing }
-    var intThrowing: [Int] { get throws { try map { try $0.intThrowing } } }
-    var bool: [Bool]? { try? boolThrowing }
-    var boolThrowing: [Bool] { get throws { try map { try $0.boolThrowing } } }
-    var double: [Double]? { try? doubleThrowing }
-    var doubleThrowing: [Double] { get throws { try map { try $0.doubleThrowing } } }
-    
-    subscript(field: String) -> [Content] {
-        return map { $0[field] }
-    }
-    
-    subscript(dynamicMember member: String) -> [Content] {
-        self[member]
-    }
-    
-    func decode<D: Decodable>(_ type: D.Type = D.self) throws -> [D] {
-        try map { try D(from: GenericDecoder(delegate: $0)) }
-    }
-}
+// MARK: CustomStringConvertible
 
 extension Content: CustomStringConvertible {
     public var description: String {
         switch state {
         case .error(let error):
             return "Content(error: \(error)"
-        case .node(let node):
-            return createString(root: node)
+        case .value(let value):
+            return createDescription(root: value)
         }
     }
     
-    private func createString(root: Node?, tabs: String = "") -> String {
-        var string = ""
+    private func createDescription(root: Value, tabs: String = "") -> String {
+        var desc = ""
         var tabs = tabs
         switch root {
         case .array(let array):
             tabs += "\t"
             if array.isEmpty {
-                string.append("[]")
+                desc.append("[]")
             } else {
-                string.append("[\n")
-                for (index, node) in array.enumerated() {
+                desc.append("[\n")
+                for (index, value) in array.enumerated() {
                     let comma = index == array.count - 1 ? "" : ","
-                    string.append(tabs + createString(root: node, tabs: tabs) + "\(comma)\n")
+                    desc.append(tabs + createDescription(root: value, tabs: tabs) + "\(comma)\n")
                 }
                 tabs = String(tabs.dropLast(1))
-                string.append("\(tabs)]")
+                desc.append("\(tabs)]")
             }
-        case .value(let value):
-            if let file = value.file {
-                string.append("<\(file.name)>")
-            } else if let bool = value.bool {
-                string.append("\(bool)")
-            } else if let int = value.int {
-                string.append("\(int)")
-            } else if let double = value.double {
-                string.append("\(double)")
-            } else if let stringVal = value.string {
-                string.append("\"\(stringVal)\"")
-            } else {
-                string.append("\(value)")
-            }
-        case .dict(let dict):
+        case .string(let string):
+            desc.append(string.inQuotes)
+        case .bool(let bool):
+            desc.append("\(bool)")
+        case .int(let int):
+            desc.append("\(int)")
+        case .double(let double):
+            desc.append("\(double)")
+        case .file(let file):
+            desc.append("<\(file.name)>")
+        case .dictionary(let dict):
             tabs += "\t"
-            string.append("{\n")
-            for (index, (key, node)) in dict.enumerated() {
+            desc.append("{\n")
+            for (index, (key, value)) in dict.enumerated() {
                 let comma = index == dict.count - 1 ? "" : ","
-                string.append(tabs + "\"\(key)\": " + createString(root: node, tabs: tabs) + "\(comma)\n")
+                desc.append(tabs + "\(key.inQuotes): " + createDescription(root: value, tabs: tabs) + "\(comma)\n")
             }
             tabs = String(tabs.dropLast(1))
-            string.append("\(tabs)}")
-        case .null, .none:
-            string.append("null")
+            desc.append("\(tabs)}")
+        case .null:
+            desc.append("null")
         }
         
-        return string
+        return desc
     }
 }
 
-extension Content {
-    public static func == (lhs: Content, rhs: String) -> Bool {
-        lhs.string == rhs
+// MARK: Codable
+
+extension Content: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        switch state {
+        case .error(let error):
+            throw error
+        case .value(let value):
+            try value.encode(to: encoder)
+        }
     }
-    
-    public static func == (lhs: Content, rhs: Int) -> Bool {
-        lhs.int == rhs
+}
+
+extension Content.Value: Encodable {
+    private struct GenericCodingKey: CodingKey {
+        let stringValue: String
+        let intValue: Int?
+
+        init(stringValue: String) {
+            self.stringValue = stringValue
+            self.intValue = Int(stringValue)
+        }
+
+        init(intValue: Int) {
+            self.stringValue = "\(intValue)"
+            self.intValue = intValue
+        }
     }
-    
-    public static func == (lhs: Content, rhs: Double) -> Bool {
-        lhs.double == rhs
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .array(let array):
+            var container = encoder.unkeyedContainer()
+            try container.encode(contentsOf: array)
+        case .dictionary(let dict):
+            var container = encoder.container(keyedBy: GenericCodingKey.self)
+            for (key, value) in dict {
+                let key = GenericCodingKey(stringValue: key)
+                try container.encode(value, forKey: key)
+            }
+        case .string(let string):
+            var container = encoder.singleValueContainer()
+            try container.encode(string)
+        case .bool(let bool):
+            var container = encoder.singleValueContainer()
+            try container.encode(bool)
+        case .int(let int):
+            var container = encoder.singleValueContainer()
+            try container.encode(int)
+        case .double(let double):
+            var container = encoder.singleValueContainer()
+            try container.encode(double)
+        case .file(let file):
+            var container = encoder.singleValueContainer()
+            try container.encode(file.content?.data)
+        case .null:
+            var container = encoder.singleValueContainer()
+            try container.encodeNil()
+        }
     }
-    
-    public static func == (lhs: Content, rhs: Bool) -> Bool {
-        lhs.bool == rhs
+}
+
+// MARK: Array Extensions
+
+extension Array where Element == Content {
+    public var string: [String]? { try? stringThrowing }
+    public var stringThrowing: [String] { get throws { try map { try $0.stringThrowing } } }
+    public var int: [Int]? { try? intThrowing }
+    public var intThrowing: [Int] { get throws { try map { try $0.intThrowing } } }
+    public var bool: [Bool]? { try? boolThrowing }
+    public var boolThrowing: [Bool] { get throws { try map { try $0.boolThrowing } } }
+    public var double: [Double]? { try? doubleThrowing }
+    public var doubleThrowing: [Double] { get throws { try map { try $0.doubleThrowing } } }
+
+    public subscript(field: String) -> [Content] {
+        return map { $0[field] }
+    }
+
+    public subscript(dynamicMember member: String) -> [Content] {
+        self[member]
+    }
+
+    public func decodeEach<D: Decodable>(_ type: D.Type = D.self) throws -> [D] {
+        try map { try D(from: GenericDecoder(delegate: $0)) }
     }
 }
