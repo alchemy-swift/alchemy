@@ -1,4 +1,6 @@
 #if os(Linux)
+import XCTest
+
 extension XCTestCase {
     /// Wait on an array of expectations for up to the specified timeout, and optionally specify whether they
     /// must be fulfilled in the given order. May return early based on fulfillment of the waited on expectations.
