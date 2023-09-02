@@ -19,7 +19,6 @@ extension XCTestCase {
     ///   provide this parameter when calling this method.
     ///
     /// - SeeAlso: XCTWaiter
-    @available(macOS 12.0, *)
     func fulfillment(of expectations: [XCTestExpectation], timeout: TimeInterval, enforceOrder: Bool = false, file: StaticString = #file, line: Int = #line) async {
         return await withCheckedContinuation { continuation in
             // This function operates by blocking a background thread instead of one owned by libdispatch or by the
