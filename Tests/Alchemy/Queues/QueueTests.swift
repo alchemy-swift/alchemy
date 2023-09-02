@@ -80,7 +80,7 @@ final class QueueTests: TestCase<TestApp> {
     
     private func _testWorker(file: StaticString = #filePath, line: UInt = #line) async throws {
         let exp = expectation(description: "")
-        ConfirmableJob.didRun = exp.fulfill
+        ConfirmableJob.didRun = { exp.fulfill() }
         try await ConfirmableJob().dispatch()
 
         let loop = EmbeddedEventLoop()
@@ -92,7 +92,7 @@ final class QueueTests: TestCase<TestApp> {
     
     private func _testFailure(file: StaticString = #filePath, line: UInt = #line) async throws {
         let exp = expectation(description: "")
-        FailureJob.didFinish = exp.fulfill
+        FailureJob.didFinish = { exp.fulfill() }
         try await FailureJob().dispatch()
 
         let loop = EmbeddedEventLoop()
@@ -105,7 +105,7 @@ final class QueueTests: TestCase<TestApp> {
     
     private func _testRetry(file: StaticString = #filePath, line: UInt = #line) async throws {
         let exp = expectation(description: "")
-        RetryJob.didFail = exp.fulfill
+        RetryJob.didFail = { exp.fulfill() }
         try await RetryJob(foo: "bar").dispatch()
 
         let loop = EmbeddedEventLoop()
@@ -122,36 +122,36 @@ final class QueueTests: TestCase<TestApp> {
         XCTAssertEqual(jobData.attempts, 1, file: file, line: line)
     }
 
-#if os(Linux)
-    /// Wait on an array of expectations for up to the specified timeout, and optionally specify whether they
-    /// must be fulfilled in the given order. May return early based on fulfillment of the waited on expectations.
-    ///
-    /// - Parameter expectations: The expectations to wait on.
-    /// - Parameter timeout: The maximum total time duration to wait on all expectations.
-    /// - Parameter enforceOrder: Specifies whether the expectations must be fulfilled in the order
-    ///   they are specified in the `expectations` Array. Default is false.
-    /// - Parameter file: The file name to use in the error message if
-    ///   expectations are not fulfilled before the given timeout. Default is the file
-    ///   containing the call to this method. It is rare to provide this
-    ///   parameter when calling this method.
-    /// - Parameter line: The line number to use in the error message if the
-    ///   expectations are not fulfilled before the given timeout. Default is the line
-    ///   number of the call to this method in the calling file. It is rare to
-    ///   provide this parameter when calling this method.
-    ///
-    /// - SeeAlso: XCTWaiter
-    func fulfillment(of expectations: [XCTestExpectation], timeout: TimeInterval, enforceOrder: Bool = false) async {
-        return await withCheckedContinuation { continuation in
-            // This function operates by blocking a background thread instead of one owned by libdispatch or by the
-            // Swift runtime (as used by Swift concurrency.) To ensure we use a thread owned by neither subsystem, use
-            // Foundation's Thread.detachNewThread(_:).
-            Thread.detachNewThread { [self] in
-                wait(for: expectations, timeout: timeout, enforceOrder: enforceOrder)
-                continuation.resume()
-            }
-        }
-    }
-#endif
+//#if os(Linux)
+//    /// Wait on an array of expectations for up to the specified timeout, and optionally specify whether they
+//    /// must be fulfilled in the given order. May return early based on fulfillment of the waited on expectations.
+//    ///
+//    /// - Parameter expectations: The expectations to wait on.
+//    /// - Parameter timeout: The maximum total time duration to wait on all expectations.
+//    /// - Parameter enforceOrder: Specifies whether the expectations must be fulfilled in the order
+//    ///   they are specified in the `expectations` Array. Default is false.
+//    /// - Parameter file: The file name to use in the error message if
+//    ///   expectations are not fulfilled before the given timeout. Default is the file
+//    ///   containing the call to this method. It is rare to provide this
+//    ///   parameter when calling this method.
+//    /// - Parameter line: The line number to use in the error message if the
+//    ///   expectations are not fulfilled before the given timeout. Default is the line
+//    ///   number of the call to this method in the calling file. It is rare to
+//    ///   provide this parameter when calling this method.
+//    ///
+//    /// - SeeAlso: XCTWaiter
+//    func fulfillment(of expectations: [XCTestExpectation], timeout: TimeInterval, enforceOrder: Bool = false) async {
+//        return await withCheckedContinuation { continuation in
+//            // This function operates by blocking a background thread instead of one owned by libdispatch or by the
+//            // Swift runtime (as used by Swift concurrency.) To ensure we use a thread owned by neither subsystem, use
+//            // Foundation's Thread.detachNewThread(_:).
+//            Thread.detachNewThread { [self] in
+//                wait(for: expectations, timeout: timeout, enforceOrder: enforceOrder)
+//                continuation.resume()
+//            }
+//        }
+//    }
+//#endif
 }
 
 private struct FailureJob: Job, Codable {
