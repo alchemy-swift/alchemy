@@ -70,4 +70,6 @@ Alchemy was designed to make it easy for you to contribute code. It's a single c
 
 You can also report bugs, suggest features, or just say hi on [Github discussions](https://github.com/alchemy-swift/alchemy/discussions) and [Discord](https://discord.gg/74Bq29q22u).
 
-👋 Thanks for checking out Alchemy - if you'd like to help support please ⭐️ the project on GitHub!
+##
+
+👋 Thanks for checking out Alchemy!
