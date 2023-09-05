@@ -11,6 +11,10 @@ struct App: Application {
             }
         }
 
+        get("/hello") { req in
+            "Hello, \(req["name"])!"
+        }
+
         post("user") {
             try await DB.table("users").insert($0.content)
         }

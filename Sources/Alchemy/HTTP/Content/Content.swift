@@ -325,7 +325,7 @@ extension Content: CustomStringConvertible {
     public var description: String {
         switch state {
         case .error(let error):
-            return "Content(error: \(error)"
+            return "Error: \(error)"
         case .value(let value):
             return createDescription(root: value)
         }
@@ -349,7 +349,7 @@ extension Content: CustomStringConvertible {
                 desc.append("\(tabs)]")
             }
         case .string(let string):
-            desc.append(string.inQuotes)
+            desc.append(string)
         case .bool(let bool):
             desc.append("\(bool)")
         case .int(let int):
