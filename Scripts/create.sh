@@ -1,26 +1,25 @@
-## Creates a new Alchemy project
+# Create a new Alchemy project
 
-# COLORS
+# Colors
 
 red='\033[0;31m'
 green='\033[0;32m'
 cyan='\033[0;36m'
 clear='\033[0m'
 
-# INPUT
+# Input
 
-echo
+printf "\n"
 read -p "Name your project: " name
-echo
+printf "\n"
 if [ -d "$name" ]; then
-  echo "The directory ${green}$name${clear} already exists."
+  printf "The directory ${green}$name${clear} already exists.\n"
   exit 1
 fi
+printf "Creating a new Alchemy app at $green$(pwd)/$name$clear.\n\n"
 
-# CREATE
+# Create
 
-echo "Creating a new Alchemy app at $green$(pwd)/$name$clear."
-echo
 mkdir $name
 cd $name
 git clone -q https://github.com/alchemy-swift/examples setup
@@ -32,13 +31,10 @@ git init &> /dev/null
 git add . &> /dev/null
 git commit -m "Create project using Alchemy Installer" &> /dev/null
 
-# OUTPUT
+# Output
 
-echo "Initialized a git repository."
-echo
-echo "Success! Run your app with:"
-echo
-echo "$cyan  cd$clear $name"
-echo "$cyan  swift run$clear app"
-echo
-echo "Happy hacking!"
+printf "Initialized a git repository.\n\n"
+printf "Success! Run your app with:\n\n"
+printf "$cyan  cd$clear $name\n"
+printf "$cyan  swift run$clear app\n\n"
+printf "Happy hacking!\n"
