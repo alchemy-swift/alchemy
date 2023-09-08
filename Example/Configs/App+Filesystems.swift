@@ -1,6 +1,6 @@
 import Alchemy
 
-extension Applications {
+extension App {
 
     /// Configurations related to your app's filesystems.
 

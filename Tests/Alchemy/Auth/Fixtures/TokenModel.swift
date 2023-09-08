@@ -1,7 +1,7 @@
 import Alchemy
 
 struct TokenModel: Model, Codable, TokenAuthable {
-    typealias User = AuthModel
+    typealias Authorizes = AuthModel
 
     var id: PK<Int> = .new
     var value = UUID()

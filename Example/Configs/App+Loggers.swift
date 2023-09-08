@@ -1,6 +1,6 @@
 import Alchemy
 
-extension Application {
+extension App {
 
     /// Configurations related to your app's loggers.
 

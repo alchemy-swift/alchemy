@@ -39,11 +39,11 @@ public protocol TokenAuthable: Model {
     /// is successfully authorized, the corresponding model of
     /// this type will be pulled from the database and
     /// associated with the request.
-    associatedtype User: Model
-    associatedtype UserRelation: Relation<Self, User>
+    associatedtype Authorizes: Model
+    associatedtype AuthorizesRelation: Relation<Self, Authorizes>
 
     /// The user in question.
-    var user: UserRelation { get }
+    var user: AuthorizesRelation { get }
 
     /// The name of the row that stores the token's value. Defaults to
     /// `"value"`.
