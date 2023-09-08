@@ -7,7 +7,6 @@ let package = Package(
         .macOS(.v13),
     ],
     products: [
-        .executable(name: "app", targets: ["Example"]),
         .library(name: "Alchemy", targets: ["Alchemy"]),
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
@@ -30,11 +29,6 @@ let package = Package(
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
     ],
     targets: [
-        .executableTarget(
-            name: "Example",
-            dependencies: ["Alchemy"],
-            path: "Example"
-        ),
         .target(
             name: "Alchemy",
             dependencies: [
@@ -64,16 +58,20 @@ let package = Package(
 
                 /// Internal dependencies
 
-                .byName(name: "AlchemyC"),
-            ]
+                "AlchemyC",
+            ],
+            path: "Alchemy"
         ),
-        .target(name: "AlchemyC"),
+        .target(name: "AlchemyC", path: "AlchemyC"),
         .target(
             name: "AlchemyTest",
-            dependencies: ["Alchemy"]
+            dependencies: [
+                "Alchemy"
+            ],
+            path: "AlchemyTest"
         ),
         .testTarget(
-            name: "AlchemyTests",
+            name: "Tests",
             dependencies: [
                 "AlchemyTest",
                 "Alchemy"

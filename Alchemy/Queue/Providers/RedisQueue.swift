@@ -1,4 +1,5 @@
 import NIO
+import NIOConcurrencyHelpers
 import RediStack
 
 extension Queue {
@@ -18,7 +19,7 @@ extension Queue {
 }
 
 /// A queue that persists jobs to a Redis instance.
-fileprivate struct RedisQueue: QueueProvider {
+fileprivate final class RedisQueue: QueueProvider {
     /// The underlying redis connection.
     private let redis: RedisClient
     /// All job data.
@@ -29,13 +30,13 @@ fileprivate struct RedisQueue: QueueProvider {
     private let backoffsKey = RedisKey("jobs:backoffs")
     /// The repeating task used for monitoring backoffs.
     private var backoffTask: RepeatedTask?
+    private var lock = NIOLock()
 
     /// Initialize with a Redis instance to persist jobs to.
     ///
     /// - Parameter redis: The Redis instance.
     init(redis: RedisClient = Redis) {
         self.redis = redis
-        backoffTask = monitorBackoffs()
     }
     
     // MARK: - Queue
@@ -46,6 +47,7 @@ fileprivate struct RedisQueue: QueueProvider {
     }
     
     func dequeue(from channel: String) async throws -> JobData? {
+        lock.withLock(monitorBackoffs)
         let jobId = try await redis.rpoplpush(from: key(for: channel), to: processingKey, valueType: String.self).get()
         guard let jobId = jobId else {
             return nil
@@ -76,9 +78,11 @@ fileprivate struct RedisQueue: QueueProvider {
     }
 
     func shutdown() async throws {
-        let promise: EventLoopPromise<Void> = Loop.makePromise()
-        backoffTask?.cancel(promise: promise)
-        try await promise.futureResult.get()
+        if let backoffTask {
+            let promise: EventLoopPromise<Void> = Loop.makePromise()
+            backoffTask.cancel(promise: promise)
+            try await promise.futureResult.get()
+        }
     }
 
     // MARK: - Private Helpers
@@ -87,34 +91,39 @@ fileprivate struct RedisQueue: QueueProvider {
         RedisKey("jobs:queue:\(channel)")
     }
     
-    private func monitorBackoffs() -> RepeatedTask {
+    private func monitorBackoffs() {
+        guard backoffTask == nil else { return }
+
         // TODO: This is failing to die on shutdown. Is there an easier way?
         // TODO: for example, if something should back off, pull the next one, then put the backoff one back.
         let loop = LoopGroup.next()
-        return loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
-            loop.asyncSubmit {
-                let result = try await redis
-                    // Get and remove backoffs that can be rerun.
-                    .transaction { conn in
-                        let set = RESPValue(from: backoffsKey.rawValue)
-                        let min = RESPValue(from: 0)
-                        let max = RESPValue(from: Date().timeIntervalSince1970)
-                        _ = try await conn.send(command: "ZRANGEBYSCORE", with: [set, min, max]).get()
-                        _ = try await conn.send(command: "ZREMRANGEBYSCORE", with: [set, min, max]).get()
-                    }
-                
+        let task = loop.scheduleRepeatedAsyncTask(initialDelay: .zero, delay: .seconds(1)) { _ in
+            loop.asyncSubmit { [weak self] in
+                guard let self else { return }
+
+                // Get and remove backoffs that can be rerun.
+                let result = try await self.redis.transaction { conn in
+                    let set = RESPValue(from: self.backoffsKey.rawValue)
+                    let min = RESPValue(from: 0)
+                    let max = RESPValue(from: Date().timeIntervalSince1970)
+                    _ = try await conn.send(command: "ZRANGEBYSCORE", with: [set, min, max]).get()
+                    _ = try await conn.send(command: "ZREMRANGEBYSCORE", with: [set, min, max]).get()
+                }
+
                 guard let values = result.array, let scores = values.first?.array, !scores.isEmpty else {
                     return
                 }
-                
+
                 for backoffKey in scores.compactMap(\.string) {
                     let values = backoffKey.split(separator: ":")
                     let jobId = String(values[0])
                     let channel = String(values[1])
-                    _ = try await redis.lpush(jobId, into: key(for: channel)).get()
+                    _ = try await self.redis.lpush(jobId, into: self.key(for: channel)).get()
                 }
             }
         }
+
+        backoffTask = task
     }
     
     private func storeJobData(_ job: JobData) async throws {
