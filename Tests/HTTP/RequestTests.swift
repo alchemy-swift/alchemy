@@ -7,19 +7,19 @@ final class RequestTests: XCTestCase {
     private let sampleToken = UUID().uuidString
     
     func testPath() {
-        XCTAssertEqual(Request.fixture(uri: "/foo/bar").path, "/foo/bar")
+        XCTAssertEqual(Request.fake(uri: "/foo/bar").path, "/foo/bar")
     }
     
     func testQueryItems() {
-        XCTAssertEqual(Request.fixture(uri: "/path").queryItems, nil)
-        XCTAssertEqual(Request.fixture(uri: "/path?foo=1&bar=2").queryItems, [
+        XCTAssertEqual(Request.fake(uri: "/path").queryItems, nil)
+        XCTAssertEqual(Request.fake(uri: "/path?foo=1&bar=2").queryItems, [
             URLQueryItem(name: "foo", value: "1"),
             URLQueryItem(name: "bar", value: "2")
         ])
     }
     
     func testParameter() {
-        let request = Request.fixture()
+        let request = Request.fake()
         request.parameters = [
             Request.Parameter(key: "foo", value: "one"),
             Request.Parameter(key: "bar", value: "two"),
@@ -34,8 +34,8 @@ final class RequestTests: XCTestCase {
     }
     
     func testBody() {
-        XCTAssertNil(Request.fixture(body: nil).body)
-        XCTAssertNotNil(Request.fixture(body: .empty).body)
+        XCTAssertNil(Request.fake(body: nil).body)
+        XCTAssertNotNil(Request.fake(body: .empty).body)
     }
     
     func testDecodeBodyJSON() {
@@ -43,9 +43,9 @@ final class RequestTests: XCTestCase {
             var foo = "bar"
         }
         
-        XCTAssertThrowsError(try Request.fixture(body: nil).decode(ExpectedJSON.self))
-        XCTAssertThrowsError(try Request.fixture(body: .empty).decode(ExpectedJSON.self))
-        XCTAssertEqual(try Request.fixture(body: .json).decode(), ExpectedJSON())
+        XCTAssertThrowsError(try Request.fake(body: nil).decode(ExpectedJSON.self))
+        XCTAssertThrowsError(try Request.fake(body: .empty).decode(ExpectedJSON.self))
+        XCTAssertEqual(try Request.fake(body: .json).decode(), ExpectedJSON())
     }
 
     // MARK: Parameters
@@ -68,54 +68,54 @@ final class RequestTests: XCTestCase {
     // MARK: Auth
 
     func testNoAuth() {
-        XCTAssertNil(Request.fixture().basicAuth())
-        XCTAssertNil(Request.fixture().bearerAuth())
-        XCTAssertNil(Request.fixture().getAuth())
+        XCTAssertNil(Request.fake().basicAuth())
+        XCTAssertNil(Request.fake().bearerAuth())
+        XCTAssertNil(Request.fake().getAuth())
     }
 
     func testUnknownAuth() {
-        let request = Request.fixture(headers: ["Authorization": "Foo \(sampleToken)"])
+        let request = Request.fake(headers: ["Authorization": "Foo \(sampleToken)"])
         XCTAssertNil(request.getAuth())
     }
 
     func testBearerAuth() {
-        let request = Request.fixture(headers: ["Authorization": "Bearer \(sampleToken)"])
+        let request = Request.fake(headers: ["Authorization": "Bearer \(sampleToken)"])
         XCTAssertNil(request.basicAuth())
         XCTAssertNotNil(request.bearerAuth())
         XCTAssertEqual(request.bearerAuth()?.token, sampleToken)
     }
 
     func testBasicAuth() {
-        let request = Request.fixture(headers: ["Authorization": "Basic \(sampleBase64Credentials)"])
+        let request = Request.fake(headers: ["Authorization": "Basic \(sampleBase64Credentials)"])
         XCTAssertNil(request.bearerAuth())
         XCTAssertNotNil(request.basicAuth())
         XCTAssertEqual(request.basicAuth(), Request.Auth.Basic(username: "username", password: "password"))
     }
 
     func testMalformedBasicAuth() {
-        let notBase64Encoded = Request.fixture(headers: ["Authorization": "Basic user:pass"])
+        let notBase64Encoded = Request.fake(headers: ["Authorization": "Basic user:pass"])
         XCTAssertNil(notBase64Encoded.basicAuth())
-        let empty = Request.fixture(headers: ["Authorization": "Basic "])
+        let empty = Request.fake(headers: ["Authorization": "Basic "])
         XCTAssertNil(empty.basicAuth())
     }
 
     // MARK: Associated Values
 
     func testValue() {
-        let request = Request.fixture()
+        let request = Request.fake()
         request.set("foo")
         XCTAssertEqual(try request.get(), "foo")
     }
 
     func testOverwite() {
-        let request = Request.fixture()
+        let request = Request.fake()
         request.set("foo")
         request.set("bar")
         XCTAssertEqual(try request.get(), "bar")
     }
 
     func testNoValue() {
-        let request = Request.fixture()
+        let request = Request.fake()
         request.set(1)
         XCTAssertThrowsError(try request.get(String.self))
     }

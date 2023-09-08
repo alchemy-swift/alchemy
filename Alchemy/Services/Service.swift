@@ -4,6 +4,12 @@ public protocol Service {
     associatedtype Identifier: Hashable
 }
 
+extension Service {
+    public static func register(_ value: Self, id: Identifier? = nil) {
+        Container.register(value, id: id).singleton()
+    }
+}
+
 /// A type to be used as the identifier for various services.
 public struct ServiceIdentifier<T>: Hashable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
     private let value: AnyHashable

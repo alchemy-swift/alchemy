@@ -77,11 +77,11 @@ final class FileMiddlewareTests: TestCase<TestApp> {
 
 extension Request {
     fileprivate static func get(_ uri: String) -> Request {
-        .fixture(method: .GET, uri: uri)
+        .fake(method: .GET, uri: uri)
     }
     
     fileprivate static func post(_ uri: String) -> Request {
-        .fixture(method: .POST, uri: uri)
+        .fake(method: .POST, uri: uri)
     }
 }
 

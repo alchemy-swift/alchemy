@@ -33,7 +33,7 @@ open class TestCase<A: Application>: XCTestCase {
         
         public func execute() async -> Response {
             await app.handler.handle(
-                request: .fixture(
+                request: .fake(
                     method: method, 
                     uri: urlComponents.path, 
                     headers: headers, 

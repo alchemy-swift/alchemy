@@ -11,6 +11,8 @@ public struct ApplicationConfiguration {
     public let defaultPlugins: (Application) -> [Plugin]
     /// Application commands.
     public let commands: [Command.Type]
+    /// The default hashing algorithm.
+    public let defaultHashAlgorithm: HashAlgorithm
     /// Maximum upload size allowed.
     public let maxUploadSize: Int
     /// Maximum size of data in flight while streaming request payloads before back pressure is applied.
@@ -30,6 +32,7 @@ public struct ApplicationConfiguration {
         plugins: @escaping @autoclosure () -> [Plugin] = [],
         defaultPlugins: @escaping (Application) -> [Plugin] = defaultPlugins,
         commands: [Command.Type] = [],
+        defaultHashAlgorithm: HashAlgorithm = .bcrypt,
         maxUploadSize: Int = 2 * 1024 * 1024,
         maxStreamingBufferSize: Int = 1 * 1024 * 1024,
         backlog: Int = 256,
@@ -41,6 +44,7 @@ public struct ApplicationConfiguration {
         self.plugins = plugins
         self.defaultPlugins = defaultPlugins
         self.commands = commands
+        self.defaultHashAlgorithm = defaultHashAlgorithm
         self.maxUploadSize = maxUploadSize
         self.maxStreamingBufferSize = maxStreamingBufferSize
         self.backlog = backlog

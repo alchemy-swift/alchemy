@@ -2,7 +2,7 @@
 import Alchemy
 
 extension Request {
-    public static func fixture(
+    public static func fake(
         method: HTTPMethod = .GET,
         uri: String = "foo",
         headers: HTTPHeaders = [:],

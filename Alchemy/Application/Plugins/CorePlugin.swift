@@ -12,7 +12,11 @@ struct CorePlugin: Plugin {
 
         app.loggers.registerServices(in: app)
 
-        // 2. Register NIO services
+        // 2. Register Hasher
+
+        app.container.register(Hasher(algorithm: app.configuration.defaultHashAlgorithm)).singleton()
+
+        // 3. Register NIO services
 
         app.container.register { MultiThreadedEventLoopGroup(numberOfThreads: $0.coreCount) as EventLoopGroup }.singleton()
         app.container.register { NIOThreadPool.singleton }
@@ -27,7 +31,7 @@ struct CorePlugin: Plugin {
             return current
         }
 
-        // 3. Register Lifecycle
+        // 4. Register Lifecycle
 
         app.container.register { container in
             var logger: Logger = container.require()

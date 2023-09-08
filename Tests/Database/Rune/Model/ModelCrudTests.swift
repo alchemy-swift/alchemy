@@ -35,7 +35,7 @@ final class ModelCrudTests: TestCase<TestApp> {
         let missingId = try await TestModel.find(999)
         XCTAssertEqual(missingId, nil)
         
-        let findByWhere = try await TestModel.first(where: "foo" == "baz")
+        let findByWhere = try await TestModel.firstWhere("foo" == "baz")
         XCTAssertEqual(findByWhere, model)
         
         let newFirst = try await TestModel.first()

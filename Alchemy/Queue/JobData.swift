@@ -46,7 +46,7 @@ public struct JobData: Codable, Equatable {
             : nil
     }
 
-    init(
+    public init(
         id: String = UUID().uuidString,
         payload: Data,
         jobName: String,

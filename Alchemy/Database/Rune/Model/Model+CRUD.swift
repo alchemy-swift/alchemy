@@ -8,6 +8,10 @@ extension Model {
         try await query(on: db).get()
     }
 
+    public static func count(on db: Database = database) async throws -> Int {
+        try await query(on: db).count()
+    }
+
     public static func chunk(on db: Database = database, _ chunkSize: Int = 100, handler: ([Self]) async throws -> Void) async throws {
         try await query(on: db).chunk(chunkSize, handler: handler)
     }
@@ -28,7 +32,7 @@ extension Model {
     ///     `Database.default`.
     ///   - where: A where clause for filtering models.
     /// - Returns: A matching model, if one exists.
-    public static func first(on db: Database = database, where: SQLWhere.Clause) async throws -> Self? {
+    public static func firstWhere(on db: Database = database, _ where: SQLWhere.Clause) async throws -> Self? {
         try await Self.where(on: db, `where`).first()
     }
 

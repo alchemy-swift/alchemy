@@ -125,7 +125,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     /// - Parameter column: What column to count. Defaults to `*`.
     /// - Returns: The count returned by the database.
     public func count(column: String = "*") async throws -> Int {
-        guard let row = try await select("COUNT(\(column))").first() as? SQLRow else {
+        guard let row = try await select("COUNT(\(column))").convert(SQLRow.self).first() else {
             throw DatabaseError("a COUNT query didn't return any data")
         }
 

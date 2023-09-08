@@ -1,7 +1,9 @@
-public struct Hasher<Algorithm: HashAlgorithm> {
-    let algorithm: Algorithm
-    
-    public init(algorithm: Algorithm) {
+public struct Hasher: Service {
+    public typealias Identifier = ServiceIdentifier<Database>
+
+    private let algorithm: HashAlgorithm
+
+    public init(algorithm: HashAlgorithm) {
         self.algorithm = algorithm
     }
     

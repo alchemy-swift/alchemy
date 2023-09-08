@@ -15,7 +15,7 @@ extension Database {
     }
     
     /// An in memory SQLite database configuration with the given identifier.
-    public static func sqlite(identifier: String) -> Database {
+    public static func sqlite(identifier: String = UUID().uuidString) -> Database {
         sqlite(configuration: .init(storage: .memory(identifier: identifier), enableForeignKeys: true))
     }
 

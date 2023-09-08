@@ -70,6 +70,20 @@ public final class Response {
         self.init(status: status, headers: headers, buffer: ByteBuffer(string: string), contentType: contentType)
     }
 
+    /// Creates a new body containing the text of the given string.
+    public convenience init(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], dict: [String: Encodable], encoder: HTTPEncoder = Bytes.defaultEncoder) throws {
+        struct AnyEncodable: Encodable {
+            let value: Encodable
+
+            func encode(to encoder: Encoder) throws {
+                try value.encode(to: encoder)
+            }
+        }
+
+        let dict = dict.compactMapValues(AnyEncodable.init)
+        try self.init(status: status, headers: headers, encodable: dict, encoder: encoder)
+    }
+
     /// Collects the body of this Response into a single `ByteBuffer`. If it is
     /// a stream, this function will return when the stream is finished. If
     /// the body is already a single `ByteBuffer`, this function will

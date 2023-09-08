@@ -60,8 +60,8 @@ public func Redis(_ id: RedisClient.Identifier) -> RedisClient { Container.requi
 public var Events: EventBus { Container.require() }
 
 /// Accessors for Hashing
-public var Hash: Hasher<BCryptHasher> { Hasher(algorithm: .bcrypt) }
-public func Hash<Algorithm: HashAlgorithm>(_ algorithm: Algorithm) -> Hasher<Algorithm> { Hasher(algorithm: algorithm) }
+public var Hash: Hasher { Container.require() }
+public func Hash(_ algorithm: HashAlgorithm) -> Hasher { Hasher(algorithm: algorithm) }
 
 /// Accessor for encryption
 public var Crypt: Encrypter { Encrypter(key: .app) }

@@ -69,11 +69,17 @@ public enum JobRecoveryStrategy: Equatable, Codable {
 /// The context this job is running in.
 public struct JobContext {
     /// The queue this job was queued on.
-    let queue: Queue
+    public let queue: Queue
     /// The channel this job was queued on.
-    let channel: String
+    public let channel: String
     /// The JobData corresponding to this job.
-    let jobData: JobData
+    public let jobData: JobData
+
+    public init(queue: Queue, channel: String, jobData: JobData) {
+        self.queue = queue
+        self.channel = channel
+        self.jobData = jobData
+    }
 }
 
 // Default implementations.

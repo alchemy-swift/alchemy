@@ -26,17 +26,3 @@ public final class SHA256Hasher: HashAlgorithm {
         return digest()
     }
 }
-
-extension Hasher where Algorithm == SHA256Hasher {
-    public func update(_ value: String) {
-        algorithm.update(Data(value.utf8))
-    }
-    
-    public func update<D: DataProtocol>(_ data: D) {
-        algorithm.update(data)
-    }
-    
-    public func digest() -> String {
-        algorithm.digest()
-    }
-}

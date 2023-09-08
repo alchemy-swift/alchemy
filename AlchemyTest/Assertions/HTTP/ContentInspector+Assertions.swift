@@ -29,7 +29,7 @@ extension HTTPInspector {
     
     @discardableResult
     public func assertBody(_ string: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        guard let body = self.body else {
+        guard let body else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
@@ -67,8 +67,8 @@ extension HTTPInspector {
     
     // Convert to anything? String, Int, Bool, Double, Array, Object...
     @discardableResult
-    public func assertJson(_ value: [String: Any], file: StaticString = #filePath, line: UInt = #line) -> Self {
-        guard let body = self.body else {
+    public func assertJsonDict(_ value: [String: Any], file: StaticString = #filePath, line: UInt = #line) -> Self {
+        guard let body else {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
@@ -81,7 +81,26 @@ extension HTTPInspector {
         XCTAssertEqual(NSDictionary(dictionary: dict), NSDictionary(dictionary: value), file: file, line: line)
         return self
     }
-    
+
+    @discardableResult
+    public func assertBodyHasFields(_ fields: String..., file: StaticString = #filePath, line: UInt = #line) -> Self {
+        guard let body else {
+            XCTFail("Request body was nil.", file: file, line: line)
+            return self
+        }
+
+        guard let dict = try? JSONSerialization.jsonObject(with: body.data, options: []) as? [String: Any] else {
+            XCTFail("Request body wasn't a json object.", file: file, line: line)
+            return self
+        }
+
+        for field in fields {
+            XCTAssertTrue(dict.keys.contains(field), file: file, line: line)
+        }
+        
+        return self
+    }
+
     @discardableResult
     public func assertEmpty(file: StaticString = #filePath, line: UInt = #line) -> Self {
         if body != nil {
