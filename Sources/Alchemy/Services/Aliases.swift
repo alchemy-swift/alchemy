@@ -1,6 +1,6 @@
 import Crypto
 
-// MARK: Public Aliases
+// MARK: Public aliases
 
 /// The default configured Client
 public var Http: Client.Builder { Container.require(Client.self).builder() }
@@ -35,9 +35,6 @@ public func Log(_ id: Logger.Identifier) -> Logger { Container.require(id: id) }
 public func Log(_ ids: Logger.Identifier...) -> Logger {
     Logger(loggers: ids.map { Container.require(id: $0) })
 }
-
-/// The application Router
-public var Routes: Router { Container.require() }
 
 /// The appliation Router
 public var Schedule: Scheduler { Container.require() }
@@ -80,8 +77,10 @@ public var LoopGroup: EventLoopGroup { Container.require() }
 /// A thread pool to run expensive work on.
 public var Thread: NIOThreadPool { Container.require() }
 
-// MARK: Internal
+// MARK: Internal aliases
 
-var Jobs: JobRegistry {
-    Container.require()
-}
+/// The application Router
+var Routes: Router { Container.require() }
+
+/// Job registration.
+var Jobs: JobRegistry { Container.require() }

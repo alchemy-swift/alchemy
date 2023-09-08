@@ -170,7 +170,7 @@ public final class Environment: ExpressibleByStringLiteral {
         } else {
             env = isRunFromTests
                 ? Environment(name: "test")
-                : Environment(name: "dev", dotenvPaths: [".env"])
+                : Environment(name: "local", dotenvPaths: [".env"])
         }
 
         env.loadVariables()
