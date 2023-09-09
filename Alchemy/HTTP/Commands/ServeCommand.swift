@@ -52,6 +52,7 @@ struct ServeCommand: Command {
         @Inject var app: Application
         if migrate {
             try await DB.migrate()
+            Log.comment("")
         }
 
         if schedule {
