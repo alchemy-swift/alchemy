@@ -23,9 +23,9 @@ printf "Creating a new Alchemy app at $green$(pwd)/$name$clear.\n\n"
 mkdir $name
 cd $name
 git clone -q https://github.com/alchemy-swift/examples setup
-mv setup/Server/* .
-mv setup/Server/.env .
-mv setup/Server/.gitignore .
+mv setup/demo/* .
+mv setup/demo/.env .
+mv setup/demo/.gitignore .
 rm -rf setup
 git init &> /dev/null
 git add . &> /dev/null
