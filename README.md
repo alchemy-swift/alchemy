@@ -16,6 +16,19 @@
 
 ---
 
+```swift
+import Alchemy
+
+@main
+struct App: Application {
+    func boot() {
+        get("/hello") { req in
+            "Hello, \(req["name"])!"
+        }
+    }
+}
+```
+
 ## Documentation
 
 For full documentation and to get started, visit [alchemyswift.com](https://alchemyswift.com).
