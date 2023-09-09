@@ -61,19 +61,7 @@ public final class ByteStream: AsyncSequence {
         }
     }
 
-    func _write(chunk: ByteBuffer?) -> EventLoopFuture<Void> {
-        createStreamerIfNotExists()
-            .flatMap {
-                if let chunk = chunk {
-                    return $0.feed(buffer: chunk)
-                } else {
-                    $0.feed(.end)
-                    return self.eventLoop.makeSucceededVoidFuture()
-                }
-            }
-    }
-
-    func _read(on eventLoop: EventLoop) -> EventLoopFuture<ByteBuffer?> {
+    public func _read(on eventLoop: EventLoop) -> EventLoopFuture<ByteBuffer?> {
         createStreamerIfNotExists()
             .flatMap {
                 if !self.didFirstRead {
@@ -91,6 +79,18 @@ public final class ByteStream: AsyncSequence {
                 }
             }
             .hop(to: eventLoop)
+    }
+
+    func _write(chunk: ByteBuffer?) -> EventLoopFuture<Void> {
+        createStreamerIfNotExists()
+            .flatMap {
+                if let chunk = chunk {
+                    return $0.feed(buffer: chunk)
+                } else {
+                    $0.feed(.end)
+                    return self.eventLoop.makeSucceededVoidFuture()
+                }
+            }
     }
 
     private func createStreamerIfNotExists() -> EventLoopFuture<HBByteBufferStreamer> {
