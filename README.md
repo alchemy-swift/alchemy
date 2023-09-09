@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  An elegant, batteries included web framework for Swift.
+    An elegant, batteries included web framework for Swift.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ## Documentation
 
-For full documentation and to get started, visit [alchemyswift.com](https://www.alchemyswift.com)
+For full documentation and to get started, visit [alchemyswift.com](https://www.alchemyswift.com).
 
 ## Contributing
 
