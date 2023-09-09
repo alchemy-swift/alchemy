@@ -10,7 +10,7 @@ public final class Response {
 
     /// Creates a new response using a status code, headers, body and optional 
     /// Content-Type.
-    public init(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], body: Bytes? = nil, contentType: ContentType? = .octetStream, updateContentLength: Bool = true) {
+    public init(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], body: Bytes? = nil, contentType: ContentType? = nil, updateContentLength: Bool = true) {
         self.status = status
         self.headers = headers
         self.body = body

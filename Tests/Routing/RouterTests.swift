@@ -139,7 +139,7 @@ final class RouterTests: TestCase<TestApp> {
     func testError() async throws {
         app.get("/error") { _ -> Void in throw TestError() }
         let status = HTTPResponseStatus.internalServerError
-        try await Test.get("/error").assertStatus(status).assertEmpty()
+        try await Test.get("/error").assertStatus(status).assertBody("500 Internal Server Error")
     }
     
     func testErrorHandling() async throws {
@@ -148,7 +148,7 @@ final class RouterTests: TestCase<TestApp> {
         
         let errorStatus = HTTPResponseStatus.internalServerError
         try await Test.get("/error_convert").assertStatus(.badGateway).assertEmpty()
-        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertEmpty()
+        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertBody("500 Internal Server Error")
     }
 
     // MARK: Streaming

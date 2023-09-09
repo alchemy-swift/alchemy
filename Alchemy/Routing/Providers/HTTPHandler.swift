@@ -11,7 +11,7 @@ public final class HTTPHandler: RequestHandler {
         self.maxUploadSize = maxUploadSize
         self.router = router
         self.globalMiddlewares = []
-        self.notFoundHandler = { _ in Response(status: .notFound) }
+        self.notFoundHandler = { _ in Response(status: .notFound, string: "404 Not Found") }
         self.errorHandler = HTTPHandler.defaultErrorHandler
     }
 
@@ -60,6 +60,6 @@ public final class HTTPHandler: RequestHandler {
 
     private static func defaultErrorHandler(request: Request, error: Error) -> Response {
         Log.error("500 on \(request.method.rawValue) \(request.path): \(String(reflecting: error)).")
-        return Response(status: .internalServerError)
+        return Response(status: .internalServerError, string: "500 Internal Server Error")
     }
 }
