@@ -88,7 +88,7 @@ public struct RedisClient: RediStack.RedisClient, Service {
     
     /// A single redis connection
     public static func connection(
-        _ host: String,
+        host: String,
         port: Int = 6379,
         password: String? = nil,
         database: Int? = nil,
