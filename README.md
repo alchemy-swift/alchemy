@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-    An elegant, batteries included web framework for Swift.
+    A modern, batteries included web framework for Swift.
 </p>
 
 <p align="center">
