@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://www.alchemyswift.com/" target="_blank">
+    <a href="https://alchemyswift.com/" target="_blank">
         <img src="https://user-images.githubusercontent.com/6025554/132588005-5f8a6a94-ec15-4cab-9be9-1e90e86d374f.png" width="400">
     </a>
 </p>
@@ -18,7 +18,7 @@
 
 ## Documentation
 
-For full documentation and to get started, visit [alchemyswift.com](https://www.alchemyswift.com).
+For full documentation and to get started, visit [alchemyswift.com](https://alchemyswift.com).
 
 ## Contributing
 
