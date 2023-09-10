@@ -109,6 +109,9 @@ extension Application {
     }
 
     /// Starts the application with the given arguments.
+    ///
+    /// @MainActor ensures that calls to `wait()` doesn't block an `EventLoop`.
+    @MainActor
     public func start(args: [String]? = nil, waitOrShutdown: Bool = true) async throws {
 
         // 0. Start the application lifecycle.
