@@ -7,6 +7,7 @@ let package = Package(
         .macOS(.v13),
     ],
     products: [
+        .executable(name: "Example", targets: ["Example"]),
         .library(name: "Alchemy", targets: ["Alchemy"]),
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
@@ -29,6 +30,13 @@ let package = Package(
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
     ],
     targets: [
+        .executableTarget(
+            name: "Example",
+            dependencies: [
+                .byName(name: "Alchemy"),
+            ],
+            path: "Example"
+        ),
         .target(
             name: "Alchemy",
             dependencies: [

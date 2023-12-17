@@ -157,7 +157,10 @@ public final class Environment: ExpressibleByStringLiteral {
     }
 
     public static var isXcode: Bool {
-        CommandLine.arguments.contains { $0.contains("/Xcode/DerivedData") || $0.contains("/Xcode/Agents") }
+        CommandLine.arguments.contains {
+            $0.contains("/Xcode/DerivedData") ||
+            $0.contains("/Xcode/Agents")
+        }
     }
 
     public static func createDefault() -> Environment {

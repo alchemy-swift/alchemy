@@ -98,8 +98,11 @@ extension Logger: Service {
     /// local dev only.
     func comment(_ message: String) {
         if !Env.isTesting && Env.isDebug {
-            let padding = Env.isXcode ? "" : "  "
-            print("\(padding)\(message)")
+            if Env.isXcode {
+                Log.info("\(message)")
+            } else {
+                print("  \(message)")
+            }
         }
     }
 
