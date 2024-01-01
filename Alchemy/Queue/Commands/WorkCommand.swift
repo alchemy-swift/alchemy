@@ -34,8 +34,6 @@ struct WorkCommand: Command {
         }
 
         if schedule {
-            @Inject var app: Application
-            app.schedule(on: Schedule)
             Schedule.start()
         }
         

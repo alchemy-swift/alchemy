@@ -4,18 +4,15 @@ import NIOHTTP1
 import NIOHTTP2
 import HummingbirdCore
 
-let kDefaultHost = "127.0.0.1"
-let kDefaultPort = 3000
-
 struct ServeCommand: Command {
     static let name = "serve"
     static var runUntilStopped: Bool = true
     
     /// The host to serve at. Defaults to `127.0.0.1`.
-    @Option var host = kDefaultHost
+    @Option var host = HTTPConfiguration.defaultHost
 
     /// The port to serve at. Defaults to `3000`.
-    @Option var port = kDefaultPort
+    @Option var port = HTTPConfiguration.defaultPort
 
     /// The unix socket to serve at. If this is provided, the host and
     /// port will be ignored.
@@ -56,7 +53,6 @@ struct ServeCommand: Command {
         }
 
         if schedule {
-            app.schedule(on: Schedule)
             Schedule.start()
         }
 

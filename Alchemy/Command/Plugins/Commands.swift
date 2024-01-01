@@ -1,13 +1,19 @@
-struct CommandsPlugin: Plugin {
-    func registerServices(in app: Application) {
+public struct Commands: Plugin, ExpressibleByArrayLiteral {
+    private let commands: [Command.Type]
+    
+    public init(arrayLiteral elements: Command.Type...) {
+        self.commands = elements
+    }
+    
+    public func registerServices(in app: Application) {
         app.container.register(Commander()).singleton()
     }
 
-    func boot(app: Application) {
-        for command in app.configuration.commands {
+    public func boot(app: Application) {
+        for command in commands {
             app.registerCommand(command)
         }
-
+        
         app.registerCommand(ControllerMakeCommand.self)
         app.registerCommand(MiddlewareMakeCommand.self)
         app.registerCommand(MigrationMakeCommand.self)

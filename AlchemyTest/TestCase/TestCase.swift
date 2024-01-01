@@ -52,7 +52,7 @@ open class TestCase<A: Application>: XCTestCase {
     open override func setUp() async throws {
         try await super.setUp()
         app = A()
-        app.setup()
+        app.bootPlugins()
         try app.boot()
     }
 

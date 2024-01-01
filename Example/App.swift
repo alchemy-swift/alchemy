@@ -37,6 +37,7 @@ import Alchemy
  - PRO: Easy overloads / hint what you want
  Closures
  - CON: can overload, but a lot of work
+
  */
 
 @main
@@ -51,6 +52,8 @@ struct App: Application {
     func get400(req: Request) throws { throw HTTPError(.badRequest) }
     func get500(req: Request) throws { throw HTTPError(.internalServerError) }
 }
+
+/*
 
 @Routes
 struct UserController {
@@ -114,6 +117,8 @@ struct User {
     let username: String
     let password: String
 }
+ 
+ */
 
 /*
  

@@ -15,18 +15,32 @@ public protocol Plugin {
     func shutdownServices(in app: Application) async throws
 }
 
-extension Plugin {
-    public var label: String { name(of: Self.self) }
+public extension Plugin {
+    var label: String { name(of: Self.self) }
     
-    public func registerServices(in app: Application) {
+    func registerServices(in app: Application) {
         //
     }
     
-    public func boot(app: Application) async throws {
+    func boot(app: Application) async throws {
         //
     }
     
-    public func shutdownServices(in app: Application) async throws {
+    func shutdownServices(in app: Application) async throws {
         //
+    }
+    
+    internal func register(in app: Application) {
+        registerServices(in: app)
+        app.lifecycle.register(
+            label: label,
+            start: .async {
+                try await boot(app: app)
+            },
+            shutdown: .async {
+                try await shutdownServices(in: app)
+            },
+            shutdownIfNotStarted: true
+        )
     }
 }
