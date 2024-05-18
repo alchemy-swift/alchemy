@@ -10,7 +10,7 @@ extension Router {
     ///
     /// - Parameter controller: The controller to handle routes on this router.
     @discardableResult
-    public func controller(_ controllers: Controller...) -> Self {
+    public func use(_ controllers: Controller...) -> Self {
         controllers.forEach {
             $0.route(group())
         }

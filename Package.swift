@@ -5,13 +5,15 @@ let package = Package(
     name: "alchemy",
     platforms: [
         .macOS(.v13),
+        .iOS(.v16),
     ],
     products: [
-        .executable(name: "Example", targets: ["Example"]),
+        .executable(name: "Demo", targets: ["AlchemyExample"]),
         .library(name: "Alchemy", targets: ["Alchemy"]),
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
     dependencies: [
+        .package(path: "../AlchemyX"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "1.8.1"),
         .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "1.3.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -31,7 +33,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "Example",
+            name: "AlchemyExample",
             dependencies: [
                 .byName(name: "Alchemy"),
             ],
@@ -40,6 +42,9 @@ let package = Package(
         .target(
             name: "Alchemy",
             dependencies: [
+                /// Experimental
+
+                .product(name: "AlchemyX", package: "AlchemyX"),
 
                 /// Core
 

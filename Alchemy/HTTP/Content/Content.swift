@@ -437,6 +437,37 @@ extension Content.Value: Encodable {
     }
 }
 
+extension Content.Value: ModelProperty {
+    public init(key: String, on row: SQLRowReader) throws {
+        throw ContentError.notSupported("Reading content from database models isn't supported, yet.")
+    }
+    
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        switch self {
+        case .array(let values):
+            try row.put(json: values, at: key)
+        case .dictionary(let dict):
+            try row.put(json: dict, at: key)
+        case .bool(let value):
+            try value.store(key: key, on: &row)
+        case .string(let value):
+            try value.store(key: key, on: &row)
+        case .int(let value):
+            try value.store(key: key, on: &row)
+        case .double(let double):
+            try double.store(key: key, on: &row)
+        case .file(let file):
+            if let buffer = file.content?.buffer {
+                row.put(SQLValue.bytes(buffer), at: key)
+            } else {
+                row.put(SQLValue.null, at: key)
+            }
+        case .null:
+            row.put(SQLValue.null, at: key)
+        }
+    }
+}
+
 // MARK: Array Extensions
 
 extension Array where Element == Content {

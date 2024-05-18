@@ -42,6 +42,10 @@ public struct RouteMatcher: Buildable {
     private mutating func matchPath(_ path: String) -> Bool {
         parameters = []
         let parts = RouteMatcher.tokenize(path)
+        guard parts.count == pathTokens.count else {
+            return false
+        }
+
         for (index, token) in pathTokens.enumerated() {
             guard let part = parts[safe: index] else {
                 return false

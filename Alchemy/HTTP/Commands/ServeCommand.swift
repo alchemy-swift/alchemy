@@ -132,7 +132,7 @@ private struct HTTPResponder: HBHTTPResponder {
         let finishedAt = Date()
         let dateString = Formatters.date.string(from: finishedAt)
         let timeString = Formatters.time.string(from: finishedAt)
-        let left = "\(dateString) \(timeString) \(req.path)"
+        let left = "\(dateString) \(timeString) \(req.method) \(req.path)"
         let right = "\(startedAt.elapsedString) \(res.status.code)"
         let dots = Log.dots(left: left, right: right)
         let status: Status = {
@@ -171,7 +171,7 @@ private struct HTTPResponder: HBHTTPResponder {
                 code = code.white
             }
             
-            Log.comment("\(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)")
+            Log.comment("\(dateString.lightBlack) \(timeString) \(req.method) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)")
         }
     }
 }

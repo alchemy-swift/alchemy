@@ -1,6 +1,7 @@
-public struct Databases: Plugin {
+public final class Databases: Plugin {
     private let `default`: Database.Identifier?
-    private let databases: [Database.Identifier: Database]
+    private let databases: () -> [Database.Identifier: Database]
+    private var _databases: [Database.Identifier: Database]?
     private let migrations: [Migration]
     private let seeders: [Seeder]
     private let defaultRedis: RedisClient.Identifier?
@@ -8,7 +9,7 @@ public struct Databases: Plugin {
 
     public init(
         default: Database.Identifier? = nil,
-        databases: [Database.Identifier: Database] = [:],
+        databases: @escaping @autoclosure () -> [Database.Identifier: Database] = [:],
         migrations: [Migration] = [],
         seeders: [Seeder] = [],
         defaultRedis: RedisClient.Identifier? = nil,
@@ -23,13 +24,16 @@ public struct Databases: Plugin {
     }
 
     public func registerServices(in app: Application) {
-        for (id, db) in databases {
+        _databases = databases()
+        guard let _databases else { return }
+
+        for (id, db) in _databases {
             db.migrations = migrations
             db.seeders = seeders
             app.container.register(db, id: id).singleton()
         }
 
-        if let _default = `default` ?? databases.keys.first {
+        if let _default = `default` ?? _databases.keys.first {
             app.container.register(DB(_default)).singleton()
         }
 
@@ -51,7 +55,8 @@ public struct Databases: Plugin {
     }
 
     public func shutdownServices(in app: Application) async throws {
-        for id in databases.keys {
+        guard let _databases else { return }
+        for id in _databases.keys {
             try await app.container.resolve(Database.self, id: id)?.shutdown()
         }
 

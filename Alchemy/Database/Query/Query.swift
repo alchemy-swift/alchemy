@@ -169,8 +169,12 @@ open class Query<Result: QueryResult>: SQLConvertible {
         try await insert(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
     }
 
-    public func insertReturn(_ values: [String: SQLConvertible]) async throws -> [SQLRow] {
-        try await insertReturn([values])
+    public func insertReturn(_ values: [String: SQLConvertible]) async throws -> SQLRow {
+        guard let first = try await insertReturn([values]).first else {
+            throw DatabaseError("INSERT didn't return any rows.")
+        }
+
+        return first
     }
 
     /// Perform an insert and return the inserted records.
@@ -199,7 +203,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
         }
     }
 
-    public func insertReturn<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> [SQLRow] {
+    public func insertReturn<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> SQLRow {
         try await insertReturn(try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
     }
 
@@ -309,7 +313,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     }
 
     public func update<E: Encodable>(_ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws {
-        try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+        try await update(try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
     }
 
     public func increment(_ column: String, by amount: Int = 1) async throws {
