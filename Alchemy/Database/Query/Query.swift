@@ -383,21 +383,6 @@ extension Database {
 
     @discardableResult
     func query(sql: SQL, logging: QueryLogging? = nil) async throws -> [SQLRow] {
-        if let logging = logging ?? self.logging {
-            switch logging {
-            case .log:
-                Log.info(sql.description)
-            case .logRawSQL:
-                Log.info(sql.rawSQLString + ";")
-            case .logFatal:
-                Log.info(sql.description)
-                fatalError("logf")
-            case .logFatalRawSQL:
-                Log.info(sql.rawSQLString + ";")
-                fatalError("logf")
-            }
-        }
-
-        return try await query(sql.statement, parameters: sql.parameters)
+        try await _query(sql.statement, parameters: sql.parameters, logging: logging)
     }
 }
