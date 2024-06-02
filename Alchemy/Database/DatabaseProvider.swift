@@ -1,5 +1,8 @@
 /// A generic type to represent any database you might be interacting with.
 public protocol DatabaseProvider {
+    /// The type of DBMS (i.e. PostgreSQL, SQLite, MySQL)
+    var type: DatabaseType { get }
+
     /// Run a parameterized query on the database. Parameterization
     /// helps protect against SQL injection.
     ///

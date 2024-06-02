@@ -5,6 +5,9 @@ public final class Database: Service {
     /// The provider of this database.
     public let provider: DatabaseProvider
 
+    /// The underlying DBMS type (i.e. PostgreSQL, SQLite, etc...)
+    public var type: DatabaseType { provider.type }
+
     /// Functions around compiling SQL statments for this database's
     /// SQL dialect when using the QueryBuilder or Rune.
     public var grammar: SQLGrammar
@@ -131,4 +134,12 @@ public final class Database: Service {
             }
         }
     }
+}
+
+public struct DatabaseType: Equatable {
+    public let name: String
+
+    public static let sqlite = DatabaseType(name: "SQLite")
+    public static let postgres = DatabaseType(name: "PostgreSQL")
+    public static let mysql = DatabaseType(name: "MySQL")
 }

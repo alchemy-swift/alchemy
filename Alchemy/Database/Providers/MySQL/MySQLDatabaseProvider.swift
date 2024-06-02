@@ -4,6 +4,8 @@ import MySQLNIO
 @_implementationOnly import NIOPosix // for inet_pton()
 
 public final class MySQLDatabaseProvider: DatabaseProvider {
+    public var type: DatabaseType { .mysql }
+
     /// The connection pool from which to make connections to the
     /// database with.
     public let pool: EventLoopGroupConnectionPool<MySQLConfiguration>
@@ -44,6 +46,8 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
 }
 
 extension MySQLConnection: DatabaseProvider, ConnectionPoolItem {
+    public var type: DatabaseType { .mysql }
+
     @discardableResult
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let binds = parameters.map(MySQLData.init)

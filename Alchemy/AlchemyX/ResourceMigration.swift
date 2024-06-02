@@ -128,19 +128,24 @@ extension CreateColumnBuilder {
 
 extension Database {
     fileprivate func schema(for table: String) async throws -> OrderedDictionary<String, SQLiteType> {
-        let rows = try await raw("PRAGMA table_info(\(table))")
-        return OrderedDictionary(
-            try rows.map {
-                let name = try $0.require("name").string()
-                let typeString = try $0.require("type").string()
-                guard let type = SQLiteType.parse(typeString) else {
-                    throw DatabaseError("Unable to decode SQLite type \(typeString)")
-                }
+        switch type {
+        case .sqlite:
+            let rows = try await raw("PRAGMA table_info(\(table))")
+            return OrderedDictionary(
+                try rows.map {
+                    let name = try $0.require("name").string()
+                    let typeString = try $0.require("type").string()
+                    guard let type = SQLiteType.parse(typeString) else {
+                        throw DatabaseError("Unable to decode SQLite type \(typeString)")
+                    }
 
-                return (name, type)
-            },
-            uniquingKeysWith: { a, _ in a }
-        )
+                    return (name, type)
+                },
+                uniquingKeysWith: { a, _ in a }
+            )
+        default:
+            preconditionFailure("pulling schemas isn't supported on \(type.name) yet")
+        }
     }
 
     enum SQLiteType: String {
