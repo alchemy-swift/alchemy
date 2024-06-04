@@ -118,6 +118,7 @@ private struct ResourceController<R: Resource>: Controller
 extension Query {
     fileprivate func filter(_ filter: QueryParameters.Filter, keyMapping: KeyMapping) -> Self {
         let op: SQLWhere.Operator = switch filter.op {
+        case .contains: .like
         case .equals: .equals
         case .greaterThan: .greaterThan
         case .greaterThanEquals: .greaterThanOrEqualTo
@@ -127,7 +128,8 @@ extension Query {
         }
 
         let field = keyMapping.encode(filter.field)
-        return `where`(field, op, filter.value)
+        let value = filter.op == .contains ? "%\(filter.value)%" : filter.value
+        return `where`(field, op, value)
     }
 
     fileprivate func sort(_ sort: QueryParameters.Sort, keyMapping: KeyMapping) -> Self {

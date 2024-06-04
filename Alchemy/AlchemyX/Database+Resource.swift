@@ -11,7 +11,7 @@ extension Database {
             // add new and drop old keys
             let columns = OrderedSet(try await columns(of: table))
             let adds = resourceSchema.keys.subtracting(columns)
-            let drops = columns.subtracting(resourceSchema.keys)
+            let drops = type == .sqlite ? [] : columns.subtracting(resourceSchema.keys)
 
             guard !adds.isEmpty || !drops.isEmpty else {
                 Log.info("Resource '\(resource)' is up to date.".green)

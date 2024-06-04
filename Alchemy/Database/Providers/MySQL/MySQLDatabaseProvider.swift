@@ -1,7 +1,6 @@
 import AsyncKit
 import NIOSSL
 import MySQLNIO
-@_implementationOnly import NIOPosix // for inet_pton()
 
 public final class MySQLDatabaseProvider: DatabaseProvider {
     public var type: DatabaseType { .mysql }
