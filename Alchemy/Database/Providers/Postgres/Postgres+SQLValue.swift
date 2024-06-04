@@ -56,7 +56,7 @@ extension PostgresCell: SQLValueConvertible {
             return (try? .int(decode(Int.self))) ?? .null
         case .bool:
             return (try? .bool(decode(Bool.self))) ?? .null
-        case .varchar, .text:
+        case .varchar, .text, .name:
             return (try? .string(decode(String.self))) ?? .null
         case .date, .timestamptz, .timestamp:
             return (try? .date(decode(Date.self))) ?? .null
