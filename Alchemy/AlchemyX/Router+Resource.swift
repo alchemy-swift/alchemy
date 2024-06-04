@@ -1,6 +1,27 @@
 import AlchemyX
 import Pluralize
 
+extension Application {
+    @discardableResult
+    public func useResource<R: Resource>(
+        _ type: R.Type,
+        db: Database = DB,
+        table: String = "\(R.self)".lowercased().pluralized,
+        updateTable: Bool = false
+    ) -> Self where R.Identifier: SQLValueConvertible & LosslessStringConvertible {
+        use(ResourceController<R>(db: db, tableName: table))
+        if updateTable {
+            Lifecycle.register(
+                label: "Migrate_\(R.self)",
+                start: .async { try await db.updateSchema(R.self) },
+                shutdown: .none
+            )
+        }
+
+        return self
+    }
+}
+
 extension Router {
     @discardableResult
     public func useResource<R: Resource>(

@@ -35,3 +35,9 @@ extension String {
         }
     }
 }
+
+extension Collection<String> {
+    var commaJoined: String {
+        joined(separator: ", ")
+    }
+}

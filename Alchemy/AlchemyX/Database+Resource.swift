@@ -1,27 +1,32 @@
 import AlchemyX
 import Collections
 
-public struct ResourceMigration<R: Resource>: Migration {
-    public var name: String {
-        let type = KeyMapping.snakeCase.encode("\(R.self)")
-        return "resource_migration_\(type)" + "_\(Int(Date().timeIntervalSince1970))"
-    }
-
-    public init() {}
-
-    public func up(db: Database) async throws {
-        let table = db.keyMapping.encode(R.table)
-        let resourceSchema = R.schema(keyMapping: db.keyMapping)
-        if try await db.hasTable(table) {
+extension Database {
+    /// Adds or alters a database table to match the schema of the Resource.
+    func updateSchema(_ resource: (some Resource).Type) async throws {
+        let table = keyMapping.encode(resource.table)
+        let resourceSchema = resource.schema(keyMapping: keyMapping)
+        if try await hasTable(table) {
 
             // add new and drop old keys
-            let columns = OrderedSet(try await db.columns(of: table))
+            let columns = OrderedSet(try await columns(of: table))
             let adds = resourceSchema.keys.subtracting(columns)
             let drops = columns.subtracting(resourceSchema.keys)
 
-            Log.info("Adding \(adds) and dropping \(drops) from Resource \(R.self)")
+            guard !adds.isEmpty || !drops.isEmpty else {
+                Log.info("Resource '\(resource)' is up to date.".green)
+                return
+            }
 
-            try await db.alterTable(table) {
+            if !adds.isEmpty {
+                Log.info("Adding \(adds.commaJoined) to resource '\(resource)'...")
+            }
+
+            if !drops.isEmpty {
+                Log.info("Dropping \(drops.commaJoined) from '\(resource)'...")
+            }
+
+            try await alterTable(table) {
                 for add in adds {
                     if let field = resourceSchema[add] {
                         $0.column(add, field: field)
@@ -37,16 +42,12 @@ public struct ResourceMigration<R: Resource>: Migration {
             Log.info("Creating table \(table)")
 
             // create the table from scratch
-            try await db.createTable(table) {
+            try await createTable(table) {
                 for (column, field) in resourceSchema {
                     $0.column(column, field: field)
                 }
             }
         }
-    }
-
-    public func down(db: Database) async throws {
-        // ignore
     }
 }
 

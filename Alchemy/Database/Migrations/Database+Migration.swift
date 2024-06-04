@@ -37,7 +37,6 @@ extension Database {
     /// Applies all outstanding migrations to the database in a single
     /// batch. Migrations are read from `database.migrations`.
     public func migrate() async throws {
-        Log.info("Running migrations.")
         let applied = try await getAppliedMigrations().map(\.name)
         let toApply = migrations.filter { !applied.contains($0.name) }
         try await migrate(toApply)
@@ -65,6 +64,7 @@ extension Database {
             return
         }
 
+        Log.info("Running migrations.")
         let lastBatch = try await getLastBatch()
         for m in migrations {
             let start = Date()
