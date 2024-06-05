@@ -50,7 +50,7 @@ public protocol BasicAuthable: Model {
     ///     Technically doesn't need to be a hashed value if
     ///     `passwordHashKeyString` points to an unhashed value, but
     ///     that wouldn't be very secure, would it?
-    static func verify(password: String, passwordHash: String) throws -> Bool
+    static func verify(password: String, passwordHash: String) async throws -> Bool
 }
 
 extension BasicAuthable {
@@ -67,8 +67,8 @@ extension BasicAuthable {
     ///     Rune model.
     /// - Returns: A `Bool` indicating if `password` matched
     ///   `passwordHash`.
-    public static func verify(password: String, passwordHash: String) throws -> Bool {
-        try Hash.verify(password, hash: passwordHash)
+    public static func verify(password: String, passwordHash: String) async throws -> Bool {
+        try await Hash.verify(password, hash: passwordHash)
     }
     
     /// A `Middleware` configured to validate the
@@ -106,7 +106,7 @@ extension BasicAuthable {
             throw DatabaseError("Missing column \(passwordKeyString) on row of type \(name(of: Self.self))")
         }
         
-        guard try verify(password: password, passwordHash: passwordHash) else {
+        guard try await verify(password: password, passwordHash: passwordHash) else {
             throw error
         }
         

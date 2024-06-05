@@ -9,12 +9,22 @@ extension Router {
         action: @escaping (RouterRequest) async throws -> RouterResponse
     ) {
         let method = HTTPMethod(rawValue: method)
-        on(method, at: path) {
-            let req = $0.routerRequest()
-            let res = try await action(req)
-            return res.response()
+        on(method, at: path) { req in
+            try await Request.$current
+                .withValue(req) {
+                    try await action(req.routerRequest())
+                }
+                .response()
         }
     }
+}
+
+extension Request {
+    /// The current request. This can only be accessed inside of a route
+    /// handler.
+    @TaskLocal static var current: Request = {
+        preconditionFailure("`Request.current` can only be accessed inside of a route handler task")
+    }()
 }
 
 extension RouterResponse {

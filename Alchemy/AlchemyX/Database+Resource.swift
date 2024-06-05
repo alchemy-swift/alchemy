@@ -7,8 +7,6 @@ extension Database {
         let table = keyMapping.encode(resource.table)
         let resourceSchema = resource.schema(keyMapping: keyMapping)
         if try await hasTable(table) {
-
-            // add new and drop old keys
             let columns = OrderedSet(try await columns(of: table))
             let adds = resourceSchema.keys.subtracting(columns)
             let drops = type == .sqlite ? [] : columns.subtracting(resourceSchema.keys)
@@ -38,10 +36,7 @@ extension Database {
                 }
             }
         } else {
-
             Log.info("Creating table \(table)")
-
-            // create the table from scratch
             try await createTable(table) {
                 for (column, field) in resourceSchema {
                     $0.column(column, field: field)
@@ -58,9 +53,8 @@ extension Resource {
 
     fileprivate static func schema(keyMapping: KeyMapping) -> OrderedDictionary<String, ResourceField> {
         OrderedDictionary(
-            fields.map { _, field in
-                (keyMapping.encode(field.name), field)
-            },
+            (fields.values + [.userId])
+                .map { (keyMapping.encode($0.name), $0) },
             uniquingKeysWith: { a, _ in a }
         )
     }
@@ -90,6 +84,10 @@ extension ResourceField {
 
     fileprivate var isOptional: Bool {
         (type as? AnyOptional.Type) != nil
+    }
+
+    fileprivate static var userId: ResourceField {
+        .init("userId", type: UUID.self)
     }
 }
 

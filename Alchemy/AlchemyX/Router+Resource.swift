@@ -45,6 +45,7 @@ private struct ResourceController<R: Resource>: Controller
 
     public func route(_ router: Router) {
         router
+            .use(Token.tokenAuthMiddleware())
             .post(R.path + "/create", use: create)
             .post(R.path, use: getAll)
             .get(R.path + "/:id", use: getOne)
@@ -64,7 +65,10 @@ private struct ResourceController<R: Resource>: Controller
             }
         }
 
-        return try await query.get().decodeEach(keyMapping: db.keyMapping)
+        return try await query
+            .ownedBy(req.user)
+            .get()
+            .decodeEach(keyMapping: db.keyMapping)
     }
 
     private func getOne(req: Request) async throws -> R {
@@ -78,7 +82,11 @@ private struct ResourceController<R: Resource>: Controller
 
     private func create(req: Request) async throws -> R {
         let resource = try req.decode(R.self)
-        return try await table.insertReturn(resource).decode(keyMapping: db.keyMapping)
+        var fields = try resource.sqlFields()
+        fields["user_id"] = try SQLValue.uuid(req.user.id())
+        return try await table
+            .insertReturn(fields)
+            .decode(keyMapping: db.keyMapping)
     }
 
     private func update(req: Request) async throws -> R {
@@ -110,8 +118,8 @@ private struct ResourceController<R: Resource>: Controller
         try await model(id).delete()
     }
 
-    private func model(_ id: R.Identifier?) -> Query<SQLRow> {
-        table.where("id" == id)
+    private func model(_ id: R.Identifier?) throws -> Query<SQLRow> {
+        try table.where("id" == id).ownedBy(req.user)
     }
 }
 
@@ -135,5 +143,16 @@ extension Query {
     fileprivate func sort(_ sort: QueryParameters.Sort, keyMapping: KeyMapping) -> Self {
         let field = keyMapping.encode(sort.field)
         return orderBy(field, direction: sort.ascending ? .asc : .desc)
+    }
+}
+
+extension Request {
+    fileprivate var user: User { get throws { try get() } }
+}
+
+
+extension Query {
+    fileprivate func ownedBy(_ user: User) throws -> Self {
+        return `where`("user_id" == user.id())
     }
 }
