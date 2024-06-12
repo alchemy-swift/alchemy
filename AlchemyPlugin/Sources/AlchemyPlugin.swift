@@ -8,6 +8,7 @@ struct AlchemyPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         JobMacro.self,
         ModelMacro.self,
+        ApplicationMacro.self,
     ]
 }
 
