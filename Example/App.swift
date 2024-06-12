@@ -3,10 +3,7 @@ import Papyrus
 
 @Application
 struct App {
-    func boot() throws {
-        addGeneratedRoutes()
-    }
-    
+
     @GET("/200")
     func success() {
         //
