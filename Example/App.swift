@@ -1,16 +1,26 @@
 import Alchemy
+import Papyrus
 
 @Application
 struct App {
     func boot() throws {
-        get("/200", use: get200)
-        get("/400", use: get400)
-        get("/500", use: get500)
+        addGeneratedRoutes()
     }
     
-    func get200(req: Request) {}
-    func get400(req: Request) throws { throw HTTPError(.badRequest) }
-    func get500(req: Request) throws { throw HTTPError(.internalServerError) }
+    @GET("/200")
+    func success() {
+        //
+    }
+
+    @GET("/400")
+    func badRequest() throws {
+        throw HTTPError(.badRequest)
+    }
+
+    @GET("/500")
+    func internalServerError() async throws {
+        throw HTTPError(.internalServerError)
+    }
 
     @Job
     static func expensive() async throws {

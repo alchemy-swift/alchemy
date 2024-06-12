@@ -58,15 +58,15 @@ struct JobMacro: PeerMacro {
 }
 
 extension FunctionDeclSyntax {
-    fileprivate var isStatic: Bool {
+    var isStatic: Bool {
         modifiers.map(\.name.text).contains("static")
     }
 
-    fileprivate var isAsync: Bool {
+    var isAsync: Bool {
         signature.effectSpecifiers?.asyncSpecifier != nil
     }
 
-    fileprivate var isThrows: Bool {
+    var isThrows: Bool {
         signature.effectSpecifiers?.throwsSpecifier != nil
     }
 }
