@@ -7,21 +7,66 @@ struct JobMacro: PeerMacro {
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        guard let name = declaration.as(FunctionDeclSyntax.self)?.name.text else {
-            fatalError("function only")
+        guard 
+            let function = declaration.as(FunctionDeclSyntax.self),
+            function.isStatic
+        else {
+            throw AlchemyMacroError("@Job can only be applied to static functions")
         }
+
+        let name = function.name.text
+        let effects = [
+            function.isAsync ? "async" : nil,
+            function.isThrows ? "throws" : nil,
+        ]
+        .compactMap { $0 }
+
+        let effectsString = 
+            if effects.isEmpty {
+                ""
+            } else {
+                " \(effects.joined(separator: " "))"
+            }
 
         return [
             Declaration("struct \(name.capitalizeFirst)Job: Job, Codable") {
-                Declaration("func handle(context: Context) async throws") {
-                    "print(\"hello from job\")"
+                Declaration("func handle(context: Context) \(effectsString)") {
+                    let name = function.name.text
+                    let expressions = [
+                        function.isThrows ? "try" : nil,
+                        function.isAsync ? "await" : nil,
+                    ]
+                    .compactMap { $0 }
+
+                    let expressionsString =
+                        if expressions.isEmpty {
+                            ""
+                        } else {
+                            "\(expressions.joined(separator: " ")) "
+                        }
+
+                    "\(expressionsString)\(name)()"
                 }
             },
 
-            Declaration("func $\(name)() async throws") {
+            Declaration("static func $\(name)() async throws") {
                 "try await \(name.capitalizeFirst)Job().dispatch()"
             },
         ]
         .map { $0.declSyntax() }
+    }
+}
+
+extension FunctionDeclSyntax {
+    fileprivate var isStatic: Bool {
+        modifiers.map(\.name.text).contains("static")
+    }
+
+    fileprivate var isAsync: Bool {
+        signature.effectSpecifiers?.asyncSpecifier != nil
+    }
+
+    fileprivate var isThrows: Bool {
+        signature.effectSpecifiers?.throwsSpecifier != nil
     }
 }

@@ -53,8 +53,8 @@ struct App: Application {
     func get500(req: Request) throws { throw HTTPError(.internalServerError) }
 
     @Job
-    func expensive() {
-
+    static func expensive() async throws {
+        print("Hello")
     }
 }
 

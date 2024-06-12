@@ -4,3 +4,9 @@ extension String {
         prefix(1).capitalized + dropFirst()
     }
 }
+
+extension Collection {
+    var nilIfEmpty: Self? {
+        isEmpty ? self : nil
+    }
+}
