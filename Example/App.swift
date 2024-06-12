@@ -19,8 +19,13 @@ struct App {
         throw HTTPError(.internalServerError)
     }
 
-    @Job
-    static func expensive() async throws {
+    @GET("/job")
+    func job() async throws {
+        try await App.$expensive(one: "", two: 1)
+    }
+
+    @Job 
+    static func expensive(one: String, two: Int) async throws {
         print("Hello")
     }
 }

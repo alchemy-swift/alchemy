@@ -15,42 +15,27 @@ struct JobMacro: PeerMacro {
         }
 
         let name = function.name.text
-        let effects = [
-            function.isAsync ? "async" : nil,
-            function.isThrows ? "throws" : nil,
-        ]
-        .compactMap { $0 }
-
-        let effectsString = 
-            if effects.isEmpty {
-                ""
-            } else {
-                " \(effects.joined(separator: " "))"
-            }
-
         return [
             Declaration("struct \(name.capitalizeFirst)Job: Job, Codable") {
-                Declaration("func handle(context: Context) \(effectsString)") {
+
+                for parameter in function.parameters {
+                    "let \(parameter.name): \(parameter.type)"
+                }
+
+                Declaration("func handle(context: Context) async throws") {
                     let name = function.name.text
-                    let expressions = [
-                        function.isThrows ? "try" : nil,
-                        function.isAsync ? "await" : nil,
-                    ]
-                    .compactMap { $0 }
-
-                    let expressionsString =
-                        if expressions.isEmpty {
-                            ""
-                        } else {
-                            "\(expressions.joined(separator: " ")) "
+                    let prefix = function.callPrefixes.isEmpty ? "" : function.callPrefixes.joined(separator: " ") + " "
+                    """
+                    try await JobContext.$current
+                        .withValue(context) {
+                            \(prefix)\(name)(\(function.jobPassthroughParameterSyntax))
                         }
-
-                    "\(expressionsString)\(name)()"
+                    """
                 }
             },
 
-            Declaration("static func $\(name)() async throws") {
-                "try await \(name.capitalizeFirst)Job().dispatch()"
+            Declaration("static func $\(name)(\(function.jobParametersSignature)) async throws") {
+                "try await \(name.capitalizeFirst)Job(\(function.jobPassthroughParameterSyntax)).dispatch()"
             },
         ]
         .map { $0.declSyntax() }
@@ -68,5 +53,33 @@ extension FunctionDeclSyntax {
 
     var isThrows: Bool {
         signature.effectSpecifiers?.throwsSpecifier != nil
+    }
+
+    var jobParametersSignature: String {
+        parameters.map {
+            let name = [$0.label, $0.name]
+                .compactMap { $0 }
+                .joined(separator: " ")
+            return "\(name): \($0.type)"
+        }
+        .joined(separator: ", ")
+    }
+
+    var jobPassthroughParameterSyntax: String {
+        parameters.map {
+            let name = [$0.label, $0.name]
+                .compactMap { $0 }
+                .joined(separator: " ")
+            return "\(name): \($0.name)"
+        }
+        .joined(separator: ", ")
+    }
+
+    var callPrefixes: [String] {
+        [
+            isThrows ? "try" : nil,
+            isAsync ? "await" : nil,
+        ]
+        .compactMap { $0 }
     }
 }

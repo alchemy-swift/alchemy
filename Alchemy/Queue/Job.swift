@@ -68,6 +68,9 @@ public enum JobRecoveryStrategy: Equatable, Codable {
 
 /// The context this job is running in.
 public struct JobContext {
+    /// The current context. This will be nil outside of a Job handler.
+    @TaskLocal public static var current: JobContext? = nil
+
     /// The queue this job was queued on.
     public let queue: Queue
     /// The channel this job was queued on.
