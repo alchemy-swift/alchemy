@@ -20,8 +20,8 @@ extension Application {
     /// Use HTTP/2 when serving, over TLS with the given tls config.
     ///
     /// - Parameter tlsConfig: A raw NIO `TLSConfiguration` to use.
-    public func useHTTP2(tlsConfig: TLSConfiguration, idleReadTimeout: TimeAmount = .seconds(20)) throws {
-        try server.addHTTP2Upgrade(tlsConfiguration: tlsConfig, idleReadTimeout: idleReadTimeout)
+    public func useHTTP2(tlsConfig: TLSConfiguration) throws {
+        try server.addHTTP2Upgrade(tlsConfiguration: tlsConfig)
     }
 
     // MARK: HTTPS

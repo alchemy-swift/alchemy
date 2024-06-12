@@ -51,6 +51,11 @@ struct App: Application {
     func get200(req: Request) {}
     func get400(req: Request) throws { throw HTTPError(.badRequest) }
     func get500(req: Request) throws { throw HTTPError(.internalServerError) }
+
+    @Job
+    func expensive() {
+
+    }
 }
 
 /*
