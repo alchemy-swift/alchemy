@@ -89,13 +89,21 @@ public final class Content: Buildable {
 
     public enum State {
         case value(Value)
-        case error(Error)
+        case error(ContentError)
     }
 
-    public enum Operator {
+    public enum Operator: CustomStringConvertible {
         case field(String)
         case index(Int)
         case flatten
+
+        public var description: String {
+            switch self {
+            case .field(let field): field
+            case .index(let index): "\(index)"
+            case .flatten: "*"
+            }
+        }
     }
 
     /// The state of this node; either an error or a value.
@@ -132,7 +140,7 @@ public final class Content: Buildable {
         }
     }
 
-    public var error: Error? {
+    public var error: ContentError? {
         guard case .error(let error) = state else { return nil }
         return error
     }
@@ -147,13 +155,22 @@ public final class Content: Buildable {
         self.path = path
     }
     
-    public init(error: Error, path: [Operator] = []) {
+    public init(error: ContentError, path: [Operator] = []) {
         self.state = .error(error)
         self.path = path
     }
 
     public func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
-        try D(from: GenericDecoder(delegate: self))
+        do {
+            return try D(from: GenericDecoder(delegate: self))
+        } catch {
+            if path.isEmpty {
+                throw ValidationError("Unable to decode \(D.self) from body.")
+            } else {
+                let pathString = path.map(\.description).joined(separator: ".")
+                throw ValidationError("Unable to decode \(D.self) from field \(pathString).")
+            }
+        }
     }
 
     private func unwrap<T>(_ value: T?) throws -> T {

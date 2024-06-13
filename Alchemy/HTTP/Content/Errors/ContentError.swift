@@ -1,4 +1,4 @@
-enum ContentError: Error {
+public enum ContentError: Error {
     case unknownContentType(ContentType?)
     case emptyBody
     case cantFlatten
@@ -8,4 +8,5 @@ enum ContentError: Error {
     case wasNull
     case typeMismatch
     case notSupported(String)
+    case misc(Error)
 }

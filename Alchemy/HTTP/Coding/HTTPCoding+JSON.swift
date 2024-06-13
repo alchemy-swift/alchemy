@@ -22,7 +22,7 @@ extension JSONDecoder: HTTPDecoder {
             let topLevel = try JSONSerialization.jsonObject(with: buffer, options: .fragmentsAllowed)
             return Content(value: parse(val: topLevel))
         } catch {
-            return Content(error: error)
+            return Content(error: .misc(error))
         }
     }
     

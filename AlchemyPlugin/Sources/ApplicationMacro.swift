@@ -43,9 +43,7 @@ struct ApplicationMacro: PeerMacro, ExtensionMacro {
 
         return try [
             Declaration("@main extension \(`struct`.name)") {},
-            Declaration("extension \(`struct`.name): Application") {
-
-            },
+            Declaration("extension \(`struct`.name): Application") {},
             Declaration("extension \(`struct`.name): RoutesGenerator") {
                 routes.generatedRoutesFunction()
             },
@@ -67,14 +65,18 @@ extension Routes {
 extension Routes.Route {
     func handlerExpression() -> Declaration {
         Declaration(method.lowercased() + path.inQuotes.inParentheses, "req") {
-            let arguments = parameters.map(\.argumentString).joined(separator: ", ").inParentheses
+            let arguments = parameters.map(\.argumentString).joined(separator: ",\n    ")
             let effectsExpressions = [
                 isThrows ? "try" : nil,
                 isAsync ? "await" : nil,
             ].compactMap { $0 }
 
             let effectsExpressionString = effectsExpressions.isEmpty ? "" : effectsExpressions.joined(separator: " ") + " "
-            "\(effectsExpressionString)\(name)\(arguments)"
+            """
+            return \(effectsExpressionString)\(name)(
+                \(arguments)
+            )
+            """
         }
     }
 }
@@ -91,15 +93,21 @@ extension EndpointParameter {
         let label = argumentLabel.map { "\($0): " } ?? ""
 
         guard type != "Request" else {
-            return label + name
+            return label + "req"
         }
 
-        let prefix = switch kind {
-        case .field: "body."
-        case .query: "query."
-        default:     ""
+        switch kind {
+        case .field: 
+            return label + "try req.content.\(name).decode(\(type).self)"
+        case .query:
+            return label + "try req.requireQuery(\(name.inQuotes), as: \(type).self)"
+        case .path:
+            return label + "try req.requireParameter(\(name.inQuotes), as: \(type).self)"
+        case .header:
+            return label + "try req.requireHeader(\(name.inQuotes))"
+        case .body:
+            return label + "try req.content.decode(\(type).self)"
         }
-        return label + prefix + name
     }
 }
 

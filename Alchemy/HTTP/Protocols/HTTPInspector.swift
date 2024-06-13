@@ -14,6 +14,14 @@ extension HTTPInspector {
         headers.first(name: name)
     }
 
+    public func requireHeader(_ name: String) throws -> String {
+        guard let header = header(name) else {
+            throw ValidationError("Missing header \(name).")
+        }
+
+        return header
+    }
+
     // MARK: Body
 
     /// The Foundation.Data of the body

@@ -237,7 +237,7 @@ extension FunctionParameterSyntax {
     }
 
     var typeName: String {
-        trimmed.type.description
+        trimmed.type.trimmedDescription
     }
 }
 

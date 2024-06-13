@@ -4,19 +4,25 @@ import Papyrus
 @Application
 struct App {
 
-    @GET("/200")
-    func success() {
-        //
+    @GET("/query")
+    func query(name: String) -> String {
+        "Hi, \(name)!"
     }
 
-    @GET("/400")
-    func badRequest() throws {
-        throw HTTPError(.badRequest)
+    @POST("/foo/:id")
+    func foo(
+        id: Int,
+        one: Header<String>,
+        two: Int,
+        three: Bool,
+        request: Request
+    ) async throws -> String {
+        "Hello"
     }
 
-    @GET("/500")
-    func internalServerError() async throws {
-        throw HTTPError(.internalServerError)
+    @POST("/body")
+    func body(thing: Body<String>) -> String {
+        thing
     }
 
     @GET("/job")
@@ -26,6 +32,17 @@ struct App {
 
     @Job 
     static func expensive(one: String, two: Int) async throws {
-        print("Hello")
+        print("Hello \(JobContext.current!.jobData.id)")
+    }
+}
+
+extension Application {
+    var queues: Queues {
+        Queues(
+            default: "memory",
+            queues: [
+                "memory": .memory,
+            ]
+        )
     }
 }

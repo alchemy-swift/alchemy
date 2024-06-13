@@ -24,7 +24,7 @@ extension URLEncodedFormDecoder: HTTPDecoder {
             let topLevel = try decode(URLEncodedNode.self, from: buffer.string)
             return Content(value: parse(value: topLevel))
         } catch {
-            return Content(error: error)
+            return Content(error: .misc(error))
         }
     }
     

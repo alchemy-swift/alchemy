@@ -172,11 +172,11 @@ public final class Request: RequestInspector {
     /// ```
     public func requireParameter<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) throws -> L {
         guard let parameterString: String = parameters.first(where: { $0.key == key })?.value else {
-            throw ValidationError("expected parameter \(key)")
+            throw ValidationError("Missing path parameter \(key).")
         }
         
         guard let converted = L(parameterString) else {
-            throw ValidationError("parameter \(key) was \(parameterString) which couldn't be converted to \(name(of: L.self))")
+            throw ValidationError("Invalid path parameter \(key). Unable to convert \(parameterString) to \(L.self).")
         }
         
         return converted
