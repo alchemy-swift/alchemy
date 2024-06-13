@@ -1,10 +1,9 @@
-@attached(peer, names: arbitrary)
+@attached(peer, names: prefixed(`$`))
 public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 
 @attached(member, names: arbitrary)
 public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro")
 
-@attached(peer)
 @attached(
     extension,
     conformances:
@@ -15,6 +14,12 @@ public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro
 )
 public macro Application() = #externalMacro(module: "AlchemyPlugin", type: "ApplicationMacro")
 
-public protocol RoutesGenerator {
-    func addGeneratedRoutes()
-}
+@attached(
+    extension,
+    conformances:
+        Controller,
+        RoutesGenerator,
+    names:
+        named(route)
+)
+public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "ControllerMacro")

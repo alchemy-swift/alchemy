@@ -4,6 +4,10 @@ import Papyrus
 @Application
 struct App {
 
+    func boot() throws {
+        use(SomeController())
+    }
+
     @GET("/query")
     func query(name: String) -> String {
         "Hi, \(name)!"
@@ -34,6 +38,12 @@ struct App {
     static func expensive(one: String, two: Int) async throws {
         print("Hello \(JobContext.current!.jobData.id)")
     }
+}
+
+@Controller
+struct SomeController {
+    @GET("/test")
+    func test() -> String { "test" }
 }
 
 extension Application {

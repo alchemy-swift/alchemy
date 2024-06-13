@@ -9,6 +9,7 @@ struct AlchemyPlugin: CompilerPlugin {
         JobMacro.self,
         ModelMacro.self,
         ApplicationMacro.self,
+        ControllerMacro.self,
     ]
 }
 
