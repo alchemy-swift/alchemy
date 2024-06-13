@@ -16,7 +16,7 @@ struct JobMacro: PeerMacro {
 
         let name = function.name.text
         return [
-            Declaration("struct \(name.capitalizeFirst)Job: Job, Codable") {
+            Declaration("struct $\(name): Job, Codable") {
 
                 for parameter in function.parameters {
                     "let \(parameter.name): \(parameter.type)"
@@ -32,10 +32,6 @@ struct JobMacro: PeerMacro {
                         }
                     """
                 }
-            },
-
-            Declaration("static func $\(name)(\(function.jobParametersSignature)) async throws") {
-                "try await \(name.capitalizeFirst)Job(\(function.jobPassthroughParameterSyntax)).dispatch()"
             },
         ]
         .map { $0.declSyntax() }

@@ -27,10 +27,10 @@ struct App {
 
     @GET("/job")
     func job() async throws {
-        try await App.$expensive(one: "", two: 1)
+        try await $expensive(one: "", two: 1).dispatch()
     }
 
-    @Job 
+    @Job
     static func expensive(one: String, two: Int) async throws {
         print("Hello \(JobContext.current!.jobData.id)")
     }
