@@ -126,11 +126,15 @@ struct EndpointParameter {
     let name: String
     let type: String
     let kind: Kind
+    let validation: String?
 
     init(_ parameter: FunctionParameterSyntax, httpMethod: String, pathParameters: [String]) {
         self.label = parameter.label
         self.name = parameter.name
         self.type = parameter.typeName
+        self.validation = parameter.parameterAttributes
+            .first { $0.name == "Validate" }
+            .map { $0.trimmedDescription }
         self.kind =
             if type.hasPrefix("Path<") {
                 .path
@@ -238,6 +242,10 @@ extension FunctionParameterSyntax {
 
     var typeName: String {
         trimmed.type.trimmedDescription
+    }
+
+    var parameterAttributes: [AttributeSyntax] {
+        attributes.compactMap { $0.as(AttributeSyntax.self) }
     }
 }
 

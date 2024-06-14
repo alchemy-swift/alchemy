@@ -42,42 +42,57 @@ extension Routes {
 extension Routes.Route {
     func handlerExpression(prefix: String = "") -> Declaration {
         Declaration(prefix + method.lowercased() + path.inQuotes.inParentheses, "req") {
-            let arguments = parameters.map(\.argumentString).joined(separator: ",\n    ")
-            let effectsExpressions = [
-                isThrows ? "try" : nil,
-                isAsync ? "await" : nil,
-            ].compactMap { $0 }
+            for parameter in parameters {
+                if let validation = parameter.validation {
+                    "\(validation) var \(parameter.name) = \(parameter.parseExpression)"
+                    "try await $\(parameter.name).validate()"
+                    ""
+                } else {
+                    "let \(parameter.name) = \(parameter.parseExpression)"
+                }
+            }
 
-            let effectsExpressionString = effectsExpressions.isEmpty ? "" : effectsExpressions.joined(separator: " ") + " "
-            """
-            return \(effectsExpressionString)\(name)(
-                \(arguments)
-            )
-            """
+            let arguments = parameters
+                .map { $0.argumentLabel + $0.name }
+                .joined(separator: ", ")
+
+
+            "return " + effectsExpression + name + arguments.inParentheses
         }
+    }
+
+    private var effectsExpression: String {
+        let effectsExpressions = [
+            isThrows ? "try" : nil,
+            isAsync ? "await" : nil,
+        ].compactMap { $0 }
+
+        return effectsExpressions.isEmpty ? "" : effectsExpressions.joined(separator: " ") + " "
     }
 }
 
 extension EndpointParameter {
-    var argumentString: String {
+    var argumentLabel: String {
         let argumentLabel = label == "_" ? nil : label ?? name
-        let label = argumentLabel.map { "\($0): " } ?? ""
+        return argumentLabel.map { "\($0): " } ?? ""
+    }
 
+    var parseExpression: String {
         guard type != "Request" else {
-            return label + "req"
+            return "req"
         }
 
         switch kind {
         case .field: 
-            return label + "try req.content.\(name).decode(\(type).self)"
+            return "try req.content.\(name).decode(\(type).self)"
         case .query:
-            return label + "try req.requireQuery(\(name.inQuotes), as: \(type).self)"
+            return "try req.requireQuery(\(name.inQuotes), as: \(type).self)"
         case .path:
-            return label + "try req.requireParameter(\(name.inQuotes), as: \(type).self)"
+            return "try req.requireParameter(\(name.inQuotes), as: \(type).self)"
         case .header:
-            return label + "try req.requireHeader(\(name.inQuotes))"
+            return "try req.requireHeader(\(name.inQuotes))"
         case .body:
-            return label + "try req.content.decode(\(type).self)"
+            return "try req.content.decode(\(type).self)"
         }
     }
 }

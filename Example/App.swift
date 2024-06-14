@@ -3,7 +3,6 @@ import Papyrus
 
 @Application
 struct App {
-
     func boot() throws {
         use(SomeController())
     }
@@ -25,7 +24,9 @@ struct App {
     }
 
     @POST("/body")
-    func body(thing: Body<String>) -> String {
+    func body(
+        @Validate(.email) thing: Body<String>
+    ) -> String {
         thing
     }
 
@@ -42,8 +43,12 @@ struct App {
 
 @Controller
 struct SomeController {
-    @GET("/test")
-    func test() -> String { "test" }
+    @POST("/user")
+    func test(
+        @Validate(.email) name: String,
+        @Validate(.between(18...99)) age: Int,
+        @Validate(.password) password: String
+    ) -> String { "test" }
 }
 
 extension Application {
