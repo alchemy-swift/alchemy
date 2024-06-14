@@ -1,5 +1,15 @@
 import Alchemy
-import Papyrus
+
+/*
+ Generated Routes
+
+ 1. simple and easy to understand what's going on
+ 2. need customization (middleware, etc)
+    - would like all routing (middleware / routes) to be in the route / boot function
+    - would like to auto generate macro'd routes
+    - want some but not too many dollar signs
+
+ */
 
 @Application
 struct App {
@@ -43,7 +53,7 @@ struct App {
 
 @Controller
 struct SomeController {
-    @POST("/user")
+    @POST("/user", options: .stream)
     func test(
         @Validate(.email) name: String,
         @Validate(.between(18...99)) age: Int,

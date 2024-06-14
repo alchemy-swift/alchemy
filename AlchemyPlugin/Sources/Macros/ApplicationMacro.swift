@@ -41,7 +41,7 @@ extension Routes {
 
 extension Routes.Route {
     func handlerExpression(prefix: String = "") -> Declaration {
-        Declaration(prefix + method.lowercased() + path.inQuotes.inParentheses, "req") {
+        Declaration(prefix + method.lowercased() + routeParametersExpression, "req") {
             for parameter in parameters {
                 if let validation = parameter.validation {
                     "\(validation) var \(parameter.name) = \(parameter.parseExpression)"
@@ -59,6 +59,13 @@ extension Routes.Route {
 
             "return " + effectsExpression + name + arguments.inParentheses
         }
+    }
+
+    private var routeParametersExpression: String {
+        [path.inQuotes, options.map { "options: \($0)" }]
+            .compactMap { $0 }
+            .joined(separator: ", ")
+            .inParentheses
     }
 
     private var effectsExpression: String {

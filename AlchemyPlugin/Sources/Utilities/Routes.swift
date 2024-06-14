@@ -8,6 +8,7 @@ struct Routes {
         let method: String
         let path: String
         let pathParameters: [String]
+        let options: String?
         /// The name of the function defining this endpoint.
         let name: String
         let parameters: [EndpointParameter]
@@ -35,7 +36,7 @@ extension Routes {
     }
 
     private static func parse(_ function: FunctionDeclSyntax) throws -> Routes.Route? {
-        guard let (method, path, pathParameters) = parseMethodAndPath(function) else {
+        guard let (method, path, pathParameters, options) = parseMethodAndPath(function) else {
             return nil
         }
 
@@ -43,6 +44,7 @@ extension Routes {
             method: method,
             path: path,
             pathParameters: pathParameters,
+            options: options,
             name: function.functionName,
             parameters: try function.parameters.compactMap {
                 EndpointParameter($0, httpMethod: method, pathParameters: pathParameters)
@@ -55,8 +57,8 @@ extension Routes {
 
     private static func parseMethodAndPath(
         _ function: FunctionDeclSyntax
-    ) -> (method: String, path: String, pathParameters: [String])? {
-        var method, path: String?
+    ) -> (method: String, path: String, pathParameters: [String], options: String?)? {
+        var method, path, options: String?
         for attribute in function.functionAttributes {
             if case let .argumentList(list) = attribute.arguments {
                 let name = attribute.attributeName.trimmedDescription
@@ -64,9 +66,11 @@ extension Routes {
                 case "GET", "DELETE", "PATCH", "POST", "PUT", "OPTIONS", "HEAD", "TRACE", "CONNECT":
                     method = name
                     path = list.first?.expression.description.withoutQuotes
+                    options = list.dropFirst().first?.expression.description.withoutQuotes
                 case "HTTP":
                     method = list.first?.expression.description.withoutQuotes
                     path = list.dropFirst().first?.expression.description.withoutQuotes
+                    options = list.dropFirst().dropFirst().first?.expression.description.withoutQuotes
                 default:
                     continue
                 }
@@ -77,7 +81,7 @@ extension Routes {
             return nil
         }
 
-        return (method, path, path.papyrusPathParameters)
+        return (method, path, path.papyrusPathParameters, options)
     }
 }
 

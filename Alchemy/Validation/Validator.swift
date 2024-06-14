@@ -17,13 +17,9 @@ public struct Validator<Value>: @unchecked Sendable {
     public func validate(_ value: Value) async throws {
         guard try await isValid(value) else {
             let message = message ?? "Invalid content."
-            throw ValidationError.invalid(message)
+            throw ValidationError(message)
         }
     }
-}
-
-public enum ValidationError: Error {
-    case invalid(String)
 }
 
 extension Validator<String> {
