@@ -10,26 +10,8 @@ struct AlchemyPlugin: CompilerPlugin {
         ModelMacro.self,
         ApplicationMacro.self,
         ControllerMacro.self,
+        HTTPMethodMacro.self,
     ]
 }
 
 #endif
-
-/*
- 
- # Routes
-
- - @Routes at top level searches for REST annotated functions
-    - constructs 
-
- # Jobs
-
- # Model
-
-
-
- */
-// @Model
-// @Routes
-// @Application
-// @Controller

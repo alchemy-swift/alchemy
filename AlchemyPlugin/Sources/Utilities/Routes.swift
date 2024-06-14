@@ -31,11 +31,25 @@ extension Routes {
 
         return Routes(
             name: type.name.text,
-            routes: try type.functions.compactMap( { try parse($0) })
+            routes: try type.functions.compactMap( { try Route.parse($0) })
         )
     }
+}
 
-    private static func parse(_ function: FunctionDeclSyntax) throws -> Routes.Route? {
+extension Routes.Route {
+    var functionSignature: String {
+        let parameters = parameters.map {
+            let name = [$0.label, $0.name]
+                .compactMap { $0 }
+                .joined(separator: " ")
+            return "\(name): \($0.type)"
+        }
+
+        let returnType = responseType.map { " -> \($0)" } ?? ""
+        return parameters.joined(separator: ", ").inParentheses + " async throws" + returnType
+    }
+
+    static func parse(_ function: FunctionDeclSyntax) throws -> Routes.Route? {
         guard let (method, path, pathParameters, options) = parseMethodAndPath(function) else {
             return nil
         }
@@ -85,20 +99,6 @@ extension Routes {
     }
 }
 
-extension Routes.Route {
-    var functionSignature: String {
-        let parameters = parameters.map {
-            let name = [$0.label, $0.name]
-                .compactMap { $0 }
-                .joined(separator: " ")
-            return "\(name): \($0.type)"
-        }
-
-        let returnType = responseType.map { " -> \($0)" } ?? ""
-        return parameters.joined(separator: ", ").inParentheses + " async throws" + returnType
-    }
-}
-
 extension [EndpointParameter] {
     fileprivate func validated() throws -> [EndpointParameter] {
         let bodies = filter { $0.kind == .body }
@@ -139,27 +139,20 @@ struct EndpointParameter {
         self.validation = parameter.parameterAttributes
             .first { $0.name == "Validate" }
             .map { $0.trimmedDescription }
+
+        let attributeNames = parameter.parameterAttributes.map(\.name)
         self.kind =
-            if type.hasPrefix("Path<") {
-                .path
-            } else if type.hasPrefix("Body<") {
-                .body
-            } else if type.hasPrefix("Header<") {
-                .header
-            } else if type.hasPrefix("Field<") {
-                .field
-            } else if type.hasPrefix("Query<") {
-                .query
-            } else if pathParameters.contains(name) {
-                // if name matches a path param, infer this belongs in path
-                .path
-            } else if ["GET", "HEAD", "DELETE"].contains(httpMethod) {
-                // if method is GET, HEAD, DELETE, infer query
-                .query
-            } else {
-                // otherwise infer it's a body field
-                .field
-            }
+            if attributeNames.contains("Path") { .path }
+            else if attributeNames.contains("Body") { .body }
+            else if attributeNames.contains("Header") { .header }
+            else if attributeNames.contains("Field") { .field }
+            else if attributeNames.contains("URLQuery") { .query }
+            // if name matches a path param, infer this belongs in path
+            else if pathParameters.contains(name) { .path }
+            // if method is GET, HEAD, DELETE, infer query
+            else if ["GET", "HEAD", "DELETE"].contains(httpMethod) { .query }
+            // otherwise infer it's a body field
+            else { .field }
     }
 }
 
