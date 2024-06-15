@@ -7,7 +7,8 @@ public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "Contr
 @attached(peer, names: prefixed(`$`))
 public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 
-@attached(member, names: arbitrary)
+@attached(member, names: named(storage))
+@attached(extension, conformances: Model)
 public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro")
 
 // MARK: Route Methods

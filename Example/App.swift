@@ -30,6 +30,13 @@ struct UserController {
     }
 }
 
+@Model
+struct Todo: Codable {
+    var id: PK<Int>
+    var name: String
+    var isDone: Bool = false
+}
+
 extension App {
     var queues: Queues {
         Queues(
