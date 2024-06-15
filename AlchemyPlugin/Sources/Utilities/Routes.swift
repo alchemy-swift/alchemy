@@ -82,7 +82,7 @@ extension Routes.Route {
                     path = list.first?.expression.description.withoutQuotes
                     options = list.dropFirst().first?.expression.description.withoutQuotes
                 case "HTTP":
-                    method = list.first?.expression.description.withoutQuotes
+                    method = list.first.map { "RAW(value: \($0.expression.description))" }
                     path = list.dropFirst().first?.expression.description.withoutQuotes
                     options = list.dropFirst().dropFirst().first?.expression.description.withoutQuotes
                 default:

@@ -23,24 +23,10 @@ public struct Validator<Value>: @unchecked Sendable {
 }
 
 extension Validator<String> {
-    public static let username = Validator(validators: .profanity, .email)
-    public static let profanity = Validator { $0 != "dang" }
-
-    public static let email = Validator {
+    public static let email = Validator("Invalid email.") {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
         return emailPred.evaluate(with: $0)
-    }
-
-    public static let password = Validator {
-        $0.count > 8 &&
-        $0.rangeOfCharacter(from: .decimalDigits) != nil &&
-        $0.rangeOfCharacter(from: .alphanumerics.inverted) != nil
-    }
-
-    public static let fraud = Validator {
-        try await Task.sleep(for: .seconds(1))
-        return $0 != "fraudman101@fraud.com"
     }
 }
 

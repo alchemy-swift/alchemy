@@ -12,7 +12,7 @@ public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro
 
 // MARK: Route Methods
 
-@attached(peer, names: prefixed(`$`)) public macro HTTP(_ path: String, method: String, options: RouteOptions = []) = #externalMacro(module: "PapyrusPlugin", type: "DecoratorMacro")
+@attached(peer, names: prefixed(`$`)) public macro HTTP(_ method: String, _ path: String, options: RouteOptions = []) = #externalMacro(module: "AlchemyPlugin", type: "HTTPMethodMacro")
 @attached(peer, names: prefixed(`$`)) public macro DELETE(_ path: String, options: RouteOptions = []) = #externalMacro(module: "AlchemyPlugin", type: "HTTPMethodMacro")
 @attached(peer, names: prefixed(`$`)) public macro GET(_ path: String, options: RouteOptions = []) = #externalMacro(module: "AlchemyPlugin", type: "HTTPMethodMacro")
 @attached(peer, names: prefixed(`$`)) public macro PATCH(_ path: String, options: RouteOptions = []) = #externalMacro(module: "AlchemyPlugin", type: "HTTPMethodMacro")

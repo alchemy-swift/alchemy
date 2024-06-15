@@ -26,7 +26,7 @@ struct JobMacro: PeerMacro {
                     let name = function.name.text
                     let prefix = function.callPrefixes.isEmpty ? "" : function.callPrefixes.joined(separator: " ") + " "
                     """
-                    try await JobContext.$current
+                    \(prefix)JobContext.$current
                         .withValue(context) {
                             \(prefix)\(name)(\(function.jobPassthroughParameterSyntax))
                         }
