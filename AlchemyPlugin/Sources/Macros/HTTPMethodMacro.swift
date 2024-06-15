@@ -11,12 +11,31 @@ struct HTTPMethodMacro: PeerMacro {
             throw AlchemyMacroError("@\(node.name) can only be applied to functions")
         }
 
-        guard let route = try Routes.Route.parse(function) else {
+        guard let endpoint = try Routes.Endpoint.parse(function) else {
             throw AlchemyMacroError("Unable to parse function for @\(node.name)")
         }
 
+        return [
+            endpoint.routeDeclaration()
+        ]
+        .map { $0.declSyntax() }
+    }
+}
+
+extension Routes.Endpoint {
+    fileprivate func routeDeclaration() -> Declaration {
+        let arguments = parameters
+            .map { parameter in
+                if parameter.type == "Request" {
+                    parameter.argumentLabel + "req"
+                } else {
+                    parameter.argumentLabel + parameter.name
+                }
+            }
+            .joined(separator: ", ")
+
         var expressions: [String] = []
-        for parameter in route.parameters {
+        for parameter in parameters where parameter.type != "Request" {
             if let validation = parameter.validation {
                 expressions.append("\(validation) var \(parameter.name) = \(parameter.parseExpression)")
                 expressions.append("try await $\(parameter.name).validate()")
@@ -25,33 +44,27 @@ struct HTTPMethodMacro: PeerMacro {
             }
         }
 
-        let arguments = route.parameters
-            .map { $0.argumentLabel + $0.name }
-            .joined(separator: ", ")
+        let returnExpression = responseType != nil ? "return " : ""
+        expressions.append(returnExpression + effectsExpression + name + arguments.inParentheses)
 
-        let returnExpression = route.responseType != nil ? "return " : ""
-        expressions.append(returnExpression + route.effectsExpression + route.name + arguments.inParentheses)
-        return [
-            Declaration("var $\(route.name): Route") {
-                let options = route.options.map { "\n    options: \($0)," } ?? ""
-                let closureArgument = arguments.isEmpty ? "_" : "req"
-                let returnType = route.responseType ?? "Void"
-                """
-                Route(
-                    method: .\(route.method),
-                    path: \(route.path.inQuotes),\(options)
-                    handler: { \(closureArgument) -> \(returnType) in
-                        \(expressions.joined(separator: "\n        "))
-                    }
-                )
-                """
-            },
-        ]
-        .map { $0.declSyntax() }
+        return Declaration("var $\(name): Route") {
+            let options = options.map { "\n    options: \($0)," } ?? ""
+            let closureArgument = arguments.isEmpty ? "_" : "req"
+            let returnType = responseType ?? "Void"
+            """
+            Route(
+                method: .\(method),
+                path: \(path.inQuotes),\(options)
+                handler: { \(closureArgument) -> \(returnType) in
+                    \(expressions.joined(separator: "\n        "))
+                }
+            )
+            """
+        }
     }
 }
 
-extension Routes.Route {
+extension Routes.Endpoint {
     fileprivate var routeParametersExpression: String {
         [path.inQuotes, options.map { "options: \($0)" }]
             .compactMap { $0 }
@@ -70,12 +83,12 @@ extension Routes.Route {
 }
 
 extension EndpointParameter {
-    var argumentLabel: String {
+    fileprivate var argumentLabel: String {
         let argumentLabel = label == "_" ? nil : label ?? name
         return argumentLabel.map { "\($0): " } ?? ""
     }
 
-    var parseExpression: String {
+    fileprivate var parseExpression: String {
         guard type != "Request" else {
             return "req"
         }

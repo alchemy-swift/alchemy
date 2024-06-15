@@ -22,8 +22,6 @@ public protocol Application: Router {
     /// Boots the app's dependencies. Don't override the default for this unless
     /// you want to prevent default Alchemy services from loading.
     func bootPlugins()
-    /// Setup generated routes.
-    func bootGeneratedRoutes()
     /// Setup your application here. Called after all services are registered.
     func boot() throws
     
@@ -72,14 +70,14 @@ public extension Application {
         }
     }
 
-    func bootGeneratedRoutes() {
-        (self as? RoutesGenerator)?.addGeneratedRoutes()
-    }
-
     func boot() throws {
         //
     }
-    
+
+    func bootRouter() {
+        (self as? Controller)?.route(self)
+    }
+
     // MARK: Plugin Defaults
     
     var http: HTTPConfiguration { HTTPConfiguration() }
@@ -101,8 +99,8 @@ public extension Application {
     func run() async throws {
         do {
             bootPlugins()
-            bootGeneratedRoutes()
             try boot()
+            bootRouter()
             try await start()
         } catch {
             commander.exit(error: error)

@@ -17,10 +17,9 @@ struct ControllerMacro: ExtensionMacro {
         }
 
         let routes = try Routes.parse(declaration)
-
         return try [
             Declaration("extension \(`struct`.name.trimmedDescription): Controller") {
-                routes.controllerRouteFunction()
+                routes.routeFunction()
             },
         ]
         .map { try $0.extensionDeclSyntax() }
@@ -28,10 +27,10 @@ struct ControllerMacro: ExtensionMacro {
 }
 
 extension Routes {
-    func controllerRouteFunction() -> Declaration {
+    func routeFunction() -> Declaration {
         Declaration("func route(_ router: Router)") {
-            for route in routes {
-                "router.use($\(route.name))"
+            for endpoint in endpoints {
+                "router.use($\(endpoint.name))"
             }
         }
     }

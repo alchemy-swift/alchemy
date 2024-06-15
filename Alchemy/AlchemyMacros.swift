@@ -1,7 +1,7 @@
-@attached(extension, conformances: Application, RoutesGenerator, names: named(addGeneratedRoutes))
+@attached(extension, conformances: Application, Controller, names: named(route))
 public macro Application() = #externalMacro(module: "AlchemyPlugin", type: "ApplicationMacro")
 
-@attached(extension, conformances: Controller, RoutesGenerator, names: named(route))
+@attached(extension, conformances: Controller, names: named(route))
 public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "ControllerMacro")
 
 @attached(peer, names: prefixed(`$`))

@@ -18,22 +18,10 @@ struct ApplicationMacro: ExtensionMacro {
 
         let routes = try Routes.parse(declaration)
         return try [
-            Declaration("@main extension \(`struct`.name.trimmedDescription)") {},
-            Declaration("extension \(`struct`.name.trimmedDescription): Application") {},
-            Declaration("extension \(`struct`.name.trimmedDescription): RoutesGenerator") {
-                routes.generatedRoutesFunction()
+            Declaration("@main extension \(`struct`.name.trimmedDescription): Application, Controller") {
+                routes.routeFunction()
             },
         ]
         .map { try $0.extensionDeclSyntax() }
-    }
-}
-
-extension Routes {
-    func generatedRoutesFunction() -> Declaration {
-        Declaration("func addGeneratedRoutes()") {
-            for route in routes {
-                "use($\(route.name))"
-            }
-        }
     }
 }

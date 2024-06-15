@@ -2,7 +2,7 @@ import Foundation
 import SwiftSyntax
 
 struct Routes {
-    struct Route {
+    struct Endpoint {
         /// Attributes to be applied to this endpoint. These take precedence
         /// over attributes at the API scope.
         let method: String
@@ -20,7 +20,7 @@ struct Routes {
     /// The name of the type defining the API.
     let name: String
     /// Attributes to be applied to every endpoint of this API.
-    let routes: [Route]
+    let endpoints: [Endpoint]
 }
 
 extension Routes {
@@ -31,12 +31,12 @@ extension Routes {
 
         return Routes(
             name: type.name.text,
-            routes: try type.functions.compactMap( { try Route.parse($0) })
+            endpoints: try type.functions.compactMap( { try Endpoint.parse($0) })
         )
     }
 }
 
-extension Routes.Route {
+extension Routes.Endpoint {
     var functionSignature: String {
         let parameters = parameters.map {
             let name = [$0.label, $0.name]
@@ -49,12 +49,12 @@ extension Routes.Route {
         return parameters.joined(separator: ", ").inParentheses + " async throws" + returnType
     }
 
-    static func parse(_ function: FunctionDeclSyntax) throws -> Routes.Route? {
+    static func parse(_ function: FunctionDeclSyntax) throws -> Routes.Endpoint? {
         guard let (method, path, pathParameters, options) = parseMethodAndPath(function) else {
             return nil
         }
 
-        return Routes.Route(
+        return Routes.Endpoint(
             method: method,
             path: path,
             pathParameters: pathParameters,
@@ -164,38 +164,12 @@ extension StructDeclSyntax {
     }
 }
 
-extension ProtocolDeclSyntax {
-    var protocolName: String {
-        name.text
-    }
-
-    var access: String? {
-        modifiers.first?.trimmedDescription
-    }
-
-    var functions: [FunctionDeclSyntax] {
-        memberBlock
-            .members
-            .compactMap { $0.decl.as(FunctionDeclSyntax.self) }
-    }
-
-    var protocolAttributes: [AttributeSyntax] {
-        attributes.compactMap { $0.as(AttributeSyntax.self) }
-    }
-}
-
 extension FunctionDeclSyntax {
 
     // MARK: Function effects & attributes
 
     var functionName: String {
         name.text
-    }
-
-    var effects: [String] {
-        [signature.effectSpecifiers?.asyncSpecifier, signature.effectSpecifiers?.throwsSpecifier]
-            .compactMap { $0 }
-            .map { $0.text }
     }
 
     var parameters: [FunctionParameterSyntax] {
@@ -211,20 +185,8 @@ extension FunctionDeclSyntax {
 
     // MARK: Return Data
 
-    var returnsResponse: Bool {
-        returnType == "Response"
-    }
-
     var returnType: String? {
         signature.returnClause?.type.trimmedDescription
-    }
-
-    var returnsVoid: Bool {
-        guard let returnType else {
-            return true
-        }
-
-        return returnType == "Void"
     }
 }
 
@@ -249,16 +211,6 @@ extension FunctionParameterSyntax {
 extension AttributeSyntax {
     var name: String {
         attributeName.trimmedDescription
-    }
-
-    var labeledArguments: [(label: String?, value: String)] {
-        guard case let .argumentList(list) = arguments else {
-            return []
-        }
-
-        return list.map {
-            ($0.label?.text, $0.expression.description)
-        }
     }
 }
 

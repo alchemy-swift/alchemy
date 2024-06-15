@@ -25,7 +25,7 @@ struct UserController {
     }
 
     @GET("/foo")
-    func foo() -> Int {
+    func foo(field1: String, request: Request) -> Int {
         123
     }
 }
