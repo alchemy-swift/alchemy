@@ -20,7 +20,6 @@ struct HTTPMethodMacro: PeerMacro {
             if let validation = parameter.validation {
                 expressions.append("\(validation) var \(parameter.name) = \(parameter.parseExpression)")
                 expressions.append("try await $\(parameter.name).validate()")
-                expressions.append("")
             } else {
                 expressions.append("let \(parameter.name) = \(parameter.parseExpression)")
             }
@@ -30,17 +29,18 @@ struct HTTPMethodMacro: PeerMacro {
             .map { $0.argumentLabel + $0.name }
             .joined(separator: ", ")
 
-
-        expressions.append("return " + route.effectsExpression + route.name + arguments.inParentheses)
-
+        let returnExpression = route.responseType != nil ? "return " : ""
+        expressions.append(returnExpression + route.effectsExpression + route.name + arguments.inParentheses)
         return [
             Declaration("var $\(route.name): Route") {
                 let options = route.options.map { "\n    options: \($0)," } ?? ""
+                let closureArgument = arguments.isEmpty ? "_" : "req"
+                let returnType = route.responseType ?? "Void"
                 """
                 Route(
                     method: .\(route.method),
                     path: \(route.path.inQuotes),\(options)
-                    handler: { req in
+                    handler: { \(closureArgument) -> \(returnType) in
                         \(expressions.joined(separator: "\n        "))
                     }
                 )
@@ -70,12 +70,12 @@ extension Routes.Route {
 }
 
 extension EndpointParameter {
-    var argumentLabel2: String {
+    var argumentLabel: String {
         let argumentLabel = label == "_" ? nil : label ?? name
         return argumentLabel.map { "\($0): " } ?? ""
     }
 
-    var parseExpression2: String {
+    var parseExpression: String {
         guard type != "Request" else {
             return "req"
         }
@@ -94,17 +94,3 @@ extension EndpointParameter {
         }
     }
 }
-
-/*
- var _body: Route {
-     Route(
-         method: .POST,
-         path: "/body",
-         handler: { req in
-             @Validate(.email) var thing = try req.content.thing.decode(String.self)
-             try await $thing.validate()
-             return body(thing: thing)
-         }
-     )
- }
- */

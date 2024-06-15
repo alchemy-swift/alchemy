@@ -1,5 +1,12 @@
 import Alchemy
 
+extension Router {
+    @discardableResult func use(_ route: Route) -> Self {
+        on(route.method, at: route.path, options: route.options, use: route.handler)
+        return self
+    }
+}
+
 struct Route {
     let method: HTTPMethod
     let path: String
@@ -17,9 +24,23 @@ struct Route {
         self.method = method
         self.path = path
         self.options = options
-        self.handler = {
-            try await handler($0)
+        self.handler = { req in
+            try await handler(req)
             return Response(status: .ok)
+        }
+    }
+
+    init<E: Encodable>(method: HTTPMethod, path: String, options: RouteOptions = [], handler: @escaping (Request) async throws -> E) {
+        self.method = method
+        self.path = path
+        self.options = options
+        self.handler = { req in
+            let value = try await handler(req)
+            if let convertible = value as? ResponseConvertible {
+                return try await convertible.response()
+            } else {
+                return try Response(status: .ok, encodable: value)
+            }
         }
     }
 }
@@ -44,18 +65,6 @@ struct App {
         request: Request
     ) async throws -> String {
         "Hello"
-    }
-
-    var _body: Route {
-        Route(
-            method: .POST,
-            path: "/body",
-            handler: { req in
-                @Validate(.email) var thing = try req.content.thing.decode(String.self)
-                try await $thing.validate()
-                return body(thing: thing)
-            }
-        )
     }
 
     @POST("/body")
@@ -84,6 +93,9 @@ struct SomeController {
         @Validate(.between(18...99)) age: Int,
         @Validate(.password) password: String
     ) -> String { "test" }
+
+    @GET("/foo")
+    func foo() -> Bool { .random() }
 }
 
 extension Application {

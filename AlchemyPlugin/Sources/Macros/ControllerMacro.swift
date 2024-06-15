@@ -31,7 +31,7 @@ extension Routes {
     func controllerRouteFunction() -> Declaration {
         Declaration("func route(_ router: Router)") {
             for route in routes {
-                route.handlerExpression(prefix: "router.")
+                "router.use($\(route.name))"
             }
         }
     }
