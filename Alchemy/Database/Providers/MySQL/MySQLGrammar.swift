@@ -1,6 +1,6 @@
 /// A MySQL specific Grammar for compiling `Query` to SQL.
 struct MySQLGrammar: SQLGrammar {
-    func insertReturn(_ table: String, values: [[String : SQLConvertible]]) -> [SQL] {
+    func insertReturn(_ table: String, values: [SQLFields]) -> [SQL] {
         values.flatMap {
             [
                 insert(table, values: [$0]),

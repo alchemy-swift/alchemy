@@ -36,7 +36,7 @@ final class SQLRowEncoderTests: TestCase<TestApp> {
         )
         
         let jsonData = try EverythingModel.jsonEncoder.encode(json)
-        let expectedFields: [String: SQLConvertible] = [
+        let expectedFields: SQLFields = [
             "id": 1,
             "string_enum": "one",
             "int_enum": 2,

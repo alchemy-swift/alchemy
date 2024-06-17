@@ -83,7 +83,7 @@ private struct ResourceController<R: Resource>: Controller
     private func create(req: Request) async throws -> R {
         let resource = try req.decode(R.self)
         var fields = try resource.sqlFields()
-        fields["user_id"] = try SQLValue.uuid(req.user.id())
+        fields["user_id"] = try SQLValue.uuid(req.user.id)
         return try await table
             .insertReturn(fields)
             .decode(keyMapping: db.keyMapping)
@@ -153,6 +153,6 @@ extension Request {
 
 extension Query {
     fileprivate func ownedBy(_ user: User) throws -> Self {
-        return `where`("user_id" == user.id())
+        return `where`("user_id" == user.id)
     }
 }

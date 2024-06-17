@@ -206,3 +206,17 @@ public enum SQLValue: Hashable, CustomStringConvertible {
         return DatabaseError("Unable to coerce value `\(self)` \(detail)to \(typeName).")
     }
 }
+
+extension SQLValue {
+    public func decode<D: Decodable & ModelProperty>(_ type: D.Type) throws -> D {
+        fatalError()
+    }
+
+    public func decode<P: ModelProperty>(_ type: P.Type) throws -> P {
+        fatalError()
+    }
+
+    public func decode<D: Decodable>(_ type: D.Type) throws -> D {
+        fatalError()
+    }
+}

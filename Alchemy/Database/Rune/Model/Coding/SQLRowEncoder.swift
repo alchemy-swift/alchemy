@@ -40,7 +40,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     
     /// Used for keeping track of the database fields pulled off the
     /// object encoded to this encoder.
-    private var fields: [String: SQLConvertible] = [:]
+    private var fields: SQLFields = [:]
 
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.
@@ -65,7 +65,7 @@ final class SQLRowEncoder: Encoder, SQLRowWriter {
     /// - Throws: A `DatabaseError` if there is an error reading
     ///   fields from `value`.
     /// - Returns: An ordered dictionary of the model's columns and values.
-    func fields<E: Encodable>(for value: E) throws -> [String: SQLConvertible] {
+    func fields<E: Encodable>(for value: E) throws -> SQLFields {
         try value.encode(to: self)
         defer { fields = [:] }
         return fields

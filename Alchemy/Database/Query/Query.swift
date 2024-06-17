@@ -143,12 +143,12 @@ open class Query<Result: QueryResult>: SQLConvertible {
     // MARK: INSERT
 
     /// Perform an insert and create a database row from the provided data.
-    public func insert(_ value: [String: SQLConvertible]) async throws {
+    public func insert(_ value: SQLFields) async throws {
         try await insert([value])
     }
 
     /// Perform an insert and create database rows from the provided data.
-    public func insert(_ values: [[String: SQLConvertible]]) async throws {
+    public func insert(_ values: [SQLFields]) async throws {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
@@ -169,7 +169,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
         try await insert(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
     }
 
-    public func insertReturn(_ values: [String: SQLConvertible]) async throws -> SQLRow {
+    public func insertReturn(_ values: SQLFields) async throws -> SQLRow {
         guard let first = try await insertReturn([values]).first else {
             throw DatabaseError("INSERT didn't return any rows.")
         }
@@ -182,7 +182,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     /// - Parameter values: An array of dictionaries containing the values to be
     ///   inserted.
     /// - Returns: The inserted rows.
-    public func insertReturn(_ values: [[String: SQLConvertible]]) async throws -> [SQLRow] {
+    public func insertReturn(_ values: [SQLFields]) async throws -> [SQLRow] {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
@@ -224,11 +224,11 @@ open class Query<Result: QueryResult>: SQLConvertible {
 
     // MARK: UPSERT
 
-    public func upsert(_ value: [String: SQLConvertible], conflicts: [String] = ["id"]) async throws {
+    public func upsert(_ value: SQLFields, conflicts: [String] = ["id"]) async throws {
         try await upsert([value], conflicts: conflicts)
     }
 
-    public func upsert(_ values: [[String: SQLConvertible]], conflicts: [String] = ["id"]) async throws {
+    public func upsert(_ values: [SQLFields], conflicts: [String] = ["id"]) async throws {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
@@ -249,11 +249,11 @@ open class Query<Result: QueryResult>: SQLConvertible {
         try await upsert(try encodables.map { try $0.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder) })
     }
 
-    public func upsertReturn(_ values: [String: SQLConvertible], conflicts: [String] = ["id"]) async throws -> [SQLRow] {
+    public func upsertReturn(_ values: SQLFields, conflicts: [String] = ["id"]) async throws -> [SQLRow] {
         try await upsertReturn([values], conflicts: conflicts)
     }
 
-    public func upsertReturn(_ values: [[String: SQLConvertible]], conflicts: [String] = ["id"]) async throws -> [SQLRow] {
+    public func upsertReturn(_ values: [SQLFields], conflicts: [String] = ["id"]) async throws -> [SQLRow] {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }
@@ -299,7 +299,7 @@ open class Query<Result: QueryResult>: SQLConvertible {
     ///
     /// - Parameter fields: An dictionary containing the values to be
     ///   updated.
-    public func update(_ fields: [String: SQLConvertible]) async throws {
+    public func update(_ fields: SQLFields) async throws {
         guard let table else {
             throw DatabaseError("Table required to run query - use `.from(...)` to set one.")
         }

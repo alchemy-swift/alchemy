@@ -7,9 +7,13 @@ public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "Contr
 @attached(peer, names: prefixed(`$`))
 public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 
-@attached(member, names: named(storage))
-@attached(extension, conformances: Model)
+@attached(memberAttribute)
+@attached(member, names: named(storage), named(fieldLookup))
+@attached(extension, conformances: Model, names: named(init), named(fields))
 public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro")
+
+@attached(accessor)
+public macro ID() = #externalMacro(module: "AlchemyPlugin", type: "IDMacro")
 
 // MARK: Route Methods
 

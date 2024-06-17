@@ -85,7 +85,7 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        guard let firstColumn = row.fields.first?.column else {
+        guard let firstColumn = row.fields.elements.first?.key else {
             throw DatabaseError("SQLRow had no fields to decode a value from.")
         }
 

@@ -1,3 +1,5 @@
+import Collections
+
 extension Model {
 
     // MARK: Dirty
@@ -10,15 +12,15 @@ extension Model {
         (try? dirtyFields()[column]) != nil
     }
 
-    public func dirtyFields() throws -> [String: SQL] {
-        let oldFields = row?.fieldDictionary.filter { $0.value != .null }.mapValues(\.sql) ?? [:]
+    public func dirtyFields() throws -> SQLFields {
+        let oldFields = row?.fields.filter { $0.value.sqlValue != .null }.mapValues(\.sql) ?? [:]
         let newFields = try fields().mapValues(\.sql)
         var dirtyFields = newFields.filter { $0.value != oldFields[$0.key] }
         for key in Set(oldFields.keys).subtracting(newFields.keys) {
             dirtyFields[key] = .null
         }
         
-        return dirtyFields
+        return dirtyFields.mapValues { $0 }
     }
 
     // MARK: Clean

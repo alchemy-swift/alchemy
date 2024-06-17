@@ -86,7 +86,7 @@ extension Model {
         }
 
         self.row = model.row
-        self.id.value = model.id.value
+        self.id = model.id
         return model
     }
     
@@ -120,7 +120,7 @@ extension Model {
     }
 
     @discardableResult
-    public func update(on db: Database = database, _ fields: [String: SQLConvertible]) async throws -> Self {
+    public func update(on db: Database = database, _ fields: SQLFields) async throws -> Self {
         try await [self].updateAll(on: db, fields)
         return try await refresh(on: db)
     }
@@ -142,7 +142,7 @@ extension Model {
         }
 
         self.row = model.row
-        self.id.value = model.id.value
+        self.id = model.id
         return model
     }
 
@@ -188,7 +188,7 @@ extension Model {
     /// Fetches an copy of this model from a database, with any updates that may
     /// have been made since it was last fetched.
     public func refresh(on db: Database = database) async throws -> Self {
-        let model = try await Self.require(id.require(), db: db)
+        let model = try await Self.require(id, db: db)
         row = model.row
         model.mergeCache(self)
         return model
@@ -232,7 +232,7 @@ extension Array where Element: Model {
         try await _insertReturnAll(on: db)
     }
 
-    func _insertReturnAll(on db: Database = Element.database, fieldOverrides: [String: SQLConvertible] = [:]) async throws -> Self {
+    func _insertReturnAll(on db: Database = Element.database, fieldOverrides: SQLFields = [:]) async throws -> Self {
         let fields = try insertableFields(on: db).map { $0 + fieldOverrides }
         try await Element.willCreate(self)
         let results = try await Element.query(on: db)
@@ -250,7 +250,7 @@ extension Array where Element: Model {
         return try await updateAll(on: db, values)
     }
 
-    public func updateAll(on db: Database = Element.database, _ fields: [String: SQLConvertible]) async throws {
+    public func updateAll(on db: Database = Element.database, _ fields: SQLFields) async throws {
         let ids = map(\.id)
         let fields = touchUpdatedAt(on: db, fields)
         try await Element.willUpdate(self)
@@ -300,10 +300,6 @@ extension Array where Element: Model {
             return self
         }
 
-        guard allSatisfy({ $0.id.value != nil }) else {
-            throw RuneError("Can't .refresh() an object with a nil `id`.")
-        }
-
         let byId = keyed(by: \.id)
         let refreshed = try await Element.query()
             .where(Element.primaryKey, in: byId.keys.array)
@@ -319,7 +315,7 @@ extension Array where Element: Model {
         return refreshed
     }
     
-    private func touchUpdatedAt(on db: Database, _ fields: [String: SQLConvertible]) -> [String: SQLConvertible] {
+    private func touchUpdatedAt(on db: Database, _ fields: SQLFields) -> SQLFields {
         guard let timestamps = Element.self as? Timestamped.Type else {
             return fields
         }
@@ -329,7 +325,7 @@ extension Array where Element: Model {
         return fields
     }
     
-    private func insertableFields(on db: Database) throws -> [[String: SQLConvertible]] {
+    private func insertableFields(on db: Database) throws -> [SQLFields] {
         guard let timestamps = Element.self as? Timestamped.Type else {
             return try map { try $0.fields() }
         }

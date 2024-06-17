@@ -1,31 +1,25 @@
+import Collections
+
 /// A row of data returned by an SQL query.
 public struct SQLRow: ExpressibleByDictionaryLiteral {
-    public let fields: [(column: String, value: SQLValue)]
-    private let lookupTable: [String: Int]
+    public let fields: OrderedDictionary<String, SQLValue>
 
-    public var fieldDictionary: [String: SQLValue] {
-        lookupTable.mapValues { fields[$0].value }
-    }
-    
-    public init(fields: [(column: String, value: SQLValue)]) {
+    public init(fields: OrderedDictionary<String, SQLValue>) {
         self.fields = fields
-        self.lookupTable = Dictionary(fields.enumerated().map { ($1.column, $0) })
     }
 
-    public init(fields: [(column: String, value: SQLValueConvertible)]) {
-        self.init(fields: fields.map { ($0, $1.sqlValue) })
+    public init(fields: [(String, SQLValueConvertible)]) {
+        let dict = fields.map { ($0, $1.sqlValue) }
+        self.init(fields: .init(dict, uniquingKeysWith: { a, _ in a }))
     }
 
     public init(dictionaryLiteral elements: (String, SQLValueConvertible)...) {
-        self.init(fields: elements)
-    }
-
-    public init(dictionary: [String: SQLValueConvertible]) {
-        self.init(fields: dictionary.map { (column: $0.key, value: $0.value) })
+        let dict = elements.map { ($0, $1.sqlValue) }
+        self.init(fields: .init(dict, uniquingKeysWith: { a, _ in a }))
     }
 
     public func contains(_ column: String) -> Bool {
-        lookupTable[column] != nil
+        fields[column] != nil
     }
 
     public func require(_ column: String) throws -> SQLValue {
@@ -43,12 +37,11 @@ public struct SQLRow: ExpressibleByDictionaryLiteral {
     }
 
     public subscript(_ index: Int) -> SQLValue {
-        fields[index].value
+        fields.elements[index].value.sqlValue
     }
 
     public subscript(_ column: String) -> SQLValue? {
-        guard let index = lookupTable[column] else { return nil }
-        return fields[index].value
+        fields[column]?.sqlValue
     }
 }
 

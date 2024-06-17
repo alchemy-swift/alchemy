@@ -40,7 +40,7 @@ final class EncryptionTests: XCTestCase {
         let fakeWriter = FakeWriter()
         var writer: SQLRowWriter = fakeWriter
         try encrypted.store(key: "foo", on: &writer)
-        guard let storedValue = fakeWriter.dict["foo"] as? String else {
+        guard let storedValue = fakeWriter.fields["foo"] as? String else {
             return XCTFail("a String wasn't stored")
         }
 
@@ -55,11 +55,11 @@ final class EncryptionTests: XCTestCase {
 }
 
 private final class FakeWriter: SQLRowWriter {
-    var dict: [String: SQLConvertible] = [:]
+    var fields: SQLFields = [:]
 
     subscript(column: String) -> SQLConvertible? {
-        get { dict[column] }
-        set { dict[column] = newValue }
+        get { fields[column] }
+        set { fields[column] = newValue }
     }
     
     func put<E: Encodable>(json: E, at key: String) throws {

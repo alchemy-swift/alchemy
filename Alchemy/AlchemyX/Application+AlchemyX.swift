@@ -22,7 +22,7 @@ private struct AuthController: Controller, AuthAPI {
     func signUp(email: String, password: String) async throws -> AuthResponse {
         let password = try await Hash.make(password)
         let user = try await User(email: email, password: password).insertReturn()
-        let token = try await Token(userId: user.id()).insertReturn()
+        let token = try await Token(userId: user.id).insertReturn()
         return .init(token: token.value, user: user.dto)
     }
 
@@ -35,7 +35,7 @@ private struct AuthController: Controller, AuthAPI {
             throw HTTPError(.unauthorized)
         }
 
-        let token = try await Token(userId: user.id()).insertReturn()
+        let token = try await Token(userId: user.id).insertReturn()
         return .init(token: token.value, user: user.dto)
     }
 
@@ -62,10 +62,11 @@ extension Controller {
     fileprivate var token: Token { get throws { try req.get() } }
 }
 
-struct Token: Model, Codable, TokenAuthable {
+@Model
+struct Token: TokenAuthable {
     typealias Authorizes = User
 
-    var id: PK<UUID> = .new
+    var id: UUID
     var value: String = UUID().uuidString
     let userId: UUID
 
@@ -74,8 +75,9 @@ struct Token: Model, Codable, TokenAuthable {
     }
 }
 
-struct User: Model, Codable {
-    var id: PK<UUID> = .new
+@Model
+struct User {
+    var id: UUID
     var email: String
     var password: String
     var phone: String?
@@ -86,7 +88,7 @@ struct User: Model, Codable {
 
     var dto: AlchemyX.User {
         AlchemyX.User(
-            id: id(),
+            id: id,
             email: email,
             phone: phone
         )

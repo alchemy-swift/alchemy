@@ -17,10 +17,11 @@ extension Queue {
 /// A queue that persists jobs to a database.
 private final class DatabaseQueue: QueueProvider {
     /// Represents the table of jobs backing a `DatabaseQueue`.
-    struct JobModel: Model, Codable {
+    @Model
+    struct JobModel {
         static var table = "jobs"
 
-        var id: PK<String> = .new
+        var id: String
         let jobName: String
         let channel: String
         let payload: Data
@@ -34,7 +35,6 @@ private final class DatabaseQueue: QueueProvider {
         var backoffUntil: Date?
 
         init(jobData: JobData) {
-            id = .new(jobData.id)
             jobName = jobData.jobName
             channel = jobData.channel
             payload = jobData.payload
@@ -43,11 +43,12 @@ private final class DatabaseQueue: QueueProvider {
             backoffSeconds = jobData.backoff.seconds
             backoffUntil = jobData.backoffUntil
             reserved = false
+            id = jobData.id
         }
 
         func toJobData() throws -> JobData {
             JobData(
-                id: try id.require(),
+                id: id,
                 payload: payload,
                 jobName: jobName,
                 channel: channel,

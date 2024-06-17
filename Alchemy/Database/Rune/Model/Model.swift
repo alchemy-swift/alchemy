@@ -7,11 +7,14 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// The type of this object's primary key.
     associatedtype PrimaryKey: PrimaryKeyProtocol
 
-    /// The identifier / primary key of this type.
-    var id: PK<PrimaryKey> { get set }
+    /// Storage for loaded information.
+    var storage: ModelStorage { get }
+
+    /// The identifier of this model
+    var id: PrimaryKey { get nonmutating set }
 
     /// Convert this to an SQLRow for updating or inserting into a database.
-    func fields() throws -> [String: SQLConvertible]
+    func fields() throws -> SQLFields
 
     /// The database on which this model is saved & queried by default.
     static var database: Database { get }
@@ -73,13 +76,13 @@ extension Model where Self: Codable {
         self = try row.decode(Self.self, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)
     }
 
-    public func fields() throws -> [String: SQLConvertible] {
+    public func fields() throws -> SQLFields {
         try sqlFields(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)
     }
 }
 
 extension Encodable {
-    func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> [String: SQLConvertible] {
+    func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> SQLFields {
         try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder).fields(for: self)
     }
 }

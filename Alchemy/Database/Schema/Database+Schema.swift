@@ -54,6 +54,6 @@ extension Database {
     /// Check if the database has a table with the given name.
     public func hasTable(_ table: String) async throws -> Bool {
         let sql = grammar.hasTable(table)
-        return try await query(sql: sql).first?.fields.first?.value.bool() ?? false
+        return try await query(sql: sql).first?.fields.elements.first?.value.bool() ?? false
     }
 }

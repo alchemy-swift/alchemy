@@ -1,8 +1,30 @@
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-struct ModelMacro: MemberMacro, ExtensionMacro {
+/*
 
+ 1. add var storage
+ 2. add init(row: SQLRow)
+ 3. add fields: SQLFields
+ 4. add @ID to `var id` - if it exists.
+
+ */
+
+struct IDMacro: AccessorMacro {
+    static func expansion(
+        of node: AttributeSyntax,
+        providingAccessorsOf declaration: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext
+    ) throws -> [AccessorDeclSyntax] {
+        [
+            "get { fatalError() }",
+            "nonmutating set { fatalError() }",
+        ]
+    }
+}
+
+struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
+    
     // MARK: ExtensionMacro
     
     static func expansion(
@@ -12,12 +34,12 @@ struct ModelMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        guard let `struct` = declaration.as(StructDeclSyntax.self) else {
-            throw AlchemyMacroError("@Model can only be used on a struct")
-        }
-
+        let resource = try Resource.parse(syntax: declaration)
         return try [
-            Declaration("extension \(`struct`.name.trimmedDescription): Model {}")
+            Declaration("extension \(resource.name): Model") {
+                resource.generateInitializer()
+                resource.generateFields()
+            }
         ]
         .map { try $0.extensionDeclSyntax() }
     }
@@ -29,16 +51,32 @@ struct ModelMacro: MemberMacro, ExtensionMacro {
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        guard let `struct` = declaration.as(StructDeclSyntax.self) else {
-            throw AlchemyMacroError("@Model can only be used on a struct")
-        }
-
+        let resource = try Resource.parse(syntax: declaration)
         return [
-            Declaration("var storage: String") {
-                `struct`.name.trimmedDescription.inQuotes
-            }
+            resource.generateStorage(),
+            resource.generateFieldLookup(),
         ]
         .map { $0.declSyntax() }
+    }
+
+    // MARK: MemberAttributeMacro
+
+    static func expansion(
+      of node: AttributeSyntax,
+      attachedTo declaration: some DeclGroupSyntax,
+      providingAttributesFor member: some DeclSyntaxProtocol,
+      in context: some MacroExpansionContext
+    ) throws -> [AttributeSyntax] {
+        guard let member = member.as(VariableDeclSyntax.self) else {
+            return []
+        }
+
+        guard !member.isStatic else {
+            return []
+        }
+
+        let property = try Resource.Property.parse(variable: member)
+        return property.name == "id" ? ["@ID"] : []
     }
 }
 
@@ -71,25 +109,38 @@ struct Resource {
 extension Resource {
     static func parse(syntax: DeclSyntaxProtocol) throws -> Resource {
         guard let `struct` = syntax.as(StructDeclSyntax.self) else {
-            throw AlchemyMacroError("For now, @Resource can only be applied to a struct")
+            throw AlchemyMacroError("For now, @Model can only be applied to a struct")
         }
 
         return Resource(
             accessLevel: `struct`.accessLevel,
             name: `struct`.structName,
-            properties: `struct`.members.map(Resource.Property.parse)
+            properties: try `struct`.instanceMembers.map(Resource.Property.parse)
         )
     }
 }
 
 extension Resource.Property {
-    static func parse(variable: VariableDeclSyntax) -> Resource.Property {
-        let patterns = variable.bindings.compactMap { PatternBindingSyntax.init($0) }
+    static func parse(variable: VariableDeclSyntax) throws -> Resource.Property {
+        let patternBindings = variable.bindings.compactMap { PatternBindingSyntax.init($0) }
         let keyword = variable.bindingSpecifier.text
-        let name = "\(patterns.first!.pattern.as(IdentifierPatternSyntax.self)!.identifier.text)"
-        let type = "\(patterns.first!.typeAnnotation!.type.trimmed)"
-        let defaultValue = patterns.first!.initializer.map { "\($0.value.trimmed)" }
-        let isStored = patterns.first?.accessorBlock == nil
+
+        guard let patternBinding = patternBindings.first else {
+            throw AlchemyMacroError("Property had no pattern bindings")
+        }
+
+        guard let identifierPattern = patternBinding.pattern.as(IdentifierPatternSyntax.self) else {
+            throw AlchemyMacroError("Unable to detect property name")
+        }
+
+        guard let typeAnnotation = patternBinding.typeAnnotation else {
+            throw AlchemyMacroError("Property \(identifierPattern.identifier.trimmedDescription) \(variable.isStatic) had no type annotation")
+        }
+
+        let name = "\(identifierPattern.identifier.text)"
+        let type = "\(typeAnnotation.type.trimmedDescription)"
+        let defaultValue = patternBinding.initializer.map { "\($0.value.trimmed)" }
+        let isStored = patternBinding.accessorBlock == nil
 
         return Resource.Property(
             keyword: keyword,
@@ -102,23 +153,24 @@ extension Resource.Property {
 }
 
 extension Resource {
+
+    fileprivate func generateStorage() -> Declaration {
+        Declaration("let storage = ModelStorage()")
+    }
+
     fileprivate func generateInitializer() -> Declaration {
-        let parameters = storedProperties.map {
-            if let defaultValue = $0.defaultValue {
-                "\($0.name): \($0.type) = \(defaultValue)"
-            } else if $0.isOptional && $0.keyword == "var" {
-                "\($0.name): \($0.type) = nil"
-            } else {
-                "\($0.name): \($0.type)"
+        Declaration("init(row: SQLRow) throws") {
+            for property in storedProperties where property.name != "id" {
+                "self.\(property.name) = try row.require(\(property.name.inQuotes)).decode(\(property.type).self)"
             }
         }
-        .joined(separator: ", ")
-        return Declaration("init(\(parameters))") {
-            for property in storedProperties {
-                "self.\(property.name) = \(property.name)"
-            }
+        .access(accessLevel == "public" ? "public" : nil)
+    }
+
+    fileprivate func generateFields() -> Declaration {
+        Declaration("func fields() -> SQLFields") {
+            "[:]"
         }
-        .access(accessLevel)
     }
 
     fileprivate func generateFieldLookup() -> Declaration {
@@ -132,7 +184,7 @@ extension Resource {
             }
             .joined(separator: ",\n")
         return Declaration("""
-            public static let fields: [PartialKeyPath<\(name)>: ResourceField] = [
+            public static let fieldLookup: FieldLookup = [
                 \(fieldsString)
             ]
             """)
@@ -158,6 +210,16 @@ extension DeclGroupSyntax {
         memberBlock
             .members
             .compactMap { $0.decl.as(VariableDeclSyntax.self) }
+    }
+
+    var instanceMembers: [VariableDeclSyntax] {
+        members.filter { !$0.isStatic }
+    }
+}
+
+extension VariableDeclSyntax {
+    var isStatic: Bool {
+        modifiers.contains { $0.name.trimmedDescription == "static" }
     }
 }
 
