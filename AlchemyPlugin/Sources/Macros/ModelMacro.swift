@@ -1,22 +1,25 @@
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-/*
-
- 1. add var storage
- 2. add init(row: SQLRow)
- 3. add fields: SQLFields
- 4. add @ID to `var id` - if it exists.
-
- */
-
 struct IDMacro: AccessorMacro {
+
+    // MARK: AccessorMacro
+
     static func expansion(
         of node: AttributeSyntax,
         providingAccessorsOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [AccessorDeclSyntax] {
-        [
+        guard let variable = declaration.as(VariableDeclSyntax.self) else {
+            throw AlchemyMacroError("@ID can only be applied to a stored property.")
+        }
+
+        let property = try Resource.Property.parse(variable: variable)
+        guard property.keyword == "var" else {
+            throw AlchemyMacroError("Property 'id' must be a var.")
+        }
+
+        return [
             "get { fatalError() }",
             "nonmutating set { fatalError() }",
         ]
@@ -76,7 +79,15 @@ struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
         }
 
         let property = try Resource.Property.parse(variable: member)
-        return property.name == "id" ? ["@ID"] : []
+        if property.name == "id" {
+            guard property.keyword == "var" else {
+                throw AlchemyMacroError("Property 'id' must be a var.")
+            }
+
+            return ["@ID"]
+        } else {
+            return []
+        }
     }
 }
 
@@ -134,7 +145,7 @@ extension Resource.Property {
         }
 
         guard let typeAnnotation = patternBinding.typeAnnotation else {
-            throw AlchemyMacroError("Property \(identifierPattern.identifier.trimmedDescription) \(variable.isStatic) had no type annotation")
+            throw AlchemyMacroError("Property '\(identifierPattern.identifier.trimmedDescription)' had no type annotation")
         }
 
         let name = "\(identifierPattern.identifier.text)"
@@ -155,7 +166,7 @@ extension Resource.Property {
 extension Resource {
 
     fileprivate func generateStorage() -> Declaration {
-        Declaration("let storage = ModelStorage()")
+        Declaration("var storage = ModelStorage()")
     }
 
     fileprivate func generateInitializer() -> Declaration {

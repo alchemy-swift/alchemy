@@ -1,4 +1,4 @@
-public final class ModelStorage {
+public final class ModelStorage: Codable {
     var row: SQLRow?
     var relationships: [String: Any]
 
@@ -7,8 +7,34 @@ public final class ModelStorage {
         self.row = nil
     }
 
-    static var new: ModelStorage {
+    public func encode(to encoder: Encoder) throws {
+        // instead, use the KeyedEncodingContainer extension below.
+        preconditionFailure("Directly encoding ModelStorage not supported!")
+    }
+
+    public init(from decoder: Decoder) throws {
+        // instead, use the KeyedDecodingContainer extension below.
+        preconditionFailure("Directly decoding ModelStorage not supported!")
+    }
+}
+
+extension KeyedDecodingContainer {
+    public func decode(
+        _ type: ModelStorage,
+        forKey key: Self.Key
+    ) throws -> ModelStorage {
+        // decode id
         ModelStorage()
+    }
+}
+
+extension KeyedEncodingContainer {
+    public mutating func encode(
+        _ value: ModelStorage,
+        forKey key: KeyedEncodingContainer<K>.Key
+    ) throws {
+        // encode id
+        // encode relationships
     }
 }
 
