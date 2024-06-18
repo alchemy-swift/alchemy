@@ -12,6 +12,11 @@ struct App {
         "Hello, \(email)!"
     }
 
+    @GET("/todos")
+    func getTodos() async throws -> [Todo] {
+        try await Todo.all()
+    }
+
     @Job
     static func expensiveWork(name: String) {
         print("This is expensive!")
@@ -39,6 +44,15 @@ struct Todo: Codable {
 }
 
 extension App {
+    var databases: Databases {
+        Databases(
+            default: "sqlite",
+            databases: [
+                "sqlite": .sqlite(path: "../AlchemyXDemo/Server/test.db")
+            ]
+        )
+    }
+
     var queues: Queues {
         Queues(
             default: "memory",

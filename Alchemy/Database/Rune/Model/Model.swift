@@ -3,15 +3,17 @@ import Pluralize
 /// An ActiveRecord-esque type used for modeling a table in a relational
 /// database. Contains many extensions for making database queries, 
 /// supporting relationships & more.
+///
+/// Use @Model to apply this protocol.
 public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     /// The type of this object's primary key.
     associatedtype PrimaryKey: PrimaryKeyProtocol
 
-    /// Storage for loaded information.
-    var storage: ModelStorage { get }
-
     /// The identifier of this model
     var id: PrimaryKey { get nonmutating set }
+
+    /// Storage for model metadata (relationships, original row, etc).
+    var storage: Storage { get }
 
     /// Convert this to an SQLRow for updating or inserting into a database.
     func fields() throws -> SQLFields

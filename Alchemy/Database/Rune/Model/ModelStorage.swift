@@ -1,10 +1,12 @@
-public final class ModelStorage: Codable {
-    var row: SQLRow?
+public final class ModelStorage<M: Model>: Codable {
+    public var id: M.PrimaryKey?
+    public var row: SQLRow?
     var relationships: [String: Any]
 
     public init() {
-        self.relationships = [:]
+        self.id = nil
         self.row = nil
+        self.relationships = [:]
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -18,22 +20,35 @@ public final class ModelStorage: Codable {
     }
 }
 
+extension Model {
+    public typealias Storage = ModelStorage<Self>
+}
+
 extension KeyedDecodingContainer {
-    public func decode(
-        _ type: ModelStorage,
+    public func decode<M: Model>(
+        _ type: ModelStorage<M>,
         forKey key: Self.Key
-    ) throws -> ModelStorage {
-        // decode id
-        ModelStorage()
+    ) throws -> ModelStorage<M> {
+        let storage = M.Storage()
+        let hasId = allKeys.contains { $0.stringValue == M.primaryKey }
+        if hasId, let key = K(stringValue: M.primaryKey) {
+            storage.id = try decode(M.PrimaryKey.self, forKey: key)
+        }
+
+        return storage
     }
 }
 
 extension KeyedEncodingContainer {
-    public mutating func encode(
-        _ value: ModelStorage,
+    public mutating func encode<M: Model>(
+        _ value: ModelStorage<M>,
         forKey key: KeyedEncodingContainer<K>.Key
     ) throws {
         // encode id
+        if let key = K(stringValue: M.primaryKey) {
+            try encode(value.id, forKey: key)
+        }
+
         // encode relationships
     }
 }

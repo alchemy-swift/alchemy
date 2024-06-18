@@ -20,8 +20,16 @@ struct IDMacro: AccessorMacro {
         }
 
         return [
-            "get { fatalError() }",
-            "nonmutating set { fatalError() }",
+            """
+            get { 
+                guard let id = storage.id else {
+                    preconditionFailure("Attempting to access 'id' from Model that doesn't have one.")
+                }
+
+                return id
+            }
+            """,
+            "nonmutating set { storage.id = newValue }",
         ]
     }
 }
@@ -164,24 +172,33 @@ extension Resource.Property {
 }
 
 extension Resource {
-
     fileprivate func generateStorage() -> Declaration {
-        Declaration("var storage = ModelStorage()")
+        Declaration("var storage = Storage()")
     }
 
     fileprivate func generateInitializer() -> Declaration {
         Declaration("init(row: SQLRow) throws") {
+            "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
             for property in storedProperties where property.name != "id" {
-                "self.\(property.name) = try row.require(\(property.name.inQuotes)).decode(\(property.type).self)"
+                "self.\(property.name) = try reader.require(\(property.type).self, at: \(property.name.inQuotes))"
             }
+
+            "storage.row = row"
         }
         .access(accessLevel == "public" ? "public" : nil)
     }
 
     fileprivate func generateFields() -> Declaration {
-        Declaration("func fields() -> SQLFields") {
-            "[:]"
+        Declaration("func fields() throws -> SQLFields") {
+            "let writer = SQLRowWriter(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)"
+            for property in storedProperties {
+                "try writer.put(\(property.name), at: \(property.name.inQuotes))"
+            }
+            """
+            return writer.fields
+            """
         }
+        .access(accessLevel == "public" ? "public" : nil)
     }
 
     fileprivate func generateFieldLookup() -> Declaration {

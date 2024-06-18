@@ -11,7 +11,14 @@ public struct Validator<Value>: @unchecked Sendable {
 
     public init(_ message: String? = nil, validators: Validator<Value>...) {
         self.message = message
-        self.isValid = { _ in fatalError() }
+        self.isValid = { value in
+            for validator in validators {
+                let result = try await validator.isValid(value)
+                if !result { return false }
+            }
+
+            return true
+        }
     }
 
     public func validate(_ value: Value) async throws {

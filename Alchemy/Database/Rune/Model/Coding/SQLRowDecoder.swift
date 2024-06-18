@@ -1,4 +1,4 @@
-struct SQLRowDecoder: Decoder, SQLRowReader {
+struct SQLRowDecoder: Decoder {
     /// A `KeyedDecodingContainerProtocol` used to decode keys from a
     /// `SQLRow`.
     private struct KeyedContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
@@ -67,17 +67,19 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     }
 
     /// The row that will be decoded out of.
-    let row: SQLRow
-    let keyMapping: KeyMapping
-    let jsonDecoder: JSONDecoder
-    
+    let reader: SQLRowReader
+
+    init(row: SQLRow, keyMapping: KeyMapping, jsonDecoder: JSONDecoder) {
+        self.reader = SQLRowReader(row: row, keyMapping: keyMapping, jsonDecoder: jsonDecoder)
+    }
+
     // MARK: Decoder
     
     var codingPath: [CodingKey] = []
     var userInfo: [CodingUserInfoKey : Any] = [:]
     
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
-        KeyedDecodingContainer(KeyedContainer<Key>(reader: self))
+        KeyedDecodingContainer(KeyedContainer<Key>(reader: reader))
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -85,33 +87,10 @@ struct SQLRowDecoder: Decoder, SQLRowReader {
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
-        guard let firstColumn = row.fields.elements.first?.key else {
+        guard let firstColumn = reader.row.fields.elements.first?.key else {
             throw DatabaseError("SQLRow had no fields to decode a value from.")
         }
 
-        return SingleContainer(reader: self, column: firstColumn)
-    }
-    
-    // MARK: SQLRowReader
-    
-    func requireJSON<D: Decodable>(_ key: String) throws -> D {
-        let key = keyMapping.encode(key)
-        return try jsonDecoder.decode(D.self, from: row.require(key).json(key))
-    }
-    
-    func require(_ key: String) throws -> SQLValue {
-        try row.require(keyMapping.encode(key))
-    }
-    
-    func contains(_ column: String) -> Bool {
-        row[keyMapping.encode(column)] != nil
-    }
-    
-    subscript(_ index: Int) -> SQLValue {
-        row[index]
-    }
-    
-    subscript(_ column: String) -> SQLValue? {
-        row[keyMapping.encode(column)]
+        return SingleContainer(reader: reader, column: firstColumn)
     }
 }

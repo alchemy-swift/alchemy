@@ -103,12 +103,12 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         self.init(name: name, source: .filesystem(Storage, path: name))
     }
 
-    public func store(key: String, on row: inout SQLRowWriter) throws {
+    public func store(key: String, on row: SQLRowWriter) throws {
         guard case .filesystem(_, let path) = source else {
             throw RuneError("currently, only files saved in a `Filesystem` can be stored on a `Model`")
         }
 
-        row.put(path, at: key)
+        row.put(sql: path, at: key)
     }
     
     // MARK: - ResponseConvertible
