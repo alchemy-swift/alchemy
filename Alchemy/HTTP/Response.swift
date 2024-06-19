@@ -72,14 +72,6 @@ public final class Response {
 
     /// Creates a new body containing the text of the given string.
     public convenience init(status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], dict: [String: Encodable], encoder: HTTPEncoder = Bytes.defaultEncoder) throws {
-        struct AnyEncodable: Encodable {
-            let value: Encodable
-
-            func encode(to encoder: Encoder) throws {
-                try value.encode(to: encoder)
-            }
-        }
-
         let dict = dict.compactMapValues(AnyEncodable.init)
         try self.init(status: status, headers: headers, encodable: dict, encoder: encoder)
     }

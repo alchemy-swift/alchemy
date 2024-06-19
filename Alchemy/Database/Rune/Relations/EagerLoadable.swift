@@ -84,4 +84,10 @@ extension Array where Element: Model {
         guard let first else { return }
         try await loader(first).load(on: self)
     }
+
+    public func with<E: EagerLoadable>(_ loader: @escaping (Element) -> E) async throws -> Self where E.From == Element {
+        guard let first else { return self }
+        try await loader(first).load(on: self)
+        return self
+    }
 }

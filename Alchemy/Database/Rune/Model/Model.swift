@@ -10,7 +10,7 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     associatedtype PrimaryKey: PrimaryKeyProtocol
 
     /// The identifier of this model
-    var id: PrimaryKey { get nonmutating set }
+    var id: PrimaryKey { get set }
 
     /// Storage for model metadata (relationships, original row, etc).
     var storage: Storage { get }

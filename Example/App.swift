@@ -14,7 +14,7 @@ struct App {
 
     @GET("/todos")
     func getTodos() async throws -> [Todo] {
-        try await Todo.all()
+        try await Todo.all().with { $0.this.with(\.this) }
     }
 
     @Job
@@ -37,10 +37,15 @@ struct UserController {
 }
 
 @Model
-struct Todo: Codable {
+struct Todo {
     var id: Int
     let name: String
     var isDone: Bool = false
+    let tags: [String]?
+
+    var this: HasMany<Todo> {
+        hasMany(from: "id", to: "id")
+    }
 }
 
 extension App {
@@ -48,7 +53,7 @@ extension App {
         Databases(
             default: "sqlite",
             databases: [
-                "sqlite": .sqlite(path: "../AlchemyXDemo/Server/test.db")
+                "sqlite": .sqlite(path: "../AlchemyXDemo/Server/test.db").logRawSQL()
             ]
         )
     }

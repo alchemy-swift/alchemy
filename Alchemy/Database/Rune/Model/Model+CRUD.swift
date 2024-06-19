@@ -85,8 +85,6 @@ extension Model {
             throw RuneError.notFound
         }
 
-        self.row = model.row
-        self.id = model.id
         return model
     }
     
@@ -141,8 +139,6 @@ extension Model {
             throw RuneError.notFound
         }
 
-        self.row = model.row
-        self.id = model.id
         return model
     }
 

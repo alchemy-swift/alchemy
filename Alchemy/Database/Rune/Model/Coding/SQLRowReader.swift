@@ -15,7 +15,11 @@ public struct SQLRowReader {
 
     public func requireJSON<D: Decodable>(_ key: String) throws -> D {
         let key = keyMapping.encode(key)
-        return try jsonDecoder.decode(D.self, from: row.require(key).json(key))
+        if let type = D.self as? AnyOptional.Type, row[key, default: .null] == .null {
+            return type.nilValue as! D
+        } else {
+            return try jsonDecoder.decode(D.self, from: row.require(key).json(key))
+        }
     }
 
     public func require<D: Decodable>(_ type: D.Type, at key: String) throws -> D {

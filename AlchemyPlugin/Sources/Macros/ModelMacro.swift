@@ -1,39 +1,6 @@
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-struct IDMacro: AccessorMacro {
-
-    // MARK: AccessorMacro
-
-    static func expansion(
-        of node: AttributeSyntax,
-        providingAccessorsOf declaration: some DeclSyntaxProtocol,
-        in context: some MacroExpansionContext
-    ) throws -> [AccessorDeclSyntax] {
-        guard let variable = declaration.as(VariableDeclSyntax.self) else {
-            throw AlchemyMacroError("@ID can only be applied to a stored property.")
-        }
-
-        let property = try Resource.Property.parse(variable: variable)
-        guard property.keyword == "var" else {
-            throw AlchemyMacroError("Property 'id' must be a var.")
-        }
-
-        return [
-            """
-            get { 
-                guard let id = storage.id else {
-                    preconditionFailure("Attempting to access 'id' from Model that doesn't have one.")
-                }
-
-                return id
-            }
-            """,
-            "nonmutating set { storage.id = newValue }",
-        ]
-    }
-}
-
 struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
     
     // MARK: ExtensionMacro
@@ -47,9 +14,11 @@ struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
     ) throws -> [ExtensionDeclSyntax] {
         let resource = try Resource.parse(syntax: declaration)
         return try [
-            Declaration("extension \(resource.name): Model") {
+            Declaration("extension \(resource.name): Model, Codable") {
                 resource.generateInitializer()
                 resource.generateFields()
+                resource.generateEncode()
+                resource.generateDecode()
             }
         ]
         .map { try $0.extensionDeclSyntax() }
@@ -197,6 +166,40 @@ extension Resource {
             """
             return writer.fields
             """
+        }
+        .access(accessLevel == "public" ? "public" : nil)
+    }
+
+    fileprivate func generateEncode() -> Declaration {
+        Declaration("func encode(to encoder: Encoder) throws") {
+            "var container = encoder.container(keyedBy: GenericCodingKey.self)"
+            for property in storedProperties {
+                "try container.encode(\(property.name), forKey: \(property.name.inQuotes))"
+            }
+
+            """
+            for (key, relationship) in storage.encodableCache {
+                try container.encode(relationship, forKey: .key(key))
+            }
+            """
+        }
+        .access(accessLevel == "public" ? "public" : nil)
+    }
+
+    fileprivate func generateDecode() -> Declaration {
+        Declaration("init(from decoder: Decoder) throws") {
+            "let container = try decoder.container(keyedBy: GenericCodingKey.self)"
+            for property in storedProperties where property.name != "id" {
+                "self.\(property.name) = try container.decode(\(property.type).self, forKey: \(property.name.inQuotes))"
+            }
+
+            if let idType = storedProperties.first(where: { $0.name == "id" })?.type {
+                """
+                if container.contains("id") {
+                    self.id = try container.decode(\(idType).self, forKey: "id")
+                }
+                """
+            }
         }
         .access(accessLevel == "public" ? "public" : nil)
     }

@@ -7,7 +7,7 @@ struct JobMacro: PeerMacro {
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        guard 
+        guard
             let function = declaration.as(FunctionDeclSyntax.self),
             function.isStatic
         else {

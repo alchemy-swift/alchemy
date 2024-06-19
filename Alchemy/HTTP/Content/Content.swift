@@ -406,21 +406,6 @@ extension Content: Encodable {
 }
 
 extension Content.Value: Encodable {
-    private struct GenericCodingKey: CodingKey {
-        let stringValue: String
-        let intValue: Int?
-
-        init(stringValue: String) {
-            self.stringValue = stringValue
-            self.intValue = Int(stringValue)
-        }
-
-        init(intValue: Int) {
-            self.stringValue = "\(intValue)"
-            self.intValue = intValue
-        }
-    }
-
     public func encode(to encoder: Encoder) throws {
         switch self {
         case .array(let array):

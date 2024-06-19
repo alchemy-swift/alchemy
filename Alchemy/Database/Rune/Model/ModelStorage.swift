@@ -1,12 +1,21 @@
 public final class ModelStorage<M: Model>: Codable {
     public var id: M.PrimaryKey?
-    public var row: SQLRow?
-    var relationships: [String: Any]
+    public var row: SQLRow? {
+        didSet {
+            if let value = try? row?.require(M.primaryKey) {
+                self.id = try? M.PrimaryKey(value: value)
+            }
+        }
+    }
+
+    public var relationships: [String: Any]
+    public var encodableCache: [String: AnyEncodable]
 
     public init() {
         self.id = nil
         self.row = nil
         self.relationships = [:]
+        self.encodableCache = [:]
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -29,13 +38,7 @@ extension KeyedDecodingContainer {
         _ type: ModelStorage<M>,
         forKey key: Self.Key
     ) throws -> ModelStorage<M> {
-        let storage = M.Storage()
-        let hasId = allKeys.contains { $0.stringValue == M.primaryKey }
-        if hasId, let key = K(stringValue: M.primaryKey) {
-            storage.id = try decode(M.PrimaryKey.self, forKey: key)
-        }
-
-        return storage
+        M.Storage()
     }
 }
 
@@ -44,12 +47,7 @@ extension KeyedEncodingContainer {
         _ value: ModelStorage<M>,
         forKey key: KeyedEncodingContainer<K>.Key
     ) throws {
-        // encode id
-        if let key = K(stringValue: M.primaryKey) {
-            try encode(value.id, forKey: key)
-        }
-
-        // encode relationships
+        // ignore
     }
 }
 
@@ -61,14 +59,19 @@ extension Model {
 
     func mergeCache(_ otherModel: Self) {
         storage.relationships = otherModel.storage.relationships
+        storage.encodableCache = otherModel.storage.encodableCache
     }
 
     func cache<To>(_ value: To, at key: String) {
-        storage.relationships[key] = value
+        if let value = value as? Encodable {
+            storage.encodableCache[key] = AnyEncodable(value)
+        } else {
+            storage.relationships[key] = value
+        }
     }
 
     func cached<To>(at key: String, _ type: To.Type = To.self) throws -> To? {
-        guard let value = storage.relationships[key] else {
+        guard let value = storage.relationships[key] ?? storage.encodableCache[key] else {
             return nil
         }
 
@@ -80,6 +83,6 @@ extension Model {
     }
 
     func cacheExists(_ key: String) -> Bool {
-        storage.relationships[key] != nil
+        storage.relationships[key] != nil || storage.encodableCache[key] != nil
     }
 }

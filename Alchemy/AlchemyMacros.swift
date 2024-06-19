@@ -9,7 +9,7 @@ public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 
 @attached(memberAttribute)
 @attached(member, names: named(storage), named(fieldLookup))
-@attached(extension, conformances: Model, names: named(init), named(fields))
+@attached(extension, conformances: Model, Codable, names: named(init), named(fields), named(encode))
 public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro")
 
 @attached(accessor)

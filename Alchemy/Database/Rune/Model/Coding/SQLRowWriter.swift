@@ -27,7 +27,7 @@ public final class SQLRowWriter {
 
 extension SQLRowWriter {
     public func put(_ value: ModelProperty, at key: String) throws {
-        
+
     }
 
     public func put(_ value: some Encodable, at key: String) throws {

@@ -91,16 +91,6 @@ extension ResourceField {
     }
 }
 
-private protocol AnyOptional {
-    static var wrappedType: Any.Type { get }
-}
-
-extension Optional: AnyOptional {
-    static fileprivate var wrappedType: Any.Type {
-        Wrapped.self
-    }
-}
-
 extension CreateColumnBuilder {
     @discardableResult func `default`(any: Any?) -> Self {
         guard let any else { return self }

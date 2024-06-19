@@ -40,8 +40,8 @@ public struct SQLRow: ExpressibleByDictionaryLiteral {
         fields.elements[index].value.sqlValue
     }
 
-    public subscript(_ column: String) -> SQLValue? {
-        fields[column]?.sqlValue
+    public subscript(_ column: String, default default: SQLValue? = nil) -> SQLValue? {
+        fields[column]?.sqlValue ?? `default`
     }
 }
 
