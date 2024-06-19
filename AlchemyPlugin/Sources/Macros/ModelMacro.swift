@@ -177,11 +177,7 @@ extension Resource {
                 "try container.encode(\(property.name), forKey: \(property.name.inQuotes))"
             }
 
-            """
-            for (key, relationship) in storage.encodableCache {
-                try container.encode(relationship, forKey: .key(key))
-            }
-            """
+            "try storage.encode(to: encoder)"
         }
         .access(accessLevel == "public" ? "public" : nil)
     }

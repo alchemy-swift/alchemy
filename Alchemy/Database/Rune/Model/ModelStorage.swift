@@ -9,18 +9,20 @@ public final class ModelStorage<M: Model>: Codable {
     }
 
     public var relationships: [String: Any]
-    public var encodableCache: [String: AnyEncodable]
 
     public init() {
         self.id = nil
         self.row = nil
         self.relationships = [:]
-        self.encodableCache = [:]
     }
 
     public func encode(to encoder: Encoder) throws {
-        // instead, use the KeyedEncodingContainer extension below.
-        preconditionFailure("Directly encoding ModelStorage not supported!")
+        var container = encoder.container(keyedBy: GenericCodingKey.self)
+        for (key, relationship) in relationships {
+            if let relationship = relationship as? AnyEncodable {
+                try container.encode(relationship, forKey: .key(key))
+            }
+        }
     }
 
     public init(from decoder: Decoder) throws {
@@ -59,19 +61,14 @@ extension Model {
 
     func mergeCache(_ otherModel: Self) {
         storage.relationships = otherModel.storage.relationships
-        storage.encodableCache = otherModel.storage.encodableCache
     }
 
     func cache<To>(_ value: To, at key: String) {
-        if let value = value as? Encodable {
-            storage.encodableCache[key] = AnyEncodable(value)
-        } else {
-            storage.relationships[key] = value
-        }
+        storage.relationships[key] = value
     }
 
     func cached<To>(at key: String, _ type: To.Type = To.self) throws -> To? {
-        guard let value = storage.relationships[key] ?? storage.encodableCache[key] else {
+        guard let value = storage.relationships[key] else {
             return nil
         }
 
@@ -83,6 +80,6 @@ extension Model {
     }
 
     func cacheExists(_ key: String) -> Bool {
-        storage.relationships[key] != nil || storage.encodableCache[key] != nil
+        storage.relationships[key] != nil
     }
 }
