@@ -7,6 +7,8 @@ public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "Contr
 @attached(peer, names: prefixed(`$`))
 public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 
+// MARK: Rune
+
 @attached(memberAttribute)
 @attached(member, names: named(storage), named(fieldLookup))
 @attached(extension, conformances: Model, Codable, names: named(init), named(fields), named(encode))
@@ -14,6 +16,10 @@ public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro
 
 @attached(accessor)
 public macro ID() = #externalMacro(module: "AlchemyPlugin", type: "IDMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro HasMany() = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
 
 // MARK: Route Methods
 

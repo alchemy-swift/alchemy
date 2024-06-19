@@ -240,7 +240,9 @@ extension DeclGroupSyntax {
     }
 
     var instanceMembers: [VariableDeclSyntax] {
-        members.filter { !$0.isStatic }
+        members
+            .filter { !$0.isStatic }
+            .filter { $0.attributes.isEmpty }
     }
 }
 

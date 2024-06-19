@@ -5,16 +5,21 @@ public protocol EagerLoadable<From, To> {
 
     /// The model instance this relation was accessed from.
     var from: From { get }
-    var cacheKey: String { get }
+    var cacheKey: CacheKey { get }
 
     /// Load results given the input rows. Results must be the same length and
     /// order as the input.
     func fetch(for models: [From]) async throws -> [To]
 }
 
+public struct CacheKey: Hashable {
+    public let name: String?
+    public let value: String
+}
+
 extension EagerLoadable {
-    public var cacheKey: String {
-        "\(Self.self)"
+    public var cacheKey: CacheKey {
+        CacheKey(name: nil, value: "\(Self.self)")
     }
 
     public var isLoaded: Bool {

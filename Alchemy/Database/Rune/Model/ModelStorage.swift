@@ -8,7 +8,7 @@ public final class ModelStorage<M: Model>: Codable {
         }
     }
 
-    public var relationships: [String: Any]
+    public var relationships: [CacheKey: Any]
 
     public init() {
         self.id = nil
@@ -19,8 +19,8 @@ public final class ModelStorage<M: Model>: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: GenericCodingKey.self)
         for (key, relationship) in relationships {
-            if let relationship = relationship as? AnyEncodable {
-                try container.encode(relationship, forKey: .key(key))
+            if let relationship = relationship as? Encodable, let name = key.name {
+                try container.encode(AnyEncodable(relationship), forKey: .key(name))
             }
         }
     }
@@ -63,11 +63,11 @@ extension Model {
         storage.relationships = otherModel.storage.relationships
     }
 
-    func cache<To>(_ value: To, at key: String) {
+    func cache<To>(_ value: To, at key: CacheKey) {
         storage.relationships[key] = value
     }
 
-    func cached<To>(at key: String, _ type: To.Type = To.self) throws -> To? {
+    func cached<To>(at key: CacheKey, _ type: To.Type = To.self) throws -> To? {
         guard let value = storage.relationships[key] else {
             return nil
         }
@@ -79,7 +79,7 @@ extension Model {
         return value
     }
 
-    func cacheExists(_ key: String) -> Bool {
+    func cacheExists(_ key: CacheKey) -> Bool {
         storage.relationships[key] != nil
     }
 }

@@ -14,7 +14,7 @@ struct App {
 
     @GET("/todos")
     func getTodos() async throws -> [Todo] {
-        try await Todo.all().with { $0.this.with(\.this) }
+        try await Todo.all().with(\.$todos)
     }
 
     @Job
@@ -43,9 +43,7 @@ struct Todo {
     var isDone: Bool = false
     let tags: [String]?
 
-    var this: HasMany<Todo> {
-        hasMany(from: "id", to: "id")
-    }
+    @HasMany var todos: [Todo]
 }
 
 extension App {

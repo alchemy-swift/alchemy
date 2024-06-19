@@ -12,6 +12,7 @@ struct AlchemyPlugin: CompilerPlugin {
         ApplicationMacro.self,
         ControllerMacro.self,
         HTTPMethodMacro.self,
+        RelationshipMacro.self,
     ]
 }
 

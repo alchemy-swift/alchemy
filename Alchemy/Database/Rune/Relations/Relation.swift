@@ -10,6 +10,7 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     var toKey: SQLKey
     var lookupKey: String
     var throughs: [Through]
+    var name: String? = nil
 
     public override var sql: SQL {
         sql(for: [from])
@@ -22,11 +23,11 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         return copy.`where`(lookupKey, in: fromKeys).sql
     }
 
-    public var cacheKey: String {
-        let key = "\(name(of: Self.self))_\(fromKey)_\(toKey)"
+    public var cacheKey: CacheKey {
+        let key = "\(Self.self)_\(fromKey)_\(toKey)"
         let throughKeys = throughs.map { "\($0.table)_\($0.from)_\($0.to)" }
         let whereKeys = wheres.map { "\($0.hashValue)" }
-        return ([key] + throughKeys + whereKeys).joined(separator: ":")
+        return CacheKey(name: name, value: ([key] + throughKeys + whereKeys).joined(separator: ":"))
     }
 
     public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
@@ -86,5 +87,10 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
         }
 
         return value
+    }
+
+    public func named(_ name: String) -> Self {
+        self.name = name
+        return self
     }
 }
