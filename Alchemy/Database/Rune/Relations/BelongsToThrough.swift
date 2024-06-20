@@ -1,17 +1,32 @@
 extension Model {
-    public typealias BelongsToThrough<To: ModelOrOptional> = BelongsToThroughRelation<Self, To>
-}
+    public typealias BelongsToThrough<To: ModelOrOptional> = BelongsToThroughRelationship<Self, To>
 
-extension BelongsToRelation {
-    public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.BelongsToThrough<To> {
-        BelongsToThroughRelation(belongsTo: self, through: table, fromKey: throughFromKey, toKey: throughToKey)
+    public func belongsToThrough<To: Model>(db: Database = To.M.database,
+                                            _ through: String,
+                                            fromKey: String? = nil,
+                                            toKey: String? = nil,
+                                            throughFromKey: String? = nil,
+                                            throughToKey: String? = nil) -> BelongsToThrough<To> {
+        belongsTo(To.self, on: db, from: fromKey, to: toKey)
+            .through(through, from: throughFromKey, to: throughToKey)
     }
 }
 
-public final class BelongsToThroughRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
-    init(belongsTo: BelongsToRelation<From, To>, through table: String, fromKey: String?, toKey: String?) {
+extension BelongsToRelationship {
+    public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.BelongsToThrough<To> {
+        BelongsToThroughRelationship(belongsTo: self, through: table, fromKey: throughFromKey, toKey: throughToKey)
+    }
+}
+
+public final class BelongsToThroughRelationship<From: Model, To: ModelOrOptional>: Relationship<From, To> {
+    public init(belongsTo: BelongsToRelationship<From, To>, through table: String, fromKey: String?, toKey: String?) {
         super.init(db: belongsTo.db, from: belongsTo.from, fromKey: belongsTo.fromKey, toKey: belongsTo.toKey)
         through(table, from: fromKey, to: toKey)
+    }
+
+    public convenience init(db: Database = To.M.database, from: From, _ through: String, fromKey: String? = nil, toKey: String? = nil, throughFromKey: String? = nil, throughToKey: String? = nil) {
+        let belongsTo = From.BelongsTo<To>(db: db, from: from, fromKey: fromKey, toKey: toKey)
+        self.init(belongsTo: belongsTo, through: through, fromKey: fromKey, toKey: toKey)
     }
 
     @discardableResult

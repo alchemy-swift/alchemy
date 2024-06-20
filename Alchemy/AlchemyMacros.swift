@@ -7,7 +7,7 @@ public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "Contr
 @attached(peer, names: prefixed(`$`))
 public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 
-// MARK: Rune
+// MARK: Rune - Model
 
 @attached(memberAttribute)
 @attached(member, names: named(storage), named(fieldLookup))
@@ -17,9 +17,59 @@ public macro Model() = #externalMacro(module: "AlchemyPlugin", type: "ModelMacro
 @attached(accessor)
 public macro ID() = #externalMacro(module: "AlchemyPlugin", type: "IDMacro")
 
+// MARK: Rune - Relationships
+
 @attached(accessor)
 @attached(peer, names: prefixed(`$`))
-public macro HasMany() = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+public macro HasMany(from: String? = nil, to: String? = nil) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro HasManyThrough(
+    _ through: String,
+    from: String? = nil,
+    to: String? = nil,
+    throughFrom: String? = nil,
+    throughTo: String? = nil
+) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro HasOne(from: String? = nil, to: String? = nil) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro HasOneThrough(
+    _ through: String,
+    from: String? = nil,
+    to: String? = nil,
+    throughFrom: String? = nil,
+    throughTo: String? = nil
+) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro BelongsTo(from: String? = nil, to: String? = nil) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro BelongsToThrough(
+    _ through: String,
+    from: String? = nil,
+    to: String? = nil,
+    throughFrom: String? = nil,
+    throughTo: String? = nil
+) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
+
+@attached(accessor)
+@attached(peer, names: prefixed(`$`))
+public macro BelongsToMany(
+    _ pivot: String? = nil,
+    from: String? = nil,
+    to: String? = nil,
+    pivotFrom: String? = nil,
+    pivotTo: String? = nil
+) = #externalMacro(module: "AlchemyPlugin", type: "RelationshipMacro")
 
 // MARK: Route Methods
 

@@ -1,15 +1,25 @@
 extension Model {
-    public typealias HasOneThrough<To: ModelOrOptional> = HasOneThroughRelation<Self, To>
-}
+    public typealias HasOneThrough<To: ModelOrOptional> = HasOneThroughRelationship<Self, To>
 
-extension HasOneRelation {
-    public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.HasOneThrough<To> {
-        HasOneThroughRelation(hasOne: self, through: table, fromKey: throughFromKey, toKey: throughToKey)
+    public func hasOneThrough<To: ModelOrOptional>(db: Database = To.M.database, 
+                                                   _ through: String,
+                                                   fromKey: String? = nil,
+                                                   toKey: String? = nil,
+                                                   throughFromKey: String? = nil,
+                                                   throughToKey: String? = nil) -> HasOneThrough<To> {
+        hasOne(To.self, on: db, from: fromKey, to: toKey)
+            .through(through, from: throughFromKey, to: throughToKey)
     }
 }
 
-public final class HasOneThroughRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
-    init(hasOne: HasOneRelation<From, To>, through table: String, fromKey: String?, toKey: String?) {
+extension HasOneRelationship {
+    public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> From.HasOneThrough<To> {
+        HasOneThroughRelationship(hasOne: self, through: table, fromKey: throughFromKey, toKey: throughToKey)
+    }
+}
+
+public final class HasOneThroughRelationship<From: Model, To: ModelOrOptional>: Relationship<From, To> {
+    public init(hasOne: HasOneRelationship<From, To>, through table: String, fromKey: String?, toKey: String?) {
         super.init(db: hasOne.db, from: hasOne.from, fromKey: hasOne.fromKey, toKey: hasOne.toKey)
         through(table, from: fromKey, to: toKey)
     }

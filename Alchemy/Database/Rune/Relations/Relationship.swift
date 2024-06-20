@@ -1,4 +1,4 @@
-public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
+public class Relationship<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     struct Through {
         let table: String
         var from: SQLKey
@@ -10,6 +10,8 @@ public class Relation<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadable {
     var toKey: SQLKey
     var lookupKey: String
     var throughs: [Through]
+
+    /// Relationships will be encoded at this key.
     var name: String? = nil
 
     public override var sql: SQL {

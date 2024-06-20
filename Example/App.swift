@@ -14,7 +14,7 @@ struct App {
 
     @GET("/todos")
     func getTodos() async throws -> [Todo] {
-        try await Todo.all().with(\.$todos)
+        try await Todo.all().with(\.$hasMany.$hasMany)
     }
 
     @Job
@@ -43,7 +43,16 @@ struct Todo {
     var isDone: Bool = false
     let tags: [String]?
 
-    @HasMany var todos: [Todo]
+    @HasOne var hasOne: [Todo]
+    @HasMany var hasMany: [Todo]
+    @BelongsTo var belongsTo: [Todo]
+    @BelongsToMany var belongsToMany: [Todo]
+}
+
+extension Todo {
+    @HasOneThrough("through_table") var hasOneThrough: [Todo]
+    @HasManyThrough("through_table") var hasManyThrough: [Todo]
+    @BelongsToThrough("through_table") var belongsToThrough: [Todo]
 }
 
 extension App {

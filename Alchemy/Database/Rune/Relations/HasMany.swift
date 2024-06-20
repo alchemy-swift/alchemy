@@ -1,5 +1,5 @@
 extension Model {
-    public typealias HasMany<To: Model> = HasManyRelation<Self, To>
+    public typealias HasMany<To: Model> = HasManyRelationship<Self, To>
 
     public func hasMany<To: Model>(_ type: To.Type = To.self,
                                    on db: Database = To.M.database,
@@ -9,8 +9,8 @@ extension Model {
     }
 }
 
-public class HasManyRelation<From: Model, M: Model>: Relation<From, [M]> {
-    init(db: Database, from: From, fromKey: String?, toKey: String?) {
+public class HasManyRelationship<From: Model, M: Model>: Relationship<From, [M]> {
+    public init(db: Database = M.database, from: From, fromKey: String? = nil, toKey: String? = nil) {
         let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
         let toKey: SQLKey = db.inferReferenceKey(From.self).specify(toKey)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)

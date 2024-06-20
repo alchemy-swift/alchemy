@@ -40,7 +40,7 @@ public protocol TokenAuthable: Model {
     /// this type will be pulled from the database and
     /// associated with the request.
     associatedtype Authorizes: Model
-    associatedtype AuthorizesRelation: Relation<Self, Authorizes>
+    associatedtype AuthorizesRelation: Relationship<Self, Authorizes>
 
     /// The user in question.
     var user: AuthorizesRelation { get }

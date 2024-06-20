@@ -34,9 +34,13 @@ public enum RelationshipMacro: AccessorMacro, PeerMacro {
             throw AlchemyMacroError("@\(node.name) can only be applied to variables")
         }
 
+        let arguments = node.arguments.map { "\($0.trimmedDescription)" } ?? ""
         return [
-            Declaration("var $\(declaration.name): \(node.name)<\(declaration.type).Element>") {
-                "\(node.name.lowercaseFirst)().named(\(declaration.name.inQuotes))"
+            Declaration("var $\(declaration.name): \(node.name)<\(declaration.type).M>") {
+                """
+                \(node.name.lowercaseFirst)(\(arguments))
+                    .named(\(declaration.name.inQuotes))
+                """
             }
         ]
         .map { $0.declSyntax() }

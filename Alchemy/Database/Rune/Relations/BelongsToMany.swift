@@ -1,29 +1,39 @@
 import Collections
 
 extension Model {
-    public typealias BelongsToMany<To: Model> = BelongsToManyRelation<Self, To>
+    public typealias BelongsToMany<To: Model> = BelongsToManyRelationship<Self, To>
 
-    public func belongsToMany<To: ModelOrOptional>(_ type: To.Type = To.self,
-                                                   on db: Database = To.M.database,
+    public func belongsToMany<To: ModelOrOptional>(on db: Database = To.M.database,
+                                                   _ pivotTable: String? = nil,
                                                    from fromKey: String? = nil,
                                                    to toKey: String? = nil,
-                                                   pivot: String? = nil,
                                                    pivotFrom: String? = nil,
                                                    pivotTo: String? = nil) -> BelongsToMany<To> {
-        BelongsToMany(db: db, from: self, fromKey: fromKey, toKey: toKey, pivot: pivot, pivotFrom: pivotFrom, pivotTo: pivotTo)
+        BelongsToMany(db: db, from: self, pivotTable, fromKey: fromKey, toKey: toKey, pivotFrom: pivotFrom, pivotTo: pivotTo)
     }
 }
 
-public class BelongsToManyRelation<From: Model, M: Model>: Relation<From, [M]> {
+public class BelongsToManyRelationship<From: Model, M: Model>: Relationship<From, [M]> {
     private var pivot: Through {
-        guard let pivot = throughs.first else { preconditionFailure("BelongsToManyRelation must never have no throughs.") }
+        guard let pivot = throughs.first else {
+            preconditionFailure("BelongsToManyRelationship must always have at least 1 through.")
+        }
+
         return pivot
     }
 
-    init(db: Database, from: From, fromKey: String?, toKey: String?, pivot: String?, pivotFrom: String?, pivotTo: String?) {
+    public init(
+        db: Database = M.database,
+        from: From,
+        _ pivotTable: String? = nil,
+        fromKey: String? = nil,
+        toKey: String? = nil,
+        pivotFrom: String? = nil,
+        pivotTo: String? = nil
+    ) {
         let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
         let toKey: SQLKey = .infer(M.primaryKey).specify(toKey)
-        let pivot: String = pivot ?? From.table.singularized + "_" + M.table.singularized
+        let pivot: String = pivotTable ?? From.table.singularized + "_" + M.table.singularized
         let pivotFrom: SQLKey = db.inferReferenceKey(From.self).specify(pivotFrom)
         let pivotTo: SQLKey = db.inferReferenceKey(M.self).specify(pivotTo)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
