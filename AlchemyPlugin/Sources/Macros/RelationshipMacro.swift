@@ -17,7 +17,7 @@ public enum RelationshipMacro: AccessorMacro, PeerMacro {
         return [
             """
             get async throws {
-                try await $\(raw: declaration.name).get()
+                try await $\(raw: declaration.name).value()
             }
             """
         ]
