@@ -22,7 +22,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                swift: [5.10]
+                swift: ["5.10"]
         container: swift:${{ matrix.swift }}
         steps:
             - uses: actions/checkout@v3
