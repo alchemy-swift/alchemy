@@ -15,7 +15,6 @@ let package = Package(
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
     dependencies: [
-        .package(path: "../AlchemyX"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "1.8.1"),
         .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "1.3.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
@@ -34,6 +33,10 @@ let package = Package(
         .package(url: "https://github.com/swift-server/RediStack", branch: "1.5.1"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/vadymmarkov/Fakery", from: "5.0.0"),
+
+        // MARK: Experimental
+
+        .package(url: "https://github.com/joshuawright11/AlchemyX.git", branch: "main"),
     ],
     targets: [
 
