@@ -1,13 +1,11 @@
-/// The core type for an Alchemy application. Implement this & it's
-/// `boot` function, then add the `@main` attribute to mark it as
-/// the entrypoint for your application.
+/// The core type for an Alchemy application.
 ///
-///     @main
-///     final class App: Application {
-///         func boot() {
-///             get("/hello") { _ in
-///                 "Hello, world!"
-///             }
+///     @Application
+///     struct App {
+///
+///         @GET("/hello")
+///         func sayHello(name: String) -> String {
+///             "Hello, \(name)!"
 ///         }
 ///     }
 ///

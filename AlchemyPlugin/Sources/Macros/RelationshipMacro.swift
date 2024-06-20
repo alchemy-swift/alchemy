@@ -66,15 +66,3 @@ extension VariableDeclSyntax {
         }.first ?? "unknown"
     }
 }
-
-/*
- @HasMany var todos: [Todo] {
-     get async throws {
-         try await $todos.get()
-     }
- }
-
- var $todos: HasMany<Todo> {
-     hasMany(from: "id", to: "id")
- }
- */

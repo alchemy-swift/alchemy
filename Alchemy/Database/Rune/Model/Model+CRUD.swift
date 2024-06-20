@@ -201,11 +201,8 @@ extension Model {
         query(on: db).select(columns)
     }
 
-    public static func with<E: EagerLoadable>(on db: Database = database, _ loader: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
-        query(on: db).didLoad { models in
-            guard let first = models.first else { return }
-            try await loader(first).load(on: models)
-        }
+    public static func with<E: EagerLoadable>(on db: Database = database, _ relationship: @escaping (Self) -> E) -> Query<Self> where E.From == Self {
+        query(on: db).with(relationship)
     }
 }
 
