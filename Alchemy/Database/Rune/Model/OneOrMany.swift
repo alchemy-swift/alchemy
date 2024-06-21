@@ -17,6 +17,8 @@ extension Array: OneOrMany where Element: Model {
 }
 
 extension Optional: OneOrMany where Wrapped: Model {
+    public typealias M = Wrapped
+
     public init(models: [Wrapped]) throws {
         self = models.first
     }
@@ -26,7 +28,7 @@ extension Optional: OneOrMany where Wrapped: Model {
     }
 }
 
-extension Model {
+extension Model where M == Self {
     public init(models: [Self]) throws {
         guard let model = models.first else {
             throw RuneError("Non-optional relationship to \(Self.self) had no results!")

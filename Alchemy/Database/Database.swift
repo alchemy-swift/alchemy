@@ -139,6 +139,10 @@ public final class Database: Service {
 public struct DatabaseType: Equatable {
     public let name: String
 
+    public init(name: String) {
+        self.name = name
+    }
+
     public static let sqlite = DatabaseType(name: "SQLite")
     public static let postgres = DatabaseType(name: "PostgreSQL")
     public static let mysql = DatabaseType(name: "MySQL")

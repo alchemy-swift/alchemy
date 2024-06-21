@@ -18,7 +18,7 @@ final class SQLRowEncoder: Encoder {
                 return
             }
             
-            try property.store(key: key.stringValue, on: writer)
+            try property.store(key: key.stringValue, on: &writer)
         }
         
         mutating func nestedContainer<NestedKey: CodingKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> {
@@ -40,7 +40,7 @@ final class SQLRowEncoder: Encoder {
     
     /// Used for keeping track of the database fields pulled off the
     /// object encoded to this encoder.
-    private let writer: SQLRowWriter
+    private var writer: SQLRowWriter
 
     /// The mapping strategy for associating `CodingKey`s on an object
     /// with column names in a database.

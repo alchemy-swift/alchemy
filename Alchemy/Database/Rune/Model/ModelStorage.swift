@@ -1,4 +1,4 @@
-public final class ModelStorage<M: Model>: Codable {
+public final class ModelStorage<M: Model>: Codable, Equatable {
     public var id: M.PrimaryKey?
     public var row: SQLRow? {
         didSet {
@@ -28,6 +28,12 @@ public final class ModelStorage<M: Model>: Codable {
     public init(from decoder: Decoder) throws {
         // instead, use the KeyedDecodingContainer extension below.
         preconditionFailure("Directly decoding ModelStorage not supported!")
+    }
+
+    // MARK: Equatable
+
+    public static func == (lhs: ModelStorage<M>, rhs: ModelStorage<M>) -> Bool {
+        lhs.id == rhs.id
     }
 }
 

@@ -3,7 +3,7 @@ import AlchemyTest
 final class ControllerTests: TestCase<TestApp> {
     func testController() async throws {
         try await Test.get("/test").assertNotFound()
-        app.controller(TestController())
+        app.use(TestController())
         try await Test.get("/test").assertOk()
     }
     
@@ -14,7 +14,7 @@ final class ControllerTests: TestCase<TestApp> {
             ActionMiddleware { expect.signalTwo() },
             ActionMiddleware { expect.signalThree() }
         ])
-        app.controller(controller)
+        app.use(controller)
         try await Test.get("/middleware").assertOk()
         
         AssertTrue(expect.one)
@@ -31,7 +31,7 @@ final class ControllerTests: TestCase<TestApp> {
         ])
         
         app
-            .controller(controller)
+            .use(controller)
             .get("/outside") { _ async -> String in
                 expect.signalFour()
                 return "foo"

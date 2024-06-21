@@ -1,7 +1,7 @@
 // For custom logic around loading and saving properties on a Model.
 public protocol ModelProperty {
     init(key: String, on row: SQLRowReader) throws
-    func store(key: String, on row: SQLRowWriter) throws
+    func store(key: String, on row: inout SQLRowWriter) throws
 }
 
 extension String: ModelProperty {
@@ -9,7 +9,7 @@ extension String: ModelProperty {
         self = try row.require(key).string(key)
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(sql: self, at: key)
     }
 }
@@ -19,7 +19,7 @@ extension Bool: ModelProperty {
         self = try row.require(key).bool(key)
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(sql: self, at: key)
     }
 }
@@ -29,7 +29,7 @@ extension Float: ModelProperty {
         self = Float(try row.require(key).double(key))
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(sql: self, at: key)
     }
 }
@@ -39,7 +39,7 @@ extension Double: ModelProperty {
         self = try row.require(key).double(key)
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(sql: self, at: key)
     }
 }
@@ -49,7 +49,7 @@ extension FixedWidthInteger {
         self = try .init(row.require(key).int(key))
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(self, at: key)
     }
 }
@@ -70,7 +70,7 @@ extension Date: ModelProperty {
         self = try row.require(key).date(key)
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(sql: self, at: key)
     }
 }
@@ -80,7 +80,7 @@ extension UUID: ModelProperty {
         self = try row.require(key).uuid(key)
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
+    public func store(key: String, on row: inout SQLRowWriter) throws {
         row.put(sql: self, at: key)
     }
 }
@@ -95,7 +95,7 @@ extension Optional: ModelProperty where Wrapped: ModelProperty {
         self = .some(try Wrapped(key: key, on: row))
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
-        try self?.store(key: key, on: row)
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        try self?.store(key: key, on: &row)
     }
 }

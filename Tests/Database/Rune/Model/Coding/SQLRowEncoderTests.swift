@@ -96,15 +96,17 @@ private struct DatabaseJSON: Codable {
     var val2: Date
 }
 
-private struct CustomKeyedModel: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct CustomKeyedModel {
+    var id: Int
     var val1: String = "foo"
     var valueTwo: Int = 0
     var valueThreeInt: Int = 1
     var snake_case: String = "bar"
 }
 
-private struct CustomDecoderModel: Model, Codable {
+@Model
+private struct CustomDecoderModel {
     static var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -112,6 +114,6 @@ private struct CustomDecoderModel: Model, Codable {
         return encoder
     }()
     
-    var id: PK<Int> = .new
+    var id: Int
     var json: DatabaseJSON
 }

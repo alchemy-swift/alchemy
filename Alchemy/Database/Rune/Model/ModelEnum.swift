@@ -25,8 +25,8 @@ extension ModelEnum where Self: RawRepresentable, RawValue: ModelProperty {
         self = value
     }
     
-    public func store(key: String, on row: SQLRowWriter) throws {
-        try rawValue.store(key: key, on: row)
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        try rawValue.store(key: key, on: &row)
     }
 }
 

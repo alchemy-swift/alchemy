@@ -3,7 +3,7 @@ public struct SQLRowReader {
     public let keyMapping: KeyMapping
     public let jsonDecoder: JSONDecoder
 
-    public init(row: SQLRow, keyMapping: KeyMapping, jsonDecoder: JSONDecoder) {
+    public init(row: SQLRow, keyMapping: KeyMapping = .useDefaultKeys, jsonDecoder: JSONDecoder = JSONDecoder()) {
         self.row = row
         self.keyMapping = keyMapping
         self.jsonDecoder = jsonDecoder

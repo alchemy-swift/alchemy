@@ -147,9 +147,12 @@ extension Resource {
 
     fileprivate func generateInitializer() -> Declaration {
         Declaration("init(row: SQLRow) throws") {
-            "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
-            for property in storedProperties where property.name != "id" {
-                "self.\(property.name) = try reader.require(\(property.type).self, at: \(property.name.inQuotes))"
+            let propertiesExceptId = storedProperties.filter { $0.name != "id" }
+            if !propertiesExceptId.isEmpty {
+                "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
+                for property in propertiesExceptId {
+                    "self.\(property.name) = try reader.require(\(property.type).self, at: \(property.name.inQuotes))"
+                }
             }
 
             "storage.row = row"
@@ -159,7 +162,7 @@ extension Resource {
 
     fileprivate func generateFields() -> Declaration {
         Declaration("func fields() throws -> SQLFields") {
-            "let writer = SQLRowWriter(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)"
+            "var writer = SQLRowWriter(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)"
             for property in storedProperties {
                 "try writer.put(\(property.name), at: \(property.name.inQuotes))"
             }

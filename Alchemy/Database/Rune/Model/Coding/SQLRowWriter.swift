@@ -1,21 +1,21 @@
-public final class SQLRowWriter {
+public struct SQLRowWriter {
     public internal(set) var fields: SQLFields
     let keyMapping: KeyMapping
     let jsonEncoder: JSONEncoder
 
-    public init(keyMapping: KeyMapping, jsonEncoder: JSONEncoder) {
+    public init(keyMapping: KeyMapping = .useDefaultKeys, jsonEncoder: JSONEncoder = JSONEncoder()) {
         self.fields = [:]
         self.keyMapping = keyMapping
         self.jsonEncoder = jsonEncoder
     }
 
-    public func put(json: some Encodable, at key: String) throws {
+    public mutating func put(json: some Encodable, at key: String) throws {
         let jsonData = try jsonEncoder.encode(json)
         let bytes = ByteBuffer(data: jsonData)
         self[key] = .value(.json(bytes))
     }
 
-    public func put(sql: SQLConvertible, at key: String) {
+    public mutating func put(sql: SQLConvertible, at key: String) {
         self[key] = sql
     }
 
@@ -26,19 +26,19 @@ public final class SQLRowWriter {
 }
 
 extension SQLRowWriter {
-    public func put(_ value: ModelProperty, at key: String) throws {
-
+    public mutating func put(_ value: ModelProperty, at key: String) throws {
+        try value.store(key: key, on: &self)
     }
 
-    public func put(_ value: some Encodable, at key: String) throws {
+    public mutating func put(_ value: some Encodable, at key: String) throws {
         if let value = value as? ModelProperty {
-            try value.store(key: key, on: self)
+            try put(value, at: key)
         } else {
             try put(json: value, at: key)
         }
     }
 
-    public func put<F: FixedWidthInteger>(_ int: F, at key: String) {
+    public mutating func put<F: FixedWidthInteger>(_ int: F, at key: String) {
         self[key] = Int(int)
     }
 }

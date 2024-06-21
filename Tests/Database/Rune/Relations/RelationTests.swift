@@ -126,27 +126,30 @@ final class RelationTests: TestCase<TestApp> {
     }
 }
 
-private struct Organization: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct Organization {
+    var id: Int
 
     var users: BelongsToMany<User> {
-        belongsToMany(pivot: UserOrganization.table)
+        belongsToMany(UserOrganization.table)
     }
 
     var usersOver30: BelongsToMany<User> {
-        belongsToMany(pivot: UserOrganization.table)
+        belongsToMany(UserOrganization.table)
             .where("age" >= 30)
     }
 }
 
-private struct UserOrganization: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct UserOrganization {
+    var id: Int
     var userId: Int
     var organizationId: Int
 }
 
-private struct User: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct User {
+    var id: Int
     let name: String
     let age: Int
     var managerId: Int?
@@ -166,12 +169,13 @@ private struct User: Model, Codable {
     }
 
     var organizations: BelongsToMany<Organization> {
-        belongsToMany(pivot: UserOrganization.table)
+        belongsToMany(UserOrganization.table)
     }
 }
 
-private struct Repository: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct Repository {
+    var id: Int
     var userId: Int
 
     var user: BelongsTo<User> {
@@ -183,8 +187,9 @@ private struct Repository: Model, Codable {
     }
 }
 
-private struct Workflow: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct Workflow {
+    var id: Int
     var repositoryId: Int
 
     var repository: BelongsTo<Repository> {
@@ -196,8 +201,9 @@ private struct Workflow: Model, Codable {
     }
 }
 
-private struct Job: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct Job {
+    var id: Int
     var workflowId: Int
 
     var workflow: BelongsTo<Workflow> {
@@ -211,8 +217,9 @@ private struct Job: Model, Codable {
     }
 }
 
-private struct TestModel: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct TestModel {
+    var id: Int
 }
 
 private struct WorkflowMigration: Migration {

@@ -33,11 +33,11 @@ final class EncryptionTests: XCTestCase {
 
         let string = "FOO"
         let encryptedValue = try Crypt.encrypt(string: string).base64EncodedString()
-        let reader: FakeReader = ["foo": encryptedValue]
+        let reader: SQLRowReader = ["foo": encryptedValue]
         let encrypted = try Encrypted(key: "foo", on: reader)
         XCTAssertEqual(encrypted.wrappedValue, "FOO")
 
-        let fakeWriter = FakeWriter()
+        let fakeWriter = SQLRowWriter()
         var writer: SQLRowWriter = fakeWriter
         try encrypted.store(key: "foo", on: &writer)
         guard let storedValue = fakeWriter.fields["foo"] as? String else {
@@ -49,49 +49,13 @@ final class EncryptionTests: XCTestCase {
     }
     
     func testEncryptedNotBase64Throws() {
-        let reader: FakeReader = ["foo": "bar"]
+        let reader: SQLRowReader = ["foo": "bar"]
         XCTAssertThrowsError(try Encrypted(key: "foo", on: reader))
     }
 }
 
-private final class FakeWriter: SQLRowWriter {
-    var fields: SQLFields = [:]
-
-    subscript(column: String) -> SQLConvertible? {
-        get { fields[column] }
-        set { fields[column] = newValue }
-    }
-    
-    func put<E: Encodable>(json: E, at key: String) throws {
-        let jsonData = try JSONEncoder().encode(json)
-        self[key] = .value(.json(ByteBuffer(data: jsonData)))
-    }
-}
-
-private struct FakeReader: SQLRowReader, ExpressibleByDictionaryLiteral {
-    var row: SQLRow
-    
-    init(dictionaryLiteral: (String, SQLValueConvertible)...) {
-        self.row = SQLRow(fields: dictionaryLiteral)
-    }
-    
-    func requireJSON<D: Decodable>(_ key: String) throws -> D {
-        return try JSONDecoder().decode(D.self, from: row.require(key).json(key))
-    }
-    
-    func require(_ key: String) throws -> SQLValue {
-        try row.require(key)
-    }
-    
-    func contains(_ column: String) -> Bool {
-        row[column] != nil
-    }
-    
-    subscript(_ index: Int) -> SQLValue {
-        row[index]
-    }
-    
-    subscript(_ column: String) -> SQLValue? {
-        row[column]
+extension SQLRowReader: ExpressibleByDictionaryLiteral {
+    public init(dictionaryLiteral: (String, SQLValueConvertible)...) {
+        self.init(row: SQLRow(fields: dictionaryLiteral))
     }
 }

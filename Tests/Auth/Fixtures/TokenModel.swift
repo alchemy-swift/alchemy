@@ -1,14 +1,17 @@
 import Alchemy
 
-struct TokenModel: Model, Codable, TokenAuthable {
+@Model
+struct TokenModel: TokenAuthable {
     typealias Authorizes = AuthModel
 
-    var id: PK<Int> = .new
-    var value = UUID()
+    var id: Int
+    var value: UUID = UUID()
     var userId: Int
 
+    @BelongsTo var auth: AuthModel
+
     var user: BelongsTo<AuthModel> {
-        belongsTo(from: "user_id")
+        $auth
     }
 
     struct Migrate: Migration {
