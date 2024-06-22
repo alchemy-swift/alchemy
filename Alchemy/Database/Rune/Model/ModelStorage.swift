@@ -16,8 +16,30 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
         self.relationships = [:]
     }
 
+    // MARK: SQL
+
+    public func write(to writer: inout SQLRowWriter) throws {
+        if let id {
+            try writer.put(id, at: M.primaryKey)
+        }
+    }
+
+    public func read(from reader: SQLRowReader) throws {
+        id = try reader.require(M.PrimaryKey.self, at: M.primaryKey)
+        row = reader.row
+    }
+
+    // MARK: Codable
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: GenericCodingKey.self)
+        
+        // 0. encode id
+        if let id {
+            try container.encode(id, forKey: .key(M.primaryKey))
+        }
+
+        // 1. encode encodable relationships
         for (key, relationship) in relationships {
             if let relationship = relationship as? Encodable, let name = key.name {
                 try container.encode(AnyEncodable(relationship), forKey: .key(name))
@@ -26,8 +48,14 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
     }
 
     public init(from decoder: Decoder) throws {
-        // instead, use the KeyedDecodingContainer extension below.
-        preconditionFailure("Directly decoding ModelStorage not supported!")
+        let container = try decoder.container(keyedBy: GenericCodingKey.self)
+        let key: GenericCodingKey = .key(M.primaryKey)
+        if container.contains(key) {
+            self.id = try container.decode(M.PrimaryKey.self, forKey: key)
+        }
+
+        self.row = nil
+        self.relationships = [:]
     }
 
     // MARK: Equatable
@@ -39,24 +67,6 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
 
 extension Model {
     public typealias Storage = ModelStorage<Self>
-}
-
-extension KeyedDecodingContainer {
-    public func decode<M: Model>(
-        _ type: ModelStorage<M>,
-        forKey key: Self.Key
-    ) throws -> ModelStorage<M> {
-        M.Storage()
-    }
-}
-
-extension KeyedEncodingContainer {
-    public mutating func encode<M: Model>(
-        _ value: ModelStorage<M>,
-        forKey key: KeyedEncodingContainer<K>.Key
-    ) throws {
-        // ignore
-    }
 }
 
 extension Model {

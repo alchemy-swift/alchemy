@@ -1,24 +1,21 @@
 final class SQLRowEncoder: Encoder {
     /// Used to decode keyed values from a Model.
     private struct _KeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtocol {
-        var writer: SQLRowWriter
-
-        // MARK: KeyedEncodingContainerProtocol
-        
+        var encoder: SQLRowEncoder
         var codingPath = [CodingKey]()
 
         mutating func encodeNil(forKey key: Key) throws {
-            writer.put(sql: .null, at: key.stringValue)
+            encoder.writer.put(sql: .null, at: key.stringValue)
         }
 
         mutating func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
             guard let property = value as? ModelProperty else {
                 // Assume anything else is JSON.
-                try writer.put(json: value, at: key.stringValue)
+                try encoder.writer.put(json: value, at: key.stringValue)
                 return
             }
             
-            try property.store(key: key.stringValue, on: &writer)
+            try property.store(key: key.stringValue, on: &encoder.writer)
         }
         
         mutating func nestedContainer<NestedKey: CodingKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> {
@@ -70,7 +67,7 @@ final class SQLRowEncoder: Encoder {
     // MARK: Encoder
 
     func container<Key>(keyedBy: Key.Type) -> KeyedEncodingContainer<Key> {
-        KeyedEncodingContainer(_KeyedEncodingContainer<Key>(writer: writer, codingPath: codingPath))
+        KeyedEncodingContainer(_KeyedEncodingContainer<Key>(encoder: self, codingPath: codingPath))
     }
 
     func unkeyedContainer() -> UnkeyedEncodingContainer {

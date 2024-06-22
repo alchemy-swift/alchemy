@@ -10,7 +10,7 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     associatedtype PrimaryKey: PrimaryKeyProtocol
 
     /// The identifier of this model
-    var id: PrimaryKey { get set }
+    var id: PrimaryKey { get nonmutating set }
 
     /// Storage for model metadata (relationships, original row, etc).
     var storage: Storage { get }
@@ -70,6 +70,23 @@ extension Model {
 
     public static func on(_ database: Database) -> Query<Self> {
         query(on: database)
+    }
+
+    public func id(_ id: PrimaryKey) -> Self {
+        self.id = id
+        return self
+    }
+
+    public func requireId() throws -> PrimaryKey {
+        guard let id = storage.id else {
+            throw RuneError("Model had no id!")
+        }
+
+        return id
+    }
+
+    public func maybeId() -> PrimaryKey? {
+        storage.id
     }
 }
 

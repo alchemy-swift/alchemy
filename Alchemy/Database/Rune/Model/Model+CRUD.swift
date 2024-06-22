@@ -113,7 +113,7 @@ extension Model {
     
     @discardableResult
     public func update(on db: Database = database, _ fields: [String: Any]) async throws -> Self {
-        let values = fields.compactMapValues { $0 as? SQLConvertible }
+        let values = SQLFields(fields.compactMapValues { $0 as? SQLConvertible }, uniquingKeysWith: { a, _ in a })
         return try await update(on: db, values)
     }
 
@@ -125,7 +125,9 @@ extension Model {
 
     @discardableResult
     public func update<E: Encodable>(on db: Database = database, _ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> Self {
-        try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+        let fields = try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder)
+        print("fields \(fields)")
+        return try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
     }
 
     // MARK: UPSERT
@@ -184,6 +186,7 @@ extension Model {
     /// Fetches an copy of this model from a database, with any updates that may
     /// have been made since it was last fetched.
     public func refresh(on db: Database = database) async throws -> Self {
+        let id = try requireId()
         let model = try await Self.require(id, db: db)
         row = model.row
         model.mergeCache(self)
@@ -237,9 +240,8 @@ extension Array where Element: Model {
 
     // MARK: UPDATE
 
-    @discardableResult
-    public func updateAll(on db: Database = Element.database, _ fields: [String: Any]) async throws -> Self {
-        let values = fields.compactMapValues { $0 as? SQLConvertible }
+    public func updateAll(on db: Database = Element.database, _ fields: [String: Any]) async throws {
+        let values = SQLFields(fields.compactMapValues { $0 as? SQLConvertible }, uniquingKeysWith: { a, _ in a })
         return try await updateAll(on: db, values)
     }
 

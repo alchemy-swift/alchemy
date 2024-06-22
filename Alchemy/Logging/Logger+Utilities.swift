@@ -112,12 +112,12 @@ extension Logger: Service {
     }
 
     static let `default`: Logger = {
-        if Environment.isRunFromTests {
-            return .null
-        } else if Environment.isXcode {
-            return .xcode
+        let isTests = Environment.isRunFromTests
+        let defaultLevel: Logger.Level = isTests ? .error : .debug
+        if Environment.isXcode {
+            return .xcode.withLevel(defaultLevel)
         } else {
-            return .debug
+            return .debug.withLevel(defaultLevel)
         }
     }()
 }

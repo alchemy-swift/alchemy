@@ -1,5 +1,3 @@
-import Crypto
-
 /// A protocol for automatically authenticating incoming requests
 /// based on their `Authentication: Bearer ...` header. When the
 /// request is intercepted by a related `TokenAuthMiddleware<T>`, it

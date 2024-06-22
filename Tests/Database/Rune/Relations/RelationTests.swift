@@ -29,20 +29,20 @@ final class RelationTests: TestCase<TestApp> {
          ===============================
          */
         
-        organization = try await Organization(id: 1).insertReturn()
-        try await Organization(id: 2).insert()
-        user = try await User(id: 3, name: "Josh", age: 29, managerId: nil).insertReturn()
-        try await User(id: 4, name: "Bill", age: 35, managerId: 3).insert()
+        organization = try await Organization().id(1).insertReturn()
+        try await Organization().id(2).insert()
+        user = try await User(name: "Josh", age: 29, managerId: nil).id(3).insertReturn()
+        try await User(name: "Bill", age: 35, managerId: 3).id(4).insert()
         try await UserOrganization(userId: 3, organizationId: 1).insert()
         try await UserOrganization(userId: 3, organizationId: 2).insert()
         try await UserOrganization(userId: 4, organizationId: 1).insert()
         try await UserOrganization(userId: 4, organizationId: 2).insert()
-        repository = try await Repository(id: 5, userId: 3).insertReturn()
-        try await Repository(id: 6, userId: 3).insert()
-        workflow = try await Workflow(id: 7, repositoryId: 5).insertReturn()
-        try await Workflow(id: 8, repositoryId: 5).insert()
-        job = try await Job(id: 9, workflowId: 7).insertReturn()
-        try await Job(id: 10, workflowId: 7).insert()
+        repository = try await Repository(userId: 3).id(5).insertReturn()
+        try await Repository(userId: 3).id(6).insert()
+        workflow = try await Workflow(repositoryId: 5).id(7).insertReturn()
+        try await Workflow(repositoryId: 5).id(8).insert()
+        job = try await Job(workflowId: 7).id(9).insertReturn()
+        try await Job(workflowId: 7).id(10).insert()
     }
 
     // MARK: - Basics

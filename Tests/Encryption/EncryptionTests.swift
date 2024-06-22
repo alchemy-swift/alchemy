@@ -37,10 +37,9 @@ final class EncryptionTests: XCTestCase {
         let encrypted = try Encrypted(key: "foo", on: reader)
         XCTAssertEqual(encrypted.wrappedValue, "FOO")
 
-        let fakeWriter = SQLRowWriter()
-        var writer: SQLRowWriter = fakeWriter
+        var writer = SQLRowWriter()
         try encrypted.store(key: "foo", on: &writer)
-        guard let storedValue = fakeWriter.fields["foo"] as? String else {
+        guard let storedValue = writer.fields["foo"] as? String else {
             return XCTFail("a String wasn't stored")
         }
 

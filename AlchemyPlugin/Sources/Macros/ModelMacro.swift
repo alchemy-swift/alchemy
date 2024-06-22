@@ -92,6 +92,10 @@ struct Resource {
     var storedProperties: [Property] {
         properties.filter(\.isStored)
     }
+
+    var storedPropertiesExceptId: [Property] {
+        storedProperties.filter { $0.name != "id" }
+    }
 }
 
 extension Resource {
@@ -141,21 +145,21 @@ extension Resource.Property {
 }
 
 extension Resource {
+    
+    // MARK: Model
+
     fileprivate func generateStorage() -> Declaration {
         Declaration("var storage = Storage()")
     }
 
     fileprivate func generateInitializer() -> Declaration {
         Declaration("init(row: SQLRow) throws") {
-            let propertiesExceptId = storedProperties.filter { $0.name != "id" }
-            if !propertiesExceptId.isEmpty {
-                "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
-                for property in propertiesExceptId {
-                    "self.\(property.name) = try reader.require(\(property.type).self, at: \(property.name.inQuotes))"
-                }
+            "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
+            for property in storedPropertiesExceptId {
+                "self.\(property.name) = try reader.require(\(property.type).self, at: \(property.name.inQuotes))"
             }
 
-            "storage.row = row"
+            "try storage.read(from: reader)"
         }
         .access(accessLevel == "public" ? "public" : nil)
     }
@@ -163,42 +167,13 @@ extension Resource {
     fileprivate func generateFields() -> Declaration {
         Declaration("func fields() throws -> SQLFields") {
             "var writer = SQLRowWriter(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)"
-            for property in storedProperties {
+            for property in storedPropertiesExceptId {
                 "try writer.put(\(property.name), at: \(property.name.inQuotes))"
             }
             """
+            try storage.write(to: &writer)
             return writer.fields
             """
-        }
-        .access(accessLevel == "public" ? "public" : nil)
-    }
-
-    fileprivate func generateEncode() -> Declaration {
-        Declaration("func encode(to encoder: Encoder) throws") {
-            "var container = encoder.container(keyedBy: GenericCodingKey.self)"
-            for property in storedProperties {
-                "try container.encode(\(property.name), forKey: \(property.name.inQuotes))"
-            }
-
-            "try storage.encode(to: encoder)"
-        }
-        .access(accessLevel == "public" ? "public" : nil)
-    }
-
-    fileprivate func generateDecode() -> Declaration {
-        Declaration("init(from decoder: Decoder) throws") {
-            "let container = try decoder.container(keyedBy: GenericCodingKey.self)"
-            for property in storedProperties where property.name != "id" {
-                "self.\(property.name) = try container.decode(\(property.type).self, forKey: \(property.name.inQuotes))"
-            }
-
-            if let idType = storedProperties.first(where: { $0.name == "id" })?.type {
-                """
-                if container.contains("id") {
-                    self.id = try container.decode(\(idType).self, forKey: "id")
-                }
-                """
-            }
         }
         .access(accessLevel == "public" ? "public" : nil)
     }
@@ -218,6 +193,36 @@ extension Resource {
                 \(fieldsString)
             ]
             """)
+    }
+
+    // MARK: Codable
+
+    fileprivate func generateEncode() -> Declaration {
+        Declaration("func encode(to encoder: Encoder) throws") {
+            if !storedPropertiesExceptId.isEmpty {
+                "var container = encoder.container(keyedBy: GenericCodingKey.self)"
+                for property in storedPropertiesExceptId {
+                    "try container.encode(\(property.name), forKey: \(property.name.inQuotes))"
+                }
+            }
+
+            "try storage.encode(to: encoder)"
+        }
+        .access(accessLevel == "public" ? "public" : nil)
+    }
+
+    fileprivate func generateDecode() -> Declaration {
+        Declaration("init(from decoder: Decoder) throws") {
+            if !storedPropertiesExceptId.isEmpty {
+                "let container = try decoder.container(keyedBy: GenericCodingKey.self)"
+                for property in storedPropertiesExceptId {
+                    "self.\(property.name) = try container.decode(\(property.type).self, forKey: \(property.name.inQuotes))"
+                }
+            }
+
+            "self.storage = try Storage(from: decoder)"
+        }
+        .access(accessLevel == "public" ? "public" : nil)
     }
 }
 

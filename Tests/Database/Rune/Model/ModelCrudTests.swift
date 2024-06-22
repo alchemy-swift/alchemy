@@ -88,7 +88,7 @@ final class ModelCrudTests: TestCase<TestApp> {
         XCTAssertEqual(model.foo, "bar")
         XCTAssertEqual(model.bar, false)
         
-        let customId = try await TestModelCustomId(foo: "bar").insertReturn()
+        let customId = try await TestModelCustomId(foo: "bar").id(UUID()).insertReturn()
         XCTAssertEqual(customId.foo, "bar")
     }
     
@@ -112,7 +112,8 @@ final class ModelCrudTests: TestCase<TestApp> {
         AssertEqual(try await model.refresh().foo, "bar")
         
         do {
-            let unsavedModel = TestModel(id: 12345, foo: "one", bar: false)
+            let unsavedModel = TestModel(foo: "one", bar: false)
+            unsavedModel.id = 12345
             _ = try await unsavedModel.refresh()
             XCTFail("Syncing an unsaved model should throw")
         } catch {}

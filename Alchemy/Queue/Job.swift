@@ -87,7 +87,7 @@ public struct JobContext {
 
 // Default implementations.
 extension Job {
-    public static var name: String { String(reflecting: Self.self) }
+    public static var name: String { "\(Self.self)" }
     public var recoveryStrategy: RecoveryStrategy { .none }
     public var retryBackoff: TimeAmount { .zero }
     

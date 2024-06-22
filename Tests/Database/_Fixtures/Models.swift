@@ -30,7 +30,7 @@ struct OtherSeedModel: Seedable {
     struct Migrate: Migration {
         func up(db: Database) async throws {
             try await db.createTable("other_seed_models") {
-                $0.uuid("id").primary()
+                $0.increments("id").primary()
                 $0.int("foo").notNull()
                 $0.bool("bar").notNull()
             }
@@ -41,7 +41,7 @@ struct OtherSeedModel: Seedable {
         }
     }
     
-    var id: UUID = UUID()
+    var id: Int
     let foo: Int
     let bar: Bool
     

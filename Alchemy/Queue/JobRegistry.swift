@@ -24,7 +24,7 @@ final class JobRegistry {
     func createJob(from jobData: JobData) async throws -> Job {
         guard let creator = lock.withLock({ creators[jobData.jobName] }) else {
             Log.warning("Unknown job of type '\(jobData.jobName)'. Please register it in your Queues config or with `app.registerJob(\(jobData.jobName).self)`.")
-            throw JobError.unknownType
+            throw JobError.unknownJob(jobData.jobName)
         }
 
         do {

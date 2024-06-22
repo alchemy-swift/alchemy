@@ -53,7 +53,7 @@ final class SQLRowTests: TestCase<TestApp> {
             "belongs_to_id": 1
         ]
 
-        XCTAssertEqual(try row.decodeModel(EverythingModel.self), EverythingModel(date: date, uuid: uuid))
+        XCTAssertEqual(try row.decodeModel(EverythingModel.self), EverythingModel(date: date, uuid: uuid).id(1))
     }
     
     func testSubscript() {
@@ -69,6 +69,7 @@ struct EverythingModel: Equatable {
         let string: String
         let int: Int
     }
+
     enum StringEnum: String, Codable, ModelEnum { case one }
     enum IntEnum: Int, Codable, ModelEnum { case two = 2 }
     enum DoubleEnum: Double, Codable, ModelEnum { case three = 3.0 }
