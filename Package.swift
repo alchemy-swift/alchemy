@@ -10,7 +10,7 @@ let package = Package(
         .iOS(.v16),
     ],
     products: [
-        .executable(name: "Demo", targets: ["AlchemyExample"]),
+        .executable(name: "AlchemyExample", targets: ["AlchemyExample"]),
         .library(name: "Alchemy", targets: ["Alchemy"]),
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],

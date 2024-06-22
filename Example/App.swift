@@ -1,5 +1,6 @@
 import Alchemy
 
+@main
 @Application
 struct App {
     func boot() throws {

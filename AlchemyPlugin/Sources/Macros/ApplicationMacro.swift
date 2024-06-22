@@ -18,7 +18,7 @@ struct ApplicationMacro: ExtensionMacro {
 
         let routes = try Routes.parse(declaration)
         return try [
-            Declaration("@main extension \(`struct`.name.trimmedDescription): Application, Controller") {
+            Declaration("extension \(`struct`.name.trimmedDescription): Application, Controller") {
                 routes.routeFunction()
             },
         ]
