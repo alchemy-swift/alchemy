@@ -31,9 +31,8 @@ public struct Validator<Value>: @unchecked Sendable {
 
 extension Validator<String> {
     public static let email = Validator("Invalid email.") {
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
-        return emailPred.evaluate(with: $0)
+        try Regex("[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}")
+            .firstMatch(in: $0) != nil
     }
 }
 
