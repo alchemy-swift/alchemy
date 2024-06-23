@@ -14,7 +14,7 @@ struct IDMacro: AccessorMacro {
             throw AlchemyMacroError("@ID can only be applied to a stored property.")
         }
 
-        let property = try Resource.Property.parse(variable: variable)
+        let property = try Model.Property.parse(variable: variable)
         guard property.keyword == "var" else {
             throw AlchemyMacroError("Property 'id' must be a var.")
         }

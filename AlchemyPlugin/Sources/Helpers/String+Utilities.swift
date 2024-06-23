@@ -3,6 +3,10 @@ extension String {
     var capitalizeFirst: String {
         prefix(1).capitalized + dropFirst()
     }
+
+    var lowercaseFirst: String {
+        prefix(1).lowercased() + dropFirst()
+    }
 }
 
 extension Collection {

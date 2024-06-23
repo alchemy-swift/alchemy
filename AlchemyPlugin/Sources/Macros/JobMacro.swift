@@ -8,16 +8,15 @@ struct JobMacro: PeerMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         guard
-            let function = declaration.as(FunctionDeclSyntax.self),
-            function.isStatic
+            let function = declaration.as(FunctionDeclSyntax.self)
+//            function.isStatic
         else {
-            throw AlchemyMacroError("@Job can only be applied to static functions")
+            throw AlchemyMacroError("@Job can only be applied to functions")
         }
 
         let name = function.name.text
         return [
             Declaration("struct $\(name): Job, Codable") {
-
                 for parameter in function.parameters {
                     "let \(parameter.name): \(parameter.type)"
                 }

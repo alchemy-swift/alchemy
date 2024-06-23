@@ -41,7 +41,7 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
 
         // 1. encode encodable relationships
         for (key, relationship) in relationships {
-            if let relationship = relationship as? Encodable, let name = key.name {
+            if let relationship = relationship as? Encodable, let name = key.key {
                 try container.encode(AnyEncodable(relationship), forKey: .key(name))
             }
         }

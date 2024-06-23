@@ -1,28 +1,7 @@
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
-    
-    // MARK: ExtensionMacro
-    
-    static func expansion(
-        of node: AttributeSyntax,
-        attachedTo declaration: some DeclGroupSyntax,
-        providingExtensionsOf type: some TypeSyntaxProtocol,
-        conformingTo protocols: [TypeSyntax],
-        in context: some MacroExpansionContext
-    ) throws -> [ExtensionDeclSyntax] {
-        let resource = try Resource.parse(syntax: declaration)
-        return try [
-            Declaration("extension \(resource.name): Model, Codable") {
-                resource.generateInitializer()
-                resource.generateFields()
-                resource.generateEncode()
-                resource.generateDecode()
-            }
-        ]
-        .map { try $0.extensionDeclSyntax() }
-    }
+struct ModelMacro: MemberMacro, MemberAttributeMacro, ExtensionMacro {
 
     // MARK: Member Macro
 
@@ -31,12 +10,12 @@ struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        let resource = try Resource.parse(syntax: declaration)
+        let resource = try Model.parse(syntax: declaration)
         return [
             resource.generateStorage(),
-            resource.generateFieldLookup(),
+            declaration.hasFieldLookupFunction ? nil : resource.generateFieldLookup(),
         ]
-        .map { $0.declSyntax() }
+        .compactMap { $0?.declSyntax() }
     }
 
     // MARK: MemberAttributeMacro
@@ -47,116 +26,52 @@ struct ModelMacro: MemberMacro, ExtensionMacro, MemberAttributeMacro {
       providingAttributesFor member: some DeclSyntaxProtocol,
       in context: some MacroExpansionContext
     ) throws -> [AttributeSyntax] {
-        guard let member = member.as(VariableDeclSyntax.self) else {
+        guard let member = member.as(VariableDeclSyntax.self), !member.isStatic else {
             return []
         }
 
-        guard !member.isStatic else {
-            return []
+        let property = try Model.Property.parse(variable: member)
+        guard property.name == "id" else { return [] }
+        guard property.keyword == "var" else {
+            throw AlchemyMacroError("Property 'id' must be a var.")
         }
 
-        let property = try Resource.Property.parse(variable: member)
-        if property.name == "id" {
-            guard property.keyword == "var" else {
-                throw AlchemyMacroError("Property 'id' must be a var.")
+        return ["@ID"]
+    }
+
+    // MARK: ExtensionMacro
+
+    static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [ExtensionDeclSyntax] {
+        let resource = try Model.parse(syntax: declaration)
+        return try [
+            Declaration("extension \(resource.name): Model, Codable") {
+                if !declaration.hasModelInit { resource.generateModelInit() }
+                if !declaration.hasFieldsFunction { resource.generateFields() }
+                if !declaration.hasDecodeInit { resource.generateDecode() }
+                if !declaration.hasEncodeFunction { resource.generateEncode() }
             }
-
-            return ["@ID"]
-        } else {
-            return []
-        }
+        ]
+        .map { try $0.extensionDeclSyntax() }
     }
 }
 
-struct Resource {
-    struct Property {
-        let keyword: String
-        let name: String
-        let type: String?
-        let defaultValue: String?
-        let isStored: Bool
-
-        var isOptional: Bool {
-            type?.last == "?"
-        }
-    }
-
-    /// The type's access level - public, private, etc
-    let accessLevel: String?
-    /// The type name
-    let name: String
-    /// The type's properties
-    let properties: [Property]
-
-    /// The type's stored properties
-    var storedProperties: [Property] {
-        properties.filter(\.isStored)
-    }
-
-    var storedPropertiesExceptId: [Property] {
-        storedProperties.filter { $0.name != "id" }
-    }
-
-    var idProperty: Property? {
-        storedProperties.filter { $0.name == "id" }.first
-    }
-}
-
-extension Resource {
-    static func parse(syntax: DeclSyntaxProtocol) throws -> Resource {
-        guard let `struct` = syntax.as(StructDeclSyntax.self) else {
-            throw AlchemyMacroError("For now, @Model can only be applied to a struct")
-        }
-
-        return Resource(
-            accessLevel: `struct`.accessLevel,
-            name: `struct`.structName,
-            properties: try `struct`.instanceMembers.map(Resource.Property.parse)
-        )
-    }
-}
-
-extension Resource.Property {
-    static func parse(variable: VariableDeclSyntax) throws -> Resource.Property {
-        let patternBindings = variable.bindings.compactMap { PatternBindingSyntax.init($0) }
-        let keyword = variable.bindingSpecifier.text
-
-        guard let patternBinding = patternBindings.first else {
-            throw AlchemyMacroError("Property had no pattern bindings")
-        }
-
-        guard let identifierPattern = patternBinding.pattern.as(IdentifierPatternSyntax.self) else {
-            throw AlchemyMacroError("Unable to detect property name")
-        }
-
-        let name = "\(identifierPattern.identifier.text)"
-        let type = patternBinding.typeAnnotation?.type.trimmedDescription
-        let defaultValue = patternBinding.initializer.map { "\($0.value.trimmed)" }
-        let isStored = patternBinding.accessorBlock == nil
-
-        return Resource.Property(
-            keyword: keyword,
-            name: name,
-            type: type,
-            defaultValue: defaultValue,
-            isStored: isStored
-        )
-    }
-}
-
-extension Resource {
+extension Model {
     
     // MARK: Model
 
     fileprivate func generateStorage() -> Declaration {
-        if let idProperty, let defaultValue = idProperty.defaultValue {
-            Declaration("var storage = Storage(id: \(defaultValue))")
-        } else {
-            Declaration("var storage = Storage()")
-        }
+        let id = idProperty.flatMap(\.defaultValue).map { "id: \($0)" } ?? ""
+        return Declaration("var storage = Storage(\(id))")
+            .access(accessLevel == "public" ? "public" : nil)
     }
 
-    fileprivate func generateInitializer() -> Declaration {
+    fileprivate func generateModelInit() -> Declaration {
         Declaration("init(row: SQLRow) throws") {
             "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
             for property in storedPropertiesExceptId {
@@ -183,20 +98,23 @@ extension Resource {
     }
 
     fileprivate func generateFieldLookup() -> Declaration {
-        let fieldsString = storedProperties
-            .map { property in
-                let key = "\\\(name).\(property.name)"
-                let defaultValue = property.defaultValue
-                let defaultArgument = defaultValue.map { ", default: \($0)" } ?? ""
-                let value = "Field(\(property.name.inQuotes), path: \(key)\(defaultArgument))"
-                return "\(key): \(value)"
-            }
-            .joined(separator: ",\n")
-        return Declaration("""
-            public static let fieldLookup: FieldLookup = [
-                \(fieldsString)
+        Declaration(
+            """
+            static let fieldLookup: FieldLookup = [
+                \(
+                    storedProperties
+                        .map { property in
+                            let key = "\\\(name).\(property.name)"
+                            let defaultValue = property.defaultValue
+                            let defaultArgument = defaultValue.map { ", default: \($0)" } ?? ""
+                            let value = "Field(\(property.name.inQuotes), path: \(key)\(defaultArgument))"
+                            return "\(key): \(value)"
+                        }
+                        .joined(separator: ",\n")
+                )
             ]
-            """)
+            """
+        ).access(accessLevel == "public" ? "public" : nil)
     }
 
     // MARK: Codable
@@ -231,41 +149,23 @@ extension Resource {
 }
 
 extension DeclGroupSyntax {
-    var hasInit: Bool {
-        !initializers.isEmpty
+    fileprivate var hasModelInit: Bool {
+        initializers.map(\.trimmedDescription).contains { $0.contains("init(row: SQLRow)") }
     }
 
-    var initializers: [InitializerDeclSyntax] {
-        memberBlock
-            .members
-            .compactMap { $0.decl.as(InitializerDeclSyntax.self) }
+    fileprivate var hasDecodeInit: Bool {
+        initializers.map(\.trimmedDescription).contains { $0.contains("init(from decoder: Decoder)") }
     }
 
-    var accessLevel: String? {
-        modifiers.first?.trimmedDescription
+    fileprivate var hasEncodeFunction: Bool {
+        functions.map(\.trimmedDescription).contains { $0.contains("func encode(to encoder: Encoder)") }
     }
 
-    var members: [VariableDeclSyntax] {
-        memberBlock
-            .members
-            .compactMap { $0.decl.as(VariableDeclSyntax.self) }
+    fileprivate var hasFieldsFunction: Bool {
+        functions.map(\.trimmedDescription).contains { $0.contains("func fields() throws -> SQLFields") }
     }
 
-    var instanceMembers: [VariableDeclSyntax] {
-        members
-            .filter { !$0.isStatic }
-            .filter { $0.attributes.isEmpty }
-    }
-}
-
-extension VariableDeclSyntax {
-    var isStatic: Bool {
-        modifiers.contains { $0.name.trimmedDescription == "static" }
-    }
-}
-
-extension StructDeclSyntax {
-    var structName: String {
-        name.text
+    fileprivate var hasFieldLookupFunction: Bool {
+        functions.map(\.trimmedDescription).contains { $0.contains("fieldLookup: FieldLookup") }
     }
 }

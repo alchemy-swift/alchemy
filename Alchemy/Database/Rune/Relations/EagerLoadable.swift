@@ -13,13 +13,13 @@ public protocol EagerLoadable<From, To> {
 }
 
 public struct CacheKey: Hashable {
-    public let name: String?
+    public let key: String?
     public let value: String
 }
 
 extension EagerLoadable {
     public var cacheKey: CacheKey {
-        CacheKey(name: nil, value: "\(Self.self)")
+        CacheKey(key: nil, value: "\(Self.self)")
     }
 
     public var isLoaded: Bool {

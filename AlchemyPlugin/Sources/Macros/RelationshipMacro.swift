@@ -39,30 +39,10 @@ public enum RelationshipMacro: AccessorMacro, PeerMacro {
             Declaration("var $\(declaration.name): \(node.name)<\(declaration.type)>") {
                 """
                 \(node.name.lowercaseFirst)(\(arguments))
-                    .named(\(declaration.name.inQuotes))
+                    .key(\(declaration.name.inQuotes))
                 """
             }
         ]
         .map { $0.declSyntax() }
-    }
-}
-
-extension String {
-    var lowercaseFirst: String {
-        prefix(1).lowercased() + dropFirst()
-    }
-}
-
-extension VariableDeclSyntax {
-    var name: String {
-        bindings.compactMap {
-            $0.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmedDescription
-        }.first ?? "unknown"
-    }
-
-    var type: String {
-        bindings.compactMap {
-            $0.typeAnnotation?.type.trimmedDescription
-        }.first ?? "unknown"
     }
 }
