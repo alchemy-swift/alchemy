@@ -64,15 +64,11 @@ extension Controller {
 
 @Model
 struct Token: TokenAuthable {
-    typealias Authorizes = User
-
     var id: UUID
     var value: String = UUID().uuidString
     let userId: UUID
 
-    var user: BelongsTo<User> {
-        belongsTo()
-    }
+    @BelongsTo var user: User
 }
 
 @Model
@@ -82,9 +78,7 @@ struct User {
     var password: String
     var phone: String?
 
-    var tokens: HasMany<Token> {
-        hasMany()
-    }
+    @HasMany var tokens: [Token]
 
     var dto: AlchemyX.User {
         AlchemyX.User(
