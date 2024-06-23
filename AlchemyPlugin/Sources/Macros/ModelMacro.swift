@@ -72,12 +72,12 @@ struct Resource {
     struct Property {
         let keyword: String
         let name: String
-        let type: String
+        let type: String?
         let defaultValue: String?
         let isStored: Bool
 
         var isOptional: Bool {
-            type.last == "?"
+            type?.last == "?"
         }
     }
 
@@ -95,6 +95,10 @@ struct Resource {
 
     var storedPropertiesExceptId: [Property] {
         storedProperties.filter { $0.name != "id" }
+    }
+
+    var idProperty: Property? {
+        storedProperties.filter { $0.name == "id" }.first
     }
 }
 
@@ -125,12 +129,8 @@ extension Resource.Property {
             throw AlchemyMacroError("Unable to detect property name")
         }
 
-        guard let typeAnnotation = patternBinding.typeAnnotation else {
-            throw AlchemyMacroError("Property '\(identifierPattern.identifier.trimmedDescription)' had no type annotation")
-        }
-
         let name = "\(identifierPattern.identifier.text)"
-        let type = "\(typeAnnotation.type.trimmedDescription)"
+        let type = patternBinding.typeAnnotation?.type.trimmedDescription
         let defaultValue = patternBinding.initializer.map { "\($0.value.trimmed)" }
         let isStored = patternBinding.accessorBlock == nil
 
@@ -149,14 +149,18 @@ extension Resource {
     // MARK: Model
 
     fileprivate func generateStorage() -> Declaration {
-        Declaration("var storage = Storage()")
+        if let idProperty, let defaultValue = idProperty.defaultValue {
+            Declaration("var storage = Storage(id: \(defaultValue))")
+        } else {
+            Declaration("var storage = Storage()")
+        }
     }
 
     fileprivate func generateInitializer() -> Declaration {
         Declaration("init(row: SQLRow) throws") {
             "let reader = SQLRowReader(row: row, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)"
             for property in storedPropertiesExceptId {
-                "self.\(property.name) = try reader.require(\(property.type).self, at: \(property.name.inQuotes))"
+                "self.\(property.name) = try reader.require(\\Self.\(property.name), at: \(property.name.inQuotes))"
             }
 
             "try storage.read(from: reader)"
@@ -184,7 +188,7 @@ extension Resource {
                 let key = "\\\(name).\(property.name)"
                 let defaultValue = property.defaultValue
                 let defaultArgument = defaultValue.map { ", default: \($0)" } ?? ""
-                let value = ".init(\(property.name.inQuotes), type: \(property.type).self\(defaultArgument))"
+                let value = "Field(\(property.name.inQuotes), path: \(key)\(defaultArgument))"
                 return "\(key): \(value)"
             }
             .joined(separator: ",\n")
@@ -216,7 +220,7 @@ extension Resource {
             if !storedPropertiesExceptId.isEmpty {
                 "let container = try decoder.container(keyedBy: GenericCodingKey.self)"
                 for property in storedPropertiesExceptId {
-                    "self.\(property.name) = try container.decode(\(property.type).self, forKey: \(property.name.inQuotes))"
+                    "self.\(property.name) = try container.decode(\\Self.\(property.name), forKey: \(property.name.inQuotes))"
                 }
             }
 

@@ -42,7 +42,8 @@ struct UserController {
 struct Todo {
     var id: Int
     let name: String
-    var isDone: Bool = false
+    var isDone = false
+    var val = UUID()
     let tags: [String]?
 
     @HasOne var hasOne: Todo

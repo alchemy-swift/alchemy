@@ -88,7 +88,7 @@ final class ModelCrudTests: TestCase<TestApp> {
         XCTAssertEqual(model.foo, "bar")
         XCTAssertEqual(model.bar, false)
         
-        let customId = try await TestModelCustomId(foo: "bar").id(UUID()).insertReturn()
+        let customId = try await TestModelCustomId(foo: "bar").insertReturn()
         XCTAssertEqual(customId.foo, "bar")
     }
     
@@ -130,7 +130,7 @@ private struct TestError: Error {}
 
 @Model
 private struct TestModelCustomId {
-    var id: UUID
+    var id = UUID()
     var foo: String
 }
 

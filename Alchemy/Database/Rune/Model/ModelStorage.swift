@@ -10,8 +10,8 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
 
     public var relationships: [CacheKey: Any]
 
-    public init() {
-        self.id = nil
+    public init(id: M.PrimaryKey? = nil) {
+        self.id = id
         self.row = nil
         self.relationships = [:]
     }

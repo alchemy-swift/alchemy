@@ -22,3 +22,9 @@ public struct GenericCodingKey: CodingKey, ExpressibleByStringLiteral {
         self.init(stringValue: value)
     }
 }
+
+extension KeyedDecodingContainer where K == GenericCodingKey {
+    public func decode<M: Model, D: Codable>(_ keyPath: KeyPath<M, D>, forKey key: String) throws -> D {
+        try decode(D.self, forKey: .key(key))
+    }
+}

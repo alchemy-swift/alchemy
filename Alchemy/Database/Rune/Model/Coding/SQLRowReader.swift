@@ -30,6 +30,10 @@ public struct SQLRowReader {
         }
     }
 
+    public func require<M: Model, D: Decodable>(_ keyPath: KeyPath<M, D>, at key: String) throws -> D {
+        try require(D.self, at: key)
+    }
+
     public func contains(_ column: String) -> Bool {
         row[keyMapping.encode(column)] != nil
     }
