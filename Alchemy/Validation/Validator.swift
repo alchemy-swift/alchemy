@@ -29,13 +29,6 @@ public struct Validator<Value>: @unchecked Sendable {
     }
 }
 
-extension Validator<String> {
-    public static let email = Validator("Invalid email.") {
-        try Regex("[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}")
-            .firstMatch(in: $0) != nil
-    }
-}
-
 extension Validator<Int> {
     public static func between(_ range: ClosedRange<Int>) -> Validator {
         Validator { range.contains($0) }
