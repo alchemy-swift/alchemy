@@ -16,7 +16,7 @@ struct ApplicationMacro: ExtensionMacro {
             throw AlchemyMacroError("@Application can only be applied to a struct")
         }
 
-        let routes = try Routes.parse(declaration)
+        let routes = try EndpointGroup.parse(declaration)
         return try [
             Declaration("extension \(`struct`.name.trimmedDescription): Application, Controller") {
                 routes.routeFunction()

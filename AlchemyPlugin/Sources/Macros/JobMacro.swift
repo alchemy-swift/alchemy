@@ -7,10 +7,7 @@ struct JobMacro: PeerMacro {
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        guard
-            let function = declaration.as(FunctionDeclSyntax.self)
-//            function.isStatic
-        else {
+        guard let function = declaration.as(FunctionDeclSyntax.self) else {
             throw AlchemyMacroError("@Job can only be applied to functions")
         }
 
@@ -38,29 +35,7 @@ struct JobMacro: PeerMacro {
 }
 
 extension FunctionDeclSyntax {
-    var isStatic: Bool {
-        modifiers.map(\.name.text).contains("static")
-    }
-
-    var isAsync: Bool {
-        signature.effectSpecifiers?.asyncSpecifier != nil
-    }
-
-    var isThrows: Bool {
-        signature.effectSpecifiers?.throwsSpecifier != nil
-    }
-
-    var jobParametersSignature: String {
-        parameters.map {
-            let name = [$0.label, $0.name]
-                .compactMap { $0 }
-                .joined(separator: " ")
-            return "\(name): \($0.type)"
-        }
-        .joined(separator: ", ")
-    }
-
-    var jobPassthroughParameterSyntax: String {
+    fileprivate var jobPassthroughParameterSyntax: String {
         parameters.map {
             let name = [$0.label, $0.name]
                 .compactMap { $0 }
@@ -70,7 +45,7 @@ extension FunctionDeclSyntax {
         .joined(separator: ", ")
     }
 
-    var callPrefixes: [String] {
+    fileprivate var callPrefixes: [String] {
         [
             isThrows ? "try" : nil,
             isAsync ? "await" : nil,

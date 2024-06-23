@@ -7,6 +7,18 @@ extension String {
     var lowercaseFirst: String {
         prefix(1).lowercased() + dropFirst()
     }
+
+    var withoutQuotes: String {
+        filter { $0 != "\"" }
+    }
+
+    var inQuotes: String {
+        "\"\(self)\""
+    }
+
+    var inParentheses: String {
+        "(\(self))"
+    }
 }
 
 extension Collection {
