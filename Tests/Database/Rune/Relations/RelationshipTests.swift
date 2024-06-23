@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTest
 
-final class RelationTests: TestCase<TestApp> {
+final class RelationshipTests: TestCase<TestApp> {
     private var organization: Organization!
     private var user: User!
     private var repository: Repository!
@@ -48,17 +48,17 @@ final class RelationTests: TestCase<TestApp> {
     // MARK: - Basics
 
     func testHasMany() async throws {
-        let repositories = try await user.refresh().repositories.get()
+        let repositories = try await user.refresh().repositories
         XCTAssertEqual(repositories.map(\.id), [5, 6])
     }
 
     func testHasOne() async throws {
-        let manager = try await user.report()
+        let manager = try await user.report
         XCTAssertEqual(manager?.id, 4)
     }
 
     func testBelongsTo() async throws {
-        let user = try await repository.user()
+        let user = try await repository.user
         XCTAssertEqual(user.id, 3)
     }
 
@@ -68,7 +68,7 @@ final class RelationTests: TestCase<TestApp> {
     }
 
     func testPivot() async throws {
-        let organizations = try await user.organizations.value()
+        let organizations = try await user.organizations
         XCTAssertEqual(organizations.map(\.id), [1, 2])
     }
 
@@ -80,31 +80,31 @@ final class RelationTests: TestCase<TestApp> {
     // MARK: - Eager Loading
 
     func testEagerLoad() async throws {
-        let user = try await User.where("id" == 3).with(\.repositories).first()
+        let user = try await User.where("id" == 3).with(\.$repositories).first()
         XCTAssertNotNil(user)
-        XCTAssertNoThrow(try user?.repositories.require())
+        XCTAssertNoThrow(try user?.$repositories.require())
     }
 
     func testAutoCache() async throws {
-        XCTAssertThrowsError(try user.repositories.require())
-        _ = try await user.repositories.value()
-        XCTAssertTrue(user.repositories.isLoaded)
-        XCTAssertNoThrow(try user.repositories.require())
+        XCTAssertThrowsError(try user.$repositories.require())
+        _ = try await user.$repositories.value()
+        XCTAssertTrue(user.$repositories.isLoaded)
+        XCTAssertNoThrow(try user.$repositories.require())
     }
 
     func testWhereCache() async throws {
-        _ = try await organization.users.value()
-        XCTAssertTrue(organization.users.isLoaded)
+        _ = try await organization.users
+        XCTAssertTrue(organization.$users.isLoaded)
         XCTAssertFalse(organization.usersOver30.isLoaded)
     }
 
     func testSync() async throws {
-        let report = try await user.report()
+        let report = try await user.report
         XCTAssertEqual(report?.id, 4)
         try await report?.update(["manager_id": SQLValue.null])
-        XCTAssertTrue(user.report.isLoaded)
-        AssertEqual(try await user.report()?.id, 4)
-        AssertNil(try await user.report.load())
+        XCTAssertTrue(user.$report.isLoaded)
+        AssertEqual(try await user.report?.id, 4)
+        AssertNil(try await user.$report.load())
     }
 
     // MARK: - CRUD
@@ -130,11 +130,9 @@ final class RelationTests: TestCase<TestApp> {
 private struct Organization {
     var id: Int
 
-    var users: BelongsToMany<User> {
-        belongsToMany(UserOrganization.table)
-    }
+    @BelongsToMany(UserOrganization.table) var users: [User]
 
-    var usersOver30: BelongsToMany<User> {
+    var usersOver30: BelongsToMany<[User]> {
         belongsToMany(UserOrganization.table)
             .where("age" >= 30)
     }
@@ -154,23 +152,16 @@ private struct User {
     let age: Int
     var managerId: Int?
 
-    var report: HasOne<User?> {
-        hasOne(to: "manager_id")
-    }
+    @HasOne(to: "manager_id") var report: User?
+    @HasMany var repositories: [Repository]
 
-    var repositories: HasMany<Repository> {
-        hasMany()
-    }
-
-    var jobs: HasManyThrough<Job> {
+    var jobs: HasManyThrough<[Job]> {
         hasMany(to: "workflow_id")
             .through(Repository.table, from: "user_id", to: "id")
             .through(Workflow.table, from: "repository_id", to: "id")
     }
 
-    var organizations: BelongsToMany<Organization> {
-        belongsToMany(UserOrganization.table)
-    }
+    @BelongsToMany(UserOrganization.table) var organizations: [Organization]
 }
 
 @Model
@@ -178,13 +169,8 @@ private struct Repository {
     var id: Int
     var userId: Int
 
-    var user: BelongsTo<User> {
-        belongsTo()
-    }
-
-    var workflows: HasMany<Workflow> {
-        hasMany()
-    }
+    @BelongsTo var user: User
+    @HasMany var workflows: [Workflow]
 }
 
 @Model
@@ -192,13 +178,8 @@ private struct Workflow {
     var id: Int
     var repositoryId: Int
 
-    var repository: BelongsTo<Repository> {
-        belongsTo()
-    }
-
-    var jobs: HasMany<Job> {
-        hasMany()
-    }
+    @BelongsTo var repository: Repository
+    @HasMany var jobs: [Job]
 }
 
 @Model
@@ -206,9 +187,7 @@ private struct Job {
     var id: Int
     var workflowId: Int
 
-    var workflow: BelongsTo<Workflow> {
-        belongsTo()
-    }
+    @BelongsTo var workflow: Workflow
 
     var user: BelongsToThrough<User> {
         belongsTo()

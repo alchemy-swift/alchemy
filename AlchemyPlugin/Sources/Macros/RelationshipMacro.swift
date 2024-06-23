@@ -36,7 +36,7 @@ public enum RelationshipMacro: AccessorMacro, PeerMacro {
 
         let arguments = node.arguments.map { "\($0.trimmedDescription)" } ?? ""
         return [
-            Declaration("var $\(declaration.name): \(node.name)<\(declaration.type).M>") {
+            Declaration("var $\(declaration.name): \(node.name)<\(declaration.type)>") {
                 """
                 \(node.name.lowercaseFirst)(\(arguments))
                     .named(\(declaration.name.inQuotes))

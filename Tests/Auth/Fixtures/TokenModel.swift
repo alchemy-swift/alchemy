@@ -8,11 +8,7 @@ struct TokenModel: TokenAuthable {
     var value: UUID = UUID()
     var userId: Int
 
-    @BelongsTo(from: "user_id") var auth: AuthModel
-
-    var user: BelongsTo<AuthModel> {
-        $auth
-    }
+    @BelongsTo(from: "user_id") var user: AuthModel
 
     struct Migrate: Migration {
         func up(db: Database) async throws {

@@ -1,19 +1,19 @@
 import Collections
 
 extension Model {
-    public typealias BelongsToMany<To: Model> = BelongsToManyRelationship<Self, To>
+    public typealias BelongsToMany<To: Many> = BelongsToManyRelationship<Self, To>
 
-    public func belongsToMany<To: ModelOrOptional>(on db: Database = To.M.database,
-                                                   _ pivotTable: String? = nil,
-                                                   from fromKey: String? = nil,
-                                                   to toKey: String? = nil,
-                                                   pivotFrom: String? = nil,
-                                                   pivotTo: String? = nil) -> BelongsToMany<To> {
+    public func belongsToMany<To: Many>(on db: Database = To.M.database,
+                                        _ pivotTable: String? = nil,
+                                        from fromKey: String? = nil,
+                                        to toKey: String? = nil,
+                                        pivotFrom: String? = nil,
+                                        pivotTo: String? = nil) -> BelongsToMany<To> {
         BelongsToMany(db: db, from: self, pivotTable, fromKey: fromKey, toKey: toKey, pivotFrom: pivotFrom, pivotTo: pivotTo)
     }
 }
 
-public class BelongsToManyRelationship<From: Model, M: Model>: Relationship<From, [M]> {
+public class BelongsToManyRelationship<From: Model, M: Many>: Relationship<From, M> {
     private var pivot: Through {
         guard let pivot = throughs.first else {
             preconditionFailure("BelongsToManyRelationship must always have at least 1 through.")
@@ -23,7 +23,7 @@ public class BelongsToManyRelationship<From: Model, M: Model>: Relationship<From
     }
 
     public init(
-        db: Database = M.database,
+        db: Database = To.M.database,
         from: From,
         _ pivotTable: String? = nil,
         fromKey: String? = nil,
@@ -32,19 +32,19 @@ public class BelongsToManyRelationship<From: Model, M: Model>: Relationship<From
         pivotTo: String? = nil
     ) {
         let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
-        let toKey: SQLKey = .infer(M.primaryKey).specify(toKey)
-        let pivot: String = pivotTable ?? From.table.singularized + "_" + M.table.singularized
+        let toKey: SQLKey = .infer(To.M.primaryKey).specify(toKey)
+        let pivot: String = pivotTable ?? From.table.singularized + "_" + To.M.table.singularized
         let pivotFrom: SQLKey = db.inferReferenceKey(From.self).specify(pivotFrom)
-        let pivotTo: SQLKey = db.inferReferenceKey(M.self).specify(pivotTo)
+        let pivotTo: SQLKey = db.inferReferenceKey(To.M.self).specify(pivotTo)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
         _through(table: pivot, from: pivotFrom, to: pivotTo)
     }
 
-    public func connect(_ model: M, pivotFields: SQLFields = [:]) async throws {
+    public func connect(_ model: To.M, pivotFields: SQLFields = [:]) async throws {
         try await connect([model], pivotFields: pivotFields)
     }
 
-    public func connect(_ models: [M], pivotFields: SQLFields = [:]) async throws {
+    public func connect(_ models: [To.M], pivotFields: SQLFields = [:]) async throws {
         let from = try requireFromValue()
         let tos = try models.map { try requireToValue($0) }
         guard fromKey.string != toKey.string else {
@@ -55,11 +55,11 @@ public class BelongsToManyRelationship<From: Model, M: Model>: Relationship<From
         try await db.table(pivot.table).insert(fieldsArray)
     }
 
-    public func connectOrUpdate(_ model: M, pivotFields: SQLFields = [:]) async throws {
+    public func connectOrUpdate(_ model: To.M, pivotFields: SQLFields = [:]) async throws {
         try await connectOrUpdate([model], pivotFields: pivotFields)
     }
 
-    public func connectOrUpdate(_ models: [M], pivotFields: SQLFields = [:]) async throws {
+    public func connectOrUpdate(_ models: [To.M], pivotFields: SQLFields = [:]) async throws {
         let from = try requireFromValue()
         let tos = try models.map { try (requireToValue($0), $0) }
 
@@ -82,12 +82,12 @@ public class BelongsToManyRelationship<From: Model, M: Model>: Relationship<From
         try await connect(notExisting, pivotFields: pivotFields)
     }
 
-    public func replace(_ models: [M], pivotFields: SQLFields = [:]) async throws {
+    public func replace(_ models: [To.M], pivotFields: SQLFields = [:]) async throws {
         try await disconnectAll()
         try await connect(models, pivotFields: pivotFields)
     }
 
-    public func disconnect(_ model: M) async throws {
+    public func disconnect(_ model: To.M) async throws {
         let from = try requireFromValue()
         let to = try requireToValue(model)
         try await db.table(pivot.table)

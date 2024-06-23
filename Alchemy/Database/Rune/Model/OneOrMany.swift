@@ -1,10 +1,12 @@
 public protocol OneOrMany {
-    associatedtype M: Model
+    associatedtype M: Model = Self
     var array: [M] { get }
     init(models: [M]) throws
 }
 
-extension Array: OneOrMany where Element: Model {
+public protocol Many: OneOrMany {}
+
+extension Array: Many, OneOrMany where Element: Model {
     public typealias M = Element
 
     public init(models: [Element]) throws {

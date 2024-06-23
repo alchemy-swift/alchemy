@@ -1,7 +1,7 @@
 extension Model {
-    public typealias HasManyThrough<To: Model> = HasManyThroughRelationship<Self, To>
+    public typealias HasManyThrough<To: Many> = HasManyThroughRelationship<Self, To>
 
-    public func hasManyThrough<To: Model>(db: Database = To.M.database,
+    public func hasManyThrough<To: Many>(db: Database = To.M.database,
                                           _ through: String,
                                           fromKey: String? = nil,
                                           toKey: String? = nil,
@@ -18,7 +18,7 @@ extension HasManyRelationship {
     }
 }
 
-public final class HasManyThroughRelationship<From: Model, M: Model>: Relationship<From, [M]> {
+public final class HasManyThroughRelationship<From: Model, M: Many>: Relationship<From, M> {
     public init(hasMany: HasManyRelationship<From, M>, through table: String, fromKey: String?, toKey: String?) {
         super.init(db: hasMany.db, from: hasMany.from, fromKey: hasMany.fromKey, toKey: hasMany.toKey)
         through(table, from: fromKey, to: toKey)
