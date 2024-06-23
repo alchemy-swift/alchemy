@@ -1,10 +1,12 @@
 public protocol OneOrMany {
-    associatedtype M: Model
+    associatedtype M: Model = Self
     var array: [M] { get }
     init(models: [M]) throws
 }
 
-extension Array: OneOrMany where Element: Model {
+public protocol Many: OneOrMany {}
+
+extension Array: Many, OneOrMany where Element: Model {
     public typealias M = Element
 
     public init(models: [Element]) throws {
@@ -17,6 +19,8 @@ extension Array: OneOrMany where Element: Model {
 }
 
 extension Optional: OneOrMany where Wrapped: Model {
+    public typealias M = Wrapped
+
     public init(models: [Wrapped]) throws {
         self = models.first
     }
@@ -26,7 +30,7 @@ extension Optional: OneOrMany where Wrapped: Model {
     }
 }
 
-extension Model {
+extension Model where M == Self {
     public init(models: [Self]) throws {
         guard let model = models.first else {
             throw RuneError("Non-optional relationship to \(Self.self) had no results!")

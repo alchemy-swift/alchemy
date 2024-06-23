@@ -4,6 +4,8 @@ import PostgresNIO
 /// A concrete `Database` for connecting to and querying a PostgreSQL
 /// database.
 public final class PostgresDatabaseProvider: DatabaseProvider {
+    public var type: DatabaseType { .postgres }
+
     /// The connection pool from which to make connections to the
     /// database with.
     public let pool: EventLoopGroupConnectionPool<PostgresConfiguration>
@@ -47,6 +49,8 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
 }
 
 extension PostgresConnection: DatabaseProvider, ConnectionPoolItem {
+    public var type: DatabaseType { .postgres }
+    
     @discardableResult
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let statement = sql.positionPostgresBinds()

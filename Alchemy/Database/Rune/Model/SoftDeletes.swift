@@ -15,9 +15,9 @@ extension SoftDeletes where Self: Model {
         get { try? row?[Self.deletedAtKey]?.date() }
         nonmutating set {
             guard let row else { return }
-            var dict = row.fieldDictionary
+            var dict = row.fields
             dict[Self.deletedAtKey] = newValue.map { .date($0) } ?? .null
-            self.row = SQLRow(dictionary: dict)
+            self.row = SQLRow(fields: dict)
         }
     }
 }

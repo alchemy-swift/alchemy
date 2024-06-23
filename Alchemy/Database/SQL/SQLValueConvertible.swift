@@ -18,6 +18,10 @@ extension FixedWidthInteger {
     public var sqlValue: SQLValue { .int(Int(self)) }
 }
 
+extension Data: SQLValueConvertible {
+    public var sqlValue: SQLValue { .bytes(.init(data: self)) }
+}
+
 extension Int: SQLValueConvertible {}
 extension Int8: SQLValueConvertible {}
 extension Int16: SQLValueConvertible {}

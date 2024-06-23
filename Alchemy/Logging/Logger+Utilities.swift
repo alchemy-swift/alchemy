@@ -98,8 +98,11 @@ extension Logger: Service {
     /// local dev only.
     func comment(_ message: String) {
         if !Env.isTesting && Env.isDebug {
-            let padding = Env.isXcode ? "" : "  "
-            print("\(padding)\(message)")
+            if Env.isXcode {
+                Log.info("\(message)")
+            } else {
+                print("  \(message)")
+            }
         }
     }
 
@@ -109,12 +112,12 @@ extension Logger: Service {
     }
 
     static let `default`: Logger = {
-        if Environment.isRunFromTests {
-            return .null
-        } else if Environment.isXcode {
-            return .xcode
+        let isTests = Environment.isRunFromTests
+        let defaultLevel: Logger.Level = isTests ? .error : .info
+        if Environment.isXcode {
+            return .xcode.withLevel(defaultLevel)
         } else {
-            return .debug
+            return .debug.withLevel(defaultLevel)
         }
     }()
 }

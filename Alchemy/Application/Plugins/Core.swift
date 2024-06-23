@@ -1,20 +1,21 @@
 import NIO
 
-/// Sets up core services that other services may depend on.
-struct CorePlugin: Plugin {
+/// Registers core Alchemy services to an application.
+struct Core: Plugin {
     func registerServices(in app: Application) {
-
-        // 0. Register Environment
+        
+        // 0. Register Application
+        
+        app.container.register(app).singleton()
+        app.container.register(app as Application).singleton()
+        
+        // 1. Register Environment
 
         app.container.register { Environment.createDefault() }.singleton()
 
-        // 1. Register Loggers
+        // 2. Register Loggers
 
         app.loggers.registerServices(in: app)
-
-        // 2. Register Hasher
-
-        app.container.register(Hasher(algorithm: app.configuration.defaultHashAlgorithm)).singleton()
 
         // 3. Register NIO services
 

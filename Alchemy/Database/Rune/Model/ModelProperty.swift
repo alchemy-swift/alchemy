@@ -10,7 +10,7 @@ extension String: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(self, at: key)
+        row.put(sql: self, at: key)
     }
 }
 
@@ -20,7 +20,7 @@ extension Bool: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(self, at: key)
+        row.put(sql: self, at: key)
     }
 }
 
@@ -30,17 +30,17 @@ extension Float: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(self, at: key)
+        row.put(sql: self, at: key)
     }
 }
 
 extension Double: ModelProperty {
     public init(key: String, on row: SQLRowReader) throws {
-        self =  try row.require(key).double(key)
+        self = try row.require(key).double(key)
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(self, at: key)
+        row.put(sql: self, at: key)
     }
 }
 
@@ -71,7 +71,7 @@ extension Date: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(self, at: key)
+        row.put(sql: self, at: key)
     }
 }
 
@@ -81,7 +81,7 @@ extension UUID: ModelProperty {
     }
     
     public func store(key: String, on row: inout SQLRowWriter) throws {
-        row.put(self, at: key)
+        row.put(sql: self, at: key)
     }
 }
 

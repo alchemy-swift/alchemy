@@ -22,7 +22,7 @@ final class ModelCrudTests: TestCase<TestApp> {
         
         let model = try await TestModel(foo: "baz", bar: false).insertReturn()
         
-        let findById = try await TestModel.find(model.id())
+        let findById = try await TestModel.find(model.id)
         XCTAssertEqual(findById, model)
         
         do {
@@ -59,7 +59,7 @@ final class ModelCrudTests: TestCase<TestApp> {
             return
         }
         
-        try await TestModel.delete(first.id.require())
+        try await TestModel.delete(first.id)
         
         let count = try await TestModel.all().count
         XCTAssertEqual(count, 4)
@@ -94,7 +94,7 @@ final class ModelCrudTests: TestCase<TestApp> {
     
     func testUpdate() async throws {
         var model = try await TestModel.seed()
-        let id = try model.id.require()
+        let id = model.id
         model.foo = "baz"
         AssertNotEqual(try await TestModel.find(id), model)
         
@@ -112,7 +112,8 @@ final class ModelCrudTests: TestCase<TestApp> {
         AssertEqual(try await model.refresh().foo, "bar")
         
         do {
-            let unsavedModel = TestModel(id: 12345, foo: "one", bar: false)
+            let unsavedModel = TestModel(foo: "one", bar: false)
+            unsavedModel.id = 12345
             _ = try await unsavedModel.refresh()
             XCTFail("Syncing an unsaved model should throw")
         } catch {}
@@ -127,13 +128,15 @@ final class ModelCrudTests: TestCase<TestApp> {
 
 private struct TestError: Error {}
 
-private struct TestModelCustomId: Model, Codable {
-    var id: PK<UUID> = .new(UUID())
+@Model
+private struct TestModelCustomId {
+    var id = UUID()
     var foo: String
 }
 
-private struct TestModel: Model, Codable, Seedable, Equatable {
-    var id: PK<Int> = .new
+@Model
+private struct TestModel: Seedable, Equatable {
+    var id: Int
     var foo: String
     var bar: Bool
     

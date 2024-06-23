@@ -39,8 +39,9 @@ final class QueryTests: TestCase<TestApp> {
     }
 }
 
-private struct TestModel: Model, Codable, Seedable, Equatable {
-    var id: PK<Int> = .new
+@Model
+private struct TestModel: Seedable, Equatable {
+    var id: Int
     var foo: String
     var bar: Bool
 

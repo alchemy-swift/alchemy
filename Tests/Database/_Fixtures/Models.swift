@@ -1,6 +1,7 @@
 import Alchemy
 
-struct SeedModel: Model, Codable, Seedable {
+@Model
+struct SeedModel: Seedable {
     struct Migrate: Migration {
         func up(db: Database) async throws {
             try await db.createTable("seed_models") {
@@ -15,7 +16,7 @@ struct SeedModel: Model, Codable, Seedable {
         }
     }
     
-    var id: PK<Int> = .new
+    var id: Int
     let name: String
     let email: String
     
@@ -24,11 +25,12 @@ struct SeedModel: Model, Codable, Seedable {
     }
 }
 
-struct OtherSeedModel: Model, Codable, Seedable {
+@Model
+struct OtherSeedModel: Seedable {
     struct Migrate: Migration {
         func up(db: Database) async throws {
             try await db.createTable("other_seed_models") {
-                $0.uuid("id").primary()
+                $0.increments("id").primary()
                 $0.int("foo").notNull()
                 $0.bool("bar").notNull()
             }
@@ -39,7 +41,7 @@ struct OtherSeedModel: Model, Codable, Seedable {
         }
     }
     
-    var id: PK<UUID> = .new(UUID())
+    var id: Int
     let foo: Int
     let bar: Bool
     

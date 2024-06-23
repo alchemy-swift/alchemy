@@ -26,20 +26,20 @@ public protocol SQLGrammar {
     // MARK: INSERT
 
     func insert(_ table: String, columns: [String], sql: SQL) -> SQL
-    func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL
-    func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL]
+    func insert(_ table: String, values: [SQLFields]) -> SQL
+    func insertReturn(_ table: String, values: [SQLFields]) -> [SQL]
 
     // MARK: UPSERT
 
-    func upsert(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> SQL
-    func upsertReturn(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> [SQL]
+    func upsert(_ table: String, values: [SQLFields], conflictKeys: [String]) -> SQL
+    func upsertReturn(_ table: String, values: [SQLFields], conflictKeys: [String]) -> [SQL]
 
     // MARK: UPDATE
 
     func update(table: String,
                 joins: [SQLJoin],
                 wheres: [SQLWhere],
-                fields: [String: SQLConvertible]) -> SQL
+                fields: SQLFields) -> SQL
 
     // MARK: DELETE
 
@@ -193,7 +193,7 @@ extension SQLGrammar {
         SQL("INSERT INTO \(table)(\(columns.joined(separator: ", "))) \(sql.statement)", parameters: sql.parameters)
     }
 
-    public func insert(_ table: String, values: [[String: SQLConvertible]]) -> SQL {
+    public func insert(_ table: String, values: [SQLFields]) -> SQL {
         guard !values.isEmpty else {
             return SQL("INSERT INTO \(table) DEFAULT VALUES")
         }
@@ -212,13 +212,13 @@ extension SQLGrammar {
         return SQL("INSERT INTO \(table) (\(columnsJoined)) VALUES \(placeholders.joined(separator: ", "))", input: input)
     }
 
-    public func insertReturn(_ table: String, values: [[String: SQLConvertible]]) -> [SQL] {
+    public func insertReturn(_ table: String, values: [SQLFields]) -> [SQL] {
         [insert(table, values: values) + " RETURNING *"]
     }
 
     // MARK: UPSERT
 
-    public func upsert(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> SQL {
+    public func upsert(_ table: String, values: [SQLFields], conflictKeys: [String]) -> SQL {
         var upsert = insert(table, values: values)
         guard !values.isEmpty else {
             return upsert
@@ -239,7 +239,7 @@ extension SQLGrammar {
         return upsert
     }
 
-    public func upsertReturn(_ table: String, values: [[String: SQLConvertible]], conflictKeys: [String]) -> [SQL] {
+    public func upsertReturn(_ table: String, values: [SQLFields], conflictKeys: [String]) -> [SQL] {
         [upsert(table, values: values, conflictKeys: conflictKeys) + " RETURNING *"]
     }
 
@@ -248,7 +248,7 @@ extension SQLGrammar {
     public func update(table: String,
                        joins: [SQLJoin],
                        wheres: [SQLWhere],
-                       fields: [String: SQLConvertible]) -> SQL {
+                       fields: SQLFields) -> SQL {
         var parameters: [SQLValue] = []
         var base = "UPDATE \(table)"
         if let joinSQL = compileJoins(joins) {

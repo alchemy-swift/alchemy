@@ -1,5 +1,7 @@
+import Papyrus
+
 /// Something that handlers, middleware, and groups can be defined on.
-public protocol Router {
+public protocol Router: PapyrusRouter {
     typealias Handler = (Request) async throws -> ResponseConvertible
     typealias ErrorHandler = (Request, Error) async throws -> ResponseConvertible
 
@@ -42,6 +44,10 @@ public struct RouteMatcher: Buildable {
     private mutating func matchPath(_ path: String) -> Bool {
         parameters = []
         let parts = RouteMatcher.tokenize(path)
+        guard parts.count == pathTokens.count else {
+            return false
+        }
+
         for (index, token) in pathTokens.enumerated() {
             guard let part = parts[safe: index] else {
                 return false

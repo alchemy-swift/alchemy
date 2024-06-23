@@ -98,7 +98,7 @@ private struct LocalFilesystem: FilesystemProvider {
         guard let rootUrl = URL(string: root) else {
             throw FileError.invalidFileUrl
         }
-        
+
         let url = rootUrl.appendingPathComponent(filepath.trimmingForwardSlash)
         
         // Ensure directory exists.

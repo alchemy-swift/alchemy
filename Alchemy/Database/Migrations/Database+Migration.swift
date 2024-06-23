@@ -2,7 +2,8 @@ extension Database {
     /// Represents a table for storing migration data. Alchemy will use
     /// this table for keeping track of the various batches of
     /// migrations that have been run.
-    struct AppliedMigration: Model, Codable {
+    @Model
+    struct AppliedMigration {
         /// A migration for adding the `AlchemyMigration` table.
         struct Migration: Alchemy.Migration {
             func up(db: Database) async throws {
@@ -22,7 +23,7 @@ extension Database {
         static let table = "migrations"
 
         /// Serial primary key.
-        var id: PK<Int> = .new
+        var id: Int
 
         /// The name of the migration.
         let name: String
@@ -37,7 +38,6 @@ extension Database {
     /// Applies all outstanding migrations to the database in a single
     /// batch. Migrations are read from `database.migrations`.
     public func migrate() async throws {
-        Log.info("Running migrations.")
         let applied = try await getAppliedMigrations().map(\.name)
         let toApply = migrations.filter { !applied.contains($0.name) }
         try await migrate(toApply)
@@ -65,6 +65,7 @@ extension Database {
             return
         }
 
+        Log.info("Running migrations.")
         let lastBatch = try await getLastBatch()
         for m in migrations {
             let start = Date()

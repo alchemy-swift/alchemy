@@ -1,7 +1,8 @@
 import Alchemy
 
-struct AuthModel: Model, Codable, BasicAuthable {
-    var id: PK<Int> = .new
+@Model
+struct AuthModel: BasicAuthable {
+    var id: Int
     let email: String
     let password: String
     

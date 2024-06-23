@@ -53,7 +53,7 @@ extension FormDataDecoder: HTTPDecoder {
             let dict = Dictionary(uniqueKeysWithValues: parts.compactMap { part in part.name.map { ($0, part) } })
             return Content(value: .dictionary(dict.mapValues(\.value)))
         } catch {
-            return Content(error: error)
+            return Content(error: .misc(error))
         }
     }
 }

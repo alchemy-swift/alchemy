@@ -68,6 +68,9 @@ public enum JobRecoveryStrategy: Equatable, Codable {
 
 /// The context this job is running in.
 public struct JobContext {
+    /// The current context. This will be nil outside of a Job handler.
+    @TaskLocal public static var current: JobContext? = nil
+
     /// The queue this job was queued on.
     public let queue: Queue
     /// The channel this job was queued on.
@@ -84,7 +87,7 @@ public struct JobContext {
 
 // Default implementations.
 extension Job {
-    public static var name: String { Alchemy.name(of: Self.self) }
+    public static var name: String { "\(Self.self)" }
     public var recoveryStrategy: RecoveryStrategy { .none }
     public var retryBackoff: TimeAmount { .zero }
     

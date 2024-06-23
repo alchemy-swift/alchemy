@@ -1,5 +1,3 @@
-import Crypto
-
 /// A protocol for automatically authenticating incoming requests
 /// based on their `Authentication: Bearer ...` header. When the
 /// request is intercepted by a related `TokenAuthMiddleware<T>`, it
@@ -40,13 +38,11 @@ public protocol TokenAuthable: Model {
     /// this type will be pulled from the database and
     /// associated with the request.
     associatedtype Authorizes: Model
-    associatedtype AuthorizesRelation: Relation<Self, Authorizes>
 
     /// The user in question.
-    var user: AuthorizesRelation { get }
+    var user: Authorizes { get async throws }
 
-    /// The name of the row that stores the token's value. Defaults to
-    /// `"value"`.
+    /// The name of the row that stores the token's value. Defaults to "value"`.
     static var valueKeyString: String { get }
 }
 
@@ -79,7 +75,6 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
         
         guard let model = try await T
             .where(T.valueKeyString == bearerAuth.token)
-            .with(\.user)
             .first()
         else {
             throw HTTPError(.unauthorized)
@@ -88,7 +83,7 @@ public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
         return try await next(
             request
                 .set(model)
-                .set(model.user())
+                .set(model.user)
         )
     }
 }

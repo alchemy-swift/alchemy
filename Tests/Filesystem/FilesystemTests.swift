@@ -81,7 +81,7 @@ final class FilesystemTests: TestCase<TestApp> {
     
     func _testInvalidURL() async throws {
         do {
-            let store: Filesystem = .local(root: "\\")
+            let store: Filesystem = .local(root: "\\+https://www.apple.com")
             _ = try await store.exists("foo")
             XCTFail("Should throw an error")
         } catch {}

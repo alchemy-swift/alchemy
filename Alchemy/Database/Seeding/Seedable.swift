@@ -1,3 +1,4 @@
+import Collections
 import Fakery
 
 public protocol Seedable {
@@ -18,14 +19,14 @@ extension Seedable where Self: Model {
     }
 
     @discardableResult
-    public static func seed(fields: [String: SQLConvertible] = [:], modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
+    public static func seed(fields: SQLFields = [:], modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
         try await seed(1, fields: fields, modifier: modifier).first!
     }
 
     @discardableResult
     public static func seed(
         _ count: Int = 1,
-        fields: [String: SQLConvertible] = [:],
+        fields: SQLFields = [:],
         modifier: ((inout Self) async throws -> Void)? = nil
     ) async throws -> [Self] {
         var models: [Self] = []

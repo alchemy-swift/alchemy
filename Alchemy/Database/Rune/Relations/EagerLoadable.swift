@@ -5,16 +5,21 @@ public protocol EagerLoadable<From, To> {
 
     /// The model instance this relation was accessed from.
     var from: From { get }
-    var cacheKey: String { get }
+    var cacheKey: CacheKey { get }
 
     /// Load results given the input rows. Results must be the same length and
     /// order as the input.
     func fetch(for models: [From]) async throws -> [To]
 }
 
+public struct CacheKey: Hashable {
+    public let key: String?
+    public let value: String
+}
+
 extension EagerLoadable {
-    public var cacheKey: String {
-        "\(Self.self)"
+    public var cacheKey: CacheKey {
+        CacheKey(key: nil, value: "\(Self.self)")
     }
 
     public var isLoaded: Bool {
@@ -71,17 +76,23 @@ extension EagerLoadable {
 }
 
 extension Query {
-    public func with<E: EagerLoadable>(_ loader: @escaping (Result) -> E) -> Self where E.From == Result {
+    public func with<E: EagerLoadable>(_ relationship: @escaping (Result) -> E) -> Self where E.From == Result {
         didLoad { models in
             guard let first = models.first else { return }
-            try await loader(first).load(on: models)
+            try await relationship(first).load(on: models)
         }
     }
 }
 
 extension Array where Element: Model {
-    public func load<E: EagerLoadable>(_ loader: @escaping (Element) -> E) async throws where E.From == Element {
+    public func load<E: EagerLoadable>(_ relationship: @escaping (Element) -> E) async throws where E.From == Element {
         guard let first else { return }
-        try await loader(first).load(on: self)
+        try await relationship(first).load(on: self)
+    }
+
+    public func with<E: EagerLoadable>(_ relationship: @escaping (Element) -> E) async throws -> Self where E.From == Element {
+        guard let first else { return self }
+        try await relationship(first).load(on: self)
+        return self
     }
 }

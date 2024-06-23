@@ -34,10 +34,9 @@ final class SQLRowEncoderTests: TestCase<TestApp> {
             date: date,
             uuid: uuid
         )
-        
+
         let jsonData = try EverythingModel.jsonEncoder.encode(json)
-        let expectedFields: [String: SQLConvertible] = [
-            "id": 1,
+        let expectedFields: SQLFields = [
             "string_enum": "one",
             "int_enum": 2,
             "double_enum": 3.0,
@@ -67,7 +66,8 @@ final class SQLRowEncoderTests: TestCase<TestApp> {
     
     func testKeyMapping() async throws {
         try await Database.fake(keyMapping: .useDefaultKeys)
-        let model = CustomKeyedModel(id: 0)
+        let model = CustomKeyedModel()
+        model.id = 0
         let fields = try model.fields()
         XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.table)
         XCTAssertEqual([
@@ -96,15 +96,17 @@ private struct DatabaseJSON: Codable {
     var val2: Date
 }
 
-private struct CustomKeyedModel: Model, Codable {
-    var id: PK<Int> = .new
+@Model
+private struct CustomKeyedModel {
+    var id: Int
     var val1: String = "foo"
     var valueTwo: Int = 0
     var valueThreeInt: Int = 1
     var snake_case: String = "bar"
 }
 
-private struct CustomDecoderModel: Model, Codable {
+@Model
+private struct CustomDecoderModel {
     static var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -112,6 +114,6 @@ private struct CustomDecoderModel: Model, Codable {
         return encoder
     }()
     
-    var id: PK<Int> = .new
+    var id: Int
     var json: DatabaseJSON
 }

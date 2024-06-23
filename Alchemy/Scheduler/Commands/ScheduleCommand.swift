@@ -6,9 +6,6 @@ struct ScheduleCommand: Command {
     // MARK: Command
 
     func run() throws {
-        @Inject var app: Application
-        app.schedule(on: Schedule)
         Schedule.start()
-        Log.info("Started scheduler.")
     }
 }

@@ -126,7 +126,8 @@ public final class Queue: Service {
         } catch where jobData.canRetry {
             try await retry()
             job?.failed(error: error)
-        } catch where (error as? JobError) == JobError.unknownType {
+        } catch JobError.unknownJob(let name) {
+            let error = JobError.unknownJob(name)
             // So that an old worker won't fail new, unrecognized jobs.
             try await retry(ignoreAttempt: true)
             job?.failed(error: error)

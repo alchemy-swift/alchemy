@@ -1,7 +1,7 @@
 protocol GenericDecoderDelegate {
     var allKeys: [String] { get }
 
-    // MARK: Primatives
+    // MARK: Primitives
 
     func decodeString(for key: CodingKey?) throws -> String
     func decodeDouble(for key: CodingKey?) throws -> Double

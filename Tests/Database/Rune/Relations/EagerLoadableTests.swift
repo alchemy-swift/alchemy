@@ -20,8 +20,9 @@ final class EagerLoadableTests: TestCase<TestApp> {
 
 private struct TestError: Error {}
 
-private struct TestParent: Model, Codable, Seedable, Equatable {
-    var id: PK<Int> = .new
+@Model
+private struct TestParent: Seedable, Equatable {
+    var id: Int
     var baz: String
 
     static func generate() async throws -> TestParent {
@@ -29,8 +30,9 @@ private struct TestParent: Model, Codable, Seedable, Equatable {
     }
 }
 
-private struct TestModel: Model, Codable, Seedable, Equatable {
-    var id: PK<Int> = .new
+@Model
+private struct TestModel: Seedable, Equatable {
+    var id: Int
     var foo: String
     var bar: Bool
     var testParentId: Int
@@ -47,7 +49,7 @@ private struct TestModel: Model, Codable, Seedable, Equatable {
             parent = try await .seed()
         }
         
-        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParentId: try parent.id.require())
+        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParentId: parent.id)
     }
     
     static func == (lhs: TestModel, rhs: TestModel) -> Bool {

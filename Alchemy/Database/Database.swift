@@ -5,6 +5,9 @@ public final class Database: Service {
     /// The provider of this database.
     public let provider: DatabaseProvider
 
+    /// The underlying DBMS type (i.e. PostgreSQL, SQLite, etc...)
+    public var type: DatabaseType { provider.type }
+
     /// Functions around compiling SQL statments for this database's
     /// SQL dialect when using the QueryBuilder or Rune.
     public var grammar: SQLGrammar
@@ -19,7 +22,7 @@ public final class Database: Service {
     public var keyMapping: KeyMapping = .snakeCase
 
     /// Whether this database should log all queries at the `debug` level.
-    var logging: QueryLogging? = nil
+    private var logging: QueryLogging? = nil
 
     /// Create a database backed by the given provider.
     ///
@@ -77,7 +80,12 @@ public final class Database: Service {
     /// - Returns: The database rows returned by the query.
     @discardableResult
     public func query(_ sql: String, parameters: [SQLValue] = []) async throws -> [SQLRow] {
-        try await provider.query(sql, parameters: parameters)
+        try await _query(sql, parameters: parameters, logging: nil)
+    }
+
+    func _query(_ sql: String, parameters: [SQLValue] = [], logging: QueryLogging?) async throws -> [SQLRow] {
+        log(SQL(sql, parameters: parameters), loggingOverride: logging)
+        return try await provider.query(sql, parameters: parameters)
     }
 
     /// Run a raw, not parametrized SQL string.
@@ -85,7 +93,8 @@ public final class Database: Service {
     /// - Returns: The rows returned by the query.
     @discardableResult
     public func raw(_ sql: String) async throws -> [SQLRow] {
-        try await provider.raw(sql)
+        log(SQL(sql, parameters: []))
+        return try await provider.raw(sql)
     }
     
     /// Runs a transaction on the database, using the given closure.
@@ -108,4 +117,33 @@ public final class Database: Service {
     public func shutdown() async throws {
         try await provider.shutdown()
     }
+
+    private func log(_ sql: SQL, loggingOverride: QueryLogging? = nil) {
+        if let logging = logging ?? self.logging {
+            switch logging {
+            case .log:
+                Log.info(sql.description)
+            case .logRawSQL:
+                Log.info(sql.rawSQLString + ";")
+            case .logFatal:
+                Log.info(sql.description)
+                fatalError("logf")
+            case .logFatalRawSQL:
+                Log.info(sql.rawSQLString + ";")
+                fatalError("logf")
+            }
+        }
+    }
+}
+
+public struct DatabaseType: Equatable {
+    public let name: String
+
+    public init(name: String) {
+        self.name = name
+    }
+
+    public static let sqlite = DatabaseType(name: "SQLite")
+    public static let postgres = DatabaseType(name: "PostgreSQL")
+    public static let mysql = DatabaseType(name: "MySQL")
 }

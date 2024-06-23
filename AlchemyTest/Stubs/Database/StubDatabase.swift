@@ -3,6 +3,8 @@ import Alchemy
 public struct StubGrammar: SQLGrammar {}
 
 public final class StubDatabase: DatabaseProvider {
+    public var type: DatabaseType { .init(name: "stub") }
+    
     private var isShutdown = false
     private var stubs: [[SQLRow]] = []
     

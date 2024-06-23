@@ -1,5 +1,5 @@
 extension Model {
-    public typealias BelongsTo<To: ModelOrOptional> = BelongsToRelation<Self, To>
+    public typealias BelongsTo<To: ModelOrOptional> = BelongsToRelationship<Self, To>
 
     public func belongsTo<To: ModelOrOptional>(_ type: To.Type = To.self,
                                                on db: Database = To.M.database,
@@ -9,10 +9,10 @@ extension Model {
     }
 }
 
-public class BelongsToRelation<From: Model, To: ModelOrOptional>: Relation<From, To> {
-    init(db: Database, from: From, fromKey: String?, toKey: String?) {
+public class BelongsToRelationship<From: Model, To: ModelOrOptional>: Relationship<From, To> {
+    public init(db: Database = To.M.database, from: From, fromKey: String? = nil, toKey: String? = nil) {
         let fromKey: SQLKey = db.inferReferenceKey(To.M.self).specify(fromKey)
-        let toKey: SQLKey = .infer(To.M.primaryKey).specify(toKey)
+        let toKey: SQLKey = .infer(To.M.idKey).specify(toKey)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
     }
 

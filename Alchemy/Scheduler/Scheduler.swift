@@ -29,6 +29,7 @@ public final class Scheduler {
             return
         }
 
+        Log.info("Scheduling \(tasks.count) tasks.")
         for task in tasks {
             schedule(task: task, on: scheduleLoop)
         }

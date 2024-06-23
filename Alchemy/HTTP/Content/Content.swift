@@ -89,13 +89,21 @@ public final class Content: Buildable {
 
     public enum State {
         case value(Value)
-        case error(Error)
+        case error(ContentError)
     }
 
-    public enum Operator {
+    public enum Operator: CustomStringConvertible {
         case field(String)
         case index(Int)
         case flatten
+
+        public var description: String {
+            switch self {
+            case .field(let field): field
+            case .index(let index): "\(index)"
+            case .flatten: "*"
+            }
+        }
     }
 
     /// The state of this node; either an error or a value.
@@ -132,7 +140,7 @@ public final class Content: Buildable {
         }
     }
 
-    public var error: Error? {
+    public var error: ContentError? {
         guard case .error(let error) = state else { return nil }
         return error
     }
@@ -147,13 +155,22 @@ public final class Content: Buildable {
         self.path = path
     }
     
-    public init(error: Error, path: [Operator] = []) {
+    public init(error: ContentError, path: [Operator] = []) {
         self.state = .error(error)
         self.path = path
     }
 
     public func decode<D: Decodable>(_ type: D.Type = D.self) throws -> D {
-        try D(from: GenericDecoder(delegate: self))
+        do {
+            return try D(from: GenericDecoder(delegate: self))
+        } catch {
+            if path.isEmpty {
+                throw ValidationError("Unable to decode \(D.self) from body.")
+            } else {
+                let pathString = path.map(\.description).joined(separator: ".")
+                throw ValidationError("Unable to decode \(D.self) from field \(pathString).")
+            }
+        }
     }
 
     private func unwrap<T>(_ value: T?) throws -> T {
@@ -389,21 +406,6 @@ extension Content: Encodable {
 }
 
 extension Content.Value: Encodable {
-    private struct GenericCodingKey: CodingKey {
-        let stringValue: String
-        let intValue: Int?
-
-        init(stringValue: String) {
-            self.stringValue = stringValue
-            self.intValue = Int(stringValue)
-        }
-
-        init(intValue: Int) {
-            self.stringValue = "\(intValue)"
-            self.intValue = intValue
-        }
-    }
-
     public func encode(to encoder: Encoder) throws {
         switch self {
         case .array(let array):
@@ -433,6 +435,37 @@ extension Content.Value: Encodable {
         case .null:
             var container = encoder.singleValueContainer()
             try container.encodeNil()
+        }
+    }
+}
+
+extension Content.Value: ModelProperty {
+    public init(key: String, on row: SQLRowReader) throws {
+        throw ContentError.notSupported("Reading content from database models isn't supported, yet.")
+    }
+    
+    public func store(key: String, on row: inout SQLRowWriter) throws {
+        switch self {
+        case .array(let values):
+            try row.put(json: values, at: key)
+        case .dictionary(let dict):
+            try row.put(json: dict, at: key)
+        case .bool(let value):
+            try value.store(key: key, on: &row)
+        case .string(let value):
+            try value.store(key: key, on: &row)
+        case .int(let value):
+            try value.store(key: key, on: &row)
+        case .double(let double):
+            try double.store(key: key, on: &row)
+        case .file(let file):
+            if let buffer = file.content?.buffer {
+                row.put(sql: SQLValue.bytes(buffer), at: key)
+            } else {
+                row.put(sql: SQLValue.null, at: key)
+            }
+        case .null:
+            row.put(sql: SQLValue.null, at: key)
         }
     }
 }

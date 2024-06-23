@@ -2,6 +2,8 @@ import AsyncKit
 import SQLiteNIO
 
 public final class SQLiteDatabaseProvider: DatabaseProvider {
+    public var type: DatabaseType { .sqlite }
+
     /// The connection pool from which to make connections to the
     /// database with.
     public let pool: EventLoopGroupConnectionPool<SQLiteConfiguration>
@@ -42,6 +44,8 @@ public final class SQLiteDatabaseProvider: DatabaseProvider {
 }
 
 extension SQLiteConnection: DatabaseProvider, ConnectionPoolItem {
+    public var type: DatabaseType { .sqlite }
+
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let parameters = parameters.map(SQLiteData.init)
         return try await query(sql, parameters).get().map(\._row)

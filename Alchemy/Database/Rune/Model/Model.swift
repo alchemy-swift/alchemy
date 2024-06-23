@@ -3,15 +3,17 @@ import Pluralize
 /// An ActiveRecord-esque type used for modeling a table in a relational
 /// database. Contains many extensions for making database queries, 
 /// supporting relationships & more.
-public protocol Model: Identifiable, QueryResult, ModelOrOptional {
-    /// The type of this object's primary key.
-    associatedtype PrimaryKey: PrimaryKeyProtocol
+///
+/// Use @Model to apply this protocol.
+public protocol Model: Identifiable, QueryResult, ModelOrOptional where ID: PrimaryKeyProtocol {
+    /// The identifier of this model
+    var id: ID { get nonmutating set }
 
-    /// The identifier / primary key of this type.
-    var id: PK<PrimaryKey> { get set }
+    /// Storage for model metadata (relationships, original row, etc).
+    var storage: Storage { get }
 
     /// Convert this to an SQLRow for updating or inserting into a database.
-    func fields() throws -> [String: SQLConvertible]
+    func fields() throws -> SQLFields
 
     /// The database on which this model is saved & queried by default.
     static var database: Database { get }
@@ -21,7 +23,7 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     static var table: String { get }
 
     /// The primary key column of this table. Defaults to `"id"`.
-    static var primaryKey: String { get }
+    static var idKey: String { get }
 
     /// The keys to to check for conflicts on when UPSERTing. Defaults to 
     /// `[Self.primaryKey]`.
@@ -49,8 +51,8 @@ extension Model {
     public static var database: Database { DB }
     public static var keyMapping: KeyMapping { database.keyMapping }
     public static var table: String { keyMapping.encode("\(Self.self)").pluralized }
-    public static var primaryKey: String { "id" }
-    public static var upsertConflictKeys: [String] { [primaryKey] }
+    public static var idKey: String { "id" }
+    public static var upsertConflictKeys: [String] { [idKey] }
     public static var jsonDecoder: JSONDecoder { JSONDecoder() }
     public static var jsonEncoder: JSONEncoder { JSONEncoder() }
 
@@ -66,6 +68,23 @@ extension Model {
     public static func on(_ database: Database) -> Query<Self> {
         query(on: database)
     }
+
+    public func id(_ id: ID) -> Self {
+        self.id = id
+        return self
+    }
+
+    public func requireId() throws -> ID {
+        guard let id = storage.id else {
+            throw RuneError("Model had no id!")
+        }
+
+        return id
+    }
+
+    public func maybeId() -> ID? {
+        storage.id
+    }
 }
 
 extension Model where Self: Codable {
@@ -73,13 +92,13 @@ extension Model where Self: Codable {
         self = try row.decode(Self.self, keyMapping: Self.keyMapping, jsonDecoder: Self.jsonDecoder)
     }
 
-    public func fields() throws -> [String: SQLConvertible] {
+    public func fields() throws -> SQLFields {
         try sqlFields(keyMapping: Self.keyMapping, jsonEncoder: Self.jsonEncoder)
     }
 }
 
 extension Encodable {
-    func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> [String: SQLConvertible] {
+    func sqlFields(keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) throws -> SQLFields {
         try SQLRowEncoder(keyMapping: keyMapping, jsonEncoder: jsonEncoder).fields(for: self)
     }
 }

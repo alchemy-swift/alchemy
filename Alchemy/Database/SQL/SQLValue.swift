@@ -86,10 +86,10 @@ public enum SQLValue: Hashable, CustomStringConvertible {
             return value.uuidString
         case .json(let bytes):
             return bytes.string
+        case .bytes(let bytes):
+            return bytes.string
         case .null:
             throw nullError(columnName)
-        default:
-            throw typeError("String", columnName: columnName)
         }
     }
 

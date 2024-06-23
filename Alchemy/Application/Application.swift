@@ -1,110 +1,112 @@
-/// The core type for an Alchemy application. Implement this & it's
-/// `boot` function, then add the `@main` attribute to mark it as
-/// the entrypoint for your application.
+/// The core type for an Alchemy application.
 ///
-///     @main
-///     struct App: Application {
-///         func boot() {
-///             get("/hello") { _ in
-///                 "Hello, world!"
-///             }
+///     @Application
+///     struct App {
+///
+///         @GET("/hello")
+///         func sayHello(name: String) -> String {
+///             "Hello, \(name)!"
 ///         }
 ///     }
 ///
 public protocol Application: Router {
     /// The container in which all services of this application are registered.
     var container: Container { get }
-
-    /// Create an instance of this Application.
+    /// Any custom plugins of this application.
+    var plugins: [Plugin] { get }
+    
     init()
-
+    
+    /// Boots the app's dependencies. Don't override the default for this unless
+    /// you want to prevent default Alchemy services from loading.
+    func bootPlugins()
     /// Setup your application here. Called after all services are registered.
     func boot() throws
-
+    
+    // MARK: Default Plugin Configurations
+    
+    /// This application's HTTP configuration.
+    var http: HTTPConfiguration { get }
+    /// This application's filesystems.
+    var filesystems: Filesystems { get }
+    /// This application's databases.
+    var databases: Databases { get }
+    /// The application's caches.
+    var caches: Caches { get }
+    /// The application's job queues.
+    var queues: Queues { get }
+    /// The application's custom commands.
+    var commands: Commands { get }
+    /// The application's loggers.
+    var loggers: Loggers { get }
+    
     /// Setup any scheduled tasks in your application here.
     func schedule(on schedule: Scheduler)
-
-    // MARK: Configuration
-
-    /// The core configuration of the application.
-    var configuration: Configuration { get }
-
-    /// The cache configuration of the application.
-    var caches: Caches { get }
-
-    /// The database configuration of the application.
-    var databases: Databases { get }
-
-    /// The filesystem configuration of the application.
-    var filesystems: Filesystems { get }
-
-    /// The loggers of you application.
-    var loggers: Loggers { get }
-
-    /// The queue configuration of the application.
-    var queues: Queues { get }
 }
 
-extension Application {
-    /// The main application container.
-    public var container: Container { .main }
-    public var caches: Caches { Caches() }
-    public var configuration: Configuration { Configuration() }
-    public var databases: Databases { Databases() }
-    public var filesystems: Filesystems { Filesystems() }
-    public var loggers: Loggers { Loggers() }
-    public var queues: Queues { Queues() }
+// MARK: Defaults
 
-    public func boot() { /* default to no-op */ }
-    public func schedule(on schedule: Scheduler) { /* default to no-op */ }
+public extension Application {
+    var container: Container { .main }
+    var plugins: [Plugin] { [] }
+    
+    func bootPlugins() {
+        let alchemyPlugins: [Plugin] = [
+            Core(),
+            Schedules(),
+            EventStreams(),
+            http,
+            commands,
+            filesystems,
+            databases,
+            caches,
+            queues,
+        ]
+        
+        for plugin in alchemyPlugins + plugins {
+            plugin.register(in: self)
+        }
+    }
 
-    public func run() async throws {
+    func boot() throws {
+        //
+    }
+
+    func bootRouter() {
+        (self as? Controller)?.route(self)
+    }
+
+    // MARK: Plugin Defaults
+    
+    var http: HTTPConfiguration { HTTPConfiguration() }
+    var commands: Commands { [] }
+    var databases: Databases { Databases() }
+    var caches: Caches { Caches() }
+    var queues: Queues { Queues() }
+    var filesystems: Filesystems { Filesystems() }
+    var loggers: Loggers { Loggers() }
+    
+    func schedule(on schedule: Scheduler) {
+        //
+    }
+}
+
+// MARK: Running
+
+public extension Application {
+    func run() async throws {
         do {
-            setup()
+            bootPlugins()
             try boot()
+            bootRouter()
             try await start()
         } catch {
             commander.exit(error: error)
         }
     }
-
-    public func setup() {
-
-        // 0. Register the Application
-
-        container.register(self).singleton()
-        container.register(self as Application).singleton()
-
-        // 1. Register core Plugin services.
-
-        let core = CorePlugin()
-        core.registerServices(in: self)
-
-        // 2. Register other Plugin services.
-
-        let plugins = configuration.defaultPlugins(self) + configuration.plugins()
-        for plugin in plugins {
-            plugin.registerServices(in: self)
-        }
-
-        // 3. Register all Plugins with lifecycle.
-
-        for plugin in [core] + plugins {
-            lifecycle.register(
-                label: plugin.label,
-                start: .async {
-                    try await plugin.boot(app: self)
-                },
-                shutdown: .async {
-                    try await plugin.shutdownServices(in: self)
-                },
-                shutdownIfNotStarted: true
-            )
-        }
-    }
-
+    
     /// Starts the application with the given arguments.
-    public func start(_ args: String..., waitOrShutdown: Bool = true) async throws {
+    func start(_ args: String..., waitOrShutdown: Bool = true) async throws {
         try await start(args: args.isEmpty ? nil : args, waitOrShutdown: waitOrShutdown)
     }
 
@@ -112,7 +114,7 @@ extension Application {
     ///
     /// @MainActor ensures that calls to `wait()` doesn't block an `EventLoop`.
     @MainActor
-    public func start(args: [String]? = nil, waitOrShutdown: Bool = true) async throws {
+    func start(args: [String]? = nil, waitOrShutdown: Bool = true) async throws {
 
         // 0. Start the application lifecycle.
 
@@ -124,8 +126,8 @@ extension Application {
         guard waitOrShutdown else { return }
 
         // 2. Wait for lifecycle or immediately shut down depending on if the
-        // command should run indefinitely.
-
+        //    command should run indefinitely.
+        
         if command.runUntilStopped {
             wait()
         } else {
@@ -133,22 +135,24 @@ extension Application {
         }
     }
 
-    public func wait() {
+    /// Waits indefinitely for the application to be stopped.
+    func wait() {
         lifecycle.wait()
     }
 
-    public func stop() async throws {
+    /// Stops the application.
+    func stop() async throws {
         try await lifecycle.shutdown()
     }
 
-    // For @main support
-    public static func main() async throws {
+    // @main support
+    static func main() async throws {
         try await Self().run()
     }
 }
 
-extension ParsableCommand {
-    fileprivate var runUntilStopped: Bool {
+fileprivate extension ParsableCommand {
+    var runUntilStopped: Bool {
         (Self.self as? Command.Type)?.runUntilStopped ?? false
     }
 }
