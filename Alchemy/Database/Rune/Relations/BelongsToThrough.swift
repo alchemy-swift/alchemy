@@ -31,7 +31,7 @@ public final class BelongsToThroughRelationship<From: Model, To: ModelOrOptional
 
     @discardableResult
     public func through(_ table: String, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        let from: SQLKey = .infer(From.primaryKey).specify(throughFromKey)
+        let from: SQLKey = .infer(From.idKey).specify(throughFromKey)
         let to: SQLKey = db.inferReferenceKey(To.M.self).specify(throughToKey)
 
         let throughReference = db.inferReferenceKey(table)
@@ -47,7 +47,7 @@ public final class BelongsToThroughRelationship<From: Model, To: ModelOrOptional
 
     @discardableResult
     public func through(_ model: (some Model).Type, from throughFromKey: String? = nil, to throughToKey: String? = nil) -> Self {
-        let from: SQLKey = .infer(From.primaryKey).specify(throughFromKey)
+        let from: SQLKey = .infer(From.idKey).specify(throughFromKey)
         let to: SQLKey = db.inferReferenceKey(To.M.self).specify(throughToKey)
 
         let throughReference = db.inferReferenceKey(model)

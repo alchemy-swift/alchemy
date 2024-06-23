@@ -12,7 +12,7 @@ extension Model {
 public class BelongsToRelationship<From: Model, To: ModelOrOptional>: Relationship<From, To> {
     public init(db: Database = To.M.database, from: From, fromKey: String? = nil, toKey: String? = nil) {
         let fromKey: SQLKey = db.inferReferenceKey(To.M.self).specify(fromKey)
-        let toKey: SQLKey = .infer(To.M.primaryKey).specify(toKey)
+        let toKey: SQLKey = .infer(To.M.idKey).specify(toKey)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
     }
 

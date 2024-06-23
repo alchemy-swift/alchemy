@@ -5,12 +5,9 @@ import Pluralize
 /// supporting relationships & more.
 ///
 /// Use @Model to apply this protocol.
-public protocol Model: Identifiable, QueryResult, ModelOrOptional {
-    /// The type of this object's primary key.
-    associatedtype PrimaryKey: PrimaryKeyProtocol
-
+public protocol Model: Identifiable, QueryResult, ModelOrOptional where ID: PrimaryKeyProtocol {
     /// The identifier of this model
-    var id: PrimaryKey { get nonmutating set }
+    var id: ID { get nonmutating set }
 
     /// Storage for model metadata (relationships, original row, etc).
     var storage: Storage { get }
@@ -26,7 +23,7 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional {
     static var table: String { get }
 
     /// The primary key column of this table. Defaults to `"id"`.
-    static var primaryKey: String { get }
+    static var idKey: String { get }
 
     /// The keys to to check for conflicts on when UPSERTing. Defaults to 
     /// `[Self.primaryKey]`.
@@ -54,8 +51,8 @@ extension Model {
     public static var database: Database { DB }
     public static var keyMapping: KeyMapping { database.keyMapping }
     public static var table: String { keyMapping.encode("\(Self.self)").pluralized }
-    public static var primaryKey: String { "id" }
-    public static var upsertConflictKeys: [String] { [primaryKey] }
+    public static var idKey: String { "id" }
+    public static var upsertConflictKeys: [String] { [idKey] }
     public static var jsonDecoder: JSONDecoder { JSONDecoder() }
     public static var jsonEncoder: JSONEncoder { JSONEncoder() }
 
@@ -72,12 +69,12 @@ extension Model {
         query(on: database)
     }
 
-    public func id(_ id: PrimaryKey) -> Self {
+    public func id(_ id: ID) -> Self {
         self.id = id
         return self
     }
 
-    public func requireId() throws -> PrimaryKey {
+    public func requireId() throws -> ID {
         guard let id = storage.id else {
             throw RuneError("Model had no id!")
         }
@@ -85,7 +82,7 @@ extension Model {
         return id
     }
 
-    public func maybeId() -> PrimaryKey? {
+    public func maybeId() -> ID? {
         storage.id
     }
 }

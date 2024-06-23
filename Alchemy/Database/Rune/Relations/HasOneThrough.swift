@@ -43,7 +43,7 @@ public final class HasOneThroughRelationship<From: Model, To: ModelOrOptional>: 
             from = from.infer(db.inferReferenceKey(through.table).string)
         }
 
-        let to: SQLKey = .infer(model.primaryKey).specify(throughToKey)
+        let to: SQLKey = .infer(model.idKey).specify(throughToKey)
         toKey = toKey.infer(db.inferReferenceKey(model).string)
         return _through(table: model.table, from: from, to: to)
     }

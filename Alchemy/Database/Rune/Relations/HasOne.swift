@@ -11,7 +11,7 @@ extension Model {
 
 public class HasOneRelationship<From: Model, To: ModelOrOptional>: Relationship<From, To> {
     public init(db: Database = To.M.database, from: From, fromKey: String? = nil, toKey: String? = nil) {
-        let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
+        let fromKey: SQLKey = .infer(From.idKey).specify(fromKey)
         let toKey: SQLKey = db.inferReferenceKey(From.self).specify(toKey)
         super.init(db: db, from: from, fromKey: fromKey, toKey: toKey)
     }

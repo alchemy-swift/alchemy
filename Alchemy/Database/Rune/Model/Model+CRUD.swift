@@ -21,8 +21,8 @@ extension Model {
     }
 
     /// Fetch the first model with the given id.
-    public static func find(on db: Database = database, _ id: PrimaryKey) async throws -> Self? {
-        try await `where`(on: db, primaryKey == id).first()
+    public static func find(on db: Database = database, _ id: ID) async throws -> Self? {
+        try await `where`(on: db, idKey == id).first()
     }
     
     /// Fetch the first model that matches the given where clause.
@@ -50,7 +50,7 @@ extension Model {
     ///
     /// - Parameter error: The error to throw should no element be
     ///   found. Defaults to `RuneError.notFound`.
-    public static func require(_ id: PrimaryKey, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
+    public static func require(_ id: ID, error: Error = RuneError.notFound, db: Database = database) async throws -> Self {
         guard let model = try await find(on: db, id) else {
             throw error
         }
@@ -172,8 +172,8 @@ extension Model {
     }
     
     /// Delete the first model with the given id.
-    public static func delete(on db: Database = database, _ id: Self.PrimaryKey) async throws {
-        try await query(on: db).where(primaryKey == id).delete()
+    public static func delete(on db: Database = database, _ id: Self.ID) async throws {
+        try await query(on: db).where(idKey == id).delete()
     }
     
     /// Delete all models of this type from a database.
@@ -250,7 +250,7 @@ extension Array where Element: Model {
         let fields = touchUpdatedAt(on: db, fields)
         try await Element.willUpdate(self)
         try await Element.query(on: db)
-            .where(Element.primaryKey, in: ids)
+            .where(Element.idKey, in: ids)
             .update(fields)
         try await Element.didUpdate(self)
     }
@@ -280,7 +280,7 @@ extension Array where Element: Model {
         let ids = map(\.id)
         try await Element.willDelete(self)
         try await Element.query(on: db)
-            .where(Element.primaryKey, in: ids)
+            .where(Element.idKey, in: ids)
             .delete()
 
         forEach { ($0 as? any Model & SoftDeletes)?.deletedAt = Date() }
@@ -297,7 +297,7 @@ extension Array where Element: Model {
 
         let byId = keyed(by: \.id)
         let refreshed = try await Element.query()
-            .where(Element.primaryKey, in: byId.keys.array)
+            .where(Element.idKey, in: byId.keys.array)
             .get()
 
         // Transfer over any loaded relationships.

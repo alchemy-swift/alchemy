@@ -1,16 +1,16 @@
 public final class ModelStorage<M: Model>: Codable, Equatable {
-    public var id: M.PrimaryKey?
+    public var id: M.ID?
     public var row: SQLRow? {
         didSet {
-            if let value = try? row?.require(M.primaryKey) {
-                self.id = try? M.PrimaryKey(value: value)
+            if let id = row?[M.idKey] {
+                self.id = try? M.ID(value: id)
             }
         }
     }
 
     public var relationships: [CacheKey: Any]
 
-    public init(id: M.PrimaryKey? = nil) {
+    public init(id: M.ID? = nil) {
         self.id = id
         self.row = nil
         self.relationships = [:]
@@ -20,12 +20,12 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
 
     public func write(to writer: inout SQLRowWriter) throws {
         if let id {
-            try writer.put(id, at: M.primaryKey)
+            try writer.put(id, at: M.idKey)
         }
     }
 
     public func read(from reader: SQLRowReader) throws {
-        id = try reader.require(M.PrimaryKey.self, at: M.primaryKey)
+        id = try reader.require(M.ID.self, at: M.idKey)
         row = reader.row
     }
 
@@ -36,7 +36,7 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
         
         // 0. encode id
         if let id {
-            try container.encode(id, forKey: .key(M.primaryKey))
+            try container.encode(id, forKey: .key(M.idKey))
         }
 
         // 1. encode encodable relationships
@@ -49,9 +49,9 @@ public final class ModelStorage<M: Model>: Codable, Equatable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: GenericCodingKey.self)
-        let key: GenericCodingKey = .key(M.primaryKey)
+        let key: GenericCodingKey = .key(M.idKey)
         if container.contains(key) {
-            self.id = try container.decode(M.PrimaryKey.self, forKey: key)
+            self.id = try container.decode(M.ID.self, forKey: key)
         }
 
         self.row = nil

@@ -31,8 +31,8 @@ public class BelongsToManyRelationship<From: Model, M: Many>: Relationship<From,
         pivotFrom: String? = nil,
         pivotTo: String? = nil
     ) {
-        let fromKey: SQLKey = .infer(From.primaryKey).specify(fromKey)
-        let toKey: SQLKey = .infer(To.M.primaryKey).specify(toKey)
+        let fromKey: SQLKey = .infer(From.idKey).specify(fromKey)
+        let toKey: SQLKey = .infer(To.M.idKey).specify(toKey)
         let pivot: String = pivotTable ?? From.table.singularized + "_" + To.M.table.singularized
         let pivotFrom: SQLKey = db.inferReferenceKey(From.self).specify(pivotFrom)
         let pivotTo: SQLKey = db.inferReferenceKey(To.M.self).specify(pivotTo)
