@@ -1,15 +1,10 @@
 import Collections
-import Fakery
 
 public protocol Seedable {
     static func generate() async throws -> Self
 }
 
 extension Seedable where Self: Model {
-    public static var faker: Faker {
-        Faker()
-    }
-
     public static func randomOrSeed() async throws -> Self {
         guard let random = try await random() else {
             return try await seed()
