@@ -32,8 +32,8 @@ extension Client.Builder {
 }
 
 extension Client.Request {
-    public func hasHeader(_ name: String, value: String? = nil) -> Bool {
-        guard let header = headers.first(name: name) else {
+    public func hasHeader(_ name: HTTPField.Name, value: String? = nil) -> Bool {
+        guard let header = headers[name] else {
             return false
         }
         

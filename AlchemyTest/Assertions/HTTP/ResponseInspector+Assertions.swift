@@ -51,7 +51,7 @@ extension ResponseInspector {
     }
     
     @discardableResult
-    public func assertStatus(_ code: UInt, file: StaticString = #filePath, line: UInt = #line) -> Self {
+    public func assertStatus(_ code: Int, file: StaticString = #filePath, line: UInt = #line) -> Self {
         XCTAssertEqual(status.code, code, file: file, line: line)
         return self
     }

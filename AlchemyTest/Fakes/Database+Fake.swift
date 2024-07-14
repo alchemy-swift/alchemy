@@ -11,12 +11,7 @@ extension Database {
     @discardableResult
     public static func fake(_ id: Identifier? = nil, keyMapping: KeyMapping = .snakeCase, migrations: [Migration] = [], seeders: [Seeder] = []) async throws -> Database {
         let db = Database.sqlite.keyMapping(keyMapping)
-        Container.register(db, id: id).singleton()
-        Container
-            .require(ServiceLifecycle.self)
-            .registerShutdown(label: "fake db", .async {
-                try await db.shutdown()
-            })
+        // TODO: shutdown database
         db.migrations = migrations
         db.seeders = seeders
         if !migrations.isEmpty { try await db.migrate() }

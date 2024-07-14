@@ -10,10 +10,9 @@ import XCTest
 open class TestCase<A: Application>: XCTestCase {
     public final class Builder: RequestBuilder {
         public var urlComponents = URLComponents()
-        public var method: HTTPRequest.Method = .GET
+        public var method: HTTPRequest.Method = .get
         public var headers: HTTPFields = [:]
         public var body: Bytes? = nil
-        private var version: HTTPVersion = .http1_1
         private var remoteAddress: SocketAddress? = nil
         private var app: A
 
@@ -21,11 +20,6 @@ open class TestCase<A: Application>: XCTestCase {
             self.app = app
         }
 
-        /// Set the http version of the mock request.
-        public func withHttpVersion(_ version: HTTPVersion) -> Self {
-            with { $0.version = version }
-        }
-        
         /// Set the remote address of the mock request.
         public func withRemoteAddress(_ address: SocketAddress) -> Self {
             with { $0.remoteAddress = address }
@@ -37,8 +31,7 @@ open class TestCase<A: Application>: XCTestCase {
                     method: method, 
                     uri: urlComponents.path, 
                     headers: headers, 
-                    version: version,
-                    body: body, 
+                    body: body,
                     remoteAddress: remoteAddress
                 )
             )
@@ -52,13 +45,13 @@ open class TestCase<A: Application>: XCTestCase {
     open override func setUp() async throws {
         try await super.setUp()
         app = A()
-        app.bootPlugins()
+        try await app.bootPlugins()
         try app.boot()
     }
 
     open override func tearDown() async throws {
         try await super.tearDown()
-        try await app.stop()
+        await app.stop()
         app.container.reset()
     }
 }

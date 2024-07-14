@@ -4,8 +4,8 @@ extension HTTPInspector {
     // MARK: Header Assertions
     
     @discardableResult
-    public func assertHeader(_ header: String, value: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        let values = headers[header]
+    public func assertHeader(_ name: HTTPField.Name, value: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
+        let values = headers[values: name]
         XCTAssertFalse(values.isEmpty, file: file, line: line)
         for v in values {
             XCTAssertEqual(v, value, file: file, line: line)
@@ -15,14 +15,14 @@ extension HTTPInspector {
     }
     
     @discardableResult
-    public func assertHeaderMissing(_ header: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        XCTAssert(headers[header].isEmpty, file: file, line: line)
+    public func assertHeaderMissing(_ header: HTTPField.Name, file: StaticString = #filePath, line: UInt = #line) -> Self {
+        XCTAssertNil(headers[header], file: file, line: line)
         return self
     }
     
     @discardableResult
     public func assertLocation(_ uri: String, file: StaticString = #filePath, line: UInt = #line) -> Self {
-        assertHeader("Location", value: uri, file: file, line: line)
+        assertHeader(.location, value: uri, file: file, line: line)
     }
     
     // MARK: Body Assertions
@@ -44,8 +44,11 @@ extension HTTPInspector {
             XCTFail("Request body was nil.", file: file, line: line)
             return self
         }
-        
-        try await body.stream.readAll(chunkHandler: assertChunk)
+
+        for try await chunk in body.stream {
+            assertChunk(chunk)
+        }
+
         return self
     }
     
