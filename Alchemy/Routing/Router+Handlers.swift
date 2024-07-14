@@ -10,7 +10,7 @@ extension Router {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
+    public func on(_ method: HTTPRequest.Method, at path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
         let matcher = RouteMatcher(path: path, match: { $0.method == method })
         appendRoute(matcher: matcher, options: options, middlewares: middlewares, handler: handler)
         return self
@@ -19,43 +19,43 @@ extension Router {
     /// `GET` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func get(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.GET, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.get, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `POST` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func post(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.POST, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.post, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `PUT` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func put(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.PUT, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.put, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `PATCH` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func patch(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.PATCH, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.patch, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `DELETE` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func delete(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.DELETE, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.delete, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `OPTIONS` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func options(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.OPTIONS, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.options, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `HEAD` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func head(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping Router.Handler) -> Self {
-        on(.HEAD, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.head, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     // MARK: - Sugar
@@ -83,7 +83,7 @@ extension Router {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
+    public func on(_ method: HTTPRequest.Method, at path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
         on(method, at: path, options: options, middlewares: middlewares) {
             try await handler($0)
             return Response(status: .ok, body: nil)
@@ -93,43 +93,43 @@ extension Router {
     /// `GET` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func get(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.GET, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.get, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `POST` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func post(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.POST, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.post, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `PUT` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func put(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.PUT, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.put, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `PATCH` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func patch(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.PATCH, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.patch, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `DELETE` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func delete(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.DELETE, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.delete, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `OPTIONS` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func options(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.OPTIONS, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.options, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `HEAD` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func head(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping VoidHandler) -> Self {
-        on(.HEAD, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.head, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     // MARK: Encodable
@@ -148,7 +148,7 @@ extension Router {
     ///   - handler: The handler to respond to the request with.
     /// - Returns: This application for building a handler chain.
     @discardableResult
-    public func on(_ method: HTTPMethod, at path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
+    public func on(_ method: HTTPRequest.Method, at path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
         on(method, at: path, options: options, middlewares: middlewares) { req -> Response in
             let value = try await handler(req)
             if let convertible = value as? ResponseConvertible {
@@ -162,42 +162,42 @@ extension Router {
     /// `GET` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func get(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.GET, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.get, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `POST` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func post(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.POST, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.post, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `PUT` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func put(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.PUT, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.put, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `PATCH` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func patch(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.PATCH, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.patch, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `DELETE` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func delete(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.DELETE, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.delete, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `OPTIONS` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func options(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.OPTIONS, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.options, at: path, options: options, middlewares: middlewares, use: handler)
     }
 
     /// `HEAD` wrapper of `Application.on(method:path:handler:)`.
     @discardableResult
     public func head(_ path: String? = nil, options: RouteOptions = [], middlewares: [Middleware] = [], use handler: @escaping EncodableHandler<some Encodable>) -> Self {
-        on(.HEAD, at: path, options: options, middlewares: middlewares, use: handler)
+        on(.head, at: path, options: options, middlewares: middlewares, use: handler)
     }
 }

@@ -63,7 +63,7 @@ extension Client.Request {
         URLComponents(string: url.absoluteString)?.path == path
     }
     
-    public func hasMethod(_ method: HTTPMethod) -> Bool {
+    public func hasMethod(_ method: HTTPRequest.Method) -> Bool {
         self.method == method
     }
     

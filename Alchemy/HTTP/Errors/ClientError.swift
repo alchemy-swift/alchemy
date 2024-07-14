@@ -30,9 +30,9 @@ public struct ClientError: Error, CustomStringConvertible {
             """
     }
 
-    private func debugString(for headers: HTTPHeaders) -> String {
+    private func debugString(for headers: HTTPFields) -> String {
         if Env.LOG_FULL_CLIENT_ERRORS == true || Env.isDebug {
-            return headers.map { "\($0): \($1)" }.joined(separator: "\n    ")
+            return headers.map { "\($0.name): \($0.value)" }.joined(separator: "\n    ")
         } else {
             return headers.map { "\($0.name)" }.joined(separator: "\n    ")
         }

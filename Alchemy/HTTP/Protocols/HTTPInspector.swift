@@ -1,7 +1,7 @@
 import MultipartKit
 
 public protocol HTTPInspector {
-    var headers: HTTPHeaders { get }
+    var headers: HTTPFields { get }
     var body: Bytes? { get }
     var container: Container { get }
 }
@@ -10,11 +10,11 @@ extension HTTPInspector {
 
     // MARK: Headers
 
-    public func header(_ name: String) -> String? {
-        headers.first(name: name)
+    public func header(_ name: HTTPField.Name) -> String? {
+        headers[values: name].first
     }
 
-    public func requireHeader(_ name: String) throws -> String {
+    public func requireHeader(_ name: HTTPField.Name) throws -> String {
         guard let header = header(name) else {
             throw ValidationError("Missing header \(name).")
         }

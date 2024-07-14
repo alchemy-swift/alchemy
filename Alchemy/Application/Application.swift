@@ -19,7 +19,7 @@ public protocol Application: Router {
     
     /// Boots the app's dependencies. Don't override the default for this unless
     /// you want to prevent default Alchemy services from loading.
-    func bootPlugins()
+    func bootPlugins() async throws
     /// Setup your application here. Called after all services are registered.
     func boot() throws
     
@@ -50,7 +50,7 @@ public extension Application {
     var container: Container { .main }
     var plugins: [Plugin] { [] }
     
-    func bootPlugins() {
+    func bootPlugins() async throws {
         let alchemyPlugins: [Plugin] = [
             Core(),
             Schedules(),
@@ -62,9 +62,15 @@ public extension Application {
             caches,
             queues,
         ]
-        
+
+        let allPlugins = alchemyPlugins + plugins
+
         for plugin in alchemyPlugins + plugins {
-            plugin.register(in: self)
+            plugin.registerServices(in: self)
+        }
+
+        for plugin in allPlugins {
+            try await plugin.boot(app: self)
         }
     }
 
@@ -91,12 +97,14 @@ public extension Application {
     }
 }
 
+import ServiceLifecycle
+
 // MARK: Running
 
 public extension Application {
     func run() async throws {
         do {
-            bootPlugins()
+            try await bootPlugins()
             try boot()
             bootRouter()
             try await start()
@@ -118,7 +126,7 @@ public extension Application {
 
         // 0. Start the application lifecycle.
 
-        try await lifecycle.start()
+        try await serviceGroup.run()
 
         // 1. Parse and run a `Command` based on the application arguments.
 
@@ -128,21 +136,14 @@ public extension Application {
         // 2. Wait for lifecycle or immediately shut down depending on if the
         //    command should run indefinitely.
         
-        if command.runUntilStopped {
-            wait()
-        } else {
-            try await stop()
+        if !command.runUntilStopped {
+            await stop()
         }
     }
 
-    /// Waits indefinitely for the application to be stopped.
-    func wait() {
-        lifecycle.wait()
-    }
-
     /// Stops the application.
-    func stop() async throws {
-        try await lifecycle.shutdown()
+    func stop() async {
+        await serviceGroup.triggerGracefulShutdown()
     }
 
     // @main support

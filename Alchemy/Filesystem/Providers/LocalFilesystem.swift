@@ -43,21 +43,27 @@ private struct LocalFilesystem: FilesystemProvider {
         return File(
             name: url.lastPathComponent,
             source: .filesystem(path: filepath),
-            content: .stream { writer in
-                // Load the file in chunks, streaming it.
-                let fileHandle = try NIOFileHandle(path: url.path)
-                defer { try? fileHandle.close() }
-                try await fileIO.readChunked(
-                    fileHandle: fileHandle,
-                    byteCount: fileSizeBytes,
-                    chunkSize: NonBlockingFileIO.defaultChunkSize,
-                    allocator: bufferAllocator,
-                    eventLoop: Loop,
-                    chunkHandler: { chunk in
-                        Loop.asyncSubmit { try await writer.write(chunk) }
+            content: .stream(
+                AsyncStream { continuation in
+                    Task {
+                        // Load the file in chunks, streaming it.
+                        let fileHandle = try NIOFileHandle(path: url.path)
+                        defer { try? fileHandle.close() }
+                        try await fileIO.readChunked(
+                            fileHandle: fileHandle,
+                            byteCount: fileSizeBytes,
+                            chunkSize: NonBlockingFileIO.defaultChunkSize,
+                            allocator: bufferAllocator,
+                            eventLoop: Loop,
+                            chunkHandler: { chunk in
+                                Loop.submit {
+                                    continuation.yield(chunk)
+                                }
+                            }
+                        ).get()
                     }
-                ).get()
-            },
+                }
+            ),
             size: fileSizeBytes)
     }
     
@@ -72,11 +78,11 @@ private struct LocalFilesystem: FilesystemProvider {
 
         // Stream and write
         var offset: Int64 = 0
-        try await content.stream.readAll { buffer in
-            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: buffer, eventLoop: Loop).get()
-            offset += Int64(buffer.writerIndex)
+        for try await chunk in content.stream {
+            try await fileIO.write(fileHandle: fileHandle, toOffset: offset, buffer: chunk, eventLoop: Loop).get()
+            offset += Int64(chunk.writerIndex)
         }
-        
+
         return File(name: url.path, source: .filesystem(path: url.relativeString))
     }
     
@@ -118,7 +124,7 @@ private struct LocalFilesystem: FilesystemProvider {
         return url
     }
     
-    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPFields = [:]) async throws -> URL {
         throw FileError.temporaryUrlNotAvailable
     }
     

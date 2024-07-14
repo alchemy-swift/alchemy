@@ -10,8 +10,8 @@ import XCTest
 open class TestCase<A: Application>: XCTestCase {
     public final class Builder: RequestBuilder {
         public var urlComponents = URLComponents()
-        public var method: HTTPMethod = .GET
-        public var headers: HTTPHeaders = [:]
+        public var method: HTTPRequest.Method = .GET
+        public var headers: HTTPFields = [:]
         public var body: Bytes? = nil
         private var version: HTTPVersion = .http1_1
         private var remoteAddress: SocketAddress? = nil

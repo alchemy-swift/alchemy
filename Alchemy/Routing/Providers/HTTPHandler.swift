@@ -18,7 +18,7 @@ public final class HTTPHandler: RequestHandler {
     public func handle(request: Request) async -> Response {
         do {
             if let maxUploadSize, let length = request.headers.contentLength, length > maxUploadSize {
-                throw HTTPError(.payloadTooLarge)
+                throw HTTPError(.contentTooLarge)
             }
 
             let middlewares = globalMiddlewares + [router]

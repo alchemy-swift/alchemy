@@ -37,13 +37,18 @@ extension FormDataDecoder: HTTPDecoder {
         
         let parser = MultipartParser(boundary: boundary)
         var parts: [MultipartPart] = []
-        var headers: HTTPHeaders = .init()
+        var headers: HTTPFields = .init()
         var body: ByteBuffer = ByteBuffer()
 
-        parser.onHeader = { headers.replaceOrAdd(name: $0, value: $1) }
+        parser.onHeader = {
+            if let name = HTTPField.Name($0) {
+                headers[name] = $1
+            }
+        }
+
         parser.onBody = { body.writeBuffer(&$0) }
         parser.onPartComplete = {
-            parts.append(MultipartPart(headers: headers, body: body))
+            parts.append(MultipartPart(headers: headers.nioHeaders, body: body))
             headers = [:]
             body = ByteBuffer()
         }
@@ -60,11 +65,11 @@ extension FormDataDecoder: HTTPDecoder {
 
 extension MultipartPart {
     fileprivate var value: Content.Value {
-        guard let disposition = headers.contentDisposition, let filename = disposition.filename else {
+        guard let disposition = fields.contentDisposition, let filename = disposition.filename else {
             return .string(body.string)
         }
         
-        let file = File(name: filename, source: .http(clientContentType: headers.contentType), content: .buffer(body), size: body.writerIndex)
+        let file = File(name: filename, source: .http(clientContentType: fields.contentType), content: .buffer(body), size: body.writerIndex)
         return .file(file)
     }
 }

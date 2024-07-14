@@ -1,4 +1,4 @@
-extension HTTPHeaders {
+extension HTTPFields {
     public struct ContentDisposition {
         public struct Value: ExpressibleByStringLiteral {
             public let string: String
@@ -37,7 +37,7 @@ extension HTTPHeaders {
     
     public var contentDisposition: ContentDisposition? {
         get {
-            guard let disposition = self["Content-Disposition"].first else {
+            guard let disposition = self[.contentDisposition] else {
                 return nil
             }
             
@@ -73,9 +73,9 @@ extension HTTPHeaders {
                 ]
                     .compactMap { $0 }
                     .joined(separator: "; ")
-                replaceOrAdd(name: "Content-Disposition", value: value)
+                self[.contentDisposition] = value
             } else {
-                remove(name: "Content-Disposition")
+                self[.contentDisposition] = nil
             }
         }
     }

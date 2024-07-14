@@ -45,11 +45,11 @@ extension Endpoint {
                 let name = attribute.attributeName.trimmedDescription
                 switch name {
                 case "GET", "DELETE", "PATCH", "POST", "PUT", "OPTIONS", "HEAD", "TRACE", "CONNECT":
-                    method = name
+                    method = name.lowercased()
                     path = list.first?.expression.description.withoutQuotes
                     options = list.dropFirst().first?.expression.description.withoutQuotes
                 case "HTTP":
-                    method = list.first.map { "RAW(value: \($0.expression.description))" }
+                    method = list.first.map { "raw(\($0.expression.description))" }
                     path = list.dropFirst().first?.expression.description.withoutQuotes
                     options = list.dropFirst().dropFirst().first?.expression.description.withoutQuotes
                 default:

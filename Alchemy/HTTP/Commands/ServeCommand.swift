@@ -2,6 +2,7 @@ import NIO
 import NIOSSL
 import NIOHTTP1
 import NIOHTTP2
+@preconcurrency import Hummingbird
 import HummingbirdCore
 
 struct ServeCommand: Command {
@@ -60,55 +61,134 @@ struct ServeCommand: Command {
             Q.startWorker()
         }
 
-        let responder = HTTPResponder(logResponses: !quiet)
-        try await app.server.start(responder: responder).get()
-
-        let address = app.server.configuration.address
-        if let unixSocket = address.unixDomainSocketPath {
-            Log.info("Server running on \(unixSocket).")
-        } else if let host = address.host, let port = address.port {
-            let link = "[http://\(host):\(port)]".bold
-            Log.info("Server running on \(link).")
-        }
-
-        if Env.isXcode {
-            Log.comment("Press Cmd+Period to stop the server")
+        var configuration = app.configuration
+        if let socket {
+            configuration.address = .unixDomainSocket(path: socket)
         } else {
-            Log.comment("Press Ctrl+C to stop the server".yellow)
-            print()
+            configuration.address = .hostname(host, port: port)
         }
+
+        let responder = AlchemyResponder(logResponses: !quiet)
+        let hbApplication = HBApplication(
+            responder: responder,
+            server: app.serverBuilder,
+            configuration: configuration,
+            services: [],
+            onServerRunning: { channel in
+                if let unixSocket = socket {
+                    Log.info("Server running on \(unixSocket).")
+                } else {
+                    let link = "[http://\(host):\(port)]".bold
+                    Log.info("Server running on \(link).")
+                }
+
+                if Env.isXcode {
+                    Log.comment("Press Cmd+Period to stop the server")
+                } else {
+                    Log.comment("Press Ctrl+C to stop the server".yellow)
+                    print()
+                }
+            },
+            eventLoopGroupProvider: .shared(LoopGroup)
+        )
+
+        try await hbApplication.run()
     }
 }
 
-private struct HTTPResponder: HBHTTPResponder {
+extension Application {
+    var configuration: ApplicationConfiguration {
+        ApplicationConfiguration(
+            address: .hostname("localhost", port: 3000),
+            serverName: nil,
+            backlog: 100,
+            reuseAddress: false
+        )
+    }
+
+    var serverBuilder: HTTPServerBuilder {
+        .http1()
+    }
+}
+
+public typealias HBResponse = Hummingbird.Response
+public typealias HBRequest = Hummingbird.Request
+public typealias HBApplication = Hummingbird.Application
+
+public struct AlchemyContext: RequestContext {
+    public var coreContext: CoreRequestContextStorage
+    public let source: ApplicationRequestContextSource
+
+    public init(source: ApplicationRequestContextSource) {
+        self.coreContext = .init(source: source)
+        self.source = source
+    }
+}
+
+public struct AlchemyResponder: HTTPResponder {
     @Inject var handler: RequestHandler
 
     let logResponses: Bool
 
-    func respond(to request: HBHTTPRequest, context: ChannelHandlerContext, onComplete: @escaping (Result<HBHTTPResponse, Error>) -> Void) {
+    // TODO: Consider using HB request? Is there a reason to roll your own?
+
+    public func respond(to request: HBRequest, context: AlchemyContext) async throws -> HBResponse {
         let startedAt = Date()
-        let req = Request(method: request.head.method,
-                          uri: request.head.uri,
-                          headers: request.head.headers,
-                          version: request.head.version,
-                          body: request.body.byteContent(on: context.eventLoop),
-                          localAddress: context.localAddress,
-                          remoteAddress: context.remoteAddress,
-                          eventLoop: context.eventLoop)
-        context.eventLoop
-            .asyncSubmit {
-                let res = await handler.handle(request: req)
-                if logResponses {
-                    logResponse(req: req, res: res, startedAt: startedAt)
-                }
+        let req = Request(
+            method: request.method,
+            uri: request.uri.string,
+            headers: request.headers,
+            body: request.body.bytes(),
+            localAddress: context.source.channel.localAddress,
+            remoteAddress: context.source.channel.remoteAddress
+        )
 
-                let head = HTTPResponseHead(version: req.version, status: res.status, headers: res.headers)
-                return HBHTTPResponse(head: head, body: res.body.hbResponseBody)
-            }
-            .whenComplete(onComplete)
+        let res = await handler.handle(request: req)
+        if logResponses {
+            logResponse(req: req, res: res, startedAt: startedAt)
+        }
+
+        return HBResponse(
+            status: res.status,
+            headers: res.headers,
+            body: res.body.hbResponseBody
+        )
     }
+}
 
-    private func logResponse(req: Request, res: Response, startedAt: Date) {
+extension RequestBody {
+    fileprivate func bytes() -> Bytes? {
+        .stream(
+            AsyncStream<ByteBuffer> { continuation in
+                Task {
+                    for try await buffer in self {
+                        continuation.yield(buffer)
+                    }
+
+                    continuation.finish()
+                }
+            }
+        )
+    }
+}
+
+extension Bytes? {
+    fileprivate var hbResponseBody: ResponseBody {
+        switch self {
+        case .buffer(let buffer):
+            return .init(byteBuffer: buffer)
+        case .stream(let stream):
+            return .init(asyncSequence: stream)
+        case .none:
+            return .init()
+        }
+    }
+}
+
+// MARK: Response Logging
+
+extension AlchemyResponder {
+    fileprivate func logResponse(req: Request, res: Response, startedAt: Date) {
         enum Formatters {
             static let date: DateFormatter = {
                 let formatter = DateFormatter()
@@ -121,7 +201,7 @@ private struct HTTPResponder: HBHTTPResponder {
                 return formatter
             }()
         }
-        
+
         enum Status {
             case success
             case warning
@@ -147,7 +227,7 @@ private struct HTTPResponder: HBHTTPResponder {
                 return .other
             }
         }()
-        
+
         if Env.isXcode {
             let logString = "\(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(res.status.code)"
             switch status {
@@ -170,103 +250,8 @@ private struct HTTPResponder: HBHTTPResponder {
             case .other:
                 code = code.white
             }
-            
+
             Log.comment("\(dateString.lightBlack) \(timeString) \(req.method) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)")
         }
     }
-}
-
-extension HBHTTPError: ResponseConvertible {
-    public func response() -> Response {
-        Response(status: status, headers: headers, body: body.map { .string($0) })
-    }
-}
-
-extension HBRequestBody {
-    fileprivate func byteContent(on eventLoop: EventLoop) -> Bytes? {
-        switch self {
-        case .byteBuffer(let bytes):
-            return bytes.map { .buffer($0) }
-        case .stream(let streamer):
-            return .stream(ByteStream { writer in
-                try await streamer.consumeAll(on: eventLoop) { buffer in
-                    eventLoop.asyncSubmit {
-                        try await writer.write(buffer)
-                    }
-                }
-                .get()
-            })
-        }
-    }
-}
-
-extension Bytes? {
-    private struct StreamerProxy: HBResponseBodyStreamer, @unchecked Sendable {
-        let stream: ByteStream
-
-        func read(on eventLoop: EventLoop) -> EventLoopFuture<HBStreamerOutput> {
-            stream._read(on: eventLoop).map { $0.map { .byteBuffer($0) } ?? .end }
-        }
-    }
-
-    fileprivate var hbResponseBody: HBResponseBody {
-        switch self {
-        case .buffer(let buffer):
-            return .byteBuffer(buffer)
-        case .stream(let stream):
-            return .stream(StreamerProxy(stream: stream))
-        case .none:
-            return .empty
-        }
-    }
-}
-
-extension String {
-    /// String with black text.
-    public var black: String { Env.isXcode ? self : applyingColor(.black) }
-    /// String with red text.
-    public var red: String { Env.isXcode ? self : applyingColor(.red)   }
-    /// String with green text.
-    public var green: String { Env.isXcode ? self : applyingColor(.green) }
-    /// String with yellow text.
-    public var yellow: String { Env.isXcode ? self : applyingColor(.yellow) }
-    /// String with blue text.
-    public var blue: String { Env.isXcode ? self : applyingColor(.blue) }
-    /// String with magenta text.
-    public var magenta: String { Env.isXcode ? self : applyingColor(.magenta) }
-    /// String with cyan text.
-    public var cyan: String { Env.isXcode ? self : applyingColor(.cyan) }
-    /// String with white text.
-    public var white: String { Env.isXcode ? self : applyingColor(.white) }
-    /// String with light black text. Generally speaking, it means dark grey in some consoles.
-    public var lightBlack: String { Env.isXcode ? self : applyingColor(.lightBlack) }
-    /// String with light red text.
-    public var lightRed: String { Env.isXcode ? self : applyingColor(.lightRed) }
-    /// String with light green text.
-    public var lightGreen: String { Env.isXcode ? self : applyingColor(.lightGreen) }
-    /// String with light yellow text.
-    public var lightYellow: String { Env.isXcode ? self : applyingColor(.lightYellow) }
-    /// String with light blue text.
-    public var lightBlue: String { Env.isXcode ? self : applyingColor(.lightBlue) }
-    /// String with light magenta text.
-    public var lightMagenta: String { Env.isXcode ? self : applyingColor(.lightMagenta) }
-    /// String with light cyan text.
-    public var lightCyan: String { Env.isXcode ? self : applyingColor(.lightCyan) }
-    /// String with light white text. Generally speaking, it means light grey in some consoles.
-    public var lightWhite: String { Env.isXcode ? self : applyingColor(.lightWhite) }
-}
-
-extension String {
-    /// String with bold style.
-    public var bold: String { Env.isXcode ? self : applyingStyle(.bold) }
-    /// String with dim style. This is not widely supported in all terminals. Use it carefully.
-    public var dim: String { Env.isXcode ? self : applyingStyle(.dim) }
-    /// String with italic style. This depends on whether an italic existing for the font family of terminals.
-    public var italic: String { Env.isXcode ? self : applyingStyle(.italic) }
-    /// String with underline style.
-    public var underline: String { Env.isXcode ? self : applyingStyle(.underline) }
-    /// String with blink style. This is not widely supported in all terminals, or need additional setting. Use it carefully.
-    public var blink: String { Env.isXcode ? self : applyingStyle(.blink) }
-    /// String with text color and background color swapped.
-    public var swap: String { Env.isXcode ? self : applyingStyle(.swap) }
 }

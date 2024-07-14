@@ -16,16 +16,16 @@
 /// ```
 public struct HTTPError: Error, ResponseConvertible {
     /// The status code of this error.
-    public let status: HTTPResponseStatus
+    public let status: HTTPResponse.Status
     /// An optional message to include in an error response.
     public let message: String?
     
-    /// Create the error with a custom `HTTPResponseStatus` and message.
+    /// Create the error with a custom `HTTPResponse.Status` and message.
     ///
     /// - Parameters:
     ///   - status: The status code of this error.
     ///   - message: The message associated with this error, defaults to nil.
-    public init(_ status: HTTPResponseStatus, message: String? = nil) {
+    public init(_ status: HTTPResponse.Status, message: String? = nil) {
         self.status = status
         self.message = message
     }

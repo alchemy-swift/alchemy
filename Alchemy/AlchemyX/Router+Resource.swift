@@ -1,5 +1,6 @@
 import AlchemyX
 import Pluralize
+import ServiceLifecycle
 
 extension Application {
     @discardableResult
@@ -11,14 +12,18 @@ extension Application {
     ) -> Self where R.Identifier: SQLValueConvertible & LosslessStringConvertible {
         use(ResourceController<R>(db: db, tableName: table))
         if updateTable {
-            Lifecycle.register(
-                label: "Migrate_\(R.self)",
-                start: .async { try await db.updateSchema(R.self) },
-                shutdown: .none
-            )
+            Container.main.services.append(ResourceMigrationService<R>(db: db))
         }
 
         return self
+    }
+}
+
+struct ResourceMigrationService<R: Resource>: ServiceLifecycle.Service, @unchecked Sendable {
+    let db: Database
+
+    func run() async throws {
+        try await db.updateSchema(R.self)
     }
 }
 

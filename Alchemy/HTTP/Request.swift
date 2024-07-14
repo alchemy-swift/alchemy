@@ -69,22 +69,18 @@ public final class Request: RequestInspector {
 
     // MARK: Stored Properties
 
-    /// The HTTPMethod of the request.
-    public var method: HTTPMethod
+    /// The HTTPRequest.Method of the request.
+    public var method: HTTPRequest.Method
     /// The URI of the request.
     public var uri: String
     /// Any headers associated with the request.
-    public var headers: HTTPHeaders
-    /// The HTTPVersion of the request.
-    public var version: HTTPVersion
+    public var headers: HTTPFields
     /// The request body.
     public var body: Bytes?
     /// The remote address where this request came from.
     public var remoteAddress: SocketAddress?
     /// The local address where this request is sent too from.
     public var localAddress: SocketAddress?
-    /// The event loop this request is being handled on.
-    public var eventLoop: EventLoop
     /// A container for storing associated types and services.
     public let container: Container
 
@@ -119,24 +115,20 @@ public final class Request: RequestInspector {
     }
 
     public init(
-        method: HTTPMethod,
+        method: HTTPRequest.Method,
         uri: String,
-        headers: HTTPHeaders = [:],
-        version: HTTPVersion = .http1_1,
+        headers: HTTPFields = [:],
         body: Bytes? = nil,
         localAddress: SocketAddress? = nil,
         remoteAddress: SocketAddress? = nil,
-        eventLoop: EventLoop = Loop,
         container: Container = Container(parent: .main)
     ) {
         self.method = method
         self.uri = uri
         self.headers = headers
-        self.version = version
         self.body = body
         self.localAddress = localAddress
         self.remoteAddress = remoteAddress
-        self.eventLoop = eventLoop
         self.container = Container(parent: .main)
     }
 
@@ -190,7 +182,7 @@ public final class Request: RequestInspector {
     ///   `Authorization` header, if it exists. Currently only
     ///   supports `Basic` and `Bearer` auth.
     public func getAuth() -> Auth? {
-        guard var authString = headers.first(name: "Authorization") else {
+        guard var authString = headers[values: .authorization].first else {
             return nil
         }
 

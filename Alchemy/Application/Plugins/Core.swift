@@ -32,7 +32,9 @@ struct Core: Plugin {
             return current
         }
 
-        // 4. Register Lifecycle
+        app.container.register(Services()).singleton()
+
+        // 4. Register ServiceGroup
 
         app.container.register { container in
             var logger: Logger = container.require()
@@ -44,11 +46,9 @@ struct Core: Plugin {
                 logger.logLevel = .notice
             }
 
-            return ServiceLifecycle(
-                configuration: ServiceLifecycle.Configuration(
-                    logger: logger,
-                    installBacktrace: !container.env.isTesting
-                )
+            return ServiceGroup(
+                services: container.services.services,
+                logger: logger
             )
         }.singleton()
     }
@@ -62,18 +62,30 @@ struct Core: Plugin {
     }
 }
 
+public final class Services {
+    fileprivate var services: [ServiceLifecycle.Service] = []
+
+    func append(_ service: ServiceLifecycle.Service) {
+        services.append(service)
+    }
+}
+
 extension Application {
     public var env: Environment {
         container.require()
     }
 
-    public var lifecycle: ServiceLifecycle {
+    public var serviceGroup: ServiceGroup {
         container.require()
     }
 }
 
 extension Container {
     var env: Environment {
+        require()
+    }
+
+    var services: Services {
         require()
     }
 

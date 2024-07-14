@@ -1,8 +1,8 @@
-import HummingbirdFoundation
+import Hummingbird
 import MultipartKit
 
 public protocol HTTPBuilder: Buildable {
-    var headers: HTTPHeaders { get set }
+    var headers: HTTPFields { get set }
     var body: Bytes? { get set }
 }
 
@@ -10,25 +10,25 @@ extension HTTPBuilder {
     
     // MARK: - Headers
 
-    public func withHeader(_ name: String, value: String) -> Self {
-        with { $0.headers.add(name: name, value: value) }
+    public func withHeader(_ name: HTTPField.Name, value: String) -> Self {
+        with { $0.headers[name] = value }
     }
     
-    public func withHeaders(_ dict: [String: String]) -> Self {
+    public func withHeaders(_ dict: [HTTPField.Name: String]) -> Self {
         dict.reduce(self) { $0.withHeader($1.key, value: $1.value) }
     }
     
     public func withBasicAuth(username: String, password: String) -> Self {
         let basicAuthString = Data("\(username):\(password)".utf8).base64EncodedString()
-        return withHeader("Authorization", value: "Basic \(basicAuthString)")
+        return withHeader(.authorization, value: "Basic \(basicAuthString)")
     }
     
     public func withToken(_ token: String) -> Self {
-        withHeader("Authorization", value: "Bearer \(token)")
+        withHeader(.authorization, value: "Bearer \(token)")
     }
     
     public func withContentType(_ contentType: ContentType) -> Self {
-        withHeader("Content-Type", value: contentType.string)
+        withHeader(.contentType, value: contentType.string)
     }
     
     // MARK: - Body

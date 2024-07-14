@@ -35,7 +35,7 @@ final class ClientTests: TestCase<TestApp> {
     }
 
     func testHeaders() {
-        let headers: HTTPHeaders = ["foo":"bar"]
+        let headers: HTTPFields = ["foo":"bar"]
         XCTAssertEqual(Client.Response(headers: headers).headers, headers)
         XCTAssertEqual(Client.Response(headers: headers).header("foo"), "bar")
         XCTAssertEqual(Client.Response(headers: headers).header("baz"), nil)
@@ -76,7 +76,7 @@ final class ClientTests: TestCase<TestApp> {
 }
 
 extension Client.Response {
-    fileprivate init(_ status: HTTPResponseStatus = .ok, headers: HTTPHeaders = [:], body: Bytes? = nil) {
+    fileprivate init(_ status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], body: Bytes? = nil) {
         self.init(request: Client.Request(url: ""), host: "https://example.com", status: status, version: .http1_1, headers: headers, body: body)
     }
 }

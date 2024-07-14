@@ -3,9 +3,9 @@ import Alchemy
 
 extension Request {
     public static func fake(
-        method: HTTPMethod = .GET,
+        method: HTTPRequest.Method = .GET,
         uri: String = "foo",
-        headers: HTTPHeaders = [:],
+        headers: HTTPFields = [:],
         version: HTTPVersion = .http1_1,
         body: Bytes? = nil,
         localAddress: SocketAddress? = nil,

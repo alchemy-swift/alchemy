@@ -9,7 +9,7 @@ public enum Bytes: ExpressibleByStringLiteral {
     public static var defaultEncoder: HTTPEncoder = .json
     
     case buffer(ByteBuffer)
-    case stream(ByteStream)
+    case stream(AsyncStream<ByteBuffer>)
 
     public var buffer: ByteBuffer {
         guard case .buffer(let buffer) = self else {
@@ -19,12 +19,12 @@ public enum Bytes: ExpressibleByStringLiteral {
         return buffer
     }
     
-    public var stream: ByteStream {
+    public var stream: AsyncStream<ByteBuffer> {
         switch self {
         case .stream(let stream):
             return stream
         case .buffer(let buffer):
-            return ByteStream { try await $0.write(buffer) }
+            return AsyncStream { buffer }
         }
     }
     
@@ -51,11 +51,10 @@ public enum Bytes: ExpressibleByStringLiteral {
             return byteBuffer
         case .stream(let byteStream):
             var collection = ByteBuffer()
-            try await byteStream.readAll { buffer in
-                var chunk = buffer
+            for try await var chunk in byteStream {
                 collection.writeBuffer(&chunk)
             }
-            
+
             return collection
         }
     }
@@ -76,12 +75,22 @@ public enum Bytes: ExpressibleByStringLiteral {
         .buffer(ByteBuffer(string: string))
     }
 
-    public static func stream(_ streamer: @escaping ByteStream.Streamer) -> Bytes {
-        .stream(ByteStream(streamer: streamer))
-    }
-
     public static func encode<E: Encodable>(_ value: E, using encoder: HTTPEncoder = Bytes.defaultEncoder) throws -> Bytes {
         let (buffer, _) = try encoder.encodeBody(value)
         return .buffer(buffer)
+    }
+
+    public static func stream<AS: AsyncSequence>(sequence: AS) -> Bytes where AS.Element == ByteBuffer {
+        .stream(
+            AsyncStream<ByteBuffer> { continuation in
+                Task {
+                    for try await chunk in sequence {
+                        continuation.yield(chunk)
+                    }
+
+                    continuation.finish()
+                }
+            }
+        )
     }
 }

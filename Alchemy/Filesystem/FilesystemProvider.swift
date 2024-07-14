@@ -16,8 +16,8 @@ public protocol FilesystemProvider {
     func delete(_ filepath: String) async throws
     
     /// Create a temporary URL to a file at the given path.
-    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders) async throws -> URL
-    
+    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPFields) async throws -> URL
+
     /// Get a URL for the file at the given path.
     func url(_ filepath: String) throws -> URL
     

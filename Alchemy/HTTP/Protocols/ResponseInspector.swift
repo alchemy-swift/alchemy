@@ -1,5 +1,5 @@
 public protocol ResponseInspector: HTTPInspector {
-    var status: HTTPResponseStatus { get }
+    var status: HTTPResponse.Status { get }
 }
 
 extension ResponseInspector {

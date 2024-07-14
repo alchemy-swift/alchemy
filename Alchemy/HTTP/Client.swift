@@ -19,9 +19,9 @@ public final class Client: Service {
         /// The url components.
         public var urlComponents: URLComponents = URLComponents()
         /// The request method.
-        public var method: HTTPMethod = .GET
+        public var method: HTTPRequest.Method = .get
         /// Any headers for this request.
-        public var headers: HTTPHeaders = [:]
+        public var headers: HTTPFields = [:]
         /// The body of this request, either a static buffer or byte stream.
         public var body: Bytes? = nil
         /// The url of this request.
@@ -38,7 +38,7 @@ public final class Client: Service {
         /// Custom config override when making this request.
         public var config: HTTPClient.Configuration? = nil
         
-        public init(url: String = "", method: HTTPMethod = .GET, headers: HTTPHeaders = [:], body: Bytes? = nil, timeout: TimeAmount? = nil) {
+        public init(url: String = "", method: HTTPRequest.Method = .get, headers: HTTPFields = [:], body: Bytes? = nil, timeout: TimeAmount? = nil) {
             self.urlComponents = URLComponents(string: url) ?? URLComponents()
             self.method = method
             self.headers = headers
@@ -57,8 +57,8 @@ public final class Client: Service {
                     case .stream(let stream):
                         func writeStream(writer: HTTPClient.Body.StreamWriter) -> EventLoopFuture<Void> {
                             Loop.asyncSubmit {
-                                try await stream.readAll {
-                                    try await writer.write(.byteBuffer($0)).get()
+                                for try await chunk in stream {
+                                    try await writer.write(.byteBuffer(chunk)).get()
                                 }
                             }
                         }
@@ -69,7 +69,12 @@ public final class Client: Service {
                     }
                 }()
                 
-                return try HTTPClient.Request(url: url, method: method, headers: headers, body: body)
+                return try HTTPClient.Request(
+                    url: url,
+                    method: HTTPMethod(rawValue: method.rawValue),
+                    headers: headers.nioHeaders,
+                    body: body
+                )
             }
         }
     }
@@ -82,11 +87,9 @@ public final class Client: Service {
         /// Remote host of the request.
         public var host: String
         /// Response HTTP status.
-        public let status: HTTPResponseStatus
-        /// Response HTTP version.
-        public let version: HTTPVersion
+        public let status: HTTPResponse.Status
         /// Reponse HTTP headers.
-        public let headers: HTTPHeaders
+        public let headers: HTTPFields
         /// Response body.
         public var body: Bytes?
         /// Allows for extending storage on this type.
@@ -95,12 +98,11 @@ public final class Client: Service {
         /// Create a stubbed response with the given info. It will be returned
         /// for any incoming request that matches the stub pattern.
         public static func stub(
-            _ status: HTTPResponseStatus = .ok,
-            version: HTTPVersion = .http1_1,
-            headers: HTTPHeaders = [:],
+            _ status: HTTPResponse.Status = .ok,
+            headers: HTTPFields = [:],
             body: Bytes? = nil
         ) -> Client.Response {
-            Client.Response(request: Request(url: ""), host: "", status: status, version: version, headers: headers, body: body)
+            Client.Response(request: Request(url: ""), host: "", status: status, headers: headers, body: body)
         }
 
         // MARK: Validation
@@ -144,8 +146,8 @@ public final class Client: Service {
     public struct Builder: RequestBuilder {
         public var client: Client
         public var urlComponents: URLComponents { get { clientRequest.urlComponents } set { clientRequest.urlComponents = newValue} }
-        public var method: HTTPMethod { get { clientRequest.method } set { clientRequest.method = newValue} }
-        public var headers: HTTPHeaders { get { clientRequest.headers } set { clientRequest.headers = newValue} }
+        public var method: HTTPRequest.Method { get { clientRequest.method } set { clientRequest.method = newValue} }
+        public var headers: HTTPFields { get { clientRequest.headers } set { clientRequest.headers = newValue} }
         public var body: Bytes? { get { clientRequest.body } set { clientRequest.body = newValue} }
         public private(set) var clientRequest: Client.Request
 
@@ -313,7 +315,7 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
         case idle
         case head(HTTPResponseHead)
         case body(HTTPResponseHead, ByteBuffer)
-        case stream(HTTPResponseHead, ByteStream)
+        case stream(HTTPResponseHead, StreamWriter)
         case error(Error)
     }
 
@@ -353,14 +355,25 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
             return task.eventLoop.makeSucceededFuture(())
         case .body(let head, var body):
             if allowStreaming {
-                let stream = ByteStream(eventLoop: task.eventLoop)
-                let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .stream(stream))
+                let stream = StreamWriter()
+                let status = HTTPResponse.Status.init(integerLiteral: Int(head.status.code))
+                let headers = HTTPFields(head.headers, splitCookie: false)
+                let response = Client.Response(
+                    request: request,
+                    host: request.host,
+                    status: status,
+                    headers: headers,
+                    body: .stream(sequence: stream)
+                )
+
                 self.responsePromise.succeed(response)
                 self.state = .stream(head, stream)
                 
                 // Write the previous part, followed by this part, to the stream.
-                return stream._write(chunk: body)
-                    .flatMap { stream._write(chunk: part) }
+                return Loop.asyncSubmit {
+                    try await stream.write(body)
+                    try await stream.write(part)
+                }
             } else {
                 // The compiler can't prove that `self.state` is dead here (and it kinda isn't, there's
                 // a cross-module call in the way) so we need to drop the original reference to `body` in
@@ -373,7 +386,9 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
                 return task.eventLoop.makeSucceededVoidFuture()
             }
         case .stream(_, let stream):
-            return stream._write(chunk: part)
+            return Loop.asyncSubmit {
+                try await stream.write(part)
+            }
         case .error:
             return task.eventLoop.makeSucceededFuture(())
         }
@@ -389,13 +404,17 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
         case .idle:
             preconditionFailure("no head received before end")
         case .head(let head):
-            let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: nil)
+            let status = HTTPResponse.Status.init(integerLiteral: Int(head.status.code))
+            let headers = HTTPFields(head.headers, splitCookie: false)
+            let response = Client.Response(request: request, host: request.host, status: status, headers: headers, body: nil)
             responsePromise.succeed(response)
         case .body(let head, let body):
-            let response = Client.Response(request: request, host: request.host, status: head.status, version: head.version, headers: head.headers, body: .buffer(body))
+            let status = HTTPResponse.Status.init(integerLiteral: Int(head.status.code))
+            let headers = HTTPFields(head.headers, splitCookie: false)
+            let response = Client.Response(request: request, host: request.host, status: status, headers: headers, body: .buffer(body))
             responsePromise.succeed(response)
         case .stream(_, let stream):
-            _ = stream._write(chunk: nil)
+            stream.finish()
         case .error:
             break
         }

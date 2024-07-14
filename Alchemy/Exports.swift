@@ -6,8 +6,14 @@
 // Foundation
 @_exported import Foundation
 
+// HTTPTypes
+@_exported import struct HTTPTypes.HTTPField
+@_exported import struct HTTPTypes.HTTPFields
+@_exported import struct HTTPTypes.HTTPRequest
+@_exported import struct HTTPTypes.HTTPResponse
+
 // Lifecycle
-@_exported import Lifecycle
+@_exported import ServiceLifecycle
 
 // Logging
 @_exported import Logging
@@ -24,9 +30,3 @@
 
 // NIOCore
 @_exported import enum NIOCore.SocketAddress
-
-// NIOHTTP1
-@_exported import struct NIOHTTP1.HTTPHeaders
-@_exported import enum NIOHTTP1.HTTPMethod
-@_exported import struct NIOHTTP1.HTTPVersion
-@_exported import enum NIOHTTP1.HTTPResponseStatus

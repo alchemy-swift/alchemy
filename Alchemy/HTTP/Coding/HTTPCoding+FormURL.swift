@@ -1,4 +1,4 @@
-import HummingbirdFoundation
+import Hummingbird
 
 extension HTTPEncoder where Self == URLEncodedFormEncoder {
     public static var urlForm: URLEncodedFormEncoder { URLEncodedFormEncoder() }

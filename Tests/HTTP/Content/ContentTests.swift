@@ -1,7 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTest
-import HummingbirdFoundation
+import Hummingbird
 import MultipartKit
 
 final class ContentTests: XCTestCase {

@@ -1,5 +1,5 @@
 public protocol RequestInspector: HTTPInspector {
-    var method: HTTPMethod { get }
+    var method: HTTPRequest.Method { get }
     var urlComponents: URLComponents { get }
 }
 

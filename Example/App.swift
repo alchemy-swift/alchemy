@@ -25,11 +25,17 @@ struct App {
     }
 }
 
+extension HTTPRequest.Method {
+    public static func raw(_ string: String) -> HTTPRequest.Method {
+        .init(rawValue: string)!
+    }
+}
+
 @Controller
 struct UserController {
     @HTTP("FOO", "/bar", options: .stream)
     func bar() {
-        
+
     }
 
     @GET("/foo")
@@ -43,7 +49,6 @@ struct Todo {
     var id: Int
     let name: String
     var isDone = false
-    var val = UUID()
     let tags: [String]?
 
     @HasOne var hasOne: Todo

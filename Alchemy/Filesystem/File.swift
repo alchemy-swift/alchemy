@@ -56,7 +56,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     }
     
     /// Get a temporary url for this resource.
-    public func temporaryUrl(expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+    public func temporaryUrl(expires: TimeAmount, headers: HTTPFields = [:]) async throws -> URL {
         switch source {
         case .filesystem(let filesystem, let path):
             return try await (filesystem ?? Storage).temporaryURL(path, expires: expires, headers: headers)
@@ -121,7 +121,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
         try await _response(disposition: .attachment(filename: name.inQuotes))
     }
 
-    private func _response(disposition: HTTPHeaders.ContentDisposition? = nil) async throws -> Response {
+    private func _response(disposition: HTTPFields.ContentDisposition? = nil) async throws -> Response {
         let content = try await getContent()
         let response = Response(status: .ok, body: content, contentType: contentType)
         response.headers.contentDisposition = disposition
@@ -154,30 +154,42 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
 // As of now, streamed files aren't possible over request multipart.
 extension File: MultipartPartConvertible {
     public var multipart: MultipartPart? {
-        var headers: HTTPHeaders = [:]
+        var headers: HTTPFields = [:]
         headers.contentType = contentType
-        headers.contentDisposition = HTTPHeaders.ContentDisposition(value: "form-data", name: nil, filename: name)
+        headers.contentDisposition = HTTPFields.ContentDisposition(value: "form-data", name: nil, filename: name)
         headers.contentLength = size
         guard let content = self.content else {
             Log.warning("Unable to convert a filesystem reference to a `MultipartPart`. Please load the contents of the file first.")
             return nil
         }
         
-        return MultipartPart(headers: headers, body: content.data)
+        return MultipartPart(headers: headers.nioHeaders, body: content.data)
     }
     
     public init?(multipart: MultipartPart) {
-        let fileExtension = multipart.headers.contentType?.fileExtension.map { ".\($0)" } ?? ""
-        let fileName = multipart.headers.contentDisposition?.filename ?? multipart.headers.contentDisposition?.name
-        let fileSize = multipart.headers.contentLength ?? multipart.body.writerIndex
-        
-        if multipart.headers.contentDisposition?.filename == nil {
+        let fileExtension = multipart.fields.contentType?.fileExtension.map { ".\($0)" } ?? ""
+        let fileName = multipart.fields.contentDisposition?.filename ?? multipart.fields.contentDisposition?.name
+        let fileSize = multipart.fields.contentLength ?? multipart.body.writerIndex
+
+        if multipart.fields.contentDisposition?.filename == nil {
             Log.warning("A multipart part had no name or filename in the Content-Disposition header, using a random UUID for the file name.")
         }
 
         // If there is no filename in the content disposition included (technically not required via RFC 7578) set to a random UUID.
         let name = (fileName ?? UUID().uuidString) + fileExtension
-        let contentType = multipart.headers.contentType
+        let contentType = multipart.fields.contentType
         self.init(name: name, source: .http(clientContentType: contentType), content: .buffer(multipart.body), size: fileSize)
+    }
+}
+
+extension MultipartPart {
+    var fields: HTTPFields {
+        HTTPFields(headers, splitCookie: false)
+    }
+}
+
+extension HTTPFields {
+    var nioHeaders: HTTPHeaders {
+        .init(map { ($0.name.rawName, $0.value) })
     }
 }

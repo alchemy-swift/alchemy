@@ -89,7 +89,7 @@ public final class CORSMiddleware: Middleware {
         public static func `default`() -> Configuration {
             Configuration(
                 allowedOrigin: .originBased,
-                allowedMethods: [.GET, .POST, .PUT, .OPTIONS, .DELETE, .PATCH],
+                allowedMethods: [.get, .post, .put, .options, .delete, .patch],
                 allowedHeaders: ["Accept", "Authorization", "Content-Type", "Origin", "X-Requested-With"]
             )
         }
@@ -135,7 +135,7 @@ public final class CORSMiddleware: Middleware {
         ///     pre-flight request.
         public init(
             allowedOrigin: AllowOriginSetting,
-            allowedMethods: [HTTPMethod],
+            allowedMethods: [HTTPRequest.Method],
             allowedHeaders: [String],
             allowCredentials: Bool = false,
             cacheExpiration: Int? = 600,
@@ -166,7 +166,7 @@ public final class CORSMiddleware: Middleware {
     
     public func handle(_ request: Request, next: Next) async throws -> Response {
         // Check if it's valid CORS request
-        guard let origin = request.headers["Origin"].first else {
+        guard let origin = request.headers[.origin] else {
             return try await next(request)
         }
         
@@ -176,32 +176,20 @@ public final class CORSMiddleware: Middleware {
         let response = request.isPreflight ? Response(status: .ok, body: nil) : try await next(request)
         
         // Modify response headers based on CORS settings
-        response.headers.replaceOrAdd(
-            name: "Access-Control-Allow-Origin",
-            value: self.configuration.allowedOrigin.header(forOrigin: origin)
-        )
-        response.headers.replaceOrAdd(
-            name: "Access-Control-Allow-Headers",
-            value: self.configuration.allowedHeaders
-        )
-        response.headers.replaceOrAdd(
-            name: "Access-Control-Allow-Methods",
-            value: self.configuration.allowedMethods
-        )
-        
-        if let exposedHeaders = self.configuration.exposedHeaders {
-            response.headers.replaceOrAdd(name: "Access-Control-Expose-Headers", value: exposedHeaders)
+        response.headers[.accessControlAllowOrigin] = configuration.allowedOrigin.header(forOrigin: origin)
+        response.headers[.accessControlAllowHeaders] = configuration.allowedHeaders
+        response.headers[.accessControlAllowMethods] = configuration.allowedMethods
+
+        if let exposedHeaders = configuration.exposedHeaders {
+            response.headers[.accessControlExposeHeaders] = exposedHeaders
         }
         
-        if let cacheExpiration = self.configuration.cacheExpiration {
-            response.headers.replaceOrAdd(name: "Access-Control-Max-Age", value: String(cacheExpiration))
+        if let cacheExpiration = configuration.cacheExpiration {
+            response.headers[.accessControlMaxAge] = String(cacheExpiration)
         }
         
-        if self.configuration.allowCredentials {
-            response.headers.replaceOrAdd(
-                name: "Access-Control-Allow-Credentials",
-                value: "true"
-            )
+        if configuration.allowCredentials {
+            response.headers[.accessControlAllowCredentials] = "true"
         }
         
         return response
@@ -211,6 +199,6 @@ public final class CORSMiddleware: Middleware {
 extension Request {
     /// Returns `true` if the request is a pre-flight CORS request.
     fileprivate var isPreflight: Bool {
-        method.rawValue == "OPTIONS" && headers["Access-Control-Request-Method"].first != nil
+        method == .options && headers[.accessControlRequestMethod] != nil
     }
 }

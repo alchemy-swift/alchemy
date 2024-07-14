@@ -50,7 +50,7 @@ public final class Filesystem: Service {
         return try await create(directoryUrl.appendingPathComponent(name).path, content: content)
     }
     
-    public func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPHeaders = [:]) async throws -> URL {
+    public func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPFields = [:]) async throws -> URL {
         try await provider.temporaryURL(filepath, expires: expires, headers: headers)
     }
     

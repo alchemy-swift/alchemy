@@ -11,7 +11,7 @@ public var DB: Database { Container.require() }
 public func DB(_ id: Database.Identifier?) -> Database { Container.require(id: id) }
 
 /// The application Lifecycle
-public var Lifecycle: ServiceLifecycle { Container.require() }
+public var Lifecycle: ServiceGroup { Container.require() }
 
 /// The application Environment
 public var Env: Environment { Container.require() }

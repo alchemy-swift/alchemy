@@ -29,7 +29,7 @@ public struct FileMiddleware: Middleware {
     
     public func handle(_ request: Request, next: Next) async throws -> Response {
         // Ignore non `GET` requests.
-        guard request.method == .GET else {
+        guard request.method == .get else {
             return try await next(request)
         }
         

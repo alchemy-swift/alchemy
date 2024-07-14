@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "alchemy",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v14),
         .iOS(.v16),
     ],
     products: [
@@ -15,11 +15,11 @@ let package = Package(
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "1.8.1"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird-core.git", from: "1.3.1"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0-rc.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0" ..< "3.0.0"),
+        .package(url: "https://github.com/apple/swift-http-types.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-syntax", from: "510.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.1.0"),
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.17.0"),
@@ -66,9 +66,10 @@ let package = Package(
                 .product(name: "Cron", package: "cron"),
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "Fakery", package: "Fakery"),
-                .product(name: "HummingbirdFoundation", package: "hummingbird"),
-                .product(name: "HummingbirdHTTP2", package: "hummingbird-core"),
-                .product(name: "HummingbirdTLS", package: "hummingbird-core"),
+                .product(name: "HTTPTypes", package: "swift-http-types"),
+                .product(name: "Hummingbird", package: "hummingbird"),
+                .product(name: "HummingbirdHTTP2", package: "hummingbird"),
+                .product(name: "HummingbirdTLS", package: "hummingbird"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "MultipartKit", package: "multipart-kit"),
                 .product(name: "Pluralize", package: "pluralize"),
