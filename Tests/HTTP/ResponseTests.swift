@@ -10,16 +10,16 @@ final class ResponseTests: XCTestCase {
     }
     
     func testInit() throws {
-        Response(status: .created, headers: ["foo": "1", "bar": "2"])
-            .assertHeader("foo", value: "1")
-            .assertHeader("bar", value: "2")
-            .assertHeader("Content-Length", value: "0")
+        Response(status: .created, headers: [.allow: "1", .accept: "2"])
+            .assertHeader(.allow, value: "1")
+            .assertHeader(.accept, value: "2")
+            .assertHeader(.contentLength, value: "0")
             .assertCreated()
     }
     
     func testInitContentLength() {
         Response(status: .ok, string: "foo")
-            .assertHeader("Content-Length", value: "3")
+            .assertHeader(.contentLength, value: "3")
             .assertBody("foo")
             .assertOk()
     }

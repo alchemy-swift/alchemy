@@ -26,7 +26,7 @@ private struct TestParent: Seedable, Equatable {
     var baz: String
 
     static func generate() async throws -> TestParent {
-        TestParent(baz: faker.lorem.word())
+        TestParent(baz: .random)
     }
 }
 
@@ -49,7 +49,7 @@ private struct TestModel: Seedable, Equatable {
             parent = try await .seed()
         }
         
-        return TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool(), testParentId: parent.id)
+        return TestModel(foo: .random, bar: .random(), testParentId: parent.id)
     }
     
     static func == (lhs: TestModel, rhs: TestModel) -> Bool {

@@ -21,7 +21,7 @@ struct SeedModel: Seedable {
     let email: String
     
     static func generate() -> SeedModel {
-        SeedModel(name: faker.name.name(), email: faker.internet.email())
+        SeedModel(name: .random, email: .random)
     }
 }
 
@@ -46,6 +46,6 @@ struct OtherSeedModel: Seedable {
     let bar: Bool
     
     static func generate() -> OtherSeedModel {
-        OtherSeedModel(foo: faker.number.randomInt(), bar: .random())
+        OtherSeedModel(foo: .random(in: 0...100), bar: .random())
     }
 }

@@ -1,32 +1,6 @@
 import HummingbirdCore
 import NIOCore
 
-public struct StreamWriter: AsyncSequence {
-    public typealias Element = ByteBuffer
-
-    public struct AsyncIterator: AsyncIteratorProtocol {
-        mutating public func next() async throws -> ByteBuffer? {
-            fatalError()
-        }
-    }
-
-    public func makeAsyncIterator() -> AsyncIterator {
-        AsyncIterator()
-    }
-
-    public func write(_ chunk: ByteBuffer) async throws {
-        fatalError()
-    }
-
-    public func finish() {
-        fatalError()
-    }
-
-    public func write(_ string: String) async throws {
-        fatalError()
-    }
-}
-
 /// A stream of bytes, that are delivered in sequential `ByteBuffer`s.
 //public final class ByteStream: AsyncSequence {
 //    public struct Writer {

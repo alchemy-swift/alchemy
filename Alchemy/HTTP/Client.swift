@@ -315,7 +315,7 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
         case idle
         case head(HTTPResponseHead)
         case body(HTTPResponseHead, ByteBuffer)
-        case stream(HTTPResponseHead, StreamWriter)
+        case stream(HTTPResponseHead, Bytes.Writer)
         case error(Error)
     }
 
@@ -355,7 +355,9 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
             return task.eventLoop.makeSucceededFuture(())
         case .body(let head, var body):
             if allowStreaming {
-                let stream = StreamWriter()
+                // TODO: use this for defering
+                let (stream, continuation) = AsyncStream.makeStream(of: ByteBuffer.self)
+                let writer = Bytes.Writer(continuation: continuation)
                 let status = HTTPResponse.Status.init(integerLiteral: Int(head.status.code))
                 let headers = HTTPFields(head.headers, splitCookie: false)
                 let response = Client.Response(
@@ -363,16 +365,16 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
                     host: request.host,
                     status: status,
                     headers: headers,
-                    body: .stream(sequence: stream)
+                    body: .stream(stream)
                 )
 
                 self.responsePromise.succeed(response)
-                self.state = .stream(head, stream)
-                
+                self.state = .stream(head, writer)
+
                 // Write the previous part, followed by this part, to the stream.
-                return Loop.asyncSubmit {
-                    try await stream.write(body)
-                    try await stream.write(part)
+                return Loop.submit {
+                    writer.write(body)
+                    writer.write(part)
                 }
             } else {
                 // The compiler can't prove that `self.state` is dead here (and it kinda isn't, there's
@@ -386,8 +388,8 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
                 return task.eventLoop.makeSucceededVoidFuture()
             }
         case .stream(_, let stream):
-            return Loop.asyncSubmit {
-                try await stream.write(part)
+            return Loop.submit {
+                stream.write(part)
             }
         case .error:
             return task.eventLoop.makeSucceededFuture(())
@@ -413,8 +415,8 @@ private class ResponseDelegate: HTTPClientResponseDelegate {
             let headers = HTTPFields(head.headers, splitCookie: false)
             let response = Client.Response(request: request, host: request.host, status: status, headers: headers, body: .buffer(body))
             responsePromise.succeed(response)
-        case .stream(_, let stream):
-            stream.finish()
+        case .stream(_, let writer):
+            writer.finish()
         case .error:
             break
         }

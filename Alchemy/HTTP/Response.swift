@@ -29,9 +29,34 @@ public final class Response {
     }
 
     /// Creates a new response using a status code, headers and `ByteBuffer` for 
-    /// the body..
+    /// the body.
     public convenience init(status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], buffer: ByteBuffer, contentType: ContentType? = .octetStream) {
         self.init(status: status, headers: headers, body: .buffer(buffer), contentType: contentType)
+    }
+
+    /// Initialize this response with a closure that will be called, allowing
+    /// you to directly write headers, body, and end to the response. The
+    /// request connection will be left open until the closure finishes.
+    ///
+    /// Usage:
+    /// ```swift
+    /// app.get("/stream") {
+    ///     Response(status: .ok, headers: ["Content-Length": "248"]) { writer in
+    ///         writer.write(...)
+    ///         writer.write(...)
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// - Parameter writer: A closure take a `ResponseWriter` and
+    ///   using it to write response data to a remote peer.
+    public convenience init(
+        status: HTTPResponse.Status = .ok,
+        headers: HTTPFields = [:],
+        streamer: @escaping Bytes.Streamer,
+        contentType: ContentType? = .octetStream
+    ) {
+        self.init(status: status, headers: headers, body: .stream(streamer: streamer), contentType: contentType)
     }
 
     public convenience init(status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], stream: AsyncStream<ByteBuffer>, contentType: ContentType? = .octetStream) {

@@ -40,7 +40,6 @@ final class CacheTests: TestCase<TestApp> {
         let client = RedisClient.testing
         Container.register(client).singleton()
         Container.register(Cache.redis).singleton()
-        app.lifecycle.registerShutdown(label: "Redis", .async(client.shutdown))
 
         guard await Redis.checkAvailable() else {
             throw XCTSkip()

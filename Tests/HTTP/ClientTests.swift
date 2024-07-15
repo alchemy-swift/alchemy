@@ -35,10 +35,10 @@ final class ClientTests: TestCase<TestApp> {
     }
 
     func testHeaders() {
-        let headers: HTTPFields = ["foo":"bar"]
+        let headers: HTTPFields = [.accept:"bar"]
         XCTAssertEqual(Client.Response(headers: headers).headers, headers)
-        XCTAssertEqual(Client.Response(headers: headers).header("foo"), "bar")
-        XCTAssertEqual(Client.Response(headers: headers).header("baz"), nil)
+        XCTAssertEqual(Client.Response(headers: headers).header(.accept), "bar")
+        XCTAssertEqual(Client.Response(headers: headers).header(.age), nil)
     }
 
     func testBody() {
@@ -77,6 +77,6 @@ final class ClientTests: TestCase<TestApp> {
 
 extension Client.Response {
     fileprivate init(_ status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], body: Bytes? = nil) {
-        self.init(request: Client.Request(url: ""), host: "https://example.com", status: status, version: .http1_1, headers: headers, body: body)
+        self.init(request: Client.Request(url: ""), host: "https://example.com", status: status, headers: headers, body: body)
     }
 }

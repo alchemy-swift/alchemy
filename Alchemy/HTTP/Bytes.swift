@@ -3,6 +3,20 @@ import HummingbirdCore
 
 /// A collection of bytes that is either a single buffer or a stream of buffers.
 public enum Bytes: ExpressibleByStringLiteral {
+    public typealias Streamer = (Writer) async throws -> Void
+
+    public struct Writer {
+        let continuation: AsyncStream<ByteBuffer>.Continuation
+
+        public func write(_ chunk: ByteBuffer) {
+            continuation.yield(chunk)
+        }
+
+        public func finish() {
+            continuation.finish()
+        }
+    }
+
     /// The default decoder for reading content from an incoming request.
     public static var defaultDecoder: HTTPDecoder = .json
     /// The default encoder for writing content to an outgoing response.
@@ -78,6 +92,17 @@ public enum Bytes: ExpressibleByStringLiteral {
     public static func encode<E: Encodable>(_ value: E, using encoder: HTTPEncoder = Bytes.defaultEncoder) throws -> Bytes {
         let (buffer, _) = try encoder.encodeBody(value)
         return .buffer(buffer)
+    }
+
+    public static func stream(streamer: @escaping Streamer) -> Bytes {
+        .stream(
+            AsyncStream { continuation in
+                Task {
+                    let writer = Writer(continuation: continuation)
+                    try await streamer(writer)
+                }
+            }
+        )
     }
 
     public static func stream<AS: AsyncSequence>(sequence: AS) -> Bytes where AS.Element == ByteBuffer {

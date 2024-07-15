@@ -141,7 +141,7 @@ private struct TestModel: Seedable, Equatable {
     var bar: Bool
     
     static func generate() async throws -> TestModel {
-        TestModel(foo: faker.lorem.word(), bar: faker.number.randomBool())
+        TestModel(foo: .random, bar: .random())
     }
 }
 

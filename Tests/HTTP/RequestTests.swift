@@ -74,28 +74,28 @@ final class RequestTests: XCTestCase {
     }
 
     func testUnknownAuth() {
-        let request = Request.fake(headers: ["Authorization": "Foo \(sampleToken)"])
+        let request = Request.fake(headers: [.authorization: "Foo \(sampleToken)"])
         XCTAssertNil(request.getAuth())
     }
 
     func testBearerAuth() {
-        let request = Request.fake(headers: ["Authorization": "Bearer \(sampleToken)"])
+        let request = Request.fake(headers: [.authorization: "Bearer \(sampleToken)"])
         XCTAssertNil(request.basicAuth())
         XCTAssertNotNil(request.bearerAuth())
         XCTAssertEqual(request.bearerAuth()?.token, sampleToken)
     }
 
     func testBasicAuth() {
-        let request = Request.fake(headers: ["Authorization": "Basic \(sampleBase64Credentials)"])
+        let request = Request.fake(headers: [.authorization: "Basic \(sampleBase64Credentials)"])
         XCTAssertNil(request.bearerAuth())
         XCTAssertNotNil(request.basicAuth())
         XCTAssertEqual(request.basicAuth(), Request.Auth.Basic(username: "username", password: "password"))
     }
 
     func testMalformedBasicAuth() {
-        let notBase64Encoded = Request.fake(headers: ["Authorization": "Basic user:pass"])
+        let notBase64Encoded = Request.fake(headers: [.authorization: "Basic user:pass"])
         XCTAssertNil(notBase64Encoded.basicAuth())
-        let empty = Request.fake(headers: ["Authorization": "Basic "])
+        let empty = Request.fake(headers: [.authorization: "Basic "])
         XCTAssertNil(empty.basicAuth())
     }
 

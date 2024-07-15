@@ -43,7 +43,7 @@ final class RouterMiddlewareTests: TestCase<TestApp> {
         var expect = Expect()
         let mw = TestMiddleware(req: { request in
             XCTAssertEqual(request.path, "/foo")
-            XCTAssertEqual(request.method, .POST)
+            XCTAssertEqual(request.method, .post)
             expect.signalOne()
         })
 

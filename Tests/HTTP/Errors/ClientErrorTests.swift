@@ -7,8 +7,8 @@ final class ClientErrorTests: TestCase<TestApp> {
     func testClientError() async throws {
         let request = Client.Request(
             url: "http://localhost/foo",
-            method: .POST,
-            headers: ["foo": "bar"],
+            method: .post,
+            headers: [.accept: "bar"],
             body: "foo"
         )
         
@@ -19,9 +19,8 @@ final class ClientErrorTests: TestCase<TestApp> {
                 request: request,
                 host: "alchemy",
                 status: .conflict,
-                version: .http1_1,
                 headers: [
-                    "foo": "bar"
+                    .accept: "bar"
                 ],
                 body: "bar"
             )
@@ -34,14 +33,14 @@ final class ClientErrorTests: TestCase<TestApp> {
             *** Request ***
             URL: POST http://localhost/foo
             Headers: [
-                foo: bar
+                Accept: bar
             ]
             Body: foo
 
             *** Response ***
             Status: 409 Conflict
             Headers: [
-                foo: bar
+                Accept: bar
             ]
             Body: bar
             """
