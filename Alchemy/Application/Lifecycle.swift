@@ -1,6 +1,6 @@
 import ServiceLifecycle
 
-final class Lifecycle: ServiceLifecycle.Service {
+actor Lifecycle: ServiceLifecycle.Service {
     fileprivate var startTasks: [() async throws -> Void] = []
     fileprivate var shutdownTasks: [() async throws -> Void] = []
 
@@ -28,6 +28,14 @@ final class Lifecycle: ServiceLifecycle.Service {
             try await shutdown()
         }
     }
+
+    func onStart(action: @escaping () async throws -> Void) {
+        self.startTasks.append(action)
+    }
+
+    func onShutdown(action: @escaping () async throws -> Void) {
+        self.shutdownTasks.append(action)
+    }
 }
 
 extension Application {
@@ -42,10 +50,10 @@ extension Container {
     }
 
     public static func onStart(action: @escaping () async throws -> Void) {
-        lifecycle.startTasks.append(action)
+        Task { await lifecycle.onStart(action: action) }
     }
 
     public static func onShutdown(action: @escaping () async throws -> Void) {
-        lifecycle.shutdownTasks.append(action)
+        Task { await lifecycle.onShutdown(action: action) }
     }
 }

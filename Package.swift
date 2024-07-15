@@ -24,7 +24,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-syntax", from: "510.0.0"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0-rc.2"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
-        .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.1.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/RediStack", from: "1.6.2"),
         .package(url: "https://github.com/vapor/async-kit.git", from: "1.0.0"),
@@ -129,7 +128,6 @@ let package = Package(
             name: "AlchemyPluginTests",
             dependencies: [
                 "AlchemyPlugin",
-                .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],
             path: "AlchemyPlugin/Tests"
         ),

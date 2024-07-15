@@ -89,7 +89,8 @@ struct ServeCommand: Command {
                     print()
                 }
             },
-            eventLoopGroupProvider: .shared(LoopGroup)
+            eventLoopGroupProvider: .shared(LoopGroup),
+            logger: Log
         )
 
         try await hbApplication.run()
@@ -125,12 +126,14 @@ public struct AlchemyContext: RequestContext {
     }
 }
 
-public struct AlchemyResponder: HTTPResponder {
+public actor AlchemyResponder: HTTPResponder {
     @Inject var handler: RequestHandler
 
     let logResponses: Bool
 
-    // TODO: Consider using HB request? Is there a reason to roll your own?
+    init(logResponses: Bool) {
+        self.logResponses = logResponses
+    }
 
     public func respond(to request: HBRequest, context: AlchemyContext) async throws -> HBResponse {
         let startedAt = Date()

@@ -159,10 +159,16 @@ public extension Application {
     }
 }
 
-private struct ApplicationService: ServiceLifecycle.Service {
+private actor ApplicationService: ServiceLifecycle.Service {
     var args: [String]? = nil
     var waitOrShutdown: Bool = true
     let app: Application
+
+    init(args: [String]? = nil, waitOrShutdown: Bool, app: Application) {
+        self.args = args
+        self.waitOrShutdown = waitOrShutdown
+        self.app = app
+    }
 
     func run() async throws {
 
