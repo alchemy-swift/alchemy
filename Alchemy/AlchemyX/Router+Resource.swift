@@ -12,7 +12,7 @@ extension Application {
     ) -> Self where R.Identifier: SQLValueConvertible & LosslessStringConvertible {
         use(ResourceController<R>(db: db, tableName: table))
         if updateTable {
-            Container.main.services.append(ResourceMigrationService<R>(db: db))
+            Container.main.lifecycleServices.append(ResourceMigrationService<R>(db: db))
         }
 
         return self

@@ -4,16 +4,16 @@ import AlchemyTest
 
 final class FilesystemTests: TestCase<TestApp> {
     private var filePath: String = ""
-    
-    private lazy var allTests = [
-        _testCreate,
-        _testDelete,
-        _testPut,
-        _testPathing,
-        _testFileStore,
-        _testInvalidURL,
-    ]
-    
+    private var root: String = ""
+
+    override func setUp() async throws {
+        try await super.setUp()
+        let root = NSTemporaryDirectory() + UUID().uuidString
+        Container.register(Filesystem.local(root: root)).singleton()
+        self.root = root
+        self.filePath = UUID().uuidString + ".txt"
+    }
+
     func testPlugin() {
         let plugin = Filesystems(default: 1, disks: [1: .local, 2: .local])
         plugin.registerServices(in: app)
@@ -21,18 +21,12 @@ final class FilesystemTests: TestCase<TestApp> {
         XCTAssertNotNil(Container.resolve(Filesystem.self, id: 1))
         XCTAssertNotNil(Container.resolve(Filesystem.self, id: 2))
     }
-    
-    func testLocal() async throws {
-        let root = NSTemporaryDirectory() + UUID().uuidString
-        Container.register(Filesystem.local(root: root)).singleton()
+
+    func testLocalRoot() {
         XCTAssertEqual(root, Storage.root)
-        for test in allTests {
-            filePath = UUID().uuidString + ".txt"
-            try await test()
-        }
     }
-    
-    func _testCreate() async throws {
+
+    func testLocalCreate() async throws {
         AssertFalse(try await Storage.exists(filePath))
         do {
             _ = try await Storage.get(filePath)
@@ -44,8 +38,9 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertEqual(file.name, filePath)
         AssertEqual(try await file.getContent().collect(), "1;2;3")
     }
+
     
-    func _testDelete() async throws {
+    func testLocalDelete() async throws {
         do {
             try await Storage.delete(filePath)
             XCTFail("Should throw an error")
@@ -55,7 +50,7 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertFalse(try await Storage.exists(filePath))
     }
     
-    func _testPut() async throws {
+    func testLocalPut() async throws {
         let file = File(name: filePath, source: .raw, content: "foo", size: 3)
         try await Storage.put(file, as: filePath)
         AssertTrue(try await Storage.exists(filePath))
@@ -63,7 +58,7 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertTrue(try await Storage.exists("foo/bar/\(filePath)"))
     }
     
-    func _testPathing() async throws {
+    func testLocalPathing() async throws {
         try await Storage.create("foo/bar/baz/\(filePath)", content: "foo")
         AssertFalse(try await Storage.exists(filePath))
         AssertTrue(try await Storage.exists("foo/bar/baz/\(filePath)"))
@@ -74,12 +69,12 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertFalse(try await Storage.exists("foo/bar/baz/\(filePath)"))
     }
     
-    func _testFileStore() async throws {
+    func testLocalFileStore() async throws {
         try await File(name: filePath, source: .raw, content: "bar", size: 3).store(as: filePath)
         AssertTrue(try await Storage.exists(filePath))
     }
     
-    func _testInvalidURL() async throws {
+    func testLocalInvalidURL() async throws {
         do {
             let store: Filesystem = .local(root: "\\+https://www.apple.com")
             _ = try await store.exists("foo")

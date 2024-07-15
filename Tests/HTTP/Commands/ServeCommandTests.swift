@@ -11,7 +11,7 @@ final class ServeCommandTests: TestCase<TestApp> {
     
     func testServe() async throws {
         app.get("/foo", use: { _ in "hello" })
-        try await ServeCommand(port: 3000).run()
+        Task { try await ServeCommand(port: 3000).run() }
         try await Http.get("http://127.0.0.1:3000/foo")
             .assertBody("hello")
         
@@ -21,8 +21,7 @@ final class ServeCommandTests: TestCase<TestApp> {
     
     func testServeWithSideEffects() async throws {
         app.get("/foo", use: { _ in "hello" })
-        try await app.serviceGroup.run()
-        try await ServeCommand(workers: 2, schedule: true, migrate: true).run()
+        Task { try await ServeCommand(workers: 2, schedule: true, migrate: true).run() }
         try await Http.get("http://127.0.0.1:3000/foo")
             .assertBody("hello")
         

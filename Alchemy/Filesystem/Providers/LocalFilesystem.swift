@@ -43,27 +43,23 @@ private struct LocalFilesystem: FilesystemProvider {
         return File(
             name: url.lastPathComponent,
             source: .filesystem(path: filepath),
-            content: .stream(
-                AsyncStream { continuation in
-                    Task {
-                        // Load the file in chunks, streaming it.
-                        let fileHandle = try NIOFileHandle(path: url.path)
-                        defer { try? fileHandle.close() }
-                        try await fileIO.readChunked(
-                            fileHandle: fileHandle,
-                            byteCount: fileSizeBytes,
-                            chunkSize: NonBlockingFileIO.defaultChunkSize,
-                            allocator: bufferAllocator,
-                            eventLoop: Loop,
-                            chunkHandler: { chunk in
-                                Loop.submit {
-                                    continuation.yield(chunk)
-                                }
-                            }
-                        ).get()
+            content: .stream { writer in
+                // Load the file in chunks, streaming it.
+                let fileHandle = try NIOFileHandle(path: url.path)
+                defer { try? fileHandle.close() }
+                try await fileIO.readChunked(
+                    fileHandle: fileHandle,
+                    byteCount: fileSizeBytes,
+                    chunkSize: NonBlockingFileIO.defaultChunkSize,
+                    allocator: bufferAllocator,
+                    eventLoop: Loop,
+                    chunkHandler: { chunk in
+                        Loop.submit {
+                            writer.write(chunk)
+                        }
                     }
-                }
-            ),
+                ).get()
+            },
             size: fileSizeBytes)
     }
     
@@ -72,7 +68,7 @@ private struct LocalFilesystem: FilesystemProvider {
         guard try await !exists(filepath) else {
             throw FileError.filenameAlreadyExists
         }
-        
+
         let fileHandle = try NIOFileHandle(path: url.path, mode: .write, flags: .allowFileCreation())
         defer { try? fileHandle.close() }
 

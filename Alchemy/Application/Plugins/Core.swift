@@ -32,7 +32,11 @@ struct Core: Plugin {
             return current
         }
 
-        app.container.register(Services()).singleton()
+        let lifecycle = Lifecycle()
+        let lifecycleServices = LifecycleServices(services: [lifecycle])
+
+        app.container.register(lifecycle).singleton()
+        app.container.register(lifecycleServices).singleton()
 
         // 4. Register ServiceGroup
 
@@ -47,7 +51,7 @@ struct Core: Plugin {
             }
 
             return ServiceGroup(
-                services: container.services.services,
+                services: container.lifecycleServices.services,
                 logger: logger
             )
         }.singleton()
@@ -62,8 +66,12 @@ struct Core: Plugin {
     }
 }
 
-public final class Services {
-    fileprivate var services: [ServiceLifecycle.Service] = []
+public final class LifecycleServices {
+    fileprivate var services: [ServiceLifecycle.Service]
+
+    init(services: [ServiceLifecycle.Service] = []) {
+        self.services = services
+    }
 
     func append(_ service: ServiceLifecycle.Service) {
         services.append(service)
@@ -85,7 +93,7 @@ extension Container {
         require()
     }
 
-    var services: Services {
+    var lifecycleServices: LifecycleServices {
         require()
     }
 

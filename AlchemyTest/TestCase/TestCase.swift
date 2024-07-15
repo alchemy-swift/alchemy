@@ -46,12 +46,14 @@ open class TestCase<A: Application>: XCTestCase {
         try await super.setUp()
         app = A()
         try await app.bootPlugins()
+        try await app.lifecycle.start()
         try app.boot()
     }
 
     open override func tearDown() async throws {
         try await super.tearDown()
         await app.stop()
+        try await app.lifecycle.shutdown()
         app.container.reset()
     }
 }

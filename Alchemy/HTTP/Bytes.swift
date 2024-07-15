@@ -38,7 +38,10 @@ public enum Bytes: ExpressibleByStringLiteral {
         case .stream(let stream):
             return stream
         case .buffer(let buffer):
-            return AsyncStream { buffer }
+            return AsyncStream { continuation in
+                continuation.yield(buffer)
+                continuation.finish()
+            }
         }
     }
     
@@ -100,6 +103,7 @@ public enum Bytes: ExpressibleByStringLiteral {
                 Task {
                     let writer = Writer(continuation: continuation)
                     try await streamer(writer)
+                    writer.finish()
                 }
             }
         )

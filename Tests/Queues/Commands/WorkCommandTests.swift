@@ -23,7 +23,13 @@ final class WorkCommandTests: TestCase<TestApp> {
     }
     
     func testRunCLI() async throws {
-        try await app.start("queue:work", "--workers", "3", "--schedule", waitOrShutdown: false)
+        Log.logLevel = .debug
+        Task { try await app.start("queue:work", "--workers", "3", "--schedule") }
+
+        // hack to wait for the queue to boot up - should find a way to hook
+        // into the command finishing.
+        try await Task.sleep(for: .milliseconds(100))
+
         XCTAssertEqual(Q.workers.count, 3)
         XCTAssertTrue(Schedule.isStarted)
     }

@@ -64,13 +64,20 @@ public extension Application {
         ]
 
         let allPlugins = alchemyPlugins + plugins
-
         for plugin in alchemyPlugins + plugins {
             plugin.registerServices(in: self)
         }
 
-        for plugin in allPlugins {
-            try await plugin.boot(app: self)
+        Container.onStart {
+            for plugin in allPlugins {
+                try await plugin.boot(app: self)
+            }
+        }
+
+        Container.onShutdown {
+            for plugin in allPlugins.reversed() {
+                try await plugin.shutdownServices(in: self)
+            }
         }
     }
 
@@ -124,21 +131,21 @@ public extension Application {
     @MainActor
     func start(args: [String]? = nil, waitOrShutdown: Bool = true) async throws {
 
-        // 0. Start the application lifecycle.
+        // 0. Add service
+
+        Container.main
+            .lifecycleServices
+            .append(
+                ApplicationService(
+                    args: args,
+                    waitOrShutdown: waitOrShutdown,
+                    app: self
+                )
+            )
+
+        // 1. Start the application lifecycle.
 
         try await serviceGroup.run()
-
-        // 1. Parse and run a `Command` based on the application arguments.
-
-        let command = try await commander.runCommand(args: args)
-        guard waitOrShutdown else { return }
-
-        // 2. Wait for lifecycle or immediately shut down depending on if the
-        //    command should run indefinitely.
-        
-        if !command.runUntilStopped {
-            await stop()
-        }
     }
 
     /// Stops the application.
@@ -149,6 +156,31 @@ public extension Application {
     // @main support
     static func main() async throws {
         try await Self().run()
+    }
+}
+
+private struct ApplicationService: ServiceLifecycle.Service {
+    var args: [String]? = nil
+    var waitOrShutdown: Bool = true
+    let app: Application
+
+    func run() async throws {
+
+        // 0. Parse and run a `Command` based on the application arguments.
+
+        let command = try await app.commander.runCommand(args: args)
+        guard waitOrShutdown else { return }
+        
+        // 1. Wait for lifecycle or immediately shut down depending on if the
+        //    command should run indefinitely.
+
+        if !command.runUntilStopped {
+            await app.stop()
+        }
+
+        // 2. this is required to not throw service lifecycle errors
+
+        try await gracefulShutdown()
     }
 }
 

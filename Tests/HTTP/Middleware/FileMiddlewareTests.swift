@@ -16,7 +16,7 @@ final class FileMiddlewareTests: TestCase<TestApp> {
     func testDirectorySanitize() async throws {
         middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public/", extensions: ["html"])
         try FileCreator.shared.create(fileName: fileName, extension: "html", contents: "foo;bar;baz", in: "Public")
-        
+
         try await middleware
             .handle(.get(fileName), next: { _ in .default })
             .collect()
