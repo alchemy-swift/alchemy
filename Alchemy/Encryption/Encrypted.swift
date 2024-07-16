@@ -1,3 +1,5 @@
+import Foundation
+
 @propertyWrapper
 public struct Encrypted: ModelProperty, Codable {
     public var wrappedValue: String

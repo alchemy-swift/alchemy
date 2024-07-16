@@ -1,3 +1,4 @@
+import Foundation
 import NIO
 import NIOConcurrencyHelpers
 import RediStack

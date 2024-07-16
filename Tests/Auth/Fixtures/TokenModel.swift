@@ -1,4 +1,5 @@
 import Alchemy
+import Foundation
 
 @Model
 struct TokenModel: TokenAuthable {

@@ -1,3 +1,5 @@
+import Foundation
+
 extension Database {
     /// An in memory SQLite database configuration.
     public static var memory: Database {

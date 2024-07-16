@@ -1,4 +1,5 @@
 import CAlchemy
+import Foundation
 
 extension HashAlgorithm where Self == BCryptHasher {
     public static var bcrypt: BCryptHasher {

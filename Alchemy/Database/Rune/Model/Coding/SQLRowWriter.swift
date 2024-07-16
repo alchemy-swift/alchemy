@@ -1,3 +1,5 @@
+import Foundation
+
 public struct SQLRowWriter {
     public internal(set) var fields: SQLFields
     let keyMapping: KeyMapping

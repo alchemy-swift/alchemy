@@ -1,3 +1,5 @@
+import Foundation
+
 /// Represents a type that may be the primary key of a database table. Out of
 /// the box, `UUID`, `String` and `Int` are supported but you can easily
 /// support your own by conforming to this protocol.

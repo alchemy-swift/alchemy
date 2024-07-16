@@ -1,3 +1,5 @@
+import Foundation
+
 /// A value that can be stored and loaded from fields in an SQL table.
 public enum SQLValue: Hashable, CustomStringConvertible {
     /// An `Int` value.

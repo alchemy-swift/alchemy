@@ -1,4 +1,6 @@
+import Foundation
 import Hummingbird
+import NIOCore
 
 actor Responder: HTTPResponder {
     struct Context: RequestContext {

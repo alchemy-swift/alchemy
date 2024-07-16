@@ -1,6 +1,6 @@
 /// Queue lets you run queued jobs to be processed in the background. Jobs are
 /// persisted by the given `QueueProvider`.
-public final class Queue: Service {
+public final class Queue: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<Queue>
 
     /// The default channel to dispatch jobs on for all queues.

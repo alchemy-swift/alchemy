@@ -1,13 +1,7 @@
 /// An identified service provider.
-public protocol Service {
+public protocol IdentifiedService {
     /// An identifier, unique to the service.
     associatedtype Identifier: Hashable
-}
-
-extension Service {
-    public static func register(_ value: Self, id: Identifier? = nil) {
-        Container.register(value, id: id).singleton()
-    }
 }
 
 /// A type to be used as the identifier for various services.
@@ -31,7 +25,7 @@ public struct ServiceIdentifier<T>: Hashable, ExpressibleByStringLiteral, Expres
     }
 }
 
-extension Inject where Value: Service {
+extension Inject where Value: IdentifiedService {
     public convenience init(_ identifier: Value.Identifier) {
         self.init(id: identifier)
     }

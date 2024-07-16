@@ -1,3 +1,4 @@
+import Foundation
 import Hummingbird
 import MultipartKit
 

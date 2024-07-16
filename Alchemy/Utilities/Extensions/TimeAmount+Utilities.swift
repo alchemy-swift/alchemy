@@ -1,3 +1,5 @@
+import Foundation
+
 extension TimeAmount {
     /// This time amount in seconds.
     var seconds: Int {

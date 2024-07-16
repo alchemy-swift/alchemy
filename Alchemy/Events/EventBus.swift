@@ -1,6 +1,6 @@
 import NIOConcurrencyHelpers
 
-public final class EventBus: Service {
+public final class EventBus: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<EventBus>
 
     public typealias Handler<E: Event> = (E) async throws -> Void

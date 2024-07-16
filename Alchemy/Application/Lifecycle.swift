@@ -13,7 +13,7 @@ public final class Lifecycle {
     let plugins: [Plugin]
 
     private var group: ServiceGroup?
-    private var services: [ServiceLifecycle.Service] = []
+    private var services: [Service] = []
     private let lock = NIOLock()
 
     init(app: Application) {
@@ -65,7 +65,7 @@ public final class Lifecycle {
         lock.withLock { shutdownTasks.append(action) }
     }
 
-    public func addService(_ service: ServiceLifecycle.Service) {
+    public func addService(_ service: Service) {
         lock.withLock { services.append(service) }
     }
 

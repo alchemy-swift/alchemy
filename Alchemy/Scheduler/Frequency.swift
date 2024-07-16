@@ -1,4 +1,5 @@
 import Cron
+import Foundation
 
 /// Used to help build schedule frequencies for scheduled tasks.
 public final class Frequency {

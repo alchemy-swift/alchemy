@@ -1,4 +1,5 @@
 import AlchemyX
+import Foundation
 
 extension Application {
     @discardableResult

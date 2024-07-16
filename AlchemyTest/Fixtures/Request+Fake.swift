@@ -1,5 +1,6 @@
 @testable
 import Alchemy
+import NIOCore
 
 extension Request {
     public static func fake(

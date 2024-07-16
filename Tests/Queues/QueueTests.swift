@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTest
+import NIOEmbedded
 
 final class QueueTests: TestCase<TestApp> {
     private lazy var allTests = [

@@ -1,3 +1,5 @@
+import Foundation
+
 public struct SQLRowReader {
     public let row: SQLRow
     public let keyMapping: KeyMapping

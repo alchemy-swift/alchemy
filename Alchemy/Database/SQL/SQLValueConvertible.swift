@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol SQLValueConvertible: SQLConvertible {
     var sqlValue: SQLValue { get }
 }

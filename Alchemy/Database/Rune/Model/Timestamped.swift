@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol Timestamped {
     static var createdAtKey: String { get }
     static var updatedAtKey: String { get }

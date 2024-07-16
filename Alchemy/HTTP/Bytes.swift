@@ -1,4 +1,5 @@
 import AsyncHTTPClient
+import Foundation
 import HummingbirdCore
 
 /// A collection of bytes that is either a single buffer or a stream of buffers.

@@ -1,3 +1,5 @@
+import Foundation
+
 extension StringProtocol {
     var inQuotes: String {
         "\"\(self)\""

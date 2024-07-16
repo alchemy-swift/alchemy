@@ -1,3 +1,5 @@
+import Foundation
+
 // For custom logic around loading and saving properties on a Model.
 public protocol ModelProperty {
     init(key: String, on row: SQLRowReader) throws

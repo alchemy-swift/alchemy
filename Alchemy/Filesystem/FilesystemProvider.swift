@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol FilesystemProvider {
     /// The root directory for storing and fetching files.
     var root: String { get }

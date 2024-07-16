@@ -1,4 +1,5 @@
 import AsyncKit
+import Foundation
 import SQLiteNIO
 
 public struct SQLiteConfiguration: ConnectionPoolSource {

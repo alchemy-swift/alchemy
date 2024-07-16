@@ -1,3 +1,5 @@
+import Foundation
+
 extension ByteBuffer {
     /// Convert the `ByteBuffer` to `Foundation.Data`.
     var data: Data {

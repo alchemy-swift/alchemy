@@ -1,3 +1,5 @@
+import Foundation
+
 /// Handles any environment info of your application. Loads any environment
 /// variables from the file a `.env` or `.env.{APP_ENV}` if `APP_ENV` is
 /// set in the current environment.

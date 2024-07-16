@@ -1,3 +1,5 @@
+import Foundation
+
 /// A type erased `CreateColumnBuilder`.
 protocol ColumnBuilderErased {
     /// Generate the `CreateColumn` data associated with this builder.

@@ -1,4 +1,5 @@
 import AsyncKit
+import Foundation
 import PostgresNIO
 
 /// A concrete `Database` for connecting to and querying a PostgreSQL

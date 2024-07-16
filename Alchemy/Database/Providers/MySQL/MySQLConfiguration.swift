@@ -1,4 +1,5 @@
 import AsyncKit
+import Foundation
 import NIOSSL
 import MySQLNIO
 

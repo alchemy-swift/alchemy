@@ -1,3 +1,4 @@
+import Foundation
 import Pluralize
 
 /// An ActiveRecord-esque type used for modeling a table in a relational

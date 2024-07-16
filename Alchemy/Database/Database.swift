@@ -1,5 +1,5 @@
 /// Used for interacting with an SQL database.
-public final class Database: Service {
+public final class Database: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<Database>
 
     /// The provider of this database.

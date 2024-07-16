@@ -1,5 +1,6 @@
 import AsyncKit
 import Atomics
+import Foundation
 import PostgresNIO
 
 public struct PostgresConfiguration: ConnectionPoolSource {

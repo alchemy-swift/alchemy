@@ -1,4 +1,5 @@
 import Collections
+import Foundation
 
 /// A row of data returned by an SQL query.
 public struct SQLRow: ExpressibleByDictionaryLiteral {

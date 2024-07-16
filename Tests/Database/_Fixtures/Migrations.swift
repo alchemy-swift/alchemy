@@ -1,4 +1,5 @@
 import Alchemy
+import Foundation
 
 private struct DatabaseJSON: Encodable {
     let name = "Josh"

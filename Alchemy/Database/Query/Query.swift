@@ -1,3 +1,5 @@
+import Foundation
+
 /// An SQL query.
 open class Query<Result: QueryResult>: SQLConvertible {
     let db: Database

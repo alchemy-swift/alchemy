@@ -1,3 +1,5 @@
+import Foundation
+
 /// A builder with useful functions for creating a table.
 public class CreateTableBuilder {
     /// The grammar with which this builder will compile SQL

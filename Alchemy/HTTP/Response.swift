@@ -1,3 +1,5 @@
+import Foundation
+
 /// A type representing the response from an HTTP endpoint. This response can be
 /// a failure or success case depending on the status code in the `head`.
 public final class Response {

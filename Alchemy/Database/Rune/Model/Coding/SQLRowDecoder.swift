@@ -1,3 +1,5 @@
+import Foundation
+
 struct SQLRowDecoder: Decoder {
     /// A `KeyedDecodingContainerProtocol` used to decode keys from a
     /// `SQLRow`.

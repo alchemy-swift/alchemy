@@ -1,3 +1,5 @@
+import Foundation
+
 /// Represents the mapping between your type's property names and a
 /// corresponding field key. Used to map `Codable` types to SQL fields.
 public enum KeyMapping {

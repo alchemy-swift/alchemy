@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTest
+import NIOEmbedded
 
 final class SchedulerTests: TestCase<TestApp> {
     private var scheduler = Scheduler()

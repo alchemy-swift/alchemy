@@ -1,4 +1,5 @@
-import NIOCore
+import Foundation
+import NIO
 
 extension Filesystem {
     /// Create a filesystem backed by the local filesystem at the given root

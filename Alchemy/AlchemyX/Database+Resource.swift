@@ -1,5 +1,6 @@
 import AlchemyX
 import Collections
+import Foundation
 
 extension Database {
     /// Adds or alters a database table to match the schema of the Resource.

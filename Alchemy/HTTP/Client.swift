@@ -1,4 +1,5 @@
 import AsyncHTTPClient
+import Foundation
 import NIOCore
 import NIOHTTP1
 
@@ -10,7 +11,7 @@ import NIOHTTP1
 ///     let response = try await Http.get("https://swift.org")
 ///
 /// See `Client.Builder` for the request builder interface.
-public final class Client: Service {
+public final class Client: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<Client>
 
     /// A type for making http requests with a `Client`. Supports static or

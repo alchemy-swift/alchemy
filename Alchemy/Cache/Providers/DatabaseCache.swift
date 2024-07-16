@@ -1,3 +1,5 @@
+import Foundation
+
 /// A SQL based provider for `Cache`.
 final class DatabaseCache: CacheProvider {
     private let db: Database

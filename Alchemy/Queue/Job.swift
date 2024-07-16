@@ -1,3 +1,5 @@
+import Foundation
+
 /// A task that can be persisted and queued for background processing.
 public protocol Job {
     typealias Context = JobContext

@@ -1,3 +1,4 @@
+import Foundation
 import MultipartKit
 
 public protocol HTTPInspector {

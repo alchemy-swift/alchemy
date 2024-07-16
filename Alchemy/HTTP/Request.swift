@@ -1,3 +1,6 @@
+import Foundation
+import NIOCore
+
 /// A type that represents inbound requests to your application.
 public final class Request: RequestInspector {
     /// Represents a dynamic parameter inside the path. Parameter placeholders

@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol SoftDeletes {
     static var deletedAtKey: String { get }
 }

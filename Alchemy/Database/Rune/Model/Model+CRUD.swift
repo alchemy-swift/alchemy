@@ -1,3 +1,5 @@
+import Foundation
+
 /// Useful extensions for various CRUD operations of a `Model`.
 extension Model {
 

@@ -1,4 +1,4 @@
-public struct Hasher: Service {
+public struct Hasher: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<Database>
 
     private let algorithm: HashAlgorithm

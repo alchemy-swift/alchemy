@@ -1,3 +1,4 @@
+import Foundation
 import SQLiteNIO
 
 extension SQLiteData: SQLValueConvertible {

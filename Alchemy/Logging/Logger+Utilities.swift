@@ -10,7 +10,7 @@
 /// // In Application.boot...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
-extension Logger: Service {
+extension Logger: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<Logger>
 
     // MARK: Conveniences

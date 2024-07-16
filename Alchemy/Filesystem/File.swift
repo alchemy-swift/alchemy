@@ -1,3 +1,4 @@
+import Foundation
 import MultipartKit
 
 /// Represents a file from either a filesystem (on disk, in AWS S3, etc) or from

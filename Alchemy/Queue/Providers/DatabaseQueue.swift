@@ -1,3 +1,5 @@
+import Foundation
+
 extension Queue {
     /// A queue backed by an SQL database.
     ///

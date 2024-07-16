@@ -4,7 +4,7 @@ import NIOSSL
 import RediStack
 
 /// A client for interfacing with a Redis instance.
-public struct RedisClient: RediStack.RedisClient, Service {
+public struct RedisClient: RediStack.RedisClient, IdentifiedService {
     public typealias Identifier = ServiceIdentifier<RedisClient>
 
     public enum Socket: Equatable {

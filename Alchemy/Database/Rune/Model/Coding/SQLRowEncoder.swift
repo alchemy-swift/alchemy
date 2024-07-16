@@ -1,3 +1,5 @@
+import Foundation
+
 final class SQLRowEncoder: Encoder {
     /// Used to decode keyed values from a Model.
     private struct _KeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainerProtocol {

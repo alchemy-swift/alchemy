@@ -1,4 +1,5 @@
 import Crypto
+import NIO
 
 // MARK: Public aliases
 

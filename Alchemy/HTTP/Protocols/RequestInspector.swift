@@ -1,3 +1,5 @@
+import Foundation
+
 public protocol RequestInspector: HTTPInspector {
     var method: HTTPRequest.Method { get }
     var urlComponents: URLComponents { get }

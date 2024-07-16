@@ -1,3 +1,5 @@
+import Foundation
+
 /// A container from which services are registered and resolved.
 public final class Container: CustomDebugStringConvertible {
     public final class Factory {
