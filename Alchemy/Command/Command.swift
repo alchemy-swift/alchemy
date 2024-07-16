@@ -43,17 +43,11 @@ public protocol Command: AsyncParsableCommand {
     /// name as an argument. Defaults to the type name.
     static var name: String { get }
 
-    /// When running the app with this command, should the app
-    /// stay alive after `run` is finished.
-    static var runUntilStopped: Bool { get }
-
     /// Run the command.
     func run() async throws
 }
 
 extension Command {
-    public static var runUntilStopped: Bool { false }
-
     public static var name: String {
         Alchemy.name(of: Self.self)
     }

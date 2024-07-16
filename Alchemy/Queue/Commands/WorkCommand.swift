@@ -1,7 +1,6 @@
 /// Command to run queue workers.
 struct WorkCommand: Command {
     static var name = "queue:work"
-    static var runUntilStopped: Bool = true
 
     /// The name of the queue the workers should observe. If no name is given,
     /// workers will observe the default queue.
@@ -17,17 +16,9 @@ struct WorkCommand: Command {
     /// Should the scheduler run in process, scheduling any recurring work.
     @Flag var schedule: Bool = false
 
-    init() {}
-    init(name: String?, channels: String = Queue.defaultChannel, workers: Int = 1, schedule: Bool = false) {
-        self.name = name
-        self.channels = channels
-        self.workers = workers
-        self.schedule = schedule
-    }
-    
     // MARK: Command
     
-    func run() throws {
+    func run() async throws {
         let queue: Queue = name.map { Container.require(id: $0) } ?? Q
         for _ in 0..<workers {
             queue.startWorker(for: channels.components(separatedBy: ","))
@@ -39,5 +30,7 @@ struct WorkCommand: Command {
         
         let schedulerText = schedule ? "scheduler and " : ""
         Log.info("Started \(schedulerText)\(workers) Queue workers.")
+
+        try await gracefulShutdown()
     }
 }

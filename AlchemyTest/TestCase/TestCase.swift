@@ -45,15 +45,12 @@ open class TestCase<A: Application>: XCTestCase {
     open override func setUp() async throws {
         try await super.setUp()
         app = A()
-        try await app.bootPlugins()
-        try await app.lifecycle.start()
-        try app.boot()
+        try await app.willRun()
     }
 
     open override func tearDown() async throws {
         try await super.tearDown()
-        await app.stop()
-        try await app.lifecycle.shutdown()
+        try await app.didRun()
         app.container.reset()
     }
 }

@@ -4,24 +4,16 @@ extension HTTPFields {
             self[.contentType].map(ContentType.init)
         }
         set {
-            if let contentType = newValue {
-                self[.contentType] = contentType.string
-            } else {
-                self[.contentType] = nil
-            }
+            self[.contentType] = newValue?.string
         }
     }
     
     public var contentLength: Int? {
         get {
-            self[.contentLength].map { Int($0) } ?? nil
+            Int(self[.contentLength] ?? "")
         }
         set {
-            if let contentLength = newValue {
-                self[.contentLength] = String(contentLength)
-            } else {
-                self[.contentLength] = nil
-            }
+            self[.contentLength] = newValue.map { String($0) }
         }
     }
 }

@@ -1,3 +1,5 @@
+import HummingbirdCore
+
 /// The core type for an Alchemy application.
 ///
 ///     @Application
@@ -14,15 +16,16 @@ public protocol Application: Router {
     var container: Container { get }
     /// Any custom plugins of this application.
     var plugins: [Plugin] { get }
-    
+    /// Build the hummingbird server
+    var server: HTTPServerBuilder { get }
+
     init()
     
-    /// Boots the app's dependencies. Don't override the default for this unless
-    /// you want to prevent default Alchemy services from loading.
-    func bootPlugins() async throws
     /// Setup your application here. Called after all services are registered.
     func boot() throws
-    
+    /// Optional shutdown logic here.
+    func shutdown() throws
+
     // MARK: Default Plugin Configurations
     
     /// This application's HTTP configuration.
@@ -47,151 +50,58 @@ public protocol Application: Router {
 // MARK: Defaults
 
 public extension Application {
-    var container: Container { .main }
-    var plugins: [Plugin] { [] }
-    
-    func bootPlugins() async throws {
-        let alchemyPlugins: [Plugin] = [
-            Core(),
-            Schedules(),
-            EventStreams(),
-            http,
-            commands,
-            filesystems,
-            databases,
-            caches,
-            queues,
-        ]
-
-        let allPlugins = alchemyPlugins + plugins
-        for plugin in alchemyPlugins + plugins {
-            plugin.registerServices(in: self)
-        }
-
-        Container.onStart {
-            for plugin in allPlugins {
-                try await plugin.boot(app: self)
-            }
-        }
-
-        Container.onShutdown {
-            for plugin in allPlugins.reversed() {
-                try await plugin.shutdownServices(in: self)
-            }
-        }
-    }
-
-    func boot() throws {
-        //
-    }
-
-    func bootRouter() {
-        (self as? Controller)?.route(self)
-    }
-
-    // MARK: Plugin Defaults
-    
-    var http: HTTPConfiguration { HTTPConfiguration() }
-    var commands: Commands { [] }
-    var databases: Databases { Databases() }
     var caches: Caches { Caches() }
-    var queues: Queues { Queues() }
+    var commands: Commands { [] }
+    var container: Container { .main }
+    var databases: Databases { Databases() }
     var filesystems: Filesystems { Filesystems() }
+    var http: HTTPConfiguration { HTTPConfiguration() }
     var loggers: Loggers { Loggers() }
-    
-    func schedule(on schedule: Scheduler) {
-        //
-    }
-}
+    var plugins: [Plugin] { [] }
+    var queues: Queues { Queues() }
+    var server: HTTPServerBuilder { .http1() }
 
-import ServiceLifecycle
+    func boot() throws {}
+    func shutdown() throws {}
+    func schedule(on schedule: Scheduler) {}
+}
 
 // MARK: Running
 
-public extension Application {
-    func run() async throws {
+extension Application {
+    // @main support
+    public static func main() async throws {
+        let app = Self()
         do {
-            try await bootPlugins()
-            try boot()
-            bootRouter()
-            try await start()
+            try await app.willRun()
+            try await app.run()
+            try await app.didRun()
         } catch {
-            commander.exit(error: error)
+            app.commander.exit(error: error)
         }
     }
-    
-    /// Starts the application with the given arguments.
-    func start(_ args: String..., waitOrShutdown: Bool = true) async throws {
-        try await start(args: args.isEmpty ? nil : args, waitOrShutdown: waitOrShutdown)
+
+    /// Runs the application with the given arguments.
+    public func run(_ args: String...) async throws {
+        try await lifecycle.start(args: args.isEmpty ? nil : args)
     }
 
-    /// Starts the application with the given arguments.
-    ///
-    /// @MainActor ensures that calls to `wait()` doesn't block an `EventLoop`.
-    @MainActor
-    func start(args: [String]? = nil, waitOrShutdown: Bool = true) async throws {
+    /// Sets up the app for running.
+    public func willRun() async throws {
+        let lifecycle = Lifecycle(app: self)
+        try await lifecycle.start()
+        (self as? Controller)?.route(self)
+        try boot()
+    }
 
-        // 0. Add service
-
-        Container.main
-            .lifecycleServices
-            .append(
-                ApplicationService(
-                    args: args,
-                    waitOrShutdown: waitOrShutdown,
-                    app: self
-                )
-            )
-
-        // 1. Start the application lifecycle.
-
-        try await serviceGroup.run()
+    /// Any cleanup after the app finishes running.
+    public func didRun() async throws {
+        try shutdown()
+        try await lifecycle.shutdown()
     }
 
     /// Stops the application.
-    func stop() async {
-        await serviceGroup.triggerGracefulShutdown()
-    }
-
-    // @main support
-    static func main() async throws {
-        try await Self().run()
-    }
-}
-
-private actor ApplicationService: ServiceLifecycle.Service {
-    var args: [String]? = nil
-    var waitOrShutdown: Bool = true
-    let app: Application
-
-    init(args: [String]? = nil, waitOrShutdown: Bool, app: Application) {
-        self.args = args
-        self.waitOrShutdown = waitOrShutdown
-        self.app = app
-    }
-
-    func run() async throws {
-
-        // 0. Parse and run a `Command` based on the application arguments.
-
-        let command = try await app.commander.runCommand(args: args)
-        guard waitOrShutdown else { return }
-        
-        // 1. Wait for lifecycle or immediately shut down depending on if the
-        //    command should run indefinitely.
-
-        if !command.runUntilStopped {
-            await app.stop()
-        }
-
-        // 2. this is required to not throw service lifecycle errors
-
-        try await gracefulShutdown()
-    }
-}
-
-fileprivate extension ParsableCommand {
-    var runUntilStopped: Bool {
-        (Self.self as? Command.Type)?.runUntilStopped ?? false
+    public func stop() async {
+        await lifecycle.stop()
     }
 }

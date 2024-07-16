@@ -31,30 +31,6 @@ struct Core: Plugin {
 
             return current
         }
-
-        let lifecycle = Lifecycle()
-        let lifecycleServices = LifecycleServices(services: [lifecycle])
-
-        app.container.register(lifecycle).singleton()
-        app.container.register(lifecycleServices).singleton()
-
-        // 4. Register ServiceGroup
-
-        app.container.register { container in
-            var logger: Logger = container.require()
-
-            // ServiceLifecycle is pretty noisy. Let's default it to
-            // logging @ .notice or above, unless the user has set
-            // the default log level to .debug or below.
-            if logger.logLevel > .debug {
-                logger.logLevel = .notice
-            }
-
-            return ServiceGroup(
-                services: container.lifecycleServices.services,
-                logger: logger
-            )
-        }.singleton()
     }
 
     func boot(app: Application) {
@@ -66,34 +42,14 @@ struct Core: Plugin {
     }
 }
 
-public final class LifecycleServices {
-    fileprivate var services: [ServiceLifecycle.Service]
-
-    init(services: [ServiceLifecycle.Service] = []) {
-        self.services = services
-    }
-
-    func append(_ service: ServiceLifecycle.Service) {
-        services.append(service)
-    }
-}
-
 extension Application {
     public var env: Environment {
-        container.require()
-    }
-
-    public var serviceGroup: ServiceGroup {
         container.require()
     }
 }
 
 extension Container {
     var env: Environment {
-        require()
-    }
-
-    var lifecycleServices: LifecycleServices {
         require()
     }
 

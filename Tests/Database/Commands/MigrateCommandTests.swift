@@ -13,7 +13,7 @@ final class MigrateCommandTests: TestCase<TestApp> {
         XCTAssertTrue(MigrationA.didUp)
         XCTAssertFalse(MigrationA.didDown)
         
-        try await app.start("migrate:rollback")
+        try await app.run("migrate:rollback")
         XCTAssertTrue(MigrationA.didDown)
     }
 }

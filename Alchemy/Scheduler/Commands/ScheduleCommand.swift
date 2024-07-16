@@ -1,11 +1,11 @@
 /// Command to run queue workers.
 struct ScheduleCommand: Command {
     static var name = "schedule"
-    static var runUntilStopped: Bool = true
 
     // MARK: Command
 
-    func run() throws {
+    func run() async throws {
         Schedule.start()
+        try await gracefulShutdown()
     }
 }

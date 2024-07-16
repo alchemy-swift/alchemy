@@ -16,7 +16,7 @@ final class SeedCommandTests: TestCase<TestApp> {
         let db = try await Database.fake("a", migrations: [SeedModel.Migrate()])
         db.seeders = [Seeder3(), Seeder4()]
         
-        try await app.start("db:seed", "seeder3", "--db", "a")
+        try await app.run("db:seed", "seeder3", "--db", "a")
         XCTAssertTrue(Seeder3.didRun)
         XCTAssertFalse(Seeder4.didRun)
     }

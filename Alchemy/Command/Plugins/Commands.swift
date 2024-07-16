@@ -21,8 +21,6 @@ public struct Commands: Plugin, ExpressibleByArrayLiteral {
         app.registerCommand(JobMakeCommand.self)
         app.registerCommand(ViewMakeCommand.self)
         app.registerCommand(ServeCommand.self)
-
-        app.setDefaultCommand(ServeCommand.self)
     }
 }
 

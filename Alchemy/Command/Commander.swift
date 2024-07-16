@@ -1,4 +1,6 @@
-final class Commander {
+import ServiceLifecycle
+
+final class Commander: ServiceLifecycle.Service, @unchecked Sendable {
     /// Command to launch a given application.
     private struct Launch: AsyncParsableCommand {
         static var configuration: CommandConfiguration {
@@ -13,10 +15,11 @@ final class Commander {
         /// The environment file to load. Defaults to `env`.
         @Option(name: .shortAndLong) var env: String = "env"
 
-        /// The environment file to load. Defaults to `env`.
+        /// The default log level.
         @Option(name: .shortAndLong) var log: Logger.Level? = nil
     }
 
+    private var args: [String]?
     private var commands: [Command.Type] = []
     private var defaultCommand: Command.Type = ServeCommand.self
 
@@ -30,32 +33,31 @@ final class Commander {
         defaultCommand = command
     }
 
+    func setArgs(_ value: [String]?) {
+        args = value
+    }
+
+    // MARK: Service
+
+    func run() async throws {
+        try await runCommand(args: args)
+    }
+
     // MARK: Running Commands
 
     /// Runs a command based on the given arguments. Returns the command that
     /// ran, after it is finished running.
-    func runCommand(args: [String]? = nil) async throws -> ParsableCommand {
-        
-        // 0. Parse the Command
+    func runCommand(args: [String]? = nil) async throws {
 
         // When running a command with no arguments during a test, send an empty
         // array of arguments to swift-argument-parser. Otherwise, it will
-        // try to parse the arguments of the test runner throw errors.
+        // try to parse the test runner arguments and throw errors.
         var command = try Launch.parseAsRoot(args ?? (Env.isTesting ? [] : nil))
-
-        // 1. Run the Command on an `EventLoop`.
-
-        try await Loop.asyncSubmit {
-            guard var asyncCommand = command as? AsyncParsableCommand else {
-                try command.run()
-                return
-            }
-
-            try await asyncCommand.run()
+        if var command = command as? AsyncParsableCommand {
+            try await command.run()
+        } else {
+            try command.run()
         }
-        .get()
-
-        return command
     }
 
     func exit(error: Error) {

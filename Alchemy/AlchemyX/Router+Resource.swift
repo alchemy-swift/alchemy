@@ -12,18 +12,12 @@ extension Application {
     ) -> Self where R.Identifier: SQLValueConvertible & LosslessStringConvertible {
         use(ResourceController<R>(db: db, tableName: table))
         if updateTable {
-            Container.main.lifecycleServices.append(ResourceMigrationService<R>(db: db))
+            Container.onStart {
+                try await db.updateSchema(R.self)
+            }
         }
 
         return self
-    }
-}
-
-struct ResourceMigrationService<R: Resource>: ServiceLifecycle.Service, @unchecked Sendable {
-    let db: Database
-
-    func run() async throws {
-        try await db.updateSchema(R.self)
     }
 }
 
