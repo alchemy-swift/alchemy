@@ -110,16 +110,12 @@ public enum Bytes: ExpressibleByStringLiteral {
     }
 
     public static func stream<AS: AsyncSequence>(sequence: AS) -> Bytes where AS.Element == ByteBuffer {
-        .stream(
-            AsyncStream<ByteBuffer> { continuation in
-                Task {
-                    for try await chunk in sequence {
-                        continuation.yield(chunk)
-                    }
-
-                    continuation.finish()
-                }
+        .stream {
+            for try await chunk in sequence {
+                $0.write(chunk)
             }
-        )
+
+            $0.finish()
+        }
     }
 }

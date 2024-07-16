@@ -1,8 +1,9 @@
+import NIOConcurrencyHelpers
 import ServiceLifecycle
 
 /// Manages the startup and shutdown of an Application as well as it's various
 /// services and configurations.
-actor Lifecycle {
+public final class Lifecycle {
     typealias Action = () async throws -> Void
 
     fileprivate var startTasks: [Action] = []
@@ -13,6 +14,7 @@ actor Lifecycle {
 
     private var group: ServiceGroup?
     private var services: [ServiceLifecycle.Service] = []
+    private let lock = NIOLock()
 
     init(app: Application) {
         self.app = app
@@ -29,7 +31,7 @@ actor Lifecycle {
         ] + app.plugins
     }
 
-    func start() async throws {
+    public func start() async throws {
         app.container.register(self).singleton()
 
         for plugin in plugins {
@@ -45,7 +47,7 @@ actor Lifecycle {
         }
     }
 
-    func shutdown() async throws {
+    public func shutdown() async throws {
         for shutdown in shutdownTasks.reversed() {
             try await shutdown()
         }
@@ -55,25 +57,26 @@ actor Lifecycle {
         }
     }
 
-    func onStart(action: @escaping () async throws -> Void) {
-        self.startTasks.append(action)
+    public func onStart(action: @escaping () async throws -> Void) {
+        lock.withLock { startTasks.append(action) }
     }
 
-    func onShutdown(action: @escaping () async throws -> Void) {
-        self.shutdownTasks.append(action)
+    public func onShutdown(action: @escaping () async throws -> Void) {
+        lock.withLock { shutdownTasks.append(action) }
     }
 
-    func addService(_ service: ServiceLifecycle.Service) {
-        services.append(service)
+    public func addService(_ service: ServiceLifecycle.Service) {
+        lock.withLock { services.append(service) }
     }
 
-    func start(args: [String]? = nil) async throws {
-        let commander = Container.require(Commander.self)
-        commander.setArgs(args)
-        let allServices = services + [commander]
-        let group = ServiceGroup(
+    public func start(args: [String]? = nil) async throws {
+        try await Container.require(Commander.self).runCommand(args: args)
+    }
+
+    public func runServices() async throws {
+        group = ServiceGroup(
             configuration: ServiceGroupConfiguration(
-                services: allServices.map {
+                services: services.map {
                     .init(
                         service: $0,
                         successTerminationBehavior: .gracefullyShutdownGroup,
@@ -84,12 +87,10 @@ actor Lifecycle {
                 logger: Log
             )
         )
-
-        self.group = group
-        try await group.run()
+        try await group?.run()
     }
 
-    func stop() async {
+    public func stop() async {
         await group?.triggerGracefulShutdown()
     }
 }
@@ -97,23 +98,5 @@ actor Lifecycle {
 extension Application {
     var lifecycle: Lifecycle {
         container.require()
-    }
-}
-
-extension Container {
-    static var lifecycle: Lifecycle {
-        require()
-    }
-
-    public static func onStart(action: @escaping () async throws -> Void) {
-        Task { await lifecycle.onStart(action: action) }
-    }
-
-    public static func onShutdown(action: @escaping () async throws -> Void) {
-        Task { await lifecycle.onShutdown(action: action) }
-    }
-
-    public static func addService(_ service: ServiceLifecycle.Service) {
-        Task { await lifecycle.addService(service) }
     }
 }

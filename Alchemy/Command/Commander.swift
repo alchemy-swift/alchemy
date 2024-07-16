@@ -1,6 +1,6 @@
 import ServiceLifecycle
 
-final class Commander: ServiceLifecycle.Service, @unchecked Sendable {
+final class Commander {
     /// Command to launch a given application.
     private struct Launch: AsyncParsableCommand {
         static var configuration: CommandConfiguration {
@@ -19,7 +19,6 @@ final class Commander: ServiceLifecycle.Service, @unchecked Sendable {
         @Option(name: .shortAndLong) var log: Logger.Level? = nil
     }
 
-    private var args: [String]?
     private var commands: [Command.Type] = []
     private var defaultCommand: Command.Type = ServeCommand.self
 
@@ -31,16 +30,6 @@ final class Commander: ServiceLifecycle.Service, @unchecked Sendable {
 
     func setDefault(command: (some Command).Type) {
         defaultCommand = command
-    }
-
-    func setArgs(_ value: [String]?) {
-        args = value
-    }
-
-    // MARK: Service
-
-    func run() async throws {
-        try await runCommand(args: args)
     }
 
     // MARK: Running Commands

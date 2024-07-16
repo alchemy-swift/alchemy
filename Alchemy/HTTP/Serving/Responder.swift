@@ -28,51 +28,6 @@ actor Responder: HTTPResponder {
         logResponse(req: req, res: res, startedAt: startedAt)
         return res.hbResponse
     }
-}
-
-extension Hummingbird.Request {
-    fileprivate func request(context: Responder.Context) -> Request {
-        Request(
-            method: method,
-            uri: uri.string,
-            headers: headers,
-            body: .stream(sequence: body),
-            localAddress: context.localAddress,
-            remoteAddress: context.remoteAddress
-        )
-    }
-}
-
-extension Response {
-    fileprivate var hbResponse: Hummingbird.Response {
-        let responseBody: ResponseBody = switch body {
-        case .buffer(let buffer):
-            .init(byteBuffer: buffer)
-        case .stream(let stream):
-            .init(asyncSequence: stream)
-        case .none:
-            .init()
-        }
-
-        return .init(status: status, headers: headers, body: responseBody)
-    }
-}
-
-// MARK: Response Logging
-
-extension Responder {
-    private enum Formatters {
-        static let date: DateFormatter = {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            return formatter
-        }()
-        static let time: DateFormatter = {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm:ss"
-            return formatter
-        }()
-    }
 
     fileprivate func logResponse(req: Request, res: Response, startedAt: Date) {
         guard logResponses else { return }
@@ -110,4 +65,45 @@ extension Responder {
             Log.comment("\(dateString.lightBlack) \(timeString) \(req.method) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(code)")
         }
     }
+}
+
+extension Hummingbird.Request {
+    fileprivate func request(context: Responder.Context) -> Request {
+        Request(
+            method: method,
+            uri: uri.string,
+            headers: headers,
+            body: .stream(sequence: body),
+            localAddress: context.localAddress,
+            remoteAddress: context.remoteAddress
+        )
+    }
+}
+
+extension Response {
+    fileprivate var hbResponse: Hummingbird.Response {
+        let responseBody: ResponseBody = switch body {
+        case .buffer(let buffer):
+            .init(byteBuffer: buffer)
+        case .stream(let stream):
+            .init(asyncSequence: stream)
+        case .none:
+            .init()
+        }
+
+        return .init(status: status, headers: headers, body: responseBody)
+    }
+}
+
+private enum Formatters {
+    static let date: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+    static let time: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 }

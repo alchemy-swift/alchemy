@@ -53,45 +53,19 @@ struct ServeCommand: Command {
 
         // 3. start serving
 
-        try await buildHummingbirdApplication().run()
-    }
+        @Inject var app: Application
 
-    private func buildHummingbirdApplication() -> Hummingbird.Application<Responder> {
-        let address: BindAddress = if let socket {
-            .unixDomainSocket(path: socket)
-        } else {
-            .hostname(host, port: port)
-        }
-        return .init(
-            responder: Responder(
-                logResponses: !quiet
-            ),
-            server: Container.require(Application.self).server,
-            configuration: ApplicationConfiguration(
-                address: address,
-                serverName: nil,
-                backlog: 256,
-                reuseAddress: false
-            ),
-            onServerRunning: onServerStart,
-            eventLoopGroupProvider: .shared(LoopGroup),
-            logger: Log
+        app.addHTTPListener(
+            address: {
+                if let socket {
+                    .unixDomainSocket(path: socket)
+                } else {
+                    .hostname(host, port: port)
+                }
+            }(),
+            logResponses: !quiet
         )
-    }
 
-    @Sendable private func onServerStart(channel: Channel) async {
-        if let unixSocket = socket {
-            Log.info("Server running on \(unixSocket).")
-        } else {
-            let link = "[http://\(host):\(port)]".bold
-            Log.info("Server running on \(link).")
-        }
-
-        if Env.isXcode {
-            Log.comment("Press Cmd+Period to stop the server")
-        } else {
-            Log.comment("Press Ctrl+C to stop the server".yellow)
-            print()
-        }
+        try await app.lifecycle.runServices()
     }
 }

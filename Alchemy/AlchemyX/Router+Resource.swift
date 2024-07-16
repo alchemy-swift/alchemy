@@ -12,7 +12,7 @@ extension Application {
     ) -> Self where R.Identifier: SQLValueConvertible & LosslessStringConvertible {
         use(ResourceController<R>(db: db, tableName: table))
         if updateTable {
-            Container.onStart {
+            Life.onStart {
                 try await db.updateSchema(R.self)
             }
         }

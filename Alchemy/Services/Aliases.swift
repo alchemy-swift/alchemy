@@ -10,8 +10,8 @@ public func Http(_ id: Client.Identifier) -> Client.Builder { Container.require(
 public var DB: Database { Container.require() }
 public func DB(_ id: Database.Identifier?) -> Database { Container.require(id: id) }
 
-/// The application Lifecycle
-public var Services: ServiceGroup { Container.require() }
+/// The application lifecyle
+public var Life: Lifecycle { Container.require() }
 
 /// The application Environment
 public var Env: Environment { Container.require() }
