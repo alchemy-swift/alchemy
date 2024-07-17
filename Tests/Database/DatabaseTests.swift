@@ -15,7 +15,7 @@ final class DatabaseTests: TestCase<TestApp> {
                 1: .testing,
                 2: .testing
             ])
-        plugin.registerServices(in: app)
+        plugin.boot(app: app)
         XCTAssertNotNil(Container.resolve(Database.self))
         XCTAssertNotNil(Container.resolve(Database.self, id: 1))
         XCTAssertNotNil(Container.resolve(Database.self, id: 2))
@@ -24,7 +24,7 @@ final class DatabaseTests: TestCase<TestApp> {
         XCTAssertNotNil(Container.resolve(RedisClient.self, id: 2))
         XCTAssertEqual(DB.migrations.count, 1)
         XCTAssertEqual(DB.seeders.count, 1)
-        try await plugin.shutdownServices(in: app)
+        try await plugin.shutdown(app: app)
     }
 }
 

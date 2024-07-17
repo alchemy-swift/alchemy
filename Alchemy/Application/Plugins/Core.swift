@@ -2,20 +2,19 @@ import NIO
 
 /// Registers core Alchemy services to an application.
 struct Core: Plugin {
-    func registerServices(in app: Application) {
-        
+    func boot(app: Application) {
         // 0. Register Application
-        
+
         app.container.register(app).singleton()
         app.container.register(app as Application).singleton()
-        
+
         // 1. Register Environment
 
         app.container.register { Environment.createDefault() }.singleton()
 
         // 2. Register Loggers
 
-        app.loggers.registerServices(in: app)
+        app.loggers.boot(app: app)
 
         // 3. Register NIO services
 
@@ -33,11 +32,7 @@ struct Core: Plugin {
         }
     }
 
-    func boot(app: Application) {
-        app.container.resolve(NIOThreadPool.self)?.start()
-    }
-
-    func shutdownServices(in app: Application) async throws {
+    func shutdown(app: Application) async throws {
         try await app.container.resolve(EventLoopGroup.self)?.shutdownGracefully()
     }
 }

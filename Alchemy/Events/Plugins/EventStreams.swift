@@ -1,5 +1,5 @@
 struct EventStreams: Plugin {
-    func registerServices(in app: Application) {
+    func boot(app: Application) {
         app.container.register(EventBus()).singleton()
     }
 }

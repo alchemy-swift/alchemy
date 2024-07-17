@@ -11,9 +11,9 @@ final class QueueTests: TestCase<TestApp> {
         _testRetry,
     ]
 
-    func testPlugin() {
+    func testPlugin() async throws {
         let plugin = Queues(default: 1, queues: [1: .memory, 2: .memory], jobs: [RetryJob.self])
-        plugin.registerServices(in: app)
+        plugin.boot(app: app)
         XCTAssertNotNil(Container.resolve(Queue.self))
         XCTAssertNotNil(Container.resolve(Queue.self, id: 1))
         XCTAssertNotNil(Container.resolve(Queue.self, id: 2))

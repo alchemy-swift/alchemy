@@ -14,9 +14,9 @@ final class FilesystemTests: TestCase<TestApp> {
         self.filePath = UUID().uuidString + ".txt"
     }
 
-    func testPlugin() {
+    func testPlugin() async throws {
         let plugin = Filesystems(default: 1, disks: [1: .local, 2: .local])
-        plugin.registerServices(in: app)
+        plugin.boot(app: app)
         XCTAssertNotNil(Container.resolve(Filesystem.self))
         XCTAssertNotNil(Container.resolve(Filesystem.self, id: 1))
         XCTAssertNotNil(Container.resolve(Filesystem.self, id: 2))

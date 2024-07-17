@@ -1,34 +1,12 @@
-import ServiceLifecycle
-
-/// A Plugin represents a modular component of an Alchemy application. They
-/// typically inject services into a container that can be used by other
-/// plugins and add functionality to an Application once it is loaded.
+/// A Plugin represents a modular component of an Alchemy application.
 public protocol Plugin {
-    /// A label for this plugin, for registration in the app lifecycle.
-    var label: String { get }
-
-    /// Register any services to an Application.
-    func registerServices(in app: Application)
-
-    /// Setup this plugin for the given app.
+    /// Start this plugin given an app.
     func boot(app: Application) async throws
 
-    /// Any shutdown logic before services are deallocated from the container.
-    func shutdownServices(in app: Application) async throws
+    /// Shutdown the plugin that was booted on the given app.
+    func shutdown(app: Application) async throws
 }
 
-public extension Plugin {
-    var label: String { name(of: Self.self) }
-    
-    func registerServices(in app: Application) {
-        //
-    }
-    
-    func boot(app: Application) async throws {
-        //
-    }
-    
-    func shutdownServices(in app: Application) async throws {
-        //
-    }
+extension Plugin {
+    public func shutdown(app: Application) async throws {}
 }

@@ -5,11 +5,9 @@ public struct Commands: Plugin, ExpressibleByArrayLiteral {
         self.commands = elements
     }
     
-    public func registerServices(in app: Application) {
-        app.container.register(Commander()).singleton()
-    }
-
     public func boot(app: Application) {
+        app.container.register(Commander()).singleton()
+
         for command in commands {
             app.registerCommand(command)
         }

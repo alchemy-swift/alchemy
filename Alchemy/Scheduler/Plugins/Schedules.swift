@@ -1,14 +1,12 @@
 struct Schedules: Plugin {
-    func registerServices(in app: Application) {
-        app.container.register(Scheduler()).singleton()
-    }
+    let scheduler = Scheduler()
 
-    func boot(app: Application) async throws {
-        app.schedule(on: Schedule)
+    func boot(app: Application) {
+        app.container.register(scheduler).singleton()
         app.registerCommand(ScheduleCommand.self)
     }
 
-    func shutdownServices(in app: Application) async throws {
-        try await app.container.resolve(Scheduler.self)?.shutdown()
+    func shutdown(app: Application) async throws {
+        try await scheduler.shutdown()
     }
 }

@@ -18,10 +18,10 @@ public final class Lifecycle {
         self.app = app
         self.plugins = [
             Core(),
+            app.commands,
             Schedules(),
             EventStreams(),
             app.http,
-            app.commands,
             app.filesystems,
             app.databases,
             app.caches,
@@ -50,25 +50,26 @@ public final class Lifecycle {
         app.container.register(self).singleton()
 
         for plugin in plugins {
-            plugin.registerServices(in: app)
-        }
-
-        for plugin in plugins {
             try await plugin.boot(app: app)
         }
 
         for start in startTasks {
             try await start()
         }
+        
+        (app as? Controller)?.route(app)
+        try await app.boot()
     }
 
     public func shutdown() async throws {
+        try await app.shutdown()
+
         for shutdown in shutdownTasks.reversed() {
             try await shutdown()
         }
 
         for plugin in plugins.reversed() {
-            try await plugin.shutdownServices(in: app)
+            try await plugin.shutdown(app: app)
         }
     }
 

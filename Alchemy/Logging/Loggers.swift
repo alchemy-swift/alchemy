@@ -9,7 +9,7 @@ public struct Loggers: Plugin {
         self.loggers = loggers
     }
 
-    public func registerServices(in app: Application) {
+    public func boot(app: Application) {
         let logLevel = app.env.logLevel
         for (id, logger) in loggers {
             var logger = logger

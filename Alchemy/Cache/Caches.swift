@@ -7,7 +7,7 @@ public struct Caches: Plugin {
         self.caches = caches
     }
 
-    public func registerServices(in app: Application) {
+    public func boot(app: Application) {
         let caches = caches()
         for (id, cache) in caches {
             app.container.register(cache, id: id).singleton()

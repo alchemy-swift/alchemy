@@ -17,7 +17,7 @@ public struct HTTPConfiguration: Plugin {
         self.maxUploadSize = maxUploadSize
     }
     
-    public func registerServices(in app: Application) {
+    public func boot(app: Application) {
         
         // 0. Register Router
 
@@ -38,7 +38,7 @@ public struct HTTPConfiguration: Plugin {
         app.container.register(Hasher(algorithm: defaultHashAlgorithm)).singleton()
     }
 
-    public func shutdownServices(in app: Application) async throws {
+    public func shutdown(app: Application) async throws {
         try app.container.resolve(Client.self)?.shutdown()
     }
 }

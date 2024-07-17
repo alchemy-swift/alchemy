@@ -23,7 +23,7 @@ public final class Databases: Plugin {
         self.redis = redis
     }
 
-    public func registerServices(in app: Application) {
+    public func boot(app: Application) {
         _databases = databases()
         guard let _databases else { return }
 
@@ -44,9 +44,7 @@ public final class Databases: Plugin {
         if let _default = defaultRedis ?? redis.keys.first {
             app.container.register(Redis(_default)).singleton()
         }
-    }
 
-    public func boot(app: Application) {
         app.registerCommand(SeedCommand.self)
         app.registerCommand(MigrateCommand.self)
         app.registerCommand(RollbackMigrationsCommand.self)
@@ -54,7 +52,7 @@ public final class Databases: Plugin {
         app.registerCommand(RefreshMigrationsCommand.self)
     }
 
-    public func shutdownServices(in app: Application) async throws {
+    public func shutdown(app: Application) async throws {
         guard let _databases else { return }
         for id in _databases.keys {
             try await app.container.resolve(Database.self, id: id)?.shutdown()

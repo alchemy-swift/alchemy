@@ -9,7 +9,7 @@ public struct Queues: Plugin {
         self.jobs = jobs
     }
 
-    public func registerServices(in app: Application) {
+    public func boot(app: Application) {
         let queues = queues()
         for (id, queue) in queues {
             app.container.register(queue, id: id).singleton()
@@ -24,13 +24,11 @@ public struct Queues: Plugin {
         for job in jobs {
             app.registerJob(job)
         }
-    }
 
-    public func boot(app: Application) {
         app.registerCommand(WorkCommand.self)
     }
 
-    public func shutdownServices(in app: Application) async throws {
+    public func shutdown(app: Application) async throws {
         app.container.require(JobRegistry.self).reset()
     }
 }

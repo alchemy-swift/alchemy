@@ -12,9 +12,9 @@ final class CacheTests: TestCase<TestApp> {
         _testWipe,
     ]
 
-    func testPlugin() {
+    func testPlugin() async throws {
         let config = Caches(caches: [1: .memory, 2: .memory, 3: .memory])
-        config.registerServices(in: app)
+        config.boot(app: app)
         XCTAssertNotNil(Container.resolve(Cache.self))
         XCTAssertNotNil(Container.resolve(Cache.self, id: 1))
         XCTAssertNotNil(Container.resolve(Cache.self, id: 2))

@@ -20,32 +20,29 @@ public protocol Application: Router {
     /// Build the hummingbird server
     var server: HTTPServerBuilder { get }
 
-    init()
-    
-    /// Setup your application here. Called after all services are registered.
-    func boot() throws
-    /// Optional shutdown logic here.
-    func shutdown() throws
+    // MARK: Configurations
 
-    // MARK: Default Plugin Configurations
-    
-    /// This application's HTTP configuration.
-    var http: HTTPConfiguration { get }
-    /// This application's filesystems.
-    var filesystems: Filesystems { get }
-    /// This application's databases.
-    var databases: Databases { get }
     /// The application's caches.
     var caches: Caches { get }
-    /// The application's job queues.
-    var queues: Queues { get }
     /// The application's custom commands.
     var commands: Commands { get }
+    /// This application's databases.
+    var databases: Databases { get }
+    /// This application's filesystems.
+    var filesystems: Filesystems { get }
+    /// This application's HTTP configuration.
+    var http: HTTPConfiguration { get }
     /// The application's loggers.
     var loggers: Loggers { get }
-    
-    /// Setup any scheduled tasks in your application here.
-    func schedule(on schedule: Scheduler)
+    /// The application's job queues.
+    var queues: Queues { get }
+
+    init()
+
+    /// Setup your application here. Called after all services are registered.
+    func boot() async throws
+    /// Optional shutdown logic here.
+    func shutdown() async throws
 }
 
 // MARK: Defaults
@@ -62,9 +59,8 @@ public extension Application {
     var queues: Queues { Queues() }
     var server: HTTPServerBuilder { .http1() }
 
-    func boot() throws {}
-    func shutdown() throws {}
-    func schedule(on schedule: Scheduler) {}
+    func boot() async throws {}
+    func shutdown() async throws {}
 }
 
 // MARK: Running
@@ -92,22 +88,20 @@ extension Application {
         try await commander.run(args: args.isEmpty ? nil : args)
     }
 
+    /// Stops a currently running application. The `Application` will handle this
+    /// as though it were sent a `SIGINT`.
+    public func stop() async {
+        await lifecycle.stop()
+    }
+
     /// Sets up the app for running.
     public func willRun() async throws {
         let lifecycle = Lifecycle(app: self)
         try await lifecycle.boot()
-        (self as? Controller)?.route(self)
-        try boot()
     }
 
     /// Any cleanup after the app finishes running.
     public func didRun() async throws {
-        try shutdown()
         try await lifecycle.shutdown()
-    }
-
-    /// Stops a currently running application.
-    public func stop() async {
-        await lifecycle.stop()
     }
 }

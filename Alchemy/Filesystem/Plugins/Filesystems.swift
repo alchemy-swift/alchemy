@@ -7,7 +7,7 @@ public struct Filesystems: Plugin {
         self.disks = disks
     }
 
-    public func registerServices(in app: Application) {
+    public func boot(app: Application) {
         for (id, disk) in disks {
             app.container.register(disk, id: id).singleton()
         }
