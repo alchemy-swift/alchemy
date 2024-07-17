@@ -17,7 +17,7 @@ extension Application {
 
 private struct AuthController: Controller, AuthAPI {
     func route(_ router: Router) {
-        registerHandlers(on: router)
+        // registerHandlers(on: router)
     }
 
     func signUp(email: String, password: String) async throws -> AuthResponse {

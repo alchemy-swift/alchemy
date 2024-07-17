@@ -2,15 +2,16 @@ import HummingbirdCore
 
 /// The core type for an Alchemy application.
 ///
-///     @Application
-///     struct App {
-///
-///         @GET("/hello")
-///         func sayHello(name: String) -> String {
-///             "Hello, \(name)!"
-///         }
+/// ```swift
+/// @Application
+/// struct App {
+///     
+///     @GET("/hello")
+///     func hello(name: String) -> String {
+///         "Hello, \(name)!"
 ///     }
-///
+/// }
+/// ```
 public protocol Application: Router {
     /// The container in which all services of this application are registered.
     var container: Container { get }
@@ -69,7 +70,7 @@ public extension Application {
 // MARK: Running
 
 extension Application {
-    // @main support
+    /// @main support
     public static func main() async throws {
         let app = Self()
         do {
@@ -83,13 +84,18 @@ extension Application {
 
     /// Runs the application with the given arguments.
     public func run(_ args: String...) async throws {
-        try await lifecycle.start(args: args.isEmpty ? nil : args)
+        try await run(args)
+    }
+
+    /// Runs the application with the given arguments.
+    public func run(_ args: [String]) async throws {
+        try await commander.run(args: args.isEmpty ? nil : args)
     }
 
     /// Sets up the app for running.
     public func willRun() async throws {
         let lifecycle = Lifecycle(app: self)
-        try await lifecycle.start()
+        try await lifecycle.boot()
         (self as? Controller)?.route(self)
         try boot()
     }
@@ -100,7 +106,7 @@ extension Application {
         try await lifecycle.shutdown()
     }
 
-    /// Stops the application.
+    /// Stops a currently running application.
     public func stop() async {
         await lifecycle.stop()
     }

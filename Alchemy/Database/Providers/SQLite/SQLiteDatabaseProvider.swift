@@ -19,24 +19,28 @@ public final class SQLiteDatabaseProvider: DatabaseProvider {
             try await $0.query(sql, parameters: parameters)
         }
     }
-    
+
     public func raw(_ sql: String) async throws -> [SQLRow] {
         try await withConnection {
             try await $0.raw(sql)
         }
     }
-    
-    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await withConnection {
             try await $0.sqliteTransaction(action)
         }
     }
-    
+
     public func shutdown() async throws {
         try await pool.asyncShutdownGracefully()
     }
-    
-    private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+
+    private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await pool.withConnection(logger: Log, on: Loop) {
             try await action($0)
         }
@@ -55,7 +59,9 @@ extension SQLiteConnection: DatabaseProvider, ConnectionPoolItem {
         try await query(sql).get().map(\._row)
     }
 
-    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await sqliteTransaction(action)
     }
 
@@ -65,7 +71,9 @@ extension SQLiteConnection: DatabaseProvider, ConnectionPoolItem {
 }
 
 extension DatabaseProvider {
-    fileprivate func sqliteTransaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+    fileprivate func sqliteTransaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await raw("BEGIN;")
         do {
             let val = try await action(self)

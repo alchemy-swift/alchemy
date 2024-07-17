@@ -1,18 +1,19 @@
-@testable import Alchemy
 import AlchemyTest
 import Crypto
+
+@testable import Alchemy
 
 final class EncryptionTests: XCTestCase {
     func testEncrypter() throws {
         let initialKey = SymmetricKey(size: .bits256)
         let initialEncryptor = Encrypter(key: initialKey)
         let initialCipher = try initialEncryptor.encrypt(string: "FOO")
-        
+
         let keyString = initialKey.withUnsafeBytes { Data($0) }.base64EncodedString()
         guard let keyData = Data(base64Encoded: keyString) else {
             return XCTFail("couldn't decode")
         }
-        
+
         let recreatedKey = SymmetricKey(data: keyData)
         let encrypter = Encrypter(key: recreatedKey)
         let cipher = try encrypter.encrypt(string: "FOO")
@@ -21,7 +22,7 @@ final class EncryptionTests: XCTestCase {
         XCTAssertEqual("FOO", decrypted)
         XCTAssertEqual("FOO", initialDecrypted)
     }
-    
+
     func testDecryptStringNotBase64Throws() {
         let key = SymmetricKey(size: .bits256)
         let encrypter = Encrypter(key: key)
@@ -46,7 +47,7 @@ final class EncryptionTests: XCTestCase {
         let decrypted = try Crypt.decrypt(base64Encoded: storedValue)
         XCTAssertEqual(decrypted, string)
     }
-    
+
     func testEncryptedNotBase64Throws() {
         let reader: SQLRowReader = ["foo": "bar"]
         XCTAssertThrowsError(try Encrypted(key: "foo", on: reader))

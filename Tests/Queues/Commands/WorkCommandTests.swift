@@ -9,11 +9,10 @@ final class WorkCommandTests: TestCase<TestApp> {
     }
     
     func testRun() async throws {
-        Task { try await WorkCommand.parse(["--workers", "5"]).run() }
+        Task { try await app.run("queue:work", "--workers", "5") }
 
-        // hack to wait for the queue to boot up - should find a way to hook
-        // into the command finishing.
-        try await Task.sleep(for: .milliseconds(100))
+        // wait for services to boot up
+        try await Task.sleep(for: .milliseconds(10))
 
         XCTAssertEqual(Q.workers.count, 5)
         XCTAssertFalse(Schedule.isStarted)
@@ -21,11 +20,10 @@ final class WorkCommandTests: TestCase<TestApp> {
     
     func testRunName() async throws {
         Queue.fake("a")
-        Task { try await WorkCommand.parse(["--name", "a", "--workers", "5"]).run() }
+        Task { try await app.run("queue:work", "--name", "a", "--workers", "5") }
 
-        // hack to wait for the queue to boot up - should find a way to hook
-        // into the command finishing.
-        try await Task.sleep(for: .milliseconds(100))
+        // wait for services to boot up
+        try await Task.sleep(for: .milliseconds(10))
 
         XCTAssertEqual(Q.workers.count, 0)
         XCTAssertEqual(Q("a").workers.count, 5)
@@ -35,9 +33,8 @@ final class WorkCommandTests: TestCase<TestApp> {
     func testRunCLI() async throws {
         Task { try await app.run("queue:work", "--workers", "3", "--schedule") }
 
-        // hack to wait for the queue to boot up - should find a way to hook
-        // into the command finishing.
-        try await Task.sleep(for: .milliseconds(100))
+        // wait for services to boot up
+        try await Task.sleep(for: .milliseconds(10))
 
         XCTAssertEqual(Q.workers.count, 3)
         XCTAssertTrue(Schedule.isStarted)

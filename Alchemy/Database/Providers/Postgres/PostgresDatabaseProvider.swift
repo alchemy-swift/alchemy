@@ -19,30 +19,34 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
     }
 
     // MARK: Database
-    
+
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         try await withConnection {
             try await $0.query(sql, parameters: parameters)
         }
     }
-    
+
     public func raw(_ sql: String) async throws -> [SQLRow] {
         try await withConnection {
             try await $0.raw(sql)
         }
     }
-    
-    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await withConnection {
             try await $0.postgresTransaction(action)
         }
     }
-    
+
     public func shutdown() async throws {
         try await pool.asyncShutdownGracefully()
     }
-    
-    private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+
+    private func withConnection<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await pool.withConnection(logger: Log, on: Loop) {
             try await action($0)
         }
@@ -51,7 +55,7 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
 
 extension PostgresConnection: DatabaseProvider, ConnectionPoolItem {
     public var type: DatabaseType { .postgres }
-    
+
     @discardableResult
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
         let statement = sql.positionPostgresBinds()
@@ -70,17 +74,21 @@ extension PostgresConnection: DatabaseProvider, ConnectionPoolItem {
     }
 
     @discardableResult
-    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+    public func transaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T)
+        async throws -> T
+    {
         try await action(self)
     }
-    
+
     public func shutdown() async throws {
         try await close().get()
     }
 }
 
 extension DatabaseProvider {
-    fileprivate func postgresTransaction<T>(_ action: @escaping (DatabaseProvider) async throws -> T) async throws -> T {
+    fileprivate func postgresTransaction<T>(
+        _ action: @escaping (DatabaseProvider) async throws -> T
+    ) async throws -> T {
         try await raw("START TRANSACTION;")
         do {
             let val = try await action(self)
@@ -109,10 +117,11 @@ extension String {
         // TODO: Move this to SQLGrammar
         replaceAll(matching: "(\\?)") { (index, _) in "$\(index + 1)" }
     }
-    
+
     private func replaceAll(matching pattern: String, callback: (Int, String) -> String) -> String {
         let expression = try! NSRegularExpression(pattern: pattern, options: [])
-        let matches = expression
+        let matches =
+            expression
             .matches(in: self, options: [], range: NSRange(startIndex..<endIndex, in: self))
         let size = matches.count - 1
         return matches.reversed()
@@ -121,8 +130,8 @@ extension String {
                 let (index, result) = match
                 let range = Range(result.range, in: current)!
                 let token = String(current[range])
-                let replacement = callback(size-index, token)
+                let replacement = callback(size - index, token)
                 current.replaceSubrange(range, with: replacement)
-        }
+            }
     }
 }

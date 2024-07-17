@@ -19,17 +19,14 @@ struct WorkCommand: Command {
     // MARK: Command
     
     func run() async throws {
-        let queue: Queue = name.map { Container.require(id: $0) } ?? Q
-        for _ in 0..<workers {
-            queue.startWorker(for: channels.components(separatedBy: ","))
-        }
-
         if schedule {
             Schedule.start()
         }
-        
-        let schedulerText = schedule ? "scheduler and " : ""
-        Log.info("Started \(schedulerText)\(workers) Queue workers.")
+
+        let queue: Queue = Container.require(id: name)
+        for _ in 0..<workers {
+            queue.startWorker(for: channels.components(separatedBy: ","))
+        }
 
         try await gracefulShutdown()
     }

@@ -22,21 +22,11 @@ final class Commander {
     private var commands: [Command.Type] = []
     private var defaultCommand: Command.Type = ServeCommand.self
 
-    // MARK: Registering Commands
-
-    func register(command: (some Command).Type) {
-        commands.append(command)
-    }
-
-    func setDefault(command: (some Command).Type) {
-        defaultCommand = command
-    }
-
     // MARK: Running Commands
 
     /// Runs a command based on the given arguments. Returns the command that
     /// ran, after it is finished running.
-    func runCommand(args: [String]? = nil) async throws {
+    func run(args: [String]? = nil) async throws {
 
         // When running a command with no arguments during a test, send an empty
         // array of arguments to swift-argument-parser. Otherwise, it will
@@ -51,6 +41,16 @@ final class Commander {
 
     func exit(error: Error) {
         Launch.exit(withError: error)
+    }
+
+    // MARK: Registering Commands
+
+    func register(command: (some Command).Type) {
+        commands.append(command)
+    }
+
+    func setDefault(command: (some Command).Type) {
+        defaultCommand = command
     }
 }
 

@@ -156,9 +156,9 @@ final class RouterTests: TestCase<TestApp> {
     func testServerResponseStream() async throws {
         app.get("/stream") { _ in
             Response {
-                $0.write("foo")
-                $0.write("bar")
-                $0.write("baz")
+                $0.write(ByteBuffer(string: "foo"))
+                $0.write(ByteBuffer(string: "bar"))
+                $0.write(ByteBuffer(string: "baz"))
             }
         }
 
@@ -171,9 +171,9 @@ final class RouterTests: TestCase<TestApp> {
     func testEndToEndStream() async throws {
         app.get("/stream", options: .stream) { _ in
             Response {
-                $0.write("foo")
-                $0.write("bar")
-                $0.write("baz")
+                $0.write(ByteBuffer(string: "foo"))
+                $0.write(ByteBuffer(string: "bar"))
+                $0.write(ByteBuffer(string: "baz"))
             }
         }
 
@@ -197,9 +197,9 @@ final class RouterTests: TestCase<TestApp> {
     func testFileRequest() {
         app.get("/stream") { _ in
             Response {
-                $0.write("foo")
-                $0.write("bar")
-                $0.write("baz")
+                $0.write(ByteBuffer(string: "foo"))
+                $0.write(ByteBuffer(string: "bar"))
+                $0.write(ByteBuffer(string: "baz"))
             }
         }
     }

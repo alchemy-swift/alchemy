@@ -29,7 +29,7 @@ extension Application {
                 }(),
                 serverName: nil,
                 backlog: 256,
-                reuseAddress: false
+                reuseAddress: true
             ),
             onServerRunning: { onServerStart(channel: $0, address: address) },
             eventLoopGroupProvider: .shared(LoopGroup),

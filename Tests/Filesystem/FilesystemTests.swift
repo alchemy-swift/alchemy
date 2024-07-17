@@ -36,7 +36,7 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertTrue(try await Storage.exists(filePath))
         let file = try await Storage.get(filePath)
         AssertEqual(file.name, filePath)
-        AssertEqual(try await file.getContent().collect(), "1;2;3")
+        AssertEqual(try await file.getContent().collect(), ByteBuffer(string: "1;2;3"))
     }
 
     
@@ -64,7 +64,7 @@ final class FilesystemTests: TestCase<TestApp> {
         AssertTrue(try await Storage.exists("foo/bar/baz/\(filePath)"))
         let file = try await Storage.get("foo/bar/baz/\(filePath)")
         AssertEqual(file.name, filePath)
-        AssertEqual(try await file.getContent().collect(), "foo")
+        AssertEqual(try await file.getContent().collect(), ByteBuffer(string: "foo"))
         try await Storage.delete("foo/bar/baz/\(filePath)")
         AssertFalse(try await Storage.exists("foo/bar/baz/\(filePath)"))
     }

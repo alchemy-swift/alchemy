@@ -61,9 +61,9 @@ final class ClientTests: TestCase<TestApp> {
 
     func testStreaming() async throws {
         let streamResponse: Client.Response = .stub(body: .stream {
-            $0.write("foo")
-            $0.write("bar")
-            $0.write("baz")
+            $0.write(ByteBuffer(string: "foo"))
+            $0.write(ByteBuffer(string: "bar"))
+            $0.write(ByteBuffer(string: "baz"))
         })
 
         Http.stub(["example.com/*": streamResponse])
