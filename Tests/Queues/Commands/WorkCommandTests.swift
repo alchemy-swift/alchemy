@@ -9,7 +9,7 @@ final class WorkCommandTests: TestCase<TestApp> {
     }
     
     func testRun() async throws {
-        Task { try await app.run("queue:work", "--workers", "5") }
+        app.background("queue:work", "--workers", "5")
 
         // wait for services to boot up
         try await Task.sleep(for: .milliseconds(10))
@@ -20,7 +20,7 @@ final class WorkCommandTests: TestCase<TestApp> {
     
     func testRunName() async throws {
         Queue.fake("a")
-        Task { try await app.run("queue:work", "--name", "a", "--workers", "5") }
+        app.background("queue:work", "--name", "a", "--workers", "5")
 
         // wait for services to boot up
         try await Task.sleep(for: .milliseconds(10))
@@ -31,7 +31,7 @@ final class WorkCommandTests: TestCase<TestApp> {
     }
     
     func testRunCLI() async throws {
-        Task { try await app.run("queue:work", "--workers", "3", "--schedule") }
+        app.background("queue:work", "--workers", "3", "--schedule")
 
         // wait for services to boot up
         try await Task.sleep(for: .milliseconds(10))

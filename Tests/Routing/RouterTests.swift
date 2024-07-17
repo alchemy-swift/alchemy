@@ -177,7 +177,7 @@ final class RouterTests: TestCase<TestApp> {
             }
         }
 
-        Task { try await app.run() }
+        app.background()
 
         var expected = ["foo", "bar", "baz"]
         try await Http
