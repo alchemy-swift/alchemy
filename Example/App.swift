@@ -25,12 +25,6 @@ struct App {
     }
 }
 
-extension HTTPRequest.Method {
-    public static func raw(_ string: String) -> HTTPRequest.Method {
-        .init(rawValue: string)!
-    }
-}
-
 @Controller
 struct UserController {
     @HTTP("FOO", "/bar", options: .stream)

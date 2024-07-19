@@ -15,26 +15,27 @@ let package = Package(
         .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/alchemy-swift/cron.git", from: "2.3.2"),
+        .package(url: "https://github.com/alchemy-swift/cron", from: "2.3.2"),
         .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-log", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
-        .package(url: "https://github.com/apple/swift-http-types.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-crypto", from: "3.0.0"),
+        .package(url: "https://github.com/apple/swift-http-types", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-syntax", from: "510.0.0"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0-rc.2"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird", from: "2.0.0-rc.2"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
-        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0"),
+        .package(url: "https://github.com/swift-server/async-http-client", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/RediStack", from: "1.6.2"),
-        .package(url: "https://github.com/vapor/async-kit.git", from: "1.0.0"),
+        .package(url: "https://github.com/vapor/async-kit", from: "1.0.0"),
         .package(url: "https://github.com/vapor/multipart-kit", from: "4.7.0"),
-        .package(url: "https://github.com/vapor/mysql-nio.git", from: "1.0.0"),
-        .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.17.0"),
-        .package(url: "https://github.com/vapor/sqlite-nio.git", from: "1.0.0"),
+        .package(url: "https://github.com/vapor/mysql-nio", from: "1.0.0"),
+        .package(url: "https://github.com/vapor/postgres-nio", from: "1.17.0"),
+        .package(url: "https://github.com/vapor/sqlite-nio", from: "1.0.0"),
 
         // MARK: Experimental
 
-        .package(url: "https://github.com/joshuawright11/AlchemyX.git", branch: "main"),
+        .package(url: "https://github.com/joshuawright11/AlchemyX", branch: "main"),
     ],
     targets: [
 
@@ -60,6 +61,7 @@ let package = Package(
                 /// Core
 
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "Cron", package: "cron"),
                 .product(name: "Crypto", package: "swift-crypto"),
@@ -71,6 +73,7 @@ let package = Package(
                 .product(name: "MultipartKit", package: "multipart-kit"),
                 .product(name: "Pluralize", package: "pluralize"),
                 .product(name: "Rainbow", package: "Rainbow"),
+
 
                 /// Databases
 
