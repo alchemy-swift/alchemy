@@ -28,6 +28,14 @@ struct ServeCommand: Command {
     /// If enabled, handled requests won't be logged.
     @Flag var quiet: Bool = false
 
+    private var bindAddress: BindAddress {
+        if let socket {
+            .unixDomainSocket(path: socket)
+        } else {
+            .hostname(host, port: port)
+        }
+    }
+
     // MARK: Command
 
     func run() async throws {
@@ -53,19 +61,8 @@ struct ServeCommand: Command {
 
         // 3. start serving
 
-        @Inject var app: Application
+        App.addHTTPListener(address: bindAddress, logResponses: !quiet)
 
-        app.addHTTPListener(
-            address: {
-                if let socket {
-                    .unixDomainSocket(path: socket)
-                } else {
-                    .hostname(host, port: port)
-                }
-            }(),
-            logResponses: !quiet
-        )
-
-        try await app.lifecycle.runServices()
+        try await Life.runServices()
     }
 }

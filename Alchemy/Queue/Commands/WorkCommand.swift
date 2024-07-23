@@ -16,6 +16,10 @@ struct WorkCommand: Command {
     /// Should the scheduler run in process, scheduling any recurring work.
     @Flag var schedule: Bool = false
 
+    var queue: Queue {
+        Container.require(id: name)
+    }
+
     // MARK: Command
     
     func run() async throws {
@@ -23,11 +27,10 @@ struct WorkCommand: Command {
             Schedule.start()
         }
 
-        let queue: Queue = Container.require(id: name)
         for _ in 0..<workers {
             queue.startWorker(for: channels.components(separatedBy: ","))
         }
 
-        try await gracefulShutdown()
+        try await Life.runServices()
     }
 }

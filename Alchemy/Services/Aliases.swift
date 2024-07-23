@@ -85,3 +85,6 @@ var Routes: Router { Container.require() }
 
 /// Job registration.
 var Jobs: JobRegistry { Container.require() }
+
+/// The current application
+var App: Application { Container.require() }

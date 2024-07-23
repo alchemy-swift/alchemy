@@ -53,7 +53,7 @@ public struct JobData: Codable, Equatable {
         payload: Data,
         jobName: String,
         channel: String,
-        attempts: Int,
+        attempts: Int = 0,
         recoveryStrategy: Job.RecoveryStrategy,
         backoff: TimeAmount,
         backoffUntil: Date? = nil
