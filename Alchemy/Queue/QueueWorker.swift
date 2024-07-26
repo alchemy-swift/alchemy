@@ -1,10 +1,17 @@
 import AsyncAlgorithms
 
-struct QueueWorker: Service, @unchecked Sendable {
+actor QueueWorker: Service {
     let queue: Queue
-    var channels: [String] = [Queue.defaultChannel]
-    var pollRate: Duration = .seconds(1)
-    var untilEmpty: Bool = false
+    var channels: [String]
+    var pollRate: Duration
+    var untilEmpty: Bool
+
+    init(queue: Queue, channels: [String], pollRate: Duration, untilEmpty: Bool) {
+        self.queue = queue
+        self.channels = channels
+        self.pollRate = pollRate
+        self.untilEmpty = untilEmpty
+    }
 
     private var timer: some AsyncSequence {
         AsyncTimerSequence(interval: pollRate, clock: ContinuousClock())

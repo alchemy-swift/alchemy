@@ -2,7 +2,7 @@ import Cron
 import Foundation
 
 /// Used to help build schedule frequencies for scheduled tasks.
-public final class Frequency {
+public final class Frequency: AsyncSequence {
     /// A day of the week.
     public enum DayOfWeek: Int, ExpressibleByIntegerLiteral {
         /// Sunday
@@ -71,7 +71,7 @@ public final class Frequency {
     var cron = try! DatePattern("* * * * * * *")
 
     /// The time amount until the next interval, if there is one.
-    func timeUntilNext() -> TimeAmount? {
+    func timeUntilNext() -> Duration? {
         guard let next = cron.next(), let nextDate = next.date else {
             return nil
         }
@@ -168,6 +168,27 @@ public final class Frequency {
             cron = try DatePattern(expression)
         } catch {
             preconditionFailure("Error parsing cron expression '\(expression)': \(error).")
+        }
+    }
+
+    // MARK: AsyncSequence
+
+    public typealias Element = Foundation.Date
+
+    public func makeAsyncIterator() -> Iterator {
+        Iterator(frequency: self)
+    }
+
+    public struct Iterator: AsyncIteratorProtocol {
+        let frequency: Frequency
+
+        public mutating func next() async throws -> Foundation.Date? {
+            guard let delay = frequency.timeUntilNext() else {
+                return nil
+            }
+
+            try await Task.sleep(for: delay)
+            return Date()
         }
     }
 }
