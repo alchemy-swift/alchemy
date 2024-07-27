@@ -10,8 +10,6 @@ final class ServeCommandTests: TestCase<TestApp> {
     }
     
     func testServe() async throws {
-        let exp = expectation(description: "")
-        Schedule.task { exp.fulfill() }.everySecond()
         app.get("/foo", use: { _ in "hello" })
         app.background("--port", "3000")
         try await Http.get("http://127.0.0.1:3000/foo")
@@ -26,7 +24,7 @@ final class ServeCommandTests: TestCase<TestApp> {
         app.background("--workers", "2", "--schedule", "--migrate")
         try await Http.get("http://127.0.0.1:3000/foo")
             .assertBody("hello")
-        
+
         XCTAssertEqual(Q.workers, 2)
         XCTAssertTrue(Schedule.isStarted)
     }
