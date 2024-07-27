@@ -6,6 +6,6 @@ struct ScheduleCommand: Command {
 
     func run() async throws {
         Schedule.start()
-        try await gracefulShutdown()
+        try await Life.runServices()
     }
 }

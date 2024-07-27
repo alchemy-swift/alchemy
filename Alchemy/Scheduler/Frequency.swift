@@ -183,10 +183,7 @@ public final class Frequency: AsyncSequence {
         let frequency: Frequency
 
         public mutating func next() async throws -> Foundation.Date? {
-            guard let delay = frequency.timeUntilNext() else {
-                return nil
-            }
-
+            guard let delay = frequency.timeUntilNext() else { return nil }
             try await Task.sleep(for: delay)
             return Date()
         }

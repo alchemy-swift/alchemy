@@ -84,7 +84,7 @@ final class QueueTests: TestCase<TestApp> {
         try await ConfirmableJob().dispatch()
 
         let loop = EmbeddedEventLoop()
-        Q.startWorker(on: loop)
+        Q.startWorker()
         loop.advanceTime(by: .seconds(5))
 
         await fulfillment(of: [exp], timeout: kMinTimeout)
@@ -96,7 +96,7 @@ final class QueueTests: TestCase<TestApp> {
         try await FailureJob().dispatch()
 
         let loop = EmbeddedEventLoop()
-        Q.startWorker(on: loop)
+        Q.startWorker()
         loop.advanceTime(by: .seconds(5))
         
         await fulfillment(of: [exp], timeout: kMinTimeout)
@@ -109,7 +109,7 @@ final class QueueTests: TestCase<TestApp> {
         try await RetryJob(foo: "bar").dispatch()
 
         let loop = EmbeddedEventLoop()
-        Q.startWorker(untilEmpty: false, on: loop)
+        Q.startWorker(untilEmpty: false)
         loop.advanceTime(by: .seconds(5))
         await fulfillment(of: [exp], timeout: kMinTimeout)
 

@@ -7,7 +7,7 @@ import ServiceLifecycle
 /// A service for scheduling recurring work, in lieu of a separate cron task
 /// running apart from your server.
 public final class Scheduler {
-    private struct Task: Service, @unchecked Sendable {
+    struct Task: Service, @unchecked Sendable {
         let name: String
         let frequency: Frequency
         let task: () async throws -> Void
@@ -29,10 +29,12 @@ public final class Scheduler {
         }
     }
 
-    private var tasks: [Task] = []
+    var isStarted = false
+    var tasks: [Task] = []
 
     /// Start scheduling.
     public func start() {
+        isStarted = true
         Log.info("Scheduling \(tasks.count) tasks.")
         for task in tasks {
             Life.addService(task)

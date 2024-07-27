@@ -73,7 +73,7 @@ final class FrequencyTests: XCTestCase {
             return
         }
 
-        XCTAssertGreaterThan(next, .hours(24 * 365 * 10))
+        XCTAssertGreaterThan(next, .seconds(60 * 60 * 24 * 365 * 10))
     }
     
     func testNoNext() {

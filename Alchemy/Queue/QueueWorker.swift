@@ -91,6 +91,7 @@ extension Queue {
     public func startWorker(for channels: [String] = [Queue.defaultChannel],
                             pollRate: Duration = .seconds(1),
                             untilEmpty: Bool = true) {
+        workers += 1
         Life.addService(
             QueueWorker(
                 queue: self,

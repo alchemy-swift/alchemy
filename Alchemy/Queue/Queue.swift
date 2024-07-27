@@ -9,12 +9,16 @@ public final class Queue: IdentifiedService {
     /// The default channel to dispatch jobs on for all queues.
     public static var defaultChannel = "default"
 
+    /// The number of workers on this queue.
+    public var workers: Int
+
     /// The provider backing this queue.
     private let provider: QueueProvider
 
     /// Initialize a queue backed by the given provider.
     public init(provider: QueueProvider) {
         self.provider = provider
+        self.workers = 0
     }
     
     /// Enqueues a generic `Job` to this queue on the given channel.

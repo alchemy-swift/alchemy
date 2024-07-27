@@ -14,7 +14,7 @@ final class WorkCommandTests: TestCase<TestApp> {
         // wait for services to boot up
         try await Task.sleep(for: .milliseconds(10))
 
-        XCTAssertEqual(Q.workers.count, 5)
+        XCTAssertEqual(Q.workers, 5)
         XCTAssertFalse(Schedule.isStarted)
     }
     
@@ -25,8 +25,8 @@ final class WorkCommandTests: TestCase<TestApp> {
         // wait for services to boot up
         try await Task.sleep(for: .milliseconds(10))
 
-        XCTAssertEqual(Q.workers.count, 0)
-        XCTAssertEqual(Q("a").workers.count, 5)
+        XCTAssertEqual(Q.workers, 0)
+        XCTAssertEqual(Q("a").workers, 5)
         XCTAssertFalse(Schedule.isStarted)
     }
     
@@ -36,7 +36,7 @@ final class WorkCommandTests: TestCase<TestApp> {
         // wait for services to boot up
         try await Task.sleep(for: .milliseconds(10))
 
-        XCTAssertEqual(Q.workers.count, 3)
+        XCTAssertEqual(Q.workers, 3)
         XCTAssertTrue(Schedule.isStarted)
     }
 }
