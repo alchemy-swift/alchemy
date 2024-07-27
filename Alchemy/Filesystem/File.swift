@@ -57,7 +57,7 @@ public struct File: Codable, ResponseConvertible, ModelProperty {
     }
     
     /// Get a temporary url for this resource.
-    public func temporaryUrl(expires: TimeAmount, headers: HTTPFields = [:]) async throws -> URL {
+    public func temporaryUrl(expires: Duration, headers: HTTPFields = [:]) async throws -> URL {
         switch source {
         case .filesystem(let filesystem, let path):
             return try await (filesystem ?? Storage).temporaryURL(path, expires: expires, headers: headers)

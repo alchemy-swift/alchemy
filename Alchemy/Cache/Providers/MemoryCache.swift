@@ -32,7 +32,7 @@ public final class MemoryCache: CacheProvider {
         try getItem(key)?.cast()
     }
     
-    public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) {
+    public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: Duration?) {
         data[key] = MemoryCacheItem(value: value.description, expiration: time.map { Date().adding(time: $0) })
     }
     

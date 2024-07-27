@@ -139,8 +139,8 @@ private struct RetryJob: Job, Codable {
     
     let foo: String
     var recoveryStrategy: RecoveryStrategy = .retry(3)
-    var retryBackoff: TimeAmount = .seconds(0)
-    
+    var retryBackoff: Duration = .seconds(0)
+
     func handle(context: JobContext) async throws {
         throw JobError(foo)
     }

@@ -25,7 +25,7 @@ final class RedisCache: CacheProvider {
         return value
     }
     
-    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: Duration?) async throws {
         if let time = time {
             _ = try await redis.transaction { conn in
                 try await conn.set(RedisKey(key), to: value.description).get()

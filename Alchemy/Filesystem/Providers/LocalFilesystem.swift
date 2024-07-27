@@ -121,7 +121,7 @@ private struct LocalFilesystem: FilesystemProvider {
         return url
     }
     
-    func temporaryURL(_ filepath: String, expires: TimeAmount, headers: HTTPFields = [:]) async throws -> URL {
+    func temporaryURL(_ filepath: String, expires: Duration, headers: HTTPFields = [:]) async throws -> URL {
         throw FileError.temporaryUrlNotAvailable
     }
     

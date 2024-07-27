@@ -32,14 +32,14 @@ public final class Client: IdentifiedService {
         /// The path of this request.
         public var path: String { urlComponents.path }
         /// How long until this request times out.
-        public var timeout: TimeAmount? = nil
+        public var timeout: Duration? = nil
         /// Whether to stream the response. If false, the response body will be
         /// fully accumulated before returning.
         public var streamResponse: Bool = false
         /// Custom config override when making this request.
         public var config: HTTPClient.Configuration? = nil
         
-        public init(url: String = "", method: HTTPRequest.Method = .get, headers: HTTPFields = [:], body: Bytes? = nil, timeout: TimeAmount? = nil) {
+        public init(url: String = "", method: HTTPRequest.Method = .get, headers: HTTPFields = [:], body: Bytes? = nil, timeout: Duration? = nil) {
             self.urlComponents = URLComponents(string: url) ?? URLComponents()
             self.method = method
             self.headers = headers
@@ -169,7 +169,7 @@ public final class Client: IdentifiedService {
         }
 
         /// Timeout if the request doesn't finish in the given time amount.
-        public func withTimeout(_ timeout: TimeAmount) -> Builder {
+        public func withTimeout(_ timeout: Duration) -> Builder {
             with { $0.clientRequest.timeout = timeout }
         }
         
@@ -294,7 +294,7 @@ public final class Client: IdentifiedService {
         if let stubs = stubs {
             return stubs.response(for: req)
         } else {
-            let deadline: NIODeadline? = req.timeout.map { .now() + $0 }
+            let deadline: NIODeadline? = req.timeout.map { .now() + .seconds(Int64($0.seconds)) }
             let httpClientOverride = req.config.map { HTTPClient(eventLoopGroupProvider: .shared(httpClient.eventLoopGroup), configuration: $0) }
 
             do {

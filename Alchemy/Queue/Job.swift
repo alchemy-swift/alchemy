@@ -13,7 +13,7 @@ public protocol Job {
     
     /// The time that should be waited before retrying this job if it fails.
     /// Sub-second precision is ignored. Defaults to 0.
-    var retryBackoff: TimeAmount { get }
+    var retryBackoff: Duration { get }
 
     // MARK: Handling
 
@@ -91,7 +91,7 @@ public struct JobContext {
 extension Job {
     public static var name: String { "\(Self.self)" }
     public var recoveryStrategy: RecoveryStrategy { .none }
-    public var retryBackoff: TimeAmount { .zero }
+    public var retryBackoff: Duration { .zero }
     
     public func finished(result: Result<Void, Error>) {
         switch result {

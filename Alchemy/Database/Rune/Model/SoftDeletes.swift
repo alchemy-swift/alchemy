@@ -53,11 +53,11 @@ extension Array where Element: Model & SoftDeletes {
     }
 
     public func forceDeleteAll(on db: Database = Element.database) async throws {
-        try await Element.willDelete(self)
+        Element.willDelete(self)
         try await db.table(Element.self)
             .where("id", in: map(\.id))
             .forceDelete()
-        try await Element.didDelete(self)
+        Element.didDelete(self)
     }
 }
 

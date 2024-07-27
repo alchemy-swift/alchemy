@@ -11,7 +11,7 @@ public protocol CacheProvider {
     /// - Parameter value: The value to set.
     /// - Parameter time: How long the cache record should live.
     ///   Defaults to nil, indicating the record has no expiry.
-    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: Duration?) async throws
     
     /// Determine if a record for the given key exists.
     ///

@@ -30,7 +30,7 @@ public final class Cache: IdentifiedService {
     /// - Parameter value: The value to set.
     /// - Parameter time: How long the cache record should live.
     ///   Defaults to nil, indicating the record has no expiry.
-    public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount? = nil) async throws {
+    public func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: Duration? = nil) async throws {
         try await provider.set(key, value: value, for: time)
     }
     

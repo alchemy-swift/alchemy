@@ -13,7 +13,7 @@ public struct JobData: Codable, Equatable {
     public let recoveryStrategy: Job.RecoveryStrategy
     /// How long should be waited before retrying a Job after a
     /// failure.
-    public let backoff: TimeAmount
+    public let backoff: Duration
     /// Don't run this again until this time.
     public var backoffUntil: Date?
     /// The number of attempts this Job has been attempted.
@@ -55,7 +55,7 @@ public struct JobData: Codable, Equatable {
         channel: String,
         attempts: Int = 0,
         recoveryStrategy: Job.RecoveryStrategy,
-        backoff: TimeAmount,
+        backoff: Duration,
         backoffUntil: Date? = nil
     ) {
         self.id = id
@@ -66,16 +66,5 @@ public struct JobData: Codable, Equatable {
         self.backoff = backoff
         self.backoffUntil = backoffUntil
         self.attempts = attempts
-    }
-}
-
-extension TimeAmount: Codable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(nanoseconds)
-    }
-
-    public init(from decoder: Decoder) throws {
-        self = .nanoseconds(try decoder.singleValueContainer().decode(Int64.self))
     }
 }

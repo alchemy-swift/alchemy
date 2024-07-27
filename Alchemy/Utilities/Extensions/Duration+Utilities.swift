@@ -1,9 +1,9 @@
 import Foundation
 
-extension TimeAmount {
+extension Duration {
     /// This time amount in seconds.
     var seconds: Int {
-        Int(self.nanoseconds / 1000000000)
+        Int(components.seconds)
     }
 }
 
@@ -12,7 +12,7 @@ extension Date {
     ///
     /// - Parameter time: The time amount to add.
     /// - Returns: The epoch seconds from adding `time` to this date.
-    func adding(time: TimeAmount) -> Int {
-        Int(self.timeIntervalSince1970) + time.seconds
+    func adding(time: Duration) -> Int {
+        Int(timeIntervalSince1970) + time.seconds
     }
 }

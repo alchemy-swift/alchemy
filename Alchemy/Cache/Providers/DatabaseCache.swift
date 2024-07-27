@@ -32,7 +32,7 @@ final class DatabaseCache: CacheProvider {
         try await getItem(key: key)?.cast()
     }
     
-    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: TimeAmount?) async throws {
+    func set<L: LosslessStringConvertible>(_ key: String, value: L, for time: Duration?) async throws {
         let item = try await getItem(key: key)
         let expiration = time.map { Date().adding(time: $0) }
         if var item = item {
