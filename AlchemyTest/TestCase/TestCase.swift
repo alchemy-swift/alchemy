@@ -51,6 +51,7 @@ open class TestCase<A: Application>: XCTestCase {
 
     open override func tearDown() async throws {
         try await super.tearDown()
+        await app.stop()
         try await app.didRun()
         app.container.reset()
     }

@@ -16,6 +16,9 @@ struct WorkCommand: Command {
     /// Should the scheduler run in process, scheduling any recurring work.
     @Flag var schedule: Bool = false
 
+    /// Should the worker continue dequeuing jobs after it runs one.
+    @Flag var empty: Bool = false
+
     var queue: Queue {
         Container.require(id: name)
     }
@@ -28,7 +31,7 @@ struct WorkCommand: Command {
         }
 
         for _ in 0..<workers {
-            queue.startWorker(for: channels.components(separatedBy: ","))
+            queue.startWorker(for: channels.components(separatedBy: ","), untilEmpty: empty)
         }
 
         try await Life.runServices()

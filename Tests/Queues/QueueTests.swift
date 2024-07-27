@@ -1,7 +1,6 @@
 @testable
 import Alchemy
 import AlchemyTest
-import NIOEmbedded
 
 final class QueueTests: TestCase<TestApp> {
     private lazy var allTests = [
@@ -82,12 +81,8 @@ final class QueueTests: TestCase<TestApp> {
         let exp = expectation(description: "")
         ConfirmableJob.didRun = { exp.fulfill() }
         try await ConfirmableJob().dispatch()
-
-        let loop = EmbeddedEventLoop()
-        Q.startWorker()
-        loop.advanceTime(by: .seconds(5))
-
-        await fulfillment(of: [exp], timeout: kMinTimeout)
+        app.background("queue:work")
+        await fulfillment(of: [exp], timeout: 2)
     }
     
     private func _testFailure(file: StaticString = #filePath, line: UInt = #line) async throws {
@@ -95,11 +90,9 @@ final class QueueTests: TestCase<TestApp> {
         FailureJob.didFinish = { exp.fulfill() }
         try await FailureJob().dispatch()
 
-        let loop = EmbeddedEventLoop()
-        Q.startWorker()
-        loop.advanceTime(by: .seconds(5))
-        
-        await fulfillment(of: [exp], timeout: kMinTimeout)
+        app.background("queue:work")
+
+        await fulfillment(of: [exp], timeout: 2)
         AssertNil(try await Q.dequeue(from: ["default"]))
     }
     
@@ -108,10 +101,8 @@ final class QueueTests: TestCase<TestApp> {
         RetryJob.didFail = { exp.fulfill() }
         try await RetryJob(foo: "bar").dispatch()
 
-        let loop = EmbeddedEventLoop()
-        Q.startWorker(untilEmpty: false)
-        loop.advanceTime(by: .seconds(5))
-        await fulfillment(of: [exp], timeout: kMinTimeout)
+        app.background("queue:work")
+        await fulfillment(of: [exp], timeout: 1.1)
 
         guard let jobData = try await Q.dequeue(from: ["default"]) else {
             XCTFail("Failed to dequeue a job.", file: file, line: line)
