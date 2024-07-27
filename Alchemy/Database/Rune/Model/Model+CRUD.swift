@@ -220,9 +220,9 @@ extension Array where Element: Model {
 
     /// Inserts each element in this array to a database.
     public func insertAll(on db: Database = Element.database) async throws {
-        try await Element.willCreate(self)
+        Element.willCreate(self)
         try await Element.query(on: db).insert(try insertableFields(on: db))
-        try await Element.didCreate(self)
+        Element.didCreate(self)
     }
     
     /// Inserts and returns each element in this array to a database.
@@ -232,11 +232,11 @@ extension Array where Element: Model {
 
     func _insertReturnAll(on db: Database = Element.database, fieldOverrides: SQLFields = [:]) async throws -> Self {
         let fields = try insertableFields(on: db).map { $0 + fieldOverrides }
-        try await Element.willCreate(self)
+        Element.willCreate(self)
         let results = try await Element.query(on: db)
             .insertReturn(fields)
             .map { try $0.decodeModel(Element.self) }
-        try await Element.didCreate(results)
+        Element.didCreate(results)
         return results
     }
 
@@ -250,27 +250,27 @@ extension Array where Element: Model {
     public func updateAll(on db: Database = Element.database, _ fields: SQLFields) async throws {
         let ids = map(\.id)
         let fields = touchUpdatedAt(on: db, fields)
-        try await Element.willUpdate(self)
+        Element.willUpdate(self)
         try await Element.query(on: db)
             .where(Element.idKey, in: ids)
             .update(fields)
-        try await Element.didUpdate(self)
+        Element.didUpdate(self)
     }
 
     // MARK: UPSERT
 
     public func upsertAll(on db: Database = Element.database, conflicts: [String] = Element.upsertConflictKeys) async throws {
-        try await Element.willUpsert(self)
+        Element.willUpsert(self)
         try await Element.query(on: db).upsert(try insertableFields(on: db), conflicts: conflicts)
-        try await Element.didUpsert(self)
+        Element.didUpsert(self)
     }
 
     public func upsertReturnAll(on db: Database = Element.database, conflicts: [String] = Element.upsertConflictKeys) async throws -> Self {
-        try await Element.willUpsert(self)
+        Element.willUpsert(self)
         let results = try await Element.query(on: db)
             .upsertReturn(try insertableFields(on: db), conflicts: conflicts)
             .map { try $0.decodeModel(Element.self) }
-        try await Element.didUpsert(results)
+        Element.didUpsert(results)
         return results
     }
 
@@ -280,14 +280,14 @@ extension Array where Element: Model {
     /// array isn't actually in the database, it will be ignored.
     public func deleteAll(on db: Database = Element.database) async throws {
         let ids = map(\.id)
-        try await Element.willDelete(self)
+        Element.willDelete(self)
         try await Element.query(on: db)
             .where(Element.idKey, in: ids)
             .delete()
 
         forEach { ($0 as? any Model & SoftDeletes)?.deletedAt = Date() }
 
-        try await Element.didDelete(self)
+        Element.didDelete(self)
     }
 
     // MARK: Refresh
@@ -339,53 +339,53 @@ extension Array where Element: Model {
 // MARK: Model Events
 
 extension Model {
-    static func didFetch(_ models: [Self]) async throws {
-        try await ModelDidFetch(models: models).fire()
+    static func didFetch(_ models: [Self]) {
+        ModelDidFetch(models: models).fire()
     }
 
-    static func willDelete(_ models: [Self]) async throws {
-        try await ModelWillDelete(models: models).fire()
+    static func willDelete(_ models: [Self]) {
+        ModelWillDelete(models: models).fire()
     }
 
-    static func didDelete(_ models: [Self]) async throws {
-        try await ModelDidDelete(models: models).fire()
+    static func didDelete(_ models: [Self]) {
+        ModelDidDelete(models: models).fire()
     }
 
-    fileprivate static func willCreate(_ models: [Self]) async throws {
-        try await ModelWillCreate(models: models).fire()
-        try await willSave(models)
+    fileprivate static func willCreate(_ models: [Self]) {
+        ModelWillCreate(models: models).fire()
+        willSave(models)
     }
     
-    fileprivate static func didCreate(_ models: [Self]) async throws {
-        try await ModelDidCreate(models: models).fire()
-        try await didSave(models)
+    fileprivate static func didCreate(_ models: [Self]) {
+        ModelDidCreate(models: models).fire()
+        didSave(models)
     }
 
-    fileprivate static func willUpsert(_ models: [Self]) async throws {
-        try await ModelWillUpsert(models: models).fire()
-        try await willSave(models)
+    fileprivate static func willUpsert(_ models: [Self]) {
+        ModelWillUpsert(models: models).fire()
+        willSave(models)
     }
 
-    fileprivate static func didUpsert(_ models: [Self]) async throws {
-        try await ModelDidUpsert(models: models).fire()
-        try await didSave(models)
+    fileprivate static func didUpsert(_ models: [Self]) {
+        ModelDidUpsert(models: models).fire()
+        didSave(models)
     }
 
-    fileprivate static func willUpdate(_ models: [Self]) async throws {
-        try await ModelWillUpdate(models: models).fire()
-        try await willSave(models)
+    fileprivate static func willUpdate(_ models: [Self]) {
+        ModelWillUpdate(models: models).fire()
+        willSave(models)
     }
     
-    fileprivate static func didUpdate(_ models: [Self]) async throws {
-        try await ModelDidUpdate(models: models).fire()
-        try await didSave(models)
+    fileprivate static func didUpdate(_ models: [Self]) {
+        ModelDidUpdate(models: models).fire()
+        didSave(models)
     }
     
-    private static func willSave(_ models: [Self]) async throws {
-        try await ModelWillSave(models: models).fire()
+    private static func willSave(_ models: [Self]) {
+        ModelWillSave(models: models).fire()
     }
     
-    private static func didSave(_ models: [Self]) async throws {
-        try await ModelDidSave(models: models).fire()
+    private static func didSave(_ models: [Self]) {
+        ModelDidSave(models: models).fire()
     }
 }

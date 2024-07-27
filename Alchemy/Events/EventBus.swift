@@ -1,81 +1,68 @@
-import NIOConcurrencyHelpers
+import AsyncAlgorithms
 
 public final class EventBus: IdentifiedService {
     public typealias Identifier = ServiceIdentifier<EventBus>
 
-    public typealias Handler<E: Event> = (E) async throws -> Void
-    private typealias AnyHandler = (Event) async throws -> Void
+    private struct EventJob<E: Event & Codable>: Job, Codable {
+        let event: E
+        let listenerId: String
 
-    private var listeners: [String: any Listener] = [:]
-    private var handlers: [String: [AnyHandler]] = [:]
-    private let lock = NIOLock()
+        func handle(context: JobContext) async throws {
+            guard let listener = Events.listeners[listenerId] as? any QueueableListener<E> else {
+                throw JobError("Unable to find registered listener of type `\(listenerId)` to handle a queued event.")
+            }
 
-    public func on<E: Event>(_ event: E.Type, handler: @escaping Handler<E>) {
-        lock.withLock {
-            handlers[E.registrationKey, default: []] += [convertHandler(handler)]
+            try await listener.handle(event: event)
         }
     }
 
-    public func register<L: Listener>(listener: L) {
-        lock.withLock {
-            handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.handle)]
-            listeners[L.registryId] = listener
+    fileprivate var listeners: [String: any Listener] = [:]
+    private let channel = AsyncChannel<Event>()
+
+    public func stream<E: Event>(of: E.Type) -> AsyncStream<E> {
+        channel
+            .compactMap { $0 as? E }
+            .stream
+    }
+
+    @discardableResult
+    public func listen<E: Event>(_ event: E.Type, handler: @escaping (E) async throws -> Void) -> Task<Void, Error> {
+        Task {
+            for await event in stream(of: event) {
+                try await handler(event)
+            }
         }
     }
 
-    public func register<L: QueueableListener>(listener: L) {
-        lock.withLock {
-            Jobs.register(EventJob<L.ObservedEvent>.self)
-            handlers[L.ObservedEvent.registrationKey, default: []] += [convertHandler(listener.dispatch)]
-            listeners[L.registryId] = listener
+    @discardableResult
+    public func register<L: Listener>(listener: L) -> Task<Void, Error> {
+        listeners[L.registryId] = listener
+        return Task {
+            for await event in stream(of: L.ObservedEvent.self) {
+                try await listener.handle(event: event)
+            }
+        }
+    }
+
+    @discardableResult
+    public func register<L: QueueableListener>(listener: L) -> Task<Void, Error> {
+        listeners[L.registryId] = listener
+        return Task {
+            for await event in stream(of: L.ObservedEvent.self) {
+                if listener.shouldQueue(event: event) {
+                    try await listener.handle(event: event)
+                } else {
+                    try await EventJob(event: event, listenerId: L.registryId)
+                        .dispatch(on: listener.queue, channel: listener.channel)
+                }
+            }
         }
     }
     
-    public func fire<E: Event>(_ event: E) async throws {
-        let handlers = lock.withLock { self.handlers[E.registrationKey] ?? [] }
-        for handle in handlers {
-            try await handle(event)
+    public func fire<E: Event>(_ event: E) {
+        Task {
+            await channel.send(event)
         }
-    }
-
-    fileprivate func lookupListener<E: Event>(_ id: String, eventType: E.Type = E.self) throws -> any Listener<E> {
-        guard let listener = Events.listeners[id] as? any Listener<E> else {
-            throw JobError("Unable to find registered listener of type `\(id)` to handle a queued event.")
-        }
-
-        return listener
-    }
-
-    private func convertHandler<E: Event>(_ handler: @escaping Handler<E>) -> AnyHandler {
-        return { event in
-            guard let event = event as? E else {
-                Log.error("Event handler type mismatch for \(E.registrationKey)!")
-                return
-            }
-
-            try await handler(event)
-        }
-    }
-}
-
-private struct EventJob<E: Event & Codable>: Job, Codable {
-    let event: E
-    let listenerId: String
-
-    func handle(context: JobContext) async throws {
-        try await Events.lookupListener(listenerId, eventType: E.self).handle(event: event)
-    }
-}
-
-extension QueueableListener {
-    fileprivate func dispatch(event: ObservedEvent) async throws {
-        guard shouldQueue(event: event) else {
-            try await handle(event: event)
-            return
-        }
-
-        try await EventJob(event: event, listenerId: Self.registryId)
-            .dispatch(on: queue, channel: channel)
     }
 }
 

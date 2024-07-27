@@ -25,6 +25,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-syntax", from: "510.0.0"),
         .package(url: "https://github.com/hummingbird-project/hummingbird", from: "2.0.0-rc.2"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
+        .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.1.0"),
         .package(url: "https://github.com/swift-server/async-http-client", from: "1.0.0"),
         .package(url: "https://github.com/swift-server/RediStack", from: "1.6.2"),
         .package(url: "https://github.com/vapor/async-kit", from: "1.0.0"),
@@ -54,6 +55,7 @@ let package = Package(
         .target(
             name: "Alchemy",
             dependencies: [
+                
                 /// Experimental
 
                 .product(name: "AlchemyX", package: "AlchemyX"),
@@ -63,6 +65,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
+                .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
                 .product(name: "Cron", package: "cron"),
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "HTTPTypes", package: "swift-http-types"),
@@ -73,7 +76,6 @@ let package = Package(
                 .product(name: "MultipartKit", package: "multipart-kit"),
                 .product(name: "Pluralize", package: "pluralize"),
                 .product(name: "Rainbow", package: "Rainbow"),
-
 
                 /// Databases
 

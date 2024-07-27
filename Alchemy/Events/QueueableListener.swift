@@ -1,5 +1,5 @@
 /// A listener that handles its events on a background `Queue`.
-public protocol QueueableListener: Listener where ObservedEvent: Codable {
+public protocol QueueableListener<ObservedEvent>: Listener where ObservedEvent: Codable {
     /// The queue where events will be dispatched.
     var queue: Queue { get }
 

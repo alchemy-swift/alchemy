@@ -108,7 +108,7 @@ extension Database {
     public func table<M: Model>(_ model: M.Type, as alias: String? = nil) -> Query<M> {
         let tableName = alias.map { "\(model.table) AS \($0)" } ?? model.table
         return Query(db: self, table: tableName)
-            .didLoad { try await M.didFetch($0) }
+            .didLoad { M.didFetch($0) }
     }
 }
 

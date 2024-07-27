@@ -3,7 +3,7 @@ import Alchemy
 @main
 @Application
 struct App {
-    func boot() throws {
+    func boot() {
         use(UserController())
     }
 
