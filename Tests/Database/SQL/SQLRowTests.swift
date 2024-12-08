@@ -5,7 +5,7 @@ import AlchemyTest
 final class SQLRowTests: TestCase<TestApp> {
     override func setUp() async throws {
         try await super.setUp()
-        try await Database.fake()
+        try await DB.fake()
     }
 
     func testDecode() {

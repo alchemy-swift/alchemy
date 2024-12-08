@@ -4,6 +4,9 @@ public macro Application() = #externalMacro(module: "AlchemyPlugin", type: "Appl
 @attached(extension, conformances: Controller, names: named(route))
 public macro Controller() = #externalMacro(module: "AlchemyPlugin", type: "ControllerMacro")
 
+@attached(accessor)
+public macro Env(_ key: String? = nil) = #externalMacro(module: "AlchemyPlugin", type: "EnvMacro")
+
 @attached(peer, names: prefixed(`$`))
 public macro Job() = #externalMacro(module: "AlchemyPlugin", type: "JobMacro")
 

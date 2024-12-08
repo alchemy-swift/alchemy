@@ -31,7 +31,7 @@ public struct ClientError: Error, CustomStringConvertible {
     }
 
     private func debugString(for headers: HTTPFields) -> String {
-        if Env.LOG_FULL_CLIENT_ERRORS == true || Env.isDebug {
+        if Env.logFullClientErrors || Env.isDebug {
             return headers.map { "\($0.name): \($0.value)" }.joined(separator: "\n    ")
         } else {
             return headers.map { "\($0.name)" }.joined(separator: "\n    ")
@@ -43,7 +43,7 @@ public struct ClientError: Error, CustomStringConvertible {
             return "<empty>"
         }
 
-        if Env.LOG_FULL_CLIENT_ERRORS == true || Env.isDebug {
+        if Env.logFullClientErrors || Env.isDebug {
             switch content {
             case .buffer(let buffer):
                 return buffer.string
@@ -59,4 +59,8 @@ public struct ClientError: Error, CustomStringConvertible {
             }
         }
     }
+}
+
+extension Environment {
+    @Env public var logFullClientErrors = false
 }

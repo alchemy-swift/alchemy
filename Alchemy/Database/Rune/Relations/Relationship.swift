@@ -11,8 +11,8 @@ public class Relationship<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadabl
     var lookupKey: String
     var throughs: [Through]
 
-    /// Relationships will be encoded at this key.
-    var key: String? = nil
+    /// If set, relationships will be encoded at this key.
+    private var encodingKey: String? = nil
 
     public override var sql: SQL {
         sql(for: [from])
@@ -29,7 +29,7 @@ public class Relationship<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadabl
         let key = "\(Self.self)_\(fromKey)_\(toKey)"
         let throughKeys = throughs.map { "\($0.table)_\($0.from)_\($0.to)" }
         let whereKeys = wheres.map { "\($0.hashValue)" }
-        return CacheKey(key: key, value: ([key] + throughKeys + whereKeys).joined(separator: ":"))
+        return CacheKey(key: ([key] + throughKeys + whereKeys).joined(separator: ":"), encodingKey: encodingKey)
     }
 
     public init(db: Database, from: From, fromKey: SQLKey, toKey: SQLKey) {
@@ -92,7 +92,7 @@ public class Relationship<From: Model, To: OneOrMany>: Query<To.M>, EagerLoadabl
     }
 
     public func key(_ key: String) -> Self {
-        self.key = key
+        self.encodingKey = key
         return self
     }
 }

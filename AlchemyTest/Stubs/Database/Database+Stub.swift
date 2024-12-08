@@ -1,11 +1,10 @@
 extension Database {
-    /// Mock the database with a database for stubbing specific queries.
-    ///
-    /// - Parameter id: The identifier of the database to stub.
+    /// Mock this database with a database for stubbing specific queries.
     @discardableResult
-    public static func stub(_ id: Identifier? = nil) -> StubDatabase {
+    public func stub() -> StubDatabase {
         let stub = StubDatabase()
-        Container.register(Database(provider: stub, grammar: StubGrammar()), id: id).singleton()
+        self.provider = stub
+        self.grammar = StubGrammar()
         return stub
     }
 }

@@ -1,14 +1,11 @@
-import ServiceLifecycle
-
 final class Commander {
     /// Command to launch a given application.
     private struct Launch: AsyncParsableCommand {
         static var configuration: CommandConfiguration {
-            let commander = Container.require(Commander.self)
-            return CommandConfiguration(
+            CommandConfiguration(
                 abstract: "Launch your app.",
-                subcommands: commander.commands,
-                defaultSubcommand: commander.defaultCommand
+                subcommands: CMD.commands,
+                defaultSubcommand: CMD.defaultCommand
             )
         }
 
@@ -31,7 +28,8 @@ final class Commander {
         // When running a command with no arguments during a test, send an empty
         // array of arguments to swift-argument-parser. Otherwise, it will
         // try to parse the test runner arguments and throw errors.
-        var command = try Launch.parseAsRoot(args ?? (Env.isTesting ? [] : nil))
+        let args = args ?? (Env.isTesting ? [] : nil)
+        var command = try Launch.parseAsRoot(args)
         if var command = command as? AsyncParsableCommand {
             try await command.run()
         } else {
@@ -45,13 +43,13 @@ final class Commander {
 
     // MARK: Registering Commands
 
-    func register(command: (some Command).Type) {
+    func register(_ command: Command.Type) {
         commands.append(command)
     }
 
-    func setDefault(command: (some Command).Type) {
+    func setDefault(_ command: (some Command).Type) {
         defaultCommand = command
     }
 }
 
-extension Logger.Level: ExpressibleByArgument {}
+extension Logger.Level: @retroactive ExpressibleByArgument {}

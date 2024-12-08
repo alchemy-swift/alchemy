@@ -53,7 +53,7 @@ public final class PostgresDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension PostgresConnection: DatabaseProvider, ConnectionPoolItem {
+extension PostgresConnection: DatabaseProvider, @retroactive ConnectionPoolItem {
     public var type: DatabaseType { .postgres }
 
     @discardableResult

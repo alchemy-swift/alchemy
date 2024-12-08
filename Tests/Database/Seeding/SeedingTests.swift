@@ -3,7 +3,7 @@ import AlchemyTest
 
 final class SeederTests: TestCase<TestApp> {
     func testSeedable() async throws {
-        try await Database.fake(migrations: [SeedModel.Migrate()])
+        try await DB.fake(migrations: [SeedModel.Migrate()])
         
         try await SeedModel.seed()
         AssertEqual(try await SeedModel.all().count, 1)
@@ -13,7 +13,7 @@ final class SeederTests: TestCase<TestApp> {
     }
 
     func testSeeder() async throws {
-        try await Database.fake(
+        try await DB.fake(
             migrations: [
                 SeedModel.Migrate(),
                 OtherSeedModel.Migrate()],
@@ -27,7 +27,7 @@ final class SeederTests: TestCase<TestApp> {
     }
 
     func testSeedWithNames() async throws {
-        try await Database.fake(
+        try await DB.fake(
             migrations: [
                 SeedModel.Migrate(),
                 OtherSeedModel.Migrate()])

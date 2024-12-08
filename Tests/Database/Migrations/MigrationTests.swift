@@ -13,15 +13,15 @@ final class MigrationTests: TestCase<TestApp> {
     }
 
     func testDatabaseMigration() async throws {
-        let db = try await Database.fake()
-        try await db.rollback()
-        db.migrations = [MigrationA()]
-        try await db.migrate()
+        try await DB.fake()
+        try await DB.rollback()
+        DB.migrations = [MigrationA()]
+        try await DB.migrate()
         AssertEqual(try await Database.AppliedMigration.all().count, 1)
-        db.migrations.append(MigrationB())
-        try await db.migrate()
+        DB.migrations.append(MigrationB())
+        try await DB.migrate()
         AssertEqual(try await Database.AppliedMigration.all().count, 2)
-        try await db.rollback()
+        try await DB.rollback()
         AssertEqual(try await Database.AppliedMigration.all().count, 1)
     }
 }

@@ -21,12 +21,11 @@ struct SeedCommand: Command {
     // MARK: Command
     
     func run() async throws {
-        let db = Container.require(Database.self, id: db)
         guard seeders.isEmpty else {
-            try await db.seed(names: seeders)
+            try await DB.seed(names: seeders)
             return
         }
         
-        try await db.seed()
+        try await DB.seed()
     }
 }

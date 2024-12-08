@@ -1,8 +1,6 @@
 /// A type for accessing a persistant cache. Supported providers are
 /// `RedisCache`, `DatabaseCache`, and `MemoryCache`.
-public final class Cache: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Cache>
-
+public final class Cache {
     private let provider: CacheProvider
     
     /// Initializer this cache with a provider. Prefer static functions

@@ -7,7 +7,7 @@ public final class HTTPHandler: RequestHandler {
     private var notFoundHandler: (Request) async throws -> Response
     private var errorHandler: (Request, Error) async -> Response
 
-    init(maxUploadSize: Int?, router: Middleware) {
+    public init(maxUploadSize: Int? = Env.maxUploadSize, router: Middleware) {
         self.maxUploadSize = maxUploadSize
         self.router = router
         self.globalMiddlewares = []
@@ -62,4 +62,8 @@ public final class HTTPHandler: RequestHandler {
         Log.error("500 on \(request.method.rawValue) \(request.path): \(String(reflecting: error)).")
         return Response(status: .internalServerError, string: "500 Internal Server Error")
     }
+}
+
+extension Environment {
+    @Env public var maxUploadSize: Int? = 2 * 1024 * 1024
 }

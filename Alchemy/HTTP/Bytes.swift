@@ -1,6 +1,5 @@
 import AsyncHTTPClient
 import Foundation
-import HummingbirdCore
 
 /// A collection of bytes that is either a single buffer or a stream of buffers.
 public enum Bytes: ExpressibleByStringLiteral {
@@ -18,11 +17,6 @@ public enum Bytes: ExpressibleByStringLiteral {
         }
     }
 
-    /// The default decoder for reading content from an incoming request.
-    public static var defaultDecoder: HTTPDecoder = .json
-    /// The default encoder for writing content to an outgoing response.
-    public static var defaultEncoder: HTTPEncoder = .json
-    
     case buffer(ByteBuffer)
     case stream(AsyncStream<ByteBuffer>)
 
@@ -93,7 +87,7 @@ public enum Bytes: ExpressibleByStringLiteral {
         .buffer(ByteBuffer(string: string))
     }
 
-    public static func encode<E: Encodable>(_ value: E, using encoder: HTTPEncoder = Bytes.defaultEncoder) throws -> Bytes {
+    public static func encode<E: Encodable>(_ value: E, using encoder: HTTPEncoder = .json) throws -> Bytes {
         let (buffer, _) = try encoder.encodeBody(value)
         return .buffer(buffer)
     }

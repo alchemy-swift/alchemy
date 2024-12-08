@@ -1,7 +1,5 @@
-public struct Hasher: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Database>
-
-    private let algorithm: HashAlgorithm
+public final class Hasher {
+    package var algorithm: HashAlgorithm
 
     public init(algorithm: HashAlgorithm) {
         self.algorithm = algorithm
@@ -18,10 +16,10 @@ public struct Hasher: IdentifiedService {
     // MARK: Async Support
 
     public func make(_ value: String) async throws -> String {
-        try await Thread.run { try makeSync(value) }
+        try await Thread.run { try self.makeSync(value) }
     }
     
     public func verify(_ plaintext: String, hash: String) async throws -> Bool {
-        try await Thread.run { try verifySync(plaintext, hash: hash) }
+        try await Thread.run { try self.verifySync(plaintext, hash: hash) }
     }
 }

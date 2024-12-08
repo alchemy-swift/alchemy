@@ -2,12 +2,14 @@ import Foundation
 import MultipartKit
 
 public protocol HTTPInspector {
+    static var defaultDecoder: HTTPDecoder { get }
     var headers: HTTPFields { get }
     var body: Bytes? { get }
     var container: Container { get }
 }
 
 extension HTTPInspector {
+    public static var defaultDecoder: HTTPDecoder { .json }
 
     // MARK: Headers
 
@@ -71,7 +73,7 @@ extension HTTPInspector {
     
     public func preferredDecoder() -> HTTPDecoder? {
         guard let contentType = headers.contentType else {
-            return Bytes.defaultDecoder
+            return Self.defaultDecoder
         }
         
         switch contentType {
@@ -92,7 +94,7 @@ extension HTTPInspector {
     /// defining an entirely new type to decode from it.
     public var content: Content {
         get {
-            guard let content = container.get(\HTTPInspector.content) else {
+            guard let content = container.$httpContent else {
                 let content: Content
                 switch (body, preferredDecoder()) {
                 case (.none, _):
@@ -103,13 +105,13 @@ extension HTTPInspector {
                     content = decoder.content(from: body.buffer, contentType: headers.contentType)
                 }
 
-                container.set(\HTTPInspector.content, value: content)
+                container.$httpContent = content
                 return content
             }
 
             return content
         }
-        nonmutating set { container.set(\HTTPInspector.content, value: newValue) }
+        nonmutating set { container.$httpContent = newValue }
     }
 
     public subscript(dynamicMember member: String) -> Content {
@@ -147,4 +149,8 @@ extension HTTPInspector {
 
         return Dictionary(uniqueKeysWithValues: files)
     }
+}
+
+fileprivate extension Container {
+    @Singleton var httpContent: Content? = nil
 }

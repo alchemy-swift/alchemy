@@ -5,7 +5,7 @@ import AlchemyTest
 final class QueryTests: TestCase<TestApp> {
     override func setUp() {
         super.setUp()
-        Database.stub()
+        DB.stub()
     }
     
     func testStartsEmpty() {
@@ -32,7 +32,7 @@ final class QueryTests: TestCase<TestApp> {
     }
 
     func testCount() async throws {
-        try await Database.fake(migrations: [TestModel.Migration()])
+        try await DB.fake(migrations: [TestModel.Migration()])
         AssertEqual(try await DB.table("test_models").count(), 0)
         try await TestModel(foo: "bar", bar: false).insert()
         AssertEqual(try await DB.table("test_models").count(), 1)

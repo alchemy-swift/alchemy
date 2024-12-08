@@ -30,7 +30,7 @@ final class EncryptionTests: XCTestCase {
     }
 
     func testEncrypted() throws {
-        Environment.stub(["APP_KEY": Encrypter.generateKeyString()])
+        Env.fake(["APP_KEY": Encrypter.generateKeyString()])
 
         let string = "FOO"
         let encryptedValue = try Crypt.encrypt(string: string).base64EncodedString()

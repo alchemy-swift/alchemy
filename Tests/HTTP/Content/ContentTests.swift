@@ -1,5 +1,4 @@
 import AlchemyTest
-import Hummingbird
 import MultipartKit
 
 @testable import Alchemy

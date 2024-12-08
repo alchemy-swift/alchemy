@@ -10,15 +10,6 @@ final class QueueTests: TestCase<TestApp> {
         _testRetry,
     ]
 
-    func testPlugin() async throws {
-        let plugin = Queues(default: 1, queues: [1: .memory, 2: .memory], jobs: [RetryJob.self])
-        plugin.boot(app: app)
-        XCTAssertNotNil(Container.resolve(Queue.self))
-        XCTAssertNotNil(Container.resolve(Queue.self, id: 1))
-        XCTAssertNotNil(Container.resolve(Queue.self, id: 2))
-        XCTAssertNotNil(Jobs.creators[RetryJob.name])
-    }
-    
     func testJobDecoding() async {
         let fakeData = JobData(payload: Data(), jobName: "", channel: "", attempts: 0, recoveryStrategy: .none, backoff: .seconds(0))
         await AssertThrowsError(try await Jobs.createJob(from: fakeData))
@@ -29,23 +20,22 @@ final class QueueTests: TestCase<TestApp> {
     
     func testDatabaseQueue() async throws {
         for test in allTests {
-            try await Database.fake(migrations: [Queue.AddJobsMigration()])
-            Container.register(Queue.database)
+            try await DB.fake(migrations: [Queue.AddJobsMigration()])
+            Container.main.set(Queue.database)
             try await test(#filePath, #line)
         }
     }
     
     func testMemoryQueue() async throws {
         for test in allTests {
-            Queue.fake()
+            Q.fake()
             try await test(#filePath, #line)
         }
     }
     
     func testRedisQueue() async throws {
-        let client = RedisClient.testing
-        Container.register(client).singleton()
-        Container.register(Queue.redis).singleton()
+        Container.main.set(RedisClient.testing)
+        Container.main.set(Queue.redis)
 
         guard await Redis.checkAvailable() else {
             throw XCTSkip()

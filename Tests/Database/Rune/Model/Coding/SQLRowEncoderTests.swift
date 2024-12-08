@@ -5,7 +5,7 @@ import XCTest
 final class SQLRowEncoderTests: TestCase<TestApp> {
     override func setUp() async throws {
         try await super.setUp()
-        try await Database.fake()
+        try await DB.fake()
     }
 
     func testEncoding() throws {
@@ -65,7 +65,7 @@ final class SQLRowEncoderTests: TestCase<TestApp> {
     }
     
     func testKeyMapping() async throws {
-        try await Database.fake(keyMapping: .useDefaultKeys)
+        try await DB.fake(keyMapping: .useDefaultKeys)
         let model = CustomKeyedModel()
         model.id = 0
         let fields = try model.fields()

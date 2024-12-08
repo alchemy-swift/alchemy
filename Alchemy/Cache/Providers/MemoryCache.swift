@@ -124,14 +124,20 @@ extension Cache {
     /// Fakes a cache using by a memory based cache. Useful for tests.
     ///
     /// - Parameters:
-    ///   - id: The identifier of the cache to fake. Defaults to `default`.
+    ///   - key: The identifier of the cache to fake. Defaults to nil.
     ///   - data: Any data to initialize your cache with. Defaults to
     ///     an empty dict.
     /// - Returns: A `MemoryCache` for verifying test expectations.
     @discardableResult
-    public static func fake(_ id: Identifier? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
+    public static func fake(_ key: ReferenceWritableKeyPath<Container, Cache>? = nil, _ data: [String: MemoryCacheItem] = [:]) -> MemoryCache {
         let provider = MemoryCache(data)
-        Container.register(Cache(provider: provider), id: id).singleton()
+        let cache = Cache(provider: provider)
+        if let key {
+            Container.main[keyPath: key] = cache
+        } else {
+            Container.main.set(cache)
+        }
+
         return provider
     }
 }

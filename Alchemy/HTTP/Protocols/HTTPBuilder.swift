@@ -1,5 +1,4 @@
 import Foundation
-import Hummingbird
 import MultipartKit
 
 public protocol HTTPBuilder: Buildable {

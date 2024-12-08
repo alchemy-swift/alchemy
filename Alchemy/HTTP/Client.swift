@@ -11,8 +11,7 @@ import NIOHTTP1
 ///     let response = try await Http.get("https://swift.org")
 ///
 /// See `Client.Builder` for the request builder interface.
-public final class Client: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Client>
+public final class Client {
 
     /// A type for making http requests with a `Client`. Supports static or
     /// streamed content.
@@ -119,7 +118,7 @@ public final class Client: IdentifiedService {
 
         // MARK: Body
 
-        public func decode<D: Decodable>(_ type: D.Type = D.self, using decoder: HTTPDecoder = Bytes.defaultDecoder) throws -> D {
+        public func decode<D: Decodable>(_ type: D.Type = D.self, using decoder: HTTPDecoder = .json) throws -> D {
             guard let buffer = body?.buffer else {
                 throw ClientError(message: "The response had no body to decode from.", request: request, response: self)
             }

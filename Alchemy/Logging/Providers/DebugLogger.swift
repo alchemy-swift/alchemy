@@ -5,6 +5,8 @@ extension Logger {
 }
 
 struct DebugLogger: LogDestination {
+    @Env var showSource = false
+
     func log(payload: LogPayload) {
         let metadataString = prettify(payload.metadata ?? [:]).map { " [\($0)]" } ?? ""
 
@@ -26,7 +28,6 @@ struct DebugLogger: LogDestination {
             _level = _level.lightRed.onBlack
         }
 
-        let showSource = Env.SHOW_SOURCE == true
         let source = showSource ? " [\(payload.source)] " : ""
         print("  \(_level) \(source)\(payload.message)\(metadataString) \n")
     }

@@ -2,9 +2,7 @@ import Foundation
 import NIOConcurrencyHelpers
 
 /// An abstraction around local or remote file storage.
-public final class Filesystem: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Filesystem>
-
+public final class Filesystem {
     private var provider: FilesystemProvider
 
     /// The root directory for storing and fetching files.

@@ -1,9 +1,7 @@
 /// Used for interacting with an SQL database.
-public final class Database: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Database>
-
+public final class Database {
     /// The provider of this database.
-    public let provider: DatabaseProvider
+    public var provider: DatabaseProvider
 
     /// The underlying DBMS type (i.e. PostgreSQL, SQLite, etc...)
     public var type: DatabaseType { provider.type }
@@ -13,10 +11,10 @@ public final class Database: IdentifiedService {
     public var grammar: SQLGrammar
 
     /// Any migrations associated with this database, whether run yet or not.
-    public var migrations: [Migration] = []
+    public var migrations: [Migration]
     
     /// Any seeders associated with this database.
-    public var seeders: [Seeder] = []
+    public var seeders: [Seeder]
 
     /// The mapping from Swift types to tables and columns in this database.
     public var keyMapping: KeyMapping = .snakeCase
@@ -35,6 +33,8 @@ public final class Database: IdentifiedService {
         self.provider = provider
         self.grammar = grammar
         self.logging = logging
+        self.migrations = Main.migrations
+        self.seeders = Main.seeders
     }
 
     /// Log all executed queries to the `debug` level.

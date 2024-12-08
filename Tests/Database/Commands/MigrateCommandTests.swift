@@ -4,8 +4,8 @@ import AlchemyTest
 
 final class MigrateCommandTests: TestCase<TestApp> {
     func testRun() async throws {
-        let db = try await Database.fake()
-        db.migrations = [MigrationA()]
+        try await DB.fake()
+        DB.migrations = [MigrationA()]
         XCTAssertFalse(MigrationA.didUp)
         XCTAssertFalse(MigrationA.didDown)
         

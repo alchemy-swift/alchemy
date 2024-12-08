@@ -1,20 +1,30 @@
 import SwiftSyntax
 
+extension AttributeSyntax {
+    var name: String {
+        attributeName.trimmedDescription
+    }
+}
+
 extension VariableDeclSyntax {
     var isStatic: Bool {
         modifiers.contains { $0.name.trimmedDescription == "static" }
     }
 
     var name: String {
-        bindings.compactMap {
-            $0.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmedDescription
-        }.first ?? "unknown"
+        firstBinding?.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmedDescription ?? "unknown"
     }
 
-    var type: String {
-        bindings.compactMap {
-            $0.typeAnnotation?.type.trimmedDescription
-        }.first ?? "unknown"
+    var type: String? {
+        firstBinding?.typeAnnotation?.type.trimmedDescription ?? initializerExpression?.inferType()
+    }
+
+    var initializerExpression: ExprSyntax? {
+        bindings.first?.initializer?.value
+    }
+
+    private var firstBinding: PatternBindingSyntax? {
+        bindings.first
     }
 }
 
@@ -42,7 +52,7 @@ extension FunctionDeclSyntax {
     }
 
     var isThrows: Bool {
-        signature.effectSpecifiers?.throwsSpecifier != nil
+        signature.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
     }
 
     // MARK: Return Data
@@ -70,8 +80,39 @@ extension FunctionParameterSyntax {
     }
 }
 
-extension AttributeSyntax {
-    var name: String {
-        attributeName.trimmedDescription
+extension ExprSyntax {
+    fileprivate func inferType() -> String? {
+        if `is`(IntegerLiteralExprSyntax.self) {
+            return "Int"
+        } else if `is`(StringLiteralExprSyntax.self) {
+            return "String"
+        } else if `is`(BooleanLiteralExprSyntax.self) {
+            return "Bool"
+        } else if `is`(FloatLiteralExprSyntax.self) {
+            return "Double"
+        } else if
+            let function = FunctionCallExprSyntax(self),
+            let declReference = DeclReferenceExprSyntax(function.calledExpression),
+            declReference.isLikelyType
+        {
+            return declReference.baseName.text
+        } else if let ternary = TernaryExprSyntax(self) {
+            return ternary.thenExpression.inferType()
+        } else if
+            let sequence = SequenceExprSyntax(self),
+            sequence.elements.count > 1,
+            let ternary = sequence.elements.compactMap({ UnresolvedTernaryExprSyntax($0) }).first
+        {
+            return ternary.thenExpression.inferType()
+        } else {
+            return nil
+        }
+    }
+}
+
+extension DeclReferenceExprSyntax {
+    fileprivate var isLikelyType: Bool {
+        guard let first = baseName.text.first else { return false }
+        return first == "_" || first.isUppercase
     }
 }

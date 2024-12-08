@@ -1,17 +1,18 @@
 @testable
 import Alchemy
 import AlchemyTest
+import Testing
 
-final class FileTests: XCTestCase {
-    func testFile() {
+struct FileTests {
+    @Test func metadata() {
         let file = File(name: "foo.html", source: .raw, content: "<p>foo</p>", size: 10)
-        XCTAssertEqual(file.extension, "html")
-        XCTAssertEqual(file.size, 10)
-        XCTAssertEqual(file.contentType, .html)
+        #expect(file.extension == "html")
+        #expect(file.size == 10)
+        #expect(file.contentType == .html)
     }
-    
-    func testInvalidURL() {
+
+    @Test func invalidURL() {
         let file = File(name: "", source: .raw, content: "foo", size: 3)
-        XCTAssertEqual(file.extension, "")
+        #expect(file.extension.isEmpty)
     }
 }

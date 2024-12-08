@@ -3,7 +3,7 @@ import AlchemyTest
 final class EagerLoadableTests: TestCase<TestApp> {
     override func setUp() async throws {
         try await super.setUp()
-        try await Database.fake(migrations: [
+        try await DB.fake(migrations: [
             TestModelMigration(),
             TestParentMigration()
         ])

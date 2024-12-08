@@ -4,9 +4,7 @@ import NIOSSL
 import RediStack
 
 /// A client for interfacing with a Redis instance.
-public struct RedisClient: RediStack.RedisClient, IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<RedisClient>
-
+public final class RedisClient: RediStack.RedisClient {
     public enum Socket: Equatable {
         /// An ip address `host` at port `port`.
         case ip(host: String, port: Int)
@@ -14,7 +12,7 @@ public struct RedisClient: RediStack.RedisClient, IdentifiedService {
         case unix(path: String)
     }
 
-    let provider: RedisProvider
+    package var provider: RedisProvider
     
     public init(provider: RedisProvider) {
         self.provider = provider

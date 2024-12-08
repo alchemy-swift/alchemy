@@ -1,7 +1,14 @@
-// These libraries are also imported wherever Alchemy is.
+// These libraries & types will be imported with `import Alchemy`.
 
 // Argument Parser
 @_exported import ArgumentParser
+
+// Content
+@_exported import struct Hummingbird.URLEncodedFormDecoder
+@_exported import struct Hummingbird.URLEncodedFormEncoder
+
+// Dependency Injection
+@_exported import Fusion
 
 // HTTPTypes
 @_exported import struct HTTPTypes.HTTPField

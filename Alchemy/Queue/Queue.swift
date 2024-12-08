@@ -1,10 +1,8 @@
 import AsyncAlgorithms
-import ServiceLifecycle
 
 /// Queue lets you run queued jobs to be processed in the background. Jobs are
 /// persisted by the given `QueueProvider`.
-public final class Queue: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Queue>
+public final class Queue {
 
     /// The default channel to dispatch jobs on for all queues.
     public static var defaultChannel = "default"
@@ -13,7 +11,7 @@ public final class Queue: IdentifiedService {
     public var workers: Int
 
     /// The provider backing this queue.
-    private let provider: QueueProvider
+    package var provider: QueueProvider
 
     /// Initialize a queue backed by the given provider.
     public init(provider: QueueProvider) {

@@ -7,7 +7,7 @@ final class QueryGroupingTests: TestCase<TestApp> {
 
     override func setUp() {
         super.setUp()
-        Database.stub()
+        DB.stub()
     }
     
     func testGroupBy() {

@@ -3,6 +3,9 @@ import NIOCore
 
 /// A type that represents inbound requests to your application.
 public final class Request: RequestInspector {
+    /// The default decoder for decoding incoming requests.
+    public static var defaultDecoder: HTTPDecoder = .json
+
     /// Represents a dynamic parameter inside the path. Parameter placeholders
     /// should be prefaced with a colon (`:`) in the route string. Something
     /// like `:user_id` in the path `/v1/users/:user_id`.
@@ -99,22 +102,22 @@ public final class Request: RequestInspector {
     public var queryItems: [URLQueryItem]? { urlComponents.queryItems }
     /// Parameters parsed from the path.
     public var parameters: [Parameter] {
-        get { container.get(\Request.parameters) ?? [] }
-        set { container.set(\Request.parameters, value: newValue) }
+        get { container.$requestParameters ?? [] }
+        set { container.$requestParameters = newValue }
     }
     
     /// The url components of this request.
     public var urlComponents: URLComponents {
         get {
-            guard let components = container.get(\Request.urlComponents) else {
+            guard let components = container.$urlComponents else {
                 let components = URLComponents(string: uri) ?? URLComponents()
-                container.set(\Request.urlComponents, value: components)
+                container.$urlComponents = components
                 return components
             }
 
             return components
         }
-        set { container.set(\Request.urlComponents, value: newValue) }
+        set { container.$urlComponents = newValue }
     }
 
     public init(
@@ -124,7 +127,7 @@ public final class Request: RequestInspector {
         body: Bytes? = nil,
         localAddress: SocketAddress? = nil,
         remoteAddress: SocketAddress? = nil,
-        container: Container = Container(parent: .main)
+        container: Container = Container()
     ) {
         self.method = method
         self.uri = uri
@@ -132,7 +135,7 @@ public final class Request: RequestInspector {
         self.body = body
         self.localAddress = localAddress
         self.remoteAddress = remoteAddress
-        self.container = Container(parent: .main)
+        self.container = Container()
     }
 
     /// Collects the body of this request into a single `ByteBuffer`. If it is
@@ -272,17 +275,30 @@ public final class Request: RequestInspector {
     ///   with `get(Value.self)`.
     @discardableResult
     public func set<T>(_ value: T) -> Self {
-        container.register(value)
+        container.set(value)
         return self
     }
 
     /// Gets a value associated with this request, throws if there is not a
     /// value of type `T` already set.
     public func get<T>(_ type: T.Type = T.self) throws -> T {
-        guard let value = container.resolve(T.self) else {
-            throw ContainerError("Couldn't find type `\(name(of: T.self))` on this request")
+        guard let value = container.get(T.self) else {
+            throw RequestError("Couldn't find type `\(name(of: T.self))` on this request")
         }
 
         return value
     }
+}
+
+struct RequestError: Error {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+}
+
+fileprivate extension Container {
+    @Singleton var requestParameters: [Request.Parameter]? = nil
+    @Singleton var urlComponents: URLComponents? = nil
 }

@@ -15,11 +15,11 @@ actor Responder: HTTPResponder {
         }
     }
 
-    @Inject var handler: HTTPHandler
-
     let logResponses: Bool
+    let handler: RequestHandler
 
-    init(logResponses: Bool) {
+    init(handler: RequestHandler, logResponses: Bool) {
+        self.handler = handler
         self.logResponses = logResponses
     }
 
@@ -41,7 +41,7 @@ actor Responder: HTTPResponder {
         let right = "\(startedAt.elapsedString) \(res.status.code)"
         let dots = Log.dots(left: left, right: right)
 
-        if Env.isXcode {
+        if Container.isXcode {
             let logString = "\(dateString.lightBlack) \(timeString) \(req.path) \(dots.lightBlack) \(finishedAt.elapsedString.lightBlack) \(res.status.code)"
             switch res.status.code {
             case 500...599:

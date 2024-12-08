@@ -1,6 +1,6 @@
 import Alchemy
 
 /// An app that does nothing, for testing.
-public final class TestApp: Application {
+public struct TestApp: Application {
     public init() {}
 }

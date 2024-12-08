@@ -48,7 +48,7 @@ public final class MySQLDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension MySQLConnection: DatabaseProvider, ConnectionPoolItem {
+extension MySQLConnection: DatabaseProvider, @retroactive ConnectionPoolItem {
     public var type: DatabaseType { .mysql }
 
     @discardableResult

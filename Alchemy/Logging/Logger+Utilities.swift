@@ -1,3 +1,5 @@
+import Foundation
+
 /// Convenience struct for logging logs of various levels to a default
 /// `Logger`. By default, this logger has label `Alchemy`.
 ///
@@ -10,8 +12,7 @@
 /// // In Application.boot...
 /// Log.logger = Logger(label: "my_default_logger")
 /// ```
-extension Logger: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<Logger>
+extension Logger {
 
     // MARK: Conveniences
 
@@ -97,8 +98,8 @@ extension Logger: IdentifiedService {
     /// Logs a "comment". Internal function intended for useful context during
     /// local dev only.
     func comment(_ message: String) {
-        if !Env.isTesting && Env.isDebug {
-            if Env.isXcode {
+        if !Container.isTest && Container.isDebug {
+            if Container.isXcode {
                 Log.info("\(message)")
             } else {
                 print("  \(message)")
@@ -107,17 +108,30 @@ extension Logger: IdentifiedService {
     }
 
     func dots(left: String, right: String) -> String {
-        let padding = Env.isXcode ? 0 : 4
+        let padding = Container.isXcode ? 0 : 4
         return String(repeating: ".", count: Terminal.columns - left.count - right.count - 2 - padding)
     }
 
-    static let `default`: Logger = {
-        let isTests = Environment.isRunFromTests
-        let defaultLevel: Logger.Level = isTests ? .error : .info
-        if Environment.isXcode {
+    public static let `default`: Logger = {
+        let isTests = Container.isTest
+        let defaultLevel: Logger.Level = Container.isTest ? .error : .info
+        let level = Environment.logLevel ?? defaultLevel
+        if Container.isXcode {
             return .xcode.withLevel(defaultLevel)
         } else {
             return .debug.withLevel(defaultLevel)
         }
     }()
+}
+
+extension Environment {
+    fileprivate static var logLevel: Logger.Level? {
+        if let value = CommandLine.value(for: "--log") ?? CommandLine.value(for: "-l"), let level = Logger.Level(rawValue: value) {
+            return level
+        } else if let value = ProcessInfo.processInfo.environment["LOG_LEVEL"], let level = Logger.Level(rawValue: value) {
+            return level
+        } else {
+            return nil
+        }
+    }
 }

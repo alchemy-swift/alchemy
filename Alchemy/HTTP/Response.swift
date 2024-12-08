@@ -3,6 +3,9 @@ import Foundation
 /// A type representing the response from an HTTP endpoint. This response can be
 /// a failure or success case depending on the status code in the `head`.
 public final class Response {
+    /// The default encoder for writing outgoing responses.
+    public static var defaultEncoder: HTTPEncoder = .json
+
     /// The success or failure status response code.
     public var status: HTTPResponse.Status
     /// The HTTP headers.
@@ -66,7 +69,7 @@ public final class Response {
     }
 
     /// Creates a new body from an `Encodable`.
-    public convenience init<E: Encodable>(status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], encodable: E, encoder: HTTPEncoder = Bytes.defaultEncoder) throws {
+    public convenience init<E: Encodable>(status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], encodable: E, encoder: HTTPEncoder = defaultEncoder) throws {
         let (buffer, type) = try encoder.encodeBody(encodable)
         self.init(status: status, headers: headers, buffer: buffer, contentType: type)
     }
@@ -82,7 +85,7 @@ public final class Response {
     }
 
     /// Creates a new body containing the text of the given string.
-    public convenience init(status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], dict: [String: Encodable], encoder: HTTPEncoder = Bytes.defaultEncoder) throws {
+    public convenience init(status: HTTPResponse.Status = .ok, headers: HTTPFields = [:], dict: [String: Encodable], encoder: HTTPEncoder = defaultEncoder) throws {
         let dict = dict.compactMapValues(AnyEncodable.init)
         try self.init(status: status, headers: headers, encodable: dict, encoder: encoder)
     }

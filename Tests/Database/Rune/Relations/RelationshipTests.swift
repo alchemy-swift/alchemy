@@ -11,7 +11,7 @@ final class RelationshipTests: TestCase<TestApp> {
 
     override func setUp() async throws {
         try await super.setUp()
-        try await Database.fake(migrations: [WorkflowMigration()])
+        try await DB.fake(migrations: [WorkflowMigration()])
 
         /*
          ========== STRUCTURE ==========

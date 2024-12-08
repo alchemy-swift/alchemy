@@ -1,9 +1,9 @@
 private struct CompoundRelation<From: Model, To: OneOrMany, A: EagerLoadable, B: EagerLoadable>: EagerLoadable
     where A.To: OneOrMany, B.To: OneOrMany, A.From == From, B.From == A.To.M, B.To.M == To.M
 {
-    public var from: From
-    public var relationA: A
-    public var relationBKey: KeyPath<A.To.M, B>
+    var from: From
+    var relationA: A
+    var relationBKey: KeyPath<A.To.M, B>
 
     init(from: From, relationA: A, relationBKey: KeyPath<A.To.M, B>) {
         self.from = from
@@ -11,7 +11,7 @@ private struct CompoundRelation<From: Model, To: OneOrMany, A: EagerLoadable, B:
         self.relationBKey = relationBKey
     }
 
-    public func fetch(for models: [From]) async throws -> [To] {
+    func fetch(for models: [From]) async throws -> [To] {
         
         // 1. Eager load relation a.
         

@@ -1,4 +1,4 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.0
 
 import CompilerPluginSupport
 import PackageDescription
@@ -22,8 +22,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-crypto", from: "3.0.0"),
         .package(url: "https://github.com/apple/swift-http-types", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-syntax", from: "510.0.0"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird", from: "2.0.0-rc.2"),
+        .package(url: "https://github.com/swiftlang/swift-syntax", from: "600.0.1"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird", from: "2.5.0"),
         .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
         .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.1.0"),
         .package(url: "https://github.com/swift-server/async-http-client", from: "1.0.0"),
@@ -107,10 +107,13 @@ let package = Package(
         // MARK: Tests
 
         .testTarget(
-            name: "Tests",
+            name: "AlchemyTests",
             dependencies: [
+
+                // Internal
+
                 "AlchemyTest",
-                "Alchemy"
+                "Alchemy",
             ],
             path: "Tests"
         ),
@@ -136,5 +139,6 @@ let package = Package(
             ],
             path: "AlchemyPlugin/Tests"
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )

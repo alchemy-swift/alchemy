@@ -4,11 +4,11 @@ import AlchemyTest
 import NIOEmbedded
 
 final class SchedulerTests: TestCase<TestApp> {
-    private var queue = Queue.fake()
+    private var queue: MemoryQueue!
 
     override func setUp() {
         super.setUp()
-        self.queue = Queue.fake()
+        self.queue = Q.fake()
     }
     
     func testScheduleTask() {

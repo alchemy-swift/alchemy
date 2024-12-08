@@ -5,7 +5,7 @@ import AlchemyTest
 final class QueryJoinTests: TestCase<TestApp> {
     override func setUp() {
         super.setUp()
-        Database.stub()
+        DB.stub()
     }
     
     func testJoin() {

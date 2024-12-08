@@ -19,10 +19,6 @@ struct WorkCommand: Command {
     /// Should the worker continue dequeuing jobs after it runs one.
     @Flag var empty: Bool = false
 
-    var queue: Queue {
-        Container.require(id: name)
-    }
-
     // MARK: Command
     
     func run() async throws {
@@ -31,7 +27,7 @@ struct WorkCommand: Command {
         }
 
         for _ in 0..<workers {
-            queue.startWorker(for: channels.components(separatedBy: ","), untilEmpty: empty)
+            Q.startWorker(for: channels.components(separatedBy: ","), untilEmpty: empty)
         }
 
         try await Life.runServices()

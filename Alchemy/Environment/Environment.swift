@@ -15,36 +15,27 @@ import Foundation
 ///
 /// // Dynamic member lookup
 /// let otherVariable: Int? = Env.OTHER_KEY
+///
+/// @Env var dbHost: Int = 5432 // loads `DB_HOST` from env if it exists,
+///                             // otherwise defaults to 5432
 /// ```
-@dynamicMemberLookup
 public final class Environment: ExpressibleByStringLiteral {
     /// The name of the environment.
-    public let name: String
+    public var name: String
     /// The paths from which the dotenv file should be loaded.
-    public let dotenvPaths: [String]
+    public var dotenvPaths: [String]
     /// All variables loaded from an environment file.
     public var dotenvVariables: [String: String]
     /// All environment variables available loaded from the process.
     public var processVariables: [String: String]
+    /// All runtime overrides for environment variables.
+    public var runtimeOverrides: [String: String] = [:]
 
-    public var isDebug: Bool {
-        self.APP_DEBUG != false
-    }
+    @Env("APP_DEBUG") public var isDebug = true
+    @Env              private var appTest: Bool?
 
     public var isTesting: Bool {
-        (isRunFromTests && self.APP_TEST != false) || self.APP_TEST == true
-    }
-
-    /// Whether the current program is running in a test suite. This is not the
-    /// same as `isTesting` which returns whether the current env is meant for
-    /// testing.
-    public var isRunFromTests: Bool {
-        Environment.isRunFromTests
-    }
-
-    /// Is this running from inside Xcode (vs the CLI).
-    public var isXcode: Bool {
-        Environment.isXcode
+        appTest ?? Container.isTest
     }
 
     public init(name: String, dotenvPaths: [String]? = nil, dotenvVariables: [String: String] = [:], processVariables: [String: String] = [:]) {
@@ -52,16 +43,14 @@ public final class Environment: ExpressibleByStringLiteral {
         self.dotenvPaths = dotenvPaths ?? [".env.\(name)"]
         self.dotenvVariables = dotenvVariables
         self.processVariables = processVariables
+        self.runtimeOverrides = [:]
     }
 
     public convenience init(stringLiteral value: String) {
         self.init(name: value)
     }
 
-    /// Required for dynamic member lookup.
-    public subscript<L: LosslessStringConvertible>(dynamicMember member: String) -> L? {
-        self.get(member)
-    }
+    // MARK: Access
 
     /// Returns any environment variables with the given key as `L`.
     ///
@@ -69,12 +58,44 @@ public final class Environment: ExpressibleByStringLiteral {
     /// - Returns: The variable converted to `L` or `nil` if the variable
     ///   doesn't exist or it cannot be converted to `L`.
     public func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
-        guard let val = processVariables[key] ?? dotenvVariables[key] else {
+        guard let val =  runtimeOverrides[key] ?? processVariables[key] ?? dotenvVariables[key] else {
             return nil
         }
 
         return L(val)
     }
+
+    public func require<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self, default: L? = nil) -> L {
+        guard let val = runtimeOverrides[key] ?? processVariables[key] ?? dotenvVariables[key] else {
+            guard let `default` else { fatalError("No environment value for \(key) found.") }
+            return `default`
+        }
+
+        guard let value = L(val) else {
+            guard let `default` else { fatalError("Environment value for \(key) is not a valid \(L.self).") }
+            return `default`
+        }
+
+        return value
+    }
+
+    public func require<L: LosslessStringConvertible>(_ key: String, as: L?.Type = L?.self, default: L? = nil) -> L? {
+        guard let val = processVariables[key] ?? dotenvVariables[key] else { return `default` }
+        guard let value = L(val) else { return `default` }
+        return value
+    }
+
+    // MARK: Runtime Overriding
+
+    public func override<L: LosslessStringConvertible>(_ key: String, with value: L) {
+        runtimeOverrides[key] = value.description
+    }
+
+    public func override<L: LosslessStringConvertible>(_ key: String, with value: L?) {
+        runtimeOverrides[key] = value?.description
+    }
+
+    // MARK: Loading
 
     /// Loads variables from the process & any environment file.
     public func loadVariables() {
@@ -137,8 +158,10 @@ public final class Environment: ExpressibleByStringLiteral {
     /// Determines the absolute path of the given argument relative to the
     /// current directory. Return nil if there is no file at that path.
     private func getAbsolutePath(relativePath: String) -> String? {
-        if relativePath.contains("/DerivedData") {
-            Log.comment("""
+        let fileManager = FileManager.default
+        let filePath = fileManager.currentDirectoryPath + relativePath
+        if filePath.contains("/DerivedData") {
+            let warning = """
                 **WARNING**
 
                 Your project is running in Xcode's `DerivedData` data directory. It's _highly_ recommend that you set a custom working directory instead, otherwise files like `.env` and folders like `Public/` won't be accessible.
@@ -146,24 +169,18 @@ public final class Environment: ExpressibleByStringLiteral {
                 It takes ~9 seconds to fix:
 
                 Product -> Scheme -> Edit Scheme -> Run -> Options -> check 'use custom working directory' & choose the root directory of your project.
-                """.yellow)
+                """
+            if Container.isXcode {
+                Log.warning(warning)
+            } else {
+                Log.comment(warning.yellow)
+            }
         }
 
-        let fileManager = FileManager.default
-        let filePath = fileManager.currentDirectoryPath + relativePath
         return fileManager.fileExists(atPath: filePath) ? filePath : nil
     }
 
-    public static var isRunFromTests: Bool {
-        CommandLine.arguments.contains { $0.contains("xctest") }
-    }
-
-    public static var isXcode: Bool {
-        CommandLine.arguments.contains {
-            $0.contains("/Xcode/DerivedData") ||
-            $0.contains("/Xcode/Agents")
-        }
-    }
+    // MARK: Helpers
 
     public static func createDefault() -> Environment {
         let env: Environment
@@ -173,7 +190,7 @@ public final class Environment: ExpressibleByStringLiteral {
                 ProcessInfo.processInfo.environment["APP_ENV"] {
             env = Environment(name: name)
         } else {
-            env = isRunFromTests
+            env = Container.isTest
                 ? Environment(name: "test")
                 : Environment(name: "local", dotenvPaths: [".env"])
         }

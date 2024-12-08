@@ -5,8 +5,8 @@ import AlchemyTest
 final class ServeCommandTests: TestCase<TestApp> {
     override func setUp() async throws {
         try await super.setUp()
-        try await Database.fake()
-        Queue.fake()
+        try await DB.fake()
+        Q.fake()
     }
     
     func testServe() async throws {

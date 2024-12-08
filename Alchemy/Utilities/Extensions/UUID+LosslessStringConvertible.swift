@@ -1,6 +1,6 @@
 import Foundation
 
-extension UUID: LosslessStringConvertible {
+extension UUID: @retroactive LosslessStringConvertible {
     public init?(_ description: String) {
         self.init(uuidString: description)
     }

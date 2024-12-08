@@ -12,19 +12,10 @@ final class CacheTests: TestCase<TestApp> {
         _testWipe,
     ]
 
-    func testPlugin() async throws {
-        let config = Caches(caches: [1: .memory, 2: .memory, 3: .memory])
-        config.boot(app: app)
-        XCTAssertNotNil(Container.resolve(Cache.self))
-        XCTAssertNotNil(Container.resolve(Cache.self, id: 1))
-        XCTAssertNotNil(Container.resolve(Cache.self, id: 2))
-        XCTAssertNotNil(Container.resolve(Cache.self, id: 3))
-    }
-    
     func testDatabaseCache() async throws {
         for test in allTests {
-            try await Database.fake(migrations: [Cache.AddCacheMigration()])
-            Container.register(Cache.database).singleton()
+            try await DB.fake(migrations: [Cache.AddCacheMigration()])
+            Container.main.set(Cache.database)
             try await test()
         }
     }
@@ -37,9 +28,8 @@ final class CacheTests: TestCase<TestApp> {
     }
     
     func testRedisCache() async throws {
-        let client = RedisClient.testing
-        Container.register(client).singleton()
-        Container.register(Cache.redis).singleton()
+        Container.main.set(RedisClient.testing)
+        Container.main.set(Cache.redis)
 
         guard await Redis.checkAvailable() else {
             throw XCTSkip()

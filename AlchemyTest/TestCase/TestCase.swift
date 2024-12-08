@@ -27,7 +27,7 @@ open class TestCase<A: Application>: XCTestCase {
         }
         
         public func execute() async -> Response {
-            await app.handler.handle(
+            await Handle.handle(
                 request: .fake(
                     method: method, 
                     uri: urlComponents.path, 
@@ -45,20 +45,26 @@ open class TestCase<A: Application>: XCTestCase {
 
     open override func setUp() async throws {
         try await super.setUp()
-        app = A()
-        try await app.willRun()
+        app = try await A.test()
     }
 
     open override func tearDown() async throws {
         try await super.tearDown()
-        await app.stop()
-        try await app.didRun()
-        app.container.reset()
+        try await app.didTest()
     }
 }
 
 extension Application {
-    fileprivate var handler: HTTPHandler {
-        container.require()
+    public static func test() async throws -> Self {
+        let app = Self()
+        Main = app
+        try await app.willRun()
+        return app
+    }
+
+    public func didTest() async throws {
+        await stop()
+        try await didRun()
+        Container.reset()
     }
 }

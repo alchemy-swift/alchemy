@@ -1,11 +1,15 @@
-struct AlchemyMacroError: Error, CustomDebugStringConvertible {
+struct AlchemyMacroError: Error, CustomDebugStringConvertible, ExpressibleByStringInterpolation {
     let message: String
+
+    var debugDescription: String {
+        message
+    }
 
     init(_ message: String) {
         self.message = message
     }
 
-    var debugDescription: String {
-        message
+    init(stringLiteral value: String) {
+        self.init(value)
     }
 }

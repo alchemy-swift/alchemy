@@ -4,6 +4,9 @@ import Alchemy
 @Application
 struct App {
     func boot() {
+        Response.defaultEncoder = .json.with(keyMapping: .snakeCase)
+        setDefaultDatabase(\.$database)
+        setDefaultQueue(\.$queue)
         use(UserController())
     }
 
@@ -57,22 +60,10 @@ extension Todo {
     @BelongsToThrough("through_table") var belongsToThrough: Todo
 }
 
-extension App {
-    var databases: Databases {
-        Databases(
-            default: "sqlite",
-            databases: [
-                "sqlite": .sqlite(path: "../AlchemyXDemo/Server/test.db").logRawSQL()
-            ]
-        )
-    }
-
-    var queues: Queues {
-        Queues(
-            default: "memory",
-            queues: [
-                "memory": .memory,
-            ]
-        )
+extension Container {
+    @Singleton var queue: Queue = isTest ? .memory : .database
+    @Singleton var database: Database {
+        guard !isTest else { return .memory }
+        return .sqlite(path: "../../AlchemyXDemo/Server/test.db").logRawSQL()
     }
 }

@@ -8,8 +8,7 @@ extension Application {
     ///   response.
     @discardableResult
     public func notFoundHandler(use handler: @escaping Router.Handler) -> Self {
-        @Inject var _handler: RequestHandler
-        _handler.setNotFoundHandler(handler)
+        Handle.setNotFoundHandler(handler)
         return self
     }
 
@@ -20,8 +19,7 @@ extension Application {
     ///   response.
     @discardableResult
     public func errorHandler(use handler: @escaping Router.ErrorHandler) -> Self {
-        @Inject var _handler: RequestHandler
-        _handler.setErrorHandler(handler)
+        Handle.setErrorHandler(handler)
         return self
     }
 
@@ -34,8 +32,7 @@ extension Application {
     ///   to this application.
     @discardableResult
     public func useAll(_ middlewares: Middleware...) -> Self {
-        @Inject var _handler: RequestHandler
-        _handler.appendGlobalMiddlewares(middlewares)
+        Handle.appendGlobalMiddlewares(middlewares)
         return self
     }
 

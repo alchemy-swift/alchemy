@@ -12,9 +12,9 @@ extension Queue {
     ///   `default`.
     /// - Returns: A `MemoryQueue` for verifying test expectations.
     @discardableResult
-    public static func fake(_ id: Identifier? = nil) -> MemoryQueue {
+    public func fake() -> MemoryQueue {
         let mock = MemoryQueue()
-        Container.register(Queue(provider: mock), id: id).singleton()
+        self.provider = mock
         return mock
     }
 }

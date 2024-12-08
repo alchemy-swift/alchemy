@@ -1,6 +1,5 @@
 import AlchemyX
 import Pluralize
-import ServiceLifecycle
 
 extension Application {
     @discardableResult
@@ -12,9 +11,7 @@ extension Application {
     ) -> Self where R.Identifier: SQLValueConvertible & LosslessStringConvertible {
         use(ResourceController<R>(db: db, tableName: table))
         if updateTable {
-            Life.onStart {
-                try await db.updateSchema(R.self)
-            }
+            Life.onBoot { try await db.updateSchema(R.self) }
         }
 
         return self

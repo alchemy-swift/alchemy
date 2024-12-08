@@ -1,8 +1,6 @@
 import AsyncAlgorithms
 
-public final class EventBus: IdentifiedService {
-    public typealias Identifier = ServiceIdentifier<EventBus>
-
+public final class EventBus {
     private struct EventJob<E: Event & Codable>: Job, Codable {
         let event: E
         let listenerId: String

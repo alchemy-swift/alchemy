@@ -47,7 +47,7 @@ public final class SQLiteDatabaseProvider: DatabaseProvider {
     }
 }
 
-extension SQLiteConnection: DatabaseProvider, ConnectionPoolItem {
+extension SQLiteConnection: DatabaseProvider, @retroactive ConnectionPoolItem {
     public var type: DatabaseType { .sqlite }
 
     public func query(_ sql: String, parameters: [SQLValue]) async throws -> [SQLRow] {
