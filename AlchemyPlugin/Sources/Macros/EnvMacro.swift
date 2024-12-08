@@ -48,18 +48,3 @@ private extension String {
         return result.uppercased()
     }
 }
-
-/*
- var maxUploadSize: Int {
-     get {
-         guard let value = get("MAX_UPLOAD_SIZE", as: Int.self) else {
-             return 2 * 1024 * 1024
-         }
-
-         return value
-     }
-     set {
-         processVariables["MAX_UPLOAD_SIZE"] = String(newValue)
-     }
- }
- */
