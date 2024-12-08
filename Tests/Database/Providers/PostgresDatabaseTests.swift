@@ -16,7 +16,6 @@ final class PostgresDatabaseTests: TestCase<TestApp> {
         XCTAssertEqual(provider.pool.source.configuration.database, "foo")
         XCTAssertEqual(provider.pool.source.configuration.username, "bar")
         XCTAssertEqual(provider.pool.source.configuration.password, "baz")
-        try await db.shutdown()
     }
 
     func testPositionBinds() {

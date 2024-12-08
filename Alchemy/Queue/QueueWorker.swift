@@ -19,7 +19,6 @@ actor QueueWorker: Service {
     }
 
     func run() async throws {
-        Log.info("Starting worker...")
         for try await _ in timer {
             try await runNext()
         }

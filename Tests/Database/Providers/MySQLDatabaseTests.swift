@@ -17,7 +17,6 @@ final class MySQLDatabaseTests: TestCase<TestApp> {
         XCTAssertEqual(provider.pool.source.database, "foo")
         XCTAssertEqual(provider.pool.source.username, "bar")
         XCTAssertEqual(provider.pool.source.password, "baz")
-        try await db.shutdown()
     }
 
     func testNil() {

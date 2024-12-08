@@ -85,7 +85,11 @@ final class QueueTests: TestCase<TestApp> {
         await fulfillment(of: [exp], timeout: 2)
         AssertNil(try await Q.dequeue(from: ["default"]))
     }
-    
+
+    /// This is a poorly written test - the worker may immediately retry the job
+    /// leading to the exp being called twice.
+    ///
+    /// Could update the backoff, but then it won't be dequeuable for that long.
     private func _testRetry(file: StaticString = #filePath, line: UInt = #line) async throws {
         let exp = expectation(description: "")
         RetryJob.didFail = { exp.fulfill() }
