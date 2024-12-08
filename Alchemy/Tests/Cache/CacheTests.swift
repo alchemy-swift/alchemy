@@ -27,7 +27,7 @@ final class CacheTests: TestCase<TestApp> {
     }
     
     func testRedisCache() async throws {
-        Container.main.set(RedisClient.testing)
+        Container.main.set(RedisClient.integration)
         Container.main.set(Cache.redis)
 
         guard await Redis.checkAvailable() else {

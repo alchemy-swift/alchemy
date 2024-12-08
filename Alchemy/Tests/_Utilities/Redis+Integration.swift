@@ -2,7 +2,8 @@ import Alchemy
 import RediStack
 
 extension Alchemy.RedisClient {
-    static var testing: Alchemy.RedisClient {
+    /// Used for running integration tests.
+    static var integration: Alchemy.RedisClient {
         .configuration(RedisConnectionPool.Configuration(
             initialServerConnectionAddresses: [
                 try! .makeAddressResolvingHost("localhost", port: 6379)
@@ -14,11 +15,6 @@ extension Alchemy.RedisClient {
     }
     
     func checkAvailable() async -> Bool {
-        do {
-            _ = try await ping().get()
-            return true
-        } catch {
-            return false
-        }
+        (try? await ping().get()) != nil
     }
 }

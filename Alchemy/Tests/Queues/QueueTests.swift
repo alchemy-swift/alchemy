@@ -34,7 +34,7 @@ final class QueueTests: TestCase<TestApp> {
     }
     
     func testRedisQueue() async throws {
-        Container.main.set(RedisClient.testing)
+        Container.main.set(RedisClient.integration)
         Container.main.set(Queue.redis)
 
         guard await Redis.checkAvailable() else {

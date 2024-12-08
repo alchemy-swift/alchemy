@@ -272,14 +272,18 @@ public final class Client {
     
     /// Stub this client, causing it to respond to all incoming requests with a
     /// stub matching the request url or a default `200` stub.
-    public func stub(_ stubs: Stubs = [:]) {
+    @discardableResult
+    public func stub(_ stubs: Stubs = [:]) -> Client {
         self.stubs = stubs
+        return self
     }
     
     /// Stub this client, causing it to respond to all incoming requests using
     /// the provided handler.
-    public func stub(_ handler: @escaping Stubs.Handler) {
+    @discardableResult
+    public func stub(_ handler: @escaping Stubs.Handler) -> Client {
         self.stubs = Stubs(handler: handler)
+        return self
     }
     
     /// Execute a request.

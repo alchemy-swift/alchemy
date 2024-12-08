@@ -1,27 +1,30 @@
 import AlchemyTesting
 
-final class ClientAssertionTests: TestCase<TestApp> {
-    override func setUp() async throws {
-        try await super.setUp()
-        Http.stub()
+final class ClientAssertionTests {
+    let client = Client().stub()
+
+    var http: Client.Builder {
+        client.builder()
     }
 
-    func testAssertNothingSent() {
-        Http.assertNothingSent()
+    deinit { try? client.shutdown() }
+
+    @Test func assertNothingSent() {
+        http.assertNothingSent()
     }
     
-    func testAssertSent() async throws {
-        _ = try await Http.get("https://localhost:3000/foo?bar=baz")
-        Http.assertSent(1) {
+    @Test func assertSent() async throws {
+        _ = try await http.get("https://localhost:3000/foo?bar=baz")
+        http.assertSent(1) {
             $0.hasMethod(.get) &&
             $0.hasPath("/foo") &&
             $0.hasQuery("bar", value: "baz")
         }
 
-        _ = try await Http
+        _ = try await http
             .withJSON(User(name: "Cyanea", age: 35))
             .post("https://localhost:3000/bar")
-        Http.assertSent(2) {
+        http.assertSent(2) {
             $0.hasMethod(.post) &&
             $0.hasPath("/bar") &&
             $0["name"] == "Cyanea" &&

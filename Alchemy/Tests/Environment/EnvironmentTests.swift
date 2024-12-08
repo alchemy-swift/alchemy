@@ -2,14 +2,14 @@
 import Alchemy
 import AlchemyTesting
 
-final class EnvTests: TestCase<TestApp> {
-    func testEnvLookup() {
+struct EnvTests {
+    @Test func lookup() {
         let env = Environment(name: "test", dotenvVariables: ["foo": "bar"])
-        XCTAssertEqual(env.get("foo"), "bar")
+        #expect(env.get("foo") == "bar")
     }
 
-    func testLoadEnvFile() {
-        let path = createTempFile(
+    @Test func envFile() {
+        let path = FileManager.default.createTempFile(
             ".env-fake-\(UUID().uuidString)",
             contents: """
                 #TEST=ignore
@@ -24,11 +24,11 @@ final class EnvTests: TestCase<TestApp> {
 
         let env = Environment(name: "test", dotenvPaths: [path])
         env.loadVariables()
-        XCTAssertEqual(env.get("FOO"), "1")
-        XCTAssertEqual(env.get("BAR"), "two")
-        XCTAssertEqual(env.get("TEST", as: String.self), nil)
-        XCTAssertEqual(env.get("fake", as: String.self), nil)
-        XCTAssertEqual(env.get("BAZ", as: String.self), nil)
-        XCTAssertEqual(env.get("QUOTES"), "three")
+        #expect(env.get("FOO") == "1")
+        #expect(env.get("BAR") == "two")
+        #expect(env.get("TEST", as: String.self) == nil)
+        #expect(env.get("fake", as: String.self) == nil)
+        #expect(env.get("BAZ", as: String.self) == nil)
+        #expect(env.get("QUOTES") == "three")
     }
 }

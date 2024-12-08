@@ -8,40 +8,40 @@ final class ControllerTests: TestCase<TestApp> {
     }
     
     func testControllerMiddleware() async throws {
-        var expect = Expect()
+        var (one, two, three) = (false, false, false)
         let controller = MiddlewareController(middlewares: [
-            ActionMiddleware { expect.signalOne() },
-            ActionMiddleware { expect.signalTwo() },
-            ActionMiddleware { expect.signalThree() }
+            ActionMiddleware { one = true },
+            ActionMiddleware { two = true },
+            ActionMiddleware { three = true }
         ])
         app.use(controller)
         try await Test.get("/middleware").assertOk()
         
-        AssertTrue(expect.one)
-        AssertTrue(expect.two)
-        AssertTrue(expect.three)
+        AssertTrue(one)
+        AssertTrue(two)
+        AssertTrue(three)
     }
     
     func testControllerMiddlewareRemoved() async throws {
-        var expect = Expect()
+        var (one, two, three, four) = (false, false, false, false)
         let controller = MiddlewareController(middlewares: [
-            ActionMiddleware { expect.signalOne() },
-            ActionMiddleware { expect.signalTwo() },
-            ActionMiddleware { expect.signalThree() },
+            ActionMiddleware { one = true },
+            ActionMiddleware { two = true },
+            ActionMiddleware { three = true },
         ])
         
         app
             .use(controller)
             .get("/outside") { _ async -> String in
-                expect.signalFour()
+                four = true
                 return "foo"
             }
         
         try await Test.get("/outside").assertOk()
-        AssertFalse(expect.one)
-        AssertFalse(expect.two)
-        AssertFalse(expect.three)
-        AssertTrue(expect.four)
+        AssertFalse(one)
+        AssertFalse(two)
+        AssertFalse(three)
+        AssertTrue(four)
     }
 }
 

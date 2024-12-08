@@ -71,19 +71,19 @@ final class RouterTests: TestCase<TestApp> {
     }
 
     func testPathParametersMatch() async throws {
-        var expect = Expect()
+        var one = false
         let uuidString = UUID().uuidString
         app.get("/v1/some_path/:uuid/:user_id") {
             XCTAssertEqual($0.parameters, [
                 Request.Parameter(key: "uuid", value: uuidString),
                 Request.Parameter(key: "user_id", value: "123"),
             ])
-            expect.signalOne()
+            one = true
             return "foo"
         }
         
         try await Test.get("/v1/some_path/\(uuidString)/123").assertBody("foo").assertOk()
-        AssertTrue(expect.one)
+        AssertTrue(one)
     }
 
     func testMultipleRequests() async throws {

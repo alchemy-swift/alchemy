@@ -6,15 +6,11 @@ extension HashAlgorithm where Self == BCryptHasher {
 
 /// A hash algorithm for testing that just returns the value as plaintext.
 public struct PlaintextHasher: HashAlgorithm {
-    public init() {
-        //
-    }
-
-    public func make(_ value: String) throws -> String {
+    public func make(_ value: String) -> String {
         value
     }
 
-    public func verify(_ plaintext: String, hash: String) throws -> Bool {
+    public func verify(_ plaintext: String, hash: String) -> Bool {
         plaintext == hash
     }
 }

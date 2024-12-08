@@ -14,15 +14,9 @@ extension TestCase {
     /// - Returns: Paths to the fake key and certificate chain, respectively.
     public func generateFakeTLSCertificate() -> (keyPath: String, certPath: String) {
         return (
-            createTempFile("fake_private_key.pem", contents: samplePKCS8PemPrivateKey),
-            createTempFile("fake_cert.pem", contents: samplePemCert)
+            FileManager.default.createTempFile("fake_private_key.pem", contents: samplePKCS8PemPrivateKey),
+            FileManager.default.createTempFile("fake_cert.pem", contents: samplePemCert)
         )
-    }
-    
-    public func createTempFile(_ name: String, contents: String) -> String {
-        let dirPath = NSTemporaryDirectory()
-        FileManager.default.createFile(atPath: dirPath + name, contents: contents.data(using: .utf8))
-        return dirPath + name
     }
     
     private var samplePemCert: String {
@@ -78,5 +72,13 @@ extension TestCase {
         ahwyQwRg2oQ2rBrBevgOKFEuIV62WfDYXi8SlT8QaZpTt2r4PYt4
         -----END RSA PRIVATE KEY-----
         """
+    }
+}
+
+extension FileManager {
+    public func createTempFile(_ name: String, contents: String) -> String {
+        let dirPath = NSTemporaryDirectory()
+        createFile(atPath: dirPath + name, contents: contents.data(using: .utf8))
+        return dirPath + name
     }
 }

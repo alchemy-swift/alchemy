@@ -1,5 +1,4 @@
-@testable
-import Alchemy
+@testable import Alchemy
 import AlchemyTesting
 
 final class SQLRowEncoderTests: TestCase<TestApp> {
