@@ -1,100 +1,67 @@
-import AlchemyTest
+import Alchemy
+import Foundation
 import MultipartKit
+import Testing
 
-@testable import Alchemy
-
-final class ContentTests: XCTestCase {
-    private lazy var allTests = [
-        _testAccess,
-        _testNestedAccess,
-        _testEnumAccess,
-        _testFlatten,
-        _testDecode,
-    ]
-
-    func testDict() throws {
-        let content = Content(value: .dictionary(Fixtures.dictContent))
-        for test in allTests {
-            try test(content, true)
-        }
-        try _testNestedArray(content: content)
-        try _testNestedDecode(content: content)
+final class ContentTests {
+    @Test(arguments: [Content.dict, .json, .url, .multipart])
+    func access(content: Content) throws {
+        #expect(content["foo"] == nil)
+        #expect(try content["string"].stringThrowing == "string")
+        #expect(try content["string"].decode(String.self) == "string")
+        #expect(try content["int"].intThrowing == 0)
+        #expect(try content["bool"].boolThrowing == true)
+        #expect(try content["double"].doubleThrowing == 1.23)
     }
 
-    func testMultipart() throws {
-        let buffer = ByteBuffer(string: Fixtures.multipartContent)
-        let content = FormDataDecoder().content(
-            from: buffer, contentType: .multipart(boundary: Fixtures.multipartBoundary))
-        try _testAccess(content: content, allowsNull: false)
-        try _testMultipart(content: content)
+    @Test(arguments: [Content.dict, .json, .url])
+    func nestedAccess(content: Content) throws {
+        #expect(content.object.four.isNull)
+        #expect(throws: Error.self) { try content["array"].stringThrowing }
+        #expect(try content["array"].arrayThrowing.count == 3)
+        #expect(throws: Error.self) { try content["array"][0].arrayThrowing }
+        #expect(try content["array"][0].intThrowing == 1)
+        #expect(try content["array"][1].intThrowing == 2)
+        #expect(try content["array"][2].intThrowing == 3)
+        #expect(try content["object"]["one"].stringThrowing == "one")
+        #expect(try content["object"]["two"].stringThrowing == "two")
+        #expect(try content["object"]["three"].stringThrowing == "three")
     }
 
-    func testJson() throws {
-        let buffer = ByteBuffer(string: Fixtures.jsonContent)
-        let content = JSONDecoder().content(from: buffer, contentType: .json)
-        for test in allTests {
-            try test(content, true)
-        }
-        try _testNestedArray(content: content)
-        try _testNestedDecode(content: content)
+    @Test(arguments: [Content.dict, .json])
+    func enumAccess(content: Content) throws {
+        let expected: [String: TestEnum?] = ["one": .one, "two": .two, "three": .three, "four": nil]
+        #expect(try content.object.one.decode(TestEnum?.self) == .one)
+        #expect(try content.object.decode([String: TestEnum?].self) == expected)
     }
 
-    func testUrl() throws {
-        let buffer = ByteBuffer(string: Fixtures.urlContent)
-        let content = URLEncodedFormDecoder().content(from: buffer, contentType: .urlForm)
-        for test in allTests {
-            try test(content, false)
-        }
-        try _testNestedDecode(content: content)
+    @Test func urlEnumAccess() throws {
+        let content = Content.url
+        let expected: [String: TestEnum?] = ["one": .one, "two": .two, "three": .three]
+        #expect(try content.object.one.decode(TestEnum?.self) == .one)
+        #expect(try content.object.decode([String: TestEnum?].self) == expected)
     }
 
-    func _testAccess(content: Content, allowsNull: Bool) throws {
-        AssertTrue(content["foo"] == nil)
-        AssertEqual(try content["string"].stringThrowing, "string")
-        AssertEqual(try content["string"].decode(String.self), "string")
-        AssertEqual(try content["int"].intThrowing, 0)
-        AssertEqual(try content["bool"].boolThrowing, true)
-        AssertEqual(try content["double"].doubleThrowing, 1.23)
+    @Test func multipart() throws {
+        let file = try Content.multipart["file"].fileThrowing
+        #expect(file.name == "a.txt")
+        #expect(file.content?.string == "Content of a.txt.\n")
     }
 
-    func _testNestedAccess(content: Content, allowsNull: Bool) throws {
-        AssertTrue(content.object.four.isNull)
-        XCTAssertThrowsError(try content["array"].stringThrowing)
-        AssertEqual(try content["array"].arrayThrowing.count, 3)
-        XCTAssertThrowsError(try content["array"][0].arrayThrowing)
-        AssertEqual(try content["array"][0].intThrowing, 1)
-        AssertEqual(try content["array"][1].intThrowing, 2)
-        AssertEqual(try content["array"][2].intThrowing, 3)
-        AssertEqual(try content["object"]["one"].stringThrowing, "one")
-        AssertEqual(try content["object"]["two"].stringThrowing, "two")
-        AssertEqual(try content["object"]["three"].stringThrowing, "three")
+
+    @Test(arguments: [Content.dict, .json])
+    func flatten(content: Content) throws {
+        let expectedArray = ["one", "three", "two", nil]
+        #expect(try content["object"][*].decodeEach(String?.self).sorted() == expectedArray)
     }
 
-    func _testEnumAccess(content: Content, allowsNull: Bool) throws {
-        enum Test: String, Decodable {
-            case one, two, three
-        }
-
-        var expectedDict: [String: Test?] = ["one": .one, "two": .two, "three": .three]
-        if allowsNull { expectedDict = ["one": .one, "two": .two, "three": .three, "four": nil] }
-
-        AssertEqual(try content.object.one.decode(Test?.self), .one)
-        AssertEqual(try content.object.decode([String: Test?].self), expectedDict)
+    @Test func urlFlatten() throws {
+        let expectedArray = ["one", "three", "two"]
+        #expect(try Content.url["object"][*].decodeEach(String?.self).sorted() == expectedArray)
     }
 
-    func _testMultipart(content: Content) throws {
-        let file = try content["file"].fileThrowing
-        AssertEqual(file.name, "a.txt")
-        AssertEqual(file.content?.buffer.string, "Content of a.txt.\n")
-    }
-
-    func _testFlatten(content: Content, allowsNull: Bool) throws {
-        var expectedArray: [String?] = ["one", "three", "two"]
-        if allowsNull { expectedArray.append(nil) }
-        AssertEqual(try content["object"][*].decodeEach(String?.self).sorted(), expectedArray)
-    }
-
-    func _testDecode(content: Content, allowsNull: Bool) throws {
+    @Test(arguments: [Content.dict, .json, .url])
+    func decode(content: Content) throws {
         struct TopLevelType: Codable, Equatable {
             var string: String = "string"
             var int: Int = 0
@@ -102,10 +69,11 @@ final class ContentTests: XCTestCase {
             var double: Double = 1.23
         }
 
-        AssertEqual(try content.decode(TopLevelType.self), TopLevelType())
+        #expect(try content.decode(TopLevelType.self) == TopLevelType())
     }
 
-    func _testNestedDecode(content: Content) throws {
+    @Test(arguments: [Content.dict, .json, .url])
+    func nestedDecode(content: Content) throws {
         struct NestedType: Codable, Equatable {
             let one: String
             let two: String
@@ -113,40 +81,45 @@ final class ContentTests: XCTestCase {
         }
 
         let expectedStruct = NestedType(one: "one", two: "two", three: "three")
-        AssertEqual(try content["object"].decode(NestedType.self), expectedStruct)
-        AssertEqual(try content["array"].decode([Int].self), [1, 2, 3])
-        AssertEqual(try content["array"].decode([Int8].self), [1, 2, 3])
+        #expect(try content["object"].decode(NestedType.self) == expectedStruct)
+        #expect(try content["array"].decode([Int].self) == [1, 2, 3])
+        #expect(try content["array"].decode([Int8].self) == [1, 2, 3])
     }
 
-    func _test(content: Content, allowsNull: Bool) throws {
-        struct DecodableType: Codable, Equatable {
-            let one: String
-            let two: String
-            let three: String
-        }
-
-        struct TopLevelType: Codable, Equatable {
-            var string: String = "string"
-            var int: Int = 0
-            var bool: Bool = false
-            var double: Double = 1.23
-        }
-
-        let expectedStruct = DecodableType(one: "one", two: "two", three: "three")
-        AssertEqual(try content.decode(TopLevelType.self), TopLevelType())
-        AssertEqual(try content["object"].decode(DecodableType.self), expectedStruct)
-        AssertEqual(try content["array"].decode([Int].self), [1, 2, 3])
-        AssertEqual(try content["array"].decode([Int8].self), [1, 2, 3])
-    }
-
-    func _testNestedArray(content: Content) throws {
+    @Test(arguments: [Content.dict, .json])
+    func nestedArray(content: Content) throws {
         struct ArrayType: Codable, Equatable {
             let foo: String
         }
 
-        AssertEqual(try content["objectArray"][*]["foo"].stringThrowing, ["bar", "baz", "tiz"])
+        #expect(try content["objectArray"][*]["foo"].stringThrowing == ["bar", "baz", "tiz"])
         let expectedArray = [ArrayType(foo: "bar"), ArrayType(foo: "baz"), ArrayType(foo: "tiz")]
-        AssertEqual(try content.objectArray.decode([ArrayType].self), expectedArray)
+        #expect(try content.objectArray.decode([ArrayType].self) == expectedArray)
+    }
+}
+
+private enum TestEnum: String, Decodable {
+    case one, two, three
+}
+
+private extension Content {
+    static var json: Content {
+        let buffer = ByteBuffer(string: Fixtures.jsonContent)
+        return JSONDecoder().content(from: buffer, contentType: .json)
+    }
+
+    static var dict: Content {
+        Content(value: .dictionary(Fixtures.dictContent))
+    }
+
+    static var url: Content {
+        let buffer = ByteBuffer(string: Fixtures.urlContent)
+        return URLEncodedFormDecoder().content(from: buffer, contentType: .urlForm)
+    }
+
+    static var multipart: Content {
+        let buffer = ByteBuffer(string: Fixtures.multipartContent)
+        return FormDataDecoder().content(from: buffer, contentType: .multipart(boundary: Fixtures.multipartBoundary))
     }
 }
 
@@ -245,14 +218,16 @@ private struct Fixtures {
         """
 }
 
-extension Optional: Comparable where Wrapped == String {
-    public static func < (lhs: Self, rhs: Self) -> Bool {
-        if let lhs = lhs, let rhs = rhs {
-            return lhs < rhs
-        } else if rhs == nil {
-            return true
-        } else {
-            return false
+private extension [String?] {
+    func sorted() -> [String?] {
+        sorted { lhs, rhs in
+            if let lhs = lhs, let rhs = rhs {
+                return lhs < rhs
+            } else if rhs == nil {
+                return true
+            } else {
+                return false
+            }
         }
     }
 }

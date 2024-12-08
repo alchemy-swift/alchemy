@@ -1,63 +1,59 @@
-@testable
 import Alchemy
-import AlchemyTest
 import MultipartKit
+import Testing
 
-final class ResponseTests: XCTestCase {
-    override class func setUp() {
-        super.setUp()
-        FormDataEncoder.boundary = { Fixtures.multipartBoundary }
+struct ResponseTests {
+    @Test func basic() throws {
+        let res = Response(status: .created, headers: [.allow: "1", .accept: "2"])
+        #expect(res.header(.allow) == "1")
+        #expect(res.header(.accept) == "2")
+        #expect(res.header(.contentLength) == "0")
+        #expect(res.status == .created)
     }
-    
-    func testInit() throws {
-        Response(status: .created, headers: [.allow: "1", .accept: "2"])
-            .assertHeader(.allow, value: "1")
-            .assertHeader(.accept, value: "2")
-            .assertHeader(.contentLength, value: "0")
-            .assertCreated()
+
+    @Test func body() {
+        let res = Response(status: .ok, string: "foo")
+        #expect(res.body?.string == "foo")
+        #expect(res.header(.contentLength) == "3")
+        #expect(res.status == .ok)
     }
-    
-    func testInitContentLength() {
-        Response(status: .ok, string: "foo")
-            .assertHeader(.contentLength, value: "3")
-            .assertBody("foo")
-            .assertOk()
-    }
-    
-    func testJSONEncode() throws {
+
+    @Test func jsonEncode() throws {
         let res = try Response(encodable: Fixtures.object, encoder: .json)
-        XCTAssertEqual(res.headers.contentType, .json)
-        // Linux doesn't guarantee json coding order.
-        XCTAssertTrue(res.body?.string == Fixtures.jsonString || res.body?.string == Fixtures.altJsonString)
+        #expect(res.headers.contentType == .json)
+        #expect(res.body?.string == Fixtures.jsonString || res.body?.string == Fixtures.altJsonString)
     }
-    
-    func testJSONDecode() throws {
+
+    @Test func jsonDecode() throws {
         let res = Response(string: Fixtures.jsonString, contentType: .json)
-        XCTAssertEqual(try res.decode(), Fixtures.object)
+        #expect(try res.decode() == Fixtures.object)
     }
-    
-    func testURLEncode() throws {
+
+    @Test func urlEncode() throws {
         let res = try Response(encodable: Fixtures.object, encoder: .urlForm)
-        XCTAssertEqual(res.headers.contentType, .urlForm)
-        XCTAssertTrue(res.body?.string == Fixtures.urlString || res.body?.string == Fixtures.urlStringAlternate)
+        #expect(res.headers.contentType == .urlForm)
+        #expect(res.body?.string == Fixtures.urlString || res.body?.string == Fixtures.urlStringAlternate)
     }
-    
-    func testURLDecode() throws {
+
+    @Test func urlDecode() throws {
         let res = Response(string: Fixtures.urlString, contentType: .urlForm)
-        XCTAssertEqual(try res.decode(), Fixtures.object)
+        #expect(try res.decode() == Fixtures.object)
     }
-    
-    func testMultipartEncode() throws {
+
+    @Test func multipartEncode() throws {
+        FormDataEncoder.boundary = { Fixtures.multipartBoundary }
         let res = try Response(encodable: Fixtures.object, encoder: .multipart)
-        XCTAssertEqual(res.headers.contentType, .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(res.body?.string, Fixtures.multipartString)
+        #expect(res.headers.contentType == .multipart(boundary: Fixtures.multipartBoundary))
+        #expect(res.body?.string == Fixtures.multipartString)
     }
-    
-    func testMultipartDecode() throws {
+
+    @Test func multipartDecode() throws {
+        FormDataEncoder.boundary = { Fixtures.multipartBoundary }
         let res = Response(string: Fixtures.multipartString, contentType: .multipart(boundary: Fixtures.multipartBoundary))
-        XCTAssertEqual(try res.decode(), Fixtures.object)
+        #expect(try res.decode() == Fixtures.object)
     }
 }
+
 
 private struct Fixtures {
     struct Test: Codable, Equatable {

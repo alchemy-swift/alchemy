@@ -1,9 +1,12 @@
-import AlchemyTest
+import Alchemy
+import Testing
 
-final class ResponseConvertibleTests: XCTestCase {
-    func testConvertArray() throws {
+struct ResponseConvertibleTests {
+    @Test func convert() throws {
         let array = ["one", "two"]
-        try array.response().assertOk().assertJson(array)
+        let res = try array.response()
+        #expect(res.status == .ok)
+        #expect(try res.decode() == array)
     }
 }
 

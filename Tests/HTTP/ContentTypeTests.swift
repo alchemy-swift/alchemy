@@ -1,23 +1,24 @@
-import AlchemyTest
+import Alchemy
+import Testing
 
-final class ContentTypeTests: XCTestCase {
-    func testFileExtension() {
-        XCTAssertEqual(ContentType(fileExtension: ".html"), .html)
+struct ContentTypeTests {
+    @Test func fileExtension() {
+        #expect(ContentType(fileExtension: ".html") == .html)
     }
-    
-    func testInvalidFileExtension() {
-        XCTAssertEqual(ContentType(fileExtension: ".sc2save"), nil)
+
+    @Test func invalidFileExtension() {
+        #expect(ContentType(fileExtension: ".sc2save") == nil)
     }
-    
-    func testParameters() {
+
+    @Test func parameters() {
         let type = ContentType.multipart(boundary: "foo")
-        XCTAssertEqual(type.value, "multipart/form-data")
-        XCTAssertEqual(type.string, "multipart/form-data; boundary=foo")
+        #expect(type.value == "multipart/form-data")
+        #expect(type.string == "multipart/form-data; boundary=foo")
     }
-    
-    func testEquality() {
+
+    @Test func equality() {
         let first = ContentType.multipart(boundary: "foo")
         let second = ContentType.multipart(boundary: "bar")
-        XCTAssertEqual(first, second)
+        #expect(first == second)
     }
 }

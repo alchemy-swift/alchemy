@@ -1,17 +1,17 @@
 import Alchemy
-import XCTest
+import Testing
 
-final class SQLTests: XCTestCase {
-    func testValueConvertible() {
+struct SQLTests {
+    @Test func valueConvertible() {
         let sql: SQL = "NOW()"
-        XCTAssertEqual(sql.rawSQLString, "NOW()")
+        #expect(sql.rawSQLString == "NOW()")
     }
 
-    func testJoined() {
-        XCTAssertEqual([
+    @Test func joined() {
+        #expect([
             SQL("where foo = ?", parameters: [.int(1)]),
             SQL("bar"),
             SQL("where baz = ?", parameters: [.string("two")])
-        ].joined(), SQL("where foo = ? bar where baz = ?", parameters: [.int(1), .string("two")]))
+        ].joined() == SQL("where foo = ? bar where baz = ?", parameters: [.int(1), .string("two")]))
     }
 }

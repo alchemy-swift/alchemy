@@ -1,132 +1,134 @@
 @testable
 import Alchemy
-import XCTest
+import Foundation
+import Testing
 
-final class RequestTests: XCTestCase {
-    private let sampleBase64Credentials = Data("username:password".utf8).base64EncodedString()
-    private let sampleToken = UUID().uuidString
-    
-    func testPath() {
-        XCTAssertEqual(Request.fake(uri: "/foo/bar").path, "/foo/bar")
+struct RequestTests {
+    let sampleBase64Credentials = Data("username:password".utf8).base64EncodedString()
+    let sampleToken = UUID().uuidString
+
+    @Test func path() {
+        #expect(Request.fake(uri: "/foo/bar").path == "/foo/bar")
     }
-    
-    func testQueryItems() {
-        XCTAssertEqual(Request.fake(uri: "/path").queryItems, nil)
-        XCTAssertEqual(Request.fake(uri: "/path?foo=1&bar=2").queryItems, [
+
+    @Test func queryItems() {
+        #expect(Request.fake(uri: "/path").queryItems == nil)
+        #expect(Request.fake(uri: "/path?foo=1&bar=2").queryItems == [
             URLQueryItem(name: "foo", value: "1"),
             URLQueryItem(name: "bar", value: "2")
         ])
     }
-    
-    func testParameter() {
+
+    @Test func parameter() {
         let request = Request.fake()
         request.parameters = [
             Request.Parameter(key: "foo", value: "one"),
             Request.Parameter(key: "bar", value: "two"),
             Request.Parameter(key: "baz", value: "three"),
         ]
-        XCTAssertEqual(request.parameter("foo"), "one")
-        XCTAssertEqual(request.parameter("bar"), "two")
-        XCTAssertEqual(request.parameter("baz"), "three")
-        XCTAssertNil(request.parameter("fake", as: String.self))
-        XCTAssertNil(request.parameter("foo", as: Int.self))
-        XCTAssertTrue(request.parameters.contains(Request.Parameter(key: "foo", value: "one")))
+        #expect(request.parameter("foo") == "one")
+        #expect(request.parameter("bar") == "two")
+        #expect(request.parameter("baz") == "three")
+        #expect(request.parameter("fake", as: String.self) == nil)
+        #expect(request.parameter("foo", as: Int.self) == nil)
+        #expect(request.parameters.contains(Request.Parameter(key: "foo", value: "one")))
     }
-    
-    func testBody() {
-        XCTAssertNil(Request.fake(body: nil).body)
-        XCTAssertNotNil(Request.fake(body: .empty).body)
+
+    @Test func body() {
+        #expect(Request.fake(body: nil).body == nil)
+        #expect(Request.fake(body: .empty).body != nil)
     }
-    
-    func testDecodeBodyJSON() {
+
+    @Test func decodeBodyJSON() throws {
         struct ExpectedJSON: Codable, Equatable {
             var foo = "bar"
         }
-        
-        XCTAssertThrowsError(try Request.fake(body: nil).decode(ExpectedJSON.self))
-        XCTAssertThrowsError(try Request.fake(body: .empty).decode(ExpectedJSON.self))
-        XCTAssertEqual(try Request.fake(body: .json).decode(), ExpectedJSON())
+
+        #expect(throws: Error.self) { try Request.fake(body: nil).decode(ExpectedJSON.self) }
+        #expect(throws: Error.self) { try Request.fake(body: .empty).decode(ExpectedJSON.self) }
+        #expect(try Request.fake(body: .json).decode() == ExpectedJSON())
     }
 
     // MARK: Parameters
 
-    func testStringConversion() {
-        XCTAssertEqual(Request.Parameter(key: "foo", value: "bar").string(), "bar")
+    @Test func stringConversion() {
+        #expect(Request.Parameter(key: "foo", value: "bar").string() == "bar")
     }
 
-    func testIntConversion() throws {
-        XCTAssertEqual(try Request.Parameter(key: "foo", value: "1").int(), 1)
-        XCTAssertThrowsError(try Request.Parameter(key: "foo", value: "foo").int())
+    @Test func intConversion() throws {
+        #expect(try Request.Parameter(key: "foo", value: "1").int() == 1)
+        #expect(throws: Error.self) { try Request.Parameter(key: "foo", value: "foo").int() }
     }
 
-    func testUuidConversion() throws {
+    @Test func uuidConversion() throws {
         let uuid = UUID()
-        XCTAssertEqual(try Request.Parameter(key: "foo", value: uuid.uuidString).uuid(), uuid)
-        XCTAssertThrowsError(try Request.Parameter(key: "foo", value: "foo").uuid())
+        #expect(try Request.Parameter(key: "foo", value: uuid.uuidString).uuid() == uuid)
+        #expect(throws: Error.self) { try Request.Parameter(key: "foo", value: "foo").uuid() }
     }
 
     // MARK: Auth
 
-    func testNoAuth() {
-        XCTAssertNil(Request.fake().basicAuth())
-        XCTAssertNil(Request.fake().bearerAuth())
-        XCTAssertNil(Request.fake().getAuth())
+    @Test func noAuth() {
+        #expect(Request.fake().basicAuth() == nil)
+        #expect(Request.fake().bearerAuth() == nil)
+        #expect(Request.fake().getAuth() == nil)
     }
 
-    func testUnknownAuth() {
+    @Test func unknownAuth() {
         let request = Request.fake(headers: [.authorization: "Foo \(sampleToken)"])
-        XCTAssertNil(request.getAuth())
+        #expect(request.getAuth() == nil)
     }
 
-    func testBearerAuth() {
+    @Test func bearerAuth() {
         let request = Request.fake(headers: [.authorization: "Bearer \(sampleToken)"])
-        XCTAssertNil(request.basicAuth())
-        XCTAssertNotNil(request.bearerAuth())
-        XCTAssertEqual(request.bearerAuth()?.token, sampleToken)
+        #expect(request.basicAuth() == nil)
+        #expect(request.bearerAuth() != nil)
+        #expect(request.bearerAuth()?.token == sampleToken)
     }
 
-    func testBasicAuth() {
+    @Test func basicAuth() {
         let request = Request.fake(headers: [.authorization: "Basic \(sampleBase64Credentials)"])
-        XCTAssertNil(request.bearerAuth())
-        XCTAssertNotNil(request.basicAuth())
-        XCTAssertEqual(request.basicAuth(), Request.Auth.Basic(username: "username", password: "password"))
+        #expect(request.bearerAuth() == nil)
+        #expect(request.basicAuth() != nil)
+        #expect(request.basicAuth() == Request.Auth.Basic(username: "username", password: "password"))
     }
 
-    func testMalformedBasicAuth() {
+    @Test func malformedBasicAuth() {
         let notBase64Encoded = Request.fake(headers: [.authorization: "Basic user:pass"])
-        XCTAssertNil(notBase64Encoded.basicAuth())
+        #expect(notBase64Encoded.basicAuth() == nil)
         let empty = Request.fake(headers: [.authorization: "Basic "])
-        XCTAssertNil(empty.basicAuth())
+        #expect(empty.basicAuth() == nil)
     }
 
     // MARK: Associated Values
 
-    func testValue() {
+    @Test func value() throws {
         let request = Request.fake()
         request.set("foo")
-        XCTAssertEqual(try request.get(), "foo")
+        #expect(try request.get() == "foo")
     }
 
-    func testOverwite() {
+    @Test func overwrite() throws {
         let request = Request.fake()
         request.set("foo")
         request.set("bar")
-        XCTAssertEqual(try request.get(), "bar")
+        #expect(try request.get() == "bar")
     }
 
-    func testNoValue() {
+    @Test func noValue() {
         let request = Request.fake()
         request.set(1)
-        XCTAssertThrowsError(try request.get(String.self))
+        #expect(throws: Error.self) { try request.get(String.self) }
     }
 }
 
-extension Bytes {
-    fileprivate static var empty: Bytes {
+
+fileprivate extension Bytes {
+    static var empty: Bytes {
         .buffer(ByteBuffer())
     }
     
-    fileprivate static var json: Bytes {
+    static var json: Bytes {
         .string("""
             {"foo":"bar"}
             """)

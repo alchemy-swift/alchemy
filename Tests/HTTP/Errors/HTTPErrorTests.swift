@@ -1,10 +1,10 @@
-import AlchemyTest
+import Alchemy
+import Testing
 
-final class HTTPErrorTests: XCTestCase {
-    func testConvertResponse() throws {
-        try HTTPError(.badGateway, message: "foo")
-            .response()
-            .assertStatus(.badGateway)
-            .assertJson(["message": "foo"])
+struct HTTPErrorTests {
+    @Test func response() throws {
+        let res = try HTTPError(.badGateway, message: "foo").response()
+        #expect(res.status == .badGateway)
+        #expect(try res.decode() == ["message": "foo"])
     }
 }

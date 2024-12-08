@@ -1,125 +1,125 @@
 @testable
 import Alchemy
-import AlchemyTest
+import Testing
 
-final class SQLGrammarTests: XCTestCase {
+struct SQLGrammarTests {
     private let grammar: SQLGrammar = PostgresGrammar()
 
-    func testCompileSelect() {
-        
+    @Test func select() {
+
     }
     
-    func testCompileJoins() {
-        
+    @Test func joins() {
+
     }
     
-    func testCompileWheres() {
-        
+    @Test func wheres() {
+
     }
     
-    func testCompileGroups() {
-        XCTAssertEqual(grammar.compileGroups(["foo, bar, baz"]), "GROUP BY foo, bar, baz")
-        XCTAssertEqual(grammar.compileGroups([]), nil)
+    @Test func groups() {
+        #expect(grammar.compileGroups(["foo, bar, baz"]) == "GROUP BY foo, bar, baz")
+        #expect(grammar.compileGroups([]) == nil)
     }
     
-    func testCompileHavings() {
-        
+    @Test func havings() {
+
     }
     
-    func testCompileOrders() {
-        XCTAssertEqual(grammar.compileOrders([
+    @Test func orders() {
+        #expect(grammar.compileOrders([
             SQLOrder(column: "foo", direction: .asc),
             SQLOrder(column: "bar", direction: .desc)
-        ]), "ORDER BY foo ASC, bar DESC")
-        XCTAssertEqual(grammar.compileOrders([]), nil)
+        ]) == "ORDER BY foo ASC, bar DESC")
+        #expect(grammar.compileOrders([]) == nil)
     }
     
-    func testCompileLimit() {
-        XCTAssertEqual(grammar.compileLimit(1), "LIMIT 1")
-        XCTAssertEqual(grammar.compileLimit(nil), nil)
+    @Test func limit() {
+        #expect(grammar.compileLimit(1) == "LIMIT 1")
+        #expect(grammar.compileLimit(nil) == nil)
     }
     
-    func testCompileOffset() {
-        XCTAssertEqual(grammar.compileOffset(1), "OFFSET 1")
-        XCTAssertEqual(grammar.compileOffset(nil), nil)
+    @Test func offset() {
+        #expect(grammar.compileOffset(1) == "OFFSET 1")
+        #expect(grammar.compileOffset(nil) == nil)
     }
     
-    func testCompileInsert() {
-        
+    @Test func insert() {
+
     }
     
-    func testCompileInsertAndReturn() {
-        
+    @Test func insertAndReturn() {
+
     }
     
-    func testCompileUpdate() {
-        
+    @Test func update() {
+
     }
     
-    func testCompileDelete() {
-        
+    @Test func delete() {
+
     }
     
-    func testCompileLock() {
-        XCTAssertEqual(grammar.compileLock(nil), nil)
-        XCTAssertEqual(grammar.compileLock(SQLLock(strength: .update, option: nil)), "FOR UPDATE")
-        XCTAssertEqual(grammar.compileLock(SQLLock(strength: .share, option: nil)), "FOR SHARE")
-        XCTAssertEqual(grammar.compileLock(SQLLock(strength: .update, option: .skipLocked)), "FOR UPDATE SKIP LOCKED")
-        XCTAssertEqual(grammar.compileLock(SQLLock(strength: .update, option: .noWait)), "FOR UPDATE NO WAIT")
+    @Test func lock() {
+        #expect(grammar.compileLock(nil) == nil)
+        #expect(grammar.compileLock(SQLLock(strength: .update, option: nil)) == "FOR UPDATE")
+        #expect(grammar.compileLock(SQLLock(strength: .share, option: nil)) == "FOR SHARE")
+        #expect(grammar.compileLock(SQLLock(strength: .update, option: .skipLocked)) == "FOR UPDATE SKIP LOCKED")
+        #expect(grammar.compileLock(SQLLock(strength: .update, option: .noWait)) == "FOR UPDATE NO WAIT")
     }
     
-    func testCompileCreateTable() {
-        
+    @Test func createTable() {
+
     }
     
-    func testCompileRenameTable() {
-        XCTAssertEqual(grammar.renameTable("foo", to: "bar"), """
+    @Test func renameTable() {
+        #expect(grammar.renameTable("foo", to: "bar") == """
         ALTER TABLE foo RENAME TO bar
         """)
     }
     
-    func testCompileDropTable() {
-        XCTAssertEqual(grammar.dropTable("foo"), """
+    @Test func dropTable() {
+        #expect(grammar.dropTable("foo") == """
         DROP TABLE foo
         """)
     }
     
-    func testCompileAlterTable() {
-        
+    @Test func alterTable() {
+
     }
     
-    func testCompileRenameColumn() {
-        XCTAssertEqual(grammar.renameColumn(on: "foo", column: "bar", to: "baz"), """
+    @Test func renameColumn() {
+        #expect(grammar.renameColumn(on: "foo", column: "bar", to: "baz") == """
         ALTER TABLE foo RENAME COLUMN "bar" TO "baz"
         """)
     }
-    
-    func testCompileCreateIndexes() {
-        
+
+    @Test func createIndexes() {
+
     }
     
-    func testCompileDropIndex() {
-        XCTAssertEqual(grammar.dropIndex(on: "foo", indexName: "bar"), "DROP INDEX bar")
+    @Test func dropIndex() {
+        #expect(grammar.dropIndex(on: "foo", indexName: "bar") == "DROP INDEX bar")
     }
     
-    func testColumnTypeString() {
-        XCTAssertEqual(grammar.columnTypeString(for: .increments), "serial")
-        XCTAssertEqual(grammar.columnTypeString(for: .int), "int")
-        XCTAssertEqual(grammar.columnTypeString(for: .bigInt), "bigint")
-        XCTAssertEqual(grammar.columnTypeString(for: .double), "float8")
-        XCTAssertEqual(grammar.columnTypeString(for: .string(.limit(10))), "varchar(10)")
-        XCTAssertEqual(grammar.columnTypeString(for: .string(.unlimited)), "text")
-        XCTAssertEqual(grammar.columnTypeString(for: .uuid), "uuid")
-        XCTAssertEqual(grammar.columnTypeString(for: .bool), "bool")
-        XCTAssertEqual(grammar.columnTypeString(for: .date), "timestamptz")
-        XCTAssertEqual(grammar.columnTypeString(for: .json), "json")
+    @Test func columnTypeString() {
+        #expect(grammar.columnTypeString(for: .increments) == "serial")
+        #expect(grammar.columnTypeString(for: .int) == "int")
+        #expect(grammar.columnTypeString(for: .bigInt) == "bigint")
+        #expect(grammar.columnTypeString(for: .double) == "float8")
+        #expect(grammar.columnTypeString(for: .string(.limit(10))) == "varchar(10)")
+        #expect(grammar.columnTypeString(for: .string(.unlimited)) == "text")
+        #expect(grammar.columnTypeString(for: .uuid) == "uuid")
+        #expect(grammar.columnTypeString(for: .bool) == "bool")
+        #expect(grammar.columnTypeString(for: .date) == "timestamptz")
+        #expect(grammar.columnTypeString(for: .json) == "json")
     }
     
-    func testCreateColumnString() {
-        
+    @Test func createColumnString() {
+
     }
     
-    func testJsonLiteral() {
-        XCTAssertEqual(grammar.jsonLiteral(for: "foo"), "'foo'::jsonb")
+    @Test func jsonLiteral() {
+        #expect(grammar.jsonLiteral(for: "foo") == "'foo'::jsonb")
     }
 }

@@ -1,19 +1,19 @@
 import Alchemy
-import XCTest
+import Testing
 
-final class KeyMappingTests: XCTestCase {
-    func testCustom() {
-        let custom = KeyMapping.custom(to: { "\($0)_1" }, from: { String($0.dropLast(2)) }) 
-        XCTAssertEqual(custom.encode("foo"), "foo_1")
+struct KeyMappingTests {
+    @Test func custom() {
+        let custom = KeyMapping.custom(to: { "\($0)_1" }, from: { String($0.dropLast(2)) })
+        #expect(custom.encode("foo") == "foo_1")
     }
-    
-    func testSnakeCase() {
+
+    @Test func snakeCase() {
         let snakeCase = KeyMapping.snakeCase
-        XCTAssertEqual(snakeCase.encode(""), "")
-        XCTAssertEqual(snakeCase.encode("foo"), "foo")
-        XCTAssertEqual(snakeCase.encode("fooBar"), "foo_bar")
-        XCTAssertEqual(snakeCase.encode("AI"), "a_i")
-        XCTAssertEqual(snakeCase.encode("testJSON"), "test_json")
-        XCTAssertEqual(snakeCase.encode("testNumbers123"), "test_numbers123")
+        #expect(snakeCase.encode("") == "")
+        #expect(snakeCase.encode("foo") == "foo")
+        #expect(snakeCase.encode("fooBar") == "foo_bar")
+        #expect(snakeCase.encode("AI") == "a_i")
+        #expect(snakeCase.encode("testJSON") == "test_json")
+        #expect(snakeCase.encode("testNumbers123") == "test_numbers123")
     }
 }

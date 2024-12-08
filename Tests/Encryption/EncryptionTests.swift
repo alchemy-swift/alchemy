@@ -1,17 +1,19 @@
-import AlchemyTest
+@testable
+import Alchemy
 import Crypto
+import Foundation
+import Testing
 
-@testable import Alchemy
-
-final class EncryptionTests: XCTestCase {
-    func testEncrypter() throws {
+struct EncryptionTests {
+    @Test func encrypter() throws {
         let initialKey = SymmetricKey(size: .bits256)
         let initialEncryptor = Encrypter(key: initialKey)
         let initialCipher = try initialEncryptor.encrypt(string: "FOO")
 
         let keyString = initialKey.withUnsafeBytes { Data($0) }.base64EncodedString()
         guard let keyData = Data(base64Encoded: keyString) else {
-            return XCTFail("couldn't decode")
+            Issue.record("couldn't decode")
+            return
         }
 
         let recreatedKey = SymmetricKey(data: keyData)
@@ -19,38 +21,39 @@ final class EncryptionTests: XCTestCase {
         let cipher = try encrypter.encrypt(string: "FOO")
         let decrypted = try encrypter.decrypt(data: cipher)
         let initialDecrypted = try encrypter.decrypt(data: initialCipher)
-        XCTAssertEqual("FOO", decrypted)
-        XCTAssertEqual("FOO", initialDecrypted)
+        #expect("FOO" == decrypted)
+        #expect("FOO" == initialDecrypted)
     }
 
-    func testDecryptStringNotBase64Throws() {
+    @Test func decryptStringNotBase64Throws() {
         let key = SymmetricKey(size: .bits256)
         let encrypter = Encrypter(key: key)
-        XCTAssertThrowsError(try encrypter.decrypt(base64Encoded: "foo"))
+        #expect(throws: Error.self) { try encrypter.decrypt(base64Encoded: "foo") }
     }
 
-    func testEncrypted() throws {
+    @Test func encrypted() throws {
         Env.fake(["APP_KEY": Encrypter.generateKeyString()])
 
         let string = "FOO"
         let encryptedValue = try Crypt.encrypt(string: string).base64EncodedString()
         let reader: SQLRowReader = ["foo": encryptedValue]
         let encrypted = try Encrypted(key: "foo", on: reader)
-        XCTAssertEqual(encrypted.wrappedValue, "FOO")
+        #expect(encrypted.wrappedValue == "FOO")
 
         var writer = SQLRowWriter()
         try encrypted.store(key: "foo", on: &writer)
         guard let storedValue = writer.fields["foo"] as? String else {
-            return XCTFail("a String wasn't stored")
+            Issue.record("a String wasn't stored")
+            return
         }
 
         let decrypted = try Crypt.decrypt(base64Encoded: storedValue)
-        XCTAssertEqual(decrypted, string)
+        #expect(decrypted == string)
     }
 
-    func testEncryptedNotBase64Throws() {
+    @Test func encryptedNotBase64Throws() {
         let reader: SQLRowReader = ["foo": "bar"]
-        XCTAssertThrowsError(try Encrypted(key: "foo", on: reader))
+        #expect(throws: Error.self) { try Encrypted(key: "foo", on: reader) }
     }
 }
 

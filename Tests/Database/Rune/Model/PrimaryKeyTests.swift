@@ -1,15 +1,16 @@
 @testable
 import Alchemy
-import AlchemyTest
+import Foundation
+import Testing
 
-final class PrimaryKeyTests: XCTestCase {
-    func testPrimaryKeyFromSqlValue() {
+struct PrimaryKeyTests {
+    @Test func primaryKeyFromSqlValue() throws {
         let uuid = UUID()
-        XCTAssertEqual(try UUID(value: .string(uuid.uuidString)), uuid)
-        XCTAssertThrowsError(try UUID(value: .int(1)))
-        XCTAssertEqual(try Int(value: .int(1)), 1)
-        XCTAssertThrowsError(try Int(value: .string("foo")))
-        XCTAssertEqual(try String(value: .string("foo")), "foo")
-        XCTAssertThrowsError(try String(value: .null))
+        #expect(try UUID(value: .string(uuid.uuidString)) == uuid)
+        #expect(throws: Error.self) { try UUID(value: .int(1)) }
+        #expect(try Int(value: .int(1)) == 1)
+        #expect(throws: Error.self) { try Int(value: .string("foo")) }
+        #expect(try String(value: .string("foo")) == "foo")
+        #expect(throws: Error.self) { try String(value: .null) }
     }
 }

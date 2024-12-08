@@ -1,12 +1,13 @@
-import AlchemyTest
+import Foundation
+import Testing
 
-final class UUIDLosslessStringConvertibleTests: XCTestCase {
-    func testValidUUID() {
+struct UUIDLosslessStringConvertibleTests {
+    @Test func validUUID() {
         let uuid = UUID()
-        XCTAssertEqual(UUID(uuid.uuidString), uuid)
+        #expect(UUID(uuid.uuidString) == uuid)
     }
-    
-    func testInvalidUUID() {
-        XCTAssertEqual(UUID("foo"), nil)
+
+    @Test func invalidUUID() {
+        #expect(UUID("foo") == nil)
     }
 }

@@ -9,7 +9,7 @@ extension HTTPDecoder where Self == FormDataDecoder {
 }
 
 extension FormDataEncoder: HTTPEncoder {
-    static var boundary: () -> String = { "AlchemyFormBoundary" + .randomAlphaNumberic(15) }
+    public static var boundary: () -> String = { "AlchemyFormBoundary" + .randomAlphaNumberic(15) }
     
     public func encodeBody<E>(_ value: E) throws -> (buffer: ByteBuffer, contentType: ContentType?) where E : Encodable {
         let boundary = FormDataEncoder.boundary()

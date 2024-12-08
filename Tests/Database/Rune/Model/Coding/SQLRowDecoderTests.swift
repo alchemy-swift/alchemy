@@ -1,19 +1,20 @@
 @testable
 import Alchemy
-import AlchemyTest
+import Foundation
+import Testing
 
-final class SQLRowDecoderTests: XCTestCase {
-    func testDecodeThrowing() throws {
+struct SQLRowDecoderTests {
+    @Test func decodeThrowing() throws {
         let row: SQLRow = [:]
         let decoder = SQLRowDecoder(row: row, keyMapping: .useDefaultKeys, jsonDecoder: JSONDecoder())
-        XCTAssertThrowsError(try decoder.singleValueContainer())
-        XCTAssertThrowsError(try decoder.unkeyedContainer())
-        
+        #expect(throws: Error.self) { try decoder.singleValueContainer() }
+        #expect(throws: Error.self) { try decoder.unkeyedContainer() }
+
         let keyed = try decoder.container(keyedBy: DummyKeys.self)
-        XCTAssertThrowsError(try keyed.nestedUnkeyedContainer(forKey: .foo))
-        XCTAssertThrowsError(try keyed.nestedContainer(keyedBy: DummyKeys.self, forKey: .foo))
-        XCTAssertThrowsError(try keyed.superDecoder())
-        XCTAssertThrowsError(try keyed.superDecoder(forKey: .foo))
+        #expect(throws: Error.self) { try keyed.nestedUnkeyedContainer(forKey: .foo) }
+        #expect(throws: Error.self) { try keyed.nestedContainer(keyedBy: DummyKeys.self, forKey: .foo) }
+        #expect(throws: Error.self) { try keyed.superDecoder() }
+        #expect(throws: Error.self) { try keyed.superDecoder(forKey: .foo) }
     }
 }
 

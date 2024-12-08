@@ -1,10 +1,10 @@
-import AlchemyTest
+import Alchemy
+import Testing
 
-final class ValidationErrorTests: XCTestCase {
-    func testConvertResponse() throws {
-        try ValidationError("bar")
-            .response()
-            .assertStatus(.badRequest)
-            .assertJson(["validation_error": "bar"])
+struct ValidationErrorTests {
+    @Test func response() throws {
+        let res = try ValidationError("bar").response()
+        #expect(res.status == .badRequest)
+        #expect(try res.decode() == ["validation_error": "bar"])
     }
 }
