@@ -1,6 +1,6 @@
 /// The default configured Filesystem
 public var Storage: Filesystem {
-    Container.main.require()
+    Container.main.require(default: .local(root: "storage"))
 }
 
 public func Storage(_ key: KeyPath<Container, Filesystem>) -> Filesystem {

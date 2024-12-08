@@ -1,6 +1,6 @@
 /// Your app's default Queue
 public var Q: Queue {
-    Container.main.require()
+    Container.main.require(default: .memory)
 }
 
 public func Q(_ key: KeyPath<Container, Queue>) -> Queue {

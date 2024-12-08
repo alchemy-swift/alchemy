@@ -7,7 +7,7 @@ extension Database {
     ///   - seeders: Any seeders to set on the database, they will be run before
     ///     this function returns.
     public func fake(keyMapping: KeyMapping = .snakeCase, migrations: [Migration] = [], seeders: [Seeder] = []) async throws {
-        self.provider = SQLiteDatabaseProvider(configuration: .init(storage: .memory(identifier: UUID().uuidString)))
+        self.provider = Database.memory.provider
         self.keyMapping = keyMapping
         self.migrations = migrations
         self.seeders = seeders

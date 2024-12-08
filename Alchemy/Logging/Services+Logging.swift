@@ -1,6 +1,6 @@
 /// The application Logger
 public var Log: Logger {
-    Container.main.get(Logger.self) ?? Container.$alchemy
+    Container.main.require(default: .default)
 }
 
 public func Log(_ key: KeyPath<Container, Logger>) -> Logger {

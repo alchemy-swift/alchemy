@@ -1,6 +1,6 @@
 /// The default configured Database
 public var DB: Database {
-    Container.main.require()
+    Container.main.require(default: .memory)
 }
 
 public func DB(_ key: KeyPath<Container, Database>) -> Database {

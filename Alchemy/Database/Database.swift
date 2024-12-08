@@ -35,6 +35,7 @@ public final class Database {
         self.logging = logging
         self.migrations = Main.migrations
         self.seeders = Main.seeders
+        Life.onShutdown { try await provider.shutdown() }
     }
 
     /// Log all executed queries to the `debug` level.

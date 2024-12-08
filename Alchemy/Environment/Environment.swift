@@ -58,15 +58,12 @@ public final class Environment: ExpressibleByStringLiteral {
     /// - Returns: The variable converted to `L` or `nil` if the variable
     ///   doesn't exist or it cannot be converted to `L`.
     public func get<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self) -> L? {
-        guard let val =  runtimeOverrides[key] ?? processVariables[key] ?? dotenvVariables[key] else {
-            return nil
-        }
-
+        guard let val = _get(key) else { return nil }
         return L(val)
     }
 
     public func require<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self, default: L? = nil) -> L {
-        guard let val = runtimeOverrides[key] ?? processVariables[key] ?? dotenvVariables[key] else {
+        guard let val = _get(key) else {
             guard let `default` else { fatalError("No environment value for \(key) found.") }
             return `default`
         }
@@ -80,9 +77,12 @@ public final class Environment: ExpressibleByStringLiteral {
     }
 
     public func require<L: LosslessStringConvertible>(_ key: String, as: L?.Type = L?.self, default: L? = nil) -> L? {
-        guard let val = processVariables[key] ?? dotenvVariables[key] else { return `default` }
-        guard let value = L(val) else { return `default` }
+        guard let string = _get(key), let value = L(string) else { return `default` }
         return value
+    }
+
+    private func _get(_ key: String) -> String? {
+        runtimeOverrides[key] ?? processVariables[key] ?? dotenvVariables[key]
     }
 
     // MARK: Runtime Overriding
