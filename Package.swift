@@ -12,31 +12,29 @@ let package = Package(
     products: [
         .executable(name: "AlchemyExample", targets: ["AlchemyExample"]),
         .library(name: "Alchemy", targets: ["Alchemy"]),
-        .library(name: "AlchemyTest", targets: ["AlchemyTest"]),
+        .library(name: "AlchemyTesting", targets: ["AlchemyTesting"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/alchemy-swift/cron", from: "2.3.2"),
-        .package(url: "https://github.com/alchemy-swift/pluralize", from: "1.0.1"),
-        .package(url: "https://github.com/apple/swift-log", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto", from: "3.0.0"),
-        .package(url: "https://github.com/apple/swift-http-types", from: "1.0.0"),
-        .package(url: "https://github.com/swiftlang/swift-syntax", from: "600.0.1"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird", from: "2.5.0"),
-        .package(url: "https://github.com/onevcat/Rainbow", .upToNextMajor(from: "4.0.0")),
-        .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.1.0"),
-        .package(url: "https://github.com/swift-server/async-http-client", from: "1.0.0"),
-        .package(url: "https://github.com/swift-server/RediStack", from: "1.6.2"),
-        .package(url: "https://github.com/vapor/async-kit", from: "1.0.0"),
-        .package(url: "https://github.com/vapor/multipart-kit", from: "4.7.0"),
-        .package(url: "https://github.com/vapor/mysql-nio", from: "1.0.0"),
-        .package(url: "https://github.com/vapor/postgres-nio", from: "1.17.0"),
-        .package(url: "https://github.com/vapor/sqlite-nio", from: "1.0.0"),
-
-        // MARK: Experimental
-
-        .package(url: "https://github.com/joshuawright11/AlchemyX", branch: "main"),
+        "alchemy-swift/cron":                     "2.3.2",
+        "alchemy-swift/pluralize":                "1.0.1",
+        "apple/swift-log":                        "1.0.0",
+        "apple/swift-argument-parser":            "1.0.0",
+        "apple/swift-async-algorithms":           "1.0.0",
+        "apple/swift-crypto":                     "3.0.0",
+        "apple/swift-http-types":                 "1.0.0",
+        "swiftlang/swift-syntax":               "600.0.1",
+        "hummingbird-project/hummingbird":        "2.5.0",
+        "hummingbird-project/hummingbird-auth":   "2.0.2",
+        "onevcat/Rainbow":                        "4.0.0",
+        "pointfreeco/swift-concurrency-extras":   "1.1.0",
+        "swift-server/async-http-client":         "1.0.0",
+        "swift-server/RediStack":                 "1.6.2",
+        "vapor/async-kit":                        "1.0.0",
+        "vapor/multipart-kit":                    "4.7.0",
+        "vapor/mysql-nio":                        "1.0.0",
+        "vapor/postgres-nio":                    "1.17.0",
+        "vapor/sqlite-nio":                       "1.0.0",
+        "joshuawright11/AlchemyX":                 "main", // experimental
     ],
     targets: [
 
@@ -44,13 +42,11 @@ let package = Package(
 
         .executableTarget(
             name: "AlchemyExample",
-            dependencies: [
-                .byName(name: "Alchemy"),
-            ],
-            path: "Example"
+            dependencies: ["Alchemy"],
+            path: "AlchemyExample"
         ),
 
-        // MARK: Libraries
+        // MARK: Alchemy
 
         .target(
             name: "Alchemy",
@@ -72,6 +68,7 @@ let package = Package(
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdHTTP2", package: "hummingbird"),
                 .product(name: "HummingbirdTLS", package: "hummingbird"),
+                .product(name: "HummingbirdBcrypt", package: "hummingbird-auth"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "MultipartKit", package: "multipart-kit"),
                 .product(name: "Pluralize", package: "pluralize"),
@@ -87,38 +84,17 @@ let package = Package(
 
                 /// Internal dependencies
 
-                "AlchemyC",
                 "AlchemyPlugin",
             ],
-            path: "Alchemy"
+            path: "Alchemy/Sources"
         ),
-        .target(
-            name: "AlchemyC",
-            path: "AlchemyC"
-        ),
-        .target(
-            name: "AlchemyTest",
-            dependencies: [
-                "Alchemy"
-            ],
-            path: "AlchemyTest"
-        ),
-
-        // MARK: Tests
-
         .testTarget(
             name: "AlchemyTests",
-            dependencies: [
-
-                // Internal
-
-                "AlchemyTest",
-                "Alchemy",
-            ],
-            path: "Tests"
+            dependencies: ["Alchemy", "AlchemyTesting"],
+            path: "Alchemy/Tests"
         ),
 
-        // MARK: Plugin
+        // MARK: AlchemyPlugin
 
         .macro(
             name: "AlchemyPlugin",
@@ -134,11 +110,34 @@ let package = Package(
         ),
         .testTarget(
             name: "AlchemyPluginTests",
-            dependencies: [
-                "AlchemyPlugin",
-            ],
+            dependencies: ["AlchemyPlugin"],
             path: "AlchemyPlugin/Tests"
+        ),
+
+        // MARK: AlchemyTesting
+
+        .target(
+            name: "AlchemyTesting",
+            dependencies: ["Alchemy"],
+            path: "AlchemyTesting/Sources"
+        ),
+        .testTarget(
+            name: "AlchemyTestingTests",
+            dependencies: ["AlchemyTesting"],
+            path: "AlchemyTesting/Tests"
         ),
     ],
     swiftLanguageModes: [.v5]
 )
+
+extension [Package.Dependency]: @retroactive ExpressibleByDictionaryLiteral {
+    public init(dictionaryLiteral elements: (String, String)...) {
+        self = elements.map { key, value in
+            if let version = PackageDescription.Version(value) {
+                return .package(url: "https://github.com/\(key)", from: version)
+            } else {
+                return .package(url: "https://github.com/\(key)", branch: value)
+            }
+        }
+    }
+}
