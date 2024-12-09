@@ -2,6 +2,8 @@ import Alchemy
 
 @Model
 struct AuthModel: BasicAuthable {
+    static let table = "auth_models"
+
     var id: Int
     let email: String
     let password: String

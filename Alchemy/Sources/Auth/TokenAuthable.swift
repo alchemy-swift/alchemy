@@ -39,7 +39,7 @@ public protocol TokenAuthable: Model {
     /// associated with the request.
     associatedtype Authorizes: Model
 
-    /// The user in question.
+    /// The user this token authorizes.
     var user: Authorizes { get async throws }
 
     /// The name of the row that stores the token's value. Defaults to "value"`.
@@ -55,8 +55,8 @@ extension TokenAuthable {
     ///
     /// - Returns: A `TokenAuthMiddleware<Self>` for authenticating
     ///   requests.
-    public static func tokenAuthMiddleware() -> TokenAuthMiddleware<Self> {
-        TokenAuthMiddleware()
+    public static func tokenAuthMiddleware(db: Database = DB) -> TokenAuthMiddleware<Self> {
+        TokenAuthMiddleware(db: db)
     }
 }
 
@@ -68,12 +68,19 @@ extension TokenAuthable {
 /// header, or the token value isn't valid, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct TokenAuthMiddleware<T: TokenAuthable>: Middleware {
+    private let db: Database
+
+    init(db: Database = DB) {
+        self.db = db
+    }
+
     public func handle(_ request: Request, next: Next) async throws -> Response {
         guard let bearerAuth = request.bearerAuth() else {
             throw HTTPError(.unauthorized)
         }
         
         guard let model = try await T
+            .query(on: db)
             .where(T.valueKeyString == bearerAuth.token)
             .first()
         else {

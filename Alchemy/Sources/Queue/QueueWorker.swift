@@ -50,8 +50,8 @@ actor QueueWorker: Service {
             try await job!.handle(context: context)
             try await success(job: job!, jobData: jobData)
         } catch where jobData.canRetry {
-            try await retry(jobData: &jobData)
             job?.failed(error: error)
+            try await retry(jobData: &jobData)
         } catch JobError.unknownJob(let name) {
             let error = JobError.unknownJob(name)
             // So that an old worker won't fail new, unrecognized jobs.

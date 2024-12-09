@@ -25,7 +25,7 @@ final class HTTPRouter: Router, Middleware {
     }
 
     private let prefixes: [String]
-    private var middlewares: [Middleware]
+    var middlewares: [Middleware]
     private var handlers: [Handler]
 
     init(prefixes: [String] = [], middlewares: [Middleware] = []) {

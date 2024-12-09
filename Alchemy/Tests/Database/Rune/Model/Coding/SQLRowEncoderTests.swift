@@ -63,21 +63,6 @@ final class SQLRowEncoderTests: TestCase<TestApp> {
         XCTAssertEqual(expectedFields.mapValues(\.sql), try model.fields().mapValues(\.sql))
     }
     
-    func testKeyMapping() async throws {
-        try await DB.fake(keyMapping: .useDefaultKeys)
-        let model = CustomKeyedModel()
-        model.id = 0
-        let fields = try model.fields()
-        XCTAssertEqual("CustomKeyedModels", CustomKeyedModel.table)
-        XCTAssertEqual([
-            "id",
-            "val1",
-            "valueTwo",
-            "valueThreeInt",
-            "snake_case"
-        ].sorted(), fields.keys.sorted())
-    }
-    
     func testCustomJSONEncoder() throws {
         let json = DatabaseJSON(val1: "one", val2: Date())
         let jsonData = try CustomDecoderModel.jsonEncoder.encode(json)

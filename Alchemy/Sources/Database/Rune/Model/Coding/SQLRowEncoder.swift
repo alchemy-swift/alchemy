@@ -21,19 +21,19 @@ final class SQLRowEncoder: Encoder {
         }
         
         mutating func nestedContainer<NestedKey: CodingKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> {
-            fatalError("Nested coding of `Model` not supported.")
+            preconditionFailure("Nested coding of `Model` not supported.")
         }
 
         mutating func nestedUnkeyedContainer(forKey key: Key) -> UnkeyedEncodingContainer {
-            fatalError("Nested coding of `Model` not supported.")
+            preconditionFailure("Nested coding of `Model` not supported.")
         }
 
         mutating func superEncoder() -> Encoder {
-            fatalError("Superclass encoding of `Model` not supported.")
+            preconditionFailure("Superclass encoding of `Model` not supported.")
         }
 
         mutating func superEncoder(forKey key: Key) -> Encoder {
-            fatalError("Superclass encoding of `Model` not supported.")
+            preconditionFailure("Superclass encoding of `Model` not supported.")
         }
     }
     
@@ -73,10 +73,10 @@ final class SQLRowEncoder: Encoder {
     }
 
     func unkeyedContainer() -> UnkeyedEncodingContainer {
-        fatalError("`Model`s should never encode to an unkeyed container.")
+        preconditionFailure("`Model`s should never encode to an unkeyed container.")
     }
 
     func singleValueContainer() -> SingleValueEncodingContainer {
-        fatalError("`Model`s should never encode to a single value container.")
+        preconditionFailure("`Model`s should never encode to a single value container.")
     }
 }

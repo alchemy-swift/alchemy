@@ -5,7 +5,7 @@ import AlchemyTesting
 final class ClientTests: TestCase<TestApp> {
     func testQueries() async throws {
         Http.stub([
-            "localhost/foo": .stub(.unauthorized),
+            "localhost/foo": .stub(.forbidden),
             "localhost/*": .stub(.ok),
             "*": .stub(.ok),
         ])
@@ -13,8 +13,8 @@ final class ClientTests: TestCase<TestApp> {
             .assertOk()
         
         try await Http.withQueries(["bar":"2"]).get("https://localhost/foo?baz=1")
-            .assertUnauthorized()
-        
+            .assertForbidden()
+
         try await Http.get("https://example.com")
             .assertOk()
         

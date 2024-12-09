@@ -57,9 +57,12 @@ open class TestCase<A: Application>: XCTestCase {
 extension Application {
     public static func test() async throws -> Self {
         let app = Self()
-        Main = app
         try await app.willRun()
         return app
+    }
+
+    public func willTest() async throws {
+        try await willRun()
     }
 
     public func didTest() async throws {

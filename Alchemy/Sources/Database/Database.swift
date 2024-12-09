@@ -33,9 +33,15 @@ public final class Database {
         self.provider = provider
         self.grammar = grammar
         self.logging = logging
-        self.migrations = Main.migrations
-        self.seeders = Main.seeders
-        Life.onShutdown { try await provider.shutdown() }
+
+        if let app = Container.$_application {
+            self.migrations = app.migrations
+            self.seeders = app.seeders
+            Life.onShutdown { try await provider.shutdown() }
+        } else {
+            self.migrations = []
+            self.seeders = []
+        }
     }
 
     /// Log all executed queries to the `debug` level.

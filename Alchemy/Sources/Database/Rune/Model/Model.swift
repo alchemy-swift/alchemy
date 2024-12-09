@@ -50,7 +50,7 @@ public protocol Model: Identifiable, QueryResult, ModelOrOptional where ID: Prim
 
 extension Model {
     public static var database: Database { DB }
-    public static var keyMapping: KeyMapping { database.keyMapping }
+    public static var keyMapping: KeyMapping { .snakeCase }
     public static var table: String { keyMapping.encode("\(Self.self)").pluralized }
     public static var idKey: String { "id" }
     public static var upsertConflictKeys: [String] { [idKey] }

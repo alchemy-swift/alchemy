@@ -56,7 +56,7 @@ public struct SQLWhere: Hashable, SQLConvertible {
                 } else if op == .equals {
                     return SQL("\(boolean) \(key) IS NULL")
                 } else {
-                    fatalError("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
+                    preconditionFailure("Can't use any where operators other than .notEqualTo or .equals if the value is NULL.")
                 }
             } else {
                 return SQL("\(boolean) \(key) \(op) ?", input: [sql])
