@@ -6,7 +6,11 @@ import SwiftSyntaxMacros
 @main
 struct AlchemyPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        
+
+        // MARK: Environment
+
+        EnvMacro.self,
+
         // MARK: Jobs
 
         JobMacro.self,

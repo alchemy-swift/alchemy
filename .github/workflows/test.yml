@@ -9,26 +9,26 @@ on:
 
 jobs:
     test-macos:
-        runs-on: macos-14
+        runs-on: macos-latest
         env:
-            DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+            DEVELOPER_DIR: /Applications/Xcode_16.1.app/Contents/Developer
         steps:
             - uses: actions/checkout@v3
             - name: Build
-              run: swift build -v
+              run: swift build
             - name: Run tests
-              run: swift test -v
+              run: swift test
     test-linux:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-22.04
         strategy:
             matrix:
-                swift: ["5.10"]
+                swift: ["6.0"]
         container: swift:${{ matrix.swift }}
         steps:
             - uses: actions/checkout@v3
             - name: Install sqlite
               run: apt-get -q update && apt-get install -y libsqlite3-dev
             - name: Build
-              run: swift build -v --enable-test-discovery
+              run: swift build
             - name: Run tests
-              run: swift test -v --enable-test-discovery
+              run: swift test

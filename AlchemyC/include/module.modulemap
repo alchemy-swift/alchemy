@@ -1,4 +1,0 @@
-module CAlchemy [system][extern_c] {
-    header "../bcrypt.h"
-    export *
-}
