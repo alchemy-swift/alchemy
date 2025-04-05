@@ -10,8 +10,8 @@ struct SeedCommandTests: AppSuite {
             try await DB.fake(migrations: [SeedModel.Migrate()])
             DB.seeders = [Seeder1(), Seeder2()]
             try await SeedCommand(db: nil).run()
-            XCTAssertTrue(Seeder1.didRun)
-            XCTAssertTrue(Seeder2.didRun)
+            #expect(Seeder1.didRun)
+            #expect(Seeder2.didRun)
         }
     }
 

@@ -2,119 +2,142 @@ import AlchemyTesting
 
 @Suite(.serialized)
 struct ModelCrudTests {
+    let db: Database
+
     init() async throws {
-        try await DB.shutdown()
-        try await DB.fake(migrations: [TestModelMigration(), TestModelCustomIdMigration()])
+        let db = Database.memory
+        try await db.migrate([TestModelMigration(), TestModelCustomIdMigration()])
+        self.db = db
     }
 
     @Test func all() async throws {
-        let all = try await TestModel.all()
+        let all = try await TestModel.all(on: db)
         #expect(all == [])
 
-        try await TestModel.seed(5)
-        
-        let newAll = try await TestModel.all()
+        try await TestModel.seed(on: db, 5)
+
+        let newAll = try await TestModel.all(on: db)
         #expect(newAll.count == 5)
+
+        try await _cleanup()
     }
     
     @Test func search() async throws {
-        let first = try await TestModel.first()
+        let first = try await TestModel.first(db: db)
         #expect(first == nil)
 
-        let model = try await TestModel(foo: "baz", bar: false).insertReturn()
-        
-        let findById = try await TestModel.find(model.id)
+        let model = try await TestModel(foo: "baz", bar: false).insertReturn(on: db)
+
+        let findById = try await TestModel.find(on: db, model.id)
         #expect(findById == model)
 
         await #expect(throws: Error.self) {
-            try await TestModel.require(999, error: TestError())
+            try await TestModel.require(999, error: TestError(), db: db)
         }
 
-        let missingId = try await TestModel.find(999)
+        let missingId = try await TestModel.find(on: db, 999)
         #expect(missingId == nil)
 
-        let findByWhere = try await TestModel.firstWhere("foo" == "baz")
+        let findByWhere = try await TestModel.firstWhere(on: db, "foo" == "baz")
         #expect(findByWhere == model)
 
-        let newFirst = try await TestModel.first()
+        let newFirst = try await TestModel.first(db: db)
         #expect(newFirst == model)
+
+        try await _cleanup()
     }
     
     @Test func random() async throws {
-        #expect(try await TestModel.random() == nil)
-        try await TestModel.seed()
-        #expect(try await TestModel.random() != nil)
+        #expect(try await TestModel.random(on: db) == nil)
+        try await TestModel.seed(on: db)
+        #expect(try await TestModel.random(on: db) != nil)
+
+        try await _cleanup()
     }
     
     @Test func delete() async throws {
-        let models = try await TestModel.seed(5)
+        let models = try await TestModel.seed(on: db, 5)
         guard let first = models.first else {
             XCTFail("There should be 5 models in the database.")
             return
         }
         
-        try await TestModel.delete(first.id)
+        try await TestModel.delete(on: db, first.id)
         
-        let count = try await TestModel.all().count
+        let count = try await TestModel.all(on: db).count
         #expect(count == 4)
 
-        try await TestModel.truncate()
-        let newCount = try await TestModel.all().count
+        try await TestModel.truncate(on: db)
+        let newCount = try await TestModel.all(on: db).count
         #expect(newCount == 0)
 
-        let model = try await TestModel.seed()
-        try await TestModel.delete("foo" == model.foo)
-        #expect(try await TestModel.all().isEmpty)
+        let model = try await TestModel.seed(on: db)
+        try await TestModel.delete(on: db, "foo" == model.foo)
+        #expect(try await TestModel.all(on: db).isEmpty)
 
-        let modelNew = try await TestModel.seed()
-        try await TestModel.delete("foo" == modelNew.foo)
-        #expect(try await TestModel.all().isEmpty)
+        let modelNew = try await TestModel.seed(on: db)
+        try await TestModel.delete(on: db, "foo" == modelNew.foo)
+        #expect(try await TestModel.all(on: db).isEmpty)
+
+        try await _cleanup()
     }
     
     @Test func deleteAll() async throws {
-        let models = try await TestModel.seed(5)
-        try await models.deleteAll()
-        #expect(try await TestModel.all().isEmpty)
+        let models = try await TestModel.seed(on: db, 5)
+        try await models.deleteAll(on: db)
+        #expect(try await TestModel.all(on: db).isEmpty)
+
+        try await _cleanup()
     }
     
     @Test func insertReturn() async throws {
-        let model = try await TestModel(foo: "bar", bar: false).insertReturn()
+        let model = try await TestModel(foo: "bar", bar: false).insertReturn(on: db)
         #expect(model.foo == "bar")
         #expect(!model.bar)
 
-        let customId = try await TestModelCustomId(foo: "bar").insertReturn()
+        let customId = try await TestModelCustomId(foo: "bar").insertReturn(on: db)
         #expect(customId.foo == "bar")
+
+        try await _cleanup()
     }
     
     @Test func update() async throws {
-        var model = try await TestModel.seed()
+        var model = try await TestModel.seed(on: db)
         let id = model.id
         model.foo = "baz"
-        #expect(try await TestModel.find(id) != model)
+        #expect(try await TestModel.find(on: db, id) != model)
 
-        _ = try await model.save()
-        #expect(try await TestModel.find(id) == model)
+        _ = try await model.save(on: db)
+        #expect(try await TestModel.find(on: db, id) == model)
 
-        _ = try await model.update(["foo": "foo"])
-        #expect(try await TestModel.find(id)?.foo == "foo")
+        _ = try await model.update(on: db, ["foo": "foo"])
+        #expect(try await TestModel.find(on: db, id)?.foo == "foo")
+
+        try await _cleanup()
     }
     
     @Test func sync() async throws {
-        let model = try await TestModel.seed()
-        _ = try await model.update { $0.foo = "bar" }
+        let model = try await TestModel.seed(on: db)
+        _ = try await model.update(on: db) { $0.foo = "bar" }
         #expect(model.foo != "bar")
-        #expect(try await model.refresh().foo == "bar")
+        #expect(try await model.refresh(on: db).foo == "bar")
 
         let unsavedModel = TestModel(foo: "one", bar: false)
         unsavedModel.id = 12345
         await #expect(throws: Error.self) {
-            try await unsavedModel.refresh()
+            try await unsavedModel.refresh(on: db)
         }
 
         let unsavedModel2 = TestModel(foo: "two", bar: true)
         await #expect(throws: Error.self) {
-            try await unsavedModel2.refresh()
+            try await unsavedModel2.refresh(on: db)
         }
+
+        try await _cleanup()
+    }
+
+    private func _cleanup() async throws {
+        try await db.shutdown()
     }
 }
 
