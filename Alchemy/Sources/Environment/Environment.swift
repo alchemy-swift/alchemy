@@ -64,12 +64,12 @@ public final class Environment: ExpressibleByStringLiteral {
 
     public func require<L: LosslessStringConvertible>(_ key: String, as: L.Type = L.self, default: L? = nil) -> L {
         guard let val = _get(key) else {
-            guard let `default` else { fatalError("No environment value for \(key) found.") }
+            guard let `default` else { preconditionFailure("No environment value for \(key) found.") }
             return `default`
         }
 
         guard let value = L(val) else {
-            guard let `default` else { fatalError("Environment value for \(key) is not a valid \(L.self).") }
+            guard let `default` else { preconditionFailure("Environment value for \(key) is not a valid \(L.self).") }
             return `default`
         }
 

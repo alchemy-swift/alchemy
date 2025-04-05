@@ -77,8 +77,8 @@ extension BasicAuthable {
     ///
     /// - Returns: A `BasicAuthMiddleware<Self>` for authenticating
     ///   requests.
-    public static func basicAuthMiddleware() -> BasicAuthMiddleware<Self> {
-        BasicAuthMiddleware()
+    public static func basicAuthMiddleware(db: Database = DB) -> BasicAuthMiddleware<Self> {
+        BasicAuthMiddleware(db: db)
     }
     
     /// Authenticates this model with a username and password.
@@ -91,8 +91,13 @@ extension BasicAuthable {
     /// - Returns: A the authenticated `BasicAuthable`, if there was
     ///   one. Throws `error` if the model is not found, or the
     ///   password doesn't match.
-    public static func authenticate(username: String, password: String, else error: Error = HTTPError(.unauthorized)) async throws -> Self {
-        let rows = try await DB
+    public static func authenticate(
+        db: Database = DB,
+        username: String,
+        password: String,
+        else error: Error = HTTPError(.unauthorized)
+    ) async throws -> Self {
+        let rows = try await db
             .table(Self.table)
             .where(usernameKeyString == username)
             .select("\(table).*", passwordKeyString)
@@ -122,12 +127,18 @@ extension BasicAuthable {
 /// basic auth values don't match a row in the database, an
 /// `HTTPError(.unauthorized)` will be thrown.
 public struct BasicAuthMiddleware<B: BasicAuthable>: Middleware {
+    private let db: Database
+
+    public init(db: Database = DB) {
+        self.db = db
+    }
+
     public func handle(_ request: Request, next: Next) async throws -> Response {
         guard let basicAuth = request.basicAuth() else {
             throw HTTPError(.unauthorized)
         }
         
-        let model = try await B.authenticate(username: basicAuth.username, password: basicAuth.password)
+        let model = try await B.authenticate(db: db, username: basicAuth.username, password: basicAuth.password)
         return try await next(request.set(model))
     }
 }

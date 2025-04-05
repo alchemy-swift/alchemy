@@ -14,12 +14,15 @@ extension Seedable where Self: Model {
     }
 
     @discardableResult
-    public static func seed(fields: SQLFields = [:], modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
-        try await seed(1, fields: fields, modifier: modifier).first!
+    public static func seed(on db: Database = DB,
+                            fields: SQLFields = [:],
+                            modifier: ((inout Self) async throws -> Void)? = nil) async throws -> Self {
+        try await seed(on: db, 1, fields: fields, modifier: modifier).first!
     }
 
     @discardableResult
     public static func seed(
+        on db: Database = DB,
         _ count: Int = 1,
         fields: SQLFields = [:],
         modifier: ((inout Self) async throws -> Void)? = nil
@@ -31,6 +34,6 @@ extension Seedable where Self: Model {
             models.append(model)
         }
 
-        return try await models._insertReturnAll(fieldOverrides: fields)
+        return try await models._insertReturnAll(on: db, fieldOverrides: fields)
     }
 }

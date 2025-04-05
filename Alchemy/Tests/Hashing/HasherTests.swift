@@ -8,8 +8,8 @@ struct HasherTests {
     }
     
     @Test func sha256() throws {
-        let hashed = try Hash(.sha256).makeSync("foo")
-        let verify = try Hash(.sha256).verifySync("foo", hash: hashed)
+        let hashed = Hash(.sha256).makeSync("foo")
+        let verify = Hash(.sha256).verifySync("foo", hash: hashed)
         #expect(verify)
     }
 }

@@ -1,20 +1,17 @@
 import AlchemyTesting
 
-final class EagerLoadableTests: TestCase<TestApp> {
-    override func setUp() async throws {
-        try await super.setUp()
-        try await DB.fake(migrations: [
-            TestModelMigration(),
-            TestParentMigration()
-        ])
-    }
-    
-    func testWith() async throws {
-        try await TestParent.seed()
-        let child = try await TestModel.seed()
-        _ = try await child.testParent()
-        let fetchedChild = try await TestModel.query().with(\.testParent).first()
-        XCTAssertEqual(fetchedChild, child)
+struct EagerLoadableTests: AppSuite {
+    let app = TestApp()
+
+    @Test func with() async throws {
+        try await withApp { _ in
+            try await DB.fake(migrations: [TestModelMigration(), TestParentMigration()])
+            try await TestParent.seed()
+            let child = try await TestModel.seed()
+            _ = try await child.testParent()
+            let fetchedChild = try await TestModel.query().with(\.testParent).first()
+            #expect(fetchedChild == child)
+        }
     }
 }
 

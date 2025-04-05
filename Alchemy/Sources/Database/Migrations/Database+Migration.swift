@@ -37,31 +37,13 @@ extension Database {
         let runAt: Date?
     }
 
-    /// Applies all outstanding migrations to the database in a single
-    /// batch. Migrations are read from `database.migrations`.
-    public func migrate() async throws {
-        let applied = try await getAppliedMigrations().map(\.name)
-        let toApply = migrations.filter { !applied.contains($0.name) }
-        try await migrate(toApply)
-    }
+    /// Applies the provided migrations or all outstanding migrations to the
+    /// database in a single batch. Migrations are read from
+    /// `database.migrations`.
+    public func migrate(_ migrations: [Migration]? = nil) async throws {
+        let appliedMigrations = try await getAppliedMigrations().map(\.name)
+        let migrations = (migrations ?? self.migrations).filter { !appliedMigrations.contains($0.name) }
 
-    /// Rolls back all migrations from all batches.
-    public func reset() async throws {
-        try await rollback(getAppliedMigrations().reversed())
-    }
-
-    /// Rolls back the latest migration batch.
-    public func rollback() async throws {
-        let lastBatch = try await getLastBatch()
-        let migrations = try await getAppliedMigrations(batch: lastBatch, enforceRegistration: true)
-        try await rollback(migrations.reversed())
-    }
-
-    /// Run the `.up` functions of an array of migrations in order.
-    ///
-    /// - Parameters:
-    ///   - migrations: The migrations to apply to this database.
-    public func migrate(_ migrations: [Migration]) async throws {
         guard !migrations.isEmpty else {
             Log.info("Nothing to migrate.".green)
             return
@@ -75,6 +57,18 @@ extension Database {
             try await AppliedMigration(name: m.name, batch: lastBatch + 1, runAt: Date()).insert(on: self)
             commentMigrationDone(m, startedAt: start)
         }
+    }
+
+    /// Rolls back all migrations from all batches.
+    public func reset() async throws {
+        try await rollback(getAppliedMigrations().reversed())
+    }
+
+    /// Rolls back the latest migration batch.
+    public func rollback() async throws {
+        let lastBatch = try await getLastBatch()
+        let migrations = try await getAppliedMigrations(batch: lastBatch, enforceRegistration: true)
+        try await rollback(migrations.reversed())
     }
 
     /// Run the `.down` functions of an array of migrations, in order.

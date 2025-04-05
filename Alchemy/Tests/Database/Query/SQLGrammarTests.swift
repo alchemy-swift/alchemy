@@ -5,26 +5,22 @@ import Testing
 struct SQLGrammarTests {
     private let grammar: SQLGrammar = PostgresGrammar()
 
-    @Test func select() {
-
-    }
+    @Test(.disabled("TODO"))
+    func select() {}
     
-    @Test func joins() {
-
-    }
+    @Test(.disabled("TODO"))
+    func joins() {}
     
-    @Test func wheres() {
-
-    }
+    @Test(.disabled("TODO"))
+    func wheres() {}
     
     @Test func groups() {
         #expect(grammar.compileGroups(["foo, bar, baz"]) == "GROUP BY foo, bar, baz")
         #expect(grammar.compileGroups([]) == nil)
     }
-    
-    @Test func havings() {
 
-    }
+    @Test(.disabled("TODO"))
+    func havings() {}
     
     @Test func orders() {
         #expect(grammar.compileOrders([
@@ -44,21 +40,17 @@ struct SQLGrammarTests {
         #expect(grammar.compileOffset(nil) == nil)
     }
     
-    @Test func insert() {
+    @Test(.disabled("TODO"))
+    func insert() {}
 
-    }
+    @Test(.disabled("TODO"))
+    func insertAndReturn() {}
     
-    @Test func insertAndReturn() {
-
-    }
+    @Test(.disabled("TODO"))
+    func update() {}
     
-    @Test func update() {
-
-    }
-    
-    @Test func delete() {
-
-    }
+    @Test(.disabled("TODO"))
+    func delete() {}
     
     @Test func lock() {
         #expect(grammar.compileLock(nil) == nil)
@@ -68,9 +60,8 @@ struct SQLGrammarTests {
         #expect(grammar.compileLock(SQLLock(strength: .update, option: .noWait)) == "FOR UPDATE NO WAIT")
     }
     
-    @Test func createTable() {
-
-    }
+    @Test(.disabled("TODO"))
+    func createTable() {}
     
     @Test func renameTable() {
         #expect(grammar.renameTable("foo", to: "bar") == """
@@ -84,9 +75,8 @@ struct SQLGrammarTests {
         """)
     }
     
-    @Test func alterTable() {
-
-    }
+    @Test(.disabled("TODO"))
+    func alterTable() {}
     
     @Test func renameColumn() {
         #expect(grammar.renameColumn(on: "foo", column: "bar", to: "baz") == """
@@ -94,10 +84,9 @@ struct SQLGrammarTests {
         """)
     }
 
-    @Test func createIndexes() {
+    @Test(.disabled("TODO"))
+    func createIndexes() {}
 
-    }
-    
     @Test func dropIndex() {
         #expect(grammar.dropIndex(on: "foo", indexName: "bar") == "DROP INDEX bar")
     }
@@ -115,9 +104,8 @@ struct SQLGrammarTests {
         #expect(grammar.columnTypeString(for: .json) == "json")
     }
     
-    @Test func createColumnString() {
-
-    }
+    @Test(.disabled("TODO"))
+    func createColumnString() {}
     
     @Test func jsonLiteral() {
         #expect(grammar.jsonLiteral(for: "foo") == "'foo'::jsonb")

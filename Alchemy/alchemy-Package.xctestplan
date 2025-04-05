@@ -1,0 +1,45 @@
+{
+  "configurations" : [
+    {
+      "id" : "2DBE8DAF-584A-41E7-AD5D-D319DEE30964",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "AlchemyExample",
+      "name" : "AlchemyExample"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AlchemyPluginTests",
+        "name" : "AlchemyPluginTests"
+      }
+    },
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AlchemyTestingTests",
+        "name" : "AlchemyTestingTests"
+      }
+    },
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AlchemyTests",
+        "name" : "AlchemyTests"
+      }
+    }
+  ],
+  "version" : 1
+}

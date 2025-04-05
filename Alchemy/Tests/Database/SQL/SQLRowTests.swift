@@ -2,13 +2,8 @@
 import Alchemy
 import AlchemyTesting
 
-final class SQLRowTests: TestCase<TestApp> {
-    override func setUp() async throws {
-        try await super.setUp()
-        try await DB.fake()
-    }
-
-    func testDecode() {
+struct SQLRowTests {
+    @Test func decode() throws {
         struct Test: Decodable, Equatable {
             let foo: Int
             let bar: String
@@ -19,10 +14,10 @@ final class SQLRowTests: TestCase<TestApp> {
             "bar": "two"
         ]
 
-        XCTAssertEqual(try row.decode(Test.self), Test(foo: 1, bar: "two"))
+        #expect(try row.decode(Test.self) == Test(foo: 1, bar: "two"))
     }
     
-    func testModel() {
+    @Test func model() throws {
         let date = Date()
         let uuid = UUID()
         let row: SQLRow = [
@@ -53,13 +48,13 @@ final class SQLRowTests: TestCase<TestApp> {
             "belongs_to_id": 1
         ]
 
-        XCTAssertEqual(try row.decodeModel(EverythingModel.self), EverythingModel(date: date, uuid: uuid).id(1))
+        #expect(try row.decodeModel(EverythingModel.self) == EverythingModel(date: date, uuid: uuid).id(1))
     }
     
-    func testSubscript() {
+    @Test func `subscript`() {
         let row: SQLRow = ["foo": 1]
-        XCTAssertEqual(row["foo"], .int(1))
-        XCTAssertEqual(row["bar"], nil)
+        #expect(row["foo"] == .int(1))
+        #expect(row["bar"] == nil)
     }
 }
 

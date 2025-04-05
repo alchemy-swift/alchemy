@@ -20,15 +20,26 @@ public var Thread: NIOThreadPool { Container.$threadPool }
 
 /// The current application.
 public internal(set) var Main: Application {
-    get { Container.$application }
-    set { Container.$application = newValue }
+    get { Container.main.application }
+    set { Container.main.application = newValue }
 }
 
 // MARK: Services
 
 extension Container {
-    @Singleton public var application: Application { fatalError("Default application hasn't been set!") }
-    @Singleton public var lifecycle = Lifecycle(app: $application)
+    var application: Application {
+        get {
+            guard let $_application else {
+                preconditionFailure("The main application hasn't been registered. Has `app.willRun` been called?")
+            }
+
+            return $_application
+        }
+        set { $_application = newValue }
+    }
+
+    @Singleton var _application: Application? = nil
+    @Singleton public var lifecycle = Lifecycle(app: application)
     @Singleton public var env: Environment = .createDefault()
     @Singleton public var threadPool: NIOThreadPool = .singleton
     @Singleton public var eventLoopGroup: EventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: isTest ? 1 : System.coreCount)

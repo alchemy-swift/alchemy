@@ -2,33 +2,34 @@
 import Alchemy
 import AlchemyTesting
 
-final class WorkCommandTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        Q.fake()
+@Suite(.serialized)
+struct WorkCommandTests: AppSuite {
+    let app = TestApp()
+
+    @Test func run() async throws {
+        try await withApp { app in
+            app.background("queue:work", "--workers", "5")
+
+            // wait for worker to boot up
+            try await Task.sleep(for: .milliseconds(10))
+
+            #expect(Q.workers == 5)
+            #expect(!Schedule.isStarted)
+        }
     }
-    
-    func testRun() async throws {
-        app.background("queue:work", "--workers", "5")
 
-        // wait for services to boot up
-        try await Task.sleep(for: .milliseconds(10))
+    @Test func runSchedule() async throws {
+        try await withApp { app in
+            app.background("queue:work", "--workers", "3", "--schedule")
 
-        XCTAssertEqual(Q.workers, 5)
-        XCTAssertFalse(Schedule.isStarted)
+            // wait for worker to boot up
+            try await Task.sleep(for: .milliseconds(10))
+
+            #expect(Q.workers == 3)
+            #expect(Schedule.isStarted)
+        }
     }
 
-    func testRunName() async throws {
-        throw XCTSkip("need to enable string -> service id")
-    }
-    
-    func testRunCLI() async throws {
-        app.background("queue:work", "--workers", "3", "--schedule")
-
-        // wait for services to boot up
-        try await Task.sleep(for: .milliseconds(10))
-
-        XCTAssertEqual(Q.workers, 3)
-        XCTAssertTrue(Schedule.isStarted)
-    }
+    @Test(.disabled("need to enable string -> service id"))
+    func runName() async throws {}
 }

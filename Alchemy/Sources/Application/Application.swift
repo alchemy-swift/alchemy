@@ -39,8 +39,7 @@ public protocol Application: Router {
 extension Application {
     /// @main support
     public static func main() async throws {
-        Main = Self()
-        try await Main.start()
+        try await Self().start()
     }
 
     /// Start the app. This boots the app, runs a command based on arguments,
@@ -73,6 +72,7 @@ extension Application {
 
     /// Sets up the app for running.
     public func willRun() async throws {
+        Main = self
         try await Life.boot()
     }
 

@@ -2,27 +2,22 @@
 import Alchemy
 import AlchemyTesting
 
-final class QueryPagingTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        DB.stub()
+struct QueryPagingTests {
+    @Test func limit() {
+        #expect(TestQuery("foo").distinct().isDistinct == true)
     }
-    
-    func testLimit() {
-        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
+
+    @Test func offset() {
+        #expect(TestQuery("foo").distinct().isDistinct == true)
     }
-    
-    func testOffset() {
-        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
-    }
-    
-    func testPaging() {
-        let standardPage = DB.table("foo").page(4)
-        XCTAssertEqual(standardPage.limit, 100)
-        XCTAssertEqual(standardPage.offset, 300)
-        
-        let customPage = DB.table("foo").page(2, pageSize: 10)
-        XCTAssertEqual(customPage.limit, 10)
-        XCTAssertEqual(customPage.offset, 10)
+
+    @Test func paging() {
+        let standardPage = TestQuery("foo").page(4)
+        #expect(standardPage.limit == 100)
+        #expect(standardPage.offset == 300)
+
+        let customPage = TestQuery("foo").page(2, pageSize: 10)
+        #expect(customPage.limit == 10)
+        #expect(customPage.offset == 10)
     }
 }

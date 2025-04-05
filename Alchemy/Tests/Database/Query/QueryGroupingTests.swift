@@ -2,26 +2,21 @@
 import Alchemy
 import AlchemyTesting
 
-final class QueryGroupingTests: TestCase<TestApp> {
-    private let sampleWhere = SQLWhere.and(.value(column: "id", op: .equals, value: .value(.int(1))))
+struct QueryGroupingTests {
+    let sampleWhere = SQLWhere.and(.value(column: "id", op: .equals, value: .value(.int(1))))
 
-    override func setUp() {
-        super.setUp()
-        DB.stub()
+    @Test func groupBy() {
+        #expect(TestQuery("foo").groupBy("bar").groups == ["bar"])
+        #expect(TestQuery("foo").groupBy("bar").groupBy("baz").groups == ["bar", "baz"])
     }
     
-    func testGroupBy() {
-        XCTAssertEqual(DB.table("foo").groupBy("bar").groups, ["bar"])
-        XCTAssertEqual(DB.table("foo").groupBy("bar").groupBy("baz").groups, ["bar", "baz"])
-    }
-    
-    func testHaving() {
+    @Test func having() {
         let orWhere = SQLWhere.or(sampleWhere.clause)
-        let query = DB.table("foo")
+        let query = TestQuery("foo")
             .having(sampleWhere.clause)
             .orHaving(orWhere.clause)
             .orHaving("bar", .like, "baz")
-        XCTAssertEqual(query.havings, [
+        #expect(query.havings == [
             sampleWhere,
             orWhere,
             SQLWhere.or(.value(column: "bar", op: .like, value: .value(.string("baz"))))

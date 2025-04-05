@@ -7,6 +7,10 @@ public var Routes: Router {
     Container.$router
 }
 
+public var Handle: HTTPHandler {
+    Container.$handler
+}
+
 /// The default configured Client
 public var Http: Client.Builder {
     Container.$client.builder()
@@ -18,8 +22,8 @@ public func Http(_ key: KeyPath<Container, Client>) -> Client.Builder {
 
 /// Accessors for Hashing
 public var Hash: Hasher {
-    get { Container.$hasher }
-    set { Container.$hasher = newValue }
+    get { Container.main.$hasher }
+    set { Container.main.$hasher = newValue }
 }
 
 public func Hash(_ algorithm: HashAlgorithm) -> Hasher {
@@ -42,13 +46,9 @@ var _Http: Client {
     Container.$client
 }
 
-var Handle: HTTPHandler {
-    Container.$handler
-}
-
 extension Container {
-    @Singleton var hasher = Hasher(algorithm: .bcrypt)
-    @Singleton var handler = HTTPHandler(router: $router)
+    @Singleton public var hasher = Hasher(algorithm: .bcrypt)
+    @Singleton public var handler = HTTPHandler(router: $router)
+    @Singleton public var client = Client()
     @Singleton var router = HTTPRouter()
-    @Singleton var client = Client()
 }

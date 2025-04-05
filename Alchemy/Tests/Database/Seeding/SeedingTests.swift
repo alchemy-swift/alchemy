@@ -2,52 +2,62 @@
 import Alchemy
 import AlchemyTesting
 
-final class SeederTests: TestCase<TestApp> {
-    func testSeedable() async throws {
-        try await DB.fake(migrations: [SeedModel.Migrate()])
-        
-        try await SeedModel.seed()
-        AssertEqual(try await SeedModel.all().count, 1)
-        
-        try await SeedModel.seed(10)
-        AssertEqual(try await SeedModel.all().count, 11)
+struct SeederTests: AppSuite {
+    let app = TestApp()
+
+    @Test func seedable() async throws {
+        try await withApp { _ in
+            try await DB.fake(migrations: [SeedModel.Migrate()])
+
+            try await SeedModel.seed()
+            #expect(try await SeedModel.all().count == 1)
+
+            try await SeedModel.seed(10)
+            #expect(try await SeedModel.all().count == 11)
+        }
     }
 
-    func testSeeder() async throws {
-        try await DB.fake(
-            migrations: [
-                SeedModel.Migrate(),
-                OtherSeedModel.Migrate()],
-            seeders: [TestSeeder()])
+    @Test func seeder() async throws {
+        try await withApp { _ in
+            try await DB.fake(
+                migrations: [
+                    SeedModel.Migrate(),
+                    OtherSeedModel.Migrate()
+                ],
+                seeders: [TestSeeder()]
+            )
 
-        AssertEqual(try await SeedModel.all().count, 10)
-        AssertEqual(try await OtherSeedModel.all().count, 0)
+            #expect(try await SeedModel.all().count == 10)
+            #expect(try await OtherSeedModel.all().count == 0)
 
-        try await DB.seed(with: OtherSeeder())
-        AssertEqual(try await OtherSeedModel.all().count, 11)
+            try await DB.seed(with: OtherSeeder())
+            #expect(try await OtherSeedModel.all().count == 11)
+        }
     }
 
-    func testSeedWithNames() async throws {
-        try await DB.fake(
-            migrations: [
-                SeedModel.Migrate(),
-                OtherSeedModel.Migrate()])
+    @Test func seedWithNames() async throws {
+        try await withApp { _ in
+            try await DB.fake(
+                migrations: [
+                    SeedModel.Migrate(),
+                    OtherSeedModel.Migrate()
+                ]
+            )
 
-        DB.seeders = [
-            TestSeeder(),
-            OtherSeeder()
-        ]
+            DB.seeders = [
+                TestSeeder(),
+                OtherSeeder()
+            ]
 
-        try await DB.seed(names: ["otherseeder"])
-        AssertEqual(try await SeedModel.all().count, 0)
-        AssertEqual(try await OtherSeedModel.all().count, 11)
+            try await DB.seed(names: ["otherseeder"])
+            #expect(try await SeedModel.all().count == 0)
+            #expect(try await OtherSeedModel.all().count == 11)
 
-        do {
-            try await DB.seed(names: ["foo"])
-            XCTFail("Unknown seeder name should throw")
-        } catch {}
+            await #expect(throws: Error.self) { try await DB.seed(names: ["foo"]) }
+        }
     }
 }
+
 
 private struct TestSeeder: Seeder {
     func run() async throws {

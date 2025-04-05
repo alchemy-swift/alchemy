@@ -4,6 +4,7 @@ import Foundation
 @Model
 struct TokenModel: TokenAuthable {
     typealias Authorizes = AuthModel
+    static let table = "token_models"
 
     var id: Int
     var value: UUID = UUID()
