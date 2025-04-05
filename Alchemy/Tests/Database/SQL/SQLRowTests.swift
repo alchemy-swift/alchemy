@@ -3,7 +3,7 @@ import Alchemy
 import AlchemyTesting
 
 struct SQLRowTests {
-    @Test func decode() {
+    @Test func decode() throws {
         struct Test: Decodable, Equatable {
             let foo: Int
             let bar: String
@@ -14,10 +14,10 @@ struct SQLRowTests {
             "bar": "two"
         ]
 
-        XCTAssertEqual(try row.decode(Test.self), Test(foo: 1, bar: "two"))
+        #expect(try row.decode(Test.self) == Test(foo: 1, bar: "two"))
     }
     
-    @Test func model() {
+    @Test func model() throws {
         let date = Date()
         let uuid = UUID()
         let row: SQLRow = [
@@ -48,13 +48,13 @@ struct SQLRowTests {
             "belongs_to_id": 1
         ]
 
-        XCTAssertEqual(try row.decodeModel(EverythingModel.self), EverythingModel(date: date, uuid: uuid).id(1))
+        #expect(try row.decodeModel(EverythingModel.self) == EverythingModel(date: date, uuid: uuid).id(1))
     }
     
     @Test func `subscript`() {
         let row: SQLRow = ["foo": 1]
-        XCTAssertEqual(row["foo"], .int(1))
-        XCTAssertEqual(row["bar"], nil)
+        #expect(row["foo"] == .int(1))
+        #expect(row["bar"] == nil)
     }
 }
 

@@ -21,12 +21,12 @@ struct MigrationTests: AppSuite {
             try await DB.rollback()
             DB.migrations = [MigrationA()]
             try await DB.migrate()
-            AssertEqual(try await Database.AppliedMigration.all().count, 1)
+            #expect(try await Database.AppliedMigration.all().count == 1)
             DB.migrations.append(MigrationB())
             try await DB.migrate()
-            AssertEqual(try await Database.AppliedMigration.all().count, 2)
+            #expect(try await Database.AppliedMigration.all().count == 2)
             try await DB.rollback()
-            AssertEqual(try await Database.AppliedMigration.all().count, 1)
+            #expect(try await Database.AppliedMigration.all().count == 1)
         }
     }
 }

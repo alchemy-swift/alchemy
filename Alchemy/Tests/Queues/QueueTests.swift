@@ -64,17 +64,17 @@ struct QueueTests: AppSuite {
             return
         }
         
-        XCTAssertEqual(jobData.jobName, "RetryJob", file: file, line: line)
-        XCTAssertEqual(jobData.recoveryStrategy, .retry(3), file: file, line: line)
-        XCTAssertEqual(jobData.backoff, .seconds(0), file: file, line: line)
-        
+        #expect(jobData.jobName == "RetryJob")
+        #expect(jobData.recoveryStrategy == .retry(3))
+        #expect(jobData.backoff == .seconds(0))
+
         let decodedJob = try await Jobs.createJob(from: jobData)
         guard let retryJob = decodedJob as? RetryJob else {
             XCTFail("Failed to decode RetryJob \(jobData.jobName) \(type(of: decodedJob))", file: file, line: line)
             return
         }
         
-        XCTAssertEqual(retryJob.foo, "bar", file: file, line: line)
+        #expect(retryJob.foo == "bar")
     }
     
     private func _testWorker(file: StaticString = #filePath, line: UInt = #line) async throws {
