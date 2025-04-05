@@ -127,9 +127,7 @@ extension Model {
 
     @discardableResult
     public func update<E: Encodable>(on db: Database = database, _ encodable: E, keyMapping: KeyMapping = .snakeCase, jsonEncoder: JSONEncoder = JSONEncoder()) async throws -> Self {
-        let fields = try encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder)
-        print("fields \(fields)")
-        return try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
+        try await update(encodable.sqlFields(keyMapping: keyMapping, jsonEncoder: jsonEncoder))
     }
 
     // MARK: UPSERT

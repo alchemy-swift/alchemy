@@ -1,12 +1,10 @@
 import AlchemyTesting
 
-final class EagerLoadableTests: TestCase<TestApp> {
-    override func setUp() async throws {
-        try await super.setUp()
-        try await DB.fake(migrations: [
-            TestModelMigration(),
-            TestParentMigration()
-        ])
+@Suite(.serialized)
+struct EagerLoadableTests {
+    init() async throws {
+        try await DB.shutdown()
+        try await DB.fake(migrations: [TestModelMigration(), TestParentMigration()])
     }
     
     func testWith() async throws {
@@ -14,7 +12,7 @@ final class EagerLoadableTests: TestCase<TestApp> {
         let child = try await TestModel.seed()
         _ = try await child.testParent()
         let fetchedChild = try await TestModel.query().with(\.testParent).first()
-        XCTAssertEqual(fetchedChild, child)
+        #expect(fetchedChild == child)
     }
 }
 

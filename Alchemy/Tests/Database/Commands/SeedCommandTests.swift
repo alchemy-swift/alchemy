@@ -2,18 +2,21 @@
 import Alchemy
 import AlchemyTesting
 
-final class SeedCommandTests: TestCase<TestApp> {
-    func testSeed() async throws {
-        try await DB.fake(migrations: [SeedModel.Migrate()])
-        DB.seeders = [Seeder1(), Seeder2()]
-        try await SeedCommand(db: nil).run()
-        XCTAssertTrue(Seeder1.didRun)
-        XCTAssertTrue(Seeder2.didRun)
+struct SeedCommandTests: AppSuite {
+    let app = TestApp()
+
+    @Test func seed() async throws {
+        try await withApp { _ in
+            try await DB.fake(migrations: [SeedModel.Migrate()])
+            DB.seeders = [Seeder1(), Seeder2()]
+            try await SeedCommand(db: nil).run()
+            XCTAssertTrue(Seeder1.didRun)
+            XCTAssertTrue(Seeder2.didRun)
+        }
     }
 
-    func testNamedSeed() async throws {
-        throw XCTSkip("need to enable selecting service from string")
-    }
+    @Test(.disabled("need to enable selecting service from string"))
+    func namedSeed() async throws {}
 }
 
 private struct Seeder1: Seeder {

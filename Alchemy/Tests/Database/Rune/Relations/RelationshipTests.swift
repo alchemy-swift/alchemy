@@ -2,15 +2,16 @@
 import Alchemy
 import AlchemyTesting
 
-final class RelationshipTests: TestCase<TestApp> {
+@Suite(.serialized)
+struct RelationshipTests {
     private var organization: Organization!
     private var user: User!
     private var repository: Repository!
     private var workflow: Workflow!
     private var job: Job!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    init() async throws {
+        try await DB.shutdown()
         try await DB.fake(migrations: [WorkflowMigration()])
 
         /*
@@ -28,7 +29,7 @@ final class RelationshipTests: TestCase<TestApp> {
          jobs                 9  10
          ===============================
          */
-        
+
         organization = try await Organization().id(1).insertReturn()
         try await Organization().id(2).insert()
         user = try await User(name: "Josh", age: 29, managerId: nil).id(3).insertReturn()
@@ -45,84 +46,84 @@ final class RelationshipTests: TestCase<TestApp> {
         try await Job(workflowId: 7).id(10).insert()
     }
 
-    // MARK: - Basics
+    // MARK: Basics
 
-    func testHasMany() async throws {
+    @Test func hasMany() async throws {
         let repositories = try await user.refresh().repositories
-        XCTAssertEqual(repositories.map(\.id), [5, 6])
+        #expect(repositories.map(\.id) == [5, 6])
     }
 
-    func testHasOne() async throws {
+    @Test func hasOne() async throws {
         let manager = try await user.report
-        XCTAssertEqual(manager?.id, 4)
+        #expect(manager?.id == 4)
     }
 
-    func testBelongsTo() async throws {
+    @Test func belongsTo() async throws {
         let user = try await repository.user
-        XCTAssertEqual(user.id, 3)
+        #expect(user.id == 3)
     }
 
-    func testThrough() async throws {
+    @Test func through() async throws {
         let jobs = try await user.jobs.get()
-        XCTAssertEqual(jobs.map(\.id), [9, 10])
+        #expect(jobs.map(\.id) == [9, 10])
     }
 
-    func testPivot() async throws {
+    @Test func pivot() async throws {
         let organizations = try await user.organizations
-        XCTAssertEqual(organizations.map(\.id), [1, 2])
+        #expect(organizations.map(\.id) == [1, 2])
     }
 
-    func testFetchWhere() async throws {
+    @Test func fetchWhere() async throws {
         let organizations = try await organization.usersOver30.get()
-        XCTAssertEqual(organizations.map(\.id), [4])
+        #expect(organizations.map(\.id) == [4])
     }
 
     // MARK: - Eager Loading
 
-    func testEagerLoad() async throws {
+    @Test func eagerLoad() async throws {
         let user = try await User.where("id" == 3).with(\.$repositories).first()
-        XCTAssertNotNil(user)
-        XCTAssertNoThrow(try user?.$repositories.require())
+        #expect(user != nil)
+        #expect(throws: Never.self) { try user?.$repositories.require() }
     }
 
-    func testAutoCache() async throws {
-        XCTAssertThrowsError(try user.$repositories.require())
+    @Test func autoCache() async throws {
+        #expect(throws: Error.self) { try user.$repositories.require() }
         _ = try await user.$repositories.value()
-        XCTAssertTrue(user.$repositories.isLoaded)
-        XCTAssertNoThrow(try user.$repositories.require())
+        #expect(user.$repositories.isLoaded == true)
+        #expect(throws: Never.self) { try user.$repositories.require() }
     }
 
-    func testWhereCache() async throws {
+    @Test func whereCache() async throws {
         _ = try await organization.users
-        XCTAssertTrue(organization.$users.isLoaded)
-        XCTAssertFalse(organization.usersOver30.isLoaded)
+        #expect(organization.$users.isLoaded == true)
+        #expect(organization.usersOver30.isLoaded == false)
     }
 
-    func testSync() async throws {
+    @Test func sync() async throws {
         let report = try await user.report
-        XCTAssertEqual(report?.id, 4)
+        #expect(report?.id == 4)
         try await report?.update(["manager_id": SQLValue.null])
-        XCTAssertTrue(user.$report.isLoaded)
-        AssertEqual(try await user.report?.id, 4)
-        AssertNil(try await user.$report.load())
+        #expect(user.$report.isLoaded == true)
+        #expect(try await user.report?.id == 4)
+        #expect(try await user.$report.load() == nil)
     }
 
     // MARK: - CRUD
 
-    func testPivotAdd() async throws {
-        throw XCTSkip()
+    @Test(.disabled())
+    func pivotAdd() async throws {
     }
 
-    func testPivotRemove() async throws {
-        throw XCTSkip()
+    @Test(.disabled())
+    func pivotRemove() async throws {
     }
 
-    func testPivotRemoveAll() async throws {
-        throw XCTSkip()
+    @Test(.disabled())
+    func pivotRemoveAll() async throws {
     }
 
-    func testPivotReplace() async throws {
-        throw XCTSkip()
+    @Test(.disabled())
+    func pivotReplace() async throws {
     }
 }
 

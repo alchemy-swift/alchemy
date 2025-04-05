@@ -1,58 +1,52 @@
 import AlchemyTesting
 
-final class ModelCrudTests: TestCase<TestApp> {
-    override func setUp() async throws {
-        try await super.setUp()
+@Suite(.serialized)
+struct ModelCrudTests {
+    init() async throws {
+        try await DB.shutdown()
         try await DB.fake(migrations: [TestModelMigration(), TestModelCustomIdMigration()])
     }
-    
-    func testAll() async throws {
+
+    @Test func all() async throws {
         let all = try await TestModel.all()
-        XCTAssertEqual(all, [])
-        
+        #expect(all == [])
+
         try await TestModel.seed(5)
         
         let newAll = try await TestModel.all()
-        XCTAssertEqual(newAll.count, 5)
+        #expect(newAll.count == 5)
     }
     
-    func testSearch() async throws {
+    @Test func search() async throws {
         let first = try await TestModel.first()
-        XCTAssertEqual(first, nil)
-        
+        #expect(first == nil)
+
         let model = try await TestModel(foo: "baz", bar: false).insertReturn()
         
         let findById = try await TestModel.find(model.id)
-        XCTAssertEqual(findById, model)
-        
-        do {
-            _ = try await TestModel.require(999, error: TestError())
-            XCTFail("`find(_:or:)` should throw on a missing element.")
-        } catch {
-            // do nothing
+        #expect(findById == model)
+
+        await #expect(throws: Error.self) {
+            try await TestModel.require(999, error: TestError())
         }
-        
+
         let missingId = try await TestModel.find(999)
-        XCTAssertEqual(missingId, nil)
-        
+        #expect(missingId == nil)
+
         let findByWhere = try await TestModel.firstWhere("foo" == "baz")
-        XCTAssertEqual(findByWhere, model)
-        
+        #expect(findByWhere == model)
+
         let newFirst = try await TestModel.first()
-        XCTAssertEqual(newFirst, model)
+        #expect(newFirst == model)
     }
     
-    func testRandom() async throws {
-        let random = try await TestModel.random()
-        XCTAssertEqual(random, nil)
-        
+    @Test func random() async throws {
+        #expect(try await TestModel.random() == nil)
         try await TestModel.seed()
-        
-        let newRandom = try await TestModel.random()
-        XCTAssertNotNil(newRandom)
+        #expect(try await TestModel.random() != nil)
     }
     
-    func testDelete() async throws {
+    @Test func delete() async throws {
         let models = try await TestModel.seed(5)
         guard let first = models.first else {
             XCTFail("There should be 5 models in the database.")
@@ -62,67 +56,65 @@ final class ModelCrudTests: TestCase<TestApp> {
         try await TestModel.delete(first.id)
         
         let count = try await TestModel.all().count
-        XCTAssertEqual(count, 4)
-        
+        #expect(count == 4)
+
         try await TestModel.truncate()
         let newCount = try await TestModel.all().count
-        XCTAssertEqual(newCount, 0)
-        
+        #expect(newCount == 0)
+
         let model = try await TestModel.seed()
         try await TestModel.delete("foo" == model.foo)
-        AssertEqual(try await TestModel.all().count, 0)
-        
+        #expect(try await TestModel.all().isEmpty)
+
         let modelNew = try await TestModel.seed()
         try await TestModel.delete("foo" == modelNew.foo)
-        AssertEqual(try await TestModel.all().count, 0)
+        #expect(try await TestModel.all().isEmpty)
     }
     
-    func testDeleteAll() async throws {
+    @Test func deleteAll() async throws {
         let models = try await TestModel.seed(5)
         try await models.deleteAll()
-        AssertEqual(try await TestModel.all().count, 0)
+        #expect(try await TestModel.all().isEmpty)
     }
     
-    func testInsertReturn() async throws {
+    @Test func insertReturn() async throws {
         let model = try await TestModel(foo: "bar", bar: false).insertReturn()
-        XCTAssertEqual(model.foo, "bar")
-        XCTAssertEqual(model.bar, false)
-        
+        #expect(model.foo == "bar")
+        #expect(!model.bar)
+
         let customId = try await TestModelCustomId(foo: "bar").insertReturn()
-        XCTAssertEqual(customId.foo, "bar")
+        #expect(customId.foo == "bar")
     }
     
-    func testUpdate() async throws {
+    @Test func update() async throws {
         var model = try await TestModel.seed()
         let id = model.id
         model.foo = "baz"
-        AssertNotEqual(try await TestModel.find(id), model)
-        
+        #expect(try await TestModel.find(id) != model)
+
         _ = try await model.save()
-        AssertEqual(try await TestModel.find(id), model)
-        
+        #expect(try await TestModel.find(id) == model)
+
         _ = try await model.update(["foo": "foo"])
-        AssertEqual(try await TestModel.find(id)?.foo, "foo")
+        #expect(try await TestModel.find(id)?.foo == "foo")
     }
     
-    func testSync() async throws {
+    @Test func sync() async throws {
         let model = try await TestModel.seed()
         _ = try await model.update { $0.foo = "bar" }
-        AssertNotEqual(model.foo, "bar")
-        AssertEqual(try await model.refresh().foo, "bar")
-        
-        do {
-            let unsavedModel = TestModel(foo: "one", bar: false)
-            unsavedModel.id = 12345
-            _ = try await unsavedModel.refresh()
-            XCTFail("Syncing an unsaved model should throw")
-        } catch {}
-        
-        do {
-            let unsavedModel = TestModel(foo: "two", bar: true)
-            _ = try await unsavedModel.refresh()
-            XCTFail("Syncing an unsaved model should throw")
-        } catch {}
+        #expect(model.foo != "bar")
+        #expect(try await model.refresh().foo == "bar")
+
+        let unsavedModel = TestModel(foo: "one", bar: false)
+        unsavedModel.id = 12345
+        await #expect(throws: Error.self) {
+            try await unsavedModel.refresh()
+        }
+
+        let unsavedModel2 = TestModel(foo: "two", bar: true)
+        await #expect(throws: Error.self) {
+            try await unsavedModel2.refresh()
+        }
     }
 }
 

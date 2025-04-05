@@ -7,4 +7,8 @@ extension Database {
         self.grammar = StubGrammar()
         return stub
     }
+
+    public static var stub: Database {
+        Database(provider: StubDatabase(), grammar: StubGrammar())
+    }
 }

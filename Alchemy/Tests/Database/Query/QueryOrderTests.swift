@@ -2,17 +2,12 @@
 import Alchemy
 import AlchemyTesting
 
-final class QueryOrderTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        DB.stub()
-    }
-    
-    func testOrderBy() {
-        let query = DB.table("foo")
+struct QueryOrderTests {
+    @Test func orderBy() {
+        let query = TestQuery("foo")
             .orderBy("bar")
             .orderBy("baz", direction: .desc)
-        XCTAssertEqual(query.orders, [
+        #expect(query.orders == [
             SQLOrder(column: "bar", direction: .asc),
             SQLOrder(column: "baz", direction: .desc),
         ])

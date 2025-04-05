@@ -3,8 +3,8 @@ import Alchemy
 import AlchemyTesting
 import AsyncHTTPClient
 
-final class ClientErrorTests: TestCase<TestApp> {
-    func testClientError() async throws {
+struct ClientErrorTests {
+    @Test func description() async throws {
         let request = Client.Request(
             url: "http://localhost/foo",
             method: .post,
@@ -45,6 +45,6 @@ final class ClientErrorTests: TestCase<TestApp> {
             Body: bar
             """
 
-        AssertEqual(error.description, expectedOutput)
+        #expect(error.description == expectedOutput)
     }
 }

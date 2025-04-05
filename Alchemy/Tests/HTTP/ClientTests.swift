@@ -2,46 +2,50 @@
 import Alchemy
 import AlchemyTesting
 
-final class ClientTests: TestCase<TestApp> {
-    func testQueries() async throws {
-        Http.stub([
+final class ClientTests {
+    let client = Client()
+    deinit { try? client.shutdown() }
+
+    @Test func queries() async throws {
+        client.stub([
             "localhost/foo": .stub(.forbidden),
             "localhost/*": .stub(.ok),
             "*": .stub(.ok),
         ])
-        try await Http.withQueries(["foo":"bar"]).get("https://localhost/baz")
-            .assertOk()
-        
-        try await Http.withQueries(["bar":"2"]).get("https://localhost/foo?baz=1")
-            .assertForbidden()
 
-        try await Http.get("https://example.com")
-            .assertOk()
-        
-        Http.assertSent { $0.hasQuery("foo", value: "bar") }
-        Http.assertSent { $0.hasQuery("bar", value: 2) && $0.hasQuery("baz", value: 1) }
+        let res1 = try await client.builder().withQueries(["foo":"bar"]).get("https://localhost/baz")
+        #expect(res1.status == .ok)
+
+        let res2 = try await client.builder().withQueries(["bar":"2"]).get("https://localhost/foo?baz=1")
+        #expect(res2.status == .forbidden)
+
+        let res3 = try await client.builder().get("https://example.com")
+        #expect(res3.status == .ok)
+
+        client.builder().assertSent { $0.hasQuery("foo", value: "bar") }
+        client.builder().assertSent { $0.hasQuery("bar", value: 2) && $0.hasQuery("baz", value: 1) }
     }
 
     // MARK: Response
 
-    func testStatusCodes() {
-        XCTAssertTrue(Client.Response(.ok).isOk)
-        XCTAssertTrue(Client.Response(.created).isSuccessful)
-        XCTAssertTrue(Client.Response(.badRequest).isClientError)
-        XCTAssertTrue(Client.Response(.badGateway).isServerError)
-        XCTAssertTrue(Client.Response(.internalServerError).isFailed)
-        XCTAssertThrowsError(try Client.Response(.internalServerError).validateSuccessful())
-        XCTAssertNoThrow(try Client.Response(.ok).validateSuccessful())
+    @Test func statusCodes() throws {
+        #expect(Client.Response(.ok).isOk)
+        #expect(Client.Response(.created).isSuccessful)
+        #expect(Client.Response(.badRequest).isClientError)
+        #expect(Client.Response(.badGateway).isServerError)
+        #expect(Client.Response(.internalServerError).isFailed)
+        #expect(throws: Error.self) { try Client.Response(.internalServerError).validateSuccessful() }
+        try Client.Response(.ok).validateSuccessful()
     }
 
-    func testHeaders() {
+    @Test func headers() {
         let headers: HTTPFields = [.accept:"bar"]
-        XCTAssertEqual(Client.Response(headers: headers).headers, headers)
-        XCTAssertEqual(Client.Response(headers: headers).header(.accept), "bar")
-        XCTAssertEqual(Client.Response(headers: headers).header(.age), nil)
+        #expect(Client.Response(headers: headers).headers == headers)
+        #expect(Client.Response(headers: headers).header(.accept) == "bar")
+        #expect(Client.Response(headers: headers).header(.age) == nil)
     }
 
-    func testBody() {
+    @Test func body() throws {
         struct SampleJson: Codable, Equatable {
             var foo: String = "bar"
         }
@@ -51,27 +55,27 @@ final class ClientTests: TestCase<TestApp> {
         """
         let jsonData = jsonString.data(using: .utf8) ?? Data()
         let body = Bytes.string(jsonString)
-        XCTAssertEqual(Client.Response(body: body).body?.buffer, body.buffer)
-        XCTAssertEqual(Client.Response(body: body).data, jsonData)
-        XCTAssertEqual(Client.Response(body: body).string, jsonString)
-        XCTAssertEqual(try Client.Response(body: body).decode(), SampleJson())
-        XCTAssertThrowsError(try Client.Response().decode(SampleJson.self))
-        XCTAssertThrowsError(try Client.Response(body: body).decode(String.self))
+        #expect(Client.Response(body: body).body?.buffer == body.buffer)
+        #expect(Client.Response(body: body).data == jsonData)
+        #expect(Client.Response(body: body).string == jsonString)
+        #expect(try Client.Response(body: body).decode() == SampleJson())
+        #expect(throws: Error.self) { try Client.Response().decode(SampleJson.self) }
+        #expect(throws: Error.self) { try Client.Response(body: body).decode(String.self) }
     }
 
-    func testStreaming() async throws {
+    @Test func streaming() async throws {
         let streamResponse: Client.Response = .stub(body: .stream {
             $0.write(ByteBuffer(string: "foo"))
             $0.write(ByteBuffer(string: "bar"))
             $0.write(ByteBuffer(string: "baz"))
         })
 
-        Http.stub(["example.com/*": streamResponse])
+        client.stub(["example.com/*": streamResponse])
 
-        var res = try await Http.get("https://example.com/foo")
-        try await res.collect()
-            .assertOk()
-            .assertBody("foobarbaz")
+        var res = try await client.builder().get("https://example.com/foo")
+        res = try await res.collect()
+        #expect(res.status == .ok)
+        #expect(res.body?.string == "foobarbaz")
     }
 }
 

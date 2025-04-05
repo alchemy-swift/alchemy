@@ -2,35 +2,30 @@
 import Alchemy
 import AlchemyTesting
 
-final class QuerySelectTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        DB.stub()
+struct QuerySelectTests {
+    @Test func startsEmpty() {
+        let query = TestQuery("foo")
+        #expect(query.table == "foo")
+        #expect(query.columns == ["*"])
+        #expect(query.isDistinct == false)
+        #expect(query.limit == nil)
+        #expect(query.offset == nil)
+        #expect(query.lock == nil)
+        #expect(query.joins == [])
+        #expect(query.wheres == [])
+        #expect(query.groups == [])
+        #expect(query.havings == [])
+        #expect(query.orders == [])
     }
-    
-    func testStartsEmpty() {
-        let query = DB.table("foo")
-        XCTAssertEqual(query.table, "foo")
-        XCTAssertEqual(query.columns, ["*"])
-        XCTAssertEqual(query.isDistinct, false)
-        XCTAssertNil(query.limit)
-        XCTAssertNil(query.offset)
-        XCTAssertNil(query.lock)
-        XCTAssertEqual(query.joins, [])
-        XCTAssertEqual(query.wheres, [])
-        XCTAssertEqual(query.groups, [])
-        XCTAssertEqual(query.havings, [])
-        XCTAssertEqual(query.orders, [])
+
+    @Test func select() {
+        let specific = TestQuery("foo").select(["bar", "baz"])
+        #expect(specific.columns == ["bar", "baz"])
+        let all = TestQuery("foo").select()
+        #expect(all.columns == ["*"])
     }
-    
-    func testSelect() {
-        let specific = DB.table("foo").select(["bar", "baz"])
-        XCTAssertEqual(specific.columns, ["bar", "baz"])
-        let all = DB.table("foo").select()
-        XCTAssertEqual(all.columns, ["*"])
-    }
-    
-    func testDistinct() {
-        XCTAssertEqual(DB.table("foo").distinct().isDistinct, true)
+
+    @Test func distinct() {
+        #expect(TestQuery("foo").distinct().isDistinct == true)
     }
 }

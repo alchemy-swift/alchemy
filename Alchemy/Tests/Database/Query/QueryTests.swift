@@ -2,40 +2,38 @@
 import Alchemy
 import AlchemyTesting
 
-final class QueryTests: TestCase<TestApp> {
-    override func setUp() {
-        super.setUp()
-        DB.stub()
-    }
-    
-    func testStartsEmpty() {
-        let query = DB.table("foo")
-        XCTAssertEqual(query.table, "foo")
-        XCTAssertEqual(query.columns, ["*"])
-        XCTAssertEqual(query.isDistinct, false)
-        XCTAssertNil(query.limit)
-        XCTAssertNil(query.offset)
-        XCTAssertNil(query.lock)
-        XCTAssertEqual(query.joins, [])
-        XCTAssertEqual(query.wheres, [])
-        XCTAssertEqual(query.groups, [])
-        XCTAssertEqual(query.havings, [])
-        XCTAssertEqual(query.orders, [])
+struct QueryTests {
+    @Test func startsEmpty() {
+        let query = TestQuery("foo")
+        #expect(query.table == "foo")
+        #expect(query.columns == ["*"])
+        #expect(query.isDistinct == false)
+        #expect(query.limit == nil)
+        #expect(query.offset == nil)
+        #expect(query.lock == nil)
+        #expect(query.joins == [])
+        #expect(query.wheres == [])
+        #expect(query.groups == [])
+        #expect(query.havings == [])
+        #expect(query.orders == [])
     }
 
-    func testTable() {
-        XCTAssertEqual(DB.table("foo").table, "foo")
+    @Test func table() {
+        #expect(TestQuery("foo").table == "foo")
     }
 
-    func testAlias() {
-        XCTAssertEqual(DB.table("foo", as: "bar").table, "foo AS bar")
+    @Test func alias() {
+        let stub = Database.stub
+        #expect(stub.table("foo", as: "bar").table == "foo AS bar")
     }
 
-    func testCount() async throws {
-        try await DB.fake(migrations: [TestModel.Migration()])
-        AssertEqual(try await DB.table("test_models").count(), 0)
-        try await TestModel(foo: "bar", bar: false).insert()
-        AssertEqual(try await DB.table("test_models").count(), 1)
+    @Test func count() async throws {
+        let db = Database.memory
+        try await db.migrate([TestModel.Migration()])
+        #expect(try await db.table("test_models").count() == 0)
+        try await TestModel(foo: "bar", bar: false).insert(on: db)
+        #expect(try await db.table("test_models").count() == 1)
+        try await db.shutdown()
     }
 }
 
@@ -62,5 +60,4 @@ private struct TestModel: Seedable, Equatable {
             try await db.dropTable("test_models")
         }
     }
-
 }

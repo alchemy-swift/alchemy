@@ -24,8 +24,6 @@ struct TokenAuthableTests: AppSuite {
                     return try req.get(TokenModel.self).value
                 }
 
-            print((Routes as! HTTPRouter).middlewares)
-
             let auth = try await AuthModel(email: "test@withapollo.com", password: Hash.make("password"))
                 .insertReturn(on: db)
             let token = try await TokenModel(userId: auth.id)

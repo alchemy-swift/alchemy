@@ -2,19 +2,23 @@
 import Alchemy
 import AlchemyTesting
 
-final class MigrateCommandTests: TestCase<TestApp> {
-    func testRun() async throws {
-        try await DB.fake()
-        DB.migrations = [MigrationA()]
-        XCTAssertFalse(MigrationA.didUp)
-        XCTAssertFalse(MigrationA.didDown)
-        
-        try await MigrateCommand().run()
-        XCTAssertTrue(MigrationA.didUp)
-        XCTAssertFalse(MigrationA.didDown)
-        
-        try await app.run("migrate:rollback")
-        XCTAssertTrue(MigrationA.didDown)
+struct MigrateCommandTests: AppSuite {
+    let app = TestApp()
+
+    @Test func run() async throws {
+        try await withApp { app in
+            try await DB.fake()
+            DB.migrations = [MigrationA()]
+            XCTAssertFalse(MigrationA.didUp)
+            XCTAssertFalse(MigrationA.didDown)
+
+            try await MigrateCommand().run()
+            XCTAssertTrue(MigrationA.didUp)
+            XCTAssertFalse(MigrationA.didDown)
+
+            try await app.run("migrate:rollback")
+            XCTAssertTrue(MigrationA.didDown)
+        }
     }
 }
 
