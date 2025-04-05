@@ -57,7 +57,8 @@ struct QueryWhereTests {
     }
 
     @Test func whereColumn() {
-        let query = DB.table("foo")
+        let query = Database.stub
+            .table("foo")
             .whereColumn("foo", .equals, "bar")
             .orWhereColumn("baz", .like, "fiz")
         #expect(query.wheres == [

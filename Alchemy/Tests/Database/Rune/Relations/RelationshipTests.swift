@@ -11,8 +11,9 @@ struct RelationshipTests {
     private var job: Job!
 
     init() async throws {
-        try await DB.shutdown()
-        try await DB.fake(migrations: [WorkflowMigration()])
+        let db = Database.memory
+        try await db.migrate([WorkflowMigration()])
+        Container.main.set(db)
 
         /*
          ========== STRUCTURE ==========
@@ -51,31 +52,43 @@ struct RelationshipTests {
     @Test func hasMany() async throws {
         let repositories = try await user.refresh().repositories
         #expect(repositories.map(\.id) == [5, 6])
+
+        try await _cleanup()
     }
 
     @Test func hasOne() async throws {
         let manager = try await user.report
         #expect(manager?.id == 4)
+
+        try await _cleanup()
     }
 
     @Test func belongsTo() async throws {
         let user = try await repository.user
         #expect(user.id == 3)
+
+        try await _cleanup()
     }
 
     @Test func through() async throws {
         let jobs = try await user.jobs.get()
         #expect(jobs.map(\.id) == [9, 10])
+
+        try await _cleanup()
     }
 
     @Test func pivot() async throws {
         let organizations = try await user.organizations
         #expect(organizations.map(\.id) == [1, 2])
+
+        try await _cleanup()
     }
 
     @Test func fetchWhere() async throws {
         let organizations = try await organization.usersOver30.get()
         #expect(organizations.map(\.id) == [4])
+
+        try await _cleanup()
     }
 
     // MARK: - Eager Loading
@@ -84,6 +97,8 @@ struct RelationshipTests {
         let user = try await User.where("id" == 3).with(\.$repositories).first()
         #expect(user != nil)
         #expect(throws: Never.self) { try user?.$repositories.require() }
+
+        try await _cleanup()
     }
 
     @Test func autoCache() async throws {
@@ -91,12 +106,16 @@ struct RelationshipTests {
         _ = try await user.$repositories.value()
         #expect(user.$repositories.isLoaded == true)
         #expect(throws: Never.self) { try user.$repositories.require() }
+
+        try await _cleanup()
     }
 
     @Test func whereCache() async throws {
         _ = try await organization.users
         #expect(organization.$users.isLoaded == true)
         #expect(organization.usersOver30.isLoaded == false)
+
+        try await _cleanup()
     }
 
     @Test func sync() async throws {
@@ -106,6 +125,8 @@ struct RelationshipTests {
         #expect(user.$report.isLoaded == true)
         #expect(try await user.report?.id == 4)
         #expect(try await user.$report.load() == nil)
+
+        try await _cleanup()
     }
 
     // MARK: - CRUD
@@ -124,6 +145,10 @@ struct RelationshipTests {
 
     @Test(.disabled())
     func pivotReplace() async throws {
+    }
+
+    private func _cleanup() async throws {
+        try await DB.shutdown()
     }
 }
 

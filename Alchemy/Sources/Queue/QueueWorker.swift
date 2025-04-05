@@ -19,6 +19,11 @@ actor QueueWorker: Service {
     }
 
     func run() async throws {
+        // 0. run immediately - `AsyncTimerSequence` waits one `interval` before
+        //    firing the first time.
+        try await runNext()
+
+        // 1. then run after every interval
         for try await _ in timer {
             try await runNext()
         }

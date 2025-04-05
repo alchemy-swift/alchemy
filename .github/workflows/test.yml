@@ -17,12 +17,12 @@ jobs:
             - name: Build
               run: swift build
             - name: Run tests
-              run: swift test
+              run: swift test --no-parallel
     test-linux:
         runs-on: ubuntu-22.04
         strategy:
             matrix:
-                swift: ["6.0"]
+                swift: ["6.1"]
         container: swift:${{ matrix.swift }}
         steps:
             - uses: actions/checkout@v3
@@ -31,4 +31,4 @@ jobs:
             - name: Build
               run: swift build
             - name: Run tests
-              run: swift test
+              run: swift test --no-parallel

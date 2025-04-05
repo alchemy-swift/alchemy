@@ -6,7 +6,7 @@ final class ControllerTests: TestCase<TestApp> {
         app.use(TestController())
         try await Test.get("/test").assertOk()
     }
-    
+
     func testControllerMiddleware() async throws {
         var (one, two, three) = (false, false, false)
         let controller = MiddlewareController(middlewares: [
