@@ -1,20 +1,15 @@
 import Alchemy
 import NIO
 
-public protocol AppSuite {
-    associatedtype A: Application
-    var app: A { get }
-}
+public protocol TestSuite {}
 
-extension AppSuite {
-    public var Test: TestBuilder<A> {
-        TestBuilder(app: app)
+extension TestSuite {
+    public var App: TestApp {
+        Main as! TestApp
     }
 
-    public func withApp(execute: (A) async throws -> Void) async throws {
-        try await app.willTest()
-        try await execute(app)
-        try await app.didTest()
+    public var Test: TestBuilder<TestApp> {
+        TestBuilder(app: App)
     }
 }
 

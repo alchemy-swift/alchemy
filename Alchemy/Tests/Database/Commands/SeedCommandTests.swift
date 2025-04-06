@@ -2,17 +2,14 @@
 import Alchemy
 import AlchemyTesting
 
-struct SeedCommandTests: AppSuite {
-    let app = TestApp()
-
+@Suite(.mockContainer)
+struct SeedCommandTests {
     @Test func seed() async throws {
-        try await withApp { _ in
-            try await DB.fake(migrations: [SeedModel.Migrate()])
-            DB.seeders = [Seeder1(), Seeder2()]
-            try await SeedCommand(db: nil).run()
-            #expect(Seeder1.didRun)
-            #expect(Seeder2.didRun)
-        }
+        try await DB.fake(migrations: [SeedModel.Migrate()])
+        DB.seeders = [Seeder1(), Seeder2()]
+        try await SeedCommand(db: nil).run()
+        #expect(Seeder1.didRun)
+        #expect(Seeder2.didRun)
     }
 
     @Test(.disabled("need to enable selecting service from string"))

@@ -2,9 +2,8 @@
 import Alchemy
 import AlchemyTesting
 
-struct MigrationTests: AppSuite {
-    let app = TestApp()
-
+@Suite(.mockContainer)
+struct MigrationTests {
     private let m1 = Migration1()
     private let m2 = Migration2()
     private let m3 = Migration3()
@@ -16,18 +15,16 @@ struct MigrationTests: AppSuite {
     }
 
     @Test func databaseMigration() async throws {
-        try await withApp { app in
-            try await DB.fake()
-            try await DB.rollback()
-            DB.migrations = [MigrationA()]
-            try await DB.migrate()
-            #expect(try await Database.AppliedMigration.all().count == 1)
-            DB.migrations.append(MigrationB())
-            try await DB.migrate()
-            #expect(try await Database.AppliedMigration.all().count == 2)
-            try await DB.rollback()
-            #expect(try await Database.AppliedMigration.all().count == 1)
-        }
+        try await DB.fake()
+        try await DB.rollback()
+        DB.migrations = [MigrationA()]
+        try await DB.migrate()
+        #expect(try await Database.AppliedMigration.all().count == 1)
+        DB.migrations.append(MigrationB())
+        try await DB.migrate()
+        #expect(try await Database.AppliedMigration.all().count == 2)
+        try await DB.rollback()
+        #expect(try await Database.AppliedMigration.all().count == 1)
     }
 }
 

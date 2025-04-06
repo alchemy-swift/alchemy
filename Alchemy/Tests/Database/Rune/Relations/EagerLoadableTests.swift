@@ -1,17 +1,14 @@
 import AlchemyTesting
 
-struct EagerLoadableTests: AppSuite {
-    let app = TestApp()
-
+@Suite(.mockContainer)
+struct EagerLoadableTests {
     @Test func with() async throws {
-        try await withApp { _ in
-            try await DB.fake(migrations: [TestModelMigration(), TestParentMigration()])
-            try await TestParent.seed()
-            let child = try await TestModel.seed()
-            _ = try await child.testParent()
-            let fetchedChild = try await TestModel.query().with(\.testParent).first()
-            #expect(fetchedChild == child)
-        }
+        try await DB.fake(migrations: [TestModelMigration(), TestParentMigration()])
+        try await TestParent.seed()
+        let child = try await TestModel.seed()
+        _ = try await child.testParent()
+        let fetchedChild = try await TestModel.query().with(\.testParent).first()
+        #expect(fetchedChild == child)
     }
 }
 
