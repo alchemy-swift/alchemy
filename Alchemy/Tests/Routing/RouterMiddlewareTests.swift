@@ -1,23 +1,24 @@
 import AlchemyTesting
 
-final class RouterMiddlewareTests: TestCase<TestApp> {
-    func testMiddlewareCalling() async throws {
+@Suite(.mockContainer)
+struct RouterMiddlewareTests: TestSuite {
+    @Test func testMiddlewareCalling() async throws {
         var (one, two) = (false, false)
         let mw1 = TestMiddleware(req: { _ in one = true })
         let mw2 = TestMiddleware(req: { _ in two = true })
 
-        app.use(mw1)
+        App.use(mw1)
             .get("/foo") { _ in }
             .use(mw2)
             .post("/foo") { _ in }
 
         _ = try await Test.get("/foo")
         
-        AssertTrue(one)
-        AssertFalse(two)
+        #expect(one)
+        #expect(!two)
     }
 
-    func testMiddlewareNotCalledWhenError() async throws {
+    @Test func testMiddlewareNotCalledWhenError() async throws {
         var (one, two, three) = (false, false, false)
         let global = TestMiddleware(res: { _ in one = true })
         let mw1 = TestMiddleware(res: { _ in two = true })
@@ -27,41 +28,45 @@ final class RouterMiddlewareTests: TestCase<TestApp> {
             throw SomeError()
         })
 
-        app.useAll(global)
+        App.useAll(global)
             .use(mw1)
             .use(mw2)
             .get("/foo") { _ in }
 
         _ = try await Test.get("/foo")
         
-        AssertFalse(one)
-        AssertFalse(two)
-        AssertTrue(three)
+        #expect(!one)
+        #expect(!two)
+        #expect(three)
     }
 
-    func testGroupMiddleware() async throws {
+    @Test func testGroupMiddleware() async throws {
         var one = false
         let mw = TestMiddleware(req: { request in
-            XCTAssertEqual(request.path, "/foo")
-            XCTAssertEqual(request.method, .post)
+            #expect(request.path == "/foo")
+            #expect(request.method == .post)
             one = true
         })
 
-        app.grouping(middlewares: [mw]) {
+        App.grouping(middlewares: [mw]) {
             $0.post("/foo") { _ in 1 }
         }
         .get("/foo") { _ in 2 }
 
-        try await Test.get("/foo").assertOk().assertBody("2")
-        try await Test.post("/foo").assertOk().assertBody("1")
-        AssertTrue(one)
+        let res1 = try await Test.get("/foo").assertOk().assertBody("2")
+        #expect(res1.status == .ok)
+        #expect(res1.body?.string == "2")
+        let res2 = try await Test.post("/foo").assertOk().assertBody("1")
+        #expect(res2.status == .ok)
+        #expect(res2.body?.string == "1")
+        #expect(one)
     }
     
-    func testGroupMiddlewareRemoved() async throws {
+    @Test func testGroupMiddlewareRemoved() async throws {
         var (one, two) = (false, false)
         let mw = ActionMiddleware { one = true }
 
-        app.grouping(middlewares: [mw]) {
+        App.grouping(middlewares: [mw]) {
             $0.get("/foo") { _ in 1 }
         }
         .get("/bar") { _ async -> Int in
@@ -69,51 +74,52 @@ final class RouterMiddlewareTests: TestCase<TestApp> {
             return 2
         }
 
-        try await Test.get("/bar").assertOk()
-        AssertFalse(one)
-        AssertTrue(two)
+        let res = try await Test.get("/bar")
+        #expect(res.status == .ok)
+        #expect(!one)
+        #expect(two)
     }
 
-    func testMiddlewareOrder() async throws {
+    @Test func testMiddlewareOrder() async throws {
         var (one, two, three, four, five, six) = (false, false, false, false, false, false)
         var stack = [Int]()
         let mw1 = TestMiddleware { _ in
-            XCTAssertEqual(stack, [])
+            #expect(stack == [])
             one = true
             stack.append(0)
         } res: { _ in
-            XCTAssertEqual(stack, [0,1,2,3,4])
+            #expect(stack == [0,1,2,3,4])
             two = true
         }
 
         let mw2 = TestMiddleware { _ in
-            XCTAssertEqual(stack, [0])
+            #expect(stack == [0])
             three = true
             stack.append(1)
         } res: { _ in
-            XCTAssertEqual(stack, [0,1,2,3])
+            #expect(stack == [0,1,2,3])
             four = true
             stack.append(4)
         }
 
         let mw3 = TestMiddleware { _ in
-            XCTAssertEqual(stack, [0,1])
+            #expect(stack == [0,1])
             five = true
             stack.append(2)
         } res: { _ in
-            XCTAssertEqual(stack, [0,1,2])
+            #expect(stack == [0,1,2])
             six = true
             stack.append(3)
         }
 
-        app.use(mw1, mw2, mw3).get("/foo") { _ in }
+        App.use(mw1, mw2, mw3).get("/foo") { _ in }
         _ = try await Test.get("/foo")
-        AssertTrue(one)
-        AssertTrue(two)
-        AssertTrue(three)
-        AssertTrue(four)
-        AssertTrue(five)
-        AssertTrue(six)
+        #expect(one)
+        #expect(two)
+        #expect(three)
+        #expect(four)
+        #expect(five)
+        #expect(six)
     }
 }
 

@@ -2,76 +2,71 @@
 import Alchemy
 import AlchemyTesting
 
-final class FileMiddlewareTests: TestCase<TestApp> {
-    var middleware: FileMiddleware!
-    var fileName = UUID().uuidString
-    
-    override func setUp() {
-        super.setUp()
+@Suite(.mockContainer)
+struct FileMiddlewareTests: TestSuite {
+    let middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public", extensions: ["html"])
+    let fileName = UUID().uuidString
+
+    init() {
         FileCreator.mock()
-        middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public", extensions: ["html"])
-        fileName = UUID().uuidString
     }
-    
-    func testDirectorySanitize() async throws {
-        middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public/", extensions: ["html"])
+
+    @Test func directorySanitize() async throws {
+        let middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public/", extensions: ["html"])
         try FileCreator.shared.create(fileName: fileName, extension: "html", contents: "foo;bar;baz", in: "Public")
 
-        try await middleware
+        let res1 = try await middleware
             .handle(.get(fileName), next: { _ in .default })
             .collect()
-            .assertBody("foo;bar;baz")
-        
-        try await middleware
+        #expect(res1.body?.string == "foo;bar;baz")
+
+        let res2 = try await middleware
             .handle(.get("//////\(fileName)"), next: { _ in .default })
             .collect()
-            .assertBody("foo;bar;baz")
-        
-        do {
-            _ = try await middleware.handle(.get("../foo"), next: { _ in .default })
-            XCTFail("An error should be thrown")
-        } catch {}
+        #expect(res2.body?.string == "foo;bar;baz")
+
+        await #expect(throws: Error.self) {
+            try await middleware.handle(.get("../foo"), next: { _ in .default })
+        }
     }
     
-    func testGetOnly() async throws {
-        try await middleware
-            .handle(.post(fileName), next: { _ in .default })
-            .assertBody("bar")
+    @Test func getOnly() async throws {
+        let res = try await middleware.handle(.post(fileName), next: { _ in .default })
+        #expect(res.body?.string == "bar")
     }
     
-    func testRedirectIndex() async throws {
+    @Test func redirectIndex() async throws {
         try FileCreator.shared.create(fileName: "index", extension: "html", contents: "foo;bar;baz", in: "Public")
-        try await middleware
+        let res = try await middleware
             .handle(.get(""), next: { _ in .default })
             .collect()
-            .assertBody("foo;bar;baz")
+        #expect(res.body?.string == "foo;bar;baz")
     }
     
-    func testLoadingFile() async throws {
+    @Test func loadingFile() async throws {
         try FileCreator.shared.create(fileName: fileName, extension: "txt", contents: "foo;bar;baz", in: "Public")
         
-        try await middleware
+        let res1 = try await middleware
             .handle(.get("\(fileName).txt"), next: { _ in .default })
             .collect()
-            .assertBody("foo;bar;baz")
-        
-        try await middleware
-            .handle(.get(fileName), next: { _ in .default })
-            .assertBody("bar")
+        #expect(res1.body?.string == "foo;bar;baz")
+
+        let res2 = try await middleware.handle(.get(fileName), next: { _ in .default })
+        #expect(res2.body?.string == "bar")
     }
     
-    func testLoadingAlternateExtension() async throws {
+    @Test func loadingAlternateExtension() async throws {
         try FileCreator.shared.create(fileName: fileName, extension: "html", contents: "foo;bar;baz", in: "Public")
         
-        try await middleware
+        let res1 = try await middleware
             .handle(.get(fileName), next: { _ in .default })
             .collect()
-            .assertBody("foo;bar;baz")
-        
-        try await middleware
+        #expect(res1.body?.string == "foo;bar;baz")
+
+        let res2 = try await middleware
             .handle(.get("\(fileName).html"), next: { _ in .default })
             .collect()
-            .assertBody("foo;bar;baz")
+        #expect(res2.body?.string == "foo;bar;baz")
     }
 }
 

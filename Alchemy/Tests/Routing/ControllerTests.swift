@@ -1,47 +1,52 @@
 import AlchemyTesting
 
-final class ControllerTests: TestCase<TestApp> {
-    func testController() async throws {
-        try await Test.get("/test").assertNotFound()
-        app.use(TestController())
-        try await Test.get("/test").assertOk()
+@Suite(.mockContainer)
+final class ControllerTests: TestSuite {
+    @Test func controller() async throws {
+        #expect(try await Test.get("/test").status == .notFound)
+        App.use(TestController())
+        #expect(try await Test.get("/test").status == .ok)
     }
 
-    func testControllerMiddleware() async throws {
+    @Test func controllerMiddleware() async throws {
         var (one, two, three) = (false, false, false)
-        let controller = MiddlewareController(middlewares: [
-            ActionMiddleware { one = true },
-            ActionMiddleware { two = true },
-            ActionMiddleware { three = true }
-        ])
-        app.use(controller)
-        try await Test.get("/middleware").assertOk()
-        
-        AssertTrue(one)
-        AssertTrue(two)
-        AssertTrue(three)
+
+        App.use(
+            MiddlewareController(middlewares: [
+                ActionMiddleware { one = true },
+                ActionMiddleware { two = true },
+                ActionMiddleware { three = true }
+            ])
+        )
+
+        let res = try await Test.get("/middleware")
+        #expect(res.status == .ok)
+        #expect(one)
+        #expect(two)
+        #expect(three)
     }
     
-    func testControllerMiddlewareRemoved() async throws {
+    @Test func controllerMiddlewareRemoved() async throws {
         var (one, two, three, four) = (false, false, false, false)
-        let controller = MiddlewareController(middlewares: [
-            ActionMiddleware { one = true },
-            ActionMiddleware { two = true },
-            ActionMiddleware { three = true },
-        ])
-        
-        app
-            .use(controller)
+        App
+            .use(
+                MiddlewareController(middlewares: [
+                    ActionMiddleware { one = true },
+                    ActionMiddleware { two = true },
+                    ActionMiddleware { three = true },
+                ])
+            )
             .get("/outside") { _ async -> String in
                 four = true
                 return "foo"
             }
         
-        try await Test.get("/outside").assertOk()
-        AssertFalse(one)
-        AssertFalse(two)
-        AssertFalse(three)
-        AssertTrue(four)
+        let res = try await Test.get("/outside")
+        #expect(res.status == .ok)
+        #expect(!one)
+        #expect(!two)
+        #expect(!three)
+        #expect(four)
     }
 }
 

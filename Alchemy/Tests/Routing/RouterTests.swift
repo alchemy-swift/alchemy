@@ -13,7 +13,7 @@ final class RouterTests: TestCase<TestApp> {
         app.delete("/string") { _ in "five" }
         app.options("/string") { _ in "six" }
         app.head("/string") { _ in "seven" }
-        
+
         try await Test.get("/string").assertBody("one").assertOk()
         try await Test.post("/string").assertBody("two").assertOk()
         try await Test.put("/string").assertBody("three").assertOk()

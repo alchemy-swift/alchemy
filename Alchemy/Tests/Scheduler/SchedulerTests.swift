@@ -1,45 +1,32 @@
 @testable
 import Alchemy
 import AlchemyTesting
-import NIOEmbedded
 
-final class SchedulerTests: TestCase<TestApp> {
-    private var queue: MemoryQueue!
+@Suite(.mockContainer)
+struct SchedulerTests: TestSuite {
+    let queue = Q.fake()
 
-    override func setUp() {
-        super.setUp()
-        self.queue = Q.fake()
+    @Test func scheduleTask() async throws {
+        try await confirmation { confirm in
+            Schedule.task { confirm() }.everySecond()
+            App.background("schedule")
+            try await Task.sleep(for: .seconds(1.01))
+        }
     }
     
-    func testScheduleTask() {
-        makeSchedule().everySecond()
-        app.background("schedule")
-        waitForExpectations(timeout: 2)
-    }
-    
-    func testScheduleJob() async throws {
+    @Test func scheduleJob() async throws {
         Schedule.job(TestJob()).everySecond()
-        app.background("schedule")
-        try await Task.sleep(for: .seconds(1))
+        App.background("schedule")
+        try await Task.sleep(for: .seconds(1.01))
         await queue.assertPushed(TestJob.self)
     }
     
-    func testDoesntRunNoNext() {
-        makeSchedule(invertExpect: true).cron("0 0 0 11 9 * 1993")
-        app.background("schedule")
-        waitForExpectations(timeout: 2)
-    }
-    
-    private func makeSchedule(invertExpect: Bool = false) -> Frequency {
-        let exp = expectation(description: "")
-        exp.isInverted = invertExpect
+    @Test func doesntRunNoNext() async throws {
         var didRun = false
-        return Schedule.task {
-            // Don't let the schedule fullfill this expectation twice.
-            guard !didRun else { return }
-            didRun = true
-            exp.fulfill()
-        }
+        Schedule.task { didRun = true }.cron("0 0 0 11 9 * 1993")
+        App.background("schedule")
+        try await Task.sleep(for: .seconds(1.01))
+        #expect(!didRun)
     }
 }
 
