@@ -1,80 +1,80 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
-let kMinTimeout: TimeInterval = 0.01
+@Suite(.mockTestApp)
+struct RouterTests {
+    @Test func testResponseConvertibleHandlers() async throws {
+        Main.get("/string") { _ in "one" }
+        Main.post("/string") { _ in "two" }
+        Main.put("/string") { _ in "three" }
+        Main.patch("/string") { _ in "four" }
+        Main.delete("/string") { _ in "five" }
+        Main.options("/string") { _ in "six" }
+        Main.head("/string") { _ in "seven" }
 
-final class RouterTests: TestCase<TestApp> {
-    func testResponseConvertibleHandlers() async throws {
-        app.get("/string") { _ in "one" }
-        app.post("/string") { _ in "two" }
-        app.put("/string") { _ in "three" }
-        app.patch("/string") { _ in "four" }
-        app.delete("/string") { _ in "five" }
-        app.options("/string") { _ in "six" }
-        app.head("/string") { _ in "seven" }
-
-        try await Test.get("/string").assertBody("one").assertOk()
-        try await Test.post("/string").assertBody("two").assertOk()
-        try await Test.put("/string").assertBody("three").assertOk()
-        try await Test.patch("/string").assertBody("four").assertOk()
-        try await Test.delete("/string").assertBody("five").assertOk()
-        try await Test.options("/string").assertBody("six").assertOk()
-        try await Test.head("/string").assertBody("seven").assertOk()
+        try await Test.get("/string").expectBody("one").expectOk()
+        try await Test.post("/string").expectBody("two").expectOk()
+        try await Test.put("/string").expectBody("three").expectOk()
+        try await Test.patch("/string").expectBody("four").expectOk()
+        try await Test.delete("/string").expectBody("five").expectOk()
+        try await Test.options("/string").expectBody("six").expectOk()
+        try await Test.head("/string").expectBody("seven").expectOk()
     }
     
-    func testVoidHandlers() async throws {
-        app.get("/void") { _ in }
-        app.post("/void") { _ in }
-        app.put("/void") { _ in }
-        app.patch("/void") { _ in }
-        app.delete("/void") { _ in }
-        app.options("/void") { _ in }
-        app.head("/void") { _ in }
-        
-        try await Test.get("/void").assertEmpty().assertOk()
-        try await Test.post("/void").assertEmpty().assertOk()
-        try await Test.put("/void").assertEmpty().assertOk()
-        try await Test.patch("/void").assertEmpty().assertOk()
-        try await Test.delete("/void").assertEmpty().assertOk()
-        try await Test.options("/void").assertEmpty().assertOk()
-        try await Test.head("/void").assertEmpty().assertOk()
+    @Test func testVoidHandlers() async throws {
+        Main.get("/void") { _ in }
+        Main.post("/void") { _ in }
+        Main.put("/void") { _ in }
+        Main.patch("/void") { _ in }
+        Main.delete("/void") { _ in }
+        Main.options("/void") { _ in }
+        Main.head("/void") { _ in }
+
+        try await Test.get("/void").expectEmpty().expectOk()
+        try await Test.post("/void").expectEmpty().expectOk()
+        try await Test.put("/void").expectEmpty().expectOk()
+        try await Test.patch("/void").expectEmpty().expectOk()
+        try await Test.delete("/void").expectEmpty().expectOk()
+        try await Test.options("/void").expectEmpty().expectOk()
+        try await Test.head("/void").expectEmpty().expectOk()
     }
     
-    func testEncodableHandlers() async throws {
-        app.get("/encodable") { _ in 1 }
-        app.post("/encodable") { _ in 2 }
-        app.put("/encodable") { _ in 3 }
-        app.patch("/encodable") { _ in 4 }
-        app.delete("/encodable") { _ in 5 }
-        app.options("/encodable") { _ in 6 }
-        app.head("/encodable") { _ in 7 }
-        
-        try await Test.get("/encodable").assertBody("1").assertOk()
-        try await Test.post("/encodable").assertBody("2").assertOk()
-        try await Test.put("/encodable").assertBody("3").assertOk()
-        try await Test.patch("/encodable").assertBody("4").assertOk()
-        try await Test.delete("/encodable").assertBody("5").assertOk()
-        try await Test.options("/encodable").assertBody("6").assertOk()
-        try await Test.head("/encodable").assertBody("7").assertOk()
+    @Test func testEncodableHandlers() async throws {
+        Main.get("/encodable") { _ in 1 }
+        Main.post("/encodable") { _ in 2 }
+        Main.put("/encodable") { _ in 3 }
+        Main.patch("/encodable") { _ in 4 }
+        Main.delete("/encodable") { _ in 5 }
+        Main.options("/encodable") { _ in 6 }
+        Main.head("/encodable") { _ in 7 }
+
+        try await Test.get("/encodable").expectBody("1").expectOk()
+        try await Test.post("/encodable").expectBody("2").expectOk()
+        try await Test.put("/encodable").expectBody("3").expectOk()
+        try await Test.patch("/encodable").expectBody("4").expectOk()
+        try await Test.delete("/encodable").expectBody("5").expectOk()
+        try await Test.options("/encodable").expectBody("6").expectOk()
+        try await Test.head("/encodable").expectBody("7").expectOk()
     }
     
-    func testMissing() async throws {
-        app.get("/foo") { _ in }
-        app.post("/bar") { _ in }
-        try await Test.post("/foo").assertNotFound()
+    @Test func testMissing() async throws {
+        Main.get("/foo") { _ in }
+        Main.post("/bar") { _ in }
+        try await Test.post("/foo").expectNotFound()
     }
 
-    func testQueriesIgnored() async throws {
-        app.get("/foo") { _ in }
-        try await Test.get("/foo?query=1").assertEmpty().assertOk()
+    @Test func testQueriesIgnored() async throws {
+        Main.get("/foo") { _ in }
+        try await Test.get("/foo?query=1").expectEmpty().expectOk()
     }
 
-    func testPathParametersMatch() async throws {
+    @Test func testPathParametersMatch() async throws {
         var one = false
         let uuidString = UUID().uuidString
-        app.get("/v1/some_path/:uuid/:user_id") {
-            XCTAssertEqual($0.parameters, [
+        Main.get("/v1/some_path/:uuid/:user_id") {
+            #expect($0.parameters == [
                 Request.Parameter(key: "uuid", value: uuidString),
                 Request.Parameter(key: "user_id", value: "123"),
             ])
@@ -82,34 +82,33 @@ final class RouterTests: TestCase<TestApp> {
             return "foo"
         }
         
-        try await Test.get("/v1/some_path/\(uuidString)/123").assertBody("foo").assertOk()
-        AssertTrue(one)
+        try await Test.get("/v1/some_path/\(uuidString)/123").expectBody("foo").expectOk()
+        #expect(one)
     }
 
-    func testMultipleRequests() async throws {
-        app.get("/foo") { _ in 1 }
-        app.get("/foo") { _ in 2 }
-        try await Test.get("/foo").assertOk().assertBody("1")
+    @Test func testMultipleRequests() async throws {
+        Main.get("/foo") { _ in 1 }
+        Main.get("/foo") { _ in 2 }
+        try await Test.get("/foo").expectOk().expectBody("1")
     }
 
-    func testInvalidPath() throws {
-        throw XCTSkip()
+    @Test(.disabled())
+    func testInvalidPath() throws {}
+
+    @Test func forwardSlashIssues() async throws {
+        Main.get("noslash") { _ in 1 }
+        Main.get("wrongslash/") { _ in 2 }
+        Main.get("//////////manyslash//////////////") { _ in 3 }
+        Main.get("split/path") { _ in 4 }
+        try await Test.get("/noslash").expectOk().expectBody("1")
+        try await Test.get("/wrongslash").expectOk().expectBody("2")
+        try await Test.get("/manyslash").expectOk().expectBody("3")
+        try await Test.get("/splitpath").expectNotFound()
+        try await Test.get("/split/path").expectOk().expectBody("4")
     }
 
-    func testForwardSlashIssues() async throws {
-        app.get("noslash") { _ in 1 }
-        app.get("wrongslash/") { _ in 2 }
-        app.get("//////////manyslash//////////////") { _ in 3 }
-        app.get("split/path") { _ in 4 }
-        try await Test.get("/noslash").assertOk().assertBody("1")
-        try await Test.get("/wrongslash").assertOk().assertBody("2")
-        try await Test.get("/manyslash").assertOk().assertBody("3")
-        try await Test.get("/splitpath").assertNotFound()
-        try await Test.get("/split/path").assertOk().assertBody("4")
-    }
-
-    func testGroupedPathPrefix() async throws {
-        app
+    @Test func groupedPathPrefix() async throws {
+        Main
             .grouping("group") { app in
                 app
                     .get("/foo") { _ in 1 }
@@ -121,40 +120,40 @@ final class RouterTests: TestCase<TestApp> {
             }
             .put("/foo") { _ in 5 }
         
-        try await Test.get("/group/foo").assertOk().assertBody("1")
-        try await Test.get("/group/bar").assertOk().assertBody("2")
-        try await Test.post("/group/nested/baz").assertOk().assertBody("3")
-        try await Test.post("/group/bar").assertOk().assertBody("4")
-        
+        try await Test.get("/group/foo").expectOk().expectBody("1")
+        try await Test.get("/group/bar").expectOk().expectBody("2")
+        try await Test.post("/group/nested/baz").expectOk().expectBody("3")
+        try await Test.post("/group/bar").expectOk().expectBody("4")
+
         // defined outside group -> still available without group prefix
-        try await Test.put("/foo").assertOk().assertBody("5")
-        
+        try await Test.put("/foo").expectOk().expectBody("5")
+
         // only available under group prefix
-        try await Test.get("/bar").assertNotFound()
-        try await Test.post("/baz").assertNotFound()
-        try await Test.post("/bar").assertNotFound()
-        try await Test.get("/foo").assertNotFound()
+        try await Test.get("/bar").expectNotFound()
+        try await Test.post("/baz").expectNotFound()
+        try await Test.post("/bar").expectNotFound()
+        try await Test.get("/foo").expectNotFound()
     }
     
-    func testError() async throws {
-        app.get("/error") { _ -> Void in throw TestError() }
+    @Test func error() async throws {
+        Main.get("/error") { _ -> Void in throw TestError() }
         let status = HTTPResponse.Status.internalServerError
-        try await Test.get("/error").assertStatus(status).assertBody("500 Internal Server Error")
+        try await Test.get("/error").expectStatus(status).expectBody("500 Internal Server Error")
     }
     
-    func testErrorHandling() async throws {
-        app.get("/error_convert") { _ -> Void in throw TestConvertibleError() }
-        app.get("/error_convert_error") { _ -> Void in throw TestThrowingConvertibleError() }
-        
+    @Test func errorHandling() async throws {
+        Main.get("/error_convert") { _ -> Void in throw TestConvertibleError() }
+        Main.get("/error_convert_error") { _ -> Void in throw TestThrowingConvertibleError() }
+
         let errorStatus = HTTPResponse.Status.internalServerError
-        try await Test.get("/error_convert").assertStatus(.badGateway).assertEmpty()
-        try await Test.get("/error_convert_error").assertStatus(errorStatus).assertBody("500 Internal Server Error")
+        try await Test.get("/error_convert").expectStatus(.badGateway).expectEmpty()
+        try await Test.get("/error_convert_error").expectStatus(errorStatus).expectBody("500 Internal Server Error")
     }
 
     // MARK: Streaming
 
-    func testServerResponseStream() async throws {
-        app.get("/stream") { _ in
+    @Test func serverResponseStream() async throws {
+        Main.get("/stream") { _ in
             Response {
                 $0.write(ByteBuffer(string: "foo"))
                 $0.write(ByteBuffer(string: "bar"))
@@ -164,12 +163,12 @@ final class RouterTests: TestCase<TestApp> {
 
         try await Test.get("/stream")
             .collect()
-            .assertOk()
-            .assertBody("foobarbaz")
+            .expectOk()
+            .expectBody("foobarbaz")
     }
 
-    func testEndToEndStream() async throws {
-        app.get("/stream", options: .stream) { _ in
+    @Test func endToEndStream() async throws {
+        Main.get("/stream", options: .stream) { _ in
             Response {
                 $0.write(ByteBuffer(string: "foo"))
                 $0.write(ByteBuffer(string: "bar"))
@@ -177,31 +176,36 @@ final class RouterTests: TestCase<TestApp> {
             }
         }
 
-        app.background()
+        Main.background()
 
         var expected = ["foo", "bar", "baz"]
         try await Http
             .withStream()
             .get("http://localhost:3000/stream")
-            .assertStream {
+            .expectStream {
                 guard expected.first != nil else {
-                    XCTFail("There were too many stream elements.")
+                    Issue.record("There were too many stream elements.")
                     return
                 }
 
-                XCTAssertEqual($0.string, expected.removeFirst())
+                #expect($0.string == expected.removeFirst())
             }
-            .assertOk()
+            .expectOk()
     }
 
-    func testFileRequest() {
-        app.get("/stream") { _ in
+    @Test func fileRequest() async throws {
+        Main.get("/stream") { _ in
             Response {
                 $0.write(ByteBuffer(string: "foo"))
                 $0.write(ByteBuffer(string: "bar"))
                 $0.write(ByteBuffer(string: "baz"))
             }
         }
+
+        try await Test.get("/stream")
+            .collect()
+            .expectOk()
+            .expectBody("foobarbaz")
     }
 }
 

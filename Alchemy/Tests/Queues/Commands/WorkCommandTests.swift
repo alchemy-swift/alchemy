@@ -2,10 +2,10 @@
 import Alchemy
 import AlchemyTesting
 
-@Suite(.mockContainer)
-struct WorkCommandTests: TestSuite {
+@Suite(.mockTestApp)
+struct WorkCommandTests {
     @Test func run() async throws {
-        App.background("queue:work", "--workers", "5")
+        Main.background("queue:work", "--workers", "5")
 
         // wait for worker to boot up
         try await Task.sleep(for: .milliseconds(10))
@@ -15,7 +15,7 @@ struct WorkCommandTests: TestSuite {
     }
 
     @Test func runSchedule() async throws {
-        App.background("queue:work", "--workers", "3", "--schedule")
+        Main.background("queue:work", "--workers", "3", "--schedule")
 
         // wait for worker to boot up
         try await Task.sleep(for: .milliseconds(10))

@@ -2,7 +2,6 @@
 import Alchemy
 import AlchemyTesting
 
-@Suite(.serialized)
 struct RelationshipTests {
     private var organization: Organization!
     private var user: User!

@@ -1,9 +1,10 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
-@Suite(.mockContainer)
-struct QueueTests: TestSuite {
+@Suite(.mockTestApp)
+struct QueueTests {
     @Test func jobDecoding() async {
         let fakeData = JobData(payload: Data(), jobName: "", channel: "", attempts: 0, recoveryStrategy: .none, backoff: .seconds(0))
         await #expect(throws: Error.self) { try await Jobs.createJob(from: fakeData) }
@@ -44,7 +45,7 @@ struct QueueTests: TestSuite {
         try await confirmation { confirm in
             ConfirmableJob.didRun = { confirm() }
             try await ConfirmableJob().dispatch()
-            App.background("queue:work")
+            Main.background("queue:work")
             try await Task.sleep(for: .seconds(0.01))
         }
 
@@ -58,7 +59,7 @@ struct QueueTests: TestSuite {
         try await confirmation { confirm in
             FailureJob.didFinish = { confirm() }
             try await FailureJob().dispatch()
-            App.background("queue:work")
+            Main.background("queue:work")
             try await Task.sleep(for: .seconds(0.01))
         }
 
@@ -74,7 +75,7 @@ struct QueueTests: TestSuite {
         try await confirmation { confirm in
             RetryJob.didFail = { confirm() }
             try await RetryJob(foo: "bar").dispatch()
-            App.background("queue:work")
+            Main.background("queue:work")
             try await Task.sleep(for: .seconds(0.01))
         }
 

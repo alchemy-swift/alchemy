@@ -1,15 +1,13 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
-@Suite(.serialized)
 struct FilesystemTests {
-    private let app: TestApp
     private let filePath: String
     private let root: String
 
     init() async throws {
-        self.app = try await .test()
         self.root = NSTemporaryDirectory() + UUID().uuidString
         self.filePath = UUID().uuidString + ".txt"
         let filesystem = Filesystem.local(root: root)

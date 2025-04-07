@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTesting
 
-@Suite(.mockContainer)
+@Suite(.mockTestApp)
 struct MigrationTests {
     private let m1 = Migration1()
     private let m2 = Migration2()

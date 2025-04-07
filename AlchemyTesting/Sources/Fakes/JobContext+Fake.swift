@@ -1,11 +1,13 @@
-extension Job {
-    public func handle() async throws {
+import Foundation
+
+public extension Job {
+    func handle() async throws {
         try await handle(context: .fake)
     }
 }
 
-extension JobContext {
-    public static var fake: JobContext {
+public extension JobContext {
+    static var fake: JobContext {
         JobContext(
             queue: .memory,
             channel: Queue.defaultChannel,

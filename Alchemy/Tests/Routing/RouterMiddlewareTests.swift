@@ -1,13 +1,13 @@
 import AlchemyTesting
 
-@Suite(.mockContainer)
-struct RouterMiddlewareTests: TestSuite {
+@Suite(.mockTestApp)
+struct RouterMiddlewareTests {
     @Test func testMiddlewareCalling() async throws {
         var (one, two) = (false, false)
         let mw1 = TestMiddleware(req: { _ in one = true })
         let mw2 = TestMiddleware(req: { _ in two = true })
 
-        App.use(mw1)
+        Main.use(mw1)
             .get("/foo") { _ in }
             .use(mw2)
             .post("/foo") { _ in }
@@ -28,7 +28,7 @@ struct RouterMiddlewareTests: TestSuite {
             throw SomeError()
         })
 
-        App.useAll(global)
+        Main.useAll(global)
             .use(mw1)
             .use(mw2)
             .get("/foo") { _ in }
@@ -48,15 +48,15 @@ struct RouterMiddlewareTests: TestSuite {
             one = true
         })
 
-        App.grouping(middlewares: [mw]) {
+        Main.grouping(middlewares: [mw]) {
             $0.post("/foo") { _ in 1 }
         }
         .get("/foo") { _ in 2 }
 
-        let res1 = try await Test.get("/foo").assertOk().assertBody("2")
+        let res1 = try await Test.get("/foo").expectOk().expectBody("2")
         #expect(res1.status == .ok)
         #expect(res1.body?.string == "2")
-        let res2 = try await Test.post("/foo").assertOk().assertBody("1")
+        let res2 = try await Test.post("/foo").expectOk().expectBody("1")
         #expect(res2.status == .ok)
         #expect(res2.body?.string == "1")
         #expect(one)
@@ -66,7 +66,7 @@ struct RouterMiddlewareTests: TestSuite {
         var (one, two) = (false, false)
         let mw = ActionMiddleware { one = true }
 
-        App.grouping(middlewares: [mw]) {
+        Main.grouping(middlewares: [mw]) {
             $0.get("/foo") { _ in 1 }
         }
         .get("/bar") { _ async -> Int in
@@ -112,7 +112,7 @@ struct RouterMiddlewareTests: TestSuite {
             stack.append(3)
         }
 
-        App.use(mw1, mw2, mw3).get("/foo") { _ in }
+        Main.use(mw1, mw2, mw3).get("/foo") { _ in }
         _ = try await Test.get("/foo")
         #expect(one)
         #expect(two)

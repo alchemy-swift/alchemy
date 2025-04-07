@@ -3,13 +3,13 @@ import Alchemy
 import AlchemyTesting
 import NIO
 
-@Suite(.mockContainer)
-struct BasicAuthableTests: TestSuite {
+@Suite(.mockTestApp)
+struct BasicAuthableTests {
     @Test func basicAuthable() async throws {
         let db = Database.memory
         try await db.migrate([AuthModel.Migrate()])
 
-        App
+        Main
             .use(AuthModel.basicAuthMiddleware(db: db))
             .get("/user") { try $0.get(AuthModel.self) }
 

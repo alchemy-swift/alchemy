@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 import SQLiteNIO
 
 struct SQLiteDatabaseTests {

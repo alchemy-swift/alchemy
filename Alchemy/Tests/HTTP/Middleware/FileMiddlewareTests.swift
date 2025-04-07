@@ -1,9 +1,10 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
-@Suite(.mockContainer)
-struct FileMiddlewareTests: TestSuite {
+@Suite(.mockTestApp)
+struct FileMiddlewareTests {
     let middleware = FileMiddleware(from: FileCreator.shared.rootPath + "Public", extensions: ["html"])
     let fileName = UUID().uuidString
 

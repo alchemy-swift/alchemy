@@ -2,7 +2,7 @@
 import Alchemy
 import AlchemyTesting
 
-@Suite(.mockContainer)
+@Suite(.mockTestApp)
 struct SeedCommandTests {
     @Test func seed() async throws {
         try await DB.fake(migrations: [SeedModel.Migrate()])

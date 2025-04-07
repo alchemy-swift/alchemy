@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
 struct MakeCommandTests {
     let fileName: String = UUID().uuidString

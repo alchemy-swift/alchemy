@@ -9,13 +9,13 @@ final class ClientAssertionTests {
 
     deinit { try? client.shutdown() }
 
-    @Test func assertNothingSent() {
-        http.assertNothingSent()
+    @Test func expectNothingSent() {
+        http.expectNothingSent()
     }
     
-    @Test func assertSent() async throws {
+    @Test func expectSent() async throws {
         _ = try await http.get("https://localhost:3000/foo?bar=baz")
-        http.assertSent(1) {
+        http.expectSent(1) {
             $0.hasMethod(.get) &&
             $0.hasPath("/foo") &&
             $0.hasQuery("bar", value: "baz")
@@ -24,7 +24,7 @@ final class ClientAssertionTests {
         _ = try await http
             .withJSON(User(name: "Cyanea", age: 35))
             .post("https://localhost:3000/bar")
-        http.assertSent(2) {
+        http.expectSent(2) {
             $0.hasMethod(.post) &&
             $0.hasPath("/bar") &&
             $0["name"] == "Cyanea" &&

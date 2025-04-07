@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
 final class ClientTests {
     let client = Client()
@@ -22,8 +23,8 @@ final class ClientTests {
         let res3 = try await client.builder().get("https://example.com")
         #expect(res3.status == .ok)
 
-        client.builder().assertSent { $0.hasQuery("foo", value: "bar") }
-        client.builder().assertSent { $0.hasQuery("bar", value: 2) && $0.hasQuery("baz", value: 1) }
+        client.builder().expectSent { $0.hasQuery("foo", value: "bar") }
+        client.builder().expectSent { $0.hasQuery("bar", value: 2) && $0.hasQuery("baz", value: 1) }
     }
 
     // MARK: Response

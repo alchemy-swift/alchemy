@@ -1,6 +1,6 @@
 import AlchemyTesting
 
-@Suite(.mockContainer)
+@Suite(.mockTestApp)
 struct EagerLoadableTests {
     @Test func with() async throws {
         try await DB.fake(migrations: [TestModelMigration(), TestParentMigration()])

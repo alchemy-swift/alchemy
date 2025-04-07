@@ -1,6 +1,7 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
 struct EnvTests {
     @Test func lookup() {

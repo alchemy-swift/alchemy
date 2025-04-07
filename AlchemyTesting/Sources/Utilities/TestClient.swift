@@ -1,29 +1,17 @@
 import Alchemy
+import Foundation
 import NIO
 
-public protocol TestSuite {}
-
-extension TestSuite {
-    public var App: TestApp {
-        Main as! TestApp
-    }
-
-    public var Test: TestBuilder<TestApp> {
-        TestBuilder(app: App)
-    }
+public var Test: TestClient {
+    TestClient()
 }
 
-public final class TestBuilder<A: Application>: RequestBuilder {
+public struct TestClient: RequestBuilder {
     public var urlComponents = URLComponents()
     public var method: HTTPRequest.Method = .get
     public var headers: HTTPFields = [:]
     public var body: Bytes? = nil
     private var remoteAddress: SocketAddress? = nil
-    private var app: A
-
-    fileprivate init(app: A) {
-        self.app = app
-    }
 
     /// Set the remote address of the mock request.
     public func withRemoteAddress(_ address: SocketAddress) -> Self {

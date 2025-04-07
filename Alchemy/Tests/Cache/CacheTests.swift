@@ -1,7 +1,7 @@
 import AlchemyTesting
 
-@Suite(.mockContainer)
-struct CacheTests: TestSuite {
+@Suite(.mockTestApp)
+struct CacheTests {
     @Test(arguments: Provider.allCases)
     func set(provider: Provider) async throws {
         guard try await provider.setup() else { return }

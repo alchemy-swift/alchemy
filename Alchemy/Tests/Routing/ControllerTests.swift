@@ -1,17 +1,17 @@
 import AlchemyTesting
 
-@Suite(.mockContainer)
-final class ControllerTests: TestSuite {
+@Suite(.mockTestApp)
+final class ControllerTests {
     @Test func controller() async throws {
         #expect(try await Test.get("/test").status == .notFound)
-        App.use(TestController())
+        Main.use(TestController())
         #expect(try await Test.get("/test").status == .ok)
     }
 
     @Test func controllerMiddleware() async throws {
         var (one, two, three) = (false, false, false)
 
-        App.use(
+        Main.use(
             MiddlewareController(middlewares: [
                 ActionMiddleware { one = true },
                 ActionMiddleware { two = true },
@@ -28,7 +28,7 @@ final class ControllerTests: TestSuite {
     
     @Test func controllerMiddlewareRemoved() async throws {
         var (one, two, three, four) = (false, false, false, false)
-        App
+        Main
             .use(
                 MiddlewareController(middlewares: [
                     ActionMiddleware { one = true },

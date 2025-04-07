@@ -1,5 +1,6 @@
 @testable import Alchemy
 import AlchemyTesting
+import Foundation
 
 struct SQLRowEncoderTests {
     @Test func encoding() throws {

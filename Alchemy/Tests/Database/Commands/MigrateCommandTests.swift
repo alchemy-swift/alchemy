@@ -2,8 +2,8 @@
 import Alchemy
 import AlchemyTesting
 
-@Suite(.mockContainer)
-struct MigrateCommandTests: TestSuite {
+@Suite(.mockTestApp)
+struct MigrateCommandTests {
     @Test func run() async throws {
         try await DB.fake()
         DB.migrations = [MigrationA()]
@@ -14,7 +14,7 @@ struct MigrateCommandTests: TestSuite {
         #expect(MigrationA.didUp)
         #expect(!MigrationA.didDown)
 
-        try await App.run("migrate:rollback")
+        try await Main.run("migrate:rollback")
         #expect(MigrationA.didDown)
     }
 }

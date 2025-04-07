@@ -1,9 +1,10 @@
 @testable
 import Alchemy
 import AlchemyTesting
+import Foundation
 
-@Suite(.mockContainer)
-struct TokenAuthableTests: TestSuite {
+@Suite(.mockTestApp)
+struct TokenAuthableTests {
     @Test func tokenAuthable() async throws {
         let db: Database = .memory
         try await db.migrate([AuthModel.Migrate(), TokenModel.Migrate()])
@@ -15,7 +16,7 @@ struct TokenAuthableTests: TestSuite {
         // allow overriding so that this can run in isolation.
         Container.main.set(db)
 
-        App
+        Main
             .use(TokenModel.tokenAuthMiddleware(db: db))
             .get("/user") { req in
                 _ = try req.get(AuthModel.self)

@@ -1,32 +1,29 @@
 @testable import Alchemy
 import AsyncHTTPClient
-import XCTest
+import Foundation
 
 extension Client.Builder {
-    public func assertNothingSent(file: StaticString = #filePath, line: UInt = #line) {
+    public func expectNothingSent(sourceLocation: SourceLocation = #_sourceLocation) {
         let stubbedRequests = client.stubs?.stubbedRequests ?? []
-        XCTAssert(stubbedRequests.isEmpty, file: file, line: line)
+        #expect(stubbedRequests.isEmpty, sourceLocation: sourceLocation)
     }
     
-    public func assertSent(
-        _ count: Int? = nil,
-        validate: ((Client.Request) throws -> Bool)? = nil,
-        file: StaticString = #filePath,
-        line: UInt = #line
-    ) {
+    public func expectSent(_ count: Int? = nil,
+                           validate: ((Client.Request) throws -> Bool)? = nil,
+                           sourceLocation: SourceLocation = #_sourceLocation) {
         let stubbedRequests = client.stubs?.stubbedRequests ?? []
-        XCTAssertFalse(stubbedRequests.isEmpty, file: file, line: line)
+        #expect(!stubbedRequests.isEmpty, sourceLocation: sourceLocation)
         if let count = count {
-            XCTAssertEqual(client.stubs?.stubbedRequests.count, count, file: file, line: line)
+            #expect(client.stubs?.stubbedRequests.count == count, sourceLocation: sourceLocation)
         }
         
         if let validate = validate {
             var foundMatch = false
             for request in stubbedRequests where !foundMatch {
-                XCTAssertNoThrow(foundMatch = try validate(request))
+                #expect(throws: Never.self) { foundMatch = try validate(request) }
             }
             
-            AssertTrue(foundMatch, file: file, line: line)
+            #expect(foundMatch, sourceLocation: sourceLocation)
         }
     }
 }

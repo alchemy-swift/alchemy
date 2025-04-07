@@ -1,6 +1,6 @@
 import AlchemyTesting
+import Foundation
 
-@Suite(.serialized)
 struct ModelCrudTests {
     let db: Database
 
@@ -58,7 +58,7 @@ struct ModelCrudTests {
     @Test func delete() async throws {
         let models = try await TestModel.seed(on: db, 5)
         guard let first = models.first else {
-            XCTFail("There should be 5 models in the database.")
+            Issue.record("There should be 5 models in the database.")
             return
         }
         
