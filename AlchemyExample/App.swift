@@ -5,8 +5,8 @@ import Alchemy
 struct App {
     func boot() {
         Response.defaultEncoder = .json.with(keyMapping: .snakeCase)
-        setDefaultDatabase(\.$database)
-        setDefaultQueue(\.$queue)
+        setDefaultDatabase(\.database)
+        setDefaultQueue(\.queue)
         use(UserController())
     }
 
@@ -61,9 +61,9 @@ extension Todo {
 }
 
 extension Container {
-    @Singleton var queue: Queue = isTest ? .memory : .database
-    @Singleton var database: Database {
+    @Service(.singleton) var queue: Queue = isTest ? .memory : .database
+    @Service(.singleton) var database: Database = {
         guard !isTest else { return .memory }
         return .sqlite(path: "../../AlchemyXDemo/Server/test.db").logRawSQL()
-    }
+    }()
 }

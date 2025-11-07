@@ -53,7 +53,7 @@ struct FileMiddlewareTests {
         #expect(res1.body?.string == "foo;bar;baz")
 
         let res2 = try await middleware.handle(.get(fileName), next: { _ in .default })
-        #expect(res2.body?.string == "bar")
+        #expect(try await res2.body?.collect().string == "bar")
     }
     
     @Test func loadingAlternateExtension() async throws {

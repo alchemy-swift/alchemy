@@ -19,12 +19,12 @@ struct MigrationTests {
         try await DB.rollback()
         DB.migrations = [MigrationA()]
         try await DB.migrate()
-        #expect(try await Database.AppliedMigration.all().count == 1)
+        #expect(try await AppliedMigration.all().count == 1)
         DB.migrations.append(MigrationB())
         try await DB.migrate()
-        #expect(try await Database.AppliedMigration.all().count == 2)
+        #expect(try await AppliedMigration.all().count == 2)
         try await DB.rollback()
-        #expect(try await Database.AppliedMigration.all().count == 1)
+        #expect(try await AppliedMigration.all().count == 1)
     }
 }
 

@@ -13,7 +13,7 @@ public func Log(_ keys: KeyPath<Container, Logger>...) -> Logger {
 
 extension Container {
     /// The default logger, only used if a user doesn't set a default logger.
-    @Singleton public var alchemy: Logger = .default
+    @Service(.singleton) public var alchemy: Logger = .default
 }
 
 extension Application {

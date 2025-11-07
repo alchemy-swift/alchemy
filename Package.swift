@@ -22,7 +22,7 @@ let package = Package(
         "apple/swift-async-algorithms":           "1.0.0",
         "apple/swift-crypto":                     "3.0.0",
         "apple/swift-http-types":                 "1.0.0",
-        "swiftlang/swift-syntax":               "600.0.1",
+        "swiftlang/swift-syntax":               "602.0.0",
         "hummingbird-project/hummingbird":        "2.5.0",
         "hummingbird-project/hummingbird-auth":   "2.0.2",
         "onevcat/Rainbow":                        "4.0.0",

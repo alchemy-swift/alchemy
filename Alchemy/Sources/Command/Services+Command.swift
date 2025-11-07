@@ -1,7 +1,7 @@
 var CMD: Commander {
-    Container.$commander
+    Container.commander
 }
 
 extension Container {
-    @Singleton var commander = Commander()
+    @Service(.singleton) var commander = Commander()
 }

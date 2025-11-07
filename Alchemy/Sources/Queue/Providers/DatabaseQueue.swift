@@ -18,50 +18,6 @@ extension Queue {
 
 /// A queue that persists jobs to a database.
 private final class DatabaseQueue: QueueProvider {
-    /// Represents the table of jobs backing a `DatabaseQueue`.
-    @Model
-    struct JobModel {
-        static var table = "jobs"
-
-        var id: String
-        let jobName: String
-        let channel: String
-        let payload: Data
-        let recoveryStrategy: Job.RecoveryStrategy
-        let backoffSeconds: Int
-
-        var attempts: Int
-        var reserved: Bool
-        var reservedAt: Date?
-        var queuedAt: Date?
-        var backoffUntil: Date?
-
-        init(jobData: JobData) {
-            jobName = jobData.jobName
-            channel = jobData.channel
-            payload = jobData.payload
-            attempts = jobData.attempts
-            recoveryStrategy = jobData.recoveryStrategy
-            backoffSeconds = jobData.backoff.seconds
-            backoffUntil = jobData.backoffUntil
-            reserved = false
-            id = jobData.id
-        }
-
-        func toJobData() throws -> JobData {
-            JobData(
-                id: id,
-                payload: payload,
-                jobName: jobName,
-                channel: channel,
-                attempts: attempts, 
-                recoveryStrategy: recoveryStrategy,
-                backoff: .seconds(Int64(backoffSeconds)),
-                backoffUntil: backoffUntil
-            )
-        }
-    }
-
     /// The database backing this queue.
     let db: Database
 
@@ -110,6 +66,50 @@ private final class DatabaseQueue: QueueProvider {
     }
 
     func shutdown() {}
+}
+
+/// Represents the table of jobs backing a `DatabaseQueue`.
+@Model
+private struct JobModel {
+    static var table = "jobs"
+
+    var id: String
+    let jobName: String
+    let channel: String
+    let payload: Data
+    let recoveryStrategy: Job.RecoveryStrategy
+    let backoffSeconds: Int
+
+    var attempts: Int
+    var reserved: Bool
+    var reservedAt: Date?
+    var queuedAt: Date?
+    var backoffUntil: Date?
+
+    init(jobData: JobData) {
+        jobName = jobData.jobName
+        channel = jobData.channel
+        payload = jobData.payload
+        attempts = jobData.attempts
+        recoveryStrategy = jobData.recoveryStrategy
+        backoffSeconds = jobData.backoff.seconds
+        backoffUntil = jobData.backoffUntil
+        reserved = false
+        id = jobData.id
+    }
+
+    func toJobData() throws -> JobData {
+        JobData(
+            id: id,
+            payload: payload,
+            jobName: jobName,
+            channel: channel,
+            attempts: attempts,
+            recoveryStrategy: recoveryStrategy,
+            backoff: .seconds(Int64(backoffSeconds)),
+            backoffUntil: backoffUntil
+        )
+    }
 }
 
 // MARK: - Migration

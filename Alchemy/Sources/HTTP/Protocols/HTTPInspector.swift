@@ -94,7 +94,7 @@ extension HTTPInspector {
     /// defining an entirely new type to decode from it.
     public var content: Content {
         get {
-            guard let content = container.$httpContent else {
+            guard let content = Container.httpContent else {
                 let content: Content
                 switch (body, preferredDecoder()) {
                 case (.none, _):
@@ -105,13 +105,13 @@ extension HTTPInspector {
                     content = decoder.content(from: body.buffer, contentType: headers.contentType)
                 }
 
-                container.$httpContent = content
+                Container.httpContent = content
                 return content
             }
 
             return content
         }
-        nonmutating set { container.$httpContent = newValue }
+        nonmutating set { Container.httpContent = newValue }
     }
 
     public subscript(dynamicMember member: String) -> Content {
@@ -152,5 +152,5 @@ extension HTTPInspector {
 }
 
 fileprivate extension Container {
-    @Singleton var httpContent: Content? = nil
+    @Service(.singleton) var httpContent: Content? = nil
 }

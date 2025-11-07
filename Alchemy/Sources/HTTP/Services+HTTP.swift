@@ -4,16 +4,16 @@ import Crypto
 
 /// The application Router
 public var Routes: Router {
-    Container.$router
+    Container.router
 }
 
 public var Handle: HTTPHandler {
-    Container.$handler
+    Container.handler
 }
 
 /// The default configured Client
 public var Http: Client.Builder {
-    Container.$client.builder()
+    Container.client.builder()
 }
 
 public func Http(_ key: KeyPath<Container, Client>) -> Client.Builder {
@@ -22,8 +22,8 @@ public func Http(_ key: KeyPath<Container, Client>) -> Client.Builder {
 
 /// Accessors for Hashing
 public var Hash: Hasher {
-    get { Container.main.$hasher }
-    set { Container.main.$hasher = newValue }
+    get { Container.hasher }
+    set { Container.hasher = newValue }
 }
 
 public func Hash(_ algorithm: HashAlgorithm) -> Hasher {
@@ -43,12 +43,12 @@ public func Crypt(key: SymmetricKey) -> Encrypter {
 
 /// For easy `Client` access - the public `Http` exposes a `Client.Builder`.
 var _Http: Client {
-    Container.$client
+    Container.client
 }
 
 extension Container {
-    @Singleton public var hasher = Hasher(algorithm: .bcrypt)
-    @Singleton public var handler = HTTPHandler(router: $router)
-    @Singleton public var client = Client()
-    @Singleton var router = HTTPRouter()
+    @Service(.singleton) public var hasher = Hasher(algorithm: .bcrypt)
+    @Service(.singleton) public var handler = HTTPHandler(router: router)
+    @Service(.singleton) public var client = Client()
+    @Service(.singleton) var router = HTTPRouter()
 }

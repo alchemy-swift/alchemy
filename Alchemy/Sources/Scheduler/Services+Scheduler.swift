@@ -1,8 +1,8 @@
 /// The appliation Scheduler
 public var Schedule: Scheduler {
-    Container.$scheduler
+    Container.scheduler
 }
 
 extension Container {
-    @Singleton var scheduler = Scheduler()
+    @Service(.singleton) var scheduler = Scheduler()
 }

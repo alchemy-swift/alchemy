@@ -34,7 +34,7 @@ public final class Database {
         self.grammar = grammar
         self.logging = logging
 
-        if let app = Container.$_application {
+        if let app = Container._application {
             self.migrations = app.migrations
             self.seeders = app.seeders
             Life.onShutdown { try await provider.shutdown() }

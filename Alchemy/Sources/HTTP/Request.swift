@@ -102,22 +102,22 @@ public final class Request: RequestInspector {
     public var queryItems: [URLQueryItem]? { urlComponents.queryItems }
     /// Parameters parsed from the path.
     public var parameters: [Parameter] {
-        get { container.$requestParameters ?? [] }
-        set { container.$requestParameters = newValue }
+        get { Container.requestParameters ?? [] }
+        set { Container.requestParameters = newValue }
     }
     
     /// The url components of this request.
     public var urlComponents: URLComponents {
         get {
-            guard let components = container.$urlComponents else {
+            guard let components = Container.urlComponents else {
                 let components = URLComponents(string: uri) ?? URLComponents()
-                container.$urlComponents = components
+                Container.urlComponents = components
                 return components
             }
 
             return components
         }
-        set { container.$urlComponents = newValue }
+        set { Container.urlComponents = newValue }
     }
 
     public init(
@@ -299,6 +299,6 @@ struct RequestError: Error {
 }
 
 fileprivate extension Container {
-    @Singleton var requestParameters: [Request.Parameter]? = nil
-    @Singleton var urlComponents: URLComponents? = nil
+    @Service(.singleton) var requestParameters: [Request.Parameter]? = nil
+    @Service(.singleton) var urlComponents: URLComponents? = nil
 }

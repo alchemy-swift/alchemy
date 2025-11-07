@@ -9,11 +9,11 @@ public func Q(_ key: KeyPath<Container, Queue>) -> Queue {
 
 /// Job registration.
 var Jobs: JobRegistry {
-    Container.$jobRegistry
+    Container.jobRegistry
 }
 
 extension Container {
-    @Singleton var jobRegistry = JobRegistry()
+    @Service(.singleton) var jobRegistry = JobRegistry()
 }
 
 extension Application {
